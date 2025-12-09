@@ -1,12 +1,15 @@
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { Category } from "@/data/categories";
+import { getCategoryIcon } from "@/data/categoryIcons";
 
 interface CategoryCardProps {
   category: Category;
 }
 
 const CategoryCard = ({ category }: CategoryCardProps) => {
+  const Icon = getCategoryIcon(category.id);
+  
   return (
     <Link
       to={`/categorie/${category.id}`}
@@ -15,7 +18,9 @@ const CategoryCard = ({ category }: CategoryCardProps) => {
       <div className="p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
-            <span className="text-4xl">{category.icon}</span>
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover:bg-primary/20">
+              <Icon className="h-7 w-7 text-primary" />
+            </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
