@@ -25,7 +25,7 @@ const Navbar = () => {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
             <Package className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-heading font-semibold text-foreground text-lg">
+          <span className="font-heading font-semibold text-foreground text-2xl">
             RentNow
 
           </span>
