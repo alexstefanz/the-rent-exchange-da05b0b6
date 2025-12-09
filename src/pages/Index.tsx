@@ -1,60 +1,100 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Mountain, Tent, Wrench, Shield, Clock, Sparkles } from "lucide-react";
+import { ArrowRight, Shield, Clock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import CategoryCard from "@/components/items/CategoryCard";
 import { categories } from "@/data/categories";
+import { getCategoryIcon } from "@/data/categoryIcons";
 
 const Index = () => {
-  const featuredCategories = categories.slice(0, 3);
+  const featuredCategories = categories.slice(0, 6);
+  
+  // Cele mai căutate categorii
+  const popularCategoryIds = [1, 2, 6, 7, 22, 19];
+  const popularCategories = categories.filter(c => popularCategoryIds.includes(c.id));
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden gradient-hero">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,hsl(var(--primary)/0.08),transparent_50%)]" />
-        <div className="container relative py-24 md:py-32">
-          <div className="mx-auto max-w-3xl text-center">
-            <h1 className="animate-fade-up font-heading text-4xl font-bold tracking-tight text-foreground md:text-6xl">
-              Închiriază Orice,{" "}
-              <span className="text-primary">De La Oricine</span>
-            </h1>
-            <p className="mt-6 animate-fade-up text-lg text-muted-foreground md:text-xl" style={{ animationDelay: "0.1s" }}>
-              Platforma de încredere pentru închiriere în comunitatea ta. 
-              Economisești bani, reduci risipa și descoperi noi posibilități.
-            </p>
-            <div className="mt-10 flex flex-col items-center gap-4 animate-fade-up sm:flex-row sm:justify-center" style={{ animationDelay: "0.2s" }}>
-              <Button variant="hero" size="xl" asChild>
-                <Link to="/categorii">
-                  Explorează Categorii
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button variant="outline" size="xl" asChild>
-                <Link to="/adauga-anunt">Adaugă Anunț</Link>
-              </Button>
+      <section className="relative overflow-hidden bg-gradient-to-br from-background via-background to-primary/5">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,hsl(var(--primary)/0.1),transparent_50%)]" />
+        <div className="container relative py-16 md:py-24">
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+            {/* Left content */}
+            <div className="text-center lg:text-left">
+              <h1 className="animate-fade-up font-heading text-4xl font-bold tracking-tight text-foreground md:text-5xl lg:text-6xl">
+                Închiriază ce ai nevoie,{" "}
+                <span className="text-primary">când ai nevoie</span>
+              </h1>
+              <p className="mt-6 animate-fade-up text-lg text-muted-foreground md:text-xl" style={{ animationDelay: "0.1s" }}>
+                Platforma ta de încredere pentru închiriere. Găsește echipamente, 
+                vehicule și multe altele de la oameni din comunitatea ta.
+              </p>
+              <div className="mt-8 flex flex-col items-center gap-4 animate-fade-up sm:flex-row lg:justify-start" style={{ animationDelay: "0.2s" }}>
+                <Button variant="hero" size="xl" asChild>
+                  <Link to="/categorii">
+                    Explorează Categorii
+                    <ArrowRight className="ml-2 h-5 w-5" />
+                  </Link>
+                </Button>
+                <Button variant="outline" size="xl" asChild>
+                  <Link to="/adauga-anunt">Adaugă Anunț</Link>
+                </Button>
+              </div>
+            </div>
+
+            {/* Right content - Illustration placeholder */}
+            <div className="hidden lg:block">
+              <div className="relative">
+                <div className="aspect-square rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-transparent p-8">
+                  <div className="grid h-full grid-cols-2 gap-4">
+                    {[1, 2, 7, 22].map((id, index) => {
+                      const cat = categories.find(c => c.id === id);
+                      const Icon = getCategoryIcon(id);
+                      return (
+                        <div 
+                          key={id}
+                          className="flex flex-col items-center justify-center rounded-2xl bg-card p-4 shadow-card transition-all hover:shadow-card-hover hover:-translate-y-1"
+                          style={{ animationDelay: `${0.3 + index * 0.1}s` }}
+                        >
+                          <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                            <Icon className="h-6 w-6 text-primary" />
+                          </div>
+                          <p className="text-center text-xs font-medium text-foreground">
+                            {cat?.name.split(' ')[0]}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Category Pills */}
-          <div className="mt-16 flex flex-wrap justify-center gap-3 animate-fade-up" style={{ animationDelay: "0.3s" }}>
-            {[
-              { icon: Mountain, label: "Outdoor", id: 1 },
-              { icon: Tent, label: "Camping", id: 2 },
-              { icon: Wrench, label: "Scule", id: 4 },
-            ].map(({ icon: Icon, label, id }) => (
-              <Link
-                key={label}
-                to={`/categorie/${id}`}
-                className="flex items-center gap-2 rounded-full bg-card px-5 py-2.5 text-sm font-medium shadow-card transition-all hover:shadow-card-hover hover:-translate-y-0.5"
-              >
-                <Icon className="h-4 w-4 text-primary" />
-                {label}
-              </Link>
-            ))}
+          {/* Popular Categories Chips */}
+          <div className="mt-12 animate-fade-up" style={{ animationDelay: "0.3s" }}>
+            <p className="mb-4 text-center text-sm font-medium text-muted-foreground lg:text-left">
+              Cele mai căutate categorii:
+            </p>
+            <div className="flex flex-wrap justify-center gap-3 lg:justify-start">
+              {popularCategories.map((category) => {
+                const Icon = getCategoryIcon(category.id);
+                return (
+                  <Link
+                    key={category.id}
+                    to={`/categorie/${category.id}`}
+                    className="flex items-center gap-2 rounded-full border-2 border-primary/30 bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm transition-all hover:border-primary hover:bg-primary/5 hover:shadow-md hover:-translate-y-0.5"
+                  >
+                    <Icon className="h-4 w-4 text-primary" />
+                    {category.name}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
@@ -131,7 +171,7 @@ const Index = () => {
                 title: "Închiriază cu Încredere",
                 description: "Fiecare închiriere este protejată. Returnează produsul și lasă o recenzie când termini.",
               },
-            ].map((step, index) => (
+            ].map((step) => (
               <div
                 key={step.title}
                 className="group rounded-2xl bg-card p-8 shadow-card transition-all hover:shadow-card-hover"
