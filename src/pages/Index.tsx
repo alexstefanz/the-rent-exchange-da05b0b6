@@ -1,13 +1,13 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Camera, Bike, Drill, Shield, Clock, Sparkles } from "lucide-react";
+import { ArrowRight, Mountain, Tent, Wrench, Shield, Clock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import ItemCard from "@/components/items/ItemCard";
-import { mockItems } from "@/data/mockItems";
+import CategoryCard from "@/components/items/CategoryCard";
+import { categories } from "@/data/categories";
 
 const Index = () => {
-  const featuredItems = mockItems.slice(0, 3);
+  const featuredCategories = categories.slice(0, 3);
 
   return (
     <div className="min-h-screen bg-background">
@@ -19,22 +19,22 @@ const Index = () => {
         <div className="container relative py-24 md:py-32">
           <div className="mx-auto max-w-3xl text-center">
             <h1 className="animate-fade-up font-heading text-4xl font-bold tracking-tight text-foreground md:text-6xl">
-              Rent Anything,{" "}
-              <span className="text-primary">From Anyone</span>
+              Închiriază Orice,{" "}
+              <span className="text-primary">De La Oricine</span>
             </h1>
             <p className="mt-6 animate-fade-up text-lg text-muted-foreground md:text-xl" style={{ animationDelay: "0.1s" }}>
-              The trusted marketplace for renting items in your community. 
-              Save money, reduce waste, and discover new possibilities.
+              Platforma de încredere pentru închiriere în comunitatea ta. 
+              Economisești bani, reduci risipa și descoperi noi posibilități.
             </p>
             <div className="mt-10 flex flex-col items-center gap-4 animate-fade-up sm:flex-row sm:justify-center" style={{ animationDelay: "0.2s" }}>
               <Button variant="hero" size="xl" asChild>
-                <Link to="/browse">
-                  Explore Rentals
+                <Link to="/categorii">
+                  Explorează Categorii
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               <Button variant="outline" size="xl" asChild>
-                <Link to="/list-item">List Your Items</Link>
+                <Link to="/adauga-anunt">Adaugă Anunț</Link>
               </Button>
             </div>
           </div>
@@ -42,13 +42,13 @@ const Index = () => {
           {/* Category Pills */}
           <div className="mt-16 flex flex-wrap justify-center gap-3 animate-fade-up" style={{ animationDelay: "0.3s" }}>
             {[
-              { icon: Camera, label: "Electronics" },
-              { icon: Bike, label: "Sports" },
-              { icon: Drill, label: "Tools" },
-            ].map(({ icon: Icon, label }) => (
+              { icon: Mountain, label: "Outdoor", id: 1 },
+              { icon: Tent, label: "Camping", id: 2 },
+              { icon: Wrench, label: "Scule", id: 4 },
+            ].map(({ icon: Icon, label, id }) => (
               <Link
                 key={label}
-                to={`/browse?category=${label.toLowerCase()}`}
+                to={`/categorie/${id}`}
                 className="flex items-center gap-2 rounded-full bg-card px-5 py-2.5 text-sm font-medium shadow-card transition-all hover:shadow-card-hover hover:-translate-y-0.5"
               >
                 <Icon className="h-4 w-4 text-primary" />
@@ -59,51 +59,42 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Featured Items */}
+      {/* Featured Categories */}
       <section className="py-20">
         <div className="container">
           <div className="mb-10 flex items-end justify-between">
             <div>
               <h2 className="font-heading text-3xl font-semibold text-foreground">
-                Popular Rentals
+                Categorii Populare
               </h2>
               <p className="mt-2 text-muted-foreground">
-                Discover what others are renting in your area
+                Descoperă cele mai căutate categorii de închiriere
               </p>
             </div>
             <Button variant="ghost" asChild className="hidden md:flex">
-              <Link to="/browse">
-                View All
+              <Link to="/categorii">
+                Vezi Toate
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredItems.map((item, index) => (
+            {featuredCategories.map((category, index) => (
               <div
-                key={item.id}
+                key={category.id}
                 className="animate-fade-up"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <ItemCard
-                  id={item.id}
-                  title={item.title}
-                  price={item.price}
-                  priceUnit={item.priceUnit}
-                  image={item.images[0]}
-                  location={item.location}
-                  rating={item.rating}
-                  category={item.category}
-                />
+                <CategoryCard category={category} />
               </div>
             ))}
           </div>
 
           <div className="mt-8 text-center md:hidden">
             <Button asChild>
-              <Link to="/browse">
-                View All Rentals
+              <Link to="/categorii">
+                Vezi Toate Categoriile
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -116,10 +107,10 @@ const Index = () => {
         <div className="container">
           <div className="mb-12 text-center">
             <h2 className="font-heading text-3xl font-semibold text-foreground">
-              How It Works
+              Cum Funcționează
             </h2>
             <p className="mt-2 text-muted-foreground">
-              Renting made simple in three easy steps
+              Închirierea simplificată în trei pași
             </p>
           </div>
 
@@ -127,18 +118,18 @@ const Index = () => {
             {[
               {
                 icon: Sparkles,
-                title: "Find What You Need",
-                description: "Browse thousands of items available in your area, from cameras to camping gear.",
+                title: "Găsește Ce Ai Nevoie",
+                description: "Răsfoiește mii de produse disponibile în zona ta, de la camere foto la echipament de camping.",
               },
               {
                 icon: Clock,
-                title: "Book & Pick Up",
-                description: "Reserve your dates, coordinate with the owner, and pick up when it's convenient.",
+                title: "Rezervă & Ridică",
+                description: "Alege perioada, coordonează cu proprietarul și ridică produsul când îți convine.",
               },
               {
                 icon: Shield,
-                title: "Rent with Confidence",
-                description: "Every rental is protected. Return the item and leave a review when you're done.",
+                title: "Închiriază cu Încredere",
+                description: "Fiecare închiriere este protejată. Returnează produsul și lasă o recenzie când termini.",
               },
             ].map((step, index) => (
               <div
@@ -163,10 +154,10 @@ const Index = () => {
         <div className="container">
           <div className="rounded-3xl bg-primary p-12 text-center md:p-16">
             <h2 className="font-heading text-3xl font-semibold text-primary-foreground md:text-4xl">
-              Have Something to Rent?
+              Ai Ceva de Închiriat?
             </h2>
             <p className="mx-auto mt-4 max-w-xl text-primary-foreground/80">
-              Turn your unused items into income. List for free and start earning today.
+              Transformă obiectele nefolosite în venit. Listează gratuit și începe să câștigi azi.
             </p>
             <Button
               variant="secondary"
@@ -174,8 +165,8 @@ const Index = () => {
               className="mt-8"
               asChild
             >
-              <Link to="/list-item">
-                Start Listing
+              <Link to="/adauga-anunt">
+                Începe Să Listezi
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>

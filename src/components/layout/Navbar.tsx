@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Package, Plus, Search } from "lucide-react";
+import { Package, Plus, Search, Grid3X3 } from "lucide-react";
 
 const Navbar = () => {
   return (
@@ -11,35 +11,42 @@ const Navbar = () => {
             <Package className="h-5 w-5 text-primary-foreground" />
           </div>
           <span className="font-heading text-xl font-semibold text-foreground">
-            RentHub
+            ÎnchiriazăAcum
           </span>
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
           <Link
-            to="/browse"
+            to="/categorii"
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <Grid3X3 className="h-4 w-4" />
+            Categorii
+          </Link>
+          <Link
+            to="/cauta"
             className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <Search className="h-4 w-4" />
-            Browse
+            Caută
           </Link>
           <Link
-            to="/list-item"
+            to="/adauga-anunt"
             className="flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             <Plus className="h-4 w-4" />
-            List an Item
+            Adaugă Anunț
           </Link>
         </nav>
 
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" className="hidden md:flex">
-            Sign In
+            Autentificare
           </Button>
           <Button size="sm" asChild>
-            <Link to="/list-item">
+            <Link to="/adauga-anunt">
               <Plus className="h-4 w-4" />
-              List Item
+              Adaugă
             </Link>
           </Button>
         </div>
