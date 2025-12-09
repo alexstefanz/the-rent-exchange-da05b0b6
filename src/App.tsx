@@ -4,8 +4,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
-import Browse from "./pages/Browse";
-import ItemDetail from "./pages/ItemDetail";
+import Categories from "./pages/Categories";
+import CategoryDetail from "./pages/CategoryDetail";
+import SubcategoryDetail from "./pages/SubcategoryDetail";
+import Search from "./pages/Search";
 import ListItem from "./pages/ListItem";
 import NotFound from "./pages/NotFound";
 
@@ -19,9 +21,11 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/browse" element={<Browse />} />
-          <Route path="/item/:id" element={<ItemDetail />} />
-          <Route path="/list-item" element={<ListItem />} />
+          <Route path="/categorii" element={<Categories />} />
+          <Route path="/categorie/:id" element={<CategoryDetail />} />
+          <Route path="/subcategorie/:id" element={<SubcategoryDetail />} />
+          <Route path="/cauta" element={<Search />} />
+          <Route path="/adauga-anunt" element={<ListItem />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
