@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Package, Plus, Search, Menu, X, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Search, Menu, X, ChevronDown, ChevronRight } from "lucide-react";
 import { categories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
+import logoImage from "@/assets/rentnow_logo.png";
+
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeMegaMenu, setActiveMegaMenu] = useState<number | null>(null);
@@ -22,13 +24,7 @@ const Navbar = () => {
       {/* Main navbar */}
       <div className="container h-16 flex items-center justify-between gap-[10px] px-[10px]">
         <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <Package className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <span className="font-heading font-semibold text-foreground text-2xl">
-            RentNow
-
-          </span>
+          <img src={logoImage} alt="RentNow" className="h-10 w-auto" />
         </Link>
 
         {/* Desktop Navigation */}

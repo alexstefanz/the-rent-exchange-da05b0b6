@@ -1,10 +1,72 @@
 import { useParams, Link } from "react-router-dom";
-import { ChevronLeft, MapPin, Calendar, Phone } from "lucide-react";
+import { ChevronLeft, MapPin, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { categories, getAllSubcategories } from "@/data/categories";
+import { getCategoryIcon } from "@/data/categoryIcons";
+
+// Mock products for subcategories
+const generateMockProducts = (subcategoryName: string, subcategoryId: string) => {
+  const products = [
+    {
+      id: `${subcategoryId}-p1`,
+      title: `${subcategoryName} - Model Premium`,
+      price: 50,
+      location: "București",
+      rating: 4.8,
+      reviewCount: 23,
+      image: "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=400&q=80",
+    },
+    {
+      id: `${subcategoryId}-p2`,
+      title: `${subcategoryName} - Standard`,
+      price: 35,
+      location: "Cluj-Napoca",
+      rating: 4.5,
+      reviewCount: 15,
+      image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80",
+    },
+    {
+      id: `${subcategoryId}-p3`,
+      title: `${subcategoryName} - Economic`,
+      price: 25,
+      location: "Timișoara",
+      rating: 4.6,
+      reviewCount: 31,
+      image: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=400&q=80",
+    },
+    {
+      id: `${subcategoryId}-p4`,
+      title: `${subcategoryName} - Profesional`,
+      price: 75,
+      location: "Iași",
+      rating: 4.9,
+      reviewCount: 42,
+      image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400&q=80",
+    },
+    {
+      id: `${subcategoryId}-p5`,
+      title: `${subcategoryName} - Set Complet`,
+      price: 100,
+      location: "Brașov",
+      rating: 4.7,
+      reviewCount: 18,
+      image: "https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=400&q=80",
+    },
+    {
+      id: `${subcategoryId}-p6`,
+      title: `${subcategoryName} - Nou 2024`,
+      price: 60,
+      location: "Constanța",
+      rating: 5.0,
+      reviewCount: 8,
+      image: "https://images.unsplash.com/photo-1478827536114-da961b7f86d2?w=400&q=80",
+    },
+  ];
+  return products;
+};
 
 const SubcategoryDetail = () => {
   const { id } = useParams();
@@ -32,6 +94,9 @@ const SubcategoryDetail = () => {
     );
   }
 
+  const products = generateMockProducts(subcategory.name, subcategory.id);
+  const Icon = getCategoryIcon(category.id);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -46,79 +111,70 @@ const SubcategoryDetail = () => {
           Înapoi la {category.name}
         </Link>
 
-        <div className="grid gap-8 lg:grid-cols-2">
-          {/* Image */}
-          <div className="overflow-hidden rounded-2xl">
-            <img
-              src={subcategory.image}
-              alt={subcategory.name}
-              className="h-full max-h-[500px] w-full object-cover"
-            />
-          </div>
-
-          {/* Details */}
-          <div>
-            <div className="mb-2 flex items-center gap-2">
-              <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                {category.name}
-              </span>
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <Icon className="h-5 w-5 text-primary" />
             </div>
-
-            <h1 className="font-heading text-3xl font-bold text-foreground md:text-4xl">
-              {subcategory.name}
-            </h1>
-
-            <p className="mt-4 text-lg text-muted-foreground">
-              {subcategory.description}
-            </p>
-
-            {/* Placeholder Info */}
-            <Card className="mt-6">
-              <CardContent className="p-6">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 text-muted-foreground">
-                    <MapPin className="h-5 w-5" />
-                    <span>Locație: Disponibil în toată România</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-muted-foreground">
-                    <Calendar className="h-5 w-5" />
-                    <span>Disponibilitate: Verifică calendarul</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-muted-foreground">
-                    <Phone className="h-5 w-5" />
-                    <span>Contact: După rezervare</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Pricing Placeholder */}
-            <Card className="mt-4">
-              <CardContent className="p-6">
-                <div className="flex items-baseline justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Preț de la</p>
-                    <p className="font-heading text-3xl font-bold text-primary">
-                      50 RON
-                      <span className="text-base font-normal text-muted-foreground">
-                        {" "}
-                        / zi
-                      </span>
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-6 space-y-3">
-                  <Button className="w-full" size="lg">
-                    Solicită Închiriere
-                  </Button>
-                  <Button variant="outline" className="w-full" size="lg">
-                    Contactează Proprietarul
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <span className="text-sm font-medium text-muted-foreground">
+              {category.name}
+            </span>
           </div>
+          <h1 className="font-heading text-3xl font-bold text-foreground md:text-4xl">
+            {subcategory.name}
+          </h1>
+          <p className="mt-2 text-lg text-muted-foreground">
+            {subcategory.description}
+          </p>
+          <p className="mt-4 text-sm text-muted-foreground">
+            {products.length} produse disponibile pentru închiriere
+          </p>
+        </div>
+
+        {/* Products Grid */}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {products.map((product) => (
+            <Card
+              key={product.id}
+              className="group overflow-hidden transition-all hover:shadow-card-hover"
+            >
+              <div className="relative aspect-[4/3] overflow-hidden">
+                <img
+                  src={product.image}
+                  alt={product.title}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+              </div>
+              <CardContent className="p-4">
+                <h3 className="font-heading text-lg font-semibold text-foreground line-clamp-2">
+                  {product.title}
+                </h3>
+                <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                  <MapPin className="h-4 w-4" />
+                  {product.location}
+                </div>
+                <div className="mt-2 flex items-center gap-1">
+                  <Star className="h-4 w-4 fill-primary text-primary" />
+                  <span className="text-sm font-medium text-foreground">
+                    {product.rating}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    ({product.reviewCount} recenzii)
+                  </span>
+                </div>
+                <div className="mt-4 flex items-baseline justify-between">
+                  <div>
+                    <span className="font-heading text-xl font-bold text-primary">
+                      {product.price} RON
+                    </span>
+                    <span className="text-sm text-muted-foreground"> / zi</span>
+                  </div>
+                  <Button size="sm">Vezi Detalii</Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </main>
 
