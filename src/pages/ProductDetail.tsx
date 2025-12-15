@@ -2,18 +2,7 @@ import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { format, differenceInDays, isBefore, isAfter, isSameDay } from "date-fns";
 import { ro } from "date-fns/locale";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  MapPin, 
-  Star, 
-  Shield, 
-  Clock, 
-  MessageCircle,
-  Check,
-  User,
-  Calendar,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Star, Shield, Clock, MessageCircle, Check, User, Calendar } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -23,55 +12,46 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
 import { categories } from "@/data/categories";
 import { getItemById, mockItems } from "@/data/mockItems";
-
-const reviews = [
-  {
-    id: "r1",
-    userName: "Maria Ionescu",
-    userAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&q=80",
-    rating: 5,
-    comment: "Produs excelent, în stare perfectă! Recomand cu încredere!",
-    date: "2024-11-15",
-  },
-  {
-    id: "r2",
-    userName: "Andrei Marin",
-    userAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80",
-    rating: 5,
-    comment: "Am închiriat pentru un weekend. Totul a fost perfect!",
-    date: "2024-10-28",
-  },
-  {
-    id: "r3",
-    userName: "Elena Dumitrescu",
-    userAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&q=80",
-    rating: 4,
-    comment: "Foarte bun, recomand!",
-    date: "2024-09-12",
-  },
-];
-
+const reviews = [{
+  id: "r1",
+  userName: "Maria Ionescu",
+  userAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&q=80",
+  rating: 5,
+  comment: "Produs excelent, în stare perfectă! Recomand cu încredere!",
+  date: "2024-11-15"
+}, {
+  id: "r2",
+  userName: "Andrei Marin",
+  userAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80",
+  rating: 5,
+  comment: "Am închiriat pentru un weekend. Totul a fost perfect!",
+  date: "2024-10-28"
+}, {
+  id: "r3",
+  userName: "Elena Dumitrescu",
+  userAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&q=80",
+  rating: 4,
+  comment: "Foarte bun, recomand!",
+  date: "2024-09-12"
+}];
 const ProductDetail = () => {
-  const { id } = useParams();
+  const {
+    id
+  } = useParams();
   const product = getItemById(id || "") || mockItems[0];
-  
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [showAllReviews, setShowAllReviews] = useState(false);
-
   const category = categories.find(c => c.id === product.categoryId);
   const subcategory = category?.subcategories.find(s => s.id === product.subcategoryId);
-
   const priceWeek = Math.round(product.price * 6);
   const priceMonth = Math.round(product.price * 22);
-
-  const nextImage = () => setCurrentImageIndex((prev) => (prev + 1) % product.images.length);
-  const prevImage = () => setCurrentImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
-
+  const nextImage = () => setCurrentImageIndex(prev => (prev + 1) % product.images.length);
+  const prevImage = () => setCurrentImageIndex(prev => (prev - 1 + product.images.length) % product.images.length);
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
-    if (!startDate || (startDate && endDate)) {
+    if (!startDate || startDate && endDate) {
       setStartDate(date);
       setEndDate(undefined);
     } else if (isBefore(date, startDate)) {
@@ -80,17 +60,14 @@ const ProductDetail = () => {
       setEndDate(date);
     }
   };
-
   const clearDates = () => {
     setStartDate(undefined);
     setEndDate(undefined);
   };
-
   const rentalDays = useMemo(() => {
     if (startDate && endDate) return differenceInDays(endDate, startDate) + 1;
     return 0;
   }, [startDate, endDate]);
-
   const totalPrice = useMemo(() => {
     if (rentalDays === 0) return 0;
     if (rentalDays >= 30) return Math.ceil(rentalDays / 30) * priceMonth;
@@ -101,29 +78,22 @@ const ProductDetail = () => {
     }
     return rentalDays * product.price;
   }, [rentalDays, product.price, priceWeek, priceMonth]);
-
   const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 3);
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       <Navbar />
       
       <main className="container py-6 px-[15px] md:px-6">
         <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
-          <Link to="/categorii" className="hover:text-primary">Toate categoriile</Link>
+          <Link to="/categorii" className="hover:text-primary text-xs">Toate categoriile</Link>
           <ChevronRight className="h-4 w-4" />
-          {category && (
-            <>
-              <Link to={`/categorie/${category.id}`} className="hover:text-primary">{category.name}</Link>
+          {category && <>
+              <Link to={`/categorie/${category.id}`} className="hover:text-primary text-xs">{category.name}</Link>
               <ChevronRight className="h-4 w-4" />
-            </>
-          )}
-          {subcategory && (
-            <>
+            </>}
+          {subcategory && <>
               <Link to={`/subcategorie/${subcategory.id}`} className="hover:text-primary">{subcategory.name}</Link>
               <ChevronRight className="h-4 w-4" />
-            </>
-          )}
+            </>}
           <span className="text-foreground">{product.title}</span>
         </nav>
 
@@ -134,8 +104,7 @@ const ProductDetail = () => {
               <div className="aspect-[4/3]">
                 <img src={product.images[currentImageIndex]} alt={product.title} className="h-full w-full object-cover" />
               </div>
-              {product.images.length > 1 && (
-                <>
+              {product.images.length > 1 && <>
                   <Button variant="ghost" size="icon" className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80" onClick={prevImage}>
                     <ChevronLeft className="h-5 w-5" />
                   </Button>
@@ -143,12 +112,9 @@ const ProductDetail = () => {
                     <ChevronRight className="h-5 w-5" />
                   </Button>
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                    {product.images.map((_, index) => (
-                      <button key={index} className={`h-2 w-2 rounded-full ${index === currentImageIndex ? "bg-primary" : "bg-background/60"}`} onClick={() => setCurrentImageIndex(index)} />
-                    ))}
+                    {product.images.map((_, index) => <button key={index} className={`h-2 w-2 rounded-full ${index === currentImageIndex ? "bg-primary" : "bg-background/60"}`} onClick={() => setCurrentImageIndex(index)} />)}
                   </div>
-                </>
-              )}
+                </>}
             </div>
 
             {/* Owner Info */}
@@ -193,15 +159,13 @@ const ProductDetail = () => {
             <div className="rounded-xl border border-border bg-card p-6">
               <h2 className="mb-4 font-heading text-xl font-semibold text-foreground">Descriere</h2>
               <p className="text-muted-foreground">{product.description}</p>
-              {product.features.length > 0 && (
-                <>
+              {product.features.length > 0 && <>
                   <Separator className="my-6" />
                   <h3 className="mb-3 font-medium text-foreground">Caracteristici</h3>
                   <div className="flex flex-wrap gap-2">
-                    {product.features.map((feature, index) => (<Badge key={index} variant="secondary">{feature}</Badge>))}
+                    {product.features.map((feature, index) => <Badge key={index} variant="secondary">{feature}</Badge>)}
                   </div>
-                </>
-              )}
+                </>}
             </div>
 
             {/* Reviews */}
@@ -211,21 +175,23 @@ const ProductDetail = () => {
                 <div className="flex items-center gap-1"><Star className="h-5 w-5 fill-yellow-400 text-yellow-400" /><span className="font-semibold">{product.rating}</span></div>
               </div>
               <div className="space-y-4">
-                {displayedReviews.map((review) => (
-                  <div key={review.id} className="border-b border-border pb-4 last:border-b-0 last:pb-0">
+                {displayedReviews.map(review => <div key={review.id} className="border-b border-border pb-4 last:border-b-0 last:pb-0">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10"><AvatarImage src={review.userAvatar} /><AvatarFallback><User className="h-5 w-5" /></AvatarFallback></Avatar>
                       <div>
                         <p className="font-medium text-foreground">{review.userName}</p>
                         <div className="flex items-center gap-2">
-                          <div className="flex">{Array.from({ length: 5 }).map((_, i) => (<Star key={i} className={`h-3 w-3 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted"}`} />))}</div>
-                          <span className="text-xs text-muted-foreground">{format(new Date(review.date), "d MMMM yyyy", { locale: ro })}</span>
+                          <div className="flex">{Array.from({
+                          length: 5
+                        }).map((_, i) => <Star key={i} className={`h-3 w-3 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted"}`} />)}</div>
+                          <span className="text-xs text-muted-foreground">{format(new Date(review.date), "d MMMM yyyy", {
+                          locale: ro
+                        })}</span>
                         </div>
                       </div>
                     </div>
                     <p className="mt-2 text-sm text-muted-foreground">{review.comment}</p>
-                  </div>
-                ))}
+                  </div>)}
               </div>
             </div>
           </div>
@@ -249,28 +215,41 @@ const ProductDetail = () => {
               <div className="mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="font-medium text-foreground flex items-center gap-2"><Calendar className="h-4 w-4" />Selectează perioada</h3>
-                  {(startDate || endDate) && (<button onClick={clearDates} className="text-xs text-primary hover:underline">Șterge</button>)}
+                  {(startDate || endDate) && <button onClick={clearDates} className="text-xs text-primary hover:underline">Șterge</button>}
                 </div>
-                <CalendarComponent
-                  mode="single"
-                  selected={endDate || startDate}
-                  onSelect={handleDateSelect}
-                  disabled={(date) => isBefore(date, new Date())}
-                  modifiers={{ start: startDate, end: endDate, range: startDate && endDate ? { from: startDate, to: endDate } : undefined }}
-                  modifiersStyles={{ start: { backgroundColor: "hsl(var(--primary))", color: "white" }, end: { backgroundColor: "hsl(var(--primary))", color: "white" }, range: { backgroundColor: "hsl(var(--primary) / 0.1)" } }}
-                  className="rounded-md border"
-                />
+                <CalendarComponent mode="single" selected={endDate || startDate} onSelect={handleDateSelect} disabled={date => isBefore(date, new Date())} modifiers={{
+                start: startDate,
+                end: endDate,
+                range: startDate && endDate ? {
+                  from: startDate,
+                  to: endDate
+                } : undefined
+              }} modifiersStyles={{
+                start: {
+                  backgroundColor: "hsl(var(--primary))",
+                  color: "white"
+                },
+                end: {
+                  backgroundColor: "hsl(var(--primary))",
+                  color: "white"
+                },
+                range: {
+                  backgroundColor: "hsl(var(--primary) / 0.1)"
+                }
+              }} className="rounded-md border" />
               </div>
 
-              {startDate && endDate && (
-                <div className="mb-4 rounded-lg bg-muted p-4">
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">De la:</span><span className="font-medium">{format(startDate, "d MMM yyyy", { locale: ro })}</span></div>
-                  <div className="flex justify-between text-sm mt-1"><span className="text-muted-foreground">Până la:</span><span className="font-medium">{format(endDate, "d MMM yyyy", { locale: ro })}</span></div>
+              {startDate && endDate && <div className="mb-4 rounded-lg bg-muted p-4">
+                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">De la:</span><span className="font-medium">{format(startDate, "d MMM yyyy", {
+                    locale: ro
+                  })}</span></div>
+                  <div className="flex justify-between text-sm mt-1"><span className="text-muted-foreground">Până la:</span><span className="font-medium">{format(endDate, "d MMM yyyy", {
+                    locale: ro
+                  })}</span></div>
                   <Separator className="my-3" />
                   <div className="flex justify-between text-sm"><span className="text-muted-foreground">{rentalDays} zile × {product.price} RON</span><span className="font-medium">{totalPrice} RON</span></div>
                   <div className="flex justify-between mt-2 font-semibold"><span>Total</span><span className="text-primary">{totalPrice} RON</span></div>
-                </div>
-              )}
+                </div>}
 
               <Button className="w-full" size="lg" disabled={!startDate || !endDate}>
                 {startDate && endDate ? "Rezervă acum" : "Selectează perioada"}
@@ -281,8 +260,6 @@ const ProductDetail = () => {
       </main>
 
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default ProductDetail;
