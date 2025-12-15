@@ -198,7 +198,7 @@ const ProductDetail = () => {
 
           {/* Right Sidebar - Booking */}
           <div className="lg:col-span-1 order-1 lg:order-2">
-            <div className="sticky top-24 rounded-xl border border-border bg-card p-6">
+            <div className="sticky top-24 rounded-xl border border-border bg-card p-4 sm:p-6">
               <div className="mb-4">
                 <div className="flex items-baseline gap-1">
                   <span className="font-heading text-2xl font-bold text-foreground">{product.price} RON</span>
@@ -236,7 +236,7 @@ const ProductDetail = () => {
                 range: {
                   backgroundColor: "hsl(var(--primary) / 0.1)"
                 }
-              }} className="rounded-md border" />
+              }} className="rounded-md border w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full" />
               </div>
 
               {startDate && endDate && <div className="mb-4 rounded-lg bg-muted p-4">
