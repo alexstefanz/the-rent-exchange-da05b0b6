@@ -1,9 +1,7 @@
 import { Package } from "lucide-react";
 import { Link } from "react-router-dom";
-
 const Footer = () => {
-  return (
-    <footer className="border-t border-border bg-secondary/30">
+  return <footer className="border-t border-border bg-secondary/30">
       <div className="container py-12">
         <div className="grid gap-8 md:grid-cols-4">
           <div className="space-y-4">
@@ -11,7 +9,7 @@ const Footer = () => {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                 <Package className="h-4 w-4 text-primary-foreground" />
               </div>
-              <span className="font-heading text-lg font-semibold">ÎnchiriazăAcum</span>
+              <span className="font-heading text-lg font-semibold">RentNow</span>
             </Link>
             <p className="text-sm text-muted-foreground">
               Platforma ta de încredere pentru închiriere. Găsește sau oferă orice ai nevoie.
@@ -86,8 +84,6 @@ const Footer = () => {
           <p>© {new Date().getFullYear()} ÎnchiriazăAcum. Toate drepturile rezervate.</p>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
-
 export default Footer;
