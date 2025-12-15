@@ -108,7 +108,7 @@ const ProductDetail = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <main className="container py-6">
+      <main className="container py-6 px-[15px] md:px-6">
         <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
           <Link to="/categorii" className="hover:text-primary">Toate categoriile</Link>
           <ChevronRight className="h-4 w-4" />
@@ -127,8 +127,8 @@ const ProductDetail = () => {
           <span className="text-foreground">{product.title}</span>
         </nav>
 
-        <div className="grid gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="grid gap-8 lg:grid-cols-3 mx-auto max-w-7xl">
+          <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
             {/* Image Gallery */}
             <div className="relative overflow-hidden rounded-xl bg-muted">
               <div className="aspect-[4/3]">
@@ -231,7 +231,7 @@ const ProductDetail = () => {
           </div>
 
           {/* Right Sidebar - Booking */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 order-1 lg:order-2">
             <div className="sticky top-24 rounded-xl border border-border bg-card p-6">
               <div className="mb-4">
                 <div className="flex items-baseline gap-1">
