@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, MapPin, ChevronDown } from "lucide-react";
+import { Search, MapPin, ChevronDown, Grid3X3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,10 +11,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { judete } from "@/data/romaniaLocations";
+import { categories } from "@/data/categories";
 
 const HeroSearchForm = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedJudet, setSelectedJudet] = useState("");
   const [selectedLocalitate, setSelectedLocalitate] = useState("");
 
@@ -25,8 +27,9 @@ const HeroSearchForm = () => {
     e.preventDefault();
     const params = new URLSearchParams();
     if (searchQuery) params.set("q", searchQuery);
-    if (selectedJudet) params.set("judet", selectedJudet);
-    if (selectedLocalitate) params.set("localitate", selectedLocalitate);
+    if (selectedCategory && selectedCategory !== "all") params.set("categorie", selectedCategory);
+    if (selectedJudet && selectedJudet !== "all") params.set("judet", selectedJudet);
+    if (selectedLocalitate && selectedLocalitate !== "all") params.set("localitate", selectedLocalitate);
     navigate(`/cauta?${params.toString()}`);
   };
 
@@ -45,6 +48,33 @@ const HeroSearchForm = () => {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="border-0 bg-transparent p-0 text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
         />
+      </div>
+
+      {/* Divider */}
+      <div className="hidden h-8 w-px bg-border md:block" />
+
+      {/* Category select */}
+      <div className="flex flex-1 items-center gap-2 px-4">
+        <Grid3X3 className="h-5 w-5 text-muted-foreground" />
+        <Select
+          value={selectedCategory}
+          onValueChange={setSelectedCategory}
+        >
+          <SelectTrigger className="w-full border-0 bg-transparent p-0 text-foreground shadow-none focus:ring-0 focus:ring-offset-0 [&>svg]:hidden">
+            <div className="flex items-center justify-between w-full">
+              <SelectValue placeholder="Toate categoriile" />
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </SelectTrigger>
+          <SelectContent className="max-h-[300px] bg-card z-50">
+            <SelectItem value="all">Toate categoriile</SelectItem>
+            {categories.map((category) => (
+              <SelectItem key={category.id} value={category.id.toString()}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Divider */}
@@ -110,7 +140,6 @@ const HeroSearchForm = () => {
         type="submit"
         className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-primary-foreground hover:bg-primary/90"
       >
-        Căutare
         <Search className="h-4 w-4" />
       </Button>
     </form>

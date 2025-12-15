@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Categories from "./pages/Categories";
 import CategoryDetail from "./pages/CategoryDetail";
 import SubcategoryDetail from "./pages/SubcategoryDetail";
+import ProductDetail from "./pages/ProductDetail";
 import Search from "./pages/Search";
 import ListItem from "./pages/ListItem";
 import NotFound from "./pages/NotFound";
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/categorii" element={<Categories />} />
           <Route path="/categorie/:id" element={<CategoryDetail />} />
           <Route path="/subcategorie/:id" element={<SubcategoryDetail />} />
+          <Route path="/produs/:id" element={<ProductDetail />} />
           <Route path="/cauta" element={<Search />} />
           <Route path="/adauga-anunt" element={<ListItem />} />
           <Route path="*" element={<NotFound />} />
