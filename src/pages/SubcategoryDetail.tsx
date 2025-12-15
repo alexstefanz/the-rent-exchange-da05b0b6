@@ -6,67 +6,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { categories, getAllSubcategories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
-
-// Mock products for subcategories
-const generateMockProducts = (subcategoryName: string, subcategoryId: string) => {
-  const products = [
-    {
-      id: `${subcategoryId}-p1`,
-      title: `${subcategoryName} - Model Premium`,
-      price: 50,
-      location: "București",
-      rating: 4.8,
-      reviewCount: 23,
-      image: "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=400&q=80",
-    },
-    {
-      id: `${subcategoryId}-p2`,
-      title: `${subcategoryName} - Standard`,
-      price: 35,
-      location: "Cluj-Napoca",
-      rating: 4.5,
-      reviewCount: 15,
-      image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80",
-    },
-    {
-      id: `${subcategoryId}-p3`,
-      title: `${subcategoryName} - Economic`,
-      price: 25,
-      location: "Timișoara",
-      rating: 4.6,
-      reviewCount: 31,
-      image: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=400&q=80",
-    },
-    {
-      id: `${subcategoryId}-p4`,
-      title: `${subcategoryName} - Profesional`,
-      price: 75,
-      location: "Iași",
-      rating: 4.9,
-      reviewCount: 42,
-      image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400&q=80",
-    },
-    {
-      id: `${subcategoryId}-p5`,
-      title: `${subcategoryName} - Set Complet`,
-      price: 100,
-      location: "Brașov",
-      rating: 4.7,
-      reviewCount: 18,
-      image: "https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=400&q=80",
-    },
-    {
-      id: `${subcategoryId}-p6`,
-      title: `${subcategoryName} - Nou 2024`,
-      price: 60,
-      location: "Constanța",
-      rating: 5.0,
-      reviewCount: 8,
-      image: "https://images.unsplash.com/photo-1478827536114-da961b7f86d2?w=400&q=80",
-    },
-  ];
-  return products;
-};
+import { getItemsBySubcategory, getItemsByCategory, mockItems } from "@/data/mockItems";
 
 const SubcategoryDetail = () => {
   const { id } = useParams();
@@ -94,7 +34,16 @@ const SubcategoryDetail = () => {
     );
   }
 
-  const products = generateMockProducts(subcategory.name, subcategory.id);
+  // Get products for this subcategory, fallback to category products if none found
+  let products = getItemsBySubcategory(subcategory.id);
+  if (products.length === 0) {
+    products = getItemsByCategory(category.id);
+  }
+  // If still no products, show some random products as placeholders
+  if (products.length === 0) {
+    products = mockItems.slice(0, 6);
+  }
+  
   const Icon = getCategoryIcon(category.id);
 
   return (
@@ -141,7 +90,7 @@ const SubcategoryDetail = () => {
             >
               <div className="relative aspect-[4/3] overflow-hidden">
                 <img
-                  src={product.image}
+                  src={product.images[0]}
                   alt={product.title}
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
@@ -168,7 +117,7 @@ const SubcategoryDetail = () => {
                     <span className="font-heading text-xl font-bold text-primary">
                       {product.price} RON
                     </span>
-                    <span className="text-sm text-muted-foreground"> / zi</span>
+                    <span className="text-sm text-muted-foreground"> / {product.priceUnit}</span>
                   </div>
                   <Button size="sm" asChild>
                     <Link to={`/produs/${product.id}`}>Vezi Detalii</Link>

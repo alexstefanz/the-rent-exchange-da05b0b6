@@ -8,7 +8,8 @@ export interface RentalItem {
   location: string;
   rating: number;
   reviewCount: number;
-  category: string;
+  categoryId: number;
+  subcategoryId: string;
   owner: {
     name: string;
     avatar: string;
@@ -19,134 +20,624 @@ export interface RentalItem {
 }
 
 export const mockItems: RentalItem[] = [
+  // OUTDOOR & AVENTURĂ (Category 1)
   {
-    id: "1",
-    title: "Professional DSLR Camera Kit",
-    description: "Canon EOS R5 with 24-70mm f/2.8 lens, perfect for photography enthusiasts and professionals. Includes extra batteries, memory cards, and a protective case.",
+    id: "1-1-1",
+    title: "Bicicletă MTB Trek X-Caliber 8",
+    description: "Bicicletă de munte profesională Trek, perfectă pentru trasee off-road. Include cască și lacăt.",
+    price: 80,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=800&q=80",
+      "https://images.unsplash.com/photo-1532298229144-0ec0c57515c7?w=800&q=80",
+      "https://images.unsplash.com/photo-1576435728678-68d0fbf94e91?w=800&q=80"
+    ],
+    location: "București, Sector 1",
+    rating: 4.9,
+    reviewCount: 47,
+    categoryId: 1,
+    subcategoryId: "1-1",
+    owner: { name: "Andrei Popescu", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80", memberSince: "2022" },
+    features: ["Cadru aluminiu", "29 inch", "Frâne hidraulice", "Suspensie Rock Shox"],
+    availability: true,
+  },
+  {
+    id: "1-1-2",
+    title: "Bicicletă City Cruiser Classic",
+    description: "Bicicletă de oraș elegantă, perfectă pentru plimbări relaxante și cumpărături.",
+    price: 45,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=800&q=80",
+      "https://images.unsplash.com/photo-1505705694340-019e1e335916?w=800&q=80"
+    ],
+    location: "Cluj-Napoca",
+    rating: 4.7,
+    reviewCount: 32,
+    categoryId: 1,
+    subcategoryId: "1-1",
+    owner: { name: "Maria Ionescu", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&q=80", memberSince: "2023" },
+    features: ["Coș față", "Lumini LED", "7 viteze", "Șa confortabilă"],
+    availability: true,
+  },
+  {
+    id: "1-6-1",
+    title: "E-Bike Specialized Turbo Vado",
+    description: "Bicicletă electrică premium cu autonomie 120km. Motor Brose 250W, display color.",
+    price: 120,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=800&q=80",
+      "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=800&q=80"
+    ],
+    location: "Timișoara",
+    rating: 4.8,
+    reviewCount: 28,
+    categoryId: 1,
+    subcategoryId: "1-6",
+    owner: { name: "George Marinescu", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80", memberSince: "2021" },
+    features: ["Motor 250W", "Autonomie 120km", "Display color", "Frâne Shimano"],
+    availability: true,
+  },
+  {
+    id: "1-8-1",
+    title: "Caiac Pelican Argo 100X",
+    description: "Caiac stabil și ușor de manevrat, perfect pentru lacuri și râuri liniștite.",
+    price: 90,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&q=80",
+      "https://images.unsplash.com/photo-1527004013197-933c4bb611b3?w=800&q=80"
+    ],
+    location: "Brașov",
+    rating: 4.6,
+    reviewCount: 19,
+    categoryId: 1,
+    subcategoryId: "1-8",
+    owner: { name: "Vlad Dumitrescu", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&q=80", memberSince: "2022" },
+    features: ["Include vâslă", "Vestă salvare", "Locuri 2", "Ușor 23kg"],
+    availability: true,
+  },
+  {
+    id: "1-10-1",
+    title: "SUP Board Aqua Marina Fusion",
+    description: "Placă SUP gonflabilă premium, ideală pentru începători și avansați.",
+    price: 70,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1499260662818-9c4c01d7cf6f?w=800&q=80",
+      "https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=800&q=80"
+    ],
+    location: "Constanța",
+    rating: 4.8,
+    reviewCount: 35,
+    categoryId: 1,
+    subcategoryId: "1-10",
+    owner: { name: "Elena Vasilescu", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&q=80", memberSince: "2023" },
+    features: ["Lungime 3.3m", "Include pagaie", "Pompă manuală", "Geantă transport"],
+    availability: true,
+  },
+
+  // CAMPING & DRUMEȚII (Category 2)
+  {
+    id: "2-1-1",
+    title: "Cort Coleman Sundome 4P",
+    description: "Cort spațios pentru 4 persoane, ușor de montat, perfect pentru camping de weekend.",
+    price: 55,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&q=80",
+      "https://images.unsplash.com/photo-1478827536114-da961b7f86d2?w=800&q=80",
+      "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?w=800&q=80"
+    ],
+    location: "Sibiu",
+    rating: 4.7,
+    reviewCount: 56,
+    categoryId: 2,
+    subcategoryId: "2-1",
+    owner: { name: "Ion Popa", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80", memberSince: "2021" },
+    features: ["Impermeabil", "Montare 10 min", "Ventilație", "Covor inclus"],
+    availability: true,
+  },
+  {
+    id: "2-3-1",
+    title: "Sac de Dormit The North Face",
+    description: "Sac de dormit pentru temperaturi până la -10°C, compact și ușor.",
+    price: 35,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=800&q=80",
+      "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&q=80"
+    ],
+    location: "Baia Mare",
+    rating: 4.9,
+    reviewCount: 41,
+    categoryId: 2,
+    subcategoryId: "2-3",
+    owner: { name: "Ana Moldovan", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&q=80", memberSince: "2022" },
+    features: ["Confort -10°C", "Puf sintetic", "1.2kg", "Sac compresie"],
+    availability: true,
+  },
+  {
+    id: "2-5-1",
+    title: "Rucsac Osprey Atmos AG 65L",
+    description: "Rucsac trekking profesional cu sistem anti-gravitație pentru confort maxim.",
+    price: 40,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80",
+      "https://images.unsplash.com/photo-1622560480654-d96214fdc887?w=800&q=80"
+    ],
+    location: "Cluj-Napoca",
+    rating: 4.8,
+    reviewCount: 33,
+    categoryId: 2,
+    subcategoryId: "2-5",
+    owner: { name: "Mihai Rusu", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80", memberSince: "2020" },
+    features: ["65 litri", "Anti-gravity", "Husă ploaie", "Buzunare laterale"],
+    availability: true,
+  },
+
+  // SPORTURI DE IARNĂ (Category 3)
+  {
+    id: "3-2-1",
+    title: "Set Schiuri Rossignol Experience 88",
+    description: "Set complet schiuri pentru nivel intermediar-avansat, include legături Look.",
+    price: 95,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800&q=80",
+      "https://images.unsplash.com/photo-1486915309851-b0cc1f8a0084?w=800&q=80",
+      "https://images.unsplash.com/photo-1605540436563-5bca919ae766?w=800&q=80"
+    ],
+    location: "Brașov",
+    rating: 4.9,
+    reviewCount: 67,
+    categoryId: 3,
+    subcategoryId: "3-2",
+    owner: { name: "Stefan Muntean", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&q=80", memberSince: "2019" },
+    features: ["Lungime 176cm", "Legături Look", "All-mountain", "Nivel intermediar"],
+    availability: true,
+  },
+  {
+    id: "3-3-1",
+    title: "Snowboard Burton Custom",
+    description: "Placă snowboard versatilă pentru toate condițiile, nivel intermediar-expert.",
+    price: 85,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1478700485868-972b69dc3fc4?w=800&q=80",
+      "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800&q=80"
+    ],
+    location: "Sinaia",
+    rating: 4.8,
+    reviewCount: 44,
+    categoryId: 3,
+    subcategoryId: "3-3",
+    owner: { name: "Radu Nistor", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80", memberSince: "2021" },
+    features: ["156cm", "Twin tip", "Flex mediu", "Freestyle/Freeride"],
+    availability: true,
+  },
+
+  // SCULE, UNELTE & CONSTRUCȚII (Category 4)
+  {
+    id: "4-1-1",
+    title: "Set Bormaşină DeWalt 20V MAX",
+    description: "Kit profesional cu bormaşină și rotopercutor, include 2 baterii și accesorii.",
+    price: 45,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=800&q=80",
+      "https://images.unsplash.com/photo-1581783898377-1c85bf937427?w=800&q=80"
+    ],
+    location: "București, Sector 3",
+    rating: 4.9,
+    reviewCount: 89,
+    categoryId: 4,
+    subcategoryId: "4-1",
+    owner: { name: "Gheorghe Stancu", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&q=80", memberSince: "2020" },
+    features: ["20V Brushless", "2 baterii 5Ah", "100+ accesorii", "Geantă transport"],
+    availability: true,
+  },
+  {
+    id: "4-3-1",
+    title: "Mașină Tuns Gazon Honda HRX217",
+    description: "Mașină de tuns gazon profesională, motor Honda, lățime 53cm.",
     price: 75,
-    priceUnit: "day",
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800&q=80",
+      "https://images.unsplash.com/photo-1558904541-efa843a96f01?w=800&q=80"
+    ],
+    location: "Iași",
+    rating: 4.7,
+    reviewCount: 52,
+    categoryId: 4,
+    subcategoryId: "4-3",
+    owner: { name: "Vasile Toma", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80", memberSince: "2021" },
+    features: ["Motor Honda", "Lățime 53cm", "Autopropulsată", "Coș 88L"],
+    availability: true,
+  },
+  {
+    id: "4-11-1",
+    title: "Generator Electric Honda EU7000is",
+    description: "Generator inverter silențios, 7000W, perfect pentru evenimente sau șantiere.",
+    price: 150,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?w=800&q=80",
+      "https://images.unsplash.com/photo-1581783898377-1c85bf937427?w=800&q=80"
+    ],
+    location: "Oradea",
+    rating: 4.8,
+    reviewCount: 38,
+    categoryId: 4,
+    subcategoryId: "4-11",
+    owner: { name: "Dan Crișan", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80", memberSince: "2019" },
+    features: ["7000W", "Inverter", "Silențios 58dB", "Autonomie 18h"],
+    availability: true,
+  },
+
+  // JUCĂRII GONFLABILE & COPII (Category 5)
+  {
+    id: "5-1-1",
+    title: "Castel Gonflabil Happy Jump",
+    description: "Castel gonflabil colorat pentru petreceri, capacitate 6-8 copii.",
+    price: 200,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80",
+      "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=800&q=80"
+    ],
+    location: "București, Sector 2",
+    rating: 4.9,
+    reviewCount: 78,
+    categoryId: 5,
+    subcategoryId: "5-1",
+    owner: { name: "Laura Dinu", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&q=80", memberSince: "2021" },
+    features: ["4x4m", "Include pompă", "6-8 copii", "Montare inclusă"],
+    availability: true,
+  },
+  {
+    id: "5-5-1",
+    title: "Mașinuță Electrică Mercedes G63",
+    description: "Mașinuță electrică pentru copii, replică Mercedes, telecomandă parentală.",
+    price: 120,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1594787318286-3d835c1d207f?w=800&q=80",
+      "https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?w=800&q=80"
+    ],
+    location: "Constanța",
+    rating: 4.8,
+    reviewCount: 45,
+    categoryId: 5,
+    subcategoryId: "5-5",
+    owner: { name: "Cristina Pavel", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&q=80", memberSince: "2022" },
+    features: ["12V", "Telecomandă", "MP3 Player", "2-6 ani"],
+    availability: true,
+  },
+
+  // GAMING & ELECTRONICE (Category 6)
+  {
+    id: "6-1-1",
+    title: "PlayStation 5 + 2 Controllere",
+    description: "Consolă PS5 cu 2 controllere DualSense și 5 jocuri populare incluse.",
+    price: 95,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=800&q=80",
+      "https://images.unsplash.com/photo-1621259182978-fbf93132d53d?w=800&q=80"
+    ],
+    location: "București, Sector 1",
+    rating: 4.9,
+    reviewCount: 112,
+    categoryId: 6,
+    subcategoryId: "6-1",
+    owner: { name: "Alex Neagu", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80", memberSince: "2022" },
+    features: ["PS5 Digital", "2 controllere", "5 jocuri", "Cabluri HDMI"],
+    availability: true,
+  },
+  {
+    id: "6-5-1",
+    title: "Meta Quest 3 VR Headset",
+    description: "Căști VR standalone de ultimă generație, include 10+ jocuri și experiențe.",
+    price: 85,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1622979135225-d2ba269cf1ac?w=800&q=80",
+      "https://images.unsplash.com/photo-1617802690992-15d93263d3a9?w=800&q=80"
+    ],
+    location: "Cluj-Napoca",
+    rating: 4.8,
+    reviewCount: 67,
+    categoryId: 6,
+    subcategoryId: "6-5",
+    owner: { name: "Bogdan Florescu", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80", memberSince: "2023" },
+    features: ["Standalone VR", "128GB", "10+ jocuri", "Controllers incluși"],
+    availability: true,
+  },
+  {
+    id: "6-7-1",
+    title: "Proiector Epson Home Cinema 5050UB",
+    description: "Proiector 4K PRO-UHD pentru experiențe cinematice acasă.",
+    price: 150,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=800&q=80",
+      "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&q=80"
+    ],
+    location: "Timișoara",
+    rating: 4.9,
+    reviewCount: 34,
+    categoryId: 6,
+    subcategoryId: "6-7",
+    owner: { name: "Mihai Stoica", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&q=80", memberSince: "2021" },
+    features: ["4K PRO-UHD", "2600 lumeni", "HDR10", "Ecran 300 inch"],
+    availability: true,
+  },
+
+  // FOTO & VIDEO (Category 7)
+  {
+    id: "7-1-1",
+    title: "DJI Mavic 3 Pro Drone",
+    description: "Dronă profesională cu cameră Hasselblad 4/3 CMOS și autonomie 46 minute.",
+    price: 180,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1473968512647-3e447244af8f?w=800&q=80",
+      "https://images.unsplash.com/photo-1507582020474-9a35b7d455d9?w=800&q=80",
+      "https://images.unsplash.com/photo-1527977966376-1c8408f9f108?w=800&q=80"
+    ],
+    location: "București, Sector 4",
+    rating: 4.9,
+    reviewCount: 56,
+    categoryId: 7,
+    subcategoryId: "7-1",
+    owner: { name: "Victor Enescu", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80", memberSince: "2022" },
+    features: ["Camera 4/3", "5.1K Video", "46 min zbor", "3 baterii"],
+    availability: true,
+  },
+  {
+    id: "7-4-1",
+    title: "Sony A7IV Kit Complet",
+    description: "Cameră mirrorless full-frame cu obiectiv 24-70mm f/2.8 GM și accesorii.",
+    price: 200,
+    priceUnit: "zi",
     images: [
       "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&q=80",
       "https://images.unsplash.com/photo-1502920917128-1aa500764cbd?w=800&q=80",
+      "https://images.unsplash.com/photo-1617005082133-548c4dd27f35?w=800&q=80"
     ],
-    location: "San Francisco, CA",
+    location: "București, Sector 1",
     rating: 4.9,
-    reviewCount: 47,
-    category: "Electronics",
-    owner: {
-      name: "Alex Chen",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80",
-      memberSince: "2022",
-    },
-    features: ["4K Video", "45MP Sensor", "In-body Stabilization", "Dual Card Slots"],
-    availability: true,
-  },
-  {
-    id: "2",
-    title: "Electric Mountain Bike",
-    description: "High-performance e-bike with 500W motor and 50-mile range. Perfect for trail riding or commuting. Includes helmet and lock.",
-    price: 45,
-    priceUnit: "day",
-    images: [
-      "https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=800&q=80",
-    ],
-    location: "Portland, OR",
-    rating: 4.7,
-    reviewCount: 23,
-    category: "Sports",
-    owner: {
-      name: "Jordan Mills",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80",
-      memberSince: "2023",
-    },
-    features: ["500W Motor", "50-mile Range", "Hydraulic Brakes", "Full Suspension"],
-    availability: true,
-  },
-  {
-    id: "3",
-    title: "Professional Power Drill Set",
-    description: "DeWalt 20V MAX drill kit with complete accessory set. Includes charger, two batteries, and over 100 drill bits and accessories.",
-    price: 25,
-    priceUnit: "day",
-    images: [
-      "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=800&q=80",
-    ],
-    location: "Austin, TX",
-    rating: 4.8,
     reviewCount: 89,
-    category: "Tools",
-    owner: {
-      name: "Mike Roberts",
-      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&q=80",
-      memberSince: "2021",
-    },
-    features: ["20V Brushless", "2 Batteries", "100+ Accessories", "Carrying Case"],
+    categoryId: 7,
+    subcategoryId: "7-4",
+    owner: { name: "Andrei Ionescu", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80", memberSince: "2020" },
+    features: ["33MP Full-frame", "4K 60fps", "Obiectiv GM", "4 baterii"],
     availability: true,
   },
   {
-    id: "4",
-    title: "4-Person Camping Tent",
-    description: "Spacious waterproof tent perfect for family camping. Easy setup in under 5 minutes. Includes ground mat and carrying bag.",
-    price: 30,
-    priceUnit: "day",
+    id: "7-3-1",
+    title: "DJI RS 3 Pro Gimbal",
+    description: "Gimbal profesional pentru camere până la 4.5kg, control wireless.",
+    price: 95,
+    priceUnit: "zi",
     images: [
-      "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=800&q=80",
+      "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=800&q=80",
+      "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&q=80"
     ],
-    location: "Denver, CO",
-    rating: 4.6,
-    reviewCount: 34,
-    category: "Outdoor",
-    owner: {
-      name: "Sarah Johnson",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&q=80",
-      memberSince: "2022",
-    },
-    features: ["Waterproof", "4-Person", "Easy Setup", "Ventilated"],
+    location: "Iași",
+    rating: 4.8,
+    reviewCount: 42,
+    categoryId: 7,
+    subcategoryId: "7-3",
+    owner: { name: "Cristian Barbu", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&q=80", memberSince: "2021" },
+    features: ["Max 4.5kg", "3 axe", "LiDAR Focus", "12h baterie"],
+    availability: true,
+  },
+
+  // EVENIMENTE & HOBBY (Category 9)
+  {
+    id: "9-6-1",
+    title: "Sistem Sonorizare JBL PRX 915",
+    description: "Sistem de sonorizare profesional 2000W, perfect pentru evenimente până la 300 persoane.",
+    price: 250,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80",
+      "https://images.unsplash.com/photo-1545454675-3531b543be5d?w=800&q=80"
+    ],
+    location: "București, Sector 5",
+    rating: 4.9,
+    reviewCount: 78,
+    categoryId: 9,
+    subcategoryId: "9-6",
+    owner: { name: "Adrian Lungu", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80", memberSince: "2019" },
+    features: ["2000W RMS", "2 sateliți + sub", "Mixer inclus", "Cabluri 50m"],
     availability: true,
   },
   {
-    id: "5",
-    title: "DJ Equipment Bundle",
-    description: "Complete DJ setup with Pioneer DDJ controller, studio monitors, and headphones. Perfect for parties and events.",
-    price: 120,
-    priceUnit: "day",
+    id: "9-3-1",
+    title: "Mașină Fum ADJ Fog Storm 1200HD",
+    description: "Mașină de fum profesională cu control DMX pentru efecte spectaculoase.",
+    price: 65,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800&q=80",
+      "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&q=80"
+    ],
+    location: "Constanța",
+    rating: 4.7,
+    reviewCount: 45,
+    categoryId: 9,
+    subcategoryId: "9-3",
+    owner: { name: "Marius Drăgan", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80", memberSince: "2021" },
+    features: ["1200W", "Control DMX", "5L lichid inclus", "Telecomandă"],
+    availability: true,
+  },
+
+  // INSTRUMENTE MUZICALE & DJ (Category 10)
+  {
+    id: "10-1-1",
+    title: "Pioneer DDJ-1000 Controller DJ",
+    description: "Controller DJ profesional cu jog wheels de 8 inch și ecrane full-color.",
+    price: 140,
+    priceUnit: "zi",
     images: [
       "https://images.unsplash.com/photo-1571935441003-93cdc0c13e49?w=800&q=80",
+      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&q=80"
     ],
-    location: "Los Angeles, CA",
+    location: "București, Sector 3",
     rating: 4.9,
-    reviewCount: 56,
-    category: "Electronics",
-    owner: {
-      name: "Chris Taylor",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80",
-      memberSince: "2020",
-    },
-    features: ["Pioneer DDJ-1000", "KRK Monitors", "Pro Headphones", "All Cables"],
+    reviewCount: 67,
+    categoryId: 10,
+    subcategoryId: "10-1",
+    owner: { name: "DJ Cristi", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80", memberSince: "2018" },
+    features: ["Jog 8 inch", "4 canale", "Rekordbox", "FX hardware"],
     availability: true,
   },
   {
-    id: "6",
-    title: "Vintage Film Projector",
-    description: "Beautiful working 16mm film projector, perfect for film nights or events. Includes a selection of classic short films.",
-    price: 60,
-    priceUnit: "day",
+    id: "10-5-1",
+    title: "Chitară Gibson Les Paul Standard",
+    description: "Chitară electrică legendară, sunet vintage cu humbuckere Burstbucker.",
+    price: 85,
+    priceUnit: "zi",
     images: [
-      "https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=800&q=80",
+      "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=800&q=80",
+      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=800&q=80"
     ],
-    location: "Brooklyn, NY",
-    rating: 4.5,
-    reviewCount: 12,
-    category: "Entertainment",
-    owner: {
-      name: "Emma Wilson",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&q=80",
-      memberSince: "2021",
-    },
-    features: ["16mm Compatible", "Restored", "Includes Films", "Quiet Operation"],
+    location: "Cluj-Napoca",
+    rating: 4.8,
+    reviewCount: 34,
+    categoryId: 10,
+    subcategoryId: "10-5",
+    owner: { name: "Florin Rock", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80", memberSince: "2020" },
+    features: ["Mahon/Arțar", "Burstbucker Pro", "Include toc", "Cablu inclus"],
+    availability: true,
+  },
+
+  // FITNESS & WELLNESS (Category 11)
+  {
+    id: "11-1-1",
+    title: "Bandă Alergare NordicTrack 2450",
+    description: "Bandă de alergat profesională cu ecran 22 inch și iFIT inclus 1 an.",
+    price: 120,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=800&q=80",
+      "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80"
+    ],
+    location: "București, Sector 1",
+    rating: 4.8,
+    reviewCount: 56,
+    categoryId: 11,
+    subcategoryId: "11-1",
+    owner: { name: "Fitness Pro", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80", memberSince: "2021" },
+    features: ["Ecran 22 inch", "22 km/h", "iFIT 1 an", "Pliere automată"],
+    availability: true,
+  },
+
+  // NUNȚI & EVENIMENTE PREMIUM (Category 19)
+  {
+    id: "19-1-1",
+    title: "Arcadă Nuntă cu Flori Artificiale",
+    description: "Arcadă elegantă decorată cu flori artificiale premium, perfectă pentru ceremonii.",
+    price: 350,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80",
+      "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&q=80",
+      "https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=800&q=80"
+    ],
+    location: "București",
+    rating: 4.9,
+    reviewCount: 89,
+    categoryId: 19,
+    subcategoryId: "19-1",
+    owner: { name: "Wedding Dreams", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&q=80", memberSince: "2019" },
+    features: ["Înălțime 2.5m", "Lățime 2m", "Montaj inclus", "Transport inclus"],
+    availability: true,
+  },
+
+  // RULOTE & CAMPERVAN-URI (Category 22)
+  {
+    id: "22-1-1",
+    title: "Rulotă Hobby De Luxe 540 UL",
+    description: "Rulotă de lux pentru 4 persoane, bucătărie completă și baie separată.",
+    price: 180,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?w=800&q=80",
+      "https://images.unsplash.com/photo-1578894381163-e72c17f2d45f?w=800&q=80",
+      "https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=800&q=80"
+    ],
+    location: "Brașov",
+    rating: 4.9,
+    reviewCount: 45,
+    categoryId: 22,
+    subcategoryId: "22-1",
+    owner: { name: "Camper Rental RO", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80", memberSince: "2020" },
+    features: ["4 persoane", "Bucătărie completă", "Baie separată", "AC inclus"],
+    availability: true,
+  },
+  {
+    id: "22-2-1",
+    title: "VW California Ocean T6.1",
+    description: "Campervan premium VW California cu acoperiș pop-up și dotări complete.",
+    price: 220,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1561361513-2d000a50f0dc?w=800&q=80",
+      "https://images.unsplash.com/photo-1578894381163-e72c17f2d45f?w=800&q=80"
+    ],
+    location: "Cluj-Napoca",
+    rating: 4.8,
+    reviewCount: 67,
+    categoryId: 22,
+    subcategoryId: "22-2",
+    owner: { name: "Van Life RO", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80", memberSince: "2021" },
+    features: ["4 locuri dormit", "Bucătărie", "Acoperiș pop-up", "Automat DSG"],
+    availability: true,
+  },
+
+  // COSTUME & RECUZITĂ (Category 20)
+  {
+    id: "20-1-1",
+    title: "Costum Batman Premium",
+    description: "Costum Batman de calitate cinematografică, include mască și accesorii.",
+    price: 75,
+    priceUnit: "zi",
+    images: [
+      "https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?w=800&q=80",
+      "https://images.unsplash.com/photo-1531259683007-016a7b628fc3?w=800&q=80"
+    ],
+    location: "București, Sector 1",
+    rating: 4.7,
+    reviewCount: 34,
+    categoryId: 20,
+    subcategoryId: "20-1",
+    owner: { name: "Costume Pro", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80", memberSince: "2020" },
+    features: ["Mărime M-XL", "Mască inclusă", "Capă", "Accesorii complete"],
     availability: true,
   },
 ];
+
+// Helper function to get items by subcategory
+export const getItemsBySubcategory = (subcategoryId: string): RentalItem[] => {
+  return mockItems.filter(item => item.subcategoryId === subcategoryId);
+};
+
+// Helper function to get items by category
+export const getItemsByCategory = (categoryId: number): RentalItem[] => {
+  return mockItems.filter(item => item.categoryId === categoryId);
+};
+
+// Helper function to get item by id
+export const getItemById = (id: string): RentalItem | undefined => {
+  return mockItems.find(item => item.id === id);
+};
 
 export const categories = [
   "All",
