@@ -170,7 +170,9 @@ const SubcategoryDetail = () => {
                     </span>
                     <span className="text-sm text-muted-foreground"> / zi</span>
                   </div>
-                  <Button size="sm">Vezi Detalii</Button>
+                  <Button size="sm" asChild>
+                    <Link to={`/produs/${product.id}`}>Vezi Detalii</Link>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
