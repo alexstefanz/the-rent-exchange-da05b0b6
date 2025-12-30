@@ -31,7 +31,7 @@ const CategoryDetail = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <main className="container py-8">
+      <main className="w-full max-w-7xl mx-auto py-8 px-[10px] md:px-6 lg:px-8">
         {/* Breadcrumb */}
         <Link
           to="/categorii"
