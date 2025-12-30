@@ -44,10 +44,10 @@ const CategoryDetail = () => {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4">
-            <span className="text-5xl">{category.icon}</span>
-            <div>
+            <span className="hidden text-5xl md:block">{category.icon}</span>
+            <div className="w-full">
               <div className="flex items-center gap-3">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+                <span className="hidden h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground md:flex">
                   {category.id}
                 </span>
                 <h1 className="font-heading text-3xl font-bold text-foreground md:text-4xl">
@@ -62,7 +62,7 @@ const CategoryDetail = () => {
         </div>
 
         {/* Subcategories Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 md:gap-6 lg:grid-cols-3 xl:grid-cols-4">
           {category.subcategories.map((subcategory, index) => (
             <div
               key={subcategory.id}
