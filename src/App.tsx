@@ -11,6 +11,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Search from "./pages/Search";
 import ListItem from "./pages/ListItem";
 import Checkout from "./pages/Checkout";
+import UserProfile from "./pages/UserProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/cauta" element={<Search />} />
           <Route path="/adauga-anunt" element={<ListItem />} />
+          <Route path="/utilizator/:id" element={<UserProfile />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
