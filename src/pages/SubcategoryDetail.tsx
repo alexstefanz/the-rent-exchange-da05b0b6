@@ -243,45 +243,47 @@ const SubcategoryDetail = () => {
 
         {/* Products Grid / List */}
         {viewMode === "gallery" ? (
-          <div className="grid gap-6 grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
             {sortedProducts.map((product) => (
               <Card
                 key={product.id}
                 className="group overflow-hidden transition-all hover:shadow-card-hover"
               >
-                <div className="relative aspect-[4/3] overflow-hidden">
+                <Link to={`/produs/${product.id}`} className="relative aspect-[4/3] overflow-hidden block">
                   <img
                     src={product.images[0]}
                     alt={product.title}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                </div>
-                <CardContent className="p-4">
-                  <h3 className="font-heading text-lg font-semibold text-foreground line-clamp-2">
+                </Link>
+                <CardContent className="p-3 md:p-4">
+                  <h3 className="font-heading text-base md:text-lg font-semibold text-foreground line-clamp-2">
                     {product.title}
                   </h3>
-                  <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                    <MapPin className="h-4 w-4" />
-                    {product.location}
+                  <div className="mt-2 flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                    <MapPin className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
+                    <span className="truncate">{product.location}</span>
                   </div>
-                  <div className="mt-2 flex items-center gap-1">
-                    <Star className="h-4 w-4 fill-primary text-primary" />
-                    <span className="text-sm font-medium text-foreground">
-                      {product.rating}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
+                  <div className="mt-2 flex flex-col md:flex-row md:items-center md:gap-1">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-3 w-3 md:h-4 md:w-4 fill-primary text-primary" />
+                      <span className="text-xs md:text-sm font-medium text-foreground">
+                        {product.rating}
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
                       ({product.reviewCount} recenzii)
                     </span>
                   </div>
-                  <div className="mt-4 flex items-baseline justify-between">
-                    <div>
-                      <span className="font-heading text-xl font-bold text-primary">
-                        {product.price} RON
-                      </span>
-                      <span className="text-sm text-muted-foreground"> / {product.priceUnit}</span>
-                    </div>
-                    <Button size="sm" asChild>
-                      <Link to={`/produs/${product.id}`}>Vezi</Link>
+                  <div className="mt-3">
+                    <span className="font-heading text-lg md:text-xl font-bold text-primary">
+                      {product.price} RON
+                    </span>
+                    <span className="text-xs md:text-sm text-muted-foreground"> / {product.priceUnit}</span>
+                  </div>
+                  <div className="hidden md:block mt-3">
+                    <Button size="sm" asChild className="w-full">
+                      <Link to={`/produs/${product.id}`}>Vezi Detalii</Link>
                     </Button>
                   </div>
                 </CardContent>
@@ -296,13 +298,13 @@ const SubcategoryDetail = () => {
                 className="group overflow-hidden transition-all hover:shadow-card-hover"
               >
                 <div className="flex flex-col sm:flex-row">
-                  <div className="relative aspect-[4/3] sm:aspect-square sm:w-48 overflow-hidden">
+                  <Link to={`/produs/${product.id}`} className="relative aspect-[4/3] sm:aspect-square sm:w-48 overflow-hidden block">
                     <img
                       src={product.images[0]}
                       alt={product.title}
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-                  </div>
+                  </Link>
                   <CardContent className="flex-1 p-4">
                     <h3 className="font-heading text-lg font-semibold text-foreground">
                       {product.title}
