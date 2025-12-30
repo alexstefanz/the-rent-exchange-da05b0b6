@@ -32,11 +32,6 @@ const SubcategoryCard = ({ id, name, description, image, categoryId }: Subcatego
         </p>
       </div>
       
-      <div className="absolute top-3 right-3">
-        <span className="rounded-full bg-primary/90 px-3 py-1 text-xs font-medium text-primary-foreground backdrop-blur-sm">
-          Închiriază
-        </span>
-      </div>
     </Link>
   );
 };
