@@ -83,18 +83,18 @@ const ProductDetail = () => {
       <Navbar />
       
       <main className="w-full max-w-7xl mx-auto py-6 px-[15px] md:px-6 lg:px-8">
-        <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
-          <Link to="/categorii" className="hover:text-primary text-xs">Toate categoriile</Link>
-          <ChevronRight className="h-4 w-4" />
+        <nav className="mb-6 hidden md:flex items-center gap-2 text-sm text-muted-foreground overflow-x-auto">
+          <Link to="/categorii" className="hover:text-primary text-xs whitespace-nowrap">Toate categoriile</Link>
+          <ChevronRight className="h-4 w-4 flex-shrink-0" />
           {category && <>
-              <Link to={`/categorie/${category.id}`} className="hover:text-primary text-xs">{category.name}</Link>
-              <ChevronRight className="h-4 w-4" />
+              <Link to={`/categorie/${category.id}`} className="hover:text-primary text-xs whitespace-nowrap">{category.name}</Link>
+              <ChevronRight className="h-4 w-4 flex-shrink-0" />
             </>}
           {subcategory && <>
-              <Link to={`/subcategorie/${subcategory.id}`} className="hover:text-primary">{subcategory.name}</Link>
-              <ChevronRight className="h-4 w-4" />
+              <Link to={`/subcategorie/${subcategory.id}`} className="hover:text-primary whitespace-nowrap">{subcategory.name}</Link>
+              <ChevronRight className="h-4 w-4 flex-shrink-0" />
             </>}
-          <span className="text-foreground">{product.title}</span>
+          <span className="text-foreground whitespace-nowrap">{product.title}</span>
         </nav>
 
         <div className="grid gap-8 lg:grid-cols-3">
