@@ -10,6 +10,7 @@ import SubcategoryDetail from "./pages/SubcategoryDetail";
 import ProductDetail from "./pages/ProductDetail";
 import Search from "./pages/Search";
 import ListItem from "./pages/ListItem";
+import Checkout from "./pages/Checkout";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/categorie/:id" element={<CategoryDetail />} />
           <Route path="/subcategorie/:id" element={<SubcategoryDetail />} />
           <Route path="/produs/:id" element={<ProductDetail />} />
+          <Route path="/checkout" element={<Checkout />} />
           <Route path="/cauta" element={<Search />} />
           <Route path="/adauga-anunt" element={<ListItem />} />
           <Route path="*" element={<NotFound />} />
