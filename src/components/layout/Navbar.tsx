@@ -44,7 +44,7 @@ const Navbar = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-md">
+      <header className="fixed lg:sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-md">
         {/* Main navbar */}
         <div className="container h-16 flex items-center justify-between gap-[10px] px-[10px]">
           <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
