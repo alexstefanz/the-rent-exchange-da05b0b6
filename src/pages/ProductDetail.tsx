@@ -184,7 +184,7 @@ const ProductDetail = () => {
                   </Avatar>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-foreground">{product.owner.name}</h3>
+                      <Link to={`/utilizator/${product.owner.id}`} className="font-semibold text-foreground hover:text-primary transition-colors">{product.owner.name}</Link>
                       <Badge variant="secondary" className="text-xs"><Check className="mr-1 h-3 w-3" />Verificat</Badge>
                     </div>
                     <div className="mt-1 flex items-center gap-1 text-sm">
@@ -207,7 +207,7 @@ const ProductDetail = () => {
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-semibold text-foreground">{product.owner.name}</h3>
+                      <Link to={`/utilizator/${product.owner.id}`} className="font-semibold text-foreground hover:text-primary transition-colors">{product.owner.name}</Link>
                       <Badge variant="secondary" className="text-xs"><Check className="mr-1 h-3 w-3" />Verificat</Badge>
                     </div>
                     <div className="mt-1 flex items-center gap-1 text-sm">
