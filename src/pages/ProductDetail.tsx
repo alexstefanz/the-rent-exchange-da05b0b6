@@ -82,7 +82,7 @@ const ProductDetail = () => {
   return <div className="min-h-screen bg-background">
       <Navbar />
       
-      <main className="container py-6 px-[15px] md:px-6">
+      <main className="w-full max-w-7xl mx-auto py-6 px-[15px] md:px-6 lg:px-8">
         <nav className="mb-6 flex items-center gap-2 text-sm text-muted-foreground">
           <Link to="/categorii" className="hover:text-primary text-xs">Toate categoriile</Link>
           <ChevronRight className="h-4 w-4" />
@@ -97,7 +97,7 @@ const ProductDetail = () => {
           <span className="text-foreground">{product.title}</span>
         </nav>
 
-        <div className="grid gap-8 lg:grid-cols-3 mx-auto max-w-7xl">
+        <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
             {/* Image Gallery */}
             <div className="relative overflow-hidden rounded-xl bg-muted">
