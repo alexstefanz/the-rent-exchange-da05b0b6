@@ -105,10 +105,10 @@ const ProductDetail = () => {
                 <img src={product.images[currentImageIndex]} alt={product.title} className="h-full w-full object-cover" />
               </div>
               {product.images.length > 1 && <>
-                  <Button variant="ghost" size="icon" className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80" onClick={prevImage}>
+                  <Button variant="ghost" size="icon" className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-background/80" onClick={prevImage}>
                     <ChevronLeft className="h-5 w-5" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/80" onClick={nextImage}>
+                  <Button variant="ghost" size="icon" className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-background/80" onClick={nextImage}>
                     <ChevronRight className="h-5 w-5" />
                   </Button>
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
@@ -198,7 +198,7 @@ const ProductDetail = () => {
 
           {/* Right Sidebar - Booking */}
           <div className="lg:col-span-1 order-1 lg:order-2">
-            <div className="sticky top-24 rounded-xl border border-border bg-card p-4 sm:p-6">
+            <div className="sticky top-24 rounded-xl border border-border bg-card p-4 sm:p-6 overflow-hidden">
               <div className="mb-4">
                 <div className="flex items-baseline gap-1">
                   <span className="font-heading text-2xl font-bold text-foreground">{product.price} RON</span>
@@ -236,7 +236,7 @@ const ProductDetail = () => {
                 range: {
                   backgroundColor: "hsl(var(--primary) / 0.1)"
                 }
-              }} className="rounded-md border w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full" />
+              }} className="rounded-md border w-full max-w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-caption]:text-sm" />
               </div>
 
               {startDate && endDate && <div className="mb-4 rounded-lg bg-muted p-4">
