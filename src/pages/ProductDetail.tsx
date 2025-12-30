@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { format, differenceInDays, isBefore, isAfter, isSameDay } from "date-fns";
 import { ro } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, MapPin, Star, Shield, Clock, MessageCircle, Check, User, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Star, Shield, Clock, MessageCircle, Check, User, Calendar, ArrowLeft, Share2, Heart } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -35,11 +35,13 @@ const reviews = [{
   date: "2024-09-12"
 }];
 const ProductDetail = () => {
+  const navigate = useNavigate();
   const {
     id
   } = useParams();
   const product = getItemById(id || "") || mockItems[0];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [showAllReviews, setShowAllReviews] = useState(false);
@@ -79,27 +81,61 @@ const ProductDetail = () => {
     return rentalDays * product.price;
   }, [rentalDays, product.price, priceWeek, priceMonth]);
   const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 3);
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: product.title,
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.log('Share cancelled');
+      }
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+    }
+  };
+
   return <div className="min-h-screen bg-background overflow-x-hidden">
       <Navbar />
       
       {/* Mobile Image Gallery - Above main content */}
-      <div className="lg:hidden px-[10px] mb-4">
-        <div className="relative overflow-hidden rounded-xl bg-muted">
-          <div className="aspect-[4/3]">
-            <img src={product.images[currentImageIndex]} alt={product.title} className="h-full w-full object-cover" />
-          </div>
-          {product.images.length > 1 && <>
-              <Button variant="ghost" size="icon" className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80" onClick={prevImage}>
-                <ChevronLeft className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80" onClick={nextImage}>
-                <ChevronRight className="h-5 w-5" />
-              </Button>
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                {product.images.map((_, index) => <button key={index} className={`h-2 w-2 rounded-full ${index === currentImageIndex ? "bg-primary" : "bg-background/60"}`} onClick={() => setCurrentImageIndex(index)} />)}
-              </div>
-            </>}
+      <div className="lg:hidden mt-16">
+        {/* Main Image with Back/Share buttons */}
+        <div className="relative">
+          <img src={product.images[0]} alt={product.title} className="w-full aspect-[4/3] object-cover" />
+          
+          {/* Back Button */}
+          <button 
+            onClick={() => navigate(-1)}
+            className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          
+          {/* Share Button */}
+          <button 
+            onClick={handleShare}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white"
+          >
+            <Share2 className="h-5 w-5" />
+          </button>
         </div>
+        
+        {/* Thumbnail Gallery */}
+        {product.images.length > 1 && (
+          <div className="flex gap-2 px-[10px] mt-2 overflow-x-auto pb-2">
+            {product.images.slice(1).map((image, index) => (
+              <img 
+                key={index + 1}
+                src={image} 
+                alt={`${product.title} ${index + 2}`} 
+                className="h-20 w-20 rounded-lg object-cover flex-shrink-0"
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <main className="w-full max-w-7xl mx-auto py-6 px-[10px] md:px-6 lg:px-8 overflow-x-hidden">
@@ -261,8 +297,16 @@ const ProductDetail = () => {
           {/* Right Sidebar - Booking */}
           <div className="lg:col-span-1 order-1 lg:order-2">
             <div className="sticky top-24 rounded-xl border border-border bg-card p-4 sm:p-6 overflow-hidden">
-              {/* Product Title - Mobile */}
-              <h1 className="font-heading text-[25px] font-semibold text-foreground mb-3 lg:hidden leading-tight">{product.title}</h1>
+              {/* Product Title - Mobile with Favorite */}
+              <div className="flex items-start justify-between gap-3 mb-3 lg:hidden">
+                <h1 className="font-heading text-[25px] font-semibold text-foreground leading-tight flex-1">{product.title}</h1>
+                <button 
+                  onClick={() => setIsFavorite(!isFavorite)}
+                  className="flex-shrink-0 mt-1"
+                >
+                  <Heart className={`h-6 w-6 ${isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
+                </button>
+              </div>
               
               <div className="mb-4">
                 <div className="flex items-baseline gap-1">
