@@ -14,6 +14,7 @@ import {
 import { Heart, Star, Search, List, LayoutGrid, ChevronRight, Check } from "lucide-react";
 import { mockItems } from "@/data/mockItems";
 import { categories } from "@/data/categories";
+import { getUserById, mockUsers } from "@/data/mockUsers";
 import {
   Pagination,
   PaginationContent,
@@ -23,21 +24,11 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
-// Mock user data
-const mockUser = {
-  id: "user-1",
-  name: "Andrei",
-  avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80",
-  rating: 5.0,
-  reviewCount: 39,
-  memberSince: "iunie 2014",
-  lastActive: "26 decembrie 2025",
-};
-
 const ITEMS_PER_PAGE = 6;
 
 const UserProfile = () => {
   const { id } = useParams();
+  const user = getUserById(id || "user-1") || mockUsers[0];
   const [isFavorite, setIsFavorite] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("new");
@@ -47,9 +38,9 @@ const UserProfile = () => {
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [expandedCategory, setExpandedCategory] = useState<number | null>(null);
 
-  // Filter items by user (mock - using first few items)
+  // Filter items by user (all items belong to this user now)
   const userItems = useMemo(() => {
-    let items = mockItems.slice(0, 25); // Mock: user has 25 items
+    let items = mockItems.filter(item => item.owner.id === id || item.owner.id === "user-1");
 
     // Filter by search
     if (searchQuery) {
@@ -85,28 +76,31 @@ const UserProfile = () => {
     return items;
   }, [searchQuery, sortBy, selectedCategory, selectedSubcategory]);
 
+  // Get all user items for counts
+  const allUserItems = useMemo(() => {
+    return mockItems.filter(item => item.owner.id === id || item.owner.id === "user-1");
+  }, [id]);
+
   // Get category counts
   const categoryCounts = useMemo(() => {
     const counts: Record<number, number> = {};
-    const allItems = mockItems.slice(0, 25);
-    allItems.forEach((item) => {
+    allUserItems.forEach((item) => {
       counts[item.categoryId] = (counts[item.categoryId] || 0) + 1;
     });
     return counts;
-  }, []);
+  }, [allUserItems]);
 
   // Get subcategory counts for expanded category
   const subcategoryCounts = useMemo(() => {
     if (!expandedCategory) return {};
     const counts: Record<string, number> = {};
-    const allItems = mockItems.slice(0, 25);
-    allItems
+    allUserItems
       .filter((item) => item.categoryId === expandedCategory)
       .forEach((item) => {
         counts[item.subcategoryId] = (counts[item.subcategoryId] || 0) + 1;
       });
     return counts;
-  }, [expandedCategory]);
+  }, [expandedCategory, allUserItems]);
 
   // Pagination
   const totalPages = Math.ceil(userItems.length / ITEMS_PER_PAGE);
@@ -156,23 +150,23 @@ const UserProfile = () => {
               {/* User Info */}
               <div className="flex items-center gap-4">
                 <img
-                  src={mockUser.avatar}
-                  alt={mockUser.name}
+                  src={user.avatar}
+                  alt={user.name}
                   className="w-20 h-20 rounded-full object-cover border-2 border-border"
                 />
                 <div>
                   <h1 className="text-2xl font-heading font-bold text-foreground">
-                    {mockUser.name}
+                    {user.name}
                   </h1>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-[#57be6a] font-semibold">
-                      {mockUser.rating} / 5
+                      {user.rating} / 5
                     </span>
                     <div className="flex">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Star
                           key={star}
-                          className="h-4 w-4 fill-amber-400 text-amber-400"
+                          className={`h-4 w-4 ${star <= Math.floor(user.rating) ? "fill-amber-400 text-amber-400" : "text-muted"}`}
                         />
                       ))}
                     </div>
@@ -181,15 +175,15 @@ const UserProfile = () => {
                     href="#ratings"
                     className="text-sm text-primary hover:underline"
                   >
-                    ({mockUser.reviewCount} de ratinguri)
+                    ({user.reviewCount} de ratinguri)
                   </a>
                 </div>
               </div>
 
               {/* Member Info */}
               <div className="text-sm text-muted-foreground md:text-right">
-                <p>Pe RentNow din {mockUser.memberSince}</p>
-                <p>Activ pe {mockUser.lastActive}</p>
+                <p>Pe RentNow din {user.memberSince}</p>
+                <p>Activ: {user.lastActive}</p>
               </div>
 
               {/* Actions */}
@@ -348,7 +342,7 @@ const UserProfile = () => {
                   Toate anunțurile
                 </span>
                 <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
-                  {mockItems.slice(0, 25).length}
+                  {allUserItems.length}
                 </span>
               </button>
 

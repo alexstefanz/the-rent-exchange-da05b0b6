@@ -1,4 +1,8 @@
-export interface RentalItem {
+import { getDefaultOwner } from "./mockUsers";
+
+const defaultOwner = getDefaultOwner();
+
+interface RentalItemBase {
   id: string;
   title: string;
   description: string;
@@ -19,7 +23,16 @@ export interface RentalItem {
   availability: boolean;
 }
 
-export const mockItems: RentalItem[] = [
+export interface RentalItem extends Omit<RentalItemBase, 'owner'> {
+  owner: {
+    id: string;
+    name: string;
+    avatar: string;
+    memberSince: string;
+  };
+}
+
+const mockItemsBase: RentalItemBase[] = [
   // OUTDOOR & AVENTURĂ (Category 1) - Subcategory 1-1 Biciclete (8 items)
   {
     id: "1-1-1",
@@ -1046,6 +1059,12 @@ export const mockItems: RentalItem[] = [
     availability: true,
   },
 ];
+
+// Transform all items to use the default owner
+export const mockItems: RentalItem[] = mockItemsBase.map(item => ({
+  ...item,
+  owner: defaultOwner,
+}));
 
 // Helper function to get items by subcategory
 export const getItemsBySubcategory = (subcategoryId: string): RentalItem[] => {
