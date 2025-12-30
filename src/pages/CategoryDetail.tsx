@@ -50,7 +50,7 @@ const CategoryDetail = () => {
                 <span className="hidden h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground md:flex">
                   {category.id}
                 </span>
-                <h1 className="font-heading text-3xl font-bold text-foreground md:text-4xl">
+                <h1 className="font-heading text-3xl font-bold text-foreground text-center md:text-left md:text-4xl">
                   {category.name}
                 </h1>
               </div>

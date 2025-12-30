@@ -104,7 +104,7 @@ export const categories: Category[] = [
       { id: "6-1", name: "Console PlayStation", description: "Console PlayStation pentru gaming", image: "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=400&q=80" },
       { id: "6-2", name: "Xbox", description: "Console Xbox pentru jocuri video", image: "https://images.unsplash.com/photo-1621259182978-fbf93132d53d?w=400&q=80" },
       { id: "6-3", name: "Nintendo Switch / Wii", description: "Console Nintendo pentru distracție", image: "https://images.unsplash.com/photo-1578303512597-81e6cc155b3e?w=400&q=80" },
-      { id: "6-4", name: "Jocuri console", description: "Colecție de jocuri pentru toate consolele", image: "https://images.unsplash.com/photo-1493711662062-fa541f7f3d24?w=400&q=80" },
+      { id: "6-4", name: "Jocuri console", description: "Colecție de jocuri pentru toate consolele", image: "/jocuri-console.png" },
       { id: "6-5", name: "VR headset", description: "Căști de realitate virtuală", image: "https://images.unsplash.com/photo-1622979135225-d2ba269cf1ac?w=400&q=80" },
       { id: "6-6", name: "Laptopuri gaming", description: "Laptopuri performante pentru gaming", image: "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=400&q=80" },
       { id: "6-7", name: "Proiectoare", description: "Proiectoare pentru home cinema", image: "https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=400&q=80" },
