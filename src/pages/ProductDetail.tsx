@@ -199,7 +199,22 @@ const ProductDetail = () => {
 
             {/* Location */}
             <div className="rounded-xl border border-border bg-card p-6">
-              <div className="flex items-center gap-2 text-foreground"><MapPin className="h-5 w-5 text-primary" /><span className="font-medium">{product.location}</span></div>
+              <div className="flex items-center gap-2 text-foreground mb-4">
+                <MapPin className="h-5 w-5 text-primary" />
+                <span className="font-medium">{product.location}</span>
+              </div>
+              <div className="rounded-lg overflow-hidden h-[200px]">
+                <iframe
+                  title="Locație"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(product.location + ', Romania')}`}
+                />
+              </div>
             </div>
 
             {/* Description */}
