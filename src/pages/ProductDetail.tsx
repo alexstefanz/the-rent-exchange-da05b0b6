@@ -307,10 +307,13 @@ const ProductDetail = () => {
                   <Heart className={`h-6 w-6 ${isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} />
                 </button>
               </div>
+
+              {/* Product Title - Desktop */}
+              <h1 className="hidden lg:block font-heading text-2xl font-semibold text-foreground mb-3">{product.title}</h1>
               
               <div className="mb-4">
                 <div className="flex items-baseline gap-1">
-                  <span className="font-heading text-2xl font-bold text-foreground">{product.price} RON</span>
+                  <span className="font-heading text-2xl font-bold text-[#57BE6A]">{product.price} RON</span>
                   <span className="text-muted-foreground">/ {product.priceUnit}</span>
                 </div>
                 <div className="mt-2 space-y-1 text-sm text-muted-foreground">
