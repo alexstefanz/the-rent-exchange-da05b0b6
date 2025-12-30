@@ -245,18 +245,19 @@ const SubcategoryDetail = () => {
         {viewMode === "gallery" ? (
           <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
             {sortedProducts.map((product) => (
-              <Card
+              <Link
                 key={product.id}
-                className="group overflow-hidden transition-all hover:shadow-card-hover"
+                to={`/produs/${product.id}`}
+                className="group block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover"
               >
-                <Link to={`/produs/${product.id}`} className="relative aspect-[4/3] overflow-hidden block">
+                <div className="relative aspect-[4/3] overflow-hidden">
                   <img
                     src={product.images[0]}
                     alt={product.title}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                </Link>
-                <CardContent className="p-3 md:p-4">
+                </div>
+                <div className="p-3 md:p-4">
                   <h3 className="font-heading text-base md:text-lg font-semibold text-foreground line-clamp-2">
                     {product.title}
                   </h3>
@@ -281,31 +282,27 @@ const SubcategoryDetail = () => {
                     </span>
                     <span className="text-xs md:text-sm text-muted-foreground"> / {product.priceUnit}</span>
                   </div>
-                  <div className="hidden md:block mt-3">
-                    <Button size="sm" asChild className="w-full">
-                      <Link to={`/produs/${product.id}`}>Vezi Detalii</Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </Link>
             ))}
           </div>
         ) : (
           <div className="flex flex-col gap-4">
             {sortedProducts.map((product) => (
-              <Card
+              <Link
                 key={product.id}
-                className="group overflow-hidden transition-all hover:shadow-card-hover"
+                to={`/produs/${product.id}`}
+                className="group block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover"
               >
                 <div className="flex flex-col sm:flex-row">
-                  <Link to={`/produs/${product.id}`} className="relative aspect-[4/3] sm:aspect-square sm:w-48 overflow-hidden block">
+                  <div className="relative aspect-[4/3] sm:aspect-square sm:w-48 overflow-hidden">
                     <img
                       src={product.images[0]}
                       alt={product.title}
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-                  </Link>
-                  <CardContent className="flex-1 p-4">
+                  </div>
+                  <div className="flex-1 p-4">
                     <h3 className="font-heading text-lg font-semibold text-foreground">
                       {product.title}
                     </h3>
@@ -327,20 +324,15 @@ const SubcategoryDetail = () => {
                         </span>
                       </div>
                     </div>
-                    <div className="mt-4 flex items-center justify-between">
-                      <div>
-                        <span className="font-heading text-xl font-bold text-primary">
-                          {product.price} RON
-                        </span>
-                        <span className="text-sm text-muted-foreground"> / {product.priceUnit}</span>
-                      </div>
-                      <Button size="sm" asChild>
-                        <Link to={`/produs/${product.id}`}>Vezi Detalii</Link>
-                      </Button>
+                    <div className="mt-4">
+                      <span className="font-heading text-xl font-bold text-primary">
+                        {product.price} RON
+                      </span>
+                      <span className="text-sm text-muted-foreground"> / {product.priceUnit}</span>
                     </div>
-                  </CardContent>
+                  </div>
                 </div>
-              </Card>
+              </Link>
             ))}
           </div>
         )}
