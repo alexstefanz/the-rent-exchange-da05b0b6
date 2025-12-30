@@ -79,10 +79,10 @@ const ProductDetail = () => {
     return rentalDays * product.price;
   }, [rentalDays, product.price, priceWeek, priceMonth]);
   const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 3);
-  return <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background overflow-x-hidden">
       <Navbar />
       
-      <main className="w-full max-w-7xl mx-auto py-6 px-[15px] md:px-6 lg:px-8">
+      <main className="w-full max-w-7xl mx-auto py-6 px-[15px] md:px-6 lg:px-8 overflow-x-hidden">
         <nav className="mb-6 hidden md:flex items-center gap-2 text-sm text-muted-foreground overflow-x-auto">
           <Link to="/categorii" className="hover:text-primary text-xs whitespace-nowrap">Toate categoriile</Link>
           <ChevronRight className="h-4 w-4 flex-shrink-0" />
@@ -199,6 +199,9 @@ const ProductDetail = () => {
           {/* Right Sidebar - Booking */}
           <div className="lg:col-span-1 order-1 lg:order-2">
             <div className="sticky top-24 rounded-xl border border-border bg-card p-4 sm:p-6 overflow-hidden">
+              {/* Product Title - Mobile */}
+              <h1 className="font-heading text-lg font-semibold text-foreground mb-3 lg:hidden">{product.title}</h1>
+              
               <div className="mb-4">
                 <div className="flex items-baseline gap-1">
                   <span className="font-heading text-2xl font-bold text-foreground">{product.price} RON</span>
@@ -236,7 +239,7 @@ const ProductDetail = () => {
                 range: {
                   backgroundColor: "hsl(var(--primary) / 0.1)"
                 }
-              }} className="rounded-md border w-full max-w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-caption]:text-sm" />
+              }} className="rounded-md border w-full [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-caption]:text-sm [&_.rdp-head_cell]:text-xs [&_.rdp-cell]:p-0 [&_.rdp-day]:h-8 [&_.rdp-day]:w-8 [&_.rdp-day]:text-xs" />
               </div>
 
               {startDate && endDate && <div className="mb-4 rounded-lg bg-muted p-4">
