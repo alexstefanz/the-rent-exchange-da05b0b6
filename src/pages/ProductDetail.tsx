@@ -82,7 +82,7 @@ const ProductDetail = () => {
   return <div className="min-h-screen bg-background overflow-x-hidden">
       <Navbar />
       
-      <main className="w-full max-w-7xl mx-auto py-6 px-[15px] md:px-6 lg:px-8 overflow-x-hidden">
+      <main className="w-full max-w-7xl mx-auto py-6 px-[10px] md:px-6 lg:px-8 overflow-x-hidden">
         <nav className="mb-6 hidden md:flex items-center gap-2 text-sm text-muted-foreground overflow-x-auto">
           <Link to="/categorii" className="hover:text-primary text-xs whitespace-nowrap">Toate categoriile</Link>
           <ChevronRight className="h-4 w-4 flex-shrink-0" />
