@@ -363,7 +363,31 @@ const ProductDetail = () => {
                   <div className="flex justify-between mt-2 font-semibold"><span>Total</span><span className="text-primary">{totalPrice} RON</span></div>
                 </div>}
 
-              <Button className="w-full" size="lg" disabled={!startDate || !endDate}>
+              <Button 
+                className="w-full" 
+                size="lg" 
+                disabled={!startDate || !endDate}
+                onClick={() => {
+                  if (startDate && endDate) {
+                    navigate('/checkout', {
+                      state: {
+                        product: {
+                          id: product.id,
+                          title: product.title,
+                          images: product.images,
+                          price: product.price,
+                          priceUnit: product.priceUnit,
+                          location: product.location,
+                        },
+                        startDate,
+                        endDate,
+                        rentalDays,
+                        totalPrice,
+                      }
+                    });
+                  }
+                }}
+              >
                 {startDate && endDate ? "Rezervă acum" : "Selectează perioada"}
               </Button>
             </div>
