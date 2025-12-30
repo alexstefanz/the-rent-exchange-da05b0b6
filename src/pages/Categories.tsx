@@ -46,8 +46,8 @@ const Categories = () => {
           </div>
         </div>
 
-        {/* Categories Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Categories Grid - 2 columns */}
+        <div className="grid grid-cols-2 gap-4">
           {filteredCategories.map((category, index) => (
             <div
               key={category.id}
