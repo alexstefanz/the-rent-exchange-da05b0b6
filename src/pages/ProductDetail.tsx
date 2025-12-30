@@ -82,6 +82,26 @@ const ProductDetail = () => {
   return <div className="min-h-screen bg-background overflow-x-hidden">
       <Navbar />
       
+      {/* Mobile Image Gallery - Above main content */}
+      <div className="lg:hidden px-[10px] mb-4">
+        <div className="relative overflow-hidden rounded-xl bg-muted">
+          <div className="aspect-[4/3]">
+            <img src={product.images[currentImageIndex]} alt={product.title} className="h-full w-full object-cover" />
+          </div>
+          {product.images.length > 1 && <>
+              <Button variant="ghost" size="icon" className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80" onClick={prevImage}>
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <Button variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80" onClick={nextImage}>
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                {product.images.map((_, index) => <button key={index} className={`h-2 w-2 rounded-full ${index === currentImageIndex ? "bg-primary" : "bg-background/60"}`} onClick={() => setCurrentImageIndex(index)} />)}
+              </div>
+            </>}
+        </div>
+      </div>
+
       <main className="w-full max-w-7xl mx-auto py-6 px-[10px] md:px-6 lg:px-8 overflow-x-hidden">
         <nav className="mb-6 hidden md:flex items-center gap-2 text-sm text-muted-foreground overflow-x-auto">
           <Link to="/categorii" className="hover:text-primary text-xs whitespace-nowrap">Toate categoriile</Link>
@@ -99,16 +119,16 @@ const ProductDetail = () => {
 
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
-            {/* Image Gallery */}
-            <div className="relative overflow-hidden rounded-xl bg-muted">
+            {/* Image Gallery - Desktop only */}
+            <div className="relative overflow-hidden rounded-xl bg-muted hidden lg:block">
               <div className="aspect-[4/3]">
                 <img src={product.images[currentImageIndex]} alt={product.title} className="h-full w-full object-cover" />
               </div>
               {product.images.length > 1 && <>
-                  <Button variant="ghost" size="icon" className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-background/80" onClick={prevImage}>
+                  <Button variant="ghost" size="icon" className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80" onClick={prevImage}>
                     <ChevronLeft className="h-5 w-5" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-background/80" onClick={nextImage}>
+                  <Button variant="ghost" size="icon" className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/80" onClick={nextImage}>
                     <ChevronRight className="h-5 w-5" />
                   </Button>
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
@@ -118,8 +138,9 @@ const ProductDetail = () => {
             </div>
 
             {/* Owner Info */}
-            <div className="rounded-xl border border-border bg-card p-6">
-              <div className="flex items-start justify-between">
+            <div className="rounded-xl border border-border bg-card p-4 md:p-6">
+              {/* Desktop Layout */}
+              <div className="hidden md:flex items-start justify-between">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-16 w-16">
                     <AvatarImage src={product.owner.avatar} />
@@ -140,6 +161,32 @@ const ProductDetail = () => {
                 </div>
                 <Button variant="outline" size="sm"><MessageCircle className="mr-2 h-4 w-4" />Trimite mesaj</Button>
               </div>
+              
+              {/* Mobile Layout */}
+              <div className="md:hidden">
+                <div className="flex items-center gap-3 w-full">
+                  <Avatar className="h-14 w-14 flex-shrink-0">
+                    <AvatarImage src={product.owner.avatar} />
+                    <AvatarFallback><User className="h-7 w-7" /></AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold text-foreground">{product.owner.name}</h3>
+                      <Badge variant="secondary" className="text-xs"><Check className="mr-1 h-3 w-3" />Verificat</Badge>
+                    </div>
+                    <div className="mt-1 flex items-center gap-1 text-sm">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span className="font-medium">{product.rating}</span>
+                      <span className="text-muted-foreground">({product.reviewCount} recenzii)</span>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">Membru din {product.owner.memberSince}</p>
+                  </div>
+                </div>
+                <Button className="w-full mt-4 bg-[#57BE6A] hover:bg-[#4aa85c] text-white" size="sm">
+                  <MessageCircle className="mr-2 h-4 w-4" />Trimite mesaj
+                </Button>
+              </div>
+              
               <Separator className="my-4" />
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4" /><span>Răspunde în &lt; 1 oră</span></div>
@@ -200,7 +247,7 @@ const ProductDetail = () => {
           <div className="lg:col-span-1 order-1 lg:order-2">
             <div className="sticky top-24 rounded-xl border border-border bg-card p-4 sm:p-6 overflow-hidden">
               {/* Product Title - Mobile */}
-              <h1 className="font-heading text-lg font-semibold text-foreground mb-3 lg:hidden">{product.title}</h1>
+              <h1 className="font-heading text-[25px] font-semibold text-foreground mb-3 lg:hidden leading-tight">{product.title}</h1>
               
               <div className="mb-4">
                 <div className="flex items-baseline gap-1">
