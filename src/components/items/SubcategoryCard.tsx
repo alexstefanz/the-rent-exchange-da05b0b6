@@ -12,7 +12,7 @@ const SubcategoryCard = ({ id, name, description, image, categoryId }: Subcatego
   return (
     <Link
       to={`/subcategorie/${id}`}
-      className="group relative overflow-hidden rounded-2xl bg-card border border-border shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1"
+      className="group relative overflow-hidden rounded-2xl bg-card shadow-card transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1"
     >
       <div className="aspect-[4/3] overflow-hidden">
         <img
