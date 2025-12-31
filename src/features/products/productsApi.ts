@@ -1,4 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
+import { sanitizeSearchInput } from "@/lib/inputValidation";
+import { handleApiError } from "@/lib/errorHandler";
 
 export interface Product {
   id: string;
@@ -47,14 +49,16 @@ export const getProducts = async (filters?: ProductFilters): Promise<Product[]> 
   }
 
   if (filters?.search) {
-    query = query.ilike("title", `%${filters.search}%`);
+    const sanitizedSearch = sanitizeSearchInput(filters.search, 100);
+    if (sanitizedSearch) {
+      query = query.ilike("title", `%${sanitizedSearch}%`);
+    }
   }
 
   const { data, error } = await query;
 
   if (error) {
-    console.error("Error fetching products:", error);
-    throw error;
+    handleApiError("Error fetching products", error);
   }
 
   return data || [];
@@ -68,8 +72,7 @@ export const getProductById = async (id: string): Promise<Product | null> => {
     .maybeSingle();
 
   if (error) {
-    console.error("Error fetching product:", error);
-    throw error;
+    handleApiError("Error fetching product", error);
   }
 
   return data;
@@ -83,8 +86,7 @@ export const getMyProducts = async (ownerId: string): Promise<Product[]> => {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching my products:", error);
-    throw error;
+    handleApiError("Error fetching my products", error);
   }
 
   return data || [];
@@ -122,8 +124,7 @@ export const createProduct = async (
     .single();
 
   if (error) {
-    console.error("Error creating product:", error);
-    throw error;
+    handleApiError("Error creating product", error);
   }
 
   return product;
@@ -153,8 +154,7 @@ export const updateProduct = async (
     .single();
 
   if (error) {
-    console.error("Error updating product:", error);
-    throw error;
+    handleApiError("Error updating product", error);
   }
 
   return product;
