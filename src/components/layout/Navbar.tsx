@@ -1,12 +1,18 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Menu, X, ChevronDown, ChevronRight } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Plus, Search, Menu, X, ChevronDown, ChevronRight, User, LogOut, Package } from "lucide-react";
 import { categories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import logoImage from "@/assets/rentnow_logo.png";
 
 const Navbar = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user, loading, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeMegaMenu, setActiveMegaMenu] = useState<number | null>(null);
   const [expandedMobileCategory, setExpandedMobileCategory] = useState<number | null>(null);
@@ -40,6 +46,16 @@ const Navbar = () => {
     setExpandedMobileCategory(null);
   };
 
+  const handleLogout = async () => {
+    await signOut();
+    toast({
+      title: "Deconectat",
+      description: "Te-ai deconectat cu succes",
+    });
+    navigate("/");
+    closeMobileMenu();
+  };
+
   const activeCategory = categories.find(c => c.id === activeMegaMenu);
 
   return (
@@ -60,9 +76,44 @@ const Navbar = () => {
           </nav>
 
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="hidden lg:flex">
-              Autentificare
-            </Button>
+            {loading ? (
+              <div className="h-9 w-24 animate-pulse bg-muted rounded-lg" />
+            ) : user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="hidden lg:flex gap-2">
+                    <User className="h-4 w-4" />
+                    <span className="max-w-[150px] truncate">
+                      {user.email?.split("@")[0]}
+                    </span>
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile" className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Profilul meu
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/owner" className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Produsele mele
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 text-destructive">
+                    <LogOut className="h-4 w-4" />
+                    Deconectare
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button variant="ghost" size="sm" className="hidden lg:flex" asChild>
+                <Link to="/auth">Autentificare</Link>
+              </Button>
+            )}
             <Button size="sm" asChild>
               <Link to="/adauga-anunt">
                 <Plus className="h-4 w-4" />
@@ -186,6 +237,15 @@ const Navbar = () => {
           {/* Mobile Menu Content */}
           <div className="flex-1 overflow-y-auto">
             <div className="p-4">
+              {/* User info for mobile */}
+              {user && (
+                <div className="mb-4 p-3 bg-muted rounded-lg">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {user.email}
+                  </p>
+                </div>
+              )}
+              
               <div className="mb-4 flex flex-col gap-2">
                 <Link 
                   to="/cauta" 
@@ -203,6 +263,26 @@ const Navbar = () => {
                   <Plus className="h-5 w-5" />
                   Adaugă Anunț
                 </Link>
+                {user && (
+                  <>
+                    <Link 
+                      to="/profile" 
+                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
+                      onClick={closeMobileMenu}
+                    >
+                      <User className="h-5 w-5" />
+                      Profilul meu
+                    </Link>
+                    <Link 
+                      to="/owner" 
+                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
+                      onClick={closeMobileMenu}
+                    >
+                      <Package className="h-5 w-5" />
+                      Produsele mele
+                    </Link>
+                  </>
+                )}
               </div>
               
               <div className="border-t border-border pt-4">
@@ -262,9 +342,18 @@ const Navbar = () => {
 
           {/* Mobile Menu Footer */}
           <div className="border-t border-border p-4">
-            <Button variant="outline" className="w-full">
-              Autentificare
-            </Button>
+            {user ? (
+              <Button variant="outline" className="w-full" onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Deconectare
+              </Button>
+            ) : (
+              <Button variant="outline" className="w-full" asChild>
+                <Link to="/auth" onClick={closeMobileMenu}>
+                  Autentificare
+                </Link>
+              </Button>
+            )}
           </div>
         </div>
       </div>
