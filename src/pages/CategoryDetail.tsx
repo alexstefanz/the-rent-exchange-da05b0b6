@@ -15,24 +15,31 @@ const CategoryDetail = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Get stable value for useEffect dependency
+  const categoryName = category?.name;
+
   // Fetch products for this category
   useEffect(() => {
     const fetchProducts = async () => {
-      if (!category) return;
+      if (!categoryName) {
+        setIsLoading(false);
+        return;
+      }
       
       setIsLoading(true);
       try {
-        const data = await getProducts({ category: category.name });
+        const data = await getProducts({ category: categoryName });
         setProducts(data);
       } catch (error) {
         console.error("Error fetching products:", error);
+        setProducts([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchProducts();
-  }, [category]);
+  }, [categoryName]);
 
   if (!category) {
     return (

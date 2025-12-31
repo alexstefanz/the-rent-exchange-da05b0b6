@@ -42,36 +42,36 @@ const SubcategoryDetail = () => {
   const selectedJudetData = judete.find((j) => j.name === selectedJudet);
   const localitati = selectedJudetData?.localitati || [];
 
+  // Get stable values for useEffect dependencies
+  const subcategoryId = subcategory?.id;
+  const categoryName = category?.name;
+
   // Fetch products from Supabase
   useEffect(() => {
     const fetchProducts = async () => {
-      if (!subcategory || !category) return;
+      if (!subcategoryId || !categoryName) {
+        setIsLoading(false);
+        return;
+      }
       
       setIsLoading(true);
       try {
         const data = await getProducts({
-          subcategory: subcategory.id,
+          subcategory: subcategoryId,
           location_city: selectedLocalitate && selectedLocalitate !== "all" ? selectedLocalitate : undefined,
         });
         
-        // If no products in subcategory, try category level
-        if (data.length === 0) {
-          const categoryData = await getProducts({
-            category: category.name,
-          });
-          setProducts(categoryData);
-        } else {
-          setProducts(data);
-        }
+        setProducts(data);
       } catch (error) {
         console.error("Error fetching products:", error);
+        setProducts([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchProducts();
-  }, [subcategory, category, selectedLocalitate]);
+  }, [subcategoryId, categoryName, selectedLocalitate]);
 
   // Apply sorting
   const sortedProducts = useMemo(() => {
