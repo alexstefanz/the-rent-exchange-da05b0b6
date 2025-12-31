@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { format, differenceInDays, isBefore, isAfter, isSameDay } from "date-fns";
+import { format, differenceInDays, isBefore } from "date-fns";
 import { ro } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, MapPin, Star, Shield, Clock, MessageCircle, Check, User, Calendar, ArrowLeft, Share2, Heart } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Star, Shield, Clock, MessageCircle, Check, User, Calendar, ArrowLeft, Share2, Heart, Loader2 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
 import { categories } from "@/data/categories";
-import { getItemById, mockItems } from "@/data/mockItems";
+import { getProductById, Product, calculateClientPrice } from "@/features/products/productsApi";
+import { supabase } from "@/integrations/supabase/client";
+
+interface OwnerInfo {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+}
+
 const reviews = [{
   id: "r1",
   userName: "Maria Ionescu",
@@ -34,26 +42,72 @@ const reviews = [{
   comment: "Foarte bun, recomand!",
   date: "2024-09-12"
 }];
+
 const ProductDetail = () => {
   const navigate = useNavigate();
-  const {
-    id
-  } = useParams();
-  const product = getItemById(id || "") || mockItems[0];
+  const { id } = useParams();
+  
+  const [product, setProduct] = useState<Product | null>(null);
+  const [owner, setOwner] = useState<OwnerInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [showAllReviews, setShowAllReviews] = useState(false);
-  const category = categories.find(c => c.id === product.categoryId);
-  const subcategory = category?.subcategories.find(s => s.id === product.subcategoryId);
-  const priceWeek = Math.round(product.price * 6);
-  const priceMonth = Math.round(product.price * 22);
-  const nextImage = () => setCurrentImageIndex(prev => (prev + 1) % product.images.length);
-  const prevImage = () => setCurrentImageIndex(prev => (prev - 1 + product.images.length) % product.images.length);
+
+  // Fetch product and owner info
+  useEffect(() => {
+    const fetchProduct = async () => {
+      if (!id) return;
+      
+      setIsLoading(true);
+      try {
+        const productData = await getProductById(id);
+        if (productData) {
+          setProduct(productData);
+          
+          // Fetch owner public info using the secure function
+          const { data: ownerData } = await supabase
+            .rpc('get_product_owner_public_info', { owner_uuid: productData.owner_id });
+          
+          if (ownerData && ownerData.length > 0) {
+            setOwner(ownerData[0]);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching product:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [id]);
+
+  const category = product?.category 
+    ? categories.find(c => c.name === product.category)
+    : null;
+  const subcategory = product?.subcategory && category
+    ? category.subcategories.find(s => s.id === product.subcategory)
+    : null;
+
+  const clientPrice = product 
+    ? calculateClientPrice(product.daily_price_owner, product.platform_fee_percent)
+    : 0;
+  const priceWeek = Math.round(clientPrice * 6);
+  const priceMonth = Math.round(clientPrice * 22);
+
+  const images = product?.images && product.images.length > 0 
+    ? product.images 
+    : ["/placeholder.svg"];
+
+  const nextImage = () => setCurrentImageIndex(prev => (prev + 1) % images.length);
+  const prevImage = () => setCurrentImageIndex(prev => (prev - 1 + images.length) % images.length);
+
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
-    if (!startDate || startDate && endDate) {
+    if (!startDate || (startDate && endDate)) {
       setStartDate(date);
       setEndDate(undefined);
     } else if (isBefore(date, startDate)) {
@@ -62,31 +116,35 @@ const ProductDetail = () => {
       setEndDate(date);
     }
   };
+
   const clearDates = () => {
     setStartDate(undefined);
     setEndDate(undefined);
   };
+
   const rentalDays = useMemo(() => {
     if (startDate && endDate) return differenceInDays(endDate, startDate) + 1;
     return 0;
   }, [startDate, endDate]);
+
   const totalPrice = useMemo(() => {
     if (rentalDays === 0) return 0;
     if (rentalDays >= 30) return Math.ceil(rentalDays / 30) * priceMonth;
     if (rentalDays >= 7) {
       const weeks = Math.floor(rentalDays / 7);
       const extraDays = rentalDays % 7;
-      return weeks * priceWeek + extraDays * product.price;
+      return weeks * priceWeek + extraDays * clientPrice;
     }
-    return rentalDays * product.price;
-  }, [rentalDays, product.price, priceWeek, priceMonth]);
+    return rentalDays * clientPrice;
+  }, [rentalDays, clientPrice, priceWeek, priceMonth]);
+
   const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 3);
 
   const handleShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: product.title,
+          title: product?.title || "Produs",
           url: window.location.href,
         });
       } catch (err) {
@@ -97,14 +155,48 @@ const ProductDetail = () => {
     }
   };
 
-  return <div className="min-h-screen bg-background overflow-x-hidden">
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container py-16 text-center">
+          <h1 className="font-heading text-2xl font-bold text-foreground">
+            Produsul nu a fost găsit
+          </h1>
+          <Button asChild className="mt-4">
+            <Link to="/categorii">Înapoi la Categorii</Link>
+          </Button>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const location = product.location_city || "România";
+  const ownerName = owner?.full_name || "Proprietar";
+  const ownerInitial = ownerName.charAt(0).toUpperCase();
+
+  return (
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <Navbar />
       
       {/* Mobile Image Gallery - Above main content */}
       <div className="lg:hidden mt-16">
         {/* Main Image with Back/Share buttons */}
         <div className="relative">
-          <img src={product.images[0]} alt={product.title} className="w-full aspect-[4/3] object-cover" />
+          <img src={images[0]} alt={product.title} className="w-full aspect-[4/3] object-cover" />
           
           {/* Back Button */}
           <button 
@@ -124,9 +216,9 @@ const ProductDetail = () => {
         </div>
         
         {/* Thumbnail Gallery */}
-        {product.images.length > 1 && (
+        {images.length > 1 && (
           <div className="flex gap-2 px-[10px] mt-2 overflow-x-auto pb-2">
-            {product.images.slice(1).map((image, index) => (
+            {images.slice(1).map((image, index) => (
               <img 
                 key={index + 1}
                 src={image} 
@@ -142,14 +234,18 @@ const ProductDetail = () => {
         <nav className="mb-6 hidden md:flex items-center gap-2 text-sm text-muted-foreground overflow-x-auto">
           <Link to="/categorii" className="hover:text-primary text-xs whitespace-nowrap">Toate categoriile</Link>
           <ChevronRight className="h-4 w-4 flex-shrink-0" />
-          {category && <>
+          {category && (
+            <>
               <Link to={`/categorie/${category.id}`} className="hover:text-primary text-xs whitespace-nowrap">{category.name}</Link>
               <ChevronRight className="h-4 w-4 flex-shrink-0" />
-            </>}
-          {subcategory && <>
+            </>
+          )}
+          {subcategory && (
+            <>
               <Link to={`/subcategorie/${subcategory.id}`} className="hover:text-primary whitespace-nowrap">{subcategory.name}</Link>
               <ChevronRight className="h-4 w-4 flex-shrink-0" />
-            </>}
+            </>
+          )}
           <span className="text-foreground whitespace-nowrap">{product.title}</span>
         </nav>
 
@@ -158,9 +254,10 @@ const ProductDetail = () => {
             {/* Image Gallery - Desktop only */}
             <div className="relative overflow-hidden rounded-xl bg-muted hidden lg:block">
               <div className="aspect-[4/3]">
-                <img src={product.images[currentImageIndex]} alt={product.title} className="h-full w-full object-cover" />
+                <img src={images[currentImageIndex]} alt={product.title} className="h-full w-full object-cover" />
               </div>
-              {product.images.length > 1 && <>
+              {images.length > 1 && (
+                <>
                   <Button variant="ghost" size="icon" className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80" onClick={prevImage}>
                     <ChevronLeft className="h-5 w-5" />
                   </Button>
@@ -168,9 +265,16 @@ const ProductDetail = () => {
                     <ChevronRight className="h-5 w-5" />
                   </Button>
                   <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                    {product.images.map((_, index) => <button key={index} className={`h-2 w-2 rounded-full ${index === currentImageIndex ? "bg-primary" : "bg-background/60"}`} onClick={() => setCurrentImageIndex(index)} />)}
+                    {images.map((_, index) => (
+                      <button 
+                        key={index} 
+                        className={`h-2 w-2 rounded-full ${index === currentImageIndex ? "bg-primary" : "bg-background/60"}`} 
+                        onClick={() => setCurrentImageIndex(index)} 
+                      />
+                    ))}
                   </div>
-                </>}
+                </>
+              )}
             </div>
 
             {/* Owner Info */}
@@ -179,20 +283,22 @@ const ProductDetail = () => {
               <div className="hidden md:flex items-start justify-between">
                 <div className="flex items-center gap-4">
                   <Avatar className="h-16 w-16">
-                    <AvatarImage src={product.owner.avatar} />
-                    <AvatarFallback><User className="h-8 w-8" /></AvatarFallback>
+                    <AvatarImage src={owner?.avatar_url || undefined} />
+                    <AvatarFallback>{ownerInitial}</AvatarFallback>
                   </Avatar>
                   <div>
                     <div className="flex items-center gap-2">
-                      <Link to={`/utilizator/${product.owner.id}`} className="font-semibold text-foreground hover:text-primary transition-colors">{product.owner.name}</Link>
+                      <Link to={`/utilizator/${product.owner_id}`} className="font-semibold text-foreground hover:text-primary transition-colors">
+                        {ownerName}
+                      </Link>
                       <Badge variant="secondary" className="text-xs"><Check className="mr-1 h-3 w-3" />Verificat</Badge>
                     </div>
                     <div className="mt-1 flex items-center gap-1 text-sm">
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="font-medium">{product.rating}</span>
-                      <span className="text-muted-foreground">({product.reviewCount} recenzii)</span>
+                      <span className="font-medium">4.9</span>
+                      <span className="text-muted-foreground">(12 recenzii)</span>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">Membru din {product.owner.memberSince}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Membru din 2024</p>
                   </div>
                 </div>
                 <Button variant="outline" size="sm"><MessageCircle className="mr-2 h-4 w-4" />Trimite mesaj</Button>
@@ -202,20 +308,22 @@ const ProductDetail = () => {
               <div className="md:hidden">
                 <div className="flex items-center gap-3 w-full">
                   <Avatar className="h-14 w-14 flex-shrink-0">
-                    <AvatarImage src={product.owner.avatar} />
-                    <AvatarFallback><User className="h-7 w-7" /></AvatarFallback>
+                    <AvatarImage src={owner?.avatar_url || undefined} />
+                    <AvatarFallback>{ownerInitial}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Link to={`/utilizator/${product.owner.id}`} className="font-semibold text-foreground hover:text-primary transition-colors">{product.owner.name}</Link>
+                      <Link to={`/utilizator/${product.owner_id}`} className="font-semibold text-foreground hover:text-primary transition-colors">
+                        {ownerName}
+                      </Link>
                       <Badge variant="secondary" className="text-xs"><Check className="mr-1 h-3 w-3" />Verificat</Badge>
                     </div>
                     <div className="mt-1 flex items-center gap-1 text-sm">
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="font-medium">{product.rating}</span>
-                      <span className="text-muted-foreground">({product.reviewCount} recenzii)</span>
+                      <span className="font-medium">4.9</span>
+                      <span className="text-muted-foreground">(12 recenzii)</span>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">Membru din {product.owner.memberSince}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Membru din 2024</p>
                   </div>
                 </div>
                 <Button className="w-full mt-4 bg-[#57BE6A] hover:bg-[#4aa85c] text-white" size="sm">
@@ -237,18 +345,18 @@ const ProductDetail = () => {
             <div className="rounded-xl border border-border bg-card p-6">
               <div className="flex items-center gap-2 text-foreground mb-4">
                 <MapPin className="h-5 w-5 text-primary" />
-                <span className="font-medium">{product.location}</span>
+                <span className="font-medium">{location}</span>
               </div>
               <div className="rounded-lg overflow-hidden h-[200px] bg-muted flex items-center justify-center">
                 <a 
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(product.location + ', Romania')}`}
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location + ', Romania')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
                 >
                   <MapPin className="h-12 w-12" />
                   <span className="text-sm font-medium">Vezi pe Google Maps</span>
-                  <span className="text-xs">{product.location}, Romania</span>
+                  <span className="text-xs">{location}, Romania</span>
                 </a>
               </div>
             </div>
@@ -256,40 +364,40 @@ const ProductDetail = () => {
             {/* Description */}
             <div className="rounded-xl border border-border bg-card p-6">
               <h2 className="mb-4 font-heading text-xl font-semibold text-foreground">Descriere</h2>
-              <p className="text-muted-foreground">{product.description}</p>
-              {product.features.length > 0 && <>
-                  <Separator className="my-6" />
-                  <h3 className="mb-3 font-medium text-foreground">Caracteristici</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {product.features.map((feature, index) => <Badge key={index} variant="secondary">{feature}</Badge>)}
-                  </div>
-                </>}
+              <p className="text-muted-foreground">{product.description || "Fără descriere."}</p>
             </div>
 
             {/* Reviews */}
             <div className="rounded-xl border border-border bg-card p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-heading text-xl font-semibold text-foreground">Recenzii ({reviews.length})</h2>
-                <div className="flex items-center gap-1"><Star className="h-5 w-5 fill-yellow-400 text-yellow-400" /><span className="font-semibold">{product.rating}</span></div>
+                <div className="flex items-center gap-1"><Star className="h-5 w-5 fill-yellow-400 text-yellow-400" /><span className="font-semibold">4.9</span></div>
               </div>
               <div className="space-y-4">
-                {displayedReviews.map(review => <div key={review.id} className="border-b border-border pb-4 last:border-b-0 last:pb-0">
+                {displayedReviews.map(review => (
+                  <div key={review.id} className="border-b border-border pb-4 last:border-b-0 last:pb-0">
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10"><AvatarImage src={review.userAvatar} /><AvatarFallback><User className="h-5 w-5" /></AvatarFallback></Avatar>
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={review.userAvatar} />
+                        <AvatarFallback><User className="h-5 w-5" /></AvatarFallback>
+                      </Avatar>
                       <div>
                         <p className="font-medium text-foreground">{review.userName}</p>
                         <div className="flex items-center gap-2">
-                          <div className="flex">{Array.from({
-                          length: 5
-                        }).map((_, i) => <Star key={i} className={`h-3 w-3 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted"}`} />)}</div>
-                          <span className="text-xs text-muted-foreground">{format(new Date(review.date), "d MMMM yyyy", {
-                          locale: ro
-                        })}</span>
+                          <div className="flex">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <Star key={i} className={`h-3 w-3 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted"}`} />
+                            ))}
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(review.date), "d MMMM yyyy", { locale: ro })}
+                          </span>
                         </div>
                       </div>
                     </div>
                     <p className="mt-2 text-sm text-muted-foreground">{review.comment}</p>
-                  </div>)}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -313,8 +421,8 @@ const ProductDetail = () => {
               
               <div className="mb-4">
                 <div className="flex items-baseline gap-1">
-                  <span className="font-heading text-2xl font-bold text-[#57BE6A]">{product.price} RON</span>
-                  <span className="text-muted-foreground">/ {product.priceUnit}</span>
+                  <span className="font-heading text-2xl font-bold text-[#57BE6A]">{clientPrice} RON</span>
+                  <span className="text-muted-foreground">/ zi</span>
                 </div>
                 <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                   <p>{priceWeek} RON / săptămână</p>
@@ -329,39 +437,46 @@ const ProductDetail = () => {
                   <h3 className="font-medium text-foreground flex items-center gap-2"><Calendar className="h-4 w-4" />Selectează perioada</h3>
                   {(startDate || endDate) && <button onClick={clearDates} className="text-xs text-primary hover:underline">Șterge</button>}
                 </div>
-                <CalendarComponent mode="single" selected={endDate || startDate} onSelect={handleDateSelect} disabled={date => isBefore(date, new Date())} modifiers={{
-                start: startDate,
-                end: endDate,
-                range: startDate && endDate ? {
-                  from: startDate,
-                  to: endDate
-                } : undefined
-              }} modifiersStyles={{
-                start: {
-                  backgroundColor: "hsl(var(--primary))",
-                  color: "white"
-                },
-                end: {
-                  backgroundColor: "hsl(var(--primary))",
-                  color: "white"
-                },
-                range: {
-                  backgroundColor: "hsl(var(--primary) / 0.1)"
-                }
-              }} className="rounded-md border w-full [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-caption]:text-sm [&_.rdp-head_cell]:text-xs [&_.rdp-cell]:p-0 [&_.rdp-day]:h-8 [&_.rdp-day]:w-8 [&_.rdp-day]:text-xs" />
+                <CalendarComponent 
+                  mode="single" 
+                  selected={endDate || startDate} 
+                  onSelect={handleDateSelect} 
+                  disabled={date => isBefore(date, new Date())} 
+                  modifiers={{
+                    start: startDate,
+                    end: endDate,
+                    range: startDate && endDate ? { from: startDate, to: endDate } : undefined
+                  }} 
+                  modifiersStyles={{
+                    start: { backgroundColor: "hsl(var(--primary))", color: "white" },
+                    end: { backgroundColor: "hsl(var(--primary))", color: "white" },
+                    range: { backgroundColor: "hsl(var(--primary) / 0.1)" }
+                  }} 
+                  className="rounded-md border w-full [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-caption]:text-sm [&_.rdp-head_cell]:text-xs [&_.rdp-cell]:p-0 [&_.rdp-day]:h-8 [&_.rdp-day]:w-8 [&_.rdp-day]:text-xs" 
+                />
               </div>
 
-              {startDate && endDate && <div className="mb-4 rounded-lg bg-muted p-4">
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">De la:</span><span className="font-medium">{format(startDate, "d MMM yyyy", {
-                    locale: ro
-                  })}</span></div>
-                  <div className="flex justify-between text-sm mt-1"><span className="text-muted-foreground">Până la:</span><span className="font-medium">{format(endDate, "d MMM yyyy", {
-                    locale: ro
-                  })}</span></div>
+              {startDate && endDate && (
+                <div className="mb-4 rounded-lg bg-muted p-4">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">De la:</span>
+                    <span className="font-medium">{format(startDate, "d MMM yyyy", { locale: ro })}</span>
+                  </div>
+                  <div className="flex justify-between text-sm mt-1">
+                    <span className="text-muted-foreground">Până la:</span>
+                    <span className="font-medium">{format(endDate, "d MMM yyyy", { locale: ro })}</span>
+                  </div>
                   <Separator className="my-3" />
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">{rentalDays} zile × {product.price} RON</span><span className="font-medium">{totalPrice} RON</span></div>
-                  <div className="flex justify-between mt-2 font-semibold"><span>Total</span><span className="text-primary">{totalPrice} RON</span></div>
-                </div>}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">{rentalDays} zile × {clientPrice} RON</span>
+                    <span className="font-medium">{totalPrice} RON</span>
+                  </div>
+                  <div className="flex justify-between mt-2 font-semibold">
+                    <span>Total</span>
+                    <span className="text-primary">{totalPrice} RON</span>
+                  </div>
+                </div>
+              )}
 
               <Button 
                 className="w-full" 
@@ -374,10 +489,10 @@ const ProductDetail = () => {
                         product: {
                           id: product.id,
                           title: product.title,
-                          images: product.images,
-                          price: product.price,
-                          priceUnit: product.priceUnit,
-                          location: product.location,
+                          images: images,
+                          price: clientPrice,
+                          priceUnit: "zi",
+                          location: location,
                         },
                         startDate,
                         endDate,
@@ -396,6 +511,8 @@ const ProductDetail = () => {
       </main>
 
       <Footer />
-    </div>;
+    </div>
+  );
 };
+
 export default ProductDetail;

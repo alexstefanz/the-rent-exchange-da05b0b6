@@ -1,8 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ChevronLeft, MapPin, Star, Grid3X3, List, ChevronDown, ArrowUpDown } from "lucide-react";
+import { ChevronLeft, MapPin, Grid3X3, List, ChevronDown, ArrowUpDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -12,10 +11,11 @@ import {
 } from "@/components/ui/select";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import ProductCard from "@/components/products/ProductCard";
 import { categories, getAllSubcategories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
-import { getItemsBySubcategory, getItemsByCategory, mockItems } from "@/data/mockItems";
 import { judete } from "@/data/romaniaLocations";
+import { getProducts, Product } from "@/features/products/productsApi";
 
 const SubcategoryDetail = () => {
   const { id } = useParams();
@@ -26,6 +26,8 @@ const SubcategoryDetail = () => {
   const [selectedLocalitate, setSelectedLocalitate] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "">("");
   const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const allSubcategories = getAllSubcategories();
   const subcategory = allSubcategories.find((sub) => sub.id === id);
@@ -40,21 +42,43 @@ const SubcategoryDetail = () => {
   const selectedJudetData = judete.find((j) => j.name === selectedJudet);
   const localitati = selectedJudetData?.localitati || [];
 
-  // Get products for this subcategory
-  let products = getItemsBySubcategory(subcategory?.id || "");
-  if (products.length === 0 && category) {
-    products = getItemsByCategory(category.id);
-  }
-  if (products.length === 0) {
-    products = mockItems.slice(0, 8);
-  }
+  // Fetch products from Supabase
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (!subcategory || !category) return;
+      
+      setIsLoading(true);
+      try {
+        const data = await getProducts({
+          subcategory: subcategory.id,
+          location_city: selectedLocalitate && selectedLocalitate !== "all" ? selectedLocalitate : undefined,
+        });
+        
+        // If no products in subcategory, try category level
+        if (data.length === 0) {
+          const categoryData = await getProducts({
+            category: category.name,
+          });
+          setProducts(categoryData);
+        } else {
+          setProducts(data);
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [subcategory, category, selectedLocalitate]);
 
   // Apply sorting
   const sortedProducts = useMemo(() => {
     if (!sortOrder) return products;
     return [...products].sort((a, b) => {
-      if (sortOrder === "asc") return a.price - b.price;
-      return b.price - a.price;
+      if (sortOrder === "asc") return a.daily_price_owner - b.daily_price_owner;
+      return b.daily_price_owner - a.daily_price_owner;
     });
   }, [products, sortOrder]);
 
@@ -115,7 +139,7 @@ const SubcategoryDetail = () => {
             {subcategory.description}
           </p>
           <p className="mt-4 text-sm text-muted-foreground">
-            {sortedProducts.length} produse disponibile pentru închiriere
+            {isLoading ? "Se încarcă..." : `${sortedProducts.length} produse disponibile pentru închiriere`}
           </p>
         </div>
 
@@ -241,100 +265,40 @@ const SubcategoryDetail = () => {
           </div>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && sortedProducts.length === 0 && (
+          <div className="py-12 text-center">
+            <p className="text-lg text-muted-foreground">
+              Nu există produse disponibile în această categorie momentan.
+            </p>
+            <Button asChild className="mt-4">
+              <Link to="/adauga-anunt">Adaugă primul produs</Link>
+            </Button>
+          </div>
+        )}
+
         {/* Products Grid / List */}
-        {viewMode === "gallery" ? (
-          <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
-            {sortedProducts.map((product) => (
-              <Link
-                key={product.id}
-                to={`/produs/${product.id}`}
-                className="group block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover"
-              >
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <img
-                    src={product.images[0]}
-                    alt={product.title}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-                <div className="p-3 md:p-4">
-                  <h3 className="font-heading text-base md:text-lg font-semibold text-foreground line-clamp-2">
-                    {product.title}
-                  </h3>
-                  <div className="mt-2 flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
-                    <MapPin className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
-                    <span className="truncate">{product.location}</span>
-                  </div>
-                  <div className="mt-2 flex flex-col md:flex-row md:items-center md:gap-1">
-                    <div className="flex items-center gap-1">
-                      <Star className="h-3 w-3 md:h-4 md:w-4 fill-primary text-primary" />
-                      <span className="text-xs md:text-sm font-medium text-foreground">
-                        {product.rating}
-                      </span>
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      ({product.reviewCount} recenzii)
-                    </span>
-                  </div>
-                  <div className="mt-3">
-                    <span className="font-heading text-lg md:text-xl font-bold text-primary">
-                      {product.price} RON
-                    </span>
-                    <span className="text-xs md:text-sm text-muted-foreground"> / {product.priceUnit}</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            {sortedProducts.map((product) => (
-              <Link
-                key={product.id}
-                to={`/produs/${product.id}`}
-                className="group block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover"
-              >
-                <div className="flex flex-col sm:flex-row">
-                  <div className="relative aspect-[4/3] sm:aspect-square sm:w-48 overflow-hidden">
-                    <img
-                      src={product.images[0]}
-                      alt={product.title}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="flex-1 p-4">
-                    <h3 className="font-heading text-lg font-semibold text-foreground">
-                      {product.title}
-                    </h3>
-                    <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
-                      {product.description}
-                    </p>
-                    <div className="mt-3 flex flex-wrap items-center gap-4">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4" />
-                        {product.location}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Star className="h-4 w-4 fill-primary text-primary" />
-                        <span className="text-sm font-medium text-foreground">
-                          {product.rating}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          ({product.reviewCount} recenzii)
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mt-4">
-                      <span className="font-heading text-xl font-bold text-primary">
-                        {product.price} RON
-                      </span>
-                      <span className="text-sm text-muted-foreground"> / {product.priceUnit}</span>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+        {!isLoading && sortedProducts.length > 0 && (
+          viewMode === "gallery" ? (
+            <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
+              {sortedProducts.map((product) => (
+                <ProductCard key={product.id} product={product} viewMode="gallery" />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {sortedProducts.map((product) => (
+                <ProductCard key={product.id} product={product} viewMode="list" />
+              ))}
+            </div>
+          )
         )}
       </main>
 
