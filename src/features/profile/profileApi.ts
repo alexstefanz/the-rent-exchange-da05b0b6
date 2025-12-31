@@ -5,6 +5,8 @@ export interface Profile {
   id: string;
   full_name: string | null;
   phone: string | null;
+  email: string | null;
+  whatsapp: string | null;
   avatar_url: string | null;
   created_at: string;
 }
@@ -46,7 +48,7 @@ export const createProfile = async (
 
 export const updateProfile = async (
   userId: string,
-  data: { full_name?: string; phone?: string; avatar_url?: string }
+  data: { full_name?: string; phone?: string; email?: string; whatsapp?: string; avatar_url?: string }
 ): Promise<Profile> => {
   const { data: profile, error } = await supabase
     .from("profiles")
