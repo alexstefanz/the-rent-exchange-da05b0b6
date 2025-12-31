@@ -16,6 +16,7 @@ import { categories } from "@/data/categories";
 import { Loader2, ArrowLeft } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import ImageUpload from "@/components/products/ImageUpload";
 
 const productSchema = z.object({
   title: z.string().min(5, "Titlul trebuie să aibă minim 5 caractere").max(100, "Titlul nu poate depăși 100 caractere"),
@@ -35,6 +36,7 @@ const NewProduct = () => {
   const { user, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [images, setImages] = useState<string[]>([]);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -70,6 +72,7 @@ const NewProduct = () => {
         subcategory: data.subcategory,
         location_city: data.location_city,
         location_country: data.location_country || "Romania",
+        images: images,
       }, user.id);
 
       toast({
@@ -221,6 +224,18 @@ const NewProduct = () => {
                     {...form.register("location_country")}
                   />
                 </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Imagini produs</Label>
+                {user && (
+                  <ImageUpload
+                    userId={user.id}
+                    images={images}
+                    onChange={setImages}
+                    maxImages={5}
+                  />
+                )}
               </div>
               
               <div className="flex gap-4">
