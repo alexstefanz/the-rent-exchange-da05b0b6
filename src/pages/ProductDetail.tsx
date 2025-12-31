@@ -251,7 +251,7 @@ const ProductDetail = () => {
       <div className="lg:hidden mt-16">
         {/* Main Image with Back/Share buttons */}
         <div className="relative">
-          <img src={images[0]} alt={product.title} className="w-full aspect-[4/3] object-cover" />
+          <img src={images[0]} alt={product.title} className="w-full aspect-[4/3] object-contain bg-muted" />
           
           {/* Back Button */}
           <button 
@@ -308,8 +308,8 @@ const ProductDetail = () => {
           <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
             {/* Image Gallery - Desktop only */}
             <div className="relative overflow-hidden rounded-xl bg-muted hidden lg:block">
-              <div className="aspect-[4/3]">
-                <img src={images[currentImageIndex]} alt={product.title} className="h-full w-full object-cover" />
+            <div className="aspect-[4/3] bg-muted">
+                <img src={images[currentImageIndex]} alt={product.title} className="h-full w-full object-contain" />
               </div>
               {images.length > 1 && (
                 <>
