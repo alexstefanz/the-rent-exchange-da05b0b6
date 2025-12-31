@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { format, differenceInDays, isBefore } from "date-fns";
 import { ro } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, MapPin, Star, Shield, Clock, MessageCircle, Check, User, Calendar, ArrowLeft, Share2, Heart, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Star, Shield, Clock, MessageCircle, Check, User, Calendar, ArrowLeft, Share2, Heart, Loader2, Phone, Mail } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,11 @@ import { Separator } from "@/components/ui/separator";
 import { categories } from "@/data/categories";
 import { getProductById, Product, calculateClientPrice } from "@/features/products/productsApi";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
+import { getOrCreateConversation, getOwnerContactInfo } from "@/features/messaging/messagingApi";
+import { ChatDialog } from "@/components/messaging/ChatDialog";
+import { ContactInfoCard } from "@/components/messaging/ContactInfoCard";
 
 interface OwnerInfo {
   id: string;
@@ -47,14 +52,25 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   
+  const { user } = useAuth();
+  
   const [product, setProduct] = useState<Product | null>(null);
   const [owner, setOwner] = useState<OwnerInfo | null>(null);
+  const [ownerContact, setOwnerContact] = useState<{
+    full_name: string | null;
+    phone: string | null;
+    email: string | null;
+    whatsapp: string | null;
+    avatar_url: string | null;
+  } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [showAllReviews, setShowAllReviews] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   // Fetch product and owner info
   useEffect(() => {
@@ -74,6 +90,12 @@ const ProductDetail = () => {
           if (ownerData && ownerData.length > 0) {
             setOwner(ownerData[0]);
           }
+          
+          // Fetch owner contact info
+          const contactInfo = await getOwnerContactInfo(productData.owner_id);
+          if (contactInfo) {
+            setOwnerContact(contactInfo);
+          }
         }
       } catch (error) {
         console.error("Error fetching product:", error);
@@ -84,6 +106,39 @@ const ProductDetail = () => {
 
     fetchProduct();
   }, [id]);
+
+  const handleStartChat = async () => {
+    if (!user) {
+      toast({
+        title: "Autentificare necesară",
+        description: "Te rugăm să te autentifici pentru a trimite mesaje.",
+        variant: "destructive"
+      });
+      navigate('/auth');
+      return;
+    }
+
+    if (!product || user.id === product.owner_id) {
+      toast({
+        title: "Nu poți contacta",
+        description: "Nu îți poți trimite mesaje ție.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const conversation = await getOrCreateConversation(product.id, product.owner_id);
+    if (conversation) {
+      setConversationId(conversation.id);
+      setChatOpen(true);
+    } else {
+      toast({
+        title: "Eroare",
+        description: "Nu s-a putut crea conversația.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const category = product?.category 
     ? categories.find(c => c.name === product.category)
@@ -301,7 +356,7 @@ const ProductDetail = () => {
                     <p className="mt-1 text-xs text-muted-foreground">Membru din 2024</p>
                   </div>
                 </div>
-                <Button variant="outline" size="sm"><MessageCircle className="mr-2 h-4 w-4" />Trimite mesaj</Button>
+                <Button variant="outline" size="sm" onClick={handleStartChat}><MessageCircle className="mr-2 h-4 w-4" />Trimite mesaj</Button>
               </div>
               
               {/* Mobile Layout */}
@@ -326,7 +381,7 @@ const ProductDetail = () => {
                     <p className="mt-1 text-xs text-muted-foreground">Membru din 2024</p>
                   </div>
                 </div>
-                <Button className="w-full mt-4 bg-[#57BE6A] hover:bg-[#4aa85c] text-white" size="sm">
+                <Button className="w-full mt-4 bg-[#57BE6A] hover:bg-[#4aa85c] text-white" size="sm" onClick={handleStartChat}>
                   <MessageCircle className="mr-2 h-4 w-4" />Trimite mesaj
                 </Button>
               </div>
@@ -340,6 +395,17 @@ const ProductDetail = () => {
                 <Shield className="h-5 w-5 text-primary" /><span className="text-foreground">Închirierea este asigurată</span>
               </div>
             </div>
+
+            {/* Contact Info */}
+            {ownerContact && (ownerContact.phone || ownerContact.email || ownerContact.whatsapp) && (
+              <ContactInfoCard
+                ownerName={ownerContact.full_name}
+                avatarUrl={ownerContact.avatar_url}
+                phone={ownerContact.phone}
+                email={ownerContact.email}
+                whatsapp={ownerContact.whatsapp}
+              />
+            )}
 
             {/* Location */}
             <div className="rounded-xl border border-border bg-card p-6">
@@ -511,6 +577,18 @@ const ProductDetail = () => {
       </main>
 
       <Footer />
+
+      {/* Chat Dialog */}
+      {conversationId && (
+        <ChatDialog
+          open={chatOpen}
+          onOpenChange={setChatOpen}
+          conversationId={conversationId}
+          otherUserName={ownerContact?.full_name || owner?.full_name || null}
+          otherUserAvatar={ownerContact?.avatar_url || owner?.avatar_url || null}
+          productTitle={product?.title || 'Produs'}
+        />
+      )}
     </div>
   );
 };

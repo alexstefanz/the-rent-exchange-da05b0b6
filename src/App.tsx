@@ -19,6 +19,7 @@ import Owner from "./pages/Owner";
 import NewProduct from "./pages/NewProduct";
 import EditProduct from "./pages/EditProduct";
 import DebugSupabase from "./pages/DebugSupabase";
+import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/owner/new-product" element={<NewProduct />} />
             <Route path="/owner/edit-product/:id" element={<EditProduct />} />
             <Route path="/debug-supabase" element={<DebugSupabase />} />
+            <Route path="/mesaje" element={<Messages />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

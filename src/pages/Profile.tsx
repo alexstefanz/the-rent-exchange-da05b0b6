@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { getProfile, updateProfile, createProfile, Profile } from "@/features/profile/profileApi";
-import { Loader2, User, Phone, Mail } from "lucide-react";
+import { Loader2, User, Phone, Mail, MessageCircle } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
@@ -19,6 +19,16 @@ const profileSchema = z.object({
   phone: z.string()
     .regex(/^[+0-9() -]*$/, "Format telefon invalid (doar cifre, +, (), spații, -)")
     .max(20, "Numărul de telefon nu poate depăși 20 caractere")
+    .optional()
+    .or(z.literal("")),
+  email: z.string()
+    .email("Format email invalid")
+    .max(100, "Email-ul nu poate depăși 100 caractere")
+    .optional()
+    .or(z.literal("")),
+  whatsapp: z.string()
+    .regex(/^[+0-9() -]*$/, "Format telefon invalid (doar cifre, +, (), spații, -)")
+    .max(20, "Numărul de WhatsApp nu poate depăși 20 caractere")
     .optional()
     .or(z.literal("")),
 });
@@ -35,7 +45,7 @@ const ProfilePage = () => {
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { full_name: "", phone: "" },
+    defaultValues: { full_name: "", phone: "", email: "", whatsapp: "" },
   });
 
   useEffect(() => {
@@ -61,6 +71,8 @@ const ProfilePage = () => {
         form.reset({
           full_name: profileData.full_name || "",
           phone: profileData.phone || "",
+          email: profileData.email || "",
+          whatsapp: profileData.whatsapp || "",
         });
       } catch (error) {
         console.error("Error loading profile:", error);
@@ -87,6 +99,8 @@ const ProfilePage = () => {
       const updatedProfile = await updateProfile(user.id, {
         full_name: data.full_name || undefined,
         phone: data.phone || undefined,
+        email: data.email || undefined,
+        whatsapp: data.whatsapp || undefined,
       });
       setProfile(updatedProfile);
       toast({
@@ -178,6 +192,43 @@ const ProfilePage = () => {
                 />
                 {form.formState.errors.phone && (
                   <p className="text-sm text-destructive">{form.formState.errors.phone.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email_contact" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Email de contact (public)
+                </Label>
+                <Input
+                  id="email_contact"
+                  type="email"
+                  placeholder="contact@exemplu.ro"
+                  maxLength={100}
+                  {...form.register("email")}
+                />
+                {form.formState.errors.email && (
+                  <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Acest email va fi vizibil pentru potențialii clienți
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="whatsapp" className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4" />
+                  WhatsApp
+                </Label>
+                <Input
+                  id="whatsapp"
+                  type="tel"
+                  placeholder="+40 7XX XXX XXX"
+                  maxLength={20}
+                  {...form.register("whatsapp")}
+                />
+                {form.formState.errors.whatsapp && (
+                  <p className="text-sm text-destructive">{form.formState.errors.whatsapp.message}</p>
                 )}
               </div>
               

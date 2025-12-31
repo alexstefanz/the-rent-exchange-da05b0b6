@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Menu, X, ChevronDown, ChevronRight, User, LogOut, Package } from "lucide-react";
+import { Plus, Search, Menu, X, ChevronDown, ChevronRight, User, LogOut, Package, MessageCircle } from "lucide-react";
 import { categories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
 import { useAuth } from "@/contexts/AuthContext";
@@ -100,6 +100,12 @@ const Navbar = () => {
                     <Link to="/owner" className="flex items-center gap-2">
                       <Package className="h-4 w-4" />
                       Produsele mele
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/mesaje" className="flex items-center gap-2">
+                      <MessageCircle className="h-4 w-4" />
+                      Mesaje
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
