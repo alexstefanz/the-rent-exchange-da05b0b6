@@ -18,6 +18,7 @@ import { toast } from "@/hooks/use-toast";
 import { getOrCreateConversation, getOwnerContactInfo } from "@/features/messaging/messagingApi";
 import { ChatDialog } from "@/components/messaging/ChatDialog";
 import { ContactInfoCard } from "@/components/messaging/ContactInfoCard";
+import NearbyProductsSlider from "@/components/products/NearbyProductsSlider";
 
 interface OwnerInfo {
   id: string;
@@ -573,6 +574,15 @@ const ProductDetail = () => {
               </Button>
             </div>
           </div>
+        </div>
+
+        {/* Nearby Products Slider */}
+        <div className="mt-8">
+          <NearbyProductsSlider
+            currentProductId={product.id}
+            locationCity={product.location_city}
+            category={product.category}
+          />
         </div>
       </main>
 

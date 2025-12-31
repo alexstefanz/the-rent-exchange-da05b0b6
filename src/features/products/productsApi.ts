@@ -159,3 +159,48 @@ export const updateProduct = async (
 
   return product;
 };
+
+export const getNearbyProducts = async (
+  currentProductId: string,
+  locationCity: string | null,
+  category: string | null,
+  limit: number = 8
+): Promise<Product[]> => {
+  let query = supabase
+    .from("products")
+    .select("*")
+    .eq("is_active", true)
+    .neq("id", currentProductId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  // First try to find products from the same city
+  if (locationCity) {
+    query = query.eq("location_city", locationCity);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    handleApiError("Error fetching nearby products", error);
+  }
+
+  // If we don't have enough products from the same city, get more from same category
+  if ((data?.length || 0) < limit && category) {
+    const existingIds = data?.map(p => p.id) || [];
+    const { data: categoryData, error: categoryError } = await supabase
+      .from("products")
+      .select("*")
+      .eq("is_active", true)
+      .eq("category", category)
+      .not("id", "in", `(${[currentProductId, ...existingIds].join(",")})`)
+      .order("created_at", { ascending: false })
+      .limit(limit - (data?.length || 0));
+
+    if (!categoryError && categoryData) {
+      return [...(data || []), ...categoryData];
+    }
+  }
+
+  return data || [];
+};
