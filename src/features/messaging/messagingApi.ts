@@ -172,16 +172,15 @@ export async function markMessagesAsRead(conversationId: string): Promise<void> 
 }
 
 export async function getOwnerContactInfo(ownerId: string) {
+  // Use secure database function that only returns contact info if user has a conversation with the owner
   const { data, error } = await supabase
-    .from('profiles')
-    .select('full_name, phone, email, whatsapp, avatar_url')
-    .eq('id', ownerId)
-    .single();
+    .rpc('get_contact_info_if_in_conversation', { owner_uuid: ownerId });
 
   if (error) {
     console.error('Error fetching owner info:', error);
     return null;
   }
 
-  return data;
+  // Function returns an array, get first result or null
+  return data && data.length > 0 ? data[0] : null;
 }

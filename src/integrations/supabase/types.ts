@@ -196,6 +196,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_contact_info_if_in_conversation: {
+        Args: { owner_uuid: string }
+        Returns: {
+          avatar_url: string
+          email: string
+          full_name: string
+          phone: string
+          whatsapp: string
+        }[]
+      }
       get_product_owner_public_info: {
         Args: { owner_uuid: string }
         Returns: {
