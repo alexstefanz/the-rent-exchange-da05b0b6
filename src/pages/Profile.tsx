@@ -16,7 +16,11 @@ import Footer from "@/components/layout/Footer";
 
 const profileSchema = z.object({
   full_name: z.string().min(2, "Numele trebuie să aibă minim 2 caractere").optional().or(z.literal("")),
-  phone: z.string().optional().or(z.literal("")),
+  phone: z.string()
+    .regex(/^[+0-9() -]*$/, "Format telefon invalid (doar cifre, +, (), spații, -)")
+    .max(20, "Numărul de telefon nu poate depăși 20 caractere")
+    .optional()
+    .or(z.literal("")),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -169,8 +173,12 @@ const ProfilePage = () => {
                   id="phone"
                   type="tel"
                   placeholder="+40 7XX XXX XXX"
+                  maxLength={20}
                   {...form.register("phone")}
                 />
+                {form.formState.errors.phone && (
+                  <p className="text-sm text-destructive">{form.formState.errors.phone.message}</p>
+                )}
               </div>
               
               <div className="flex gap-4">

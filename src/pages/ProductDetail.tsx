@@ -239,17 +239,17 @@ const ProductDetail = () => {
                 <MapPin className="h-5 w-5 text-primary" />
                 <span className="font-medium">{product.location}</span>
               </div>
-              <div className="rounded-lg overflow-hidden h-[200px]">
-                <iframe
-                  title="Locație"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(product.location + ', Romania')}`}
-                />
+              <div className="rounded-lg overflow-hidden h-[200px] bg-muted flex items-center justify-center">
+                <a 
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(product.location + ', Romania')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <MapPin className="h-12 w-12" />
+                  <span className="text-sm font-medium">Vezi pe Google Maps</span>
+                  <span className="text-xs">{product.location}, Romania</span>
+                </a>
               </div>
             </div>
 
