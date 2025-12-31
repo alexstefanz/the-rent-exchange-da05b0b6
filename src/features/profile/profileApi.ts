@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { handleApiError } from "@/lib/errorHandler";
 
 export interface Profile {
   id: string;
@@ -16,8 +17,7 @@ export const getProfile = async (userId: string): Promise<Profile | null> => {
     .maybeSingle();
 
   if (error) {
-    console.error("Error fetching profile:", error);
-    throw error;
+    handleApiError("Error fetching profile", error);
   }
 
   return data;
@@ -38,8 +38,7 @@ export const createProfile = async (
     .single();
 
   if (error) {
-    console.error("Error creating profile:", error);
-    throw error;
+    handleApiError("Error creating profile", error);
   }
 
   return profile;
@@ -57,8 +56,7 @@ export const updateProfile = async (
     .single();
 
   if (error) {
-    console.error("Error updating profile:", error);
-    throw error;
+    handleApiError("Error updating profile", error);
   }
 
   return profile;
