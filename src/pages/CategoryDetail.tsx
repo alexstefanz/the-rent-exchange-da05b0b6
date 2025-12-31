@@ -1,14 +1,38 @@
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import SubcategoryCard from "@/components/items/SubcategoryCard";
+import ProductCard from "@/components/products/ProductCard";
 import { getCategoryById } from "@/data/categories";
+import { getProducts, Product } from "@/features/products/productsApi";
 
 const CategoryDetail = () => {
   const { id } = useParams();
   const category = getCategoryById(Number(id));
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch products for this category
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (!category) return;
+      
+      setIsLoading(true);
+      try {
+        const data = await getProducts({ category: category.name });
+        setProducts(data);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [category]);
 
   if (!category) {
     return (
@@ -56,28 +80,66 @@ const CategoryDetail = () => {
               </div>
               <p className="mt-2 text-muted-foreground">
                 {category.subcategories.length} subcategorii disponibile pentru închiriat
+                {!isLoading && products.length > 0 && ` • ${products.length} anunțuri`}
               </p>
             </div>
           </div>
         </div>
 
         {/* Subcategories Grid */}
-        <div className="grid grid-cols-2 gap-4 md:gap-6 lg:grid-cols-3 xl:grid-cols-4">
-          {category.subcategories.map((subcategory, index) => (
-            <div
-              key={subcategory.id}
-              className="animate-fade-up"
-              style={{ animationDelay: `${Math.min(index * 0.05, 0.5)}s` }}
-            >
-              <SubcategoryCard
-                id={subcategory.id}
-                name={subcategory.name}
-                description={subcategory.description}
-                image={subcategory.image}
-                categoryId={category.id}
-              />
+        <div className="mb-12">
+          <h2 className="mb-4 font-heading text-xl font-semibold text-foreground">
+            Subcategorii
+          </h2>
+          <div className="grid grid-cols-2 gap-4 md:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+            {category.subcategories.map((subcategory, index) => (
+              <div
+                key={subcategory.id}
+                className="animate-fade-up"
+                style={{ animationDelay: `${Math.min(index * 0.05, 0.5)}s` }}
+              >
+                <SubcategoryCard
+                  id={subcategory.id}
+                  name={subcategory.name}
+                  description={subcategory.description}
+                  image={subcategory.image}
+                  categoryId={category.id}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Products Section */}
+        <div>
+          <h2 className="mb-4 font-heading text-xl font-semibold text-foreground">
+            Anunțuri în această categorie
+          </h2>
+
+          {isLoading && (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
-          ))}
+          )}
+
+          {!isLoading && products.length === 0 && (
+            <div className="py-8 text-center rounded-xl bg-muted/30">
+              <p className="text-muted-foreground">
+                Nu există anunțuri în această categorie momentan.
+              </p>
+              <Button asChild className="mt-4">
+                <Link to="/adauga-anunt">Adaugă primul anunț</Link>
+              </Button>
+            </div>
+          )}
+
+          {!isLoading && products.length > 0 && (
+            <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
         </div>
       </main>
 

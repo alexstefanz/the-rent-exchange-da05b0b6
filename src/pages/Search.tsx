@@ -1,21 +1,48 @@
-import { useState } from "react";
-import { Search as SearchIcon } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Search as SearchIcon, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import CategoryCard from "@/components/items/CategoryCard";
 import SubcategoryCard from "@/components/items/SubcategoryCard";
+import ProductCard from "@/components/products/ProductCard";
 import { searchCategories, categories } from "@/data/categories";
+import { getProducts, Product } from "@/features/products/productsApi";
 
 const Search = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const { matchingCategories, matchingSubcategories } = searchQuery
     ? searchCategories(searchQuery)
     : { matchingCategories: categories, matchingSubcategories: [] };
 
+  // Search products when query changes
+  useEffect(() => {
+    const searchProducts = async () => {
+      if (!searchQuery || searchQuery.length < 2) {
+        setProducts([]);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const data = await getProducts({ search: searchQuery });
+        setProducts(data);
+      } catch (error) {
+        console.error("Error searching products:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(searchProducts, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery]);
+
   const hasResults =
-    matchingCategories.length > 0 || matchingSubcategories.length > 0;
+    matchingCategories.length > 0 || matchingSubcategories.length > 0 || products.length > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -46,9 +73,30 @@ const Search = () => {
           </div>
         </div>
 
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
+
         {/* Results */}
-        {searchQuery && hasResults && (
+        {searchQuery && hasResults && !isLoading && (
           <>
+            {/* Matching Products from Database */}
+            {products.length > 0 && (
+              <section className="mb-10">
+                <h2 className="mb-4 font-heading text-xl font-semibold text-foreground">
+                  Anunțuri ({products.length})
+                </h2>
+                <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
+                  {products.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* Matching Categories */}
             {matchingCategories.length > 0 && (
               <section className="mb-10">
@@ -67,7 +115,7 @@ const Search = () => {
             {matchingSubcategories.length > 0 && (
               <section>
                 <h2 className="mb-4 font-heading text-xl font-semibold text-foreground">
-                  Produse ({matchingSubcategories.length})
+                  Subcategorii ({matchingSubcategories.length})
                 </h2>
                 <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {matchingSubcategories.map((subcategory) => (
@@ -101,7 +149,7 @@ const Search = () => {
         )}
 
         {/* No Results */}
-        {searchQuery && !hasResults && (
+        {searchQuery && !hasResults && !isLoading && (
           <div className="py-12 text-center">
             <p className="text-lg text-muted-foreground">
               Nu am găsit rezultate pentru "{searchQuery}"
