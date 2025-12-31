@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { getSubcategoryIcon } from "@/data/subcategoryIcons";
 
 interface SubcategoryCardProps {
   id: string;
@@ -8,32 +9,20 @@ interface SubcategoryCardProps {
   categoryId: number;
 }
 
-const SubcategoryCard = ({ id, name, image, categoryId }: SubcategoryCardProps) => {
+const SubcategoryCard = ({ id, name }: SubcategoryCardProps) => {
+  const Icon = getSubcategoryIcon(id);
+  
   return (
     <Link
       to={`/subcategorie/${id}`}
-      className="group relative block aspect-[4/3] overflow-hidden transition-all duration-300 hover:-translate-y-1"
-      style={{ borderRadius: "15px" }}
+      className="group flex flex-col items-center justify-center gap-3 rounded-xl bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
     >
-      {/* Background Image */}
-      <img
-        src={image}
-        alt={name}
-        className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-      />
-      
-      {/* Dark Overlay 30% */}
-      <div className="absolute inset-0 bg-black/30" />
-      
-      {/* Text Content - Centered with shadow */}
-      <div className="absolute inset-0 flex items-center justify-center p-4">
-        <h3 
-          className="text-center font-heading text-lg font-bold text-white drop-shadow-lg md:text-xl"
-          style={{ textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}
-        >
-          {name}
-        </h3>
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+        <Icon className="h-7 w-7" />
       </div>
+      <span className="text-center font-medium text-foreground">
+        {name}
+      </span>
     </Link>
   );
 };
