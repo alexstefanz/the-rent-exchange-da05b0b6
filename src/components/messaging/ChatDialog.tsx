@@ -11,7 +11,8 @@ import {
   getMessages, 
   sendMessage, 
   markMessagesAsRead,
-  Message 
+  Message,
+  MAX_MESSAGE_LENGTH 
 } from "@/features/messaging/messagingApi";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
@@ -163,8 +164,9 @@ export function ChatDialog({
           <Input
             placeholder="Scrie un mesaj..."
             value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
+            onChange={(e) => setNewMessage(e.target.value.slice(0, MAX_MESSAGE_LENGTH))}
             onKeyPress={handleKeyPress}
+            maxLength={MAX_MESSAGE_LENGTH}
             disabled={sending}
           />
           <Button 
