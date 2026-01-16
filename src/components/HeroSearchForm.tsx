@@ -69,7 +69,7 @@ const HeroSearchForm = () => {
           <SelectContent className="max-h-[300px] bg-card z-50">
             <SelectItem value="all">Toate categoriile</SelectItem>
             {categories.map((category) => (
-              <SelectItem key={category.id} value={category.id.toString()}>
+              <SelectItem key={category.id} value={category.name}>
                 {category.name}
               </SelectItem>
             ))}

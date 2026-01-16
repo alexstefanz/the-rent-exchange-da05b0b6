@@ -45,7 +45,8 @@ export const getProducts = async (filters?: ProductFilters): Promise<Product[]> 
   }
 
   if (filters?.location_city) {
-    query = query.eq("location_city", filters.location_city);
+    // Use ilike for case-insensitive matching (handles "Iași" vs "iasi" vs "Iasi")
+    query = query.ilike("location_city", filters.location_city);
   }
 
   if (filters?.search) {
