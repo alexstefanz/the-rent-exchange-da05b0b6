@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Heart, Star, Search, List, LayoutGrid, ChevronRight, Check, Loader2 } from "lucide-react";
+import { Heart, Star, Search, List, LayoutGrid, ChevronRight, Check, Loader2, Share2 } from "lucide-react";
 import { categories } from "@/data/categories";
 import {
   Pagination,
@@ -21,8 +21,21 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { getPublicProfile } from "@/features/profile/profileApi";
+import { 
+  getPublicProfile, 
+  getUserStatistics, 
+  getUserReviews,
+  isUserFavorite,
+  addUserToFavorites,
+  removeUserFromFavorites,
+  UserStatistics,
+  UserReview
+} from "@/features/profile/profileApi";
 import { getPublicUserProducts, Product, calculateClientPrice } from "@/features/products/productsApi";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import UserStatsCard from "@/components/profile/UserStatsCard";
+import UserReviewsList from "@/components/profile/UserReviewsList";
 
 const ITEMS_PER_PAGE = 6;
 
@@ -34,14 +47,18 @@ interface PublicProfile {
 
 const UserProfile = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   
   // State for real data
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [statistics, setStatistics] = useState<UserStatistics | null>(null);
+  const [reviews, setReviews] = useState<UserReview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("new");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -63,9 +80,11 @@ const UserProfile = () => {
       setError(null);
 
       try {
-        const [profileData, productsData] = await Promise.all([
+        const [profileData, productsData, statsData, reviewsData] = await Promise.all([
           getPublicProfile(id),
-          getPublicUserProducts(id)
+          getPublicUserProducts(id),
+          getUserStatistics(id),
+          getUserReviews(id)
         ]);
 
         if (!profileData) {
@@ -76,6 +95,14 @@ const UserProfile = () => {
 
         setProfile(profileData);
         setProducts(productsData);
+        setStatistics(statsData);
+        setReviews(reviewsData);
+
+        // Check if user is in favorites (if logged in)
+        if (user) {
+          const favoriteStatus = await isUserFavorite(id);
+          setIsFavorite(favoriteStatus);
+        }
       } catch (err) {
         console.error("Error fetching user data:", err);
         setError("A apărut o eroare la încărcarea profilului.");
@@ -85,7 +112,7 @@ const UserProfile = () => {
     };
 
     fetchData();
-  }, [id]);
+  }, [id, user]);
 
   // Filter products
   const filteredProducts = useMemo(() => {
@@ -250,6 +277,59 @@ const UserProfile = () => {
     );
   }
 
+  // Handle favorite toggle
+  const handleFavoriteToggle = async () => {
+    if (!user) {
+      toast.error("Trebuie să fii autentificat pentru a salva la favorite.");
+      return;
+    }
+
+    if (!id || id === user.id) {
+      return;
+    }
+
+    setIsFavoriteLoading(true);
+    try {
+      if (isFavorite) {
+        const success = await removeUserFromFavorites(id);
+        if (success) {
+          setIsFavorite(false);
+          toast.success("Utilizator eliminat din favorite");
+        }
+      } else {
+        const success = await addUserToFavorites(id);
+        if (success) {
+          setIsFavorite(true);
+          toast.success("Utilizator adăugat la favorite");
+        }
+      }
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
+      toast.error("A apărut o eroare");
+    } finally {
+      setIsFavoriteLoading(false);
+    }
+  };
+
+  // Handle share
+  const handleShare = async () => {
+    const shareData = {
+      title: profile?.full_name || "Profil utilizator",
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success("Link copiat în clipboard");
+      }
+    } catch (err) {
+      console.error("Error sharing:", err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
@@ -271,9 +351,19 @@ const UserProfile = () => {
                     {profile.full_name || "Utilizator"}
                   </h1>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[#57be6a] font-semibold">
-                      Nou
-                    </span>
+                    {statistics && statistics.reviews_count > 0 ? (
+                      <>
+                        <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                        <span className="font-semibold text-foreground">
+                          {statistics.average_rating.toFixed(1)}
+                        </span>
+                        <span className="text-muted-foreground">
+                          ({statistics.reviews_count} recenzii)
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-[#57be6a] font-semibold">Nou</span>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
                     {products.length} {products.length === 1 ? "anunț activ" : "anunțuri active"}
@@ -283,22 +373,36 @@ const UserProfile = () => {
 
               {/* Actions */}
               <div className="flex items-center gap-3">
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2" onClick={handleShare}>
+                  <Share2 className="h-4 w-4" />
                   Distribuie
                 </Button>
-                <Button
-                  variant="outline"
-                  className={`gap-2 ${isFavorite ? "text-red-500 border-red-500" : ""}`}
-                  onClick={() => setIsFavorite(!isFavorite)}
-                >
-                  <Heart
-                    className={`h-4 w-4 ${isFavorite ? "fill-red-500" : ""}`}
-                  />
-                  Salvează ca favorit
-                </Button>
+                {user && id !== user.id && (
+                  <Button
+                    variant="outline"
+                    className={`gap-2 ${isFavorite ? "text-red-500 border-red-500" : ""}`}
+                    onClick={handleFavoriteToggle}
+                    disabled={isFavoriteLoading}
+                  >
+                    <Heart
+                      className={`h-4 w-4 ${isFavorite ? "fill-red-500" : ""}`}
+                    />
+                    {isFavorite ? "Salvat" : "Salvează"}
+                  </Button>
+                )}
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Statistics Card */}
+        <div className="container mx-auto px-4 py-6">
+          <UserStatsCard
+            productsCount={statistics?.products_count || products.length}
+            memberSince={statistics?.member_since || null}
+            averageRating={statistics?.average_rating || 0}
+            reviewsCount={statistics?.reviews_count || 0}
+          />
         </div>
 
         {/* Products Section */}
@@ -597,6 +701,11 @@ const UserProfile = () => {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="container mx-auto px-4 pb-8">
+          <UserReviewsList reviews={reviews} />
         </div>
       </main>
 
