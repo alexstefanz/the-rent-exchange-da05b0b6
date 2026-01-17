@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -11,10 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Heart, Star, Search, List, LayoutGrid, ChevronRight, Check } from "lucide-react";
-import { mockItems } from "@/data/mockItems";
+import { Heart, Star, Search, List, LayoutGrid, ChevronRight, Check, Loader2 } from "lucide-react";
 import { categories } from "@/data/categories";
-import { getUserById, mockUsers } from "@/data/mockUsers";
 import {
   Pagination,
   PaginationContent,
@@ -23,24 +21,75 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { getPublicProfile } from "@/features/profile/profileApi";
+import { getPublicUserProducts, Product, calculateClientPrice } from "@/features/products/productsApi";
 
 const ITEMS_PER_PAGE = 6;
 
+interface PublicProfile {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+}
+
 const UserProfile = () => {
   const { id } = useParams();
-  const user = getUserById(id || "user-1") || mockUsers[0];
+  
+  // State for real data
+  const [profile, setProfile] = useState<PublicProfile | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
   const [isFavorite, setIsFavorite] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("new");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
-  const [expandedCategory, setExpandedCategory] = useState<number | null>(null);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
-  // Filter items by user (all items belong to this user now)
-  const userItems = useMemo(() => {
-    let items = mockItems.filter(item => item.owner.id === id || item.owner.id === "user-1");
+  // Fetch profile and products on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!id) {
+        setError("ID utilizator lipsă");
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const [profileData, productsData] = await Promise.all([
+          getPublicProfile(id),
+          getPublicUserProducts(id)
+        ]);
+
+        if (!profileData) {
+          setError("Profilul nu a fost găsit sau utilizatorul nu are anunțuri active.");
+          setIsLoading(false);
+          return;
+        }
+
+        setProfile(profileData);
+        setProducts(productsData);
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+        setError("A apărut o eroare la încărcarea profilului.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  // Filter products
+  const filteredProducts = useMemo(() => {
+    let items = [...products];
 
     // Filter by search
     if (searchQuery) {
@@ -51,72 +100,77 @@ const UserProfile = () => {
 
     // Filter by category
     if (selectedCategory) {
-      items = items.filter((item) => item.categoryId === selectedCategory);
+      items = items.filter((item) => item.category === selectedCategory);
     }
 
     // Filter by subcategory
     if (selectedSubcategory) {
-      items = items.filter((item) => item.subcategoryId === selectedSubcategory);
+      items = items.filter((item) => item.subcategory === selectedSubcategory);
     }
 
     // Sort items
     switch (sortBy) {
       case "expensive":
-        items = [...items].sort((a, b) => b.price - a.price);
+        items = items.sort((a, b) => 
+          calculateClientPrice(b.daily_price_owner, b.platform_fee_percent) - 
+          calculateClientPrice(a.daily_price_owner, a.platform_fee_percent)
+        );
         break;
       case "cheap":
-        items = [...items].sort((a, b) => a.price - b.price);
+        items = items.sort((a, b) => 
+          calculateClientPrice(a.daily_price_owner, a.platform_fee_percent) - 
+          calculateClientPrice(b.daily_price_owner, b.platform_fee_percent)
+        );
         break;
       case "new":
       default:
-        // Keep original order (newest first)
+        // Already sorted by created_at desc from API
         break;
     }
 
     return items;
-  }, [searchQuery, sortBy, selectedCategory, selectedSubcategory]);
-
-  // Get all user items for counts
-  const allUserItems = useMemo(() => {
-    return mockItems.filter(item => item.owner.id === id || item.owner.id === "user-1");
-  }, [id]);
+  }, [products, searchQuery, sortBy, selectedCategory, selectedSubcategory]);
 
   // Get category counts
   const categoryCounts = useMemo(() => {
-    const counts: Record<number, number> = {};
-    allUserItems.forEach((item) => {
-      counts[item.categoryId] = (counts[item.categoryId] || 0) + 1;
+    const counts: Record<string, number> = {};
+    products.forEach((item) => {
+      if (item.category) {
+        counts[item.category] = (counts[item.category] || 0) + 1;
+      }
     });
     return counts;
-  }, [allUserItems]);
+  }, [products]);
 
   // Get subcategory counts for expanded category
   const subcategoryCounts = useMemo(() => {
     if (!expandedCategory) return {};
     const counts: Record<string, number> = {};
-    allUserItems
-      .filter((item) => item.categoryId === expandedCategory)
+    products
+      .filter((item) => item.category === expandedCategory)
       .forEach((item) => {
-        counts[item.subcategoryId] = (counts[item.subcategoryId] || 0) + 1;
+        if (item.subcategory) {
+          counts[item.subcategory] = (counts[item.subcategory] || 0) + 1;
+        }
       });
     return counts;
-  }, [expandedCategory, allUserItems]);
+  }, [expandedCategory, products]);
 
   // Pagination
-  const totalPages = Math.ceil(userItems.length / ITEMS_PER_PAGE);
-  const paginatedItems = userItems.slice(
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
+  const paginatedItems = filteredProducts.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   );
 
-  const handleCategoryClick = (categoryId: number) => {
-    if (expandedCategory === categoryId) {
+  const handleCategoryClick = (categoryName: string) => {
+    if (expandedCategory === categoryName) {
       setExpandedCategory(null);
       setSelectedCategory(null);
       setSelectedSubcategory(null);
     } else {
-      setExpandedCategory(categoryId);
-      setSelectedCategory(categoryId);
+      setExpandedCategory(categoryName);
+      setSelectedCategory(categoryName);
       setSelectedSubcategory(null);
     }
     setCurrentPage(1);
@@ -135,8 +189,66 @@ const UserProfile = () => {
   };
 
   const availableCategories = categories.filter(
-    (cat) => categoryCounts[cat.id] > 0
+    (cat) => categoryCounts[cat.name] > 0
   );
+
+  // Helper function to get image URL
+  const getImageUrl = (product: Product) => {
+    if (product.images && product.images.length > 0) {
+      return product.images[0];
+    }
+    return "/placeholder.svg";
+  };
+
+  // Helper function to format date
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("ro-RO", {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    });
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Se încarcă profilul...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !profile) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-heading font-bold text-foreground mb-2">
+              Profil negăsit
+            </h1>
+            <p className="text-muted-foreground mb-4">
+              {error || "Utilizatorul nu a fost găsit sau nu are anunțuri active."}
+            </p>
+            <Button asChild>
+              <Link to="/">Înapoi la pagina principală</Link>
+            </Button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -150,40 +262,23 @@ const UserProfile = () => {
               {/* User Info */}
               <div className="flex items-center gap-4">
                 <img
-                  src={user.avatar}
-                  alt={user.name}
+                  src={profile.avatar_url || "/placeholder.svg"}
+                  alt={profile.full_name || "Utilizator"}
                   className="w-20 h-20 rounded-full object-cover border-2 border-border"
                 />
                 <div>
                   <h1 className="text-2xl font-heading font-bold text-foreground">
-                    {user.name}
+                    {profile.full_name || "Utilizator"}
                   </h1>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-[#57be6a] font-semibold">
-                      {user.rating} / 5
+                      Nou
                     </span>
-                    <div className="flex">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={`h-4 w-4 ${star <= Math.floor(user.rating) ? "fill-amber-400 text-amber-400" : "text-muted"}`}
-                        />
-                      ))}
-                    </div>
                   </div>
-                  <a
-                    href="#ratings"
-                    className="text-sm text-primary hover:underline"
-                  >
-                    ({user.reviewCount} de ratinguri)
-                  </a>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {products.length} {products.length === 1 ? "anunț activ" : "anunțuri active"}
+                  </p>
                 </div>
-              </div>
-
-              {/* Member Info */}
-              <div className="text-sm text-muted-foreground md:text-right">
-                <p>Pe RentNow din {user.memberSince}</p>
-                <p>Activ: {user.lastActive}</p>
               </div>
 
               {/* Actions */}
@@ -324,7 +419,7 @@ const UserProfile = () => {
                 Filtrează anunțurile
               </h2>
               <p className="text-sm text-muted-foreground mb-4">
-                Am găsit {userItems.length} rezultate pentru tine
+                Am găsit {filteredProducts.length} rezultate pentru tine
               </p>
               <p className="text-sm font-medium text-foreground mb-3">
                 Categorii
@@ -342,7 +437,7 @@ const UserProfile = () => {
                   Toate anunțurile
                 </span>
                 <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
-                  {allUserItems.length}
+                  {products.length}
                 </span>
               </button>
 
@@ -351,33 +446,33 @@ const UserProfile = () => {
                 {availableCategories.map((category) => (
                   <div key={category.id}>
                     <button
-                      onClick={() => handleCategoryClick(category.id)}
+                      onClick={() => handleCategoryClick(category.name)}
                       className={`flex items-center justify-between w-full py-2 text-left hover:text-primary transition-colors ${
-                        selectedCategory === category.id
+                        selectedCategory === category.name
                           ? "font-semibold text-primary"
                           : "text-foreground"
                       }`}
                     >
                       <span className="flex items-center gap-2 text-sm">
-                        {selectedCategory === category.id && !selectedSubcategory && (
+                        {selectedCategory === category.name && !selectedSubcategory && (
                           <Check className="h-4 w-4 text-primary" />
                         )}
                         {category.name}
                       </span>
                       <div className="flex items-center gap-2">
                         <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
-                          {categoryCounts[category.id]}
+                          {categoryCounts[category.name]}
                         </span>
                         <ChevronRight
                           className={`h-4 w-4 transition-transform ${
-                            expandedCategory === category.id ? "rotate-90" : ""
+                            expandedCategory === category.name ? "rotate-90" : ""
                           }`}
                         />
                       </div>
                     </button>
 
                     {/* Subcategories */}
-                    {expandedCategory === category.id && (
+                    {expandedCategory === category.name && (
                       <div className="ml-4 mt-1 space-y-1 border-l-2 border-border pl-3">
                         {category.subcategories
                           .filter((sub) => subcategoryCounts[sub.id])
@@ -426,7 +521,7 @@ const UserProfile = () => {
                       className="flex gap-4 p-4 bg-card border border-border rounded-lg hover:shadow-md transition-shadow"
                     >
                       <img
-                        src={item.images[0]}
+                        src={getImageUrl(item)}
                         alt={item.title}
                         className="w-40 h-28 object-cover rounded-md shrink-0"
                       />
@@ -437,7 +532,7 @@ const UserProfile = () => {
                               {item.title}
                             </h3>
                             <p className="text-xl font-bold text-[#57be6a] mt-1">
-                              {item.price} lei
+                              {calculateClientPrice(item.daily_price_owner, item.platform_fee_percent)} lei
                             </p>
                           </div>
                           <Button
@@ -450,10 +545,10 @@ const UserProfile = () => {
                           </Button>
                         </div>
                         <p className="text-sm text-muted-foreground mt-2">
-                          {item.location}
+                          {item.location_city || item.location_country || "România"}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          29 decembrie 2025
+                          {formatDate(item.created_at)}
                         </p>
                       </div>
                     </Link>
@@ -469,7 +564,7 @@ const UserProfile = () => {
                     >
                       <div className="relative">
                         <img
-                          src={item.images[0]}
+                          src={getImageUrl(item)}
                           alt={item.title}
                           className="w-full h-48 object-cover"
                         />
@@ -487,13 +582,13 @@ const UserProfile = () => {
                           {item.title}
                         </h3>
                         <p className="text-xl font-bold text-[#57be6a] mt-1">
-                          {item.price} lei
+                          {calculateClientPrice(item.daily_price_owner, item.platform_fee_percent)} lei
                         </p>
                         <p className="text-sm text-muted-foreground mt-2">
-                          {item.location}
+                          {item.location_city || item.location_country || "România"}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          29 decembrie 2025
+                          {formatDate(item.created_at)}
                         </p>
                       </div>
                     </Link>

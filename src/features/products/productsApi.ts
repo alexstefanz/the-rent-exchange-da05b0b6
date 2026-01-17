@@ -93,6 +93,22 @@ export const getMyProducts = async (ownerId: string): Promise<Product[]> => {
   return data || [];
 };
 
+// Get public products for a specific user (for public profile page)
+export const getPublicUserProducts = async (ownerId: string): Promise<Product[]> => {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("owner_id", ownerId)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    handleApiError("Error fetching user products", error);
+  }
+
+  return data || [];
+};
+
 export const createProduct = async (
   data: {
     title: string;
