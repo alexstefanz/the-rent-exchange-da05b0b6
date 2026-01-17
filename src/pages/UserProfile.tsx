@@ -11,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Heart, Star, Search, List, LayoutGrid, ChevronRight, Check, Loader2 } from "lucide-react";
+import { Heart, Star, Search, List, LayoutGrid, ChevronRight, Check, Loader2, Calendar, Package, MessageCircle } from "lucide-react";
 import { categories } from "@/data/categories";
 import {
   Pagination,
@@ -23,6 +23,11 @@ import {
 } from "@/components/ui/pagination";
 import { getPublicProfile } from "@/features/profile/profileApi";
 import { getPublicUserProducts, Product, calculateClientPrice } from "@/features/products/productsApi";
+import { getUserStatistics, UserStatistics } from "@/features/profile/statisticsApi";
+import { isUserFavorite, addFavoriteUser, removeFavoriteUser } from "@/features/profile/favoritesApi";
+import { getUserReviews, UserReview } from "@/features/profile/reviewsApi";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const ITEMS_PER_PAGE = 6;
 
@@ -34,14 +39,18 @@ interface PublicProfile {
 
 const UserProfile = () => {
   const { id } = useParams();
+  const { user } = useAuth();
   
   // State for real data
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [statistics, setStatistics] = useState<UserStatistics | null>(null);
+  const [reviews, setReviews] = useState<UserReview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("new");
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -49,6 +58,7 @@ const UserProfile = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [showAllReviews, setShowAllReviews] = useState(false);
 
   // Fetch profile and products on mount
   useEffect(() => {
@@ -63,9 +73,11 @@ const UserProfile = () => {
       setError(null);
 
       try {
-        const [profileData, productsData] = await Promise.all([
+        const [profileData, productsData, statsData, reviewsData] = await Promise.all([
           getPublicProfile(id),
-          getPublicUserProducts(id)
+          getPublicUserProducts(id),
+          getUserStatistics(id),
+          getUserReviews(id),
         ]);
 
         if (!profileData) {
@@ -76,6 +88,14 @@ const UserProfile = () => {
 
         setProfile(profileData);
         setProducts(productsData);
+        setStatistics(statsData);
+        setReviews(reviewsData);
+
+        // Check if current user has this profile as favorite
+        if (user && user.id !== id) {
+          const favoriteStatus = await isUserFavorite(id);
+          setIsFavorite(favoriteStatus);
+        }
       } catch (err) {
         console.error("Error fetching user data:", err);
         setError("A apărut o eroare la încărcarea profilului.");
@@ -85,30 +105,56 @@ const UserProfile = () => {
     };
 
     fetchData();
-  }, [id]);
+  }, [id, user]);
+
+  // Handle favorite toggle
+  const handleFavoriteToggle = async () => {
+    if (!user) {
+      toast.error("Trebuie să fii autentificat pentru a salva la favorite.");
+      return;
+    }
+
+    if (!id || user.id === id) {
+      return;
+    }
+
+    setIsFavoriteLoading(true);
+    try {
+      if (isFavorite) {
+        await removeFavoriteUser(id);
+        setIsFavorite(false);
+        toast.success("Utilizator eliminat din favorite.");
+      } else {
+        await addFavoriteUser(id);
+        setIsFavorite(true);
+        toast.success("Utilizator salvat la favorite!");
+      }
+    } catch (err) {
+      console.error("Error toggling favorite:", err);
+      toast.error("A apărut o eroare. Încearcă din nou.");
+    } finally {
+      setIsFavoriteLoading(false);
+    }
+  };
 
   // Filter products
   const filteredProducts = useMemo(() => {
     let items = [...products];
 
-    // Filter by search
     if (searchQuery) {
       items = items.filter((item) =>
         item.title.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
-    // Filter by category
     if (selectedCategory) {
       items = items.filter((item) => item.category === selectedCategory);
     }
 
-    // Filter by subcategory
     if (selectedSubcategory) {
       items = items.filter((item) => item.subcategory === selectedSubcategory);
     }
 
-    // Sort items
     switch (sortBy) {
       case "expensive":
         items = items.sort((a, b) => 
@@ -124,7 +170,6 @@ const UserProfile = () => {
         break;
       case "new":
       default:
-        // Already sorted by created_at desc from API
         break;
     }
 
@@ -192,7 +237,6 @@ const UserProfile = () => {
     (cat) => categoryCounts[cat.name] > 0
   );
 
-  // Helper function to get image URL
   const getImageUrl = (product: Product) => {
     if (product.images && product.images.length > 0) {
       return product.images[0];
@@ -200,7 +244,6 @@ const UserProfile = () => {
     return "/placeholder.svg";
   };
 
-  // Helper function to format date
   const formatDate = (dateString: string | null) => {
     if (!dateString) return "";
     const date = new Date(dateString);
@@ -210,6 +253,8 @@ const UserProfile = () => {
       year: "numeric"
     });
   };
+
+  const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 3);
 
   // Loading state
   if (isLoading) {
@@ -270,10 +315,23 @@ const UserProfile = () => {
                   <h1 className="text-2xl font-heading font-bold text-foreground">
                     {profile.full_name || "Utilizator"}
                   </h1>
+                  {/* Rating display */}
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-[#57be6a] font-semibold">
-                      Nou
-                    </span>
+                    {statistics && statistics.reviews_count > 0 ? (
+                      <>
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          <span className="font-semibold text-foreground">
+                            {statistics.average_rating.toFixed(1)}
+                          </span>
+                        </div>
+                        <span className="text-muted-foreground text-sm">
+                          ({statistics.reviews_count} {statistics.reviews_count === 1 ? "recenzie" : "recenzii"})
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-[#57be6a] font-semibold">Nou</span>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
                     {products.length} {products.length === 1 ? "anunț activ" : "anunțuri active"}
@@ -286,18 +344,69 @@ const UserProfile = () => {
                 <Button variant="outline" className="gap-2">
                   Distribuie
                 </Button>
-                <Button
-                  variant="outline"
-                  className={`gap-2 ${isFavorite ? "text-red-500 border-red-500" : ""}`}
-                  onClick={() => setIsFavorite(!isFavorite)}
-                >
-                  <Heart
-                    className={`h-4 w-4 ${isFavorite ? "fill-red-500" : ""}`}
-                  />
-                  Salvează ca favorit
-                </Button>
+                {user && user.id !== id && (
+                  <Button
+                    variant="outline"
+                    className={`gap-2 ${isFavorite ? "text-red-500 border-red-500" : ""}`}
+                    onClick={handleFavoriteToggle}
+                    disabled={isFavoriteLoading}
+                  >
+                    {isFavoriteLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Heart className={`h-4 w-4 ${isFavorite ? "fill-red-500" : ""}`} />
+                    )}
+                    {isFavorite ? "Salvat" : "Salvează ca favorit"}
+                  </Button>
+                )}
               </div>
             </div>
+
+            {/* Statistics Section */}
+            {statistics && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Package className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Produse</p>
+                    <p className="font-semibold text-foreground">{statistics.products_count}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Star className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Rating mediu</p>
+                    <p className="font-semibold text-foreground">
+                      {statistics.reviews_count > 0 ? statistics.average_rating.toFixed(1) : "N/A"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <MessageCircle className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Recenzii</p>
+                    <p className="font-semibold text-foreground">{statistics.reviews_count}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Calendar className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Membru din</p>
+                    <p className="font-semibold text-foreground">
+                      {statistics.member_since ? formatDate(statistics.member_since) : "N/A"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -506,97 +615,136 @@ const UserProfile = () => {
 
             {/* Products Grid/List */}
             <div className="flex-1">
-              {paginatedItems.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">
-                    Nu am găsit anunțuri care să corespundă criteriilor tale.
-                  </p>
-                </div>
-              ) : viewMode === "list" ? (
-                <div className="space-y-4">
-                  {paginatedItems.map((item) => (
-                    <Link
-                      key={item.id}
-                      to={`/produs/${item.id}`}
-                      className="flex gap-4 p-4 bg-card border border-border rounded-lg hover:shadow-md transition-shadow"
-                    >
-                      <img
-                        src={getImageUrl(item)}
-                        alt={item.title}
-                        className="w-40 h-28 object-cover rounded-md shrink-0"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-4">
-                          <div>
-                            <h3 className="font-semibold text-foreground line-clamp-1">
-                              {item.title}
-                            </h3>
-                            <p className="text-xl font-bold text-[#57be6a] mt-1">
-                              {calculateClientPrice(item.daily_price_owner, item.platform_fee_percent)} lei
+              {paginatedItems.length > 0 ? (
+                viewMode === "grid" ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {paginatedItems.map((item) => (
+                      <Link
+                        key={item.id}
+                        to={`/produs/${item.id}`}
+                        className="group bg-card rounded-lg overflow-hidden border border-border hover:shadow-lg transition-shadow"
+                      >
+                        <div className="aspect-square overflow-hidden">
+                          <img
+                            src={getImageUrl(item)}
+                            alt={item.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                        <div className="p-4">
+                          <h3 className="font-medium text-foreground line-clamp-2">
+                            {item.title}
+                          </h3>
+                          <p className="text-primary font-bold mt-2">
+                            {calculateClientPrice(item.daily_price_owner, item.platform_fee_percent)} lei/zi
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {item.location_city}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {paginatedItems.map((item) => (
+                      <Link
+                        key={item.id}
+                        to={`/produs/${item.id}`}
+                        className="flex gap-4 bg-card rounded-lg overflow-hidden border border-border hover:shadow-lg transition-shadow p-4"
+                      >
+                        <div className="w-32 h-32 shrink-0 rounded-lg overflow-hidden">
+                          <img
+                            src={getImageUrl(item)}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-medium text-foreground line-clamp-2">
+                            {item.title}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            {item.description}
+                          </p>
+                          <div className="flex items-center justify-between mt-3">
+                            <p className="text-primary font-bold">
+                              {calculateClientPrice(item.daily_price_owner, item.platform_fee_percent)} lei/zi
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {item.location_city}
                             </p>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="shrink-0"
-                            onClick={(e) => e.preventDefault()}
-                          >
-                            <Heart className="h-5 w-5" />
-                          </Button>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          {item.location_city || item.location_country || "România"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(item.created_at)}
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                      </Link>
+                    ))}
+                  </div>
+                )
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {paginatedItems.map((item) => (
-                    <Link
-                      key={item.id}
-                      to={`/produs/${item.id}`}
-                      className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-md transition-shadow"
-                    >
-                      <div className="relative">
-                        <img
-                          src={getImageUrl(item)}
-                          alt={item.title}
-                          className="w-full h-48 object-cover"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-2 right-2 bg-background/80 hover:bg-background"
-                          onClick={(e) => e.preventDefault()}
-                        >
-                          <Heart className="h-5 w-5" />
-                        </Button>
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-foreground line-clamp-1">
-                          {item.title}
-                        </h3>
-                        <p className="text-xl font-bold text-[#57be6a] mt-1">
-                          {calculateClientPrice(item.daily_price_owner, item.platform_fee_percent)} lei
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          {item.location_city || item.location_country || "România"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(item.created_at)}
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">Nu s-au găsit produse.</p>
                 </div>
               )}
             </div>
           </div>
+
+          {/* Reviews Section */}
+          {reviews.length > 0 && (
+            <section className="mt-12 pt-8 border-t border-border">
+              <h2 className="text-xl font-heading font-bold text-foreground mb-6">
+                Recenzii ({reviews.length})
+              </h2>
+              <div className="space-y-4">
+                {displayedReviews.map((review) => (
+                  <div key={review.id} className="bg-card rounded-lg p-4 border border-border">
+                    <div className="flex items-start gap-3">
+                      <img
+                        src={review.reviewer?.avatar_url || "/placeholder.svg"}
+                        alt={review.reviewer?.full_name || "Utilizator"}
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-foreground">
+                            {review.reviewer?.full_name || "Utilizator anonim"}
+                          </p>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDate(review.created_at)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 mt-1">
+                          {Array.from({ length: 5 }, (_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-4 w-4 ${
+                                i < review.rating
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-muted"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        {review.comment && (
+                          <p className="text-sm text-muted-foreground mt-2">
+                            {review.comment}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {reviews.length > 3 && (
+                <Button
+                  variant="outline"
+                  className="mt-4"
+                  onClick={() => setShowAllReviews(!showAllReviews)}
+                >
+                  {showAllReviews ? "Arată mai puține" : `Vezi toate recenziile (${reviews.length})`}
+                </Button>
+              )}
+            </section>
+          )}
         </div>
       </main>
 
