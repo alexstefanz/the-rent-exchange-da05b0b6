@@ -63,3 +63,20 @@ export const updateProfile = async (
 
   return profile;
 };
+
+// Get public profile info for users with active products (for public profile page)
+export const getPublicProfile = async (userId: string): Promise<{
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+} | null> => {
+  const { data, error } = await supabase
+    .rpc('get_product_owner_public_info', { owner_uuid: userId });
+  
+  if (error) {
+    console.error("Error fetching public profile:", error);
+    return null;
+  }
+  
+  return data && data.length > 0 ? data[0] : null;
+};
