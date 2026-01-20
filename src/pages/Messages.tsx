@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -7,36 +7,26 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, MessageCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getConversations, Conversation } from "@/features/messaging/messagingApi";
+import { Conversation } from "@/features/messaging/messagingApi";
 import { ChatDialog } from "@/components/messaging/ChatDialog";
+import { useConversations } from "@/hooks/queries/useConversations";
+import { useQueryClient } from "@tanstack/react-query";
 import { format, isToday, isYesterday } from "date-fns";
 import { ro } from "date-fns/locale";
 
 export default function Messages() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/auth');
-    }
-  }, [user, authLoading, navigate]);
+  // Redirect if not logged in
+  if (!authLoading && !user) {
+    navigate('/auth');
+  }
 
-  useEffect(() => {
-    if (user) {
-      loadConversations();
-    }
-  }, [user]);
-
-  const loadConversations = async () => {
-    setLoading(true);
-    const data = await getConversations();
-    setConversations(data);
-    setLoading(false);
-  };
+  // Use React Query for conversations
+  const { data: conversations = [], isLoading } = useConversations(user?.id);
 
   const formatMessageTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -46,6 +36,14 @@ export default function Messages() {
       return 'Ieri';
     }
     return format(date, 'd MMM', { locale: ro });
+  };
+
+  const handleCloseChat = (open: boolean) => {
+    if (!open) {
+      setSelectedConversation(null);
+      // Invalidate conversations cache to refresh unread counts
+      queryClient.invalidateQueries({ queryKey: ["conversations", user?.id] });
+    }
   };
 
   if (authLoading) {
@@ -63,7 +61,7 @@ export default function Messages() {
       <main className="flex-1 container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-6">Mesaje</h1>
 
-        {loading ? (
+        {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
@@ -132,12 +130,7 @@ export default function Messages() {
       {selectedConversation && (
         <ChatDialog
           open={!!selectedConversation}
-          onOpenChange={(open) => {
-            if (!open) {
-              setSelectedConversation(null);
-              loadConversations(); // Refresh to update unread counts
-            }
-          }}
+          onOpenChange={handleCloseChat}
           conversationId={selectedConversation.id}
           otherUserName={selectedConversation.other_user?.full_name || null}
           otherUserAvatar={selectedConversation.other_user?.avatar_url || null}

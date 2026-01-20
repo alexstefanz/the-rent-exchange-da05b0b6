@@ -38,7 +38,7 @@ export async function getOrCreateConversation(productId: string, ownerId: string
     .select('*')
     .eq('product_id', productId)
     .eq('buyer_id', user.id)
-    .single();
+    .maybeSingle();
 
   if (existing) return existing as Conversation;
 
@@ -65,55 +65,40 @@ export async function getConversations(): Promise<Conversation[]> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
 
+  // Use optimized database function that fetches all data in one query
   const { data, error } = await supabase
-    .from('conversations')
-    .select(`
-      *,
-      product:products(title, images)
-    `)
-    .or(`buyer_id.eq.${user.id},owner_id.eq.${user.id}`)
-    .order('updated_at', { ascending: false });
+    .rpc('get_user_conversations', { user_uuid: user.id });
 
   if (error) {
     console.error('Error fetching conversations:', error);
     return [];
   }
 
-  // Get last message and unread count for each conversation
-  const conversationsWithDetails = await Promise.all(
-    (data || []).map(async (conv) => {
-      const { data: messages } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('conversation_id', conv.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
-
-      const { count } = await supabase
-        .from('messages')
-        .select('*', { count: 'exact', head: true })
-        .eq('conversation_id', conv.id)
-        .eq('is_read', false)
-        .neq('sender_id', user.id);
-
-      // Get other user info
-      const otherUserId = conv.buyer_id === user.id ? conv.owner_id : conv.buyer_id;
-      const { data: otherUser } = await supabase
-        .from('profiles')
-        .select('full_name, avatar_url')
-        .eq('id', otherUserId)
-        .single();
-
-      return {
-        ...conv,
-        last_message: messages?.[0] || null,
-        unread_count: count || 0,
-        other_user: otherUser
-      } as Conversation;
-    })
-  );
-
-  return conversationsWithDetails;
+  return (data || []).map(conv => ({
+    id: conv.id,
+    product_id: conv.product_id,
+    buyer_id: conv.buyer_id,
+    owner_id: conv.owner_id,
+    created_at: conv.created_at,
+    updated_at: conv.updated_at,
+    product: {
+      title: conv.product_title,
+      images: conv.product_images,
+    },
+    other_user: {
+      full_name: conv.other_user_name,
+      avatar_url: conv.other_user_avatar,
+    },
+    last_message: conv.last_message_content ? {
+      id: '', // Not returned from optimized query
+      conversation_id: conv.id,
+      sender_id: conv.last_message_sender_id,
+      content: conv.last_message_content,
+      is_read: true, // Not needed for display
+      created_at: conv.last_message_created_at,
+    } : null,
+    unread_count: Number(conv.unread_count) || 0,
+  }));
 }
 
 export async function getMessages(conversationId: string): Promise<Message[]> {

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -21,35 +21,29 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { getPublicProfile } from "@/features/profile/profileApi";
-import { getPublicUserProducts, Product, calculateClientPrice } from "@/features/products/productsApi";
-import { getUserStatistics, UserStatistics } from "@/features/profile/statisticsApi";
-import { isUserFavorite, addFavoriteUser, removeFavoriteUser } from "@/features/profile/favoritesApi";
-import { getUserReviews, UserReview } from "@/features/profile/reviewsApi";
+import { calculateClientPrice, Product } from "@/features/products/productsApi";
+import { addFavoriteUser, removeFavoriteUser } from "@/features/profile/favoritesApi";
+import { usePublicUserProducts } from "@/hooks/queries/useProducts";
+import { usePublicProfile, useUserStatistics, useUserReviews, useIsUserFavorite } from "@/hooks/queries/useUserProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 const ITEMS_PER_PAGE = 6;
-
-interface PublicProfile {
-  id: string;
-  full_name: string | null;
-  avatar_url: string | null;
-}
 
 const UserProfile = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   
-  // State for real data
-  const [profile, setProfile] = useState<PublicProfile | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [statistics, setStatistics] = useState<UserStatistics | null>(null);
-  const [reviews, setReviews] = useState<UserReview[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // React Query hooks for data fetching
+  const { data: profile, isLoading: profileLoading, error: profileError } = usePublicProfile(id);
+  const { data: products = [] } = usePublicUserProducts(id);
+  const { data: statistics } = useUserStatistics(id);
+  const { data: reviews = [] } = useUserReviews(id);
+  const { data: isFavorite = false } = useIsUserFavorite(id, user?.id);
   
-  const [isFavorite, setIsFavorite] = useState(false);
+  // Local UI state
   const [isFavoriteLoading, setIsFavoriteLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("new");
@@ -60,52 +54,7 @@ const UserProfile = () => {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [showAllReviews, setShowAllReviews] = useState(false);
 
-  // Fetch profile and products on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!id) {
-        setError("ID utilizator lipsă");
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const [profileData, productsData, statsData, reviewsData] = await Promise.all([
-          getPublicProfile(id),
-          getPublicUserProducts(id),
-          getUserStatistics(id),
-          getUserReviews(id),
-        ]);
-
-        if (!profileData) {
-          setError("Profilul nu a fost găsit sau utilizatorul nu are anunțuri active.");
-          setIsLoading(false);
-          return;
-        }
-
-        setProfile(profileData);
-        setProducts(productsData);
-        setStatistics(statsData);
-        setReviews(reviewsData);
-
-        // Check if current user has this profile as favorite
-        if (user && user.id !== id) {
-          const favoriteStatus = await isUserFavorite(id);
-          setIsFavorite(favoriteStatus);
-        }
-      } catch (err) {
-        console.error("Error fetching user data:", err);
-        setError("A apărut o eroare la încărcarea profilului.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [id, user]);
+  const isLoading = profileLoading;
 
   // Handle favorite toggle
   const handleFavoriteToggle = async () => {
@@ -122,13 +71,13 @@ const UserProfile = () => {
     try {
       if (isFavorite) {
         await removeFavoriteUser(id);
-        setIsFavorite(false);
         toast.success("Utilizator eliminat din favorite.");
       } else {
         await addFavoriteUser(id);
-        setIsFavorite(true);
         toast.success("Utilizator salvat la favorite!");
       }
+      // Invalidate the favorites query to refresh
+      queryClient.invalidateQueries({ queryKey: ["is-favorite", id, user.id] });
     } catch (err) {
       console.error("Error toggling favorite:", err);
       toast.error("A apărut o eroare. Încearcă din nou.");
@@ -273,7 +222,7 @@ const UserProfile = () => {
   }
 
   // Error state
-  if (error || !profile) {
+  if (profileError || !profile) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Navbar />
@@ -283,7 +232,7 @@ const UserProfile = () => {
               Profil negăsit
             </h1>
             <p className="text-muted-foreground mb-4">
-              {error || "Utilizatorul nu a fost găsit sau nu are anunțuri active."}
+              Utilizatorul nu a fost găsit sau nu are anunțuri active.
             </p>
             <Button asChild>
               <Link to="/">Înapoi la pagina principală</Link>

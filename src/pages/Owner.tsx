@@ -1,50 +1,24 @@
-import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { getMyProducts, Product, calculateClientPrice } from "@/features/products/productsApi";
+import { calculateClientPrice } from "@/features/products/productsApi";
+import { useMyProducts } from "@/hooks/queries/useProducts";
 import { Loader2, Plus, Package, Edit, MapPin } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 const Owner = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-    }
-  }, [user, authLoading, navigate]);
-
-  useEffect(() => {
-    const loadProducts = async () => {
-      if (!user) return;
-
-      try {
-        const data = await getMyProducts(user.id);
-        setProducts(data);
-      } catch (error) {
-        console.error("Error loading products:", error);
-        toast({
-          title: "Eroare",
-          description: "Nu s-au putut încărca produsele",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (user) {
-      loadProducts();
-    }
-  }, [user, toast]);
+  
+  // Redirect if not logged in
+  if (!authLoading && !user) {
+    navigate("/auth");
+  }
+  
+  // Use React Query for products
+  const { data: products = [], isLoading } = useMyProducts(user?.id);
 
   if (authLoading || isLoading) {
     return (

@@ -7,39 +7,16 @@ import Footer from "@/components/layout/Footer";
 import SubcategoryCard from "@/components/items/SubcategoryCard";
 import ProductCard from "@/components/products/ProductCard";
 import { getCategoryById } from "@/data/categories";
-import { getProducts, Product } from "@/features/products/productsApi";
+import { useProducts } from "@/hooks/queries/useProducts";
 
 const CategoryDetail = () => {
   const { id } = useParams();
   const category = getCategoryById(Number(id));
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Get stable value for useEffect dependency
-  const categoryName = category?.name;
-
-  // Fetch products for this category
-  useEffect(() => {
-    const fetchProducts = async () => {
-      if (!categoryName) {
-        setIsLoading(false);
-        return;
-      }
-      
-      setIsLoading(true);
-      try {
-        const data = await getProducts({ category: categoryName });
-        setProducts(data);
-      } catch (error) {
-        console.error("Error fetching products:", error);
-        setProducts([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, [categoryName]);
+  
+  // Use React Query for products
+  const { data: products = [], isLoading } = useProducts(
+    category ? { category: category.name } : undefined
+  );
 
   if (!category) {
     return (
