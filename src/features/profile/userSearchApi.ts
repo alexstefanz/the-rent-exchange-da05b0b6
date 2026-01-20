@@ -10,44 +10,22 @@ export interface SearchedUser {
 export const searchUsers = async (query: string): Promise<SearchedUser[]> => {
   if (!query || query.length < 2) return [];
 
-  // Search profiles by name - we need to use a different approach since profiles table has RLS
-  // We'll search through products and get unique owners
-  const { data: products, error } = await supabase
-    .from("products")
-    .select("owner_id")
-    .eq("is_active", true);
+  // Use optimized database function that performs a single query
+  const { data, error } = await supabase
+    .rpc('search_users_by_name', { 
+      search_query: query, 
+      result_limit: 20 
+    });
 
   if (error) {
     console.error("Error searching users:", error);
     return [];
   }
 
-  // Get unique owner IDs
-  const uniqueOwnerIds = [...new Set(products?.map(p => p.owner_id) || [])];
-  
-  // Fetch profile info for each owner
-  const users: SearchedUser[] = [];
-  
-  for (const ownerId of uniqueOwnerIds) {
-    const { data: profileData } = await supabase
-      .rpc('get_product_owner_public_info', { owner_uuid: ownerId });
-    
-    if (profileData && profileData.length > 0) {
-      const profile = profileData[0];
-      // Check if name matches the search query
-      if (profile.full_name && profile.full_name.toLowerCase().includes(query.toLowerCase())) {
-        // Count products
-        const productCount = products?.filter(p => p.owner_id === ownerId).length || 0;
-        
-        users.push({
-          id: profile.id,
-          full_name: profile.full_name,
-          avatar_url: profile.avatar_url,
-          products_count: productCount,
-        });
-      }
-    }
-  }
-
-  return users;
+  return (data || []).map(user => ({
+    id: user.id,
+    full_name: user.full_name,
+    avatar_url: user.avatar_url,
+    products_count: Number(user.products_count),
+  }));
 };

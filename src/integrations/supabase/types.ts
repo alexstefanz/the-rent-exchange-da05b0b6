@@ -334,6 +334,39 @@ export type Database = {
           id: string
         }[]
       }
+      get_user_conversations: {
+        Args: { user_uuid: string }
+        Returns: {
+          buyer_id: string
+          created_at: string
+          id: string
+          last_message_content: string
+          last_message_created_at: string
+          last_message_sender_id: string
+          other_user_avatar: string
+          other_user_id: string
+          other_user_name: string
+          owner_id: string
+          product_id: string
+          product_images: string[]
+          product_title: string
+          unread_count: number
+          updated_at: string
+        }[]
+      }
+      get_user_reviews_with_reviewers: {
+        Args: { target_user_id: string }
+        Returns: {
+          comment: string
+          created_at: string
+          id: string
+          rating: number
+          reviewed_user_id: string
+          reviewer_avatar_url: string
+          reviewer_full_name: string
+          reviewer_id: string
+        }[]
+      }
       get_user_statistics: {
         Args: { target_user_id: string }
         Returns: {
@@ -344,6 +377,15 @@ export type Database = {
         }[]
       }
       is_user_favorite: { Args: { target_user_id: string }; Returns: boolean }
+      search_users_by_name: {
+        Args: { result_limit?: number; search_query: string }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          id: string
+          products_count: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

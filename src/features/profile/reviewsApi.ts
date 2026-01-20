@@ -15,43 +15,26 @@ export interface UserReview {
 }
 
 export const getUserReviews = async (userId: string): Promise<UserReview[]> => {
+  // Use optimized database function that fetches reviews with reviewer info in one query
   const { data, error } = await supabase
-    .from("user_reviews")
-    .select(`
-      id,
-      reviewer_id,
-      reviewed_user_id,
-      rating,
-      comment,
-      created_at
-    `)
-    .eq("reviewed_user_id", userId)
-    .order("created_at", { ascending: false });
+    .rpc('get_user_reviews_with_reviewers', { target_user_id: userId });
 
   if (error) {
     console.error("Error fetching user reviews:", error);
     return [];
   }
 
-  // Fetch reviewer profiles separately due to RLS
-  const reviewerIds = [...new Set(data?.map(r => r.reviewer_id) || [])];
-  const reviewerProfiles: Record<string, { full_name: string | null; avatar_url: string | null }> = {};
-
-  for (const reviewerId of reviewerIds) {
-    const { data: profileData } = await supabase
-      .rpc('get_product_owner_public_info', { owner_uuid: reviewerId });
-    
-    if (profileData && profileData.length > 0) {
-      reviewerProfiles[reviewerId] = {
-        full_name: profileData[0].full_name,
-        avatar_url: profileData[0].avatar_url,
-      };
-    }
-  }
-
   return (data || []).map(review => ({
-    ...review,
-    reviewer: reviewerProfiles[review.reviewer_id] || { full_name: null, avatar_url: null },
+    id: review.id,
+    reviewer_id: review.reviewer_id,
+    reviewed_user_id: review.reviewed_user_id,
+    rating: review.rating,
+    comment: review.comment,
+    created_at: review.created_at,
+    reviewer: {
+      full_name: review.reviewer_full_name,
+      avatar_url: review.reviewer_avatar_url,
+    },
   }));
 };
 

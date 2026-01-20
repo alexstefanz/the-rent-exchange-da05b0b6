@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Search as SearchIcon, Loader2, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -6,8 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ProductCard from "@/components/products/ProductCard";
-import { getProducts, Product } from "@/features/products/productsApi";
-import { searchUsers, SearchedUser } from "@/features/profile/userSearchApi";
+import { useProducts } from "@/hooks/queries/useProducts";
+import { useSearchUsers } from "@/hooks/queries/useSearch";
+import { ProductFilters } from "@/features/products/productsApi";
 
 const Search = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -18,62 +19,26 @@ const Search = () => {
   const tabParam = searchParams.get("tab") || "products";
 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [users, setUsers] = useState<SearchedUser[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [activeTab, setActiveTab] = useState(tabParam);
 
-  // Search products when query or filters change
-  useEffect(() => {
-    const searchProductsAsync = async () => {
-      setIsLoading(true);
-      try {
-        const filters: { search?: string; category?: string; city?: string } = {};
-        
-        if (searchQuery) filters.search = searchQuery;
-        if (categoryFilter && categoryFilter !== "all") filters.category = categoryFilter;
-        if (localitateFilter && localitateFilter !== "all") {
-          filters.city = localitateFilter;
-        } else if (judetFilter && judetFilter !== "all") {
-          filters.city = judetFilter;
-        }
-
-        const data = await getProducts(filters);
-        setProducts(data);
-      } catch (error) {
-        console.error("Error searching products:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    const debounceTimer = setTimeout(searchProductsAsync, 300);
-    return () => clearTimeout(debounceTimer);
+  // Build filters for products query
+  const productFilters = useMemo((): ProductFilters => {
+    const filters: ProductFilters = {};
+    if (searchQuery) filters.search = searchQuery;
+    if (categoryFilter && categoryFilter !== "all") filters.category = categoryFilter;
+    if (localitateFilter && localitateFilter !== "all") {
+      filters.location_city = localitateFilter;
+    } else if (judetFilter && judetFilter !== "all") {
+      filters.location_city = judetFilter;
+    }
+    return filters;
   }, [searchQuery, categoryFilter, judetFilter, localitateFilter]);
 
-  // Search users when query changes
-  useEffect(() => {
-    const searchUsersAsync = async () => {
-      if (!searchQuery || searchQuery.length < 2) {
-        setUsers([]);
-        return;
-      }
+  // Use React Query for products
+  const { data: products = [], isLoading } = useProducts(productFilters);
 
-      setIsLoadingUsers(true);
-      try {
-        const data = await searchUsers(searchQuery);
-        setUsers(data);
-      } catch (error) {
-        console.error("Error searching users:", error);
-      } finally {
-        setIsLoadingUsers(false);
-      }
-    };
-
-    const debounceTimer = setTimeout(searchUsersAsync, 300);
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery]);
+  // Use React Query for users
+  const { data: users = [], isLoading: isLoadingUsers } = useSearchUsers(searchQuery);
 
   // Update URL when search query changes
   const handleSearchChange = (value: string) => {
