@@ -1,46 +1,208 @@
 
-# Ajustări Formular de Căutare - Vizibilitate Completă pe Mobil
 
-## Problemă
+# Header Enhancement: Avatar, Notificări, Language Switcher și Meniu Complet
 
-Din screenshot-ul furnizat, butonul "Caută" este tăiat în partea de jos a ecranului pe mobil. Formularul trebuie să fie complet vizibil la prima încărcare.
+## Rezumat
 
-## Soluție
+Voi adăuga în header-ul aplicației:
+1. **Avatar utilizator** cu poză din profil (sau inițiale fallback)
+2. **Secțiune notificări** cu icon clopoțel și badge pentru notificări noi
+3. **Language switcher** pentru Română/Engleză
+4. **Meniu dropdown complet** la click pe avatar cu toate opțiunile cerute
+5. **Pagină Centru de Ajutor** similară cu rentx.ro
 
-### 1. Reducere spațiere verticală în Hero Section
+---
 
-**Fișier:** `src/pages/Index.tsx`
+## Structura Meniului Dropdown (la click pe avatar)
 
-Reduc padding-ul din secțiunea hero pentru a da mai mult spațiu formularului:
-- Schimb `pt-24 pb-16` în `pt-16 pb-8` pe mobil
-- Reduc spațiul `mt-10` de deasupra formularului la `mt-6`
+| Secțiune | Opțiuni | Iconiță |
+|----------|---------|---------|
+| Profil | Contul meu | User |
+| | Anunțurile mele | FileText |
+| | Rezervări | CalendarCheck |
+| | Mesaje | MessageCircle |
+| | Favorite | Heart |
+| Separator | --- | --- |
+| Acțiuni | Adaugă un anunț | PlusCircle |
+| | Centru de asistență | HelpCircle |
+| Separator | --- | --- |
+| | Ieși din cont | LogOut |
 
-### 2. Compactare formular pe mobil
+---
 
-**Fișier:** `src/components/HeroSearchForm.tsx`
+## Fișiere de Creat/Modificat
 
-Reduc spațierea internă a formularului pentru a-l face mai compact:
-- Padding container: `p-5` → `p-4` pe mobil
-- Gap între elemente: `gap-4` → `gap-2` pe mobil  
-- Padding pe fiecare câmp: `py-3` → `py-2` pe mobil
-- Buton: `py-4` → `py-3` pe mobil
+### 1. Context pentru Limbă (NOU)
+**Fișier:** `src/contexts/LanguageContext.tsx`
 
-### 3. Lărgire formular pe mobil (10-15px pe fiecare parte)
+- Context React pentru gestionarea limbii curente
+- Salvare în localStorage pentru persistență
+- Suport pentru "ro" și "en"
 
-**Fișier:** `src/pages/Index.tsx`
+### 2. Hook pentru Profil în Navbar
+**Fișier:** `src/hooks/queries/useCurrentUserProfile.ts`
 
-Adaug margin negativ sau reduc padding-ul containerului pe mobil:
-- Wrapper formular: adaug `mx-[-12px] md:mx-0` pentru a extinde formularul peste marginile containerului pe mobil
+- Query pentru a încărca profilul utilizatorului curent (avatar_url, full_name)
+- Folosit în Navbar pentru afișarea avatarului
 
-## Modificări Tehnice
+### 3. Componentă Language Switcher
+**Fișier:** `src/components/layout/LanguageSwitcher.tsx`
 
-| Fișier | Modificare |
-|--------|------------|
-| `src/pages/Index.tsx` | Reduc `pt-24` la `pt-16`, `mt-10` la `mt-6`, adaug `mx-[-12px]` pe wrapper |
-| `src/components/HeroSearchForm.tsx` | Reduc gap-uri și padding-uri pentru compactare |
+- Dropdown sau toggle între RO/EN
+- Folosește LanguageContext pentru a schimba limba
 
-## Rezultat Final
+### 4. Componentă Notifications Bell
+**Fișier:** `src/components/layout/NotificationBell.tsx`
 
-- Formularul va fi complet vizibil pe mobil la prima încărcare
-- Butonul "Caută" va fi vizibil fără scroll
-- Formularul va fi mai lat cu ~24px total (12px stânga + 12px dreapta)
+- Icon clopoțel cu badge pentru notificări necitite
+- Dropdown cu lista notificărilor
+- Pregătit pentru integrare viitoare cu baza de date
+
+### 5. Navbar Update
+**Fișier:** `src/components/layout/Navbar.tsx`
+
+**Modificări:**
+- Înlocuiește butonul text cu Avatar component
+- Adaugă NotificationBell
+- Adaugă LanguageSwitcher
+- Extinde DropdownMenu cu toate opțiunile cerute
+- Grupează opțiunile cu separatori vizuali
+
+### 6. Pagina Centru de Ajutor (NOU)
+**Fișier:** `src/pages/HelpCenter.tsx`
+
+Layout similar cu rentx.ro:
+- Header cu titlu și search bar
+- 3 carduri principale:
+  - **Întrebări frecvente (FAQ)**
+  - **Asistență/Contact**
+  - **Feedback**
+
+### 7. App Routes Update
+**Fișier:** `src/App.tsx`
+
+- Adaugă ruta `/centru-asistenta` pentru HelpCenter
+- Wrap cu LanguageProvider
+
+---
+
+## Structura Dropdown Menu
+
+```text
+DropdownMenuContent:
+├── DropdownMenuItem: Contul meu → /profile
+├── DropdownMenuItem: Anunțurile mele → /owner
+├── DropdownMenuItem: Rezervări → /rezervari
+├── DropdownMenuItem: Mesaje → /mesaje
+├── DropdownMenuItem: Favorite → /profile#favorite
+├── DropdownMenuSeparator
+├── DropdownMenuItem: Adaugă un anunț → /adauga-anunt
+├── DropdownMenuItem: Centru de asistență → /centru-asistenta
+├── DropdownMenuSeparator
+└── DropdownMenuItem: Ieși din cont → signOut()
+```
+
+---
+
+## Help Center Page Layout
+
+```text
+┌─────────────────────────────────────────────────┐
+│                    NAVBAR                        │
+├─────────────────────────────────────────────────┤
+│                                                  │
+│           Centru de Asistență                    │
+│                                                  │
+│    ┌─────────────────────────────────────┐      │
+│    │        🔍 Caută ajutor...            │      │
+│    └─────────────────────────────────────┘      │
+│                                                  │
+│  ┌────────────┐ ┌────────────┐ ┌────────────┐   │
+│  │    📋      │ │    💬      │ │    📝      │   │
+│  │  Întrebări │ │ Asistență  │ │  Feedback  │   │
+│  │  frecvente │ │  Contact   │ │            │   │
+│  │     →      │ │     →      │ │     →      │   │
+│  └────────────┘ └────────────┘ └────────────┘   │
+│                                                  │
+│           Articole populare                      │
+│  ┌─────────────────────────────────────────┐    │
+│  │ • Cum să închiriez un produs?           │    │
+│  │ • Cum să adaug un anunț?                │    │
+│  │ • Politica de anulare                   │    │
+│  │ • Metode de plată acceptate             │    │
+│  └─────────────────────────────────────────┘    │
+│                                                  │
+├─────────────────────────────────────────────────┤
+│                    FOOTER                        │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+## Language Switcher Design
+
+```text
+Dropdown simplu:
+┌──────────┐
+│ 🇷🇴 RO ▼ │  ← Afișează limba curentă
+└──────────┘
+    │
+    ▼
+┌──────────────┐
+│ 🇷🇴 Română   │
+│ 🇬🇧 English  │
+└──────────────┘
+```
+
+---
+
+## Notification Bell Design
+
+```text
+┌─────┐
+│ 🔔  │  ← Clopoțel cu badge roșu dacă sunt notificări
+└─────┘
+    │ (click)
+    ▼
+┌────────────────────────────────────┐
+│ Notificări                          │
+├────────────────────────────────────┤
+│ • Mesaj nou de la Ion              │
+│ • Rezervare confirmată             │
+│ • Produs vizualizat de 5 ori       │
+├────────────────────────────────────┤
+│ Vezi toate notificările            │
+└────────────────────────────────────┘
+```
+
+---
+
+## Pași de Implementare
+
+| # | Task | Fișier |
+|---|------|--------|
+| 1 | Creează LanguageContext | `src/contexts/LanguageContext.tsx` |
+| 2 | Creează hook pentru profilul curent | `src/hooks/queries/useCurrentUserProfile.ts` |
+| 3 | Creează LanguageSwitcher | `src/components/layout/LanguageSwitcher.tsx` |
+| 4 | Creează NotificationBell | `src/components/layout/NotificationBell.tsx` |
+| 5 | Actualizează Navbar cu toate componentele | `src/components/layout/Navbar.tsx` |
+| 6 | Creează pagina HelpCenter | `src/pages/HelpCenter.tsx` |
+| 7 | Adaugă ruta și LanguageProvider în App.tsx | `src/App.tsx` |
+
+---
+
+## Dependențe Existente Folosite
+
+- `@radix-ui/react-avatar` - Pentru componenta Avatar
+- `@radix-ui/react-dropdown-menu` - Pentru meniu dropdown
+- `lucide-react` - Pentru iconițe (Bell, User, Heart, etc.)
+- Componente UI existente din `src/components/ui/`
+
+---
+
+## Considerații Mobile
+
+- Pe mobil, avatarul și notificările vor fi vizibile în header
+- Language switcher va fi în meniul off-canvas pe mobil
+- Dropdown-ul complet va funcționa pe toate dispozitivele
+
