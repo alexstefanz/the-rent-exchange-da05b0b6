@@ -87,6 +87,9 @@ const Categories = () => {
                       {nameParts[1]}
                     </span>
                   )}
+                  <span className="block text-[10px] text-muted-foreground sm:text-xs">
+                    {category.subcategories.length} subcategorii
+                  </span>
                 </div>
               </Link>
             );
