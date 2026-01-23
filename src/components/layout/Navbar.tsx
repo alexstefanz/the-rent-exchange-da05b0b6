@@ -1,21 +1,66 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Plus, Search, Menu, X, ChevronDown, ChevronRight, User, LogOut, Package, MessageCircle } from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  Plus, 
+  Search, 
+  Menu, 
+  X, 
+  ChevronDown, 
+  ChevronRight, 
+  User, 
+  LogOut, 
+  FileText, 
+  MessageCircle,
+  CalendarCheck,
+  Heart,
+  PlusCircle,
+  HelpCircle,
+  Globe
+} from "lucide-react";
 import { categories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
+import { useCurrentUserProfile } from "@/hooks/queries/useCurrentUserProfile";
+import LanguageSwitcher from "./LanguageSwitcher";
+import NotificationBell from "./NotificationBell";
 import logoImage from "@/assets/rentnow_logo.png";
 
 const Navbar = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading, signOut } = useAuth();
+  const { t } = useLanguage();
+  const { data: profile } = useCurrentUserProfile();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeMegaMenu, setActiveMegaMenu] = useState<number | null>(null);
   const [expandedMobileCategory, setExpandedMobileCategory] = useState<number | null>(null);
+
+  // Get user initials for avatar fallback
+  const getInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    if (user?.email) {
+      return user.email.slice(0, 2).toUpperCase();
+    }
+    return "U";
+  };
 
   // Prevent body scroll when mobile menu is open
   useEffect(() => {
@@ -49,8 +94,8 @@ const Navbar = () => {
   const handleLogout = async () => {
     await signOut();
     toast({
-      title: "Deconectat",
-      description: "Te-ai deconectat cu succes",
+      title: t("Deconectat", "Logged out"),
+      description: t("Te-ai deconectat cu succes", "You have been logged out successfully"),
     });
     navigate("/");
     closeMobileMenu();
@@ -71,59 +116,113 @@ const Navbar = () => {
           <nav className="hidden items-center gap-4 lg:flex">
             <Link to="/cauta" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary">
               <Search className="h-4 w-4" />
-              Caută
+              {t("Caută", "Search")}
             </Link>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            {/* Language Switcher - Desktop */}
+            <div className="hidden lg:flex">
+              <LanguageSwitcher />
+            </div>
+
             {loading ? (
               <div className="h-9 w-24 animate-pulse bg-muted rounded-lg" />
             ) : user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="hidden lg:flex gap-2">
-                    <User className="h-4 w-4" />
-                    <span className="max-w-[150px] truncate">
-                      {user.email?.split("@")[0]}
-                    </span>
-                    <ChevronDown className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile" className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      Profilul meu
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/owner" className="flex items-center gap-2">
-                      <Package className="h-4 w-4" />
-                      Produsele mele
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/mesaje" className="flex items-center gap-2">
-                      <MessageCircle className="h-4 w-4" />
-                      Mesaje
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2 text-destructive">
-                    <LogOut className="h-4 w-4" />
-                    Deconectare
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <>
+                {/* Notification Bell - Desktop */}
+                <div className="hidden lg:flex">
+                  <NotificationBell />
+                </div>
+
+                {/* User Avatar Dropdown - Desktop */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="hidden lg:flex rounded-full h-10 w-10 p-0">
+                      <Avatar className="h-9 w-9 border-2 border-primary/20 transition-all hover:border-primary">
+                        <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                          {getInitials()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 bg-background">
+                    {/* User Info Header */}
+                    <div className="px-3 py-2 border-b border-border">
+                      <p className="font-medium text-sm truncate">
+                        {profile?.full_name || user.email?.split("@")[0]}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    </div>
+
+                    {/* Profile Section */}
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="flex items-center gap-3 py-2">
+                        <User className="h-4 w-4" />
+                        {t("Contul meu", "My Account")}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/owner" className="flex items-center gap-3 py-2">
+                        <FileText className="h-4 w-4" />
+                        {t("Anunțurile mele", "My Listings")}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/rezervari" className="flex items-center gap-3 py-2">
+                        <CalendarCheck className="h-4 w-4" />
+                        {t("Rezervări", "Reservations")}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/mesaje" className="flex items-center gap-3 py-2">
+                        <MessageCircle className="h-4 w-4" />
+                        {t("Mesaje", "Messages")}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/favorite" className="flex items-center gap-3 py-2">
+                        <Heart className="h-4 w-4" />
+                        {t("Favorite", "Favorites")}
+                      </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+
+                    {/* Actions Section */}
+                    <DropdownMenuItem asChild>
+                      <Link to="/adauga-anunt" className="flex items-center gap-3 py-2">
+                        <PlusCircle className="h-4 w-4" />
+                        {t("Adaugă un anunț", "Add a listing")}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link to="/centru-asistenta" className="flex items-center gap-3 py-2">
+                        <HelpCircle className="h-4 w-4" />
+                        {t("Centru de asistență", "Help Center")}
+                      </Link>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+
+                    {/* Logout */}
+                    <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-3 py-2 text-destructive focus:text-destructive">
+                      <LogOut className="h-4 w-4" />
+                      {t("Ieși din cont", "Log out")}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
             ) : (
               <Button variant="ghost" size="sm" className="hidden lg:flex" asChild>
-                <Link to="/auth">Autentificare</Link>
+                <Link to="/auth">{t("Autentificare", "Login")}</Link>
               </Button>
             )}
             <Button size="sm" asChild>
               <Link to="/adauga-anunt">
                 <Plus className="h-4 w-4" />
-                Adaugă
+                {t("Adaugă", "Add")}
               </Link>
             </Button>
             
@@ -175,13 +274,29 @@ const Navbar = () => {
           <div className="flex-1 overflow-y-auto">
             <div className="p-4">
               {/* User info for mobile */}
-              {user && (
-                <div className="mb-4 p-3 bg-muted rounded-lg">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {user.email}
-                  </p>
+              {user && profile && (
+                <div className="mb-4 p-3 bg-muted rounded-lg flex items-center gap-3">
+                  <Avatar className="h-10 w-10 border-2 border-primary/20">
+                    <AvatarImage src={profile.avatar_url || undefined} alt={profile.full_name || "User"} />
+                    <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                      {getInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {profile.full_name || user.email?.split("@")[0]}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  </div>
                 </div>
               )}
+
+              {/* Language Switcher for Mobile */}
+              <div className="mb-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50">
+                <Globe className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">{t("Limbă", "Language")}:</span>
+                <LanguageSwitcher />
+              </div>
               
               <div className="mb-4 flex flex-col gap-2">
                 <Link 
@@ -190,15 +305,15 @@ const Navbar = () => {
                   onClick={closeMobileMenu}
                 >
                   <Search className="h-5 w-5" />
-                  Caută
+                  {t("Caută", "Search")}
                 </Link>
                 <Link 
                   to="/adauga-anunt" 
                   className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
                   onClick={closeMobileMenu}
                 >
-                  <Plus className="h-5 w-5" />
-                  Adaugă Anunț
+                  <PlusCircle className="h-5 w-5" />
+                  {t("Adaugă Anunț", "Add Listing")}
                 </Link>
                 {user && (
                   <>
@@ -208,23 +323,55 @@ const Navbar = () => {
                       onClick={closeMobileMenu}
                     >
                       <User className="h-5 w-5" />
-                      Profilul meu
+                      {t("Contul meu", "My Account")}
                     </Link>
                     <Link 
                       to="/owner" 
                       className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
                       onClick={closeMobileMenu}
                     >
-                      <Package className="h-5 w-5" />
-                      Produsele mele
+                      <FileText className="h-5 w-5" />
+                      {t("Anunțurile mele", "My Listings")}
+                    </Link>
+                    <Link 
+                      to="/rezervari" 
+                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
+                      onClick={closeMobileMenu}
+                    >
+                      <CalendarCheck className="h-5 w-5" />
+                      {t("Rezervări", "Reservations")}
+                    </Link>
+                    <Link 
+                      to="/mesaje" 
+                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
+                      onClick={closeMobileMenu}
+                    >
+                      <MessageCircle className="h-5 w-5" />
+                      {t("Mesaje", "Messages")}
+                    </Link>
+                    <Link 
+                      to="/favorite" 
+                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
+                      onClick={closeMobileMenu}
+                    >
+                      <Heart className="h-5 w-5" />
+                      {t("Favorite", "Favorites")}
                     </Link>
                   </>
                 )}
+                <Link 
+                  to="/centru-asistenta" 
+                  className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
+                  onClick={closeMobileMenu}
+                >
+                  <HelpCircle className="h-5 w-5" />
+                  {t("Centru de asistență", "Help Center")}
+                </Link>
               </div>
               
               <div className="border-t border-border pt-4">
                 <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Categorii
+                  {t("Categorii", "Categories")}
                 </p>
                 <div className="flex flex-col">
                   {categories.map(category => {
@@ -264,7 +411,7 @@ const Navbar = () => {
                               className="mt-3 flex items-center gap-1 px-3 text-sm font-medium text-primary hover:underline" 
                               onClick={closeMobileMenu}
                             >
-                              Vezi toate
+                              {t("Vezi toate", "View all")}
                               <ChevronRight className="h-4 w-4" />
                             </Link>
                           </div>
@@ -282,12 +429,12 @@ const Navbar = () => {
             {user ? (
               <Button variant="outline" className="w-full" onClick={handleLogout}>
                 <LogOut className="h-4 w-4 mr-2" />
-                Deconectare
+                {t("Deconectare", "Log out")}
               </Button>
             ) : (
               <Button variant="outline" className="w-full" asChild>
                 <Link to="/auth" onClick={closeMobileMenu}>
-                  Autentificare
+                  {t("Autentificare", "Login")}
                 </Link>
               </Button>
             )}

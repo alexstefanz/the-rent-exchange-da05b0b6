@@ -1,0 +1,29 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+
+export const useCurrentUserProfile = () => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ["currentUserProfile", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, full_name, avatar_url, email")
+        .eq("id", user.id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching current user profile:", error);
+        return null;
+      }
+
+      return data;
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
