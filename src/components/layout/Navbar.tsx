@@ -158,7 +158,7 @@ const Navbar = () => {
 
                     {/* Profile Section */}
                     <DropdownMenuItem asChild>
-                      <Link to="/profile" className="flex items-center gap-3 py-2">
+                      <Link to="/profile#contul-meu" className="flex items-center gap-3 py-2">
                         <User className="h-4 w-4" />
                         {t("Contul meu", "My Account")}
                       </Link>
@@ -176,7 +176,7 @@ const Navbar = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/mesaje" className="flex items-center gap-3 py-2">
+                      <Link to="/profile#mesaje" className="flex items-center gap-3 py-2">
                         <MessageCircle className="h-4 w-4" />
                         {t("Mesaje", "Messages")}
                       </Link>
@@ -318,7 +318,7 @@ const Navbar = () => {
                 {user && (
                   <>
                     <Link 
-                      to="/profile" 
+                      to="/profile#contul-meu" 
                       className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
                       onClick={closeMobileMenu}
                     >
@@ -342,7 +342,7 @@ const Navbar = () => {
                       {t("Rezervări", "Reservations")}
                     </Link>
                     <Link 
-                      to="/mesaje" 
+                      to="/profile#mesaje" 
                       className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
                       onClick={closeMobileMenu}
                     >

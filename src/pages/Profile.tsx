@@ -1,52 +1,55 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Loader2, UserCog, User, MessageCircle, Wallet, Bell } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getProfile, updateProfile, createProfile, Profile } from "@/features/profile/profileApi";
-import { Loader2, User, Phone, Mail, MessageCircle } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import AccountTab from "@/components/profile/AccountTab";
+import ProfileTab from "@/components/profile/ProfileTab";
+import MessagesTab from "@/components/profile/MessagesTab";
+import EarningsTab from "@/components/profile/EarningsTab";
+import NotificationsTab from "@/components/profile/NotificationsTab";
 
-const profileSchema = z.object({
-  full_name: z.string().min(2, "Numele trebuie să aibă minim 2 caractere").optional().or(z.literal("")),
-  phone: z.string()
-    .regex(/^[+0-9() -]*$/, "Format telefon invalid (doar cifre, +, (), spații, -)")
-    .max(20, "Numărul de telefon nu poate depăși 20 caractere")
-    .optional()
-    .or(z.literal("")),
-  email: z.string()
-    .email("Format email invalid")
-    .max(100, "Email-ul nu poate depăși 100 caractere")
-    .optional()
-    .or(z.literal("")),
-  whatsapp: z.string()
-    .regex(/^[+0-9() -]*$/, "Format telefon invalid (doar cifre, +, (), spații, -)")
-    .max(20, "Numărul de WhatsApp nu poate depăși 20 caractere")
-    .optional()
-    .or(z.literal("")),
-});
-
-type ProfileFormData = z.infer<typeof profileSchema>;
+const TABS = [
+  { id: "contul-meu", labelRo: "Contul meu", labelEn: "My Account", icon: UserCog },
+  { id: "profil", labelRo: "Profilul meu", labelEn: "My Profile", icon: User },
+  { id: "mesaje", labelRo: "Mesaje", labelEn: "Messages", icon: MessageCircle },
+  { id: "castiguri", labelRo: "Câștiguri", labelEn: "Earnings", icon: Wallet },
+  { id: "notificari", labelRo: "Notificări", labelEn: "Notifications", icon: Bell },
+];
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const location = useLocation();
   const { user, loading: authLoading } = useAuth();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const { language } = useLanguage();
+  const t = (ro: string, en: string) => language === "ro" ? ro : en;
 
-  const form = useForm<ProfileFormData>({
-    resolver: zodResolver(profileSchema),
-    defaultValues: { full_name: "", phone: "", email: "", whatsapp: "" },
-  });
+  // Get tab from URL hash or default to first tab
+  const getTabFromHash = () => {
+    const hash = location.hash.replace("#", "");
+    const validTab = TABS.find(tab => tab.id === hash);
+    return validTab ? hash : TABS[0].id;
+  };
+
+  const [activeTab, setActiveTab] = useState(getTabFromHash);
+
+  // Update tab when hash changes
+  useEffect(() => {
+    const handleHashChange = () => {
+      setActiveTab(getTabFromHash());
+    };
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  // Update URL hash when tab changes
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    navigate(`#${value}`, { replace: true });
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -54,72 +57,7 @@ const ProfilePage = () => {
     }
   }, [user, authLoading, navigate]);
 
-  useEffect(() => {
-    const loadProfile = async () => {
-      if (!user) return;
-
-      try {
-        let profileData = await getProfile(user.id);
-        
-        if (!profileData) {
-          profileData = await createProfile(user.id, {
-            full_name: user.user_metadata?.full_name || null,
-          });
-        }
-
-        setProfile(profileData);
-        form.reset({
-          full_name: profileData.full_name || "",
-          phone: profileData.phone || "",
-          email: profileData.email || "",
-          whatsapp: profileData.whatsapp || "",
-        });
-      } catch (error) {
-        console.error("Error loading profile:", error);
-        toast({
-          title: "Eroare",
-          description: "Nu s-a putut încărca profilul",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (user) {
-      loadProfile();
-    }
-  }, [user, form, toast]);
-
-  const handleSubmit = async (data: ProfileFormData) => {
-    if (!user) return;
-
-    setIsSaving(true);
-    try {
-      const updatedProfile = await updateProfile(user.id, {
-        full_name: data.full_name || undefined,
-        phone: data.phone || undefined,
-        email: data.email || undefined,
-        whatsapp: data.whatsapp || undefined,
-      });
-      setProfile(updatedProfile);
-      toast({
-        title: "Succes",
-        description: "Profil actualizat cu succes",
-      });
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      toast({
-        title: "Eroare",
-        description: "Nu s-a putut actualiza profilul",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  if (authLoading || isLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -131,125 +69,60 @@ const ProfilePage = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       
-      <main className="flex-1 container max-w-2xl py-8 pt-24 lg:pt-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Profilul meu
-            </CardTitle>
-            <CardDescription>
-              Actualizează informațiile profilului tău
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  Email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={user?.email || ""}
-                  disabled
-                  className="bg-muted"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Emailul nu poate fi modificat
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="full_name" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Nume complet
-                </Label>
-                <Input
-                  id="full_name"
-                  type="text"
-                  placeholder="Ion Popescu"
-                  {...form.register("full_name")}
-                />
-                {form.formState.errors.full_name && (
-                  <p className="text-sm text-destructive">{form.formState.errors.full_name.message}</p>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  Telefon
-                </Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+40 7XX XXX XXX"
-                  maxLength={20}
-                  {...form.register("phone")}
-                />
-                {form.formState.errors.phone && (
-                  <p className="text-sm text-destructive">{form.formState.errors.phone.message}</p>
-                )}
-              </div>
+      <main className="flex-1 container py-8 pt-24 lg:pt-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight">
+            {t("Contul Meu", "My Account")}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {t(
+              "Gestionează setările și preferințele contului tău",
+              "Manage your account settings and preferences"
+            )}
+          </p>
+        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email_contact" className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  Email de contact (public)
-                </Label>
-                <Input
-                  id="email_contact"
-                  type="email"
-                  placeholder="contact@exemplu.ro"
-                  maxLength={100}
-                  {...form.register("email")}
-                />
-                {form.formState.errors.email && (
-                  <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Acest email va fi vizibil pentru potențialii clienți
-                </p>
-              </div>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <TabsList className="w-full h-auto flex flex-wrap justify-start gap-1 bg-muted/50 p-1 rounded-lg mb-6">
+            {TABS.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <TabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  className="flex items-center gap-2 px-4 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-all"
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">
+                    {language === "ro" ? tab.labelRo : tab.labelEn}
+                  </span>
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
 
-              <div className="space-y-2">
-                <Label htmlFor="whatsapp" className="flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4" />
-                  WhatsApp
-                </Label>
-                <Input
-                  id="whatsapp"
-                  type="tel"
-                  placeholder="+40 7XX XXX XXX"
-                  maxLength={20}
-                  {...form.register("whatsapp")}
-                />
-                {form.formState.errors.whatsapp && (
-                  <p className="text-sm text-destructive">{form.formState.errors.whatsapp.message}</p>
-                )}
-              </div>
-              
-              <div className="flex gap-4">
-                <Button type="submit" disabled={isSaving}>
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Se salvează...
-                    </>
-                  ) : (
-                    "Salvează modificările"
-                  )}
-                </Button>
-                <Button type="button" variant="outline" onClick={() => navigate("/owner")}>
-                  Produsele mele
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+          <TabsContent value="contul-meu" className="mt-0">
+            <AccountTab />
+          </TabsContent>
+
+          <TabsContent value="profil" className="mt-0">
+            <ProfileTab />
+          </TabsContent>
+
+          <TabsContent value="mesaje" className="mt-0">
+            <MessagesTab />
+          </TabsContent>
+
+          <TabsContent value="castiguri" className="mt-0">
+            <EarningsTab />
+          </TabsContent>
+
+          <TabsContent value="notificari" className="mt-0">
+            <NotificationsTab />
+          </TabsContent>
+        </Tabs>
       </main>
       
       <Footer />
