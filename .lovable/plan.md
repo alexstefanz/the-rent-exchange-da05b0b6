@@ -1,190 +1,118 @@
 
-# Dashboard Utilizator - Transformare Pagina Profil
+
+# Adăugare "Ai uitat parola?" la pagina de autentificare
 
 ## Rezumat
 
-Voi transforma pagina actuală `/profile` într-un dashboard complet cu tab-uri, similar cu screenshot-ul furnizat. Dashboard-ul va avea 5 secțiuni principale:
-
-1. **Contul meu** - Starea contului, schimbare parolă, dezactivare cont, metode de plată
-2. **Profilul meu** - Editare informații personale (formularul actual)
-3. **Mesaje** - Lista conversațiilor (integrat din pagina Messages existentă)
-4. **Câștiguri** - Vizualizare venituri din închirieri
-5. **Notificări** - Lista tuturor notificărilor
+Voi adăuga un link "Ai uitat parola?" sub câmpul de parolă în formularul de login. La click, se va deschide un dialog în care utilizatorul introduce email-ul, iar Supabase va trimite un email cu link de resetare parolă.
 
 ---
 
-## Layout Dashboard
+## Implementare
 
-```text
-┌─────────────────────────────────────────────────────────────────────────┐
-│                              NAVBAR                                      │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  Contul Meu                                                              │
-│  Gestionează setările și preferințele contului tău                       │
-│                                                                          │
-│  ┌──────────┬──────────────┬─────────┬───────────┬─────────────┐        │
-│  │ Contul   │ Profilul meu │ Mesaje  │ Câștiguri │ Notificări  │        │
-│  │   meu    │              │         │           │             │        │
-│  └──────────┴──────────────┴─────────┴───────────┴─────────────┘        │
-│                                                                          │
-│  ┌─────────────────────────────┐    ┌─────────────────────────────┐     │
-│  │  Starea contului            │    │  Metoda de plată             │     │
-│  │  ✓ Email verificat          │    │  Adaugă o metodă de plată    │     │
-│  │  ⚠ Identitate neverificată  │    │                              │     │
-│  │  ⚠ Telefon neverificat      │    │  Cum primești banii?         │     │
-│  └─────────────────────────────┘    │  Configurează încasarea      │     │
-│                                      └─────────────────────────────┘     │
-│  ┌─────────────────────────────┐                                         │
-│  │  Schimbă parola             │    ┌─────────────────────────────┐     │
-│  │  [Schimbă parola]           │    │  💳 Plăți sigure             │     │
-│  └─────────────────────────────┘    │  Info despre protecția       │     │
-│                                      │  plăților                    │     │
-│  ┌─────────────────────────────┐    └─────────────────────────────┘     │
-│  │  Dezactivare cont           │                                         │
-│  │  [Dezactivează]             │                                         │
-│  └─────────────────────────────┘                                         │
-│                                                                          │
-├─────────────────────────────────────────────────────────────────────────┤
-│                              FOOTER                                      │
-└─────────────────────────────────────────────────────────────────────────┘
+### Modificări în `src/pages/Auth.tsx`
+
+**1. Import Dialog components și funcția de reset:**
+- Adaug import pentru `Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`
+- Folosesc `supabase.auth.resetPasswordForEmail()` pentru trimiterea email-ului
+
+**2. State nou pentru dialog:**
+```typescript
+const [showResetDialog, setShowResetDialog] = useState(false);
+const [resetEmail, setResetEmail] = useState("");
+const [isResetting, setIsResetting] = useState(false);
+```
+
+**3. Funcție de resetare parolă:**
+```typescript
+const handleResetPassword = async () => {
+  setIsResetting(true);
+  const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+    redirectTo: `${window.location.origin}/auth?reset=true`,
+  });
+  setIsResetting(false);
+  
+  if (error) {
+    toast({ title: "Eroare", description: error.message, variant: "destructive" });
+  } else {
+    toast({ title: "Email trimis", description: "Verifică inbox-ul pentru link-ul de resetare" });
+    setShowResetDialog(false);
+    setResetEmail("");
+  }
+};
+```
+
+**4. Link sub câmpul de parolă (linia ~157):**
+```tsx
+<div className="flex justify-end">
+  <Button 
+    type="button" 
+    variant="link" 
+    className="px-0 text-sm text-muted-foreground"
+    onClick={() => setShowResetDialog(true)}
+  >
+    Ai uitat parola?
+  </Button>
+</div>
+```
+
+**5. Dialog pentru reset parolă:**
+```tsx
+<Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Resetare parolă</DialogTitle>
+      <DialogDescription>
+        Introdu adresa de email și îți vom trimite un link pentru resetarea parolei.
+      </DialogDescription>
+    </DialogHeader>
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="reset-email">Email</Label>
+        <Input
+          id="reset-email"
+          type="email"
+          placeholder="email@exemplu.ro"
+          value={resetEmail}
+          onChange={(e) => setResetEmail(e.target.value)}
+        />
+      </div>
+      <Button 
+        onClick={handleResetPassword} 
+        className="w-full"
+        disabled={isResetting || !resetEmail}
+      >
+        {isResetting ? "Se trimite..." : "Trimite link de resetare"}
+      </Button>
+    </div>
+  </DialogContent>
+</Dialog>
 ```
 
 ---
 
-## Fișiere de Creat
+## Flux Utilizator
 
-### 1. Componente Dashboard (NOI)
-| Fișier | Descriere |
-|--------|-----------|
-| `src/components/profile/AccountTab.tsx` | Tab-ul "Contul meu" - stare cont, parolă, dezactivare, plăți |
-| `src/components/profile/ProfileTab.tsx` | Tab-ul "Profilul meu" - formularul existent mutat aici |
-| `src/components/profile/MessagesTab.tsx` | Tab-ul "Mesaje" - lista conversații |
-| `src/components/profile/EarningsTab.tsx` | Tab-ul "Câștiguri" - statistici venituri |
-| `src/components/profile/NotificationsTab.tsx` | Tab-ul "Notificări" - toate notificările |
+1. Utilizatorul dă click pe "Ai uitat parola?"
+2. Se deschide un dialog cu câmp de email
+3. Introduce email-ul și apasă "Trimite link de resetare"
+4. Supabase trimite email cu link de resetare
+5. Toast de confirmare apare
+6. Utilizatorul primește email și poate reseta parola
 
-### 2. Pagina Profile Refactorizată
+---
+
+## Fișiere Modificate
+
 | Fișier | Modificare |
 |--------|-----------|
-| `src/pages/Profile.tsx` | Complet refactorizat cu sistemul de tab-uri |
+| `src/pages/Auth.tsx` | Adăugare link, dialog și funcție reset |
 
 ---
 
-## Detalii pe Fiecare Tab
+## Note
 
-### Tab 1: Contul Meu
+- Supabase se ocupă automat de trimiterea email-ului de resetare
+- Link-ul din email va redirecționa utilizatorul înapoi în aplicație
+- Nu este nevoie de configurare suplimentară în backend
 
-**Secțiuni:**
-- **Starea contului** - cu iconițe verzi/roșii pentru status verificare
-  - Email (verificat/neverificat)
-  - Identitate (verificată/neverificată)
-  - Telefon (verificat/neverificat)
-- **Schimbă parola** - buton care deschide dialog sau trimite email reset
-- **Dezactivare cont** - buton cu confirmare
-- **Metoda de plată** - adaugă card pentru rezervări
-- **Cum primești banii** - configurare IBAN pentru plăți
-
-### Tab 2: Profilul Meu
-
-**Conținut:**
-- Formularul existent cu:
-  - Nume complet
-  - Telefon
-  - Email contact public
-  - WhatsApp
-- Adăugare avatar upload
-
-### Tab 3: Mesaje
-
-**Conținut:**
-- Lista conversațiilor (reutilizăm logica din Messages.tsx)
-- Dialog de chat la click
-
-### Tab 4: Câștiguri
-
-**Conținut:**
-- Statistici:
-  - Total câștiguri luna curentă
-  - Total câștiguri total
-  - Număr închirieri
-- Tabel cu istoricul tranzacțiilor
-- Grafic simplu cu câștigurile pe luni
-
-### Tab 5: Notificări
-
-**Conținut:**
-- Lista tuturor notificărilor
-- Marcare ca citite
-- Filtrare pe tip
-
----
-
-## Implementare Tehnică
-
-### Tab-uri cu URL Hash
-Voi folosi URL hash pentru a păstra starea tab-ului:
-- `/profile#contul-meu`
-- `/profile#profil`
-- `/profile#mesaje`
-- `/profile#castiguri`
-- `/profile#notificari`
-
-Acest lucru permite navigare directă din header dropdown.
-
-### Structura Codului pentru Profile.tsx
-
-```text
-Profile.tsx:
-├── Tabs (din shadcn/ui)
-├── TabsList (cu iconițe și text)
-├── TabsContent pentru fiecare secțiune
-│   ├── AccountTab
-│   ├── ProfileTab  
-│   ├── MessagesTab
-│   ├── EarningsTab
-│   └── NotificationsTab
-```
-
-### Stilizare Tab-uri (similar screenshot)
-- Tab activ: fundal primary, text alb
-- Tab inactiv: fundal transparent, border
-- Iconițe pentru fiecare tab
-- Responsive pe mobil (horizontal scroll sau stacked)
-
----
-
-## Pași de Implementare
-
-| # | Task | Fișier |
-|---|------|--------|
-| 1 | Creează AccountTab | `src/components/profile/AccountTab.tsx` |
-| 2 | Creează ProfileTab (mută formular) | `src/components/profile/ProfileTab.tsx` |
-| 3 | Creează MessagesTab | `src/components/profile/MessagesTab.tsx` |
-| 4 | Creează EarningsTab | `src/components/profile/EarningsTab.tsx` |
-| 5 | Creează NotificationsTab | `src/components/profile/NotificationsTab.tsx` |
-| 6 | Refactorizează Profile.tsx cu tabs | `src/pages/Profile.tsx` |
-| 7 | Actualizează link-urile din Navbar | `src/components/layout/Navbar.tsx` |
-
----
-
-## Iconițe Folosite (Lucide)
-
-| Tab | Iconiță |
-|-----|---------|
-| Contul meu | `UserCog` sau `Settings` |
-| Profilul meu | `User` |
-| Mesaje | `MessageCircle` |
-| Câștiguri | `Wallet` sau `DollarSign` |
-| Notificări | `Bell` |
-
----
-
-## Note pentru Implementare
-
-1. **Câștiguri Tab**: Pentru moment va fi mock data, deoarece nu există încă un sistem de rezervări complete cu plăți. Pregătit pentru integrare viitoare.
-
-2. **Notificări Tab**: Va folosi mock data similar cu NotificationBell, pregătit pentru integrare cu o tabelă de notificări în baza de date.
-
-3. **Verificări Cont**: Status-urile de verificare (identitate, telefon) vor fi mock pentru moment - funcționalitatea reală poate fi adăugată ulterior.
-
-4. **Responsive Design**: Pe mobil, tab-urile vor fi scrollabile orizontal sau aranjate într-un select dropdown.
