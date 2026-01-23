@@ -192,7 +192,7 @@ const Navbar = () => {
 
                     {/* Actions Section */}
                     <DropdownMenuItem asChild>
-                      <Link to="/adauga-anunt" className="flex items-center gap-3 py-2">
+                      <Link to="/owner/new-product" className="flex items-center gap-3 py-2">
                         <PlusCircle className="h-4 w-4" />
                         {t("Adaugă un anunț", "Add a listing")}
                       </Link>
@@ -220,7 +220,7 @@ const Navbar = () => {
               </Button>
             )}
             <Button size="sm" asChild>
-              <Link to="/adauga-anunt">
+              <Link to="/owner/new-product">
                 <Plus className="h-4 w-4" />
                 {t("Adaugă", "Add")}
               </Link>
@@ -308,7 +308,7 @@ const Navbar = () => {
                   {t("Caută", "Search")}
                 </Link>
                 <Link 
-                  to="/adauga-anunt" 
+                  to="/owner/new-product" 
                   className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
                   onClick={closeMobileMenu}
                 >
