@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { sanitizeSearchInput } from "@/lib/inputValidation";
+import { sanitizeSearchInput, normalizeDiacritics } from "@/lib/inputValidation";
 import { handleApiError } from "@/lib/errorHandler";
 
 export interface Product {
@@ -45,8 +45,9 @@ export const getProducts = async (filters?: ProductFilters): Promise<Product[]> 
   }
 
   if (filters?.location_city) {
-    // Use ilike for case-insensitive matching (handles "Iași" vs "iasi" vs "Iasi")
-    query = query.ilike("location_city", filters.location_city);
+    // Normalize diacritics and use partial matching for location search
+    const normalizedLocation = normalizeDiacritics(filters.location_city);
+    query = query.ilike("location_city", `%${normalizedLocation}%`);
   }
 
   if (filters?.search) {
