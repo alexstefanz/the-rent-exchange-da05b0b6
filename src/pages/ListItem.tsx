@@ -85,7 +85,7 @@ const ListItem = () => {
       description: "Your item is now available for rent.",
     });
     
-    navigate("/browse");
+    navigate("/owner");
   };
 
   return (
