@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import logoImage from "@/assets/rentnow_logo.png";
 
@@ -36,6 +38,34 @@ const Auth = () => {
   const { toast } = useToast();
   const { user, loading: authLoading, signIn, signUp } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [isResetting, setIsResetting] = useState(false);
+
+  const handleResetPassword = async () => {
+    if (!resetEmail) return;
+    
+    setIsResetting(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/auth?reset=true`,
+    });
+    setIsResetting(false);
+    
+    if (error) {
+      toast({ 
+        title: "Eroare", 
+        description: error.message, 
+        variant: "destructive" 
+      });
+    } else {
+      toast({ 
+        title: "Email trimis", 
+        description: "Verifică inbox-ul pentru link-ul de resetare a parolei." 
+      });
+      setShowResetDialog(false);
+      setResetEmail("");
+    }
+  };
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -154,6 +184,16 @@ const Auth = () => {
                   {loginForm.formState.errors.password && (
                     <p className="text-sm text-destructive">{loginForm.formState.errors.password.message}</p>
                   )}
+                  <div className="flex justify-end">
+                    <Button 
+                      type="button" 
+                      variant="link" 
+                      className="px-0 h-auto text-sm text-muted-foreground hover:text-primary"
+                      onClick={() => setShowResetDialog(true)}
+                    >
+                      Ai uitat parola?
+                    </Button>
+                  </div>
                 </div>
                 
                 <Button type="submit" className="w-full" disabled={isLoading}>
@@ -243,6 +283,49 @@ const Auth = () => {
           </CardContent>
         </Tabs>
       </Card>
+
+      <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Resetare parolă</DialogTitle>
+            <DialogDescription>
+              Introdu adresa de email și îți vom trimite un link pentru resetarea parolei.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="reset-email">Email</Label>
+              <Input
+                id="reset-email"
+                type="email"
+                placeholder="email@exemplu.ro"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleResetPassword();
+                  }
+                }}
+              />
+            </div>
+            <Button 
+              onClick={handleResetPassword} 
+              className="w-full"
+              disabled={isResetting || !resetEmail}
+            >
+              {isResetting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Se trimite...
+                </>
+              ) : (
+                "Trimite link de resetare"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
