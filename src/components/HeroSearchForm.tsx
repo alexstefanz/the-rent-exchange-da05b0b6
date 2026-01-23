@@ -36,17 +36,17 @@ const HeroSearchForm = () => {
   return (
     <form
       onSubmit={handleSearch}
-      className="flex flex-col gap-3 rounded-xl bg-card p-4 shadow-lg md:flex-row md:items-center md:gap-0 md:rounded-full md:p-2"
+      className="flex flex-col gap-4 rounded-xl bg-card p-5 shadow-lg md:flex-row md:items-center md:gap-0 md:rounded-full md:p-2"
     >
       {/* Search input */}
-      <div className="flex flex-1 items-center gap-2 px-4">
-        <Search className="h-5 w-5 text-muted-foreground" />
+      <div className="flex flex-1 items-center gap-3 px-4 py-3 md:py-0">
+        <Search className="h-6 w-6 text-muted-foreground md:h-5 md:w-5" />
         <Input
           type="text"
           placeholder="Ce anume căutați?"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="border-0 bg-transparent p-0 text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="border-0 bg-transparent p-0 text-base text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 md:text-sm"
         />
       </div>
 
@@ -54,8 +54,8 @@ const HeroSearchForm = () => {
       <div className="hidden h-8 w-px bg-border md:block" />
 
       {/* Category select */}
-      <div className="flex flex-1 items-center gap-2 px-4">
-        <Grid3X3 className="h-5 w-5 text-muted-foreground" />
+      <div className="flex flex-1 items-center gap-3 px-4 py-3 md:py-0">
+        <Grid3X3 className="h-6 w-6 text-muted-foreground md:h-5 md:w-5" />
         <Select
           value={selectedCategory}
           onValueChange={setSelectedCategory}
@@ -81,8 +81,8 @@ const HeroSearchForm = () => {
       <div className="hidden h-8 w-px bg-border md:block" />
 
       {/* Location selects */}
-      <div className="flex flex-1 items-center gap-2 px-4">
-        <MapPin className="h-5 w-5 text-muted-foreground" />
+      <div className="flex flex-1 items-center gap-3 px-4 py-3 md:py-0">
+        <MapPin className="h-6 w-6 text-muted-foreground md:h-5 md:w-5" />
         <Select
           value={selectedJudet}
           onValueChange={(value) => {
@@ -138,9 +138,10 @@ const HeroSearchForm = () => {
       {/* Search button */}
       <Button
         type="submit"
-        className="flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-primary-foreground hover:bg-primary/90"
+        className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-4 text-primary-foreground hover:bg-primary/90 md:w-auto md:py-3"
       >
-        <Search className="h-4 w-4" />
+        <Search className="h-5 w-5 md:h-4 md:w-4" />
+        <span className="md:hidden">Caută</span>
       </Button>
     </form>
   );
