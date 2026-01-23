@@ -1,92 +1,46 @@
 
-# Modificări Layout Desktop/Mobile pentru Navbar și Formular de Căutare
+# Ajustări Formular de Căutare - Vizibilitate Completă pe Mobil
 
-## Rezumat
+## Problemă
 
-Voi face următoarele modificări:
-1. Ascund bara de categorii orizontală pe desktop (rămâne meniul off-canvas pentru tabletă și mobil)
-2. Adaug spațiu de 35px între header și banner pe mobil
-3. Măresc formularul de căutare pe mobil pentru vizibilitate și accesibilitate mai bună
+Din screenshot-ul furnizat, butonul "Caută" este tăiat în partea de jos a ecranului pe mobil. Formularul trebuie să fie complet vizibil la prima încărcare.
 
----
+## Soluție
 
-## Modificări Detaliate
-
-### 1. Navbar - Ascunderea meniului pe desktop
-
-**Fișier:** `src/components/layout/Navbar.tsx`
-
-Voi modifica bara de categorii pentru a fi complet ascunsă pe toate ecranele (inclusiv desktop). Meniul off-canvas pentru tabletă și mobil rămâne funcțional.
-
-**Schimbări:**
-- Linia 142-164: Adaug `hidden` și elimin `lg:block` pentru a ascunde bara de categorii pe toate ecranele
-- Liniile 166-210: Elimin sau ascund mega-menu-ul desktop care nu mai este necesar
-
----
-
-### 2. Index.tsx - Spațiu între header și banner pe mobil
+### 1. Reducere spațiere verticală în Hero Section
 
 **Fișier:** `src/pages/Index.tsx`
 
-Voi adăuga padding-top suplimentar pentru secțiunea Hero pe mobil pentru a crea spațiu între header-ul fix și conținut.
+Reduc padding-ul din secțiunea hero pentru a da mai mult spațiu formularului:
+- Schimb `pt-24 pb-16` în `pt-16 pb-8` pe mobil
+- Reduc spațiul `mt-10` de deasupra formularului la `mt-6`
 
-**Schimbări:**
-- Linia 22: Modific `py-16 md:py-24` → `pt-24 pb-16 md:py-24`
-- Aceasta adaugă aproximativ 35-40px spațiu suplimentar pe mobil (pt-24 = 96px vs py-16 = 64px)
-
----
-
-### 3. HeroSearchForm - Formular mai mare pe mobil
+### 2. Compactare formular pe mobil
 
 **Fișier:** `src/components/HeroSearchForm.tsx`
 
-Voi mări formularul de căutare pe mobil pentru a fi mai vizibil și accesibil.
+Reduc spațierea internă a formularului pentru a-l face mai compact:
+- Padding container: `p-5` → `p-4` pe mobil
+- Gap între elemente: `gap-4` → `gap-2` pe mobil  
+- Padding pe fiecare câmp: `py-3` → `py-2` pe mobil
+- Buton: `py-4` → `py-3` pe mobil
 
-**Schimbări:**
-- Linia 39: Măresc padding-ul formularului → `p-5 md:p-4` pentru mobil
-- Liniile 42-50: Măresc input-ul și icon-urile
-- Liniile 139-144: Măresc butonul de căutare pe mobil
+### 3. Lărgire formular pe mobil (10-15px pe fiecare parte)
 
-**Modificări specifice:**
-```text
-Formular container:
-- Padding: p-4 → p-5 pe mobil
-- Gap între elemente: gap-3 → gap-4 pe mobil
+**Fișier:** `src/pages/Index.tsx`
 
-Input de căutare:
-- Înălțime minimă: py-3 pe mobil
-- Text: text-base pe mobil
+Adaug margin negativ sau reduc padding-ul containerului pe mobil:
+- Wrapper formular: adaug `mx-[-12px] md:mx-0` pentru a extinde formularul peste marginile containerului pe mobil
 
-Select-uri:
-- Înălțime: py-3 pe mobil
-- Text mai mare
+## Modificări Tehnice
 
-Buton căutare:
-- Dimensiune: mai mare pe mobil (py-4)
-- Lățime completă pe mobil
-```
-
----
-
-## Detalii Tehnice
-
-### Breakpoints folosite
-- `md:` = 768px (tablet)
-- `lg:` = 1024px (desktop)
-
-### Fișiere afectate
 | Fișier | Modificare |
 |--------|------------|
-| `src/components/layout/Navbar.tsx` | Ascund bara de categorii pe desktop |
-| `src/pages/Index.tsx` | Adaug spațiu header-banner pe mobil |
-| `src/components/HeroSearchForm.tsx` | Măresc formularul pe mobil |
+| `src/pages/Index.tsx` | Reduc `pt-24` la `pt-16`, `mt-10` la `mt-6`, adaug `mx-[-12px]` pe wrapper |
+| `src/components/HeroSearchForm.tsx` | Reduc gap-uri și padding-uri pentru compactare |
 
----
+## Rezultat Final
 
-## Comportament final
-
-| Dispozitiv | Meniu Categorii | Meniu Off-canvas | Spațiu Header-Banner |
-|------------|-----------------|------------------|---------------------|
-| Desktop (1024px+) | Ascuns | Ascuns | Standard |
-| Tablet (768-1023px) | Ascuns | Disponibil | Standard |
-| Mobil (<768px) | Ascuns | Disponibil | +35px suplimentar |
+- Formularul va fi complet vizibil pe mobil la prima încărcare
+- Butonul "Caută" va fi vizibil fără scroll
+- Formularul va fi mai lat cu ~24px total (12px stânga + 12px dreapta)
