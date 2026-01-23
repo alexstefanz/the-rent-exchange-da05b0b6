@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload, X, Plus, DollarSign, MapPin, Tag } from "lucide-react";
+import { X, Plus, DollarSign, MapPin, Tag, Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import ImageUpload from "@/components/products/ImageUpload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -19,6 +21,7 @@ import { toast } from "@/hooks/use-toast";
 
 const ListItem = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -29,6 +32,12 @@ const ListItem = () => {
     features: [""],
   });
   const [images, setImages] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate("/auth");
+    }
+  }, [user, loading, navigate]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -51,18 +60,13 @@ const ListItem = () => {
     setFormData({ ...formData, features: newFeatures });
   };
 
-  const handleImageUpload = () => {
-    // Mock image upload - in real app, this would handle file uploads
-    const mockImages = [
-      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80",
-      "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&q=80",
-    ];
-    setImages([...images, mockImages[images.length % 2]]);
-  };
-
-  const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,28 +110,15 @@ const ListItem = () => {
               Add photos to showcase your item
             </p>
             
-            <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3">
-              {images.map((image, index) => (
-                <div key={index} className="group relative aspect-square overflow-hidden rounded-lg">
-                  <img src={image} alt="" className="h-full w-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="absolute right-2 top-2 rounded-full bg-foreground/80 p-1.5 text-background opacity-0 transition-opacity group-hover:opacity-100"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-              
-              <button
-                type="button"
-                onClick={handleImageUpload}
-                className="flex aspect-square flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-secondary/30 transition-colors hover:border-primary hover:bg-secondary/50"
-              >
-                <Upload className="h-8 w-8 text-muted-foreground" />
-                <span className="mt-2 text-sm text-muted-foreground">Add Photo</span>
-              </button>
+            <div className="mt-4">
+              {user && (
+                <ImageUpload
+                  userId={user.id}
+                  images={images}
+                  onChange={setImages}
+                  maxImages={5}
+                />
+              )}
             </div>
           </div>
 
