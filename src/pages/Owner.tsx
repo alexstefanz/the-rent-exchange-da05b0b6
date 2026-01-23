@@ -189,7 +189,10 @@ const Owner = () => {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Anulează</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteProduct}
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteProduct();
+              }}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
