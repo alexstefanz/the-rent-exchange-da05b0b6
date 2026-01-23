@@ -178,6 +178,18 @@ export const updateProduct = async (
   return product;
 };
 
+export const deleteProduct = async (id: string, ownerId: string): Promise<void> => {
+  const { error } = await supabase
+    .from("products")
+    .delete()
+    .eq("id", id)
+    .eq("owner_id", ownerId);
+
+  if (error) {
+    handleApiError("Error deleting product", error);
+  }
+};
+
 export const getNearbyProducts = async (
   currentProductId: string,
   locationCity: string | null,

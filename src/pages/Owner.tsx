@@ -1,16 +1,33 @@
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { calculateClientPrice } from "@/features/products/productsApi";
+import { calculateClientPrice, deleteProduct } from "@/features/products/productsApi";
 import { useMyProducts } from "@/hooks/queries/useProducts";
-import { Loader2, Plus, Package, Edit, MapPin } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { Loader2, Plus, Package, Edit, MapPin, Trash2 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 const Owner = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Redirect if not logged in
   if (!authLoading && !user) {
@@ -19,6 +36,29 @@ const Owner = () => {
   
   // Use React Query for products
   const { data: products = [], isLoading } = useMyProducts(user?.id);
+
+  const handleDeleteProduct = async () => {
+    if (!productToDelete || !user?.id) return;
+    
+    setIsDeleting(true);
+    try {
+      await deleteProduct(productToDelete, user.id);
+      queryClient.invalidateQueries({ queryKey: ["myProducts", user.id] });
+      toast({
+        title: "Produs șters",
+        description: "Produsul a fost șters cu succes.",
+      });
+    } catch (error) {
+      toast({
+        title: "Eroare",
+        description: "Nu s-a putut șterge produsul. Încearcă din nou.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setProductToDelete(null);
+    }
+  };
 
   if (authLoading || isLoading) {
     return (
@@ -110,12 +150,22 @@ const Owner = () => {
                           {clientPrice} RON<span className="text-sm font-normal text-muted-foreground">/zi</span>
                         </p>
                       </div>
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to={`/owner/edit-product/${product.id}`}>
-                          <Edit className="h-4 w-4 mr-1" />
-                          Editează
-                        </Link>
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          className="h-9 w-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          onClick={() => setProductToDelete(product.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to={`/owner/edit-product/${product.id}`}>
+                            <Edit className="h-4 w-4 mr-1" />
+                            Editează
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -126,6 +176,35 @@ const Owner = () => {
       </main>
       
       <Footer />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!productToDelete} onOpenChange={() => setProductToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ești sigur că vrei să ștergi acest produs?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Această acțiune nu poate fi anulată. Produsul va fi șters permanent din contul tău.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Anulează</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteProduct}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Se șterge...
+                </>
+              ) : (
+                "Șterge"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
