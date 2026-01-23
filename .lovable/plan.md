@@ -1,118 +1,107 @@
 
+# Rezolvare Upload Imagini pe Pagina "Adaugă Anunț"
 
-# Adăugare "Ai uitat parola?" la pagina de autentificare
+## Problema Identificată
 
-## Rezumat
+Pagina `/adauga-anunt` (`ListItem.tsx`) folosește o funcție mock pentru upload-ul de imagini care nu face nimic real - doar adaugă URL-uri de test. În schimb, există deja o componentă funcțională `ImageUpload` care folosește Supabase Storage (folosită în `NewProduct.tsx`).
 
-Voi adăuga un link "Ai uitat parola?" sub câmpul de parolă în formularul de login. La click, se va deschide un dialog în care utilizatorul introduce email-ul, iar Supabase va trimite un email cu link de resetare parolă.
+## Soluție
+
+Voi înlocui funcția mock din `ListItem.tsx` cu componenta reală `ImageUpload` care permite încărcarea reală a imaginilor în Supabase Storage.
 
 ---
 
-## Implementare
+## Modificări Necesare
 
-### Modificări în `src/pages/Auth.tsx`
+### Fișier: `src/pages/ListItem.tsx`
 
-**1. Import Dialog components și funcția de reset:**
-- Adaug import pentru `Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`
-- Folosesc `supabase.auth.resetPasswordForEmail()` pentru trimiterea email-ului
+**1. Importuri noi:**
+- Adaug `useAuth` din `@/contexts/AuthContext` pentru a obține user ID
+- Adaug `ImageUpload` din `@/components/products/ImageUpload`
+- Adaug `useEffect` pentru redirect la login dacă nu e autentificat
+- Adaug `Loader2` pentru starea de loading
 
-**2. State nou pentru dialog:**
-```typescript
-const [showResetDialog, setShowResetDialog] = useState(false);
-const [resetEmail, setResetEmail] = useState("");
-const [isResetting, setIsResetting] = useState(false);
-```
+**2. Modificări în componenta ListItem:**
+- Obțin utilizatorul curent cu `useAuth()`
+- Adaug redirect la `/auth` dacă nu e logat (pentru că are nevoie de user ID pentru upload)
+- Adaug loading state pentru autentificare
 
-**3. Funcție de resetare parolă:**
-```typescript
-const handleResetPassword = async () => {
-  setIsResetting(true);
-  const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-    redirectTo: `${window.location.origin}/auth?reset=true`,
-  });
-  setIsResetting(false);
-  
-  if (error) {
-    toast({ title: "Eroare", description: error.message, variant: "destructive" });
-  } else {
-    toast({ title: "Email trimis", description: "Verifică inbox-ul pentru link-ul de resetare" });
-    setShowResetDialog(false);
-    setResetEmail("");
-  }
+**3. Înlocuire secțiune imagini:**
+- Elimin funcția `handleImageUpload` mock
+- Elimin funcția `removeImage` (e gestionată de `ImageUpload`)
+- Înlocuiesc secțiunea de imagini cu componenta `ImageUpload`
+
+---
+
+## Cod Curent vs Cod Nou
+
+**Curent (nu funcționează):**
+```tsx
+const handleImageUpload = () => {
+  // Mock image upload - in real app, this would handle file uploads
+  const mockImages = [...];
+  setImages([...images, mockImages[images.length % 2]]);
 };
 ```
 
-**4. Link sub câmpul de parolă (linia ~157):**
+**Nou (funcțional):**
 ```tsx
-<div className="flex justify-end">
-  <Button 
-    type="button" 
-    variant="link" 
-    className="px-0 text-sm text-muted-foreground"
-    onClick={() => setShowResetDialog(true)}
-  >
-    Ai uitat parola?
-  </Button>
-</div>
-```
-
-**5. Dialog pentru reset parolă:**
-```tsx
-<Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle>Resetare parolă</DialogTitle>
-      <DialogDescription>
-        Introdu adresa de email și îți vom trimite un link pentru resetarea parolei.
-      </DialogDescription>
-    </DialogHeader>
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="reset-email">Email</Label>
-        <Input
-          id="reset-email"
-          type="email"
-          placeholder="email@exemplu.ro"
-          value={resetEmail}
-          onChange={(e) => setResetEmail(e.target.value)}
-        />
-      </div>
-      <Button 
-        onClick={handleResetPassword} 
-        className="w-full"
-        disabled={isResetting || !resetEmail}
-      >
-        {isResetting ? "Se trimite..." : "Trimite link de resetare"}
-      </Button>
-    </div>
-  </DialogContent>
-</Dialog>
+{user && (
+  <ImageUpload
+    userId={user.id}
+    images={images}
+    onChange={setImages}
+    maxImages={5}
+  />
+)}
 ```
 
 ---
 
-## Flux Utilizator
+## Structura Finală Secțiune Imagini
 
-1. Utilizatorul dă click pe "Ai uitat parola?"
-2. Se deschide un dialog cu câmp de email
-3. Introduce email-ul și apasă "Trimite link de resetare"
-4. Supabase trimite email cu link de resetare
-5. Toast de confirmare apare
-6. Utilizatorul primește email și poate reseta parola
+```text
+┌────────────────────────────────────────────────────────────┐
+│  Photos                                                     │
+│  Add photos to showcase your item                          │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │                    ImageUpload                        │  │
+│  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌───────────┐   │  │
+│  │  │  Img 1  │ │  Img 2  │ │  Img 3  │ │ + Adaugă  │   │  │
+│  │  │    X    │ │    X    │ │    X    │ │  imagini  │   │  │
+│  │  └─────────┘ └─────────┘ └─────────┘ └───────────┘   │  │
+│  │                                                       │  │
+│  │  sau zona de drop cu border dashed dacă nu sunt      │  │
+│  │  imagini încărcate                                    │  │
+│  └──────────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────┘
+```
 
 ---
 
 ## Fișiere Modificate
 
-| Fișier | Modificare |
-|--------|-----------|
-| `src/pages/Auth.tsx` | Adăugare link, dialog și funcție reset |
+| Fișier | Acțiune |
+|--------|---------|
+| `src/pages/ListItem.tsx` | Modificat - înlocuire mock cu ImageUpload real |
+
+---
+
+## Pași de Implementare
+
+1. Adaug importuri pentru `useAuth`, `ImageUpload`, `useEffect`, `Loader2`
+2. Obțin user și loading state din `useAuth()`
+3. Adaug `useEffect` pentru redirect la login
+4. Elimin funcțiile mock (`handleImageUpload`, `removeImage`)
+5. Înlocuiesc secțiunea imagini cu componenta `ImageUpload`
+6. Adaug loading spinner pentru când se verifică autentificarea
 
 ---
 
 ## Note
 
-- Supabase se ocupă automat de trimiterea email-ului de resetare
-- Link-ul din email va redirecționa utilizatorul înapoi în aplicație
-- Nu este nevoie de configurare suplimentară în backend
-
+- Utilizatorul trebuie să fie autentificat pentru a putea încărca imagini (necesar pentru path-ul în storage)
+- Se păstrează limita de 5 imagini (configurabil)
+- Prima imagine încărcată devine automat imaginea principală
+- Toate imaginile sunt stocate în bucket-ul `product-images` din Supabase Storage
