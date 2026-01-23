@@ -44,3 +44,19 @@ export const sanitizeTextInput = (input: string, maxLength: number = 1000): stri
     .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
     .substring(0, maxLength);
 };
+
+/**
+ * Normalizes Romanian diacritics to ASCII equivalents for search matching
+ * ă/â → a, î → i, ș → s, ț → t
+ */
+export const normalizeDiacritics = (text: string): string => {
+  if (!text || typeof text !== 'string') {
+    return '';
+  }
+  
+  return text
+    .replace(/[ăâ]/gi, (match) => match.toLowerCase() === match ? 'a' : 'A')
+    .replace(/[î]/gi, (match) => match.toLowerCase() === match ? 'i' : 'I')
+    .replace(/[șş]/gi, (match) => match.toLowerCase() === match ? 's' : 'S')
+    .replace(/[țţ]/gi, (match) => match.toLowerCase() === match ? 't' : 'T');
+};
