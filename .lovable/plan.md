@@ -1,135 +1,92 @@
 
-# Fix Search Location Filtering
+# Modificări Layout Desktop/Mobile pentru Navbar și Formular de Căutare
 
-## Problem Identified
+## Rezumat
 
-The search form has a data model mismatch between counties and localities:
+Voi face următoarele modificări:
+1. Ascund bara de categorii orizontală pe desktop (rămâne meniul off-canvas pentru tabletă și mobil)
+2. Adaug spațiu de 35px între header și banner pe mobil
+3. Măresc formularul de căutare pe mobil pentru vizibilitate și accesibilitate mai bună
 
-1. **When user selects county "Iași"**: The code passes "Iași" to `location_city` filter
-2. **Database stores**: `location_city` = "Iasi" or "iasi" (city names, not counties)
-3. **Query fails**: `ILIKE 'Iași'` doesn't match "Iasi" because it's doing exact case-insensitive matching, not partial matching
+---
 
-Additionally, the search form uses county (județ) names but the database stores city/locality names, creating a conceptual mismatch.
+## Modificări Detaliate
 
-## Solution
+### 1. Navbar - Ascunderea meniului pe desktop
 
-### Approach 1: Add Wildcard Matching for County Search
+**Fișier:** `src/components/layout/Navbar.tsx`
 
-When a county is selected but no specific locality, use `%` wildcard with the county name stripped of diacritics to catch all variations:
+Voi modifica bara de categorii pentru a fi complet ascunsă pe toate ecranele (inclusiv desktop). Meniul off-canvas pentru tabletă și mobil rămâne funcțional.
 
+**Schimbări:**
+- Linia 142-164: Adaug `hidden` și elimin `lg:block` pentru a ascunde bara de categorii pe toate ecranele
+- Liniile 166-210: Elimin sau ascund mega-menu-ul desktop care nu mai este necesar
+
+---
+
+### 2. Index.tsx - Spațiu între header și banner pe mobil
+
+**Fișier:** `src/pages/Index.tsx`
+
+Voi adăuga padding-top suplimentar pentru secțiunea Hero pe mobil pentru a crea spațiu între header-ul fix și conținut.
+
+**Schimbări:**
+- Linia 22: Modific `py-16 md:py-24` → `pt-24 pb-16 md:py-24`
+- Aceasta adaugă aproximativ 35-40px spațiu suplimentar pe mobil (pt-24 = 96px vs py-16 = 64px)
+
+---
+
+### 3. HeroSearchForm - Formular mai mare pe mobil
+
+**Fișier:** `src/components/HeroSearchForm.tsx`
+
+Voi mări formularul de căutare pe mobil pentru a fi mai vizibil și accesibil.
+
+**Schimbări:**
+- Linia 39: Măresc padding-ul formularului → `p-5 md:p-4` pentru mobil
+- Liniile 42-50: Măresc input-ul și icon-urile
+- Liniile 139-144: Măresc butonul de căutare pe mobil
+
+**Modificări specifice:**
 ```text
-Search.tsx (lines 29-34):
-- When only judet is selected: search for products where location_city contains cities from that county
-- When localitate is selected: search for exact locality match with diacritic normalization
+Formular container:
+- Padding: p-4 → p-5 pe mobil
+- Gap între elemente: gap-3 → gap-4 pe mobil
+
+Input de căutare:
+- Înălțime minimă: py-3 pe mobil
+- Text: text-base pe mobil
+
+Select-uri:
+- Înălțime: py-3 pe mobil
+- Text mai mare
+
+Buton căutare:
+- Dimensiune: mai mare pe mobil (py-4)
+- Lățime completă pe mobil
 ```
 
-### Approach 2: Normalize Diacritics (Recommended)
+---
 
-Add a utility function to normalize Romanian diacritics for search comparison, and use partial matching:
+## Detalii Tehnice
 
-**Files to modify:**
+### Breakpoints folosite
+- `md:` = 768px (tablet)
+- `lg:` = 1024px (desktop)
 
-1. **src/lib/inputValidation.ts** - Add diacritic normalization function
-2. **src/features/products/productsApi.ts** - Normalize location filter before querying
-3. **src/pages/Search.tsx** - Pass localities list when county is selected
+### Fișiere afectate
+| Fișier | Modificare |
+|--------|------------|
+| `src/components/layout/Navbar.tsx` | Ascund bara de categorii pe desktop |
+| `src/pages/Index.tsx` | Adaug spațiu header-banner pe mobil |
+| `src/components/HeroSearchForm.tsx` | Măresc formularul pe mobil |
 
 ---
 
-## Technical Implementation
+## Comportament final
 
-### Step 1: Add Diacritic Normalization Utility
-
-Create a function to convert Romanian diacritics to ASCII equivalents:
-- ă/â → a
-- î → i  
-- ș → s
-- ț → t
-
-### Step 2: Update Products API
-
-Modify `getProducts()` to:
-1. Normalize the `location_city` filter (remove diacritics)
-2. Use `%` wildcard for partial matching when appropriate
-
-```typescript
-// In productsApi.ts, line 47-49
-if (filters?.location_city) {
-  const normalizedLocation = normalizeDiacritics(filters.location_city);
-  query = query.ilike("location_city", `%${normalizedLocation}%`);
-}
-```
-
-### Step 3: Update Search Page Logic
-
-When only a county is selected (no locality), we have two options:
-
-**Option A** - Match all localities from that county (complex):
-Pass the list of localities from the selected county to the API
-
-**Option B** - Match by county name pattern (simple, recommended):
-Since most products in a county have city names that may match the county name (e.g., "Iasi" city in "Iași" county), use normalized partial matching
-
----
-
-## Implementation Details
-
-### File: src/lib/inputValidation.ts
-
-Add new function:
-
-```typescript
-export const normalizeDiacritics = (text: string): string => {
-  return text
-    .replace(/[ăâ]/gi, (match) => match.toLowerCase() === match ? 'a' : 'A')
-    .replace(/[î]/gi, (match) => match.toLowerCase() === match ? 'i' : 'I')
-    .replace(/[ș]/gi, (match) => match.toLowerCase() === match ? 's' : 'S')
-    .replace(/[ț]/gi, (match) => match.toLowerCase() === match ? 't' : 'T');
-};
-```
-
-### File: src/features/products/productsApi.ts
-
-Update the location filter in `getProducts()`:
-
-```typescript
-if (filters?.location_city) {
-  const normalizedLocation = normalizeDiacritics(filters.location_city);
-  // Use partial matching to handle variations
-  query = query.ilike("location_city", `%${normalizedLocation}%`);
-}
-```
-
-### File: src/pages/Search.tsx
-
-The filter building logic remains the same, but now the API will handle diacritic normalization.
-
----
-
-## Edge Cases Handled
-
-| User Selection | DB Value | Result |
-|----------------|----------|--------|
-| County: "Iași" | "Iasi" | Match (normalized) |
-| County: "Iași" | "iasi" | Match (case-insensitive) |
-| Locality: "Iași" | "Iasi" | Match (normalized) |
-| Locality: "Pașcani" | "Pascani" | Match (normalized) |
-
----
-
-## Testing Plan
-
-1. Select county "Iași" → Should show products with `location_city` = "Iasi"
-2. Select locality "Iași" → Should show products with `location_city` = "Iasi"
-3. Select county "București" → Should show products from Bucharest sectors
-4. Verify category + location combo works
-
----
-
-## Summary of Changes
-
-| File | Change |
-|------|--------|
-| `src/lib/inputValidation.ts` | Add `normalizeDiacritics()` function |
-| `src/features/products/productsApi.ts` | Use normalized location with partial matching |
-
-This is a minimal fix that solves the diacritics mismatch issue without requiring database schema changes or complex multi-value filtering.
+| Dispozitiv | Meniu Categorii | Meniu Off-canvas | Spațiu Header-Banner |
+|------------|-----------------|------------------|---------------------|
+| Desktop (1024px+) | Ascuns | Ascuns | Standard |
+| Tablet (768-1023px) | Ascuns | Disponibil | Standard |
+| Mobil (<768px) | Ascuns | Disponibil | +35px suplimentar |
