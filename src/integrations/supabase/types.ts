@@ -99,6 +99,51 @@ export type Database = {
           },
         ]
       }
+      kyc_verifications: {
+        Row: {
+          created_at: string | null
+          document_type: string | null
+          document_url: string | null
+          id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          selfie_url: string | null
+          status: string
+          submitted_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          document_type?: string | null
+          document_url?: string | null
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          selfie_url?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          document_type?: string | null
+          document_url?: string | null
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          selfie_url?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -269,6 +314,136 @@ export type Database = {
         }
         Relationships: []
       }
+      rentals: {
+        Row: {
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          completed_at: string | null
+          confirmed_at: string | null
+          created_at: string | null
+          daily_price: number
+          end_date: string
+          id: string
+          owner_id: string | null
+          owner_payout: number
+          paid_at: string | null
+          payment_method: string | null
+          payment_status: string
+          platform_fee: number
+          platform_fee_percent: number
+          product_id: string | null
+          rental_days: number
+          renter_id: string | null
+          start_date: string
+          status: string
+          subtotal: number
+          updated_at: string | null
+        }
+        Insert: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          daily_price: number
+          end_date: string
+          id?: string
+          owner_id?: string | null
+          owner_payout: number
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          platform_fee: number
+          platform_fee_percent?: number
+          product_id?: string | null
+          rental_days: number
+          renter_id?: string | null
+          start_date: string
+          status?: string
+          subtotal: number
+          updated_at?: string | null
+        }
+        Update: {
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          daily_price?: number
+          end_date?: string
+          id?: string
+          owner_id?: string | null
+          owner_payout?: number
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_status?: string
+          platform_fee?: number
+          platform_fee_percent?: number
+          product_id?: string | null
+          rental_days?: number
+          renter_id?: string | null
+          start_date?: string
+          status?: string
+          subtotal?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rentals_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          id: string
+          processed_at: string | null
+          rental_id: string | null
+          status: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          id?: string
+          processed_at?: string | null
+          rental_id?: string | null
+          status?: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string | null
+          description?: string | null
+          id?: string
+          processed_at?: string | null
+          rental_id?: string | null
+          status?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_reviews: {
         Row: {
           comment: string | null
@@ -311,11 +486,98 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      get_admin_financial_summary: {
+        Args: { end_date?: string; start_date?: string }
+        Returns: {
+          completed_rentals: number
+          owner_payouts: number
+          pending_payments: number
+          platform_fees: number
+          total_revenue: number
+        }[]
+      }
+      get_admin_rentals: {
+        Args: {
+          limit_count?: number
+          offset_count?: number
+          status_filter?: string
+        }
+        Returns: {
+          created_at: string
+          daily_price: number
+          end_date: string
+          id: string
+          owner_id: string
+          owner_name: string
+          owner_payout: number
+          payment_status: string
+          platform_fee: number
+          product_id: string
+          product_title: string
+          rental_days: number
+          renter_id: string
+          renter_name: string
+          start_date: string
+          status: string
+          subtotal: number
+        }[]
+      }
+      get_admin_stats: {
+        Args: never
+        Returns: {
+          active_rentals: number
+          pending_kyc: number
+          revenue_this_month: number
+          total_products: number
+          total_rentals: number
+          total_users: number
+        }[]
+      }
+      get_admin_users: {
+        Args: {
+          limit_count?: number
+          offset_count?: number
+          search_query?: string
+        }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          kyc_status: string
+          phone: string
+          products_count: number
+          rentals_count: number
+          user_role: string
+        }[]
+      }
       get_contact_info_if_in_conversation: {
         Args: { owner_uuid: string }
         Returns: {
@@ -376,6 +638,13 @@ export type Database = {
           reviews_count: number
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_user_favorite: { Args: { target_user_id: string }; Returns: boolean }
       search_users_by_name: {
         Args: { result_limit?: number; search_query: string }
@@ -388,7 +657,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -515,6 +784,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
