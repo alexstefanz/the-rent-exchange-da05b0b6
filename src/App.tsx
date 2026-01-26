@@ -23,6 +23,14 @@ import Messages from "./pages/Messages";
 import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
 
+// Admin pages
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminReservations from "./pages/admin/AdminReservations";
+import AdminFinances from "./pages/admin/AdminFinances";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminKYC from "./pages/admin/AdminKYC";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -50,6 +58,15 @@ const App = () => (
               <Route path="/owner/edit-product/:id" element={<EditProduct />} />
               <Route path="/mesaje" element={<Messages />} />
               <Route path="/centru-asistenta" element={<HelpCenter />} />
+              
+              {/* Admin routes */}
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/reservations" element={<AdminReservations />} />
+              <Route path="/admin/finances" element={<AdminFinances />} />
+              <Route path="/admin/analytics" element={<AdminAnalytics />} />
+              <Route path="/admin/users" element={<AdminUsers />} />
+              <Route path="/admin/kyc" element={<AdminKYC />} />
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
