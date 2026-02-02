@@ -43,7 +43,7 @@ const HeroSearchForm = () => {
         <Search className="h-5 w-5 text-muted-foreground" />
         <Input
           type="text"
-          placeholder="Ce anume căutați?"
+          placeholder="Caută obiecte de închiriat în apropiere"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="border-0 bg-transparent p-0 text-base text-foreground placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 md:text-sm"
