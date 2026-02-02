@@ -4,8 +4,11 @@ import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import HeroSearchForm from "@/components/HeroSearchForm";
+import TrustBadges from "@/components/trust/TrustBadges";
+import FeaturedListings from "@/components/home/FeaturedListings";
 import { categories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
+import { uxCopy } from "@/data/uxCopy";
 
 const Index = () => {
   // Cele mai căutate categorii - primele 9 pentru grid
@@ -22,17 +25,21 @@ const Index = () => {
         <div className="container relative pt-16 pb-8 md:py-24">
           <div className="mx-auto max-w-4xl text-center">
             <h1 className="mt-[30px] animate-fade-up font-heading text-4xl font-bold tracking-tight text-foreground md:mt-0 md:text-5xl lg:text-6xl">
-              Închiriază ce ai nevoie,{" "}
-              <span className="text-primary">când ai nevoie</span>
+              {uxCopy.home.heroTitle}{" "}
+              <span className="text-primary">{uxCopy.home.heroTitleHighlight}</span>
             </h1>
             <p className="mt-6 animate-fade-up text-lg text-muted-foreground md:text-xl" style={{ animationDelay: "0.1s" }}>
-              Platforma ta de încredere pentru închiriere. Găsește echipamente, 
-              vehicule și multe altele de la oameni din comunitatea ta.
+              {uxCopy.home.heroSubtitle}
             </p>
             
             {/* Search Form */}
             <div className="mx-[-12px] mt-6 animate-fade-up md:mx-0 md:mt-10" style={{ animationDelay: "0.2s" }}>
               <HeroSearchForm />
+            </div>
+
+            {/* Trust Badges */}
+            <div className="mt-8 animate-fade-up" style={{ animationDelay: "0.3s" }}>
+              <TrustBadges />
             </div>
           </div>
         </div>
@@ -92,10 +99,10 @@ const Index = () => {
             })}
           </div>
 
-          <div className="mt-10 text-center">
+          <div className="mt-8 text-center">
             <Button variant="outline" asChild>
               <Link to="/categorii">
-                Vezi Toate Categoriile
+                {uxCopy.common.viewAll}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -103,8 +110,11 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Featured Listings */}
+      <FeaturedListings />
+
       {/* How It Works */}
-      <section className="border-y border-border bg-secondary/30 py-20">
+      <section className="border-y border-border bg-secondary/30 py-16 md:py-20">
         <div className="container">
           <div className="mb-12 text-center">
             <h2 className="font-heading text-3xl font-semibold text-foreground">

@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
-import { MapPin } from "lucide-react";
+import { MapPin, CheckCircle, Heart } from "lucide-react";
 import { Product, calculateClientPrice } from "@/features/products/productsApi";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
   product: Product;
@@ -8,6 +10,7 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
+  const [isFavorite, setIsFavorite] = useState(false);
   const clientPrice = calculateClientPrice(
     product.daily_price_owner,
     product.platform_fee_percent
@@ -15,6 +18,12 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
 
   const imageUrl = product.images?.[0] || "/placeholder.svg";
   const location = product.location_city || "România";
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsFavorite(!isFavorite);
+  };
 
   if (viewMode === "list") {
     return (
@@ -29,6 +38,11 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
               alt={product.title}
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
+            {/* Verified badge */}
+            <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs font-medium text-emerald-700 backdrop-blur-sm">
+              <CheckCircle className="h-3 w-3" />
+              <span>Verificat</span>
+            </div>
           </div>
           <div className="flex-1 p-4">
             <h3 className="font-heading text-lg font-semibold text-foreground">
@@ -60,7 +74,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
   return (
     <Link
       to={`/produs/${product.id}`}
-      className="group block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover"
+      className="group relative block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover"
     >
       <div className="relative aspect-[4/3] overflow-hidden">
         <img
@@ -68,6 +82,23 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
           alt={product.title}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
+        {/* Verified badge */}
+        <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs font-medium text-emerald-700 backdrop-blur-sm">
+          <CheckCircle className="h-3 w-3" />
+          <span className="hidden sm:inline">Verificat</span>
+        </div>
+        {/* Favorite button */}
+        <button
+          onClick={handleFavoriteClick}
+          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm transition-colors hover:bg-white"
+        >
+          <Heart
+            className={cn(
+              "h-4 w-4 transition-colors",
+              isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"
+            )}
+          />
+        </button>
       </div>
       <div className="p-3 md:p-4">
         <h3 className="font-heading text-base md:text-lg font-semibold text-foreground line-clamp-2">

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { format, differenceInDays, isBefore } from "date-fns";
 import { ro } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, MapPin, Star, Shield, Clock, MessageCircle, Check, User, Calendar, ArrowLeft, Share2, Heart, Loader2, Phone, Mail } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Star, Shield, Clock, MessageCircle, Check, User, Calendar, ArrowLeft, Share2, Heart, Loader2, Phone, Mail, Info } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,11 @@ import { getOrCreateConversation, getOwnerContactInfo } from "@/features/messagi
 import { ChatDialog } from "@/components/messaging/ChatDialog";
 import { ContactInfoCard } from "@/components/messaging/ContactInfoCard";
 import NearbyProductsSlider from "@/components/products/NearbyProductsSlider";
+import OwnerSection from "@/components/product/OwnerSection";
+import ProductIncludes from "@/components/product/ProductIncludes";
+import UsageRules from "@/components/product/UsageRules";
+import TrustIndicators from "@/components/trust/TrustIndicators";
+import { uxCopy } from "@/data/uxCopy";
 
 interface OwnerInfo {
   id: string;
@@ -333,69 +338,19 @@ const ProductDetail = () => {
               )}
             </div>
 
-            {/* Owner Info */}
-            <div className="rounded-xl border border-border bg-card p-4 md:p-6">
-              {/* Desktop Layout */}
-              <div className="hidden md:flex items-start justify-between">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={owner?.avatar_url || undefined} />
-                    <AvatarFallback>{ownerInitial}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Link to={`/utilizator/${product.owner_id}`} className="font-semibold text-foreground hover:text-primary transition-colors">
-                        {ownerName}
-                      </Link>
-                      <Badge variant="secondary" className="text-xs"><Check className="mr-1 h-3 w-3" />Verificat</Badge>
-                    </div>
-                    <div className="mt-1 flex items-center gap-1 text-sm">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="font-medium">4.9</span>
-                      <span className="text-muted-foreground">(12 recenzii)</span>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">Membru din 2024</p>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" onClick={handleStartChat}><MessageCircle className="mr-2 h-4 w-4" />Trimite mesaj</Button>
-              </div>
-              
-              {/* Mobile Layout */}
-              <div className="md:hidden">
-                <div className="flex items-center gap-3 w-full">
-                  <Avatar className="h-14 w-14 flex-shrink-0">
-                    <AvatarImage src={owner?.avatar_url || undefined} />
-                    <AvatarFallback>{ownerInitial}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Link to={`/utilizator/${product.owner_id}`} className="font-semibold text-foreground hover:text-primary transition-colors">
-                        {ownerName}
-                      </Link>
-                      <Badge variant="secondary" className="text-xs"><Check className="mr-1 h-3 w-3" />Verificat</Badge>
-                    </div>
-                    <div className="mt-1 flex items-center gap-1 text-sm">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="font-medium">4.9</span>
-                      <span className="text-muted-foreground">(12 recenzii)</span>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">Membru din 2024</p>
-                  </div>
-                </div>
-                <Button className="w-full mt-4 bg-[#57BE6A] hover:bg-[#4aa85c] text-white" size="sm" onClick={handleStartChat}>
-                  <MessageCircle className="mr-2 h-4 w-4" />Trimite mesaj
-                </Button>
-              </div>
-              
-              <Separator className="my-4" />
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground"><Clock className="h-4 w-4" /><span>Răspunde în &lt; 1 oră</span></div>
-                <div className="flex items-center gap-2 text-muted-foreground"><MessageCircle className="h-4 w-4" /><span>Rată răspuns: 98%</span></div>
-              </div>
-              <div className="mt-4 flex items-center gap-2 rounded-lg bg-primary/5 p-3 text-sm">
-                <Shield className="h-5 w-5 text-primary" /><span className="text-foreground">Închirierea este asigurată</span>
-              </div>
-            </div>
+            {/* Owner Info - Using new OwnerSection component */}
+            <OwnerSection
+              ownerId={product.owner_id}
+              ownerName={ownerName}
+              ownerAvatar={owner?.avatar_url}
+              rating={4.9}
+              reviewCount={12}
+              memberSince="2024"
+              responseTime="< 1 oră"
+              responseRate="98%"
+              onStartChat={handleStartChat}
+              isOwnProduct={user?.id === product.owner_id}
+            />
 
             {/* Contact Info */}
             {ownerContact && (ownerContact.phone || ownerContact.email || ownerContact.whatsapp) && (
@@ -433,6 +388,12 @@ const ProductDetail = () => {
               <h2 className="mb-4 font-heading text-xl font-semibold text-foreground">Descriere</h2>
               <p className="text-muted-foreground">{product.description || "Fără descriere."}</p>
             </div>
+
+            {/* What's Included */}
+            <ProductIncludes />
+
+            {/* Usage Rules */}
+            <UsageRules />
 
             {/* Reviews */}
             <div className="rounded-xl border border-border bg-card p-6">
@@ -570,8 +531,18 @@ const ProductDetail = () => {
                   }
                 }}
               >
-                {startDate && endDate ? "Rezervă acum" : "Selectează perioada"}
+                {startDate && endDate ? uxCopy.booking.ctaPrimary : "Selectează perioada"}
               </Button>
+
+              {/* Reassurance Message */}
+              <p className="mt-3 text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
+                <Info className="h-3 w-3" />
+                {uxCopy.booking.reassurance}
+              </p>
+
+              {/* Trust Indicators */}
+              <Separator className="my-4" />
+              <TrustIndicators variant="vertical" size="sm" />
             </div>
           </div>
         </div>
