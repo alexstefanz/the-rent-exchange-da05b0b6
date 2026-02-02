@@ -1,379 +1,339 @@
 
-# Plan Implementare Sistem ERP - MVP pentru Administratori
+# Plan de Imbunatatire UX - Marketplace de Inchiriere P2P
 
-## Prezentare Generală
+## Rezumat Executiv
 
-Vom construi un panou de administrare complet pentru platforma de închirieri, accesibil doar administratorilor. Sistemul va include 4 module principale: Rezervări, Financiar, Analytics și Gestionare Utilizatori.
+Voi transforma aplicatia intr-un marketplace de inchiriere peer-to-peer de incredere, similar cu Hygglo, concentrandu-ma pe claritate, flow-uri ghidate si conversie. Toate schimbarile sunt realiste pentru MVP si prioritizeaza experienta utilizatorului.
+
+---
+
+## 1. Homepage si Discovery
+
+### 1.1 Componenta Noua: TrustBadges.tsx
+Banda de indicatori de incredere sub bara de cautare:
+- "Plati sigure" cu iconita Shield
+- "Utilizatori verificati" cu iconita CheckCircle  
+- "Asigurare inclusa" cu iconita ShieldCheck
+
+### 1.2 Componenta Noua: FeaturedListings.tsx
+Sectiune "Populare in zona ta" cu:
+- Slider de produse recomandate
+- Card-uri cu: imagine, pret/zi, titlu, badge "Proprietar verificat"
+- Placeholder inteligent daca nu sunt date
+
+### 1.3 Modificari Index.tsx
+- Placeholder bara cautare: "Cauta obiecte de inchiriat in apropiere"
+- Adaugare TrustBadges imediat sub HeroSearchForm
+- Adaugare FeaturedListings dupa categorii populare
+- Reordonare sectiuni pentru flow mai natural
+
+---
+
+## 2. Rezultate Cautare
+
+### 2.1 Componenta Noua: SearchFilters.tsx
+Panel lateral cu filtre vizibile:
+- Categorie (dropdown)
+- Interval pret (slider dual)
+- Disponibilitate (date range picker)
+- Distanta maxima (slider)
+
+### 2.2 Componenta Noua: EmptySearchState.tsx
+Empty state prietenos cand nu exista rezultate:
+- Ilustratie/icon reprezentativ
+- Mesaj empatic: "Nu am gasit exact ce cauti"
+- Sugestii: "Incearca termeni mai generali" / "Extinde zona de cautare"
+- Link-uri catre categorii populare
+
+### 2.3 Imbunatatiri ProductCard.tsx
+- Badge "Proprietar verificat" pe imagine
+- Iconita inima pentru favorite (hover)
+- Rating cu stele (daca exista)
+- Disponibilitate rapida vizibila
+
+### 2.4 Modificari Search.tsx
+- Layout 2 coloane: filtre (stanga) + rezultate (dreapta)
+- Sortare vizibila: "Relevanta", "Pret crescator", "Cele mai apropiate"
+- Numar rezultate + timp de raspuns
+- Responsive: filtre in drawer pe mobil
+
+---
+
+## 3. Pagina Obiectului (PRIORITATE MARE)
+
+### 3.1 Restructurare ProductDetail.tsx
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│                    ADMIN DASHBOARD                              │
-├─────────────────────────────────────────────────────────────────┤
-│  📋 Rezervări  │  💰 Financiar  │  📊 Analytics  │  👥 Utilizatori│
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐        │
-│  │ Total    │  │ Venituri │  │ Useri    │  │ Produse  │        │
-│  │ Rezervări│  │ Lună     │  │ Activi   │  │ Active   │        │
-│  │   127    │  │ 45,230   │  │   892    │  │   456    │        │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘        │
-│                                                                  │
-│  ┌────────────────────────────────────────────────────────────┐│
-│  │ Grafice & Tabele specifice fiecărui modul                  ││
-│  └────────────────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────────┘
+LAYOUT NOU:
++------------------------------------------+
+|  GALERIE IMAGINI (fullwidth pe mobil)    |
++------------------------------------------+
+|                    |  BOOKING CARD       |
+|  TITLU + PRET      |  - Calendar         |
+|  DESCRIERE         |  - Selectie date    |
+|                    |  - Calcul pret      |
+|  PROPRIETAR        |  - CTA "Trimite     |
+|  - Avatar          |    cerere"          |
+|  - Verificat       |  - Microcopy        |
+|  - Rating          |    reasigurant      |
+|                    |                     |
+|  CE ESTE INCLUS    +---------------------+
+|  REGULI            |
+|  RECENZII          |
++------------------------------------------+
 ```
+
+### 3.2 Componenta Noua: BookingCard.tsx
+Card sticky pe dreapta cu:
+- Pret/zi mare si vizibil
+- Calendar intuitiv pentru selectie perioada
+- Calcul automat cu breakdown
+- **CTA principal**: "Trimite cerere de inchiriere"
+- **Microcopy**: "Nu vei fi taxat pana cand proprietarul accepta cererea"
+- Indicatori: "Anulare gratuita" / "Raspuns rapid"
+
+### 3.3 Componenta Noua: OwnerSection.tsx
+Sectiune proprietar imbunatatita:
+- Avatar mare + nume
+- Badge "Verificat" vizibil
+- Rating + numar recenzii
+- Timp mediu de raspuns
+- Buton "Trimite mesaj"
+- Badge-uri de incredere
+
+### 3.4 Componenta Noua: ProductIncludes.tsx
+Lista clara cu ce este inclus:
+- Iconite + text pentru fiecare element
+- Exemple: "Husa transport inclusa", "Manual utilizare", "Baterii suplimentare"
+
+### 3.5 Componenta Noua: UsageRules.tsx
+Reguli de utilizare clare:
+- Politica de anulare
+- Depozit (daca exista)
+- Restrictii de folosire
+
+### 3.6 Imbunatatiri Recenzii
+- Secțiune recenzii mai prominentă
+- Avatar + nume + data
+- Rating individual cu stele
+- Posibilitate "Vezi toate recenziile"
 
 ---
 
-## Faza 1: Baza de Date - Tabele Noi
+## 4. Flow de Rezervare (Ghidat)
 
-### 1.1 Sistem de Roluri (Securitate)
-
-```sql
--- Enum pentru roluri
-CREATE TYPE public.app_role AS ENUM ('admin', 'moderator', 'user');
-
--- Tabel roluri utilizatori (separat de profiles pentru securitate)
-CREATE TABLE public.user_roles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    role app_role NOT NULL DEFAULT 'user',
-    created_at TIMESTAMPTZ DEFAULT now(),
-    UNIQUE (user_id, role)
-);
-
--- Funcție verificare rol (SECURITY DEFINER pentru a evita recursivitate RLS)
-CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role app_role)
-RETURNS BOOLEAN
-LANGUAGE SQL
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.user_roles
-    WHERE user_id = _user_id AND role = _role
-  )
-$$;
-```
-
-### 1.2 Tabel Rezervări/Închirieri
-
-```sql
-CREATE TABLE public.rentals (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    product_id UUID REFERENCES products(id) ON DELETE SET NULL,
-    renter_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    owner_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    
-    -- Date rezervare
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    rental_days INTEGER NOT NULL,
-    
-    -- Pricing
-    daily_price NUMERIC NOT NULL,
-    platform_fee_percent NUMERIC NOT NULL DEFAULT 20,
-    subtotal NUMERIC NOT NULL,
-    platform_fee NUMERIC NOT NULL,
-    owner_payout NUMERIC NOT NULL,
-    
-    -- Status
-    status TEXT NOT NULL DEFAULT 'pending',
-    -- pending, confirmed, active, completed, cancelled, overdue
-    
-    -- Plăți
-    payment_status TEXT NOT NULL DEFAULT 'pending',
-    -- pending, paid, refunded, failed
-    payment_method TEXT,
-    paid_at TIMESTAMPTZ,
-    
-    -- Timestamps
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now(),
-    confirmed_at TIMESTAMPTZ,
-    completed_at TIMESTAMPTZ,
-    cancelled_at TIMESTAMPTZ,
-    cancellation_reason TEXT
-);
-```
-
-### 1.3 Tabel Tranzacții Financiare
-
-```sql
-CREATE TABLE public.transactions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    rental_id UUID REFERENCES rentals(id) ON DELETE SET NULL,
-    user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    
-    type TEXT NOT NULL,
-    -- rental_payment, platform_fee, owner_payout, refund, late_fee
-    
-    amount NUMERIC NOT NULL,
-    currency TEXT DEFAULT 'RON',
-    status TEXT NOT NULL DEFAULT 'pending',
-    -- pending, completed, failed
-    
-    description TEXT,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    processed_at TIMESTAMPTZ
-);
-```
-
-### 1.4 Tabel KYC (Verificare Identitate)
-
-```sql
-CREATE TABLE public.kyc_verifications (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL UNIQUE,
-    
-    status TEXT NOT NULL DEFAULT 'not_started',
-    -- not_started, pending, approved, rejected
-    
-    document_type TEXT,
-    -- id_card, passport, driving_license
-    
-    document_url TEXT,
-    selfie_url TEXT,
-    
-    submitted_at TIMESTAMPTZ,
-    reviewed_at TIMESTAMPTZ,
-    reviewed_by UUID REFERENCES auth.users(id),
-    rejection_reason TEXT,
-    
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
-);
-```
-
----
-
-## Faza 2: Politici RLS (Securitate)
-
-```sql
--- User Roles - doar admini pot vedea/modifica
-ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Only admins can manage roles"
-ON user_roles FOR ALL
-USING (public.has_role(auth.uid(), 'admin'));
-
--- Rentals - proprietarii și chiriașii văd propriile, admini văd toate
-ALTER TABLE rentals ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users see own rentals"
-ON rentals FOR SELECT
-USING (
-    renter_id = auth.uid() OR 
-    owner_id = auth.uid() OR 
-    public.has_role(auth.uid(), 'admin')
-);
-
-CREATE POLICY "Admins can manage all rentals"
-ON rentals FOR ALL
-USING (public.has_role(auth.uid(), 'admin'));
-
--- Similar pentru transactions și kyc_verifications
-```
-
----
-
-## Faza 3: Structură Frontend
-
-### 3.1 Rute Noi în App.tsx
+### 4.1 Componenta Noua: BookingWizard.tsx
+Wizard pe pasi cu indicator de progres:
 
 ```text
-/admin                 → Dashboard principal
-/admin/reservations    → Gestiune rezervări
-/admin/finances        → Rapoarte financiare
-/admin/analytics       → Statistici platformă
-/admin/users           → Gestiune utilizatori
-/admin/kyc             → Verificări KYC
+[1. Perioada] --> [2. Mesaj] --> [3. Autentificare] --> [4. Confirmare]
+     ●              ○                  ○                    ○
 ```
 
-### 3.2 Componente Noi
+**Pas 1: Selecteaza Perioada**
+- Calendar cu zilele selectate
+- Sumar pret calculat
+- Buton "Continua"
+
+**Pas 2: Mesaj pentru Proprietar**
+- Textarea cu placeholder util
+- "Salut! As dori sa inchiriez [produs] pentru [perioada]. [Intrebare optionala]"
+- Sugestii de intrebari frecvente
+
+**Pas 3: Autentificare**
+- Daca nu este logat: form login/signup inline
+- Social login vizibil
+- "Cont nou? Creaza in 30 secunde"
+
+**Pas 4: Confirmare Cerere**
+- Sumar complet: produs, date, pret, proprietar
+- Checkbox termeni si conditii
+- **CTA**: "Trimite cererea"
+- **Microcopy**: "Vei primi raspuns in maxim 24 ore"
+
+### 4.2 Componenta Noua: BookingConfirmation.tsx
+Ecran dupa trimitere cerere:
+- Iconita success animata
+- "Cererea ta a fost trimisa!"
+- Ce urmeaza: "Proprietarul va raspunde in maxim 24 ore"
+- Timeline vizual al procesului
+- Link-uri: "Vezi cererea" / "Inapoi la cautare"
+
+### 4.3 Modificari Checkout.tsx
+- Integrare componente noi
+- Progress bar vizibil
+- Microcopy la fiecare pas
+- Back button clar la fiecare pas
+
+---
+
+## 5. Incredere si Siguranta
+
+### 5.1 Componenta Noua: TrustIndicators.tsx
+Componenta reutilizabila cu badge-uri:
+- "Utilizatori verificati" + icon
+- "Plati protejate" + icon
+- "Asigurare inclusa" + icon
+- "Suport 24/7" + icon
+
+### 5.2 Componenta Noua: ReassuranceMessages.tsx
+Mesaje contextuale de reasigurare:
+- La checkout: "Plata ta este protejata. Nu se debiteaza pana la confirmare."
+- La trimitere cerere: "Poti anula gratuit pana la confirmare."
+- La mesagerie: "Tine conversatia pe platforma pentru protectie."
+
+### 5.3 Integrare in Pagini
+- ProductDetail: TrustIndicators sub booking card
+- Checkout: Mesaje de reasigurare la fiecare pas
+- Search: Badge-uri pe carduri produse
+
+---
+
+## 6. Dashboard Utilizator
+
+### 6.1 Restructurare Profile.tsx
+Doua zone clare cu tabs:
 
 ```text
-src/
-├── pages/
-│   └── admin/
-│       ├── AdminDashboard.tsx      # Pagină principală
-│       ├── AdminReservations.tsx   # Modul rezervări
-│       ├── AdminFinances.tsx       # Modul financiar
-│       ├── AdminAnalytics.tsx      # Modul analytics
-│       ├── AdminUsers.tsx          # Modul utilizatori
-│       └── AdminKYC.tsx            # Modul KYC
-│
-├── components/
-│   └── admin/
-│       ├── AdminSidebar.tsx        # Meniu lateral
-│       ├── AdminLayout.tsx         # Layout cu sidebar
-│       ├── AdminGuard.tsx          # Protecție rută admin
-│       ├── StatsCard.tsx           # Card statistici
-│       ├── ReservationsTable.tsx   # Tabel rezervări
-│       ├── TransactionsTable.tsx   # Tabel tranzacții
-│       └── UsersTable.tsx          # Tabel utilizatori
-│
-├── features/
-│   └── admin/
-│       ├── adminApi.ts             # API calls pentru admin
-│       ├── rentalsApi.ts           # CRUD rezervări
-│       └── kycApi.ts               # Verificări KYC
-│
-└── hooks/
-    └── queries/
-        ├── useAdminStats.ts        # Hook statistici
-        ├── useRentals.ts           # Hook rezervări
-        └── useAdminUsers.ts        # Hook utilizatori
+INCHIRIERI (Am imprumutat)    |    OFERTE (Am dat cu imprumut)
+-----------------------------|---------------------------------
+[ ] Rezervari viitoare       | [ ] Obiectele mele listate
+[ ] Istoric inchirieri       | [ ] Cereri in asteptare
+                             | [ ] Rezervari active
 ```
 
----
+### 6.2 Componenta Noua: RentalsTab.tsx
+Tab "Inchirierile Mele":
+- Lista rezervari cu status vizual
+- Badge-uri colorate: "In asteptare" (galben), "Acceptat" (verde), "Finalizat" (gri), "Anulat" (rosu)
+- Actiuni contextuale: "Contacteaza proprietarul", "Anuleaza"
+- Empty state: "Nu ai nicio rezervare inca. Cauta primul obiect de inchiriat!"
 
-## Faza 4: Module Detaliate
+### 6.3 Componenta Noua: LendingsTab.tsx
+Tab "Ofertele Mele":
+- Obiectele listate cu status
+- Cereri in asteptare cu actiuni: "Accepta" / "Refuza"
+- Statistici simple: "3 inchirieri luna aceasta"
+- Empty state: "Nu ai listat nimic inca. Transforma obiectele nefolosite in venit!"
 
-### 4.1 Dashboard Principal
-
-Afișează:
-- Total rezervări (zi/săptămână/lună)
-- Venituri platformă
-- Utilizatori noi
-- Produse active
-- Grafic venituri (recharts)
-- Ultimele 5 rezervări
-- Alerte (KYC pending, dispute-uri)
-
-### 4.2 Modul Rezervări
-
-| Funcționalitate | Descriere |
-|-----------------|-----------|
-| Listare | Tabel cu toate rezervările, filtru pe status |
-| Detalii | Click pe rezervare → modal cu toate detaliile |
-| Schimbare status | Admin poate confirma/anula/marca completat |
-| Penalizări | Adăugare late fee pentru întârzieri |
-| Export | Export CSV rezervări |
-
-### 4.3 Modul Financiar
-
-| Funcționalitate | Descriere |
-|-----------------|-----------|
-| Raport venituri | Grafic venituri platformă vs plăți proprietari |
-| Tranzacții | Istoric complet tranzacții |
-| Plăți pending | Lista plăților de efectuat către proprietari |
-| Comisioane | Raport comisioane colectate |
-
-### 4.4 Modul Analytics
-
-| Metrică | Descriere |
-|---------|-----------|
-| Utilizatori activi | Grafic utilizatori activi zilnic/lunar |
-| Produse populare | Top 10 produse închiriate |
-| Categorii | Distribuție rezervări pe categorii |
-| Locații | Hartă rezervări pe orașe |
-| Conversie | Rata vizite → rezervări |
-
-### 4.5 Modul Utilizatori & KYC
-
-| Funcționalitate | Descriere |
-|-----------------|-----------|
-| Listare utilizatori | Tabel cu toți utilizatorii, search, filtre |
-| Profil detaliat | Click → modal cu toate datele, produse, rezervări |
-| Verificare KYC | Lista cereri KYC pending de aprobat |
-| Suspend utilizator | Posibilitate de suspendare cont |
-| Atribuire rol | Promovare la moderator/admin |
+### 6.4 Componente Status
+- StatusBadge.tsx - badge-uri colorate pentru statusuri
+- RentalCard.tsx - card pentru o rezervare cu detalii
+- RequestCard.tsx - card pentru o cerere primita
 
 ---
 
-## Ordinea Implementării (MVP)
+## 7. UX Writing si Microcopy
 
-Pentru abordarea MVP cerută, implementăm în această ordine:
-
-| Pas | Descriere | Timp estimat |
-|-----|-----------|--------------|
-| 1 | Tabele bază de date (roles, rentals, transactions, kyc) | Prima iterație |
-| 2 | AdminGuard + AdminLayout + rute protejate | Prima iterație |
-| 3 | Dashboard cu statistici de bază | Prima iterație |
-| 4 | Modul Rezervări (listare + schimbare status) | A doua iterație |
-| 5 | Modul Financiar (tranzacții + rapoarte) | A doua iterație |
-| 6 | Modul Utilizatori (listare + KYC) | A treia iterație |
-| 7 | Modul Analytics (grafice detaliate) | A treia iterație |
-
----
-
-## Detalii Tehnice
-
-### Protecție Rute Admin
+### 7.1 Fisier Nou: src/data/uxCopy.ts
+Biblioteca centralizata de texte:
 
 ```typescript
-// AdminGuard.tsx
-const AdminGuard = ({ children }) => {
-  const { user } = useAuth();
-  const { data: isAdmin, isLoading } = useQuery({
-    queryKey: ['isAdmin', user?.id],
-    queryFn: () => supabase.rpc('has_role', { 
-      _user_id: user?.id, 
-      _role: 'admin' 
-    })
-  });
-
-  if (isLoading) return <LoadingSpinner />;
-  if (!isAdmin) return <Navigate to="/" />;
-  
-  return children;
+export const uxCopy = {
+  search: {
+    placeholder: "Cauta obiecte de inchiriat in apropiere",
+    noResults: "Nu am gasit exact ce cauti",
+    suggestions: "Incearca termeni mai generali sau extinde zona"
+  },
+  booking: {
+    ctaPrimary: "Trimite cerere de inchiriere",
+    reassurance: "Nu vei fi taxat pana cand proprietarul accepta",
+    confirmation: "Cererea ta a fost trimisa cu succes!"
+  },
+  trust: {
+    verified: "Utilizator verificat",
+    securePay: "Plati protejate",
+    insurance: "Asigurare inclusa"
+  },
+  // ... etc
 };
 ```
 
-### API Statistici Admin
-
-```typescript
-// Funcție database pentru statistici
-CREATE OR REPLACE FUNCTION get_admin_stats()
-RETURNS TABLE(
-    total_users BIGINT,
-    total_products BIGINT,
-    total_rentals BIGINT,
-    revenue_this_month NUMERIC,
-    pending_kyc BIGINT
-)
-LANGUAGE SQL
-STABLE
-SECURITY DEFINER
-AS $$
-  SELECT 
-    (SELECT COUNT(*) FROM profiles),
-    (SELECT COUNT(*) FROM products WHERE is_active = true),
-    (SELECT COUNT(*) FROM rentals),
-    (SELECT COALESCE(SUM(platform_fee), 0) FROM rentals 
-     WHERE created_at >= date_trunc('month', now())),
-    (SELECT COUNT(*) FROM kyc_verifications WHERE status = 'pending')
-$$;
-```
+### 7.2 Principii Aplicate
+- Limbaj conversational, nu formal
+- Fiecare ecran explica "ce se intampla acum" si "ce urmeaza"
+- Evitam jargon tehnic
+- Folosim "tu" nu "dumneavoastra"
 
 ---
 
-## Fișiere de Modificat/Creat
+## 8. Fisiere de Creat/Modificat
 
-| Fișier | Acțiune |
-|--------|---------|
-| `supabase/migrations/xxx_erp_tables.sql` | Creare tabele noi |
-| `src/App.tsx` | Adăugare rute admin |
-| `src/pages/admin/*.tsx` | Pagini noi (6 fișiere) |
-| `src/components/admin/*.tsx` | Componente noi (7+ fișiere) |
-| `src/features/admin/*.ts` | API functions (3 fișiere) |
-| `src/hooks/queries/useAdmin*.ts` | Hooks React Query (3 fișiere) |
+### Fisiere Noi
+| Fisier | Scop |
+|--------|------|
+| `src/components/trust/TrustBadges.tsx` | Banda indicatori incredere |
+| `src/components/trust/TrustIndicators.tsx` | Badge-uri reutilizabile |
+| `src/components/trust/ReassuranceMessage.tsx` | Mesaje contextuale |
+| `src/components/home/FeaturedListings.tsx` | Produse recomandate |
+| `src/components/search/SearchFilters.tsx` | Panel filtre |
+| `src/components/search/EmptySearchState.tsx` | Empty state prietenos |
+| `src/components/product/BookingCard.tsx` | Card rezervare |
+| `src/components/product/OwnerSection.tsx` | Sectiune proprietar |
+| `src/components/product/ProductIncludes.tsx` | Ce este inclus |
+| `src/components/product/UsageRules.tsx` | Reguli utilizare |
+| `src/components/booking/BookingWizard.tsx` | Flow pe pasi |
+| `src/components/booking/BookingConfirmation.tsx` | Ecran confirmare |
+| `src/components/booking/ProgressIndicator.tsx` | Indicator pasi |
+| `src/components/dashboard/RentalsTab.tsx` | Tab inchirieri |
+| `src/components/dashboard/LendingsTab.tsx` | Tab oferte |
+| `src/components/dashboard/StatusBadge.tsx` | Badge-uri status |
+| `src/data/uxCopy.ts` | Texte centralizate |
+
+### Fisiere de Modificat
+| Fisier | Modificari |
+|--------|------------|
+| `src/pages/Index.tsx` | Adaugare TrustBadges, FeaturedListings, placeholder nou |
+| `src/pages/Search.tsx` | Layout cu filtre, empty states, sortare |
+| `src/pages/ProductDetail.tsx` | Restructurare completa cu componente noi |
+| `src/pages/Checkout.tsx` | Integrare wizard, progress bar, microcopy |
+| `src/pages/Profile.tsx` | Restructurare tabs Inchirieri/Oferte |
+| `src/components/products/ProductCard.tsx` | Badge verificat, favorite, rating |
+| `src/components/HeroSearchForm.tsx` | Placeholder nou |
 
 ---
 
-## Note Importante
+## Ordinea Implementarii
 
-1. **Securitate**: Rolurile sunt stocate într-un tabel separat (nu în profiles) pentru a preveni atacuri de escaladare privilegii
+### Faza 1 - Homepage si Incredere
+1. TrustBadges + TrustIndicators
+2. Modificari Index.tsx
+3. Modificari HeroSearchForm placeholder
 
-2. **Primul admin**: După creare tabele, trebuie adăugat manual primul admin:
-   ```sql
-   INSERT INTO user_roles (user_id, role) 
-   VALUES ('UUID-ul-tau', 'admin');
-   ```
+### Faza 2 - Cautare si Filtre
+4. SearchFilters component
+5. EmptySearchState component
+6. Modificari Search.tsx
+7. Imbunatatiri ProductCard.tsx
 
-3. **Integrare Stripe**: Modulul financiar poate fi extins ulterior cu Stripe pentru procesare plăți reale
+### Faza 3 - Pagina Produs (PRIORITATE)
+8. BookingCard.tsx
+9. OwnerSection.tsx
+10. ProductIncludes + UsageRules
+11. Restructurare ProductDetail.tsx
 
-4. **KYC extern**: Pentru verificare KYC profesională, se poate integra un serviciu extern (Onfido, Jumio) prin edge functions
+### Faza 4 - Flow Rezervare
+12. ProgressIndicator + BookingWizard
+13. BookingConfirmation
+14. Modificari Checkout.tsx
+
+### Faza 5 - Dashboard
+15. RentalsTab + LendingsTab
+16. StatusBadge
+17. Restructurare Profile.tsx
+
+### Faza 6 - Polish
+18. uxCopy.ts - centralizare texte
+19. Responsive adjustments
+20. Microcopy final
+
+---
+
+## Note Tehnice
+
+1. **Mobile-first**: Toate componentele vor fi responsive
+2. **Componente mici**: Prefer componente reutilizabile
+3. **Fara backend nou**: Folosim datele existente + mock unde e nevoie
+4. **Animatii subtile**: Tranzitii pentru feedback vizual
+5. **Accesibilitate**: Focus states, aria labels
+
