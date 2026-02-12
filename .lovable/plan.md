@@ -1,53 +1,34 @@
 
-# Fix 404 pe "View request" + Anulare cerere in 24h
+# Add "Requests" Tab and Separate Successfully Rented Items
 
-## Problema 1: Butonul "View request" duce la 404
-Butonul "View request" din ecranul de confirmare navigheaza catre `/profil#mesaje`, dar ruta corecta in aplicatie este `/profile`. Simpla corectare a linkului rezolva problema.
+## Overview
+Split the current "My Rentals" tab into two distinct tabs:
+- **Requests** (Cereri) -- shows pending rental requests (awaiting owner response), with the cancel option
+- **My Rentals** (Inchirierile mele) -- shows only successfully rented items (confirmed, active, completed)
 
-## Problema 2: Anulare cerere de catre chirias (max 24h)
-Chiriasul trebuie sa poata anula o cerere de inchiriere pending, dar doar in primele 24 de ore de la creare. Dupa 24h, butonul de anulare dispare.
+## Changes
 
----
+### 1. Update Profile Tab Navigation (`src/pages/Profile.tsx`)
+- Add a new tab entry `{ id: "cereri", labelRo: "Cereri", labelEn: "Requests", icon: ClipboardList }` after Favorites
+- Add corresponding `TabsTrigger` and `TabsContent` for the new tab
+- Import a new `RequestsTab` component
 
-## Ce se schimba
+### 2. Create `src/components/dashboard/RequestsTab.tsx`
+- Fetch rentals where `status = 'pending'` or `status = 'cancelled'` for the current user (as renter)
+- Show pending requests with the existing cancel button (24h window logic)
+- Show cancelled requests in a separate "history" section
+- Empty state: "No pending requests" with a link to search
 
-### 1. Fix link "View request" (`BookingConfirmation.tsx`)
-- Schimbam `/profil#mesaje` in `/profile?tab=rentals` pentru a duce chiriasul direct la tab-ul cu cererile lui
+### 3. Update `src/components/dashboard/RentalsTab.tsx`
+- Remove pending requests from this tab -- only show `confirmed`, `active`, `completed` rentals
+- Remove the cancel button logic (moved to RequestsTab)
+- Simplify the "upcoming" section to confirmed/active only
+- Keep completed in a "past" section
+- Update empty state messaging
 
-### 2. Buton "Anuleaza cererea" in `RentalsTab.tsx`
-- Pentru inchirierile cu status `pending` si create in ultimele 24h, afisam un buton "Anuleaza cererea"
-- La click, se cere confirmare si apoi se actualizeaza statusul in `cancelled`
-- Fetch-ul deja include `created_at` implicit; vom adauga `created_at` in query si in interfata `Rental`
-- Folosim update direct pe tabela `rentals` (RLS permite renter-ului? - trebuie verificat)
-
-### 3. RLS Policy pentru anulare de catre chirias
-- In prezent, doar owner-ul si admin-ul pot face UPDATE pe `rentals`
-- Trebuie adaugata o politica RLS care permite renter-ului sa faca update (doar pe `status` si `cancelled_at`) pentru propriile cereri pending
-
----
-
-## Detalii tehnice
-
-### Migrare DB
-```sql
-CREATE POLICY "Renters can cancel own pending rentals"
-ON public.rentals FOR UPDATE
-USING (renter_id = auth.uid() AND status = 'pending')
-WITH CHECK (renter_id = auth.uid() AND status = 'cancelled');
-```
-
-### BookingConfirmation.tsx
-- Linia 81: `/profil#mesaje` -> `/profile?tab=rentals`
-
-### RentalsTab.tsx
-- Adaugam `created_at` in query-ul Supabase si in interfata
-- Pentru cereri `pending` create in ultimele 24h, afisam buton "Anuleaza"
-- La click: dialog de confirmare, apoi `supabase.from("rentals").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", rentalId)`
-- Invalidam query-ul dupa anulare
-
-### Fisiere modificate
-| Fisier | Ce se schimba |
-|--------|---------------|
-| `src/components/booking/BookingConfirmation.tsx` | Fix link: `/profile?tab=rentals` |
-| `src/components/dashboard/RentalsTab.tsx` | Buton anulare + logica 24h |
-| DB migration | RLS policy pentru renter cancel |
+### Files Modified
+| File | Change |
+|------|--------|
+| `src/pages/Profile.tsx` | Add "Cereri" tab + import RequestsTab |
+| `src/components/dashboard/RequestsTab.tsx` | New component for pending/cancelled requests |
+| `src/components/dashboard/RentalsTab.tsx` | Remove pending items, simplify to confirmed/active/completed only |
