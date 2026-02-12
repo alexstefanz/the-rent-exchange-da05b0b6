@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Loader2, UserCog, User, MessageCircle, Wallet, Bell, ShoppingBag, Package } from "lucide-react";
+import { Loader2, UserCog, User, MessageCircle, Wallet, Bell, ShoppingBag, Package, Heart } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -13,11 +13,13 @@ import EarningsTab from "@/components/profile/EarningsTab";
 import NotificationsTab from "@/components/profile/NotificationsTab";
 import RentalsTab from "@/components/dashboard/RentalsTab";
 import LendingsTab from "@/components/dashboard/LendingsTab";
+import FavoritesTab from "@/components/profile/FavoritesTab";
 import { uxCopy } from "@/data/uxCopy";
 
 const TABS = [
   { id: "contul-meu", labelRo: "Contul meu", labelEn: "My Account", icon: UserCog },
   { id: "profil", labelRo: "Profilul meu", labelEn: "My Profile", icon: User },
+  { id: "favorite", labelRo: "Favorite", labelEn: "Favorites", icon: Heart },
   { id: "inchirieri", labelRo: "Închirierile mele", labelEn: "My Rentals", icon: ShoppingBag },
   { id: "anunturi", labelRo: "Anunțurile mele", labelEn: "My Listings", icon: Package },
   { id: "mesaje", labelRo: "Mesaje", labelEn: "Messages", icon: MessageCircle },
@@ -114,6 +116,10 @@ const ProfilePage = () => {
 
           <TabsContent value="profil" className="mt-0">
             <ProfileTab />
+          </TabsContent>
+
+          <TabsContent value="favorite" className="mt-0">
+            <FavoritesTab />
           </TabsContent>
 
           <TabsContent value="inchirieri" className="mt-0">
