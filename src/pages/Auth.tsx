@@ -20,14 +20,14 @@ const Auth = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
-  const { user, loading: authLoading, signIn, signUp } = useAuth();
+  const { user, loading: authLoading, signIn, signUp, isPasswordRecovery, clearPasswordRecovery } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [isResetting, setIsResetting] = useState(false);
   const copy = useUxCopy();
 
-  const isResetMode = searchParams.get("reset") === "true";
+  const isResetMode = isPasswordRecovery || searchParams.get("reset") === "true";
 
   const loginSchema = z.object({
     email: z.string().email(copy.auth.invalidEmail),
@@ -146,7 +146,8 @@ const Auth = () => {
     setIsLoading(false);
     toast({ title: copy.auth.resetSuccess, description: copy.auth.resetSuccessDesc });
     
-    // Clear reset param and redirect to login
+    // Clear recovery state and redirect to login
+    clearPasswordRecovery();
     setSearchParams({});
     await supabase.auth.signOut();
     navigate("/auth");
