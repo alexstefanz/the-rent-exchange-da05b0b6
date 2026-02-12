@@ -2,48 +2,47 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Loader2, MessageCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Conversation } from "@/features/messaging/messagingApi";
-import { ChatDialog } from "@/components/messaging/ChatDialog";
 import { useConversations } from "@/hooks/queries/useConversations";
 import { useQueryClient } from "@tanstack/react-query";
-import { format, isToday, isYesterday } from "date-fns";
-import { ro } from "date-fns/locale";
+import { ConversationList } from "@/components/messaging/ConversationList";
+import { ChatPanel } from "@/components/messaging/ChatPanel";
+import { useEffect, useState as useStateReact } from "react";
+
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useStateReact(typeof window !== "undefined" ? window.innerWidth >= 1024 : true);
+  useEffect(() => {
+    const mql = window.matchMedia("(min-width: 1024px)");
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+  return isDesktop;
+}
 
 export default function Messages() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isDesktop = useIsDesktop();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [activeTab, setActiveTab] = useState("rezervari");
 
-  // Redirect if not logged in
   if (!authLoading && !user) {
-    navigate('/auth');
+    navigate("/auth");
   }
 
-  // Use React Query for conversations
   const { data: conversations = [], isLoading } = useConversations(user?.id);
 
-  const formatMessageTime = (dateString: string) => {
-    const date = new Date(dateString);
-    if (isToday(date)) {
-      return format(date, 'HH:mm');
-    } else if (isYesterday(date)) {
-      return 'Ieri';
-    }
-    return format(date, 'd MMM', { locale: ro });
+  const handleSelect = (conv: Conversation) => {
+    setSelectedConversation(conv);
   };
 
-  const handleCloseChat = (open: boolean) => {
-    if (!open) {
-      setSelectedConversation(null);
-      // Invalidate conversations cache to refresh unread counts
-      queryClient.invalidateQueries({ queryKey: ["conversations", user?.id] });
-    }
+  const handleBack = () => {
+    setSelectedConversation(null);
+    queryClient.invalidateQueries({ queryKey: ["conversations"] });
   };
 
   if (authLoading) {
@@ -54,89 +53,79 @@ export default function Messages() {
     );
   }
 
-  return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
-      
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Mesaje</h1>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : conversations.length === 0 ? (
-          <Card>
-            <CardContent className="py-16 text-center">
-              <MessageCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">Nicio conversație</h3>
-              <p className="text-muted-foreground">
-                Conversațiile tale vor apărea aici când vei contacta un proprietar.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-2">
-            {conversations.map((conv) => (
-              <Card
-                key={conv.id}
-                className="cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => setSelectedConversation(conv)}
-              >
-                <CardContent className="p-4 flex items-center gap-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={conv.other_user?.avatar_url || undefined} />
-                    <AvatarFallback>
-                      {conv.other_user?.full_name?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-medium truncate">
-                        {conv.other_user?.full_name || 'Utilizator'}
-                      </span>
-                      {conv.last_message && (
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {formatMessageTime(conv.last_message.created_at)}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {conv.product?.title}
-                    </p>
-                    {conv.last_message && (
-                      <p className={`text-sm truncate mt-1 ${conv.unread_count ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
-                        {conv.last_message.sender_id === user?.id ? 'Tu: ' : ''}
-                        {conv.last_message.content}
-                      </p>
-                    )}
-                  </div>
-
-                  {conv.unread_count && conv.unread_count > 0 && (
-                    <Badge variant="default" className="rounded-full h-6 min-w-6 flex items-center justify-center">
-                      {conv.unread_count}
-                    </Badge>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </main>
-
-      <Footer />
-
-      {selectedConversation && (
-        <ChatDialog
-          open={!!selectedConversation}
-          onOpenChange={handleCloseChat}
+  // Mobile: fullscreen chat when a conversation is selected
+  if (!isDesktop && selectedConversation) {
+    return (
+      <div className="h-[100dvh] flex flex-col">
+        <ChatPanel
           conversationId={selectedConversation.id}
           otherUserName={selectedConversation.other_user?.full_name || null}
           otherUserAvatar={selectedConversation.other_user?.avatar_url || null}
-          productTitle={selectedConversation.product?.title || 'Produs'}
+          productTitle={selectedConversation.product?.title || "Produs"}
+          onBack={handleBack}
         />
-      )}
+      </div>
+    );
+  }
+
+  // Mobile: conversation list (no chat selected)
+  if (!isDesktop) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Navbar />
+        <main className="flex-1 pb-20">
+          <ConversationList
+            conversations={conversations}
+            isLoading={isLoading}
+            userId={user?.id || ""}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onSelect={handleSelect}
+          />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Desktop: split view
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      <Navbar />
+      <main className="flex-1 container mx-auto px-4 py-6">
+        <div className="flex h-[calc(100vh-10rem)] border rounded-xl overflow-hidden bg-background shadow-sm">
+          {/* Left: conversation list */}
+          <div className="w-[340px] shrink-0 border-r flex flex-col">
+            <ConversationList
+              conversations={conversations}
+              isLoading={isLoading}
+              userId={user?.id || ""}
+              selectedId={selectedConversation?.id}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              onSelect={handleSelect}
+            />
+          </div>
+
+          {/* Right: chat area */}
+          <div className="flex-1 flex flex-col">
+            {selectedConversation ? (
+              <ChatPanel
+                conversationId={selectedConversation.id}
+                otherUserName={selectedConversation.other_user?.full_name || null}
+                otherUserAvatar={selectedConversation.other_user?.avatar_url || null}
+                productTitle={selectedConversation.product?.title || "Produs"}
+              />
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
+                <MessageCircle className="h-12 w-12 mb-3" />
+                <p className="text-sm">Selectează o conversație pentru a vedea mesajele</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </main>
+      <Footer />
     </div>
   );
 }
