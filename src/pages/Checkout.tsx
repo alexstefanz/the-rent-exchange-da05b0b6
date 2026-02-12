@@ -53,6 +53,7 @@ const Checkout = () => {
   const [messageToOwner, setMessageToOwner] = useState("");
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createdRentalId, setCreatedRentalId] = useState<string | null>(null);
 
   if (!state) {
     return (
@@ -79,7 +80,7 @@ const Checkout = () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      await createRental({
+      const rental = await createRental({
         productId: product.id,
         ownerId: product.ownerId,
         startDate: format(new Date(startDate), "yyyy-MM-dd"),
@@ -90,6 +91,7 @@ const Checkout = () => {
         paymentMethod: paymentMethod || "card",
         messageToOwner: messageToOwner || undefined,
       });
+      setCreatedRentalId(rental?.id || null);
       setIsConfirmed(true);
       toast.success("Rezervarea a fost creată cu succes!");
     } catch (e: any) {
@@ -119,6 +121,8 @@ const Checkout = () => {
             endDate={format(new Date(endDate), "d MMM yyyy", { locale: dateLocale })}
             totalPrice={totalPrice}
             rentalDays={rentalDays}
+            productId={product.id}
+            ownerId={product.ownerId}
           />
         </main>
       </div>
