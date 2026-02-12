@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { AcceptedRentalDialog } from "./AcceptedRentalDialog";
 
 const statusLabels: Record<string, { ro: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { ro: "În așteptare", variant: "secondary" },
@@ -48,17 +49,18 @@ const LendingsTab = () => {
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [rejectDialogRental, setRejectDialogRental] = useState<OwnerRental | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [acceptedRental, setAcceptedRental] = useState<OwnerRental | null>(null);
 
   const activeProducts = products.filter(p => p.is_active);
   const pendingRentals = rentals.filter(r => r.status === "pending");
   const otherRentals = rentals.filter(r => r.status !== "pending");
 
-  const handleAccept = async (rentalId: string) => {
-    setRespondingId(rentalId);
+  const handleAccept = async (rental: OwnerRental) => {
+    setRespondingId(rental.id);
     try {
-      await respondToRental(rentalId, "accept");
-      toast.success("Cererea a fost acceptată!");
+      await respondToRental(rental.id, "accept");
       queryClient.invalidateQueries({ queryKey: ["ownerRentals"] });
+      setAcceptedRental(rental);
     } catch (e) {
       toast.error("Eroare la acceptarea cererii");
       console.error(e);
@@ -148,7 +150,7 @@ const LendingsTab = () => {
                 key={rental.id}
                 rental={rental}
                 isResponding={respondingId === rental.id}
-                onAccept={() => handleAccept(rental.id)}
+                onAccept={() => handleAccept(rental)}
                 onReject={() => setRejectDialogRental(rental)}
               />
             ))}
@@ -265,6 +267,17 @@ const LendingsTab = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Accepted Rental Confirmation Dialog */}
+      <AcceptedRentalDialog
+        rental={acceptedRental}
+        open={!!acceptedRental}
+        onOpenChange={(open) => !open && setAcceptedRental(null)}
+        onCancelled={() => {
+          setAcceptedRental(null);
+          queryClient.invalidateQueries({ queryKey: ["ownerRentals"] });
+        }}
+      />
     </div>
   );
 };
