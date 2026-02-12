@@ -141,7 +141,7 @@ const RequestsTab = () => {
           <div className="space-y-4">
             {pendingRequests.map((request) => (
               <div key={request.id} className="flex flex-col sm:flex-row gap-4 rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-md">
-                <img src={request.product_image} alt={request.product_title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover" />
+                <img src={request.product_image} alt={request.product_title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-contain bg-white" />
                 <div className="flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <Link to={`/produs/${request.product_id}`} className="font-medium text-foreground hover:text-primary transition-colors">{request.product_title}</Link>
@@ -152,37 +152,37 @@ const RequestsTab = () => {
                     <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{request.start_date} - {request.end_date}</span>
                     {request.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{request.location}</span>}
                   </div>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="font-semibold text-primary">{request.subtotal} RON</span>
-                    <div className="flex items-center gap-2">
-                      {canCancel(request) && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm" disabled={cancelMutation.isPending}>
-                              <XCircle className="mr-1 h-4 w-4" />
-                              Anulează
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Anulează cererea</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Ești sigur că vrei să anulezi cererea de închiriere pentru <strong>{request.product_title}</strong>? Această acțiune nu poate fi anulată.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Înapoi</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => cancelMutation.mutate(request)}>
-                                Da, anulează
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to="/profile#mesaje">{copy.dashboard.contactOwner}</Link>
-                      </Button>
-                    </div>
+                  <div className="mt-3 text-center">
+                    <span className="text-lg font-bold text-primary">{request.subtotal} RON</span>
+                  </div>
+                  <div className="mt-3 flex justify-center gap-2">
+                    {canCancel(request) && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm" disabled={cancelMutation.isPending}>
+                            <XCircle className="mr-1 h-4 w-4" />
+                            Anulează
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Anulează cererea</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Ești sigur că vrei să anulezi cererea de închiriere pentru <strong>{request.product_title}</strong>? Această acțiune nu poate fi anulată.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Înapoi</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => cancelMutation.mutate(request)}>
+                              Da, anulează
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to="/profile#mesaje">{copy.dashboard.contactOwner}</Link>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -197,7 +197,7 @@ const RequestsTab = () => {
           <div className="space-y-4">
             {cancelledRequests.map((request) => (
               <div key={request.id} className="flex flex-col sm:flex-row gap-4 rounded-xl border border-border bg-card p-4 opacity-75">
-                <img src={request.product_image} alt={request.product_title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover" />
+                <img src={request.product_image} alt={request.product_title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-contain bg-white" />
                 <div className="flex-1">
                   <div className="flex items-start justify-between gap-2">
                     <span className="font-medium text-foreground">{request.product_title}</span>
@@ -206,8 +206,8 @@ const RequestsTab = () => {
                   <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{request.start_date} - {request.end_date}</span>
                   </div>
-                  <div className="mt-3">
-                    <span className="font-semibold text-muted-foreground">{request.subtotal} RON</span>
+                  <div className="mt-3 text-center">
+                    <span className="text-lg font-bold text-muted-foreground">{request.subtotal} RON</span>
                   </div>
                 </div>
               </div>
