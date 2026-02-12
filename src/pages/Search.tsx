@@ -102,7 +102,7 @@ const Search = () => {
                 {!isLoading && filteredProducts.length > 0 && (
                   <div>
                     <p className="mb-4 text-sm text-muted-foreground">{copy.search.resultsCount(filteredProducts.length)}</p>
-                    <div className={viewMode === "gallery" ? "grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-col gap-4"}>
+                    <div className={viewMode === "gallery" ? "grid gap-3 sm:gap-4 md:gap-6 grid-cols-2 lg:grid-cols-3" : "flex flex-col gap-4"}>
                       {filteredProducts.map((product) => <ProductCard key={product.id} product={product} viewMode={viewMode} />)}
                     </div>
                   </div>
