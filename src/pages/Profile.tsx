@@ -53,6 +53,21 @@ const ProfilePage = () => {
     enabled: !!user?.id,
   });
 
+  // Fetch unread notifications count for badge
+  const { data: unreadNotifCount = 0 } = useQuery({
+    queryKey: ["unread-notifications-count", user?.id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user!.id)
+        .eq("is_read", false);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!user?.id,
+  });
+
   // Get tab from URL hash or default to first tab
   const getTabFromHash = () => {
     const hash = location.hash.replace("#", "");
@@ -114,7 +129,8 @@ const ProfilePage = () => {
           <TabsList className="w-full h-auto flex flex-wrap justify-start gap-1 bg-muted/50 p-1 rounded-lg mb-6">
             {TABS.map((tab) => {
               const Icon = tab.icon;
-              const showBadge = tab.id === "cereri" && pendingCount > 0;
+              const badgeCount = tab.id === "cereri" ? pendingCount : tab.id === "notificari" ? unreadNotifCount : 0;
+              const showBadge = badgeCount > 0;
               return (
                 <TabsTrigger
                   key={tab.id}
@@ -127,7 +143,7 @@ const ProfilePage = () => {
                   </span>
                   {showBadge && (
                     <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold px-1">
-                      {pendingCount}
+                      {badgeCount}
                     </span>
                   )}
                 </TabsTrigger>
