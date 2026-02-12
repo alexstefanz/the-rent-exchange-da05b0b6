@@ -1,129 +1,67 @@
 
 
-# Traducere Categorii, Subcategorii si Pagini Detaliu
+# Adaugare Favorite Produse (Anunturi)
 
-## Problema
-Numele categoriilor (ex: "OUTDOOR & AVENTURA"), subcategoriilor (ex: "Castele gonflabile"), descrierilor si textele hardcoded din paginile `CategoryDetail.tsx` si `SubcategoryDetail.tsx` raman in romana indiferent de limba selectata.
+## Situatia actuala
+Exista doar un sistem de favorite pentru **utilizatori** (`favorite_users` table). Nu exista nicio tabela sau functionalitate pentru a salva **produse/anunturi** la favorite. Butonul Heart de pe pagina de produs exista vizual dar nu salveaza nimic in baza de date.
 
-## Solutia
+## Ce vom implementa
 
-### Pas 1: Adaugare campuri EN in `categories.ts`
+### 1. Creare tabela `favorite_products` in baza de date
+- Coloane: `id`, `user_id`, `product_id`, `created_at`
+- Constrangere unica pe `(user_id, product_id)` pentru a preveni duplicatele
+- Politici RLS: utilizatorii pot vedea/adauga/sterge doar propriile favorite
 
-Voi adauga `nameEn` si `descriptionEn` la interfetele `Category` si `Subcategory`, apoi voi completa traducerile pentru toate cele 22 categorii si ~150 subcategorii.
+### 2. Creare API `src/features/profile/favoriteProductsApi.ts`
+Functii:
+- `addFavoriteProduct(productId)` - adauga la favorite
+- `removeFavoriteProduct(productId)` - sterge din favorite
+- `isProductFavorite(productId)` - verifica daca e favorit
+- `getFavoriteProducts()` - returneaza lista de produse favorite (cu detalii)
 
-Exemplu:
-```typescript
-interface Subcategory {
-  id: string;
-  name: string;
-  nameEn: string;
-  description: string;
-  descriptionEn: string;
-  image: string;
-}
+### 3. Buton Heart pe galeria de imagini (dreapta jos)
+Pe pagina `ProductDetail.tsx`:
+- Adaugare buton Heart in coltul dreapta-jos al containerului de imagine (atat desktop cat si mobil)
+- La click: verifica autentificare, apoi toggle favorit in baza de date
+- Afisare stare reala (plin rosu = favorit, gol = nefavorit)
+- Preluare stare initiala la incarcare pagina
 
-interface Category {
-  id: number;
-  name: string;
-  nameEn: string;
-  subcategories: Subcategory[];
-  icon: string;
-}
-```
-
-Traduceri categorii:
-| RO | EN |
-|----|-----|
-| OUTDOOR & AVENTURA | OUTDOOR & ADVENTURE |
-| CAMPING & DRUMETII | CAMPING & HIKING |
-| SPORTURI DE IARNA | WINTER SPORTS |
-| SCULE, UNELTE & CONSTRUCTII | TOOLS & CONSTRUCTION |
-| JUCARII GONFLABILE & COPII | INFLATABLES & KIDS |
-| GAMING & ELECTRONICE | GAMING & ELECTRONICS |
-| FOTO & VIDEO | PHOTO & VIDEO |
-| MOBILITATE URBANA | URBAN MOBILITY |
-| EVENIMENTE & HOBBY | EVENTS & HOBBY |
-| INSTRUMENTE MUZICALE & DJ | MUSICAL INSTRUMENTS & DJ |
-| FITNESS & WELLNESS | FITNESS & WELLNESS |
-| ECHIPAMENTE MEDICALE & RECUPERARE | MEDICAL EQUIPMENT & RECOVERY |
-| ANIMALE DE COMPANIE | PETS |
-| REMORCI & TRANSPORT | TRAILERS & TRANSPORT |
-| BEBE & FAMILY RENTALS | BABY & FAMILY RENTALS |
-| IMPRIMANTE 3D & CNC | 3D PRINTERS & CNC |
-| TELESCOP & OBSERVATIE | TELESCOPES & OBSERVATION |
-| NUNTI & EVENIMENTE PREMIUM | WEDDINGS & PREMIUM EVENTS |
-| COSTUME & RECUZITA | COSTUMES & PROPS |
-| INDUSTRIAL CLEANING | INDUSTRIAL CLEANING |
-| RULOTE & CAMPERVAN-URI | RVs & CAMPERVANS |
-
-Plus toate ~150 subcategoriile cu `nameEn` si `descriptionEn`.
-
-### Pas 2: Adaugare chei noi in `uxCopy.ts`
-
-Voi adauga sectiunea `categoryDetail` cu traduceri pentru textele hardcoded:
-
-```typescript
-categoryDetail: {
-  backToCategories: { ro: "Inapoi la Categorii", en: "Back to Categories" },
-  subcategoriesAvailable: { ro: (n) => `${n} subcategorii disponibile pentru inchiriat`, en: (n) => `${n} subcategories available for rent` },
-  listings: { ro: (n) => `${n} anunturi`, en: (n) => `${n} listings` },
-  subcategories: { ro: "Subcategorii", en: "Subcategories" },
-  listingsInCategory: { ro: "Anunturi in aceasta categorie", en: "Listings in this category" },
-  noListings: { ro: "Nu exista anunturi in aceasta categorie momentan.", en: "No listings in this category at the moment." },
-  addFirstListing: { ro: "Adauga primul anunt", en: "Add first listing" },
-  categoryNotFound: { ro: "Categoria nu a fost gasita", en: "Category not found" },
-  subcategoryNotFound: { ro: "Subcategoria nu a fost gasita", en: "Subcategory not found" },
-  productsAvailable: { ro: (n) => `${n} produse disponibile pentru inchiriere`, en: (n) => `${n} products available for rent` },
-  noProducts: { ro: "Nu exista produse disponibile in aceasta categorie momentan.", en: "No products available in this category at the moment." },
-  addFirstProduct: { ro: "Adauga primul produs", en: "Add first product" },
-  allSubcategories: { ro: "Toate subcategoriile", en: "All subcategories" },
-  entireCountry: { ro: "Toata tara", en: "Entire country" },
-  selectCity: { ro: "Selecteaza localitatea", en: "Select city" },
-  allCities: { ro: "Toate localitatile", en: "All cities" },
-  sortByPrice: { ro: "Sorteaza dupa pret", en: "Sort by price" },
-  priceLowHigh: { ro: "Pret: Ieftin -> Scump", en: "Price: Low -> High" },
-  priceHighLow: { ro: "Pret: Scump -> Ieftin", en: "Price: High -> Low" },
-  backTo: { ro: (name) => `Inapoi la ${name}`, en: (name) => `Back to ${name}` },
-}
-```
-
-### Pas 3: Actualizare `CategoryDetail.tsx`
-
-- Import `useUxCopy` si `useLanguage`
-- Folosire `language === "en" ? category.nameEn : category.name` pentru afisare
-- Inlocuire texte hardcoded cu chei din `copy.categoryDetail`
-
-### Pas 4: Actualizare `SubcategoryDetail.tsx`
-
-- Import `useUxCopy` si `useLanguage`  
-- Folosire `nameEn`/`descriptionEn` conditionate de limba
-- Inlocuire texte hardcoded: "Inapoi la", "Se incarca...", "produse disponibile", "Nu exista produse", "Adauga primul produs", "Toata tara", etc.
-
-### Pas 5: Actualizare `Categories.tsx`
-
-- Pagina deja foloseste `useUxCopy`, dar afiseaza `category.name` - trebuie sa afiseze `nameEn` cand limba e EN
-
-### Pas 6: Actualizare `SubcategoryCard.tsx`
-
-- Va primi si `nameEn` si va afisa pe baza limbii
-
----
+### 4. Tab "Favorite" in Profil
+- Adaugare tab nou in `Profile.tsx` cu iconita Heart
+- Creare componenta `FavoritesTab.tsx` care afiseaza produsele favorite ca un grid de ProductCard-uri
+- Buton de stergere rapida din favorite
 
 ## Detalii Tehnice
+
+### Schema baza de date
+```sql
+CREATE TABLE favorite_products (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(user_id, product_id)
+);
+
+ALTER TABLE favorite_products ENABLE ROW LEVEL SECURITY;
+
+-- Politici RLS
+CREATE POLICY "Users can view own favorite products" ON favorite_products FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can add favorite products" ON favorite_products FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can remove favorite products" ON favorite_products FOR DELETE USING (auth.uid() = user_id);
+```
+
+### Fisiere noi
+| Fisier | Scop |
+|--------|------|
+| `src/features/profile/favoriteProductsApi.ts` | API pentru CRUD favorite produse |
+| `src/components/profile/FavoritesTab.tsx` | Tab cu lista de produse favorite |
 
 ### Fisiere modificate
 | Fisier | Ce se schimba |
 |--------|---------------|
-| `src/data/categories.ts` | Adaugare `nameEn`, `descriptionEn` la toate categoriile si subcategoriile |
-| `src/data/uxCopy.ts` | Adaugare sectiune `categoryDetail` |
-| `src/pages/CategoryDetail.tsx` | Folosire traduceri dinamice |
-| `src/pages/SubcategoryDetail.tsx` | Folosire traduceri dinamice |
-| `src/pages/Categories.tsx` | Afisare `nameEn` cand limba e EN |
-| `src/components/items/SubcategoryCard.tsx` | Afisare `nameEn` cand limba e EN |
-| `src/pages/Index.tsx` | Afisare `nameEn` pe homepage categorii populare |
-
-### Estimare
-- ~150 subcategorii de tradus (name + description)
-- 22 categorii de tradus
-- 7 fisiere de modificat
+| `src/pages/ProductDetail.tsx` | Buton Heart pe galeria de imagini + logica reala de toggle |
+| `src/pages/Profile.tsx` | Adaugare tab "Favorite" |
+| `src/data/uxCopy.ts` | Adaugare texte pentru sectiunea favorite |
+| `src/components/products/ProductCard.tsx` | Conectare buton Heart existent la API-ul real |
 
