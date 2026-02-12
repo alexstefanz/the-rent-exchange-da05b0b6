@@ -4,6 +4,8 @@ import { Loader2, UserCog, User, MessageCircle, Wallet, Bell, ShoppingBag, Packa
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AccountTab from "@/components/profile/AccountTab";
@@ -35,6 +37,21 @@ const ProfilePage = () => {
   const { user, loading: authLoading } = useAuth();
   const { language } = useLanguage();
   const t = (ro: string, en: string) => language === "ro" ? ro : en;
+
+  // Fetch pending requests count for badge
+  const { data: pendingCount = 0 } = useQuery({
+    queryKey: ["pending-requests-count", user?.id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("rentals")
+        .select("id", { count: "exact", head: true })
+        .eq("renter_id", user!.id)
+        .eq("status", "pending");
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!user?.id,
+  });
 
   // Get tab from URL hash or default to first tab
   const getTabFromHash = () => {
@@ -97,16 +114,22 @@ const ProfilePage = () => {
           <TabsList className="w-full h-auto flex flex-wrap justify-start gap-1 bg-muted/50 p-1 rounded-lg mb-6">
             {TABS.map((tab) => {
               const Icon = tab.icon;
+              const showBadge = tab.id === "cereri" && pendingCount > 0;
               return (
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="flex items-center gap-2 px-4 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-all"
+                  className="relative flex items-center gap-2 px-4 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-all"
                 >
                   <Icon className="h-4 w-4" />
                   <span className="hidden sm:inline">
                     {language === "ro" ? tab.labelRo : tab.labelEn}
                   </span>
+                  {showBadge && (
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold px-1">
+                      {pendingCount}
+                    </span>
+                  )}
                 </TabsTrigger>
               );
             })}

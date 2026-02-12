@@ -19,6 +19,7 @@ interface Request {
   product_id: string | null;
   product_title: string;
   product_image: string;
+  owner_id: string | null;
   owner_name: string;
   start_date: string;
   end_date: string;
@@ -43,6 +44,7 @@ const fetchMyRequests = async (userId: string): Promise<Request[]> => {
     product_id: r.product_id,
     product_title: r.products?.title || "Produs șters",
     product_image: r.products?.images?.[0] || "/placeholder.svg",
+    owner_id: r.products?.owner_id || null,
     owner_name: r.products?.profiles?.full_name || "Utilizator",
     start_date: format(new Date(r.start_date), "dd MMM yyyy"),
     end_date: format(new Date(r.end_date), "dd MMM yyyy"),
@@ -68,15 +70,29 @@ const RequestsTab = () => {
   });
 
   const cancelMutation = useMutation({
-    mutationFn: async (rentalId: string) => {
+    mutationFn: async (request: Request) => {
       const { error } = await supabase
         .from("rentals")
         .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
-        .eq("id", rentalId);
+        .eq("id", request.id);
       if (error) throw error;
+
+      // Notify owner about the cancellation
+      if (request.owner_id) {
+        await supabase.from("notifications").insert({
+          user_id: request.owner_id,
+          type: "rental",
+          title_ro: `Cerere anulată: ${request.product_title}`,
+          title_en: `Request cancelled: ${request.product_title}`,
+          description_ro: `Chiriașul a anulat cererea de închiriere pentru "${request.product_title}" (${request.start_date} - ${request.end_date}).`,
+          description_en: `The renter cancelled the rental request for "${request.product_title}" (${request.start_date} - ${request.end_date}).`,
+          link: "/profile#anunturi",
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-requests-count"] });
       toast.success("Cererea a fost anulată cu succes");
     },
     onError: () => {
@@ -156,7 +172,7 @@ const RequestsTab = () => {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Înapoi</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => cancelMutation.mutate(request.id)}>
+                              <AlertDialogAction onClick={() => cancelMutation.mutate(request)}>
                                 Da, anulează
                               </AlertDialogAction>
                             </AlertDialogFooter>
