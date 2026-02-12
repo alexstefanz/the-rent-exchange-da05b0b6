@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: "RentNow <onboarding@resend.dev>",
+        from: "RentNow <noreply@rentli.ro>",
         to: [email],
         subject: "Parola ta a fost schimbată - RentNow",
         html,
