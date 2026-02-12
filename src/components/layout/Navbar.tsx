@@ -226,6 +226,13 @@ const Navbar = () => {
               </Link>
             </Button>
             
+            {/* Notification Bell - Mobile/Tablet */}
+            {user && (
+              <div className="lg:hidden">
+                <NotificationBell />
+              </div>
+            )}
+
             {/* Mobile menu button */}
             <Button 
               variant="ghost" 
