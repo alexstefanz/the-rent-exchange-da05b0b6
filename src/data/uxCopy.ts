@@ -222,6 +222,16 @@ const createUxCopy = () => ({
     emailSent: { ro: "Email trimis", en: "Email sent" },
     checkInbox: { ro: "Verifică inbox-ul pentru link-ul de resetare a parolei.", en: "Check your inbox for the password reset link." },
     errorGeneric: { ro: "Eroare", en: "Error" },
+    // Reset password form
+    newPassword: { ro: "Parolă nouă", en: "New password" },
+    confirmNewPassword: { ro: "Confirmă parola nouă", en: "Confirm new password" },
+    setNewPassword: { ro: "Setează parola nouă", en: "Set new password" },
+    setNewPasswordSubtitle: { ro: "Introdu noua ta parolă mai jos", en: "Enter your new password below" },
+    resetSuccess: { ro: "Parolă schimbată cu succes", en: "Password changed successfully" },
+    resetSuccessDesc: { ro: "Te poți autentifica acum cu noua parolă.", en: "You can now log in with your new password." },
+    resettingPassword: { ro: "Se resetează...", en: "Resetting..." },
+    resetPasswordButton: { ro: "Resetează parola", en: "Reset password" },
+    resetError: { ro: "Eroare la resetarea parolei", en: "Password reset error" },
   },
   checkout: {
     title: { ro: "Confirmă și plătește", en: "Confirm and pay" },
