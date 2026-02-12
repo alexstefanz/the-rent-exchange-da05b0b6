@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
             method: "POST",
             headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
             body: JSON.stringify({
-              from: "RentNow <onboarding@resend.dev>",
+              from: "RentNow <noreply@rentli.ro>",
               to: [ownerEmail],
               subject: `Cerere anulată - ${productTitle}`,
               html: ownerHtml,
@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
             method: "POST",
             headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
             body: JSON.stringify({
-              from: "RentNow <onboarding@resend.dev>",
+              from: "RentNow <noreply@rentli.ro>",
               to: [renterEmail],
               subject: `Confirmare anulare - ${productTitle}`,
               html: renterHtml,

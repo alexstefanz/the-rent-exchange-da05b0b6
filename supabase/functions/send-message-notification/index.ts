@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "RentNow <onboarding@resend.dev>",
+            from: "RentNow <noreply@rentli.ro>",
             to: [recipientEmail],
             subject: `Mesaj nou de la ${senderName} - ${productTitle}`,
             html,
