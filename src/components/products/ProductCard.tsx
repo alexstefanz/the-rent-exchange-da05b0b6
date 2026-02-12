@@ -76,7 +76,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
       to={`/produs/${product.id}`}
       className="group relative block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover"
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+      <div className="relative aspect-[4/3] overflow-hidden bg-white">
         <img
           src={imageUrl}
           alt={product.title}
