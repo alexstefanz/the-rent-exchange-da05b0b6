@@ -152,37 +152,37 @@ const RequestsTab = () => {
                     <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{request.start_date} - {request.end_date}</span>
                     {request.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{request.location}</span>}
                   </div>
-                  <div className="mt-3 flex items-center justify-between">
+                  <div className="mt-3">
                     <span className="text-lg font-bold text-primary">{request.subtotal} RON</span>
-                    <div className="flex items-center gap-1.5">
-                      {canCancel(request) && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm" className="h-7 px-2 text-xs" disabled={cancelMutation.isPending}>
-                              <XCircle className="mr-1 h-3 w-3" />
-                              Anulează
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Anulează cererea</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Ești sigur că vrei să anulezi cererea de închiriere pentru <strong>{request.product_title}</strong>? Această acțiune nu poate fi anulată.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Înapoi</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => cancelMutation.mutate(request)}>
-                                Da, anulează
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                      <Button variant="outline" size="sm" className="h-7 px-2 text-xs" asChild>
-                        <Link to="/profile#mesaje">{copy.dashboard.contactOwner}</Link>
-                      </Button>
-                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center gap-1.5">
+                    {canCancel(request) && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="sm" className="h-7 px-2 text-xs" disabled={cancelMutation.isPending}>
+                            <XCircle className="mr-1 h-3 w-3" />
+                            Anulează
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Anulează cererea</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Ești sigur că vrei să anulezi cererea de închiriere pentru <strong>{request.product_title}</strong>? Această acțiune nu poate fi anulată.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Înapoi</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => cancelMutation.mutate(request)}>
+                              Da, anulează
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                    <Button variant="outline" size="sm" className="h-7 px-2 text-xs" asChild>
+                      <Link to="/profile#mesaje">{copy.dashboard.contactOwner}</Link>
+                    </Button>
                   </div>
                 </div>
               </div>
