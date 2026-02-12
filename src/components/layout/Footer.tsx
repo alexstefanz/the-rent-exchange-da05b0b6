@@ -1,6 +1,10 @@
 import { Package } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useUxCopy } from "@/hooks/useUxCopy";
+
 const Footer = () => {
+  const copy = useUxCopy();
+
   return <footer className="border-t border-border bg-secondary/30">
       <div className="container py-12">
         <div className="grid gap-8 md:grid-cols-4">
@@ -12,68 +16,68 @@ const Footer = () => {
               <span className="font-heading text-lg font-semibold">RentNow</span>
             </Link>
             <p className="text-sm text-muted-foreground">
-              Platforma ta de încredere pentru închiriere. Găsește sau oferă orice ai nevoie.
+              {copy.footer.description}
             </p>
           </div>
 
           <div className="space-y-4">
-            <h4 className="font-heading text-sm font-semibold">Explorează</h4>
+            <h4 className="font-heading text-sm font-semibold">{copy.footer.explore}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link to="/categorii" className="transition-colors hover:text-foreground">
-                  Toate Categoriile
+                  {copy.footer.allCategories}
                 </Link>
               </li>
               <li>
                 <Link to="/cauta" className="transition-colors hover:text-foreground">
-                  Caută Produse
+                  {copy.footer.searchProducts}
                 </Link>
               </li>
               <li>
                 <Link to="/categorie/1" className="transition-colors hover:text-foreground">
-                  Outdoor & Aventură
+                  {copy.footer.outdoorAdventure}
                 </Link>
               </li>
             </ul>
           </div>
 
           <div className="space-y-4">
-            <h4 className="font-heading text-sm font-semibold">Publică</h4>
+            <h4 className="font-heading text-sm font-semibold">{copy.footer.publish}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link to="/adauga-anunt" className="transition-colors hover:text-foreground">
-                  Adaugă Anunț
+                  {copy.footer.addListing}
                 </Link>
               </li>
               <li>
                 <Link to="#" className="transition-colors hover:text-foreground">
-                  Cum Funcționează
+                  {copy.footer.howItWorks}
                 </Link>
               </li>
               <li>
                 <Link to="#" className="transition-colors hover:text-foreground">
-                  Prețuri
+                  {copy.footer.pricing}
                 </Link>
               </li>
             </ul>
           </div>
 
           <div className="space-y-4">
-            <h4 className="font-heading text-sm font-semibold">Suport</h4>
+            <h4 className="font-heading text-sm font-semibold">{copy.footer.support}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link to="#" className="transition-colors hover:text-foreground">
-                  Centru de Ajutor
+                  {copy.footer.helpCenter}
                 </Link>
               </li>
               <li>
                 <Link to="#" className="transition-colors hover:text-foreground">
-                  Contactează-ne
+                  {copy.footer.contactUs}
                 </Link>
               </li>
               <li>
                 <Link to="#" className="transition-colors hover:text-foreground">
-                  Termeni și Condiții
+                  {copy.footer.terms}
                 </Link>
               </li>
             </ul>
@@ -81,7 +85,7 @@ const Footer = () => {
         </div>
 
         <div className="mt-8 border-t border-border pt-8 text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} ÎnchiriazăAcum. Toate drepturile rezervate.</p>
+          <p>© {new Date().getFullYear()} {copy.footer.copyright}</p>
         </div>
       </div>
     </footer>;

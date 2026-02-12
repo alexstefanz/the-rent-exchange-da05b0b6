@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { uxCopy } from "@/data/uxCopy";
+import { useUxCopy } from "@/hooks/useUxCopy";
 
 interface ProgressIndicatorProps {
   currentStep: number;
@@ -8,28 +8,32 @@ interface ProgressIndicatorProps {
   steps?: string[];
 }
 
-const defaultSteps = [
-  uxCopy.booking.steps.period,
-  uxCopy.booking.steps.message,
-  uxCopy.booking.steps.auth,
-  uxCopy.booking.steps.confirm,
-];
-
 const ProgressIndicator = ({
   currentStep,
   totalSteps = 4,
-  steps = defaultSteps,
+  steps,
 }: ProgressIndicatorProps) => {
+  const copy = useUxCopy();
+  
+  const defaultSteps = [
+    copy.booking.steps.period,
+    copy.booking.steps.message,
+    copy.booking.steps.auth,
+    copy.booking.steps.confirm,
+  ];
+
+  const activeSteps = steps || defaultSteps;
+
   return (
     <div className="w-full">
       {/* Mobile Progress Bar */}
       <div className="md:hidden">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-foreground">
-            Pasul {currentStep} din {totalSteps}
+            {copy.progressIndicator.stepOf(currentStep, totalSteps)}
           </span>
           <span className="text-sm text-muted-foreground">
-            {steps[currentStep - 1]}
+            {activeSteps[currentStep - 1]}
           </span>
         </div>
         <div className="h-2 w-full rounded-full bg-muted">
@@ -42,15 +46,14 @@ const ProgressIndicator = ({
 
       {/* Desktop Step Indicator */}
       <div className="hidden md:flex items-center justify-center">
-        {steps.map((step, index) => {
+        {activeSteps.map((step, index) => {
           const stepNumber = index + 1;
           const isCompleted = stepNumber < currentStep;
           const isCurrent = stepNumber === currentStep;
-          const isLast = index === steps.length - 1;
+          const isLast = index === activeSteps.length - 1;
 
           return (
             <div key={step} className="flex items-center">
-              {/* Step Circle */}
               <div className="flex flex-col items-center">
                 <div
                   className={cn(
@@ -78,7 +81,6 @@ const ProgressIndicator = ({
                 </span>
               </div>
 
-              {/* Connector Line */}
               {!isLast && (
                 <div
                   className={cn(

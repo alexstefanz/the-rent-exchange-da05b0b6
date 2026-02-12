@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { uxCopy } from "@/data/uxCopy";
+import { useUxCopy } from "@/hooks/useUxCopy";
 
 type StatusType = "pending" | "accepted" | "rejected" | "completed" | "cancelled" | "active" | "inactive";
 
@@ -8,49 +8,29 @@ interface StatusBadgeProps {
   size?: "sm" | "md";
 }
 
-const statusConfig: Record<StatusType, { label: string; className: string }> = {
-  pending: {
-    label: uxCopy.status.pending,
-    className: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  },
-  accepted: {
-    label: uxCopy.status.accepted,
-    className: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  },
-  rejected: {
-    label: uxCopy.status.rejected,
-    className: "bg-red-100 text-red-800 border-red-200",
-  },
-  completed: {
-    label: uxCopy.status.completed,
-    className: "bg-gray-100 text-gray-800 border-gray-200",
-  },
-  cancelled: {
-    label: uxCopy.status.cancelled,
-    className: "bg-red-100 text-red-800 border-red-200",
-  },
-  active: {
-    label: uxCopy.status.active,
-    className: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  },
-  inactive: {
-    label: uxCopy.status.inactive,
-    className: "bg-gray-100 text-gray-800 border-gray-200",
-  },
+const statusStyles: Record<StatusType, string> = {
+  pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  accepted: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  rejected: "bg-red-100 text-red-800 border-red-200",
+  completed: "bg-gray-100 text-gray-800 border-gray-200",
+  cancelled: "bg-red-100 text-red-800 border-red-200",
+  active: "bg-emerald-100 text-emerald-800 border-emerald-200",
+  inactive: "bg-gray-100 text-gray-800 border-gray-200",
 };
 
 const StatusBadge = ({ status, size = "sm" }: StatusBadgeProps) => {
-  const config = statusConfig[status];
+  const copy = useUxCopy();
+  const label = copy.status[status];
 
   return (
     <span
       className={cn(
         "inline-flex items-center rounded-full border font-medium",
-        config.className,
+        statusStyles[status],
         size === "sm" ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-sm"
       )}
     >
-      {config.label}
+      {label}
     </span>
   );
 };
