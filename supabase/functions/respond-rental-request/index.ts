@@ -190,52 +190,99 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Send email
+    // Send emails to both renter and owner
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    if (resendApiKey && renterEmail) {
-      let html: string;
-      let subject: string;
+    const ownerEmail = await getEmail(rental.owner_id, owner?.email || null);
+    const renterName = renter?.full_name || "Chiriașul";
 
-      if (action === "accept") {
-        subject = `Cererea ta a fost acceptată - ${productTitle}`;
-        html = buildEmailTemplate({
-          title: "Cererea ta a fost acceptată! 🎉",
-          greeting: `<strong>${ownerName}</strong> a acceptat cererea ta pentru <strong>${productTitle}</strong>. Poți discuta detaliile de predare.`,
-          rows,
-          ctaText: "Discută detaliile",
-          ctaLink: "/profile?tab=rentals",
-          footerText: "Contactează proprietarul pentru a stabili detaliile de predare.",
-        });
-      } else {
-        subject = `Cererea ta a fost refuzată - ${productTitle}`;
-        const reasonRow = reason ? [{ label: "📝 Motiv", value: reason }] : [];
-        html = buildEmailTemplate({
-          title: "Cererea ta a fost refuzată",
-          greeting: `<strong>${ownerName}</strong> a refuzat cererea pentru <strong>${productTitle}</strong>.`,
-          rows: [...rows, ...reasonRow],
-          ctaText: "Caută alte produse",
-          ctaLink: "/search",
-          footerText: "Poți căuta alte produse similare pe platformă.",
-        });
+    if (resendApiKey) {
+      const emailPromises: Promise<unknown>[] = [];
+
+      // Email to renter
+      if (renterEmail) {
+        let renterHtml: string;
+        let renterSubject: string;
+
+        if (action === "accept") {
+          renterSubject = `Cererea ta a fost acceptată - ${productTitle}`;
+          renterHtml = buildEmailTemplate({
+            title: "Cererea ta a fost acceptată! 🎉",
+            greeting: `<strong>${ownerName}</strong> a acceptat cererea ta pentru <strong>${productTitle}</strong>. Poți discuta detaliile de predare.`,
+            rows,
+            ctaText: "Discută detaliile",
+            ctaLink: "/profile?tab=rentals",
+            footerText: "Contactează proprietarul pentru a stabili detaliile de predare.",
+          });
+        } else {
+          renterSubject = `Cererea ta a fost refuzată - ${productTitle}`;
+          const reasonRow = reason ? [{ label: "📝 Motiv", value: reason }] : [];
+          renterHtml = buildEmailTemplate({
+            title: "Cererea ta a fost refuzată",
+            greeting: `<strong>${ownerName}</strong> a refuzat cererea pentru <strong>${productTitle}</strong>.`,
+            rows: [...rows, ...reasonRow],
+            ctaText: "Caută alte produse",
+            ctaLink: "/search",
+            footerText: "Poți căuta alte produse similare pe platformă.",
+          });
+        }
+
+        emailPromises.push(
+          fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              from: "RentNow <onboarding@resend.dev>",
+              to: [renterEmail],
+              subject: renterSubject,
+              html: renterHtml,
+            }),
+          }).catch((e) => console.error("Renter email error:", e))
+        );
       }
 
-      try {
-        await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${resendApiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from: "RentNow <onboarding@resend.dev>",
-            to: [renterEmail],
-            subject,
-            html,
-          }),
-        });
-      } catch (e) {
-        console.error("Email error:", e);
+      // Email to owner (confirmation)
+      if (ownerEmail) {
+        let ownerHtml: string;
+        let ownerSubject: string;
+
+        if (action === "accept") {
+          ownerSubject = `Ai acceptat cererea - ${productTitle}`;
+          ownerHtml = buildEmailTemplate({
+            title: "Ai acceptat cererea! ✅",
+            greeting: `Ai acceptat cererea lui <strong>${renterName}</strong> pentru <strong>${productTitle}</strong>. Contactează chiriașul pentru detaliile de predare.`,
+            rows,
+            ctaText: "Vezi închirierile tale",
+            ctaLink: "/profile?tab=lendings",
+            footerText: "Stabilește detaliile de predare cu chiriașul.",
+          });
+        } else {
+          ownerSubject = `Ai refuzat cererea - ${productTitle}`;
+          const reasonRow = reason ? [{ label: "📝 Motiv", value: reason }] : [];
+          ownerHtml = buildEmailTemplate({
+            title: "Ai refuzat cererea",
+            greeting: `Ai refuzat cererea lui <strong>${renterName}</strong> pentru <strong>${productTitle}</strong>.`,
+            rows: [...rows, ...reasonRow],
+            ctaText: "Vezi anunțurile tale",
+            ctaLink: "/profile?tab=lendings",
+            footerText: "Produsul tău rămâne disponibil pentru alte cereri.",
+          });
+        }
+
+        emailPromises.push(
+          fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              from: "RentNow <onboarding@resend.dev>",
+              to: [ownerEmail],
+              subject: ownerSubject,
+              html: ownerHtml,
+            }),
+          }).catch((e) => console.error("Owner email error:", e))
+        );
       }
+
+      await Promise.all(emailPromises);
     }
 
     return new Response(JSON.stringify({ success: true, status: newStatus }), {

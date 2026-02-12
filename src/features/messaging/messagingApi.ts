@@ -151,6 +151,19 @@ export async function sendMessage(conversationId: string, content: string): Prom
     .update({ updated_at: new Date().toISOString() })
     .eq('id', conversationId);
 
+  // Send email notification (non-blocking)
+  try {
+    await supabase.functions.invoke('send-message-notification', {
+      body: {
+        conversation_id: conversationId,
+        sender_id: user.id,
+        message_content: trimmed,
+      },
+    });
+  } catch (e) {
+    console.error('Message notification error:', e);
+  }
+
   return data as Message;
 }
 
