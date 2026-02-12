@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +18,7 @@ import { useUxCopy } from "@/hooks/useUxCopy";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const { user, loading: authLoading, signIn, signUp } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
@@ -25,6 +26,8 @@ const Auth = () => {
   const [resetEmail, setResetEmail] = useState("");
   const [isResetting, setIsResetting] = useState(false);
   const copy = useUxCopy();
+
+  const isResetMode = searchParams.get("reset") === "true";
 
   const loginSchema = z.object({
     email: z.string().email(copy.auth.invalidEmail),
@@ -41,8 +44,17 @@ const Auth = () => {
     path: ["confirmPassword"],
   });
 
+  const resetPasswordSchema = z.object({
+    newPassword: z.string().min(6, copy.auth.passwordMin),
+    confirmNewPassword: z.string(),
+  }).refine((data) => data.newPassword === data.confirmNewPassword, {
+    message: copy.auth.passwordMismatch,
+    path: ["confirmNewPassword"],
+  });
+
   type LoginFormData = z.infer<typeof loginSchema>;
   type RegisterFormData = z.infer<typeof registerSchema>;
+  type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
   const handleResetPassword = async () => {
     if (!resetEmail) return;
@@ -70,9 +82,14 @@ const Auth = () => {
     defaultValues: { fullName: "", email: "", password: "", confirmPassword: "" },
   });
 
+  const resetForm = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
+    defaultValues: { newPassword: "", confirmNewPassword: "" },
+  });
+
   useEffect(() => {
-    if (user) navigate("/");
-  }, [user, navigate]);
+    if (user && !isResetMode) navigate("/");
+  }, [user, navigate, isResetMode]);
 
   const handleLogin = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -104,10 +121,75 @@ const Auth = () => {
     }
   };
 
+  const handleSetNewPassword = async (data: ResetPasswordFormData) => {
+    setIsLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: data.newPassword });
+    
+    if (error) {
+      setIsLoading(false);
+      toast({ title: copy.auth.resetError, description: error.message, variant: "destructive" });
+      return;
+    }
+
+    // Send confirmation email
+    try {
+      const userEmail = user?.email;
+      if (userEmail) {
+        await supabase.functions.invoke("send-password-changed-notification", {
+          body: { email: userEmail },
+        });
+      }
+    } catch (e) {
+      console.error("Failed to send password changed notification:", e);
+    }
+
+    setIsLoading(false);
+    toast({ title: copy.auth.resetSuccess, description: copy.auth.resetSuccessDesc });
+    
+    // Clear reset param and redirect to login
+    setSearchParams({});
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Reset password mode
+  if (isResetMode) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted/30 px-4 py-8">
+        <div className="mb-8">
+          <img src={logoImage} alt="RentNow" className="h-12 w-auto" />
+        </div>
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-xl">{copy.auth.setNewPassword}</CardTitle>
+            <CardDescription>{copy.auth.setNewPasswordSubtitle}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={resetForm.handleSubmit(handleSetNewPassword)} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-password">{copy.auth.newPassword}</Label>
+                <Input id="new-password" type="password" placeholder="••••••••" {...resetForm.register("newPassword")} />
+                {resetForm.formState.errors.newPassword && <p className="text-sm text-destructive">{resetForm.formState.errors.newPassword.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirm-new-password">{copy.auth.confirmNewPassword}</Label>
+                <Input id="confirm-new-password" type="password" placeholder="••••••••" {...resetForm.register("confirmNewPassword")} />
+                {resetForm.formState.errors.confirmNewPassword && <p className="text-sm text-destructive">{resetForm.formState.errors.confirmNewPassword.message}</p>}
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{copy.auth.resettingPassword}</> : copy.auth.resetPasswordButton}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     );
   }

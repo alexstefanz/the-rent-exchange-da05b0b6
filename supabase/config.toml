@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.respond-rental-request]
 verify_jwt = false
+
+[functions.send-password-changed-notification]
+verify_jwt = false

@@ -1,0 +1,126 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const PLATFORM_URL = "https://the-rent-exchange.lovable.app";
+
+function buildEmailTemplate(opts: {
+  title: string;
+  greeting: string;
+  rows: { label: string; value: string }[];
+  ctaText: string;
+  ctaLink: string;
+  footerText: string;
+}) {
+  const rowsHtml = opts.rows
+    .map(
+      (r) =>
+        `<tr><td style="padding:6px 0;color:#6B6155;font-size:14px;">${r.label}</td><td style="padding:6px 0;color:#2D2517;font-size:14px;font-weight:600;text-align:right;">${r.value}</td></tr>`
+    )
+    .join("");
+
+  return `<!DOCTYPE html>
+<html lang="ro">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#FAF9F7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAF9F7;padding:32px 16px;">
+<tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+  <tr><td style="background-color:#3DB86A;border-radius:12px 12px 0 0;padding:24px 32px;text-align:center;">
+    <span style="color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">RentNow</span>
+  </td></tr>
+  <tr><td style="background-color:#ffffff;padding:32px;border-radius:0 0 12px 12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+    <h2 style="margin:0 0 8px;color:#2D2517;font-size:20px;">${opts.title}</h2>
+    <p style="margin:0 0 24px;color:#6B6155;font-size:15px;line-height:1.5;">${opts.greeting}</p>
+    ${rowsHtml ? `<table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #E8E4DF;border-bottom:1px solid #E8E4DF;margin-bottom:24px;padding:8px 0;">${rowsHtml}</table>` : ''}
+    <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+      <a href="${PLATFORM_URL}${opts.ctaLink}" style="display:inline-block;background-color:#3DB86A;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;">${opts.ctaText}</a>
+    </td></tr></table>
+  </td></tr>
+  <tr><td style="padding:24px 32px;text-align:center;">
+    <p style="margin:0;color:#9B9489;font-size:12px;">${opts.footerText}</p>
+    <a href="${PLATFORM_URL}" style="color:#3DB86A;font-size:12px;text-decoration:none;">the-rent-exchange.lovable.app</a>
+  </td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>`;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { email } = await req.json();
+
+    if (!email) {
+      return new Response(JSON.stringify({ error: "Email is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      throw new Error("RESEND_API_KEY not configured");
+    }
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString("ro-RO", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const html = buildEmailTemplate({
+      title: "Parola ta a fost schimbată",
+      greeting: "Parola contului tău RentNow a fost schimbată cu succes. Dacă nu tu ai făcut această modificare, te rugăm să ne contactezi imediat.",
+      rows: [
+        { label: "Data schimbării", value: dateStr },
+        { label: "Cont", value: email },
+      ],
+      ctaText: "Accesează contul",
+      ctaLink: "/auth",
+      footerText: "Ai primit acest email deoarece parola contului tău a fost schimbată.",
+    });
+
+    const resendRes = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${resendApiKey}`,
+      },
+      body: JSON.stringify({
+        from: "RentNow <onboarding@resend.dev>",
+        to: [email],
+        subject: "Parola ta a fost schimbată - RentNow",
+        html,
+      }),
+    });
+
+    if (!resendRes.ok) {
+      const err = await resendRes.text();
+      console.error("Resend error:", err);
+      throw new Error(`Resend error: ${err}`);
+    }
+
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
