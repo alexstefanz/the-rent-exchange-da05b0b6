@@ -32,6 +32,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrentUserProfile } from "@/hooks/queries/useCurrentUserProfile";
+import { useConversations } from "@/hooks/queries/useConversations";
 import LanguageSwitcher from "./LanguageSwitcher";
 import NotificationBell from "./NotificationBell";
 import logoImage from "@/assets/rentnow_logo.png";
@@ -42,6 +43,8 @@ const Navbar = () => {
   const { user, loading, signOut } = useAuth();
   const { t } = useLanguage();
   const { data: profile } = useCurrentUserProfile();
+  const { data: conversations } = useConversations(user?.id);
+  const unreadMessagesCount = conversations?.reduce((sum: number, c: any) => sum + (c.unread_count || 0), 0) || 0;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeMegaMenu, setActiveMegaMenu] = useState<number | null>(null);
   const [expandedMobileCategory, setExpandedMobileCategory] = useState<number | null>(null);
@@ -355,6 +358,11 @@ const Navbar = () => {
                     >
                       <MessageCircle className="h-5 w-5" />
                       {t("Mesaje", "Messages")}
+                      {unreadMessagesCount > 0 && (
+                        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-bold text-destructive-foreground">
+                          {unreadMessagesCount > 99 ? "99+" : unreadMessagesCount}
+                        </span>
+                      )}
                     </Link>
                     <Link 
                       to="/profile#favorite" 
