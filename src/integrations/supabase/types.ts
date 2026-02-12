@@ -215,6 +215,45 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          description_en: string | null
+          description_ro: string | null
+          id: string
+          is_read: boolean
+          link: string | null
+          title_en: string | null
+          title_ro: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description_en?: string | null
+          description_ro?: string | null
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          title_en?: string | null
+          title_ro: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description_en?: string | null
+          description_ro?: string | null
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          title_en?: string | null
+          title_ro?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       product_reviews: {
         Row: {
           comment: string | null

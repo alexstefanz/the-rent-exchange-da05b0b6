@@ -170,7 +170,7 @@ const Navbar = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/rezervari" className="flex items-center gap-3 py-2">
+                      <Link to="/profile#inchirieri" className="flex items-center gap-3 py-2">
                         <CalendarCheck className="h-4 w-4" />
                         {t("Rezervări", "Reservations")}
                       </Link>
@@ -182,7 +182,7 @@ const Navbar = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/favorite" className="flex items-center gap-3 py-2">
+                      <Link to="/profile#favorite" className="flex items-center gap-3 py-2">
                         <Heart className="h-4 w-4" />
                         {t("Favorite", "Favorites")}
                       </Link>
@@ -334,7 +334,7 @@ const Navbar = () => {
                       {t("Anunțurile mele", "My Listings")}
                     </Link>
                     <Link 
-                      to="/rezervari" 
+                      to="/profile#inchirieri" 
                       className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
                       onClick={closeMobileMenu}
                     >
@@ -350,7 +350,7 @@ const Navbar = () => {
                       {t("Mesaje", "Messages")}
                     </Link>
                     <Link 
-                      to="/favorite" 
+                      to="/profile#favorite" 
                       className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
                       onClick={closeMobileMenu}
                     >

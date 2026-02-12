@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,57 +12,48 @@ import {
   CheckCheck
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
-
-interface Notification {
-  id: string;
-  type: "message" | "reservation" | "view" | "review" | "system";
-  title: string;
-  description: string;
-  createdAt: string;
-  isRead: boolean;
-}
+import { 
+  getNotifications, 
+  markAsRead as apiMarkAsRead, 
+  markAllAsRead as apiMarkAllAsRead,
+  type Notification 
+} from "@/features/profile/notificationsApi";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 
 const NotificationsTab = () => {
   const { t, language } = useLanguage();
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock notifications - to be replaced with real data
-  const [notifications, setNotifications] = useState<Notification[]>([
-    {
-      id: "1",
-      type: "message",
-      title: t("Mesaj nou", "New message"),
-      description: t(
-        "Ai primit un mesaj nou de la Ion Popescu",
-        "You received a new message from Ion Popescu"
-      ),
-      createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(), // 30 min ago
-      isRead: false,
-    },
-    {
-      id: "2",
-      type: "reservation",
-      title: t("Rezervare confirmată", "Reservation confirmed"),
-      description: t(
-        "Rezervarea ta pentru 'Bicicletă MTB' a fost confirmată",
-        "Your reservation for 'MTB Bike' has been confirmed"
-      ),
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-      isRead: false,
-    },
-    {
-      id: "3",
-      type: "view",
-      title: t("Produs vizualizat", "Product viewed"),
-      description: t(
-        "Produsul tău 'Aparat foto Canon' a fost vizualizat de 15 ori",
-        "Your product 'Canon Camera' has been viewed 15 times"
-      ),
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-      isRead: true,
-    },
-  ]);
+  useEffect(() => {
+    if (!user) return;
+    const load = async () => {
+      try {
+        const data = await getNotifications();
+        setNotifications(data);
+      } catch (e) {
+        console.error("Error loading notifications:", e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    load();
+
+    // Realtime subscription
+    const channel = supabase
+      .channel("notifications-tab")
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, () => {
+        load();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
 
   const formatTime = (dateString: string) => {
     return formatDistanceToNow(new Date(dateString), {
@@ -71,32 +62,39 @@ const NotificationsTab = () => {
     });
   };
 
-  const getNotificationIcon = (type: Notification["type"]) => {
+  const getNotificationIcon = (type: string) => {
     switch (type) {
-      case "message":
-        return <MessageCircle className="h-5 w-5 text-blue-500" />;
-      case "reservation":
-        return <Calendar className="h-5 w-5 text-green-500" />;
-      case "view":
-        return <Eye className="h-5 w-5 text-purple-500" />;
-      case "review":
-        return <CheckCircle2 className="h-5 w-5 text-amber-500" />;
-      default:
-        return <Bell className="h-5 w-5 text-muted-foreground" />;
+      case "message": return <MessageCircle className="h-5 w-5 text-blue-500" />;
+      case "reservation": return <Calendar className="h-5 w-5 text-green-500" />;
+      case "view": return <Eye className="h-5 w-5 text-purple-500" />;
+      case "review": return <CheckCircle2 className="h-5 w-5 text-amber-500" />;
+      default: return <Bell className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
-  const markAsRead = (id: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await apiMarkAsRead(id);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    } catch (e) { console.error(e); }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await apiMarkAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    } catch (e) { console.error(e); }
+  };
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
-  };
-
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-  };
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  }
 
   if (notifications.length === 0) {
     return (
@@ -119,63 +117,39 @@ const NotificationsTab = () => {
 
   return (
     <div className="space-y-4">
-      {/* Header with Mark All as Read */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h3 className="text-lg font-medium">
-            {t("Notificări", "Notifications")}
-          </h3>
-          {unreadCount > 0 && (
-            <Badge variant="default">{unreadCount}</Badge>
-          )}
+          <h3 className="text-lg font-medium">{t("Notificări", "Notifications")}</h3>
+          {unreadCount > 0 && <Badge variant="default">{unreadCount}</Badge>}
         </div>
         {unreadCount > 0 && (
-          <Button variant="ghost" size="sm" onClick={markAllAsRead}>
+          <Button variant="ghost" size="sm" onClick={handleMarkAllAsRead}>
             <CheckCheck className="h-4 w-4 mr-2" />
             {t("Marchează toate ca citite", "Mark all as read")}
           </Button>
         )}
       </div>
 
-      {/* Notifications List */}
       <div className="space-y-3">
         {notifications.map((notification) => (
-          <Card
-            key={notification.id}
-            className={`transition-all ${
-              !notification.isRead ? "border-primary/30 bg-primary/5" : ""
-            }`}
-          >
+          <Card key={notification.id} className={`transition-all ${!notification.is_read ? "border-primary/30 bg-primary/5" : ""}`}>
             <CardContent className="p-4">
               <div className="flex items-start gap-4">
-                <div className="flex-shrink-0 mt-1">
-                  {getNotificationIcon(notification.type)}
-                </div>
-                
+                <div className="flex-shrink-0 mt-1">{getNotificationIcon(notification.type)}</div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <h4 className="font-medium">
-                      {notification.title}
-                      {!notification.isRead && (
-                        <span className="inline-block w-2 h-2 bg-primary rounded-full ml-2" />
-                      )}
+                      {language === "ro" ? notification.title_ro : (notification.title_en || notification.title_ro)}
+                      {!notification.is_read && <span className="inline-block w-2 h-2 bg-primary rounded-full ml-2" />}
                     </h4>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                      {formatTime(notification.createdAt)}
-                    </span>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">{formatTime(notification.created_at)}</span>
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {notification.description}
+                    {language === "ro" ? notification.description_ro : (notification.description_en || notification.description_ro)}
                   </p>
                 </div>
-
-                {!notification.isRead && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="flex-shrink-0"
-                    onClick={() => markAsRead(notification.id)}
-                  >
+                {!notification.is_read && (
+                  <Button variant="ghost" size="icon" className="flex-shrink-0" onClick={() => handleMarkAsRead(notification.id)}>
                     <Check className="h-4 w-4" />
                   </Button>
                 )}

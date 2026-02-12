@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,18 +9,46 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
-
-// Mock notifications for now - will be replaced with real data later
-const mockNotifications = [
-  { id: 1, message: "Mesaj nou de la Ion", time: "5 min" },
-  { id: 2, message: "Rezervare confirmată", time: "1 oră" },
-  { id: 3, message: "Produs vizualizat de 5 ori", time: "2 ore" },
-];
+import { getNotifications, type Notification } from "@/features/profile/notificationsApi";
+import { supabase } from "@/integrations/supabase/client";
+import { formatDistanceToNow } from "date-fns";
+import { ro, enUS } from "date-fns/locale";
 
 const NotificationBell = () => {
-  const { t } = useLanguage();
-  const unreadCount = mockNotifications.length;
+  const { t, language } = useLanguage();
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    const load = async () => {
+      try {
+        const data = await getNotifications();
+        setNotifications(data.slice(0, 5));
+      } catch (e) { console.error(e); }
+    };
+    load();
+
+    const channel = supabase
+      .channel("notification-bell")
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, () => {
+        load();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user]);
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  const formatTime = (dateString: string) => {
+    return formatDistanceToNow(new Date(dateString), {
+      addSuffix: false,
+      locale: language === "ro" ? ro : enUS,
+    });
+  };
 
   return (
     <DropdownMenu>
@@ -38,11 +67,11 @@ const NotificationBell = () => {
           {t("Notificări", "Notifications")}
         </div>
         <div className="max-h-64 overflow-y-auto">
-          {mockNotifications.length > 0 ? (
-            mockNotifications.map((notification) => (
-              <DropdownMenuItem key={notification.id} className="flex flex-col items-start gap-1 py-3">
-                <span className="text-sm">{notification.message}</span>
-                <span className="text-xs text-muted-foreground">{notification.time}</span>
+          {notifications.length > 0 ? (
+            notifications.map((n) => (
+              <DropdownMenuItem key={n.id} className={`flex flex-col items-start gap-1 py-3 ${!n.is_read ? "bg-primary/5" : ""}`}>
+                <span className="text-sm">{language === "ro" ? n.title_ro : (n.title_en || n.title_ro)}</span>
+                <span className="text-xs text-muted-foreground">{formatTime(n.created_at)}</span>
               </DropdownMenuItem>
             ))
           ) : (
@@ -53,7 +82,7 @@ const NotificationBell = () => {
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild className="justify-center">
-          <Link to="/notificari" className="text-sm font-medium text-primary">
+          <Link to="/profile#notificari" className="text-sm font-medium text-primary">
             {t("Vezi toate notificările", "View all notifications")}
           </Link>
         </DropdownMenuItem>

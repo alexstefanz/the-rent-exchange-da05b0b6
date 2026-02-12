@@ -57,6 +57,8 @@ const App = () => (
               <Route path="/owner/new-product" element={<NewProduct />} />
               <Route path="/owner/edit-product/:id" element={<EditProduct />} />
               <Route path="/mesaje" element={<Messages />} />
+              <Route path="/favorite" element={<Navigate to="/profile#favorite" replace />} />
+              <Route path="/rezervari" element={<Navigate to="/profile#inchirieri" replace />} />
               <Route path="/centru-asistenta" element={<HelpCenter />} />
               
               {/* Admin routes */}

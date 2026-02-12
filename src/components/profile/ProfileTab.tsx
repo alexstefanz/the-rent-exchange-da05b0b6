@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getProfile, updateProfile, createProfile, Profile } from "@/features/profile/profileApi";
+import { uploadAvatar } from "@/features/profile/avatarApi";
 import { Loader2, User, Phone, Mail, MessageCircle, Camera } from "lucide-react";
 
 const profileSchema = z.object({
@@ -45,6 +46,8 @@ const ProfileTab = ({ onProfileLoaded }: ProfileTabProps) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -157,16 +160,40 @@ const ProfileTab = ({ onProfileLoaded }: ProfileTabProps) => {
                 {getInitials()}
               </AvatarFallback>
             </Avatar>
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file || !user) return;
+                if (file.size > 5 * 1024 * 1024) {
+                  toast({ title: t("Eroare", "Error"), description: t("Fișierul este prea mare (max 5MB)", "File is too large (max 5MB)"), variant: "destructive" });
+                  return;
+                }
+                setIsUploadingAvatar(true);
+                try {
+                  const newUrl = await uploadAvatar(user.id, file);
+                  setProfile(prev => prev ? { ...prev, avatar_url: newUrl } : prev);
+                  toast({ title: t("Succes", "Success"), description: t("Fotografia a fost actualizată", "Photo updated successfully") });
+                } catch (error) {
+                  console.error("Avatar upload error:", error);
+                  toast({ title: t("Eroare", "Error"), description: t("Nu s-a putut încărca fotografia", "Could not upload photo"), variant: "destructive" });
+                } finally {
+                  setIsUploadingAvatar(false);
+                  if (fileInputRef.current) fileInputRef.current.value = "";
+                }
+              }}
+            />
             <Button 
               size="icon" 
               variant="outline" 
               className="absolute bottom-0 right-0 rounded-full h-10 w-10 bg-background"
-              onClick={() => toast({
-                title: t("În curând", "Coming soon"),
-                description: t("Funcționalitatea de încărcare foto va fi disponibilă în curând", "Photo upload will be available soon"),
-              })}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingAvatar}
             >
-              <Camera className="h-4 w-4" />
+              {isUploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
             </Button>
           </div>
           <p className="text-sm text-muted-foreground text-center">
