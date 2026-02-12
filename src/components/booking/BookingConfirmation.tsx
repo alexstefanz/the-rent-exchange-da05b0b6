@@ -1,7 +1,10 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { CheckCircle, Clock, MessageCircle, ArrowRight, Home, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import { getOrCreateConversation } from "@/features/messaging/messagingApi";
+import { toast } from "sonner";
 
 interface BookingConfirmationProps {
   productTitle: string;
@@ -10,12 +13,32 @@ interface BookingConfirmationProps {
   endDate: string;
   totalPrice: number;
   rentalDays: number;
+  productId: string;
+  ownerId: string;
 }
 
 const BookingConfirmation = ({
-  productTitle, ownerName, startDate, endDate, totalPrice, rentalDays,
+  productTitle, ownerName, startDate, endDate, totalPrice, rentalDays, productId, ownerId,
 }: BookingConfirmationProps) => {
   const copy = useUxCopy();
+  const navigate = useNavigate();
+  const [isOpeningChat, setIsOpeningChat] = useState(false);
+
+  const handleOpenChat = async () => {
+    setIsOpeningChat(true);
+    try {
+      const conversation = await getOrCreateConversation(productId, ownerId);
+      if (conversation) {
+        navigate("/mesaje", { state: { conversationId: conversation.id } });
+      } else {
+        toast.error("Nu s-a putut deschide conversația.");
+      }
+    } catch {
+      toast.error("Eroare la deschiderea conversației.");
+    } finally {
+      setIsOpeningChat(false);
+    }
+  };
 
   const steps = [
     { icon: MessageCircle, title: copy.checkout.requestSent, description: copy.checkout.requestSentDesc, completed: true },
@@ -78,16 +101,14 @@ const BookingConfirmation = ({
 
       <div className="mt-8 flex flex-col sm:flex-row gap-3 w-full max-w-md animate-fade-up" style={{ animationDelay: "0.3s" }}>
         <Button variant="outline" className="flex-1" asChild>
-          <Link to="/profile?tab=rentals">
-            <MessageCircle className="mr-2 h-4 w-4" />
+          <Link to="/profile#cereri">
+            <Search className="mr-2 h-4 w-4" />
             {copy.checkout.viewRequest}
           </Link>
         </Button>
-        <Button className="flex-1" asChild>
-          <Link to="/cauta">
-            <Search className="mr-2 h-4 w-4" />
-            {copy.checkout.continueSearching}
-          </Link>
+        <Button className="flex-1" onClick={handleOpenChat} disabled={isOpeningChat}>
+          <MessageCircle className="mr-2 h-4 w-4" />
+          {isOpeningChat ? "Se deschide..." : "Discută cu proprietarul"}
         </Button>
       </div>
     </div>
