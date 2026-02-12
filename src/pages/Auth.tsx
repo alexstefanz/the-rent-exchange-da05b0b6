@@ -14,24 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import logoImage from "@/assets/rentnow_logo.png";
-
-const loginSchema = z.object({
-  email: z.string().email("Email invalid"),
-  password: z.string().min(6, "Parola trebuie să aibă minim 6 caractere"),
-});
-
-const registerSchema = z.object({
-  fullName: z.string().min(2, "Numele trebuie să aibă minim 2 caractere"),
-  email: z.string().email("Email invalid"),
-  password: z.string().min(6, "Parola trebuie să aibă minim 6 caractere"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Parolele nu se potrivesc",
-  path: ["confirmPassword"],
-});
-
-type LoginFormData = z.infer<typeof loginSchema>;
-type RegisterFormData = z.infer<typeof registerSchema>;
+import { useUxCopy } from "@/hooks/useUxCopy";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -41,27 +24,37 @@ const Auth = () => {
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [isResetting, setIsResetting] = useState(false);
+  const copy = useUxCopy();
+
+  const loginSchema = z.object({
+    email: z.string().email(copy.auth.invalidEmail),
+    password: z.string().min(6, copy.auth.passwordMin),
+  });
+
+  const registerSchema = z.object({
+    fullName: z.string().min(2, copy.auth.nameMin),
+    email: z.string().email(copy.auth.invalidEmail),
+    password: z.string().min(6, copy.auth.passwordMin),
+    confirmPassword: z.string(),
+  }).refine((data) => data.password === data.confirmPassword, {
+    message: copy.auth.passwordMismatch,
+    path: ["confirmPassword"],
+  });
+
+  type LoginFormData = z.infer<typeof loginSchema>;
+  type RegisterFormData = z.infer<typeof registerSchema>;
 
   const handleResetPassword = async () => {
     if (!resetEmail) return;
-    
     setIsResetting(true);
     const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
       redirectTo: `${window.location.origin}/auth?reset=true`,
     });
     setIsResetting(false);
-    
     if (error) {
-      toast({ 
-        title: "Eroare", 
-        description: error.message, 
-        variant: "destructive" 
-      });
+      toast({ title: copy.auth.errorGeneric, description: error.message, variant: "destructive" });
     } else {
-      toast({ 
-        title: "Email trimis", 
-        description: "Verifică inbox-ul pentru link-ul de resetare a parolei." 
-      });
+      toast({ title: copy.auth.emailSent, description: copy.auth.checkInbox });
       setShowResetDialog(false);
       setResetEmail("");
     }
@@ -78,29 +71,21 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    if (user) {
-      navigate("/");
-    }
+    if (user) navigate("/");
   }, [user, navigate]);
 
   const handleLogin = async (data: LoginFormData) => {
     setIsLoading(true);
     const { error } = await signIn(data.email, data.password);
     setIsLoading(false);
-
     if (error) {
       toast({
-        title: "Eroare la autentificare",
-        description: error.message === "Invalid login credentials" 
-          ? "Email sau parolă incorectă" 
-          : error.message,
+        title: copy.auth.loginError,
+        description: error.message === "Invalid login credentials" ? copy.auth.invalidCredentials : error.message,
         variant: "destructive",
       });
     } else {
-      toast({
-        title: "Autentificare reușită",
-        description: "Bine ai venit înapoi!",
-      });
+      toast({ title: copy.auth.loginSuccess, description: copy.auth.welcomeBackToast });
       navigate("/");
     }
   };
@@ -109,22 +94,12 @@ const Auth = () => {
     setIsLoading(true);
     const { error } = await signUp(data.email, data.password, data.fullName);
     setIsLoading(false);
-
     if (error) {
       let message = error.message;
-      if (error.message.includes("already registered")) {
-        message = "Un cont cu acest email există deja";
-      }
-      toast({
-        title: "Eroare la înregistrare",
-        description: message,
-        variant: "destructive",
-      });
+      if (error.message.includes("already registered")) message = copy.auth.accountExists;
+      toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
     } else {
-      toast({
-        title: "Cont creat cu succes",
-        description: "Te-ai înregistrat cu succes!",
-      });
+      toast({ title: copy.auth.accountCreated, description: copy.auth.accountCreatedDesc });
       navigate("/");
     }
   };
@@ -147,136 +122,65 @@ const Auth = () => {
         <Tabs defaultValue="login" className="w-full">
           <CardHeader className="space-y-1 pb-4">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Autentificare</TabsTrigger>
-              <TabsTrigger value="register">Înregistrare</TabsTrigger>
+              <TabsTrigger value="login">{copy.auth.login}</TabsTrigger>
+              <TabsTrigger value="register">{copy.auth.register}</TabsTrigger>
             </TabsList>
           </CardHeader>
           
           <CardContent>
             <TabsContent value="login" className="space-y-4">
-              <CardTitle className="text-xl">Bine ai revenit!</CardTitle>
-              <CardDescription>
-                Introdu datele tale pentru a te autentifica
-              </CardDescription>
+              <CardTitle className="text-xl">{copy.auth.welcomeBack}</CardTitle>
+              <CardDescription>{copy.auth.loginSubtitle}</CardDescription>
               
               <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    placeholder="email@exemplu.ro"
-                    {...loginForm.register("email")}
-                  />
-                  {loginForm.formState.errors.email && (
-                    <p className="text-sm text-destructive">{loginForm.formState.errors.email.message}</p>
-                  )}
+                  <Label htmlFor="login-email">{copy.auth.email}</Label>
+                  <Input id="login-email" type="email" placeholder="email@exemplu.ro" {...loginForm.register("email")} />
+                  {loginForm.formState.errors.email && <p className="text-sm text-destructive">{loginForm.formState.errors.email.message}</p>}
                 </div>
-                
                 <div className="space-y-2">
-                  <Label htmlFor="login-password">Parolă</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    placeholder="••••••••"
-                    {...loginForm.register("password")}
-                  />
-                  {loginForm.formState.errors.password && (
-                    <p className="text-sm text-destructive">{loginForm.formState.errors.password.message}</p>
-                  )}
+                  <Label htmlFor="login-password">{copy.auth.password}</Label>
+                  <Input id="login-password" type="password" placeholder="••••••••" {...loginForm.register("password")} />
+                  {loginForm.formState.errors.password && <p className="text-sm text-destructive">{loginForm.formState.errors.password.message}</p>}
                   <div className="flex justify-end">
-                    <Button 
-                      type="button" 
-                      variant="link" 
-                      className="px-0 h-auto text-sm text-muted-foreground hover:text-primary"
-                      onClick={() => setShowResetDialog(true)}
-                    >
-                      Ai uitat parola?
+                    <Button type="button" variant="link" className="px-0 h-auto text-sm text-muted-foreground hover:text-primary" onClick={() => setShowResetDialog(true)}>
+                      {copy.auth.forgotPassword}
                     </Button>
                   </div>
                 </div>
-                
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Se autentifică...
-                    </>
-                  ) : (
-                    "Autentificare"
-                  )}
+                  {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{copy.auth.loggingIn}</> : copy.auth.login}
                 </Button>
               </form>
             </TabsContent>
             
             <TabsContent value="register" className="space-y-4">
-              <CardTitle className="text-xl">Creează un cont</CardTitle>
-              <CardDescription>
-                Completează formularul pentru a te înregistra
-              </CardDescription>
+              <CardTitle className="text-xl">{copy.auth.createAccount}</CardTitle>
+              <CardDescription>{copy.auth.registerSubtitle}</CardDescription>
               
               <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="register-name">Nume complet</Label>
-                  <Input
-                    id="register-name"
-                    type="text"
-                    placeholder="Ion Popescu"
-                    {...registerForm.register("fullName")}
-                  />
-                  {registerForm.formState.errors.fullName && (
-                    <p className="text-sm text-destructive">{registerForm.formState.errors.fullName.message}</p>
-                  )}
+                  <Label htmlFor="register-name">{copy.auth.fullName}</Label>
+                  <Input id="register-name" type="text" placeholder="Ion Popescu" {...registerForm.register("fullName")} />
+                  {registerForm.formState.errors.fullName && <p className="text-sm text-destructive">{registerForm.formState.errors.fullName.message}</p>}
                 </div>
-                
                 <div className="space-y-2">
-                  <Label htmlFor="register-email">Email</Label>
-                  <Input
-                    id="register-email"
-                    type="email"
-                    placeholder="email@exemplu.ro"
-                    {...registerForm.register("email")}
-                  />
-                  {registerForm.formState.errors.email && (
-                    <p className="text-sm text-destructive">{registerForm.formState.errors.email.message}</p>
-                  )}
+                  <Label htmlFor="register-email">{copy.auth.email}</Label>
+                  <Input id="register-email" type="email" placeholder="email@exemplu.ro" {...registerForm.register("email")} />
+                  {registerForm.formState.errors.email && <p className="text-sm text-destructive">{registerForm.formState.errors.email.message}</p>}
                 </div>
-                
                 <div className="space-y-2">
-                  <Label htmlFor="register-password">Parolă</Label>
-                  <Input
-                    id="register-password"
-                    type="password"
-                    placeholder="••••••••"
-                    {...registerForm.register("password")}
-                  />
-                  {registerForm.formState.errors.password && (
-                    <p className="text-sm text-destructive">{registerForm.formState.errors.password.message}</p>
-                  )}
+                  <Label htmlFor="register-password">{copy.auth.password}</Label>
+                  <Input id="register-password" type="password" placeholder="••••••••" {...registerForm.register("password")} />
+                  {registerForm.formState.errors.password && <p className="text-sm text-destructive">{registerForm.formState.errors.password.message}</p>}
                 </div>
-                
                 <div className="space-y-2">
-                  <Label htmlFor="register-confirm">Confirmă parola</Label>
-                  <Input
-                    id="register-confirm"
-                    type="password"
-                    placeholder="••••••••"
-                    {...registerForm.register("confirmPassword")}
-                  />
-                  {registerForm.formState.errors.confirmPassword && (
-                    <p className="text-sm text-destructive">{registerForm.formState.errors.confirmPassword.message}</p>
-                  )}
+                  <Label htmlFor="register-confirm">{copy.auth.confirmPassword}</Label>
+                  <Input id="register-confirm" type="password" placeholder="••••••••" {...registerForm.register("confirmPassword")} />
+                  {registerForm.formState.errors.confirmPassword && <p className="text-sm text-destructive">{registerForm.formState.errors.confirmPassword.message}</p>}
                 </div>
-                
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Se creează contul...
-                    </>
-                  ) : (
-                    "Înregistrare"
-                  )}
+                  {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{copy.auth.creatingAccount}</> : copy.auth.register}
                 </Button>
               </form>
             </TabsContent>
@@ -287,41 +191,16 @@ const Auth = () => {
       <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Resetare parolă</DialogTitle>
-            <DialogDescription>
-              Introdu adresa de email și îți vom trimite un link pentru resetarea parolei.
-            </DialogDescription>
+            <DialogTitle>{copy.auth.resetPassword}</DialogTitle>
+            <DialogDescription>{copy.auth.resetDescription}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="reset-email">Email</Label>
-              <Input
-                id="reset-email"
-                type="email"
-                placeholder="email@exemplu.ro"
-                value={resetEmail}
-                onChange={(e) => setResetEmail(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleResetPassword();
-                  }
-                }}
-              />
+              <Label htmlFor="reset-email">{copy.auth.email}</Label>
+              <Input id="reset-email" type="email" placeholder="email@exemplu.ro" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleResetPassword(); } }} />
             </div>
-            <Button 
-              onClick={handleResetPassword} 
-              className="w-full"
-              disabled={isResetting || !resetEmail}
-            >
-              {isResetting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Se trimite...
-                </>
-              ) : (
-                "Trimite link de resetare"
-              )}
+            <Button onClick={handleResetPassword} className="w-full" disabled={isResetting || !resetEmail}>
+              {isResetting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{copy.auth.sending}</> : copy.auth.sendResetLink}
             </Button>
           </div>
         </DialogContent>
