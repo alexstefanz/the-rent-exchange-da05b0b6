@@ -1,54 +1,45 @@
 
 
-# Modernizare Template Email + Adresă Expeditor
+# Formular Resetare Parola
 
-## 1. Adresa de email (onboarding@resend.dev)
+## Problema
+Cand utilizatorul da click pe "Reset Password" din email, este redirectionat la `/auth?reset=true`. Insa pagina Auth.tsx nu detecteaza parametrul `reset=true` si afiseaza formularul de login in loc de un formular de resetare parola.
 
-**Da, se poate schimba**, dar necesita un pas in afara platformei:
-- Adresa `onboarding@resend.dev` este adresa implicita de test oferita de Resend
-- Pentru a folosi o adresa proprie (ex: `noreply@rentnow.ro`), trebuie sa:
-  1. Accesezi contul Resend si sa adaugi un domeniu propriu (ex: `rentnow.ro`)
-  2. Configurezi inregistrarile DNS (SPF, DKIM) conform instructiunilor Resend
-  3. Dupa verificare, actualizezi adresa `from` in cod
+## Solutia
 
-**Fara un domeniu verificat**, Resend nu permite trimiterea de pe alte adrese. Acesta este un pas pe care trebuie sa-l faci tu in panoul Resend. Odata ce ai domeniul verificat, imi spui adresa dorita si o actualizez in cod.
+### 1. Detectare mod resetare in `src/pages/Auth.tsx`
+- Citeste parametrul `?reset=true` din URL folosind `useSearchParams`
+- Cand `reset=true` este prezent, afiseaza un formular dedicat de resetare parola **in loc de** tab-urile login/register
+- Formularul contine: "Parola noua" + "Confirma parola noua" + buton "Reseteaza parola"
+- Validare zod: minim 6 caractere, parolele trebuie sa se potriveasca
 
-## 2. Template Email Modern
+### 2. Logica de resetare
+- Foloseste `supabase.auth.updateUser({ password: newPassword })` pentru a seta noua parola
+- Dupa succes, afiseaza toast de confirmare si redirectioneaza la pagina de login (stergand parametrul `reset` din URL)
 
-**Da, se poate!** Voi inlocui HTML-ul simplu cu un template modern, responsive, in culorile platformei (verde primary `hsl(131, 45%, 50%)` si fundal cald).
+### 3. Email de confirmare dupa resetare
+- Creez o noua edge function `send-password-changed-notification` care trimite un email de confirmare ca parola a fost schimbata
+- Template-ul va folosi acelasi design modern (verde `#3DB86A`, card, buton)
+- Emailul va include: mesaj de confirmare, data/ora schimbarii, si buton "Acceseaza contul" catre `/auth`
+- Functia este apelata din Auth.tsx dupa `updateUser` reusit, pasand emailul utilizatorului
 
-### Ce se va schimba
+### 4. Adaugare copy UX in `src/data/uxCopy.ts`
+- Adaug texte noi: `newPassword`, `confirmNewPassword`, `resetSuccess`, `resetSuccessDesc`, `resettingPassword`, `passwordChanged`
 
-Ambele edge functions (`send-rental-notification` si `respond-rental-request`) vor primi un template HTML complet cu:
+## Fisiere modificate
 
-- **Header** cu logo/nume "RentNow" pe fundal verde primary
-- **Card central** cu fundal alb, border-radius, si shadow subtil
-- **Informatii structurate** cu iconite text si separatori
-- **Buton CTA** verde cu link catre platforma (ex: "Vezi cererea", "Raspunde acum", "Cauta produse")
-- **Footer** cu text gri si link catre platforma
-- **Responsive** -- arata bine pe desktop si mobil
+| Fisier | Schimbare |
+|--------|-----------|
+| `src/pages/Auth.tsx` | Detectare `?reset=true`, formular resetare, apel edge function |
+| `src/data/uxCopy.ts` | Texte noi pentru formularul de resetare |
+| `supabase/functions/send-password-changed-notification/index.ts` | Edge function noua pentru email confirmare |
 
-### Template-uri afectate (4 emailuri total)
+## Flow complet
 
-| Email | Destinatar | Buton CTA |
-|-------|-----------|-----------|
-| Cerere noua de inchiriere | Proprietar | "Vezi cererea" -> `/profile?tab=lendings` |
-| Cerere trimisa | Chirias | "Vezi statusul" -> `/profile?tab=cereri` |
-| Cerere acceptata | Chirias | "Discuta detaliile" -> `/profile?tab=rentals` |
-| Cerere refuzata | Chirias | "Cauta produse" -> `/cauta` |
-
-### Detalii tehnice
-
-**Fisiere modificate:**
-- `supabase/functions/send-rental-notification/index.ts` -- template nou pentru emailurile de cerere noua + confirmare trimitere
-- `supabase/functions/respond-rental-request/index.ts` -- template nou pentru emailurile de acceptare + refuzare
-
-**Abordare:** Voi crea o functie helper `buildEmailTemplate()` in fiecare edge function care genereaza HTML-ul complet cu parametri (titlu, continut, buton text, buton link). Astfel template-ul ramane consistent si usor de modificat.
-
-**Culorile folosite:**
-- Primary (verde): `#3DB86A` (din HSL 131, 45%, 50%)
-- Background: `#FAF9F7` (fundal cald)
-- Card: `#FFFFFF`
-- Text principal: `#2D2517`
-- Text secundar: `#6B6155`
+1. Utilizatorul cere resetare parola -> primeste email
+2. Click "Reset Password" in email -> ajunge pe `/auth?reset=true`
+3. Vede formularul cu "Parola noua" + "Confirma parola"
+4. Completeaza si trimite -> parola se actualizeaza
+5. Primeste email de confirmare ca parola s-a schimbat
+6. Este redirectionat la formularul de login
 
