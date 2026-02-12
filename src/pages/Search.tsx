@@ -94,13 +94,15 @@ const Search = () => {
           </div>
           <TabsContent value="products" className="mt-0">
             <div className="flex gap-8">
-              <SearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} priceRange={priceRange} onPriceRangeChange={setPriceRange} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
-              <div className="flex-1">
+              <div className="hidden lg:block">
+                <SearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} priceRange={priceRange} onPriceRangeChange={setPriceRange} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
+              </div>
+              <div className="flex-1 min-w-0">
                 {isLoading && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
                 {!isLoading && filteredProducts.length > 0 && (
                   <div>
                     <p className="mb-4 text-sm text-muted-foreground">{copy.search.resultsCount(filteredProducts.length)}</p>
-                    <div className={viewMode === "gallery" ? "grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-3" : "flex flex-col gap-4"}>
+                    <div className={viewMode === "gallery" ? "grid gap-3 sm:gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-col gap-4"}>
                       {filteredProducts.map((product) => <ProductCard key={product.id} product={product} viewMode={viewMode} />)}
                     </div>
                   </div>
