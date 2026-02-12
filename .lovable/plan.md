@@ -1,117 +1,129 @@
 
-# Plan: Traducere Completa RO/EN a Platformei
+
+# Traducere Categorii, Subcategorii si Pagini Detaliu
 
 ## Problema
-Language switcher-ul schimba limba in context, dar majoritatea textelor din aplicatie sunt hardcoded in romana. Fisierul centralizat `uxCopy.ts` contine doar texte in romana, iar paginile principale (Index, ProductDetail, Checkout, Categories, Auth, Footer, Search, etc.) nu folosesc deloc functia `t()`.
+Numele categoriilor (ex: "OUTDOOR & AVENTURA"), subcategoriilor (ex: "Castele gonflabile"), descrierilor si textele hardcoded din paginile `CategoryDetail.tsx` si `SubcategoryDetail.tsx` raman in romana indiferent de limba selectata.
 
 ## Solutia
 
-### Pas 1: Restructurare `uxCopy.ts` cu suport bilingv
-Voi transforma `uxCopy.ts` dintr-un obiect cu stringuri simple intr-un obiect cu perechi `{ ro, en }` si voi crea un hook `useTranslatedCopy()` care returneaza automat textele in limba selectata.
+### Pas 1: Adaugare campuri EN in `categories.ts`
 
-Structura noua:
+Voi adauga `nameEn` si `descriptionEn` la interfetele `Category` si `Subcategory`, apoi voi completa traducerile pentru toate cele 22 categorii si ~150 subcategorii.
+
+Exemplu:
 ```typescript
-const uxCopyBilingual = {
-  search: {
-    placeholder: { ro: "Cauta obiecte...", en: "Search items..." },
-    noResults: { ro: "Nu am gasit...", en: "No results..." },
-    // ...
-  }
+interface Subcategory {
+  id: string;
+  name: string;
+  nameEn: string;
+  description: string;
+  descriptionEn: string;
+  image: string;
+}
+
+interface Category {
+  id: number;
+  name: string;
+  nameEn: string;
+  subcategories: Subcategory[];
+  icon: string;
 }
 ```
 
-Un hook `useUxCopy()` va returna versiunea tradusa bazata pe limba curenta din `LanguageContext`.
+Traduceri categorii:
+| RO | EN |
+|----|-----|
+| OUTDOOR & AVENTURA | OUTDOOR & ADVENTURE |
+| CAMPING & DRUMETII | CAMPING & HIKING |
+| SPORTURI DE IARNA | WINTER SPORTS |
+| SCULE, UNELTE & CONSTRUCTII | TOOLS & CONSTRUCTION |
+| JUCARII GONFLABILE & COPII | INFLATABLES & KIDS |
+| GAMING & ELECTRONICE | GAMING & ELECTRONICS |
+| FOTO & VIDEO | PHOTO & VIDEO |
+| MOBILITATE URBANA | URBAN MOBILITY |
+| EVENIMENTE & HOBBY | EVENTS & HOBBY |
+| INSTRUMENTE MUZICALE & DJ | MUSICAL INSTRUMENTS & DJ |
+| FITNESS & WELLNESS | FITNESS & WELLNESS |
+| ECHIPAMENTE MEDICALE & RECUPERARE | MEDICAL EQUIPMENT & RECOVERY |
+| ANIMALE DE COMPANIE | PETS |
+| REMORCI & TRANSPORT | TRAILERS & TRANSPORT |
+| BEBE & FAMILY RENTALS | BABY & FAMILY RENTALS |
+| IMPRIMANTE 3D & CNC | 3D PRINTERS & CNC |
+| TELESCOP & OBSERVATIE | TELESCOPES & OBSERVATION |
+| NUNTI & EVENIMENTE PREMIUM | WEDDINGS & PREMIUM EVENTS |
+| COSTUME & RECUZITA | COSTUMES & PROPS |
+| INDUSTRIAL CLEANING | INDUSTRIAL CLEANING |
+| RULOTE & CAMPERVAN-URI | RVs & CAMPERVANS |
 
-### Pas 2: Traducere pagini principale
+Plus toate ~150 subcategoriile cu `nameEn` si `descriptionEn`.
 
-Fiecare pagina/componenta cu text hardcoded va fi actualizata:
+### Pas 2: Adaugare chei noi in `uxCopy.ts`
 
-**Pagini (8 fisiere):**
-- `Index.tsx` - hero, categorii, "Cum functioneaza", CTA section
-- `Search.tsx` - header, tabs, users results text
-- `ProductDetail.tsx` - breadcrumbs, descriere, calendar, reviews, toast messages
-- `Checkout.tsx` - headers, step titles, payment options, review, terms
-- `Categories.tsx` - header, search placeholder, empty state
-- `Auth.tsx` - login/register forms, validation messages, reset password dialog
-- `HelpCenter.tsx` (deja are `t()`, dar trebuie verificat)
-- `Profile.tsx` (deja are `t()`, partial tradus)
+Voi adauga sectiunea `categoryDetail` cu traduceri pentru textele hardcoded:
 
-**Componente (15+ fisiere):**
-- `Footer.tsx` - toate link-urile si textele
-- `HeroSearchForm.tsx` - placeholder-uri, butoane select
-- `FeaturedListings.tsx` - badge "Verificat"
-- `OwnerSection.tsx` - texte hardcoded ("recenzii", "Raspunde in", mobile "Verificat")
-- `ProductIncludes.tsx` - default items list
-- `UsageRules.tsx` - default rules, deposit text
-- `BookingCard.tsx` - "saptamana", "luna", "Sterge" button
-- `BookingConfirmation.tsx` - timeline steps, action buttons
-- `ProgressIndicator.tsx` - "Pasul X din Y"
-- `RentalsTab.tsx` - "Proprietar:", "Contacteaza proprietarul"
-- `LendingsTab.tsx` - "Produse active", "Cereri in asteptare", "Accepta", "Refuza", "Adauga anunt"
-- `SearchFilters.tsx` - "Filtre", "Toate categoriile", "Aplica filtrele"
-- `EmptySearchState.tsx` - "Exploreaza toate categoriile"
-- `StatusBadge.tsx` - uses uxCopy (will be auto-translated)
-- `NearbyProductsSlider.tsx` - daca are text hardcoded
+```typescript
+categoryDetail: {
+  backToCategories: { ro: "Inapoi la Categorii", en: "Back to Categories" },
+  subcategoriesAvailable: { ro: (n) => `${n} subcategorii disponibile pentru inchiriat`, en: (n) => `${n} subcategories available for rent` },
+  listings: { ro: (n) => `${n} anunturi`, en: (n) => `${n} listings` },
+  subcategories: { ro: "Subcategorii", en: "Subcategories" },
+  listingsInCategory: { ro: "Anunturi in aceasta categorie", en: "Listings in this category" },
+  noListings: { ro: "Nu exista anunturi in aceasta categorie momentan.", en: "No listings in this category at the moment." },
+  addFirstListing: { ro: "Adauga primul anunt", en: "Add first listing" },
+  categoryNotFound: { ro: "Categoria nu a fost gasita", en: "Category not found" },
+  subcategoryNotFound: { ro: "Subcategoria nu a fost gasita", en: "Subcategory not found" },
+  productsAvailable: { ro: (n) => `${n} produse disponibile pentru inchiriere`, en: (n) => `${n} products available for rent` },
+  noProducts: { ro: "Nu exista produse disponibile in aceasta categorie momentan.", en: "No products available in this category at the moment." },
+  addFirstProduct: { ro: "Adauga primul produs", en: "Add first product" },
+  allSubcategories: { ro: "Toate subcategoriile", en: "All subcategories" },
+  entireCountry: { ro: "Toata tara", en: "Entire country" },
+  selectCity: { ro: "Selecteaza localitatea", en: "Select city" },
+  allCities: { ro: "Toate localitatile", en: "All cities" },
+  sortByPrice: { ro: "Sorteaza dupa pret", en: "Sort by price" },
+  priceLowHigh: { ro: "Pret: Ieftin -> Scump", en: "Price: Low -> High" },
+  priceHighLow: { ro: "Pret: Scump -> Ieftin", en: "Price: High -> Low" },
+  backTo: { ro: (name) => `Inapoi la ${name}`, en: (name) => `Back to ${name}` },
+}
+```
 
-### Pas 3: Traducere `uxCopy.ts` complet
+### Pas 3: Actualizare `CategoryDetail.tsx`
 
-Toate textele din `uxCopy.ts` vor primi echivalent EN:
+- Import `useUxCopy` si `useLanguage`
+- Folosire `language === "en" ? category.nameEn : category.name` pentru afisare
+- Inlocuire texte hardcoded cu chei din `copy.categoryDetail`
 
-| Sectiune | Exemplu RO | Exemplu EN |
-|----------|-----------|-----------|
-| search | "Cauta obiecte de inchiriat" | "Search items to rent nearby" |
-| booking | "Trimite cerere de inchiriere" | "Send rental request" |
-| trust | "Plati protejate" | "Secure payments" |
-| dashboard | "Inchirierile mele" | "My Rentals" |
-| status | "In asteptare" | "Pending" |
-| home | "Inchiriaza ce ai nevoie" | "Rent what you need" |
-| common | "Se incarca..." | "Loading..." |
-| owner | "Trimite mesaj" | "Send message" |
-| product | "Ce este inclus" | "What's included" |
-| reassurance | "Plata ta este protejata" | "Your payment is protected" |
+### Pas 4: Actualizare `SubcategoryDetail.tsx`
 
-### Pas 4: Traducere date statice
+- Import `useUxCopy` si `useLanguage`  
+- Folosire `nameEn`/`descriptionEn` conditionate de limba
+- Inlocuire texte hardcoded: "Inapoi la", "Se incarca...", "produse disponibile", "Nu exista produse", "Adauga primul produs", "Toata tara", etc.
 
-- `categories.ts` si `subcategories` - adaugare camp `nameEn` sau abordare dictionar
-- Review-uri mock din `ProductDetail.tsx` - traducere conditionata
-- Validation messages din `Auth.tsx` (zod schemas)
+### Pas 5: Actualizare `Categories.tsx`
+
+- Pagina deja foloseste `useUxCopy`, dar afiseaza `category.name` - trebuie sa afiseze `nameEn` cand limba e EN
+
+### Pas 6: Actualizare `SubcategoryCard.tsx`
+
+- Va primi si `nameEn` si va afisa pe baza limbii
 
 ---
 
 ## Detalii Tehnice
 
-### Abordare pentru `uxCopy.ts`
-Voi crea un nou format cu un hook dedicat:
-
-```typescript
-// uxCopy.ts - structura noua
-export const uxCopyRo = { /* toate textele RO */ };
-export const uxCopyEn = { /* toate textele EN */ };
-
-// Hook: useUxCopy.ts
-export const useUxCopy = () => {
-  const { language } = useLanguage();
-  return language === "ro" ? uxCopyRo : uxCopyEn;
-};
-```
-
-Aceasta abordare:
-- Pastreaza type safety
-- Permite import direct fara context in componente non-React (StatusBadge etc.)
-- Minimizeaza refactoring - doar schimbi importul
-
-**Problema cu StatusBadge**: `statusConfig` este definit la nivel de modul, nu in componenta, deci nu poate folosi hooks. Solutia: mut config-ul in interiorul componentei sau il fac functie.
-
-### Fisiere noi
-| Fisier | Scop |
-|--------|------|
-| `src/hooks/useUxCopy.ts` | Hook pentru texte traduse |
-
-### Fisiere modificate (~25 fisiere)
-- `src/data/uxCopy.ts` - restructurare completa
-- Toate paginile si componentele listate mai sus
+### Fisiere modificate
+| Fisier | Ce se schimba |
+|--------|---------------|
+| `src/data/categories.ts` | Adaugare `nameEn`, `descriptionEn` la toate categoriile si subcategoriile |
+| `src/data/uxCopy.ts` | Adaugare sectiune `categoryDetail` |
+| `src/pages/CategoryDetail.tsx` | Folosire traduceri dinamice |
+| `src/pages/SubcategoryDetail.tsx` | Folosire traduceri dinamice |
+| `src/pages/Categories.tsx` | Afisare `nameEn` cand limba e EN |
+| `src/components/items/SubcategoryCard.tsx` | Afisare `nameEn` cand limba e EN |
+| `src/pages/Index.tsx` | Afisare `nameEn` pe homepage categorii populare |
 
 ### Estimare
-- ~25 fisiere de modificat
-- ~500+ stringuri de tradus
-- Nu necesita modificari backend
+- ~150 subcategorii de tradus (name + description)
+- 22 categorii de tradus
+- 7 fisiere de modificat
+
