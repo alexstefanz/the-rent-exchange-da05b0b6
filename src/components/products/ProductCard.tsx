@@ -76,11 +76,11 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
       to={`/produs/${product.id}`}
       className="group relative block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover"
     >
-      <div className="relative aspect-[4/3] overflow-hidden">
+      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
         <img
           src={imageUrl}
           alt={product.title}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
         />
         {/* Verified badge */}
         <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs font-medium text-emerald-700 backdrop-blur-sm">
