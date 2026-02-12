@@ -25,6 +25,7 @@ import UsageRules from "@/components/product/UsageRules";
 import TrustIndicators from "@/components/trust/TrustIndicators";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { addFavoriteProduct, removeFavoriteProduct, isProductFavorite } from "@/features/profile/favoriteProductsApi";
 
 interface OwnerInfo {
   id: string;
@@ -72,12 +73,17 @@ const ProductDetail = () => {
           if (ownerData && ownerData.length > 0) setOwner(ownerData[0]);
           const contactInfo = await getOwnerContactInfo(productData.owner_id);
           if (contactInfo) setOwnerContact(contactInfo);
+          // Check favorite status
+          if (user) {
+            const fav = await isProductFavorite(productData.id);
+            setIsFavorite(fav);
+          }
         }
       } catch (error) { console.error("Error fetching product:", error); }
       finally { setIsLoading(false); }
     };
     fetchProduct();
-  }, [id]);
+  }, [id, user]);
 
   const handleStartChat = async () => {
     if (!user) {
@@ -126,6 +132,28 @@ const ProductDetail = () => {
     else { navigator.clipboard.writeText(window.location.href); }
   };
 
+  const handleToggleFavorite = async () => {
+    if (!user) {
+      toast({ title: copy.favorites?.loginRequired || "Login required", variant: "destructive" });
+      navigate('/auth');
+      return;
+    }
+    if (!product) return;
+    try {
+      if (isFavorite) {
+        await removeFavoriteProduct(product.id);
+        setIsFavorite(false);
+        toast({ title: copy.favorites?.removed || "Removed from favorites" });
+      } else {
+        await addFavoriteProduct(product.id);
+        setIsFavorite(true);
+        toast({ title: copy.favorites?.added || "Added to favorites" });
+      }
+    } catch {
+      toast({ title: copy.auth?.errorGeneric || "Error", variant: "destructive" });
+    }
+  };
+
   if (isLoading) {
     return (<div className="min-h-screen bg-background"><Navbar /><div className="flex items-center justify-center py-24"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div><Footer /></div>);
   }
@@ -147,6 +175,9 @@ const ProductDetail = () => {
           <img src={images[0]} alt={product.title} className="w-full aspect-[4/3] object-contain bg-muted" />
           <button onClick={() => navigate(-1)} className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white"><ArrowLeft className="h-5 w-5" /></button>
           <button onClick={handleShare} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white"><Share2 className="h-5 w-5" /></button>
+          <button onClick={handleToggleFavorite} className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+            <Heart className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : "text-white"}`} />
+          </button>
         </div>
         {images.length > 1 && (
           <div className="flex gap-2 px-[10px] mt-2 overflow-x-auto pb-2">
@@ -178,6 +209,9 @@ const ProductDetail = () => {
                   </div>
                 </>
               )}
+              <button onClick={handleToggleFavorite} className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                <Heart className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : "text-white"}`} />
+              </button>
             </div>
 
             <OwnerSection ownerId={product.owner_id} ownerName={ownerName} ownerAvatar={owner?.avatar_url} rating={4.9} reviewCount={12} memberSince="2024" responseTime={copy.owner.responseTimeValue} responseRate="98%" onStartChat={handleStartChat} isOwnProduct={user?.id === product.owner_id} />
@@ -236,7 +270,7 @@ const ProductDetail = () => {
             <div className="sticky top-24 rounded-xl border border-border bg-card p-4 sm:p-6 overflow-hidden">
               <div className="flex items-start justify-between gap-3 mb-3 lg:hidden">
                 <h1 className="font-heading text-[25px] font-semibold text-foreground leading-tight flex-1">{product.title}</h1>
-                <button onClick={() => setIsFavorite(!isFavorite)} className="flex-shrink-0 mt-1"><Heart className={`h-6 w-6 ${isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} /></button>
+                <button onClick={handleToggleFavorite} className="flex-shrink-0 mt-1"><Heart className={`h-6 w-6 ${isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} /></button>
               </div>
               <h1 className="hidden lg:block font-heading text-2xl font-semibold text-foreground mb-3">{product.title}</h1>
               

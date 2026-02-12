@@ -326,6 +326,16 @@ const createUxCopy = () => ({
     backTo: { ro: (name: string) => `Înapoi la ${name}`, en: (name: string) => `Back to ${name}` },
     loading: { ro: "Se încarcă...", en: "Loading..." },
   },
+  favorites: {
+    tabLabel: { ro: "Favorite", en: "Favorites" },
+    empty: { ro: "Nu ai produse favorite încă", en: "No favorites yet" },
+    emptyDesc: { ro: "Navighează prin anunțuri și apasă pe inimioară pentru a salva favoritele aici.", en: "Browse listings and tap the heart icon to save your favorites here." },
+    count: { ro: (n: number) => `${n} produs${n !== 1 ? 'e' : ''} favorit${n !== 1 ? 'e' : ''}`, en: (n: number) => `${n} favorite${n !== 1 ? 's' : ''}` },
+    added: { ro: "Adăugat la favorite", en: "Added to favorites" },
+    removed: { ro: "Eliminat din favorite", en: "Removed from favorites" },
+    remove: { ro: "Elimină din favorite", en: "Remove from favorites" },
+    loginRequired: { ro: "Trebuie să fii autentificat pentru a adăuga la favorite", en: "You need to be logged in to add favorites" },
+  },
 });
 
 // Type for the bilingual copy
