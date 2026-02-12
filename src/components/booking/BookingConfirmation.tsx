@@ -78,7 +78,7 @@ const BookingConfirmation = ({
 
       <div className="mt-8 flex flex-col sm:flex-row gap-3 w-full max-w-md animate-fade-up" style={{ animationDelay: "0.3s" }}>
         <Button variant="outline" className="flex-1" asChild>
-          <Link to="/profil#mesaje">
+          <Link to="/profile?tab=rentals">
             <MessageCircle className="mr-2 h-4 w-4" />
             {copy.checkout.viewRequest}
           </Link>
