@@ -7,14 +7,16 @@ import Footer from "@/components/layout/Footer";
 import { categories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const colors = ["bg-yellow-100","bg-blue-100","bg-amber-100","bg-orange-100","bg-indigo-100","bg-emerald-100","bg-pink-100","bg-cyan-100","bg-rose-100"];
 
 const Categories = () => {
   const copy = useUxCopy();
+  const { language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const filteredCategories = categories.filter(
-    (cat) => cat.name.toLowerCase().includes(searchQuery.toLowerCase()) || cat.subcategories.some((sub) => sub.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    (cat) => cat.name.toLowerCase().includes(searchQuery.toLowerCase()) || cat.nameEn.toLowerCase().includes(searchQuery.toLowerCase()) || cat.subcategories.some((sub) => sub.name.toLowerCase().includes(searchQuery.toLowerCase()) || sub.nameEn.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -35,7 +37,8 @@ const Categories = () => {
           {filteredCategories.map((category, index) => {
             const Icon = getCategoryIcon(category.id);
             const colorClass = colors[index % colors.length];
-            const nameParts = category.name.split(" & ");
+            const displayName = language === "en" ? category.nameEn : category.name;
+            const nameParts = displayName.split(" & ");
             return (
               <Link key={category.id} to={`/categorie/${category.id}`} className="group flex flex-col items-center gap-2 animate-fade-up" style={{ animationDelay: `${Math.min(index * 0.03, 0.3)}s` }}>
                 <div className={`flex h-16 w-16 items-center justify-center rounded-full ${colorClass} transition-transform duration-200 group-hover:scale-110 sm:h-20 sm:w-20`}>

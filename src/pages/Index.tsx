@@ -9,9 +9,11 @@ import FeaturedListings from "@/components/home/FeaturedListings";
 import { categories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Index = () => {
   const copy = useUxCopy();
+  const { language } = useLanguage();
   const popularCategoryIds = [1, 2, 6, 7, 22, 19, 4, 5, 9];
   const popularCategories = categories.filter(c => popularCategoryIds.includes(c.id));
 
@@ -56,8 +58,7 @@ const Index = () => {
                     <Icon className="h-8 w-8 text-foreground sm:h-10 sm:w-10" />
                   </div>
                   <p className="text-xs font-medium text-foreground sm:text-sm">
-                    {category.name.split(" & ")[0]}
-                    {category.name.includes("&") && (<><br /><span className="text-muted-foreground">{category.name.split(" & ")[1]?.split(" ")[0]}</span></>)}
+                    {(() => { const n = language === "en" ? category.nameEn : category.name; return (<>{n.split(" & ")[0]}{n.includes("&") && (<><br /><span className="text-muted-foreground">{n.split(" & ")[1]?.split(" ")[0]}</span></>)}</>); })()}
                   </p>
                 </Link>
               );

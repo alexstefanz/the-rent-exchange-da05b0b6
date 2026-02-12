@@ -303,6 +303,29 @@ const createUxCopy = () => ({
   progressIndicator: {
     stepOf: { ro: (step: number, total: number) => `Pasul ${step} din ${total}`, en: (step: number, total: number) => `Step ${step} of ${total}` },
   },
+  categoryDetail: {
+    backToCategories: { ro: "Înapoi la Categorii", en: "Back to Categories" },
+    subcategoriesAvailable: { ro: (n: number) => `${n} subcategorii disponibile pentru închiriat`, en: (n: number) => `${n} subcategories available for rent` },
+    listings: { ro: (n: number) => `${n} anunțuri`, en: (n: number) => `${n} listings` },
+    subcategories: { ro: "Subcategorii", en: "Subcategories" },
+    listingsInCategory: { ro: "Anunțuri în această categorie", en: "Listings in this category" },
+    noListings: { ro: "Nu există anunțuri în această categorie momentan.", en: "No listings in this category at the moment." },
+    addFirstListing: { ro: "Adaugă primul anunț", en: "Add first listing" },
+    categoryNotFound: { ro: "Categoria nu a fost găsită", en: "Category not found" },
+    subcategoryNotFound: { ro: "Subcategoria nu a fost găsită", en: "Subcategory not found" },
+    productsAvailable: { ro: (n: number) => `${n} produse disponibile pentru închiriere`, en: (n: number) => `${n} products available for rent` },
+    noProducts: { ro: "Nu există produse disponibile în această categorie momentan.", en: "No products available in this category at the moment." },
+    addFirstProduct: { ro: "Adaugă primul produs", en: "Add first product" },
+    allSubcategories: { ro: "Toate subcategoriile", en: "All subcategories" },
+    entireCountry: { ro: "Toată țara", en: "Entire country" },
+    selectCity: { ro: "Selectează localitatea", en: "Select city" },
+    allCities: { ro: "Toate localitățile", en: "All cities" },
+    sortByPrice: { ro: "Sortează după preț", en: "Sort by price" },
+    priceLowHigh: { ro: "Preț: Ieftin → Scump", en: "Price: Low → High" },
+    priceHighLow: { ro: "Preț: Scump → Ieftin", en: "Price: High → Low" },
+    backTo: { ro: (name: string) => `Înapoi la ${name}`, en: (name: string) => `Back to ${name}` },
+    loading: { ro: "Se încarcă...", en: "Loading..." },
+  },
 });
 
 // Type for the bilingual copy
