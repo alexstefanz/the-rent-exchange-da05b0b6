@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Package, Plus, Eye, Edit, Check, X, TrendingUp } from "lucide-react";
+import { Package, Plus, Eye, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "./StatusBadge";
 import { useUxCopy } from "@/hooks/useUxCopy";
@@ -8,26 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { calculateClientPrice } from "@/features/products/productsApi";
 import { Loader2 } from "lucide-react";
 
-interface RentalRequest {
-  id: string;
-  renterName: string;
-  renterAvatar: string;
-  productTitle: string;
-  startDate: string;
-  endDate: string;
-  totalPrice: number;
-  message?: string;
-}
-
-interface LendingsTabProps {
-  requests?: RentalRequest[];
-}
-
-const mockRequests: RentalRequest[] = [
-  { id: "req-1", renterName: "Ion Popescu", renterAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80", productTitle: "Canon EOS R5", startDate: "20 Feb 2026", endDate: "23 Feb 2026", totalPrice: 450, message: "Bună! Aș dori să închiriez camera pentru un eveniment de familie." },
-];
-
-const LendingsTab = ({ requests = mockRequests }: LendingsTabProps) => {
+const LendingsTab = () => {
   const copy = useUxCopy();
   const { user } = useAuth();
   const { data: products = [], isLoading } = useMyProducts(user?.id);
@@ -42,7 +23,7 @@ const LendingsTab = ({ requests = mockRequests }: LendingsTabProps) => {
     );
   }
 
-  if (products.length === 0 && requests.length === 0) {
+  if (products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
         <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
@@ -71,51 +52,7 @@ const LendingsTab = ({ requests = mockRequests }: LendingsTabProps) => {
             </div>
             <p className="text-2xl font-bold text-foreground">{activeProducts.length}</p>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <TrendingUp className="h-4 w-4" />
-              <span className="text-sm">{copy.dashboard.pendingRequestsLabel}</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{requests.length}</p>
-          </div>
         </div>
-      )}
-
-      {requests.length > 0 && (
-        <section>
-          <h3 className="mb-4 font-heading text-lg font-semibold text-foreground flex items-center gap-2">
-            {copy.dashboard.pendingRequests}
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">{requests.length}</span>
-          </h3>
-          <div className="space-y-4">
-            {requests.map((request) => (
-              <div key={request.id} className="rounded-xl border-2 border-primary/20 bg-primary/5 p-4">
-                <div className="flex items-start gap-3">
-                  <img src={request.renterAvatar} alt={request.renterName} className="w-12 h-12 rounded-full object-cover" />
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-foreground">{request.renterName}</span>
-                      <StatusBadge status="pending" />
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {copy.dashboard.wantsToRent}: <span className="font-medium">{request.productTitle}</span>
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {request.startDate} - {request.endDate} • <span className="font-semibold text-primary">{request.totalPrice} RON</span>
-                    </p>
-                    {request.message && (
-                      <p className="mt-2 text-sm text-muted-foreground italic bg-background rounded-lg p-2">"{request.message}"</p>
-                    )}
-                    <div className="mt-3 flex gap-2">
-                      <Button size="sm" className="gap-1"><Check className="h-4 w-4" />{copy.dashboard.accept}</Button>
-                      <Button variant="outline" size="sm" className="gap-1"><X className="h-4 w-4" />{copy.dashboard.reject}</Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
       )}
 
       <section>
@@ -145,7 +82,7 @@ const LendingsTab = ({ requests = mockRequests }: LendingsTabProps) => {
                       <Link to={`/produs/${product.id}`}><Eye className="h-4 w-4" /></Link>
                     </Button>
                     <Button variant="ghost" size="sm" className="h-8 px-2" asChild>
-                      <Link to={`/editeaza/${product.id}`}><Edit className="h-4 w-4" /></Link>
+                      <Link to={`/owner/edit-product/${product.id}`}><Edit className="h-4 w-4" /></Link>
                     </Button>
                   </div>
                 </div>

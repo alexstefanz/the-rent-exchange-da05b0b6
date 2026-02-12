@@ -1,36 +1,70 @@
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, Search, ArrowRight } from "lucide-react";
+import { Calendar, MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "./StatusBadge";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { format } from "date-fns";
 
 interface Rental {
   id: string;
-  productId: string;
-  productTitle: string;
-  productImage: string;
-  ownerName: string;
-  startDate: string;
-  endDate: string;
-  totalPrice: number;
-  status: "pending" | "accepted" | "completed" | "cancelled";
+  product_id: string | null;
+  product_title: string;
+  product_image: string;
+  owner_name: string;
+  start_date: string;
+  end_date: string;
+  subtotal: number;
+  status: string;
   location: string;
 }
 
-interface RentalsTabProps {
-  rentals?: Rental[];
-  isLoading?: boolean;
-}
+const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
+  const { data, error } = await supabase
+    .from("rentals")
+    .select("id, product_id, start_date, end_date, subtotal, status, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
+    .eq("renter_id", userId)
+    .order("created_at", { ascending: false });
 
-const mockRentals: Rental[] = [
-  { id: "1", productId: "prod-1", productTitle: "Canon EOS R5 - Cameră Mirrorless", productImage: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=300&q=80", ownerName: "Alexandru M.", startDate: "15 Feb 2026", endDate: "18 Feb 2026", totalPrice: 450, status: "pending", location: "București" },
-  { id: "2", productId: "prod-2", productTitle: "DJI Mavic 3 Pro - Dronă Profesională", productImage: "https://images.unsplash.com/photo-1473968512647-3e447244af8f?w=300&q=80", ownerName: "Maria I.", startDate: "10 Feb 2026", endDate: "12 Feb 2026", totalPrice: 350, status: "accepted", location: "Cluj-Napoca" },
-];
+  if (error) throw error;
 
-const RentalsTab = ({ rentals = mockRentals, isLoading = false }: RentalsTabProps) => {
+  return (data || []).map((r: any) => ({
+    id: r.id,
+    product_id: r.product_id,
+    product_title: r.products?.title || "Produs șters",
+    product_image: r.products?.images?.[0] || "/placeholder.svg",
+    owner_name: r.products?.profiles?.full_name || "Utilizator",
+    start_date: format(new Date(r.start_date), "dd MMM yyyy"),
+    end_date: format(new Date(r.end_date), "dd MMM yyyy"),
+    subtotal: r.subtotal,
+    status: r.status,
+    location: r.products?.location_city || "",
+  }));
+};
+
+const RentalsTab = () => {
   const copy = useUxCopy();
-  const upcomingRentals = rentals.filter(r => r.status === "pending" || r.status === "accepted");
+  const { user } = useAuth();
+
+  const { data: rentals = [], isLoading } = useQuery({
+    queryKey: ["my-rentals", user?.id],
+    queryFn: () => fetchMyRentals(user!.id),
+    enabled: !!user?.id,
+  });
+
+  const upcomingRentals = rentals.filter(r => r.status === "pending" || r.status === "active" || r.status === "confirmed");
   const pastRentals = rentals.filter(r => r.status === "completed" || r.status === "cancelled");
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (rentals.length === 0) {
     return (
@@ -58,21 +92,21 @@ const RentalsTab = ({ rentals = mockRentals, isLoading = false }: RentalsTabProp
           <div className="space-y-4">
             {upcomingRentals.map((rental) => (
               <div key={rental.id} className="flex flex-col sm:flex-row gap-4 rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-md">
-                <img src={rental.productImage} alt={rental.productTitle} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover" />
+                <img src={rental.product_image} alt={rental.product_title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover" />
                 <div className="flex-1">
                   <div className="flex items-start justify-between gap-2">
-                    <Link to={`/produs/${rental.productId}`} className="font-medium text-foreground hover:text-primary transition-colors">{rental.productTitle}</Link>
-                    <StatusBadge status={rental.status} />
+                    <Link to={`/produs/${rental.product_id}`} className="font-medium text-foreground hover:text-primary transition-colors">{rental.product_title}</Link>
+                    <StatusBadge status={rental.status as any} />
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground">{copy.dashboard.owner}: {rental.ownerName}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{copy.dashboard.owner}: {rental.owner_name}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{rental.startDate} - {rental.endDate}</span>
-                    <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{rental.location}</span>
+                    <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{rental.start_date} - {rental.end_date}</span>
+                    {rental.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{rental.location}</span>}
                   </div>
                   <div className="mt-3 flex items-center justify-between">
-                    <span className="font-semibold text-primary">{rental.totalPrice} RON</span>
+                    <span className="font-semibold text-primary">{rental.subtotal} RON</span>
                     <Button variant="outline" size="sm" asChild>
-                      <Link to={`/profil#mesaje`}>{copy.dashboard.contactOwner}</Link>
+                      <Link to="/profile#mesaje">{copy.dashboard.contactOwner}</Link>
                     </Button>
                   </div>
                 </div>
@@ -88,17 +122,17 @@ const RentalsTab = ({ rentals = mockRentals, isLoading = false }: RentalsTabProp
           <div className="space-y-4">
             {pastRentals.map((rental) => (
               <div key={rental.id} className="flex flex-col sm:flex-row gap-4 rounded-xl border border-border bg-card p-4 opacity-75">
-                <img src={rental.productImage} alt={rental.productTitle} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover" />
+                <img src={rental.product_image} alt={rental.product_title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover" />
                 <div className="flex-1">
                   <div className="flex items-start justify-between gap-2">
-                    <span className="font-medium text-foreground">{rental.productTitle}</span>
-                    <StatusBadge status={rental.status} />
+                    <span className="font-medium text-foreground">{rental.product_title}</span>
+                    <StatusBadge status={rental.status as any} />
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{rental.startDate} - {rental.endDate}</span>
+                    <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{rental.start_date} - {rental.end_date}</span>
                   </div>
                   <div className="mt-3">
-                    <span className="font-semibold text-muted-foreground">{rental.totalPrice} RON</span>
+                    <span className="font-semibold text-muted-foreground">{rental.subtotal} RON</span>
                   </div>
                 </div>
               </div>
