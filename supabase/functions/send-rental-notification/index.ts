@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Fetch rental with product info
+    // Fetch rental
     const { data: rental, error: rentalError } = await supabaseAdmin
       .from("rentals")
       .select("*")
@@ -49,6 +49,27 @@ Deno.serve(async (req) => {
     const product = productRes.data;
     const renter = renterRes.data;
     const owner = ownerRes.data;
+
+    // Helper: get email from profiles or fallback to auth.users
+    const getEmail = async (userId: string, profileEmail: string | null): Promise<string | null> => {
+      if (profileEmail) return profileEmail;
+      try {
+        const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
+        if (data?.user?.email) {
+          // Backfill email into profiles for future use
+          await supabaseAdmin.from("profiles").update({ email: data.user.email }).eq("id", userId);
+          return data.user.email;
+        }
+      } catch (e) {
+        console.error("Error fetching auth user email:", e);
+      }
+      return null;
+    };
+
+    const [ownerEmail, renterEmail] = await Promise.all([
+      getEmail(rental.owner_id, owner?.email || null),
+      getEmail(rental.renter_id, renter?.email || null),
+    ]);
 
     // Insert transaction
     await supabaseAdmin.from("transactions").insert({
@@ -85,10 +106,10 @@ Deno.serve(async (req) => {
 
     // Send emails via Resend
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    if (resendApiKey && owner?.email && renter?.email) {
+    if (resendApiKey && (ownerEmail || renterEmail)) {
       const sendEmail = async (to: string, subject: string, html: string) => {
         try {
-          await fetch("https://api.resend.com/emails", {
+          const res = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
               Authorization: `Bearer ${resendApiKey}`,
@@ -101,33 +122,37 @@ Deno.serve(async (req) => {
               html,
             }),
           });
+          const result = await res.text();
+          console.log(`Email sent to ${to}:`, result);
         } catch (e) {
           console.error("Email send error:", e);
         }
       };
 
-      // Email to owner
-      await sendEmail(
-        owner.email,
-        `Cerere nouă de închiriere - ${product?.title}`,
-        `<h2>Ai o cerere nouă de închiriere!</h2>
-        <p><strong>${renter?.full_name || "Un utilizator"}</strong> dorește să închirieze <strong>${product?.title}</strong>.</p>
-        <p><strong>Perioadă:</strong> ${rental.start_date} → ${rental.end_date} (${rental.rental_days} zile)</p>
-        <p><strong>Total:</strong> ${rental.subtotal} RON</p>
-        <p><strong>Vei primi:</strong> ${rental.owner_payout} RON</p>
-        <p>Accesează platforma pentru a accepta sau refuza cererea.</p>`
-      );
+      if (ownerEmail) {
+        await sendEmail(
+          ownerEmail,
+          `Cerere nouă de închiriere - ${product?.title}`,
+          `<h2>Ai o cerere nouă de închiriere!</h2>
+          <p><strong>${renter?.full_name || "Un utilizator"}</strong> dorește să închirieze <strong>${product?.title}</strong>.</p>
+          <p><strong>Perioadă:</strong> ${rental.start_date} → ${rental.end_date} (${rental.rental_days} zile)</p>
+          <p><strong>Total:</strong> ${rental.subtotal} RON</p>
+          <p><strong>Vei primi:</strong> ${rental.owner_payout} RON</p>
+          <p>Accesează platforma pentru a accepta sau refuza cererea.</p>`
+        );
+      }
 
-      // Email to renter
-      await sendEmail(
-        renter.email,
-        `Cererea ta a fost trimisă - ${product?.title}`,
-        `<h2>Cererea ta a fost trimisă!</h2>
-        <p>Ai solicitat închirierea <strong>${product?.title}</strong>.</p>
-        <p><strong>Perioadă:</strong> ${rental.start_date} → ${rental.end_date} (${rental.rental_days} zile)</p>
-        <p><strong>Total de plată:</strong> ${rental.subtotal} RON</p>
-        <p>Vei fi notificat când proprietarul va răspunde la cererea ta.</p>`
-      );
+      if (renterEmail) {
+        await sendEmail(
+          renterEmail,
+          `Cererea ta a fost trimisă - ${product?.title}`,
+          `<h2>Cererea ta a fost trimisă!</h2>
+          <p>Ai solicitat închirierea <strong>${product?.title}</strong>.</p>
+          <p><strong>Perioadă:</strong> ${rental.start_date} → ${rental.end_date} (${rental.rental_days} zile)</p>
+          <p><strong>Total de plată:</strong> ${rental.subtotal} RON</p>
+          <p>Vei fi notificat când proprietarul va răspunde la cererea ta.</p>`
+        );
+      }
     }
 
     return new Response(JSON.stringify({ success: true }), {

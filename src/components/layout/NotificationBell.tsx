@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { Link } from "react-router-dom";
-import { getNotifications, type Notification } from "@/features/profile/notificationsApi";
+import { Link, useNavigate } from "react-router-dom";
+import { getNotifications, markAsRead, type Notification } from "@/features/profile/notificationsApi";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
@@ -19,6 +19,7 @@ import { ro, enUS } from "date-fns/locale";
 const NotificationBell = () => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
@@ -50,6 +51,18 @@ const NotificationBell = () => {
     });
   };
 
+  const handleNotificationClick = async (n: Notification) => {
+    if (!n.is_read) {
+      try {
+        await markAsRead(n.id);
+        setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, is_read: true } : x));
+      } catch (e) { console.error(e); }
+    }
+    if (n.link) {
+      navigate(n.link);
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -62,16 +75,25 @@ const NotificationBell = () => {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-72 bg-background">
+      <DropdownMenuContent align="end" className="w-80 bg-background">
         <div className="px-3 py-2 font-semibold text-sm border-b border-border">
           {t("Notificări", "Notifications")}
         </div>
-        <div className="max-h-64 overflow-y-auto">
+        <div className="max-h-72 overflow-y-auto">
           {notifications.length > 0 ? (
             notifications.map((n) => (
-              <DropdownMenuItem key={n.id} className={`flex flex-col items-start gap-1 py-3 ${!n.is_read ? "bg-primary/5" : ""}`}>
-                <span className="text-sm">{language === "ro" ? n.title_ro : (n.title_en || n.title_ro)}</span>
-                <span className="text-xs text-muted-foreground">{formatTime(n.created_at)}</span>
+              <DropdownMenuItem 
+                key={n.id} 
+                className={`flex flex-col items-start gap-1 py-3 cursor-pointer ${!n.is_read ? "bg-primary/5" : ""}`}
+                onClick={() => handleNotificationClick(n)}
+              >
+                <span className="text-sm font-medium">{language === "ro" ? n.title_ro : (n.title_en || n.title_ro)}</span>
+                {(n.description_ro || n.description_en) && (
+                  <span className="text-xs text-muted-foreground line-clamp-2">
+                    {language === "ro" ? n.description_ro : (n.description_en || n.description_ro)}
+                  </span>
+                )}
+                <span className="text-xs text-muted-foreground/70">{formatTime(n.created_at)}</span>
               </DropdownMenuItem>
             ))
           ) : (
