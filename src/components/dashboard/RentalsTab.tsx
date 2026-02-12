@@ -1,18 +1,13 @@
 import { Link } from "react-router-dom";
-import { Calendar, MapPin, Search, XCircle } from "lucide-react";
+import { Calendar, MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "./StatusBadge";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { format, differenceInHours } from "date-fns";
-import { toast } from "sonner";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { format } from "date-fns";
 
 interface Rental {
   id: string;
@@ -25,7 +20,6 @@ interface Rental {
   subtotal: number;
   status: string;
   location: string;
-  created_at: string;
 }
 
 const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
@@ -33,6 +27,7 @@ const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
     .from("rentals")
     .select("id, product_id, start_date, end_date, subtotal, status, created_at, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
     .eq("renter_id", userId)
+    .in("status", ["confirmed", "active", "completed"])
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -48,17 +43,12 @@ const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
     subtotal: r.subtotal,
     status: r.status,
     location: r.products?.location_city || "",
-    created_at: r.created_at,
   }));
 };
-
-const canCancel = (rental: Rental) =>
-  rental.status === "pending" && differenceInHours(new Date(), new Date(rental.created_at)) < 24;
 
 const RentalsTab = () => {
   const copy = useUxCopy();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
 
   const { data: rentals = [], isLoading } = useQuery({
     queryKey: ["my-rentals", user?.id],
@@ -66,25 +56,8 @@ const RentalsTab = () => {
     enabled: !!user?.id,
   });
 
-  const cancelMutation = useMutation({
-    mutationFn: async (rentalId: string) => {
-      const { error } = await supabase
-        .from("rentals")
-        .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
-        .eq("id", rentalId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["my-rentals"] });
-      toast.success("Cererea a fost anulată cu succes");
-    },
-    onError: () => {
-      toast.error("Eroare la anularea cererii");
-    },
-  });
-
-  const upcomingRentals = rentals.filter(r => r.status === "pending" || r.status === "active" || r.status === "confirmed");
-  const pastRentals = rentals.filter(r => r.status === "completed" || r.status === "cancelled");
+  const activeRentals = rentals.filter(r => r.status === "confirmed" || r.status === "active");
+  const completedRentals = rentals.filter(r => r.status === "completed");
 
   if (isLoading) {
     return (
@@ -114,11 +87,11 @@ const RentalsTab = () => {
 
   return (
     <div className="space-y-8">
-      {upcomingRentals.length > 0 && (
+      {activeRentals.length > 0 && (
         <section>
           <h3 className="mb-4 font-heading text-lg font-semibold text-foreground">{copy.dashboard.upcomingRentals}</h3>
           <div className="space-y-4">
-            {upcomingRentals.map((rental) => (
+            {activeRentals.map((rental) => (
               <div key={rental.id} className="flex flex-col sm:flex-row gap-4 rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-md">
                 <img src={rental.product_image} alt={rental.product_title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover" />
                 <div className="flex-1">
@@ -133,35 +106,9 @@ const RentalsTab = () => {
                   </div>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="font-semibold text-primary">{rental.subtotal} RON</span>
-                    <div className="flex items-center gap-2">
-                      {canCancel(rental) && (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm" disabled={cancelMutation.isPending}>
-                              <XCircle className="mr-1 h-4 w-4" />
-                              Anulează
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Anulează cererea</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Ești sigur că vrei să anulezi cererea de închiriere pentru <strong>{rental.product_title}</strong>? Această acțiune nu poate fi anulată.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Înapoi</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => cancelMutation.mutate(rental.id)}>
-                                Da, anulează
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      )}
-                      <Button variant="outline" size="sm" asChild>
-                        <Link to="/profile#mesaje">{copy.dashboard.contactOwner}</Link>
-                      </Button>
-                    </div>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to="/profile#mesaje">{copy.dashboard.contactOwner}</Link>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -170,11 +117,11 @@ const RentalsTab = () => {
         </section>
       )}
 
-      {pastRentals.length > 0 && (
+      {completedRentals.length > 0 && (
         <section>
           <h3 className="mb-4 font-heading text-lg font-semibold text-foreground">{copy.dashboard.rentalHistory}</h3>
           <div className="space-y-4">
-            {pastRentals.map((rental) => (
+            {completedRentals.map((rental) => (
               <div key={rental.id} className="flex flex-col sm:flex-row gap-4 rounded-xl border border-border bg-card p-4 opacity-75">
                 <img src={rental.product_image} alt={rental.product_title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover" />
                 <div className="flex-1">

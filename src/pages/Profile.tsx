@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Loader2, UserCog, User, MessageCircle, Wallet, Bell, ShoppingBag, Package, Heart } from "lucide-react";
+import { Loader2, UserCog, User, MessageCircle, Wallet, Bell, ShoppingBag, Package, Heart, ClipboardList } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -11,6 +11,7 @@ import ProfileTab from "@/components/profile/ProfileTab";
 import MessagesTab from "@/components/profile/MessagesTab";
 import EarningsTab from "@/components/profile/EarningsTab";
 import NotificationsTab from "@/components/profile/NotificationsTab";
+import RequestsTab from "@/components/dashboard/RequestsTab";
 import RentalsTab from "@/components/dashboard/RentalsTab";
 import LendingsTab from "@/components/dashboard/LendingsTab";
 import FavoritesTab from "@/components/profile/FavoritesTab";
@@ -20,6 +21,7 @@ const TABS = [
   { id: "contul-meu", labelRo: "Contul meu", labelEn: "My Account", icon: UserCog },
   { id: "profil", labelRo: "Profilul meu", labelEn: "My Profile", icon: User },
   { id: "favorite", labelRo: "Favorite", labelEn: "Favorites", icon: Heart },
+  { id: "cereri", labelRo: "Cereri", labelEn: "Requests", icon: ClipboardList },
   { id: "inchirieri", labelRo: "Închirierile mele", labelEn: "My Rentals", icon: ShoppingBag },
   { id: "anunturi", labelRo: "Anunțurile mele", labelEn: "My Listings", icon: Package },
   { id: "mesaje", labelRo: "Mesaje", labelEn: "Messages", icon: MessageCircle },
@@ -120,6 +122,10 @@ const ProfilePage = () => {
 
           <TabsContent value="favorite" className="mt-0">
             <FavoritesTab />
+          </TabsContent>
+
+          <TabsContent value="cereri" className="mt-0">
+            <RequestsTab />
           </TabsContent>
 
           <TabsContent value="inchirieri" className="mt-0">
