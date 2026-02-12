@@ -1,86 +1,53 @@
 
-# Notificari cu Detalii Inchiriere + Chat + Fix Email
+# Fix 404 pe "View request" + Anulare cerere in 24h
 
-## Problema 1: Email-urile nu se trimit
-Profilurile din tabela `profiles` au campul `email` gol (`null`). Edge function-ul verifica `if (owner?.email && renter?.email)` si nu trimite nimic. Solutia: in edge function, vom folosi `supabase.auth.admin.getUserById()` pentru a obtine email-ul din `auth.users` cand cel din `profiles` e null. De asemenea, vom salva email-ul in profil la signup pentru viitoare utilizari.
+## Problema 1: Butonul "View request" duce la 404
+Butonul "View request" din ecranul de confirmare navigheaza catre `/profil#mesaje`, dar ruta corecta in aplicatie este `/profile`. Simpla corectare a linkului rezolva problema.
 
-## Problema 2: Notificari cu detalii si chat
-Cand dai click pe o notificare de tip `rental_request` sau `rental_confirmation`, vrem sa:
-- Afisam detalii despre inchiriere (produs, perioada, suma, status)
-- Oferim un buton "Discuta" care deschide ChatDialog-ul cu cealalta parte
+## Problema 2: Anulare cerere de catre chirias (max 24h)
+Chiriasul trebuie sa poata anula o cerere de inchiriere pending, dar doar in primele 24 de ore de la creare. Dupa 24h, butonul de anulare dispare.
 
-### Ce se schimba
+---
 
-**1. Edge Function (`send-rental-notification/index.ts`)**
-- Adaugam fallback la `auth.admin.getUserById()` pentru email cand `profiles.email` e null
-- Salvam email-ul in `profiles` daca lipseste (pentru viitor)
+## Ce se schimba
 
-**2. `handle_new_user()` trigger - migrare DB**
-- Modificam trigger-ul sa salveze si email-ul din `auth.users` in `profiles` la signup
+### 1. Fix link "View request" (`BookingConfirmation.tsx`)
+- Schimbam `/profil#mesaje` in `/profile?tab=rentals` pentru a duce chiriasul direct la tab-ul cu cererile lui
 
-**3. NotificationsTab (`src/components/profile/NotificationsTab.tsx`)**
-- La click pe o notificare de tip rental, expandam un panel cu:
-  - Detalii inchiriere (produs, date, pret, status)
-  - Buton "Discuta cu chiriasul/proprietarul" care deschide ChatDialog
-- Folosim `notification.link` pentru a determina contextul (rental)
-- Fetch-uim datele rental-ului din DB cand se expandeaza notificarea
+### 2. Buton "Anuleaza cererea" in `RentalsTab.tsx`
+- Pentru inchirierile cu status `pending` si create in ultimele 24h, afisam un buton "Anuleaza cererea"
+- La click, se cere confirmare si apoi se actualizeaza statusul in `cancelled`
+- Fetch-ul deja include `created_at` implicit; vom adauga `created_at` in query si in interfata `Rental`
+- Folosim update direct pe tabela `rentals` (RLS permite renter-ului? - trebuie verificat)
 
-**4. NotificationBell (`src/components/layout/NotificationBell.tsx`)**
-- La click pe notificare, adaugam descrierea in dropdown
-- Notificarile cu link navigheaza la sectiunea corespunzatoare (ex: `/profile?tab=lendings`)
+### 3. RLS Policy pentru anulare de catre chirias
+- In prezent, doar owner-ul si admin-ul pot face UPDATE pe `rentals`
+- Trebuie adaugata o politica RLS care permite renter-ului sa faca update (doar pe `status` si `cancelled_at`) pentru propriile cereri pending
 
-**5. Nou: `src/features/rentals/rentalDetailsApi.ts`**
-- Functie `getRentalDetails(rentalId)` care returneaza detaliile complete ale unei inchirieri (produs, chirias, proprietar)
+---
 
-## Detalii Tehnice
+## Detalii tehnice
 
 ### Migrare DB
 ```sql
--- Update handle_new_user to also save email
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
-BEGIN
-  INSERT INTO public.profiles (id, full_name, email)
-  VALUES (NEW.id, NEW.raw_user_meta_data ->> 'full_name', NEW.email);
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Backfill existing users' emails
-UPDATE profiles p
-SET email = u.email
-FROM auth.users u
-WHERE p.id = u.id AND p.email IS NULL;
+CREATE POLICY "Renters can cancel own pending rentals"
+ON public.rentals FOR UPDATE
+USING (renter_id = auth.uid() AND status = 'pending')
+WITH CHECK (renter_id = auth.uid() AND status = 'cancelled');
 ```
 
-### Edge Function Fix
-In loc de:
-```text
-owner.email -> poate fi null
-```
-Vom face:
-```text
-1. Citim email din profiles
-2. Daca e null, citim din auth.admin.getUserById()
-3. Trimitem email
-```
+### BookingConfirmation.tsx
+- Linia 81: `/profil#mesaje` -> `/profile?tab=rentals`
 
-### NotificationsTab - Expandable Rental Details
-Fiecare notificare de tip `rental_request` / `rental_confirmation` va avea un state expandabil care arata:
-- Numele produsului
-- Perioada (start_date - end_date)
-- Suma totala
-- Status curent
-- Buton "Discuta" care deschide ChatDialog
+### RentalsTab.tsx
+- Adaugam `created_at` in query-ul Supabase si in interfata
+- Pentru cereri `pending` create in ultimele 24h, afisam buton "Anuleaza"
+- La click: dialog de confirmare, apoi `supabase.from("rentals").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", rentalId)`
+- Invalidam query-ul dupa anulare
 
 ### Fisiere modificate
 | Fisier | Ce se schimba |
 |--------|---------------|
-| `supabase/functions/send-rental-notification/index.ts` | Fallback email din auth.users |
-| `src/components/profile/NotificationsTab.tsx` | Expandable rental details + chat button |
-| `src/components/layout/NotificationBell.tsx` | Descriere in dropdown, navigare la link |
-
-### Fisiere noi
-| Fisier | Scop |
-|--------|------|
-| `src/features/rentals/rentalDetailsApi.ts` | Fetch rental details pentru notificari |
+| `src/components/booking/BookingConfirmation.tsx` | Fix link: `/profile?tab=rentals` |
+| `src/components/dashboard/RentalsTab.tsx` | Buton anulare + logica 24h |
+| DB migration | RLS policy pentru renter cancel |
