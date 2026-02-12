@@ -1,58 +1,50 @@
 
 
-# Desktop Chat Button + Mobile Bottom Navigation Bar
+# Confirmare acceptare cerere + Chat cu chiriasul
 
 ## Ce se schimba
 
-### Desktop (lg+)
-- Se adauga un buton "Chat" in header, langa celelalte iconite (notificari, avatar), similar cu screenshot-ul: iconita de mesaj + text "Chat", cu background inchis si stil pill/rounded.
-- Butonul duce la `/mesaje`.
+### 1. Dialog de confirmare dupa acceptare (LendingsTab)
+Cand proprietarul apasa "Accepta", dupa ce cererea e procesata cu succes, in loc de un simplu toast, se afiseaza un **dialog de confirmare** cu informatii despre chirias si booking, similar cu screenshot-ul 2:
 
-### Mobile / Tablet (sub lg)
-- Se elimina butonul "Adauga" din header (muta in bottom bar).
-- In header raman doar: logo, notification bell, hamburger menu.
-- Se adauga un **bottom navigation bar fix** cu 5 tab-uri (ca in screenshot):
-  - **Exploreaza** (Search icon) -> `/cauta`
-  - **Favorite** (Heart icon) -> `/profile#favorite`
-  - **Vinde** (PlusCircle icon) -> `/owner/new-product`
-  - **Chat** (MessageCircle icon) -> `/mesaje`
-  - **Cont** (User icon) -> `/profile#contul-meu`
-- Bottom bar e vizibil pe toate paginile, fixat jos, cu border-top si background solid.
+- **Avatar + Nume chirias** (cu link catre profil)
+- **Verificat ID** - badge verde daca chiriasul are KYC aprobat
+- **3 casete info**:
+  - Perioada inchiriere (data start - data end)
+  - Booking number (primele 8 caractere din rental ID)
+  - Pret total (subtotal RON)
+- **Buton "Discuta cu chiriasul"** - deschide/creaza conversatie cu chiriasul
+- **Buton "Cancel request"** - vizibil doar daca cererea a fost creata in ultimele 24h, cu asterisk si nota "*Anularea este posibila doar in primele 24 de ore"
+
+### 2. Verificare KYC chirias
+Se face un query la tabela `kyc_verifications` pentru a verifica daca chiriasul are status "approved" - afisam "Verificat ID" cu iconita verde.
+
+### 3. Initiere chat cu chiriasul
+Butonul "Discuta" foloseste `getOrCreateConversation` din messagingApi pentru a crea/deschide o conversatie intre proprietar si chirias pe produsul respectiv, apoi deschide ChatDialog.
 
 ## Detalii tehnice
 
-### Fisier: `src/components/layout/Navbar.tsx`
-- **Desktop**: Adaug un buton/link "Chat" (`MessageCircle` + text) in zona din dreapta header-ului, vizibil doar pe `lg:flex`, cu stil dark pill (bg-foreground text-background rounded-full). Include badge cu unread count daca > 0.
-- **Mobile header**: Ascund butonul "Adauga" pe mobil (`hidden lg:flex`). Pastrez doar NotificationBell + Menu button.
+### Fisier: `src/components/dashboard/LendingsTab.tsx`
+- Adaug state `acceptedRental` care se seteaza dupa accept reusit (in loc de toast)
+- Adaug un Dialog care afiseaza informatiile de confirmare
+- Query KYC status pentru chirias (`kyc_verifications` table)
+- Buton "Discuta" care creaza conversatie si deschide ChatDialog
+- Buton "Cancel request" cu conditia de 24h si nota cu asterisk
+- Cancel request apeleaza `respondToRental(rentalId, "reject")` sau direct update pe rental
 
-### Fisier nou: `src/components/layout/MobileBottomNav.tsx`
-- Component separat pentru bottom navigation bar.
-- 5 tab-uri cu iconite si labels.
-- Fixed bottom, z-50, border-top, background solid.
-- Highlight tab-ul activ bazat pe ruta curenta (`useLocation`).
-- Badge pe Chat tab cu numarul de mesaje necitite.
+### Fisier: `src/features/rentals/ownerRentalsApi.ts`
+- Extind `OwnerRental` interface sa includa `renter_id` (deja exista) - no changes needed
 
-### Fisier: `src/pages/Index.tsx` (si alte pagini)
-- Adaug `MobileBottomNav` in layout-ul paginilor (sau il pun direct in Navbar ca sa fie global).
-- Alternativ: il includ in Navbar.tsx ca parte a return-ului, dupa header, ca sa apara pe toate paginile automat.
-
-### Fisier: `src/index.css`
-- Adaug padding-bottom pe body/main content pe mobil pentru a nu acoperi continutul cu bottom nav (~70px).
-
-## Structura bottom nav
-
-```text
-+--------------------------------------------------+
-|  Exploreaza  |  Favorite  |  Vinde  |  Chat  |  Cont  |
-|   (Search)   |  (Heart)   | (Plus)  | (Msg)  | (User) |
-+--------------------------------------------------+
-```
+### Flow
+1. Owner apasa "Accepta" pe cerere
+2. Se proceseaza acceptarea (edge function)
+3. Se afiseaza dialogul de confirmare cu datele booking-ului
+4. Owner poate apasa "Discuta" pentru a trimite mesaj chiriasului
+5. Owner poate anula cererea doar in primele 24h (cu confirmare)
 
 ## Fisiere modificate
 
 | Fisier | Schimbare |
 |--------|-----------|
-| `src/components/layout/MobileBottomNav.tsx` | Component nou - bottom navigation bar |
-| `src/components/layout/Navbar.tsx` | Adauga Chat button desktop, ascunde "Adauga" pe mobil, include MobileBottomNav |
-| `src/index.css` | Padding bottom pe mobil pentru bottom nav |
+| `src/components/dashboard/LendingsTab.tsx` | Dialog confirmare dupa acceptare, chat integration, cancel cu 24h |
 
