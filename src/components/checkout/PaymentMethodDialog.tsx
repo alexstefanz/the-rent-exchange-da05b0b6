@@ -123,6 +123,20 @@ const PaymentMethodDialog = ({ open, onOpenChange, onSelectMethod }: PaymentMeth
             {/* Card Form */}
             {showCardForm && selectedMethod === 'card' && (
               <div className="mt-4 p-4 bg-muted rounded-lg space-y-4 animate-fade-in">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-dashed border-primary/50 text-primary hover:bg-primary/5"
+                  onClick={() => {
+                    setCardNumber("4242 4242 4242 4242");
+                    setExpiryDate("12/28");
+                    setCvv("123");
+                    setCardName("Test User");
+                  }}
+                >
+                  🧪 Card de test (auto-fill)
+                </Button>
                 <div className="space-y-2">
                   <Label htmlFor="cardNumber">Număr card</Label>
                   <Input

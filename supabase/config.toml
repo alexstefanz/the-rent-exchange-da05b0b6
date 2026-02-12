@@ -1,1 +1,4 @@
 project_id = "tsffyecastudajmgrckt"
+
+[functions.send-rental-notification]
+verify_jwt = false
