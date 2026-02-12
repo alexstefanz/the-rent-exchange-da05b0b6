@@ -22,6 +22,7 @@ import EditProduct from "./pages/EditProduct";
 import Messages from "./pages/Messages";
 import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
+import ScrollToTop from "./components/ScrollToTop";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -41,6 +42,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/categorii" element={<Categories />} />
