@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,15 +7,20 @@ import SubcategoryCard from "@/components/items/SubcategoryCard";
 import ProductCard from "@/components/products/ProductCard";
 import { getCategoryById } from "@/data/categories";
 import { useProducts } from "@/hooks/queries/useProducts";
+import { useUxCopy } from "@/hooks/useUxCopy";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const CategoryDetail = () => {
   const { id } = useParams();
   const category = getCategoryById(Number(id));
+  const copy = useUxCopy();
+  const { language } = useLanguage();
   
-  // Use React Query for products
   const { data: products = [], isLoading } = useProducts(
     category ? { category: category.name } : undefined
   );
+
+  const catName = category ? (language === "en" ? category.nameEn : category.name) : "";
 
   if (!category) {
     return (
@@ -24,10 +28,10 @@ const CategoryDetail = () => {
         <Navbar />
         <main className="container py-16 text-center">
           <h1 className="font-heading text-2xl font-bold text-foreground">
-            Categoria nu a fost găsită
+            {copy.categoryDetail.categoryNotFound}
           </h1>
           <Button asChild className="mt-4">
-            <Link to="/categorii">Înapoi la Categorii</Link>
+            <Link to="/categorii">{copy.categoryDetail.backToCategories}</Link>
           </Button>
         </main>
         <Footer />
@@ -40,16 +44,14 @@ const CategoryDetail = () => {
       <Navbar />
 
       <main className="w-full max-w-7xl mx-auto py-8 px-[10px] md:px-6 lg:px-8">
-        {/* Breadcrumb */}
         <Link
           to="/categorii"
           className="mb-6 inline-flex items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ChevronLeft className="mr-1 h-4 w-4" />
-          Înapoi la Categorii
+          {copy.categoryDetail.backToCategories}
         </Link>
 
-        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4">
             <span className="hidden text-5xl md:block">{category.icon}</span>
@@ -59,21 +61,20 @@ const CategoryDetail = () => {
                   {category.id}
                 </span>
                 <h1 className="font-heading text-3xl font-bold text-foreground text-center md:text-left md:text-4xl">
-                  {category.name}
+                  {catName}
                 </h1>
               </div>
               <p className="mt-2 text-muted-foreground">
-                {category.subcategories.length} subcategorii disponibile pentru închiriat
-                {!isLoading && products.length > 0 && ` • ${products.length} anunțuri`}
+                {copy.categoryDetail.subcategoriesAvailable(category.subcategories.length)}
+                {!isLoading && products.length > 0 && ` • ${copy.categoryDetail.listings(products.length)}`}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Subcategories Grid */}
         <div className="mb-12">
           <h2 className="mb-4 font-heading text-xl font-semibold text-foreground">
-            Subcategorii
+            {copy.categoryDetail.subcategories}
           </h2>
           <div className="grid grid-cols-2 gap-4 md:gap-6 lg:grid-cols-3 xl:grid-cols-4">
             {category.subcategories.map((subcategory, index) => (
@@ -85,6 +86,7 @@ const CategoryDetail = () => {
                 <SubcategoryCard
                   id={subcategory.id}
                   name={subcategory.name}
+                  nameEn={subcategory.nameEn}
                   description={subcategory.description}
                   image={subcategory.image}
                   categoryId={category.id}
@@ -94,10 +96,9 @@ const CategoryDetail = () => {
           </div>
         </div>
 
-        {/* Products Section */}
         <div>
           <h2 className="mb-4 font-heading text-xl font-semibold text-foreground">
-            Anunțuri în această categorie
+            {copy.categoryDetail.listingsInCategory}
           </h2>
 
           {isLoading && (
@@ -109,10 +110,10 @@ const CategoryDetail = () => {
           {!isLoading && products.length === 0 && (
             <div className="py-8 text-center rounded-xl bg-muted/30">
               <p className="text-muted-foreground">
-                Nu există anunțuri în această categorie momentan.
+                {copy.categoryDetail.noListings}
               </p>
               <Button asChild className="mt-4">
-                <Link to="/adauga-anunt">Adaugă primul anunț</Link>
+                <Link to="/adauga-anunt">{copy.categoryDetail.addFirstListing}</Link>
               </Button>
             </div>
           )}

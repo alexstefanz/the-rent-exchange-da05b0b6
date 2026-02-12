@@ -1,16 +1,20 @@
 import { Link } from "react-router-dom";
 import { getSubcategoryIcon } from "@/data/subcategoryIcons";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SubcategoryCardProps {
   id: string;
   name: string;
+  nameEn?: string;
   description: string;
   image: string;
   categoryId: number;
 }
 
-const SubcategoryCard = ({ id, name }: SubcategoryCardProps) => {
+const SubcategoryCard = ({ id, name, nameEn }: SubcategoryCardProps) => {
   const Icon = getSubcategoryIcon(id);
+  const { language } = useLanguage();
+  const displayName = language === "en" && nameEn ? nameEn : name;
   
   return (
     <Link
@@ -21,7 +25,7 @@ const SubcategoryCard = ({ id, name }: SubcategoryCardProps) => {
         <Icon className="h-7 w-7" />
       </div>
       <span className="text-center font-medium text-foreground">
-        {name}
+        {displayName}
       </span>
     </Link>
   );
