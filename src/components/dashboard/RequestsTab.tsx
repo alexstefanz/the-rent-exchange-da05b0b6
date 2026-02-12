@@ -90,10 +90,15 @@ const RequestsTab = () => {
         });
       }
     },
-    onSuccess: () => {
+    onSuccess: (_data, request) => {
       queryClient.invalidateQueries({ queryKey: ["my-requests"] });
       queryClient.invalidateQueries({ queryKey: ["pending-requests-count"] });
       toast.success("Cererea a fost anulată cu succes");
+
+      // Send cancellation email notification (non-blocking)
+      supabase.functions.invoke('send-cancellation-notification', {
+        body: { rental_id: request.id },
+      }).catch((e) => console.error('Cancellation notification error:', e));
     },
     onError: () => {
       toast.error("Eroare la anularea cererii");
