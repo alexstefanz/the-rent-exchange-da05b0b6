@@ -2,3 +2,6 @@ project_id = "tsffyecastudajmgrckt"
 
 [functions.send-rental-notification]
 verify_jwt = false
+
+[functions.respond-rental-request]
+verify_jwt = false
