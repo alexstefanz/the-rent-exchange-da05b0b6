@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { SearchX, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { categories } from "@/data/categories";
-import { uxCopy } from "@/data/uxCopy";
+import { useUxCopy } from "@/hooks/useUxCopy";
 
 interface EmptySearchStateProps {
   searchQuery?: string;
@@ -10,7 +10,7 @@ interface EmptySearchStateProps {
 }
 
 const EmptySearchState = ({ searchQuery, type = "products" }: EmptySearchStateProps) => {
-  // Get 4 popular categories for suggestions
+  const copy = useUxCopy();
   const popularCategories = categories.slice(0, 4);
 
   return (
@@ -20,13 +20,17 @@ const EmptySearchState = ({ searchQuery, type = "products" }: EmptySearchStatePr
       </div>
       
       <h3 className="mb-2 font-heading text-xl font-semibold text-foreground">
-        {uxCopy.search.noResults}
+        {copy.search.noResults}
       </h3>
       
       <p className="mb-6 max-w-md text-muted-foreground">
         {searchQuery 
-          ? `Nu am găsit ${type === "products" ? "produse" : "utilizatori"} pentru "${searchQuery}". ${uxCopy.search.noResultsSubtitle}`
-          : `Nu există ${type === "products" ? "produse" : "utilizatori"} disponibile momentan.`
+          ? (type === "products" 
+              ? copy.emptySearch.noProducts(searchQuery)
+              : copy.emptySearch.noUsers(searchQuery))
+          : (type === "products"
+              ? copy.emptySearch.noProductsAvailable
+              : copy.emptySearch.noUsersAvailable)
         }
       </p>
 
@@ -34,7 +38,7 @@ const EmptySearchState = ({ searchQuery, type = "products" }: EmptySearchStatePr
         <>
           <div className="mb-6">
             <p className="mb-3 text-sm font-medium text-foreground">
-              {uxCopy.search.suggestions}:
+              {copy.search.suggestions}:
             </p>
             <div className="flex flex-wrap justify-center gap-2">
               {popularCategories.map((category) => (
@@ -51,7 +55,7 @@ const EmptySearchState = ({ searchQuery, type = "products" }: EmptySearchStatePr
 
           <Button asChild>
             <Link to="/categorii">
-              Explorează toate categoriile
+              {copy.emptySearch.exploreCategories}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>

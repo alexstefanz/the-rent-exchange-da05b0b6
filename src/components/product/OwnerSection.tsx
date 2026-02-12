@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { uxCopy } from "@/data/uxCopy";
+import { useUxCopy } from "@/hooks/useUxCopy";
 
 interface OwnerSectionProps {
   ownerId: string;
@@ -31,6 +31,7 @@ const OwnerSection = ({
   onStartChat,
   isOwnProduct = false,
 }: OwnerSectionProps) => {
+  const copy = useUxCopy();
   const ownerInitial = ownerName.charAt(0).toUpperCase();
 
   return (
@@ -52,23 +53,23 @@ const OwnerSection = ({
               </Link>
               <Badge variant="secondary" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">
                 <Check className="mr-1 h-3 w-3" />
-                {uxCopy.trust.verified}
+                {copy.trust.verified}
               </Badge>
             </div>
             <div className="mt-1 flex items-center gap-1 text-sm">
               <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
               <span className="font-medium">{rating.toFixed(1)}</span>
-              <span className="text-muted-foreground">({reviewCount} recenzii)</span>
+              <span className="text-muted-foreground">({reviewCount} {copy.owner.reviews})</span>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              {uxCopy.owner.memberSince} {memberSince}
+              {copy.owner.memberSince} {memberSince}
             </p>
           </div>
         </div>
         {!isOwnProduct && (
           <Button variant="outline" size="sm" onClick={onStartChat}>
             <MessageCircle className="mr-2 h-4 w-4" />
-            {uxCopy.owner.sendMessage}
+            {copy.owner.sendMessage}
           </Button>
         )}
       </div>
@@ -90,16 +91,16 @@ const OwnerSection = ({
               </Link>
               <Badge variant="secondary" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">
                 <Check className="mr-1 h-3 w-3" />
-                Verificat
+                {copy.trust.verified}
               </Badge>
             </div>
             <div className="mt-1 flex items-center gap-1 text-sm">
               <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
               <span className="font-medium">{rating.toFixed(1)}</span>
-              <span className="text-muted-foreground">({reviewCount} recenzii)</span>
+              <span className="text-muted-foreground">({reviewCount} {copy.owner.reviews})</span>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
-              {uxCopy.owner.memberSince} {memberSince}
+              {copy.owner.memberSince} {memberSince}
             </p>
           </div>
         </div>
@@ -110,7 +111,7 @@ const OwnerSection = ({
             onClick={onStartChat}
           >
             <MessageCircle className="mr-2 h-4 w-4" />
-            {uxCopy.owner.sendMessage}
+            {copy.owner.sendMessage}
           </Button>
         )}
       </div>
@@ -121,18 +122,18 @@ const OwnerSection = ({
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Clock className="h-4 w-4 text-primary" />
-          <span>Răspunde în {responseTime}</span>
+          <span>{copy.owner.respondsIn} {responseTime}</span>
         </div>
         <div className="flex items-center gap-2 text-muted-foreground">
           <MessageCircle className="h-4 w-4 text-primary" />
-          <span>Rată răspuns: {responseRate}</span>
+          <span>{copy.owner.responseRate}: {responseRate}</span>
         </div>
       </div>
 
       {/* Insurance Badge */}
       <div className="mt-4 flex items-center gap-2 rounded-lg bg-primary/5 p-3 text-sm">
         <Shield className="h-5 w-5 text-primary" />
-        <span className="text-foreground">{uxCopy.trust.insurance}</span>
+        <span className="text-foreground">{copy.trust.insurance}</span>
       </div>
     </div>
   );

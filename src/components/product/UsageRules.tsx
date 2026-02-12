@@ -1,5 +1,5 @@
 import { AlertCircle, Clock, Wallet, ShieldCheck } from "lucide-react";
-import { uxCopy } from "@/data/uxCopy";
+import { useUxCopy } from "@/hooks/useUxCopy";
 
 interface UsageRule {
   icon: typeof AlertCircle;
@@ -12,33 +12,25 @@ interface UsageRulesProps {
   depositAmount?: number;
 }
 
-const defaultRules: UsageRule[] = [
-  {
-    icon: Clock,
-    title: "Politică de anulare",
-    description: "Anulare gratuită cu până la 24 de ore înainte de începerea închirierii.",
-  },
-  {
-    icon: Wallet,
-    title: "Plată",
-    description: "Plata se face în avans pentru a confirma rezervarea. Acceptăm card și transfer bancar.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Returnare",
-    description: "Produsul trebuie returnat în aceeași stare în care a fost primit.",
-  },
-];
+const UsageRules = ({ rules, depositAmount }: UsageRulesProps) => {
+  const copy = useUxCopy();
 
-const UsageRules = ({ rules = defaultRules, depositAmount }: UsageRulesProps) => {
+  const defaultRules: UsageRule[] = [
+    { icon: Clock, title: copy.usageRules.cancellation, description: copy.usageRules.cancellationDesc },
+    { icon: Wallet, title: copy.usageRules.payment, description: copy.usageRules.paymentDesc },
+    { icon: ShieldCheck, title: copy.usageRules.return, description: copy.usageRules.returnDesc },
+  ];
+
+  const displayRules = rules || defaultRules;
+
   return (
     <div className="rounded-xl border border-border bg-card p-6">
       <h2 className="mb-4 font-heading text-xl font-semibold text-foreground flex items-center gap-2">
         <AlertCircle className="h-5 w-5 text-primary" />
-        {uxCopy.product.rules}
+        {copy.product.rules}
       </h2>
       <div className="space-y-4">
-        {rules.map((rule, index) => {
+        {displayRules.map((rule, index) => {
           const Icon = rule.icon;
           return (
             <div key={index} className="flex items-start gap-3">
@@ -58,11 +50,11 @@ const UsageRules = ({ rules = defaultRules, depositAmount }: UsageRulesProps) =>
             <div className="flex items-center gap-2">
               <Wallet className="h-5 w-5 text-amber-600" />
               <span className="font-medium text-amber-800">
-                {uxCopy.product.deposit}: {depositAmount} RON
+                {copy.product.deposit}: {depositAmount} RON
               </span>
             </div>
             <p className="mt-1 text-sm text-amber-700">
-              Garanția se returnează integral la predarea produsului în stare bună.
+              {copy.usageRules.depositReturn}
             </p>
           </div>
         )}
