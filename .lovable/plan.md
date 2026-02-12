@@ -1,97 +1,89 @@
 
-# Functionalizare Profil: Foto, Notificari, Review-uri si Linkuri Dropdown
+# Flow End-to-End: Inchiriere -> Plata Test -> Notificare Email
 
-## Ce se va implementa
+## Rezumat
+Vom face functional intregul flow de checkout cu plata de test (fara procesator de plati real), vom salva rezervarea in baza de date, si vom trimite notificari email ambilor utilizatori (chirias si proprietar) la crearea unei rezervari.
 
-### 1. Upload foto profil (functional)
-Butonul Camera de pe ProfileTab afiseaza acum "Coming soon". Il vom face functional:
-- Creare bucket `avatars` in Supabase Storage (public) cu RLS policies
-- La click pe Camera, se deschide un file input pentru selectia imaginii
-- Imaginea se uploadeaza in bucket-ul `avatars` sub `{userId}/avatar.{ext}`
-- Se actualizeaza `avatar_url` in tabela `profiles` via `updateProfile()`
-- Avatarul se actualizeaza in timp real pe pagina
+## Ce se schimba
 
-### 2. Notificari reale (inlocuire placeholder-e)
-Momentan `NotificationsTab` si `NotificationBell` folosesc date mock hardcoded.
-- Creare tabela `notifications` in baza de date cu coloane: `id`, `user_id`, `type`, `title_ro`, `title_en`, `description_ro`, `description_en`, `is_read`, `created_at`, `link`
-- RLS: utilizatorii vad/actualizeaza doar propriile notificari
-- Creare API `src/features/profile/notificationsApi.ts` cu functii: `getNotifications()`, `markAsRead()`, `markAllAsRead()`, `getUnreadCount()`
-- Actualizare `NotificationsTab` sa foloseasca date reale din DB
-- Actualizare `NotificationBell` sa afiseze count real si notificari reale
-- Activare realtime pe tabela `notifications` pentru actualizari live
+### 1. Metoda de plata "Test Mode"
+In `PaymentMethodDialog.tsx`, vom adauga o optiune vizibila **"Card de test"** care pre-completeaza automat formularul cu date fictive (4242 4242 4242 4242, 12/28, 123, Test User). Aceasta permite testarea rapida fara a introduce date manual.
 
-### 3. Review-uri functionale (stergere placeholder-e)
-API-ul de review-uri (`reviewsApi.ts`) exista deja si e functional. Problema e ca:
-- `RentalsTab` afiseaza date mock hardcoded (mockRentals)
-- `LendingsTab` probabil la fel
+### 2. Checkout functional - salvare rezervare in DB
+Acum `handleConfirmReservation` doar seteaza `isConfirmed = true` fara a salva nimic. Vom:
+- Integra `useAuth` in `Checkout.tsx` pentru autentificarea reala (inlocuire `LoginDialog` simulat cu auth real)
+- La pasul de confirmare, crea o inregistrare in tabela `rentals` cu:
+  - `product_id`, `renter_id` (user logat), `owner_id` (din produs)
+  - `start_date`, `end_date`, `rental_days`, `daily_price`
+  - `subtotal`, `platform_fee`, `owner_payout` (calculate automat)
+  - `status: 'pending'`, `payment_status: 'pending'`, `payment_method`
+- Crea o inregistrare in tabela `transactions` (tip: 'rental_payment')
+- Crea o conversatie + mesaj initial catre proprietar (daca s-a completat mesajul)
+- Crea notificari in tabela `notifications` pentru ambii utilizatori
 
-Voi actualiza:
-- `RentalsTab` sa fetcheze din tabela `rentals` real
-- `LendingsTab` sa fetcheze din tabela `products` real (anunturile proprietarului)
-- Stergerea tuturor datelor mock/placeholder din aceste componente
+### 3. Edge function pentru notificari email
+Vom crea o edge function `send-rental-notification` care:
+- Primeste datele rezervarii (rental_id)
+- Fetche-aza detaliile rezervarii, produsului, chiriasului si proprietarului
+- Trimite email ambilor utilizatori folosind Supabase Auth (Resend, integrat nativ)
+- Email catre **proprietar**: "Ai o noua cerere de inchiriere pentru [produs]"
+- Email catre **chirias**: "Cererea ta de inchiriere a fost trimisa pentru [produs]"
 
-### 4. Linkuri functionale in dropdown (Rezervari si Favorite)
-In `Navbar.tsx`, linkurile `/rezervari` si `/favorite` nu au rute definite in `App.tsx`.
-- `/favorite` -> Redirect la `/profile#favorite`
-- `/rezervari` -> Redirect la `/profile#inchirieri`
-- Actualizare linkuri in `Navbar.tsx` sa pointeze direct catre hash-urile corecte din profil
+### 4. LoginDialog integrat cu auth real
+`LoginDialog` foloseste acum login simulat. Il vom conecta la `useAuth` din `AuthContext` pentru login/signup real cu email si parola.
 
 ---
 
 ## Detalii Tehnice
 
-### Baza de date
-
-**Bucket nou `avatars`:**
-```sql
-INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', true);
-
-CREATE POLICY "Users can upload own avatar" ON storage.objects FOR INSERT 
-WITH CHECK (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
-
-CREATE POLICY "Users can update own avatar" ON storage.objects FOR UPDATE 
-USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
-
-CREATE POLICY "Users can delete own avatar" ON storage.objects FOR DELETE 
-USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
-
-CREATE POLICY "Anyone can view avatars" ON storage.objects FOR SELECT 
-USING (bucket_id = 'avatars');
-```
-
-**Tabela `notifications`:**
-```sql
-CREATE TABLE notifications (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL,
-  type TEXT NOT NULL DEFAULT 'system',
-  title_ro TEXT NOT NULL,
-  title_en TEXT,
-  description_ro TEXT,
-  description_en TEXT,
-  is_read BOOLEAN NOT NULL DEFAULT false,
-  link TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
--- Politici RLS pentru SELECT, UPDATE (mark as read)
-ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
-```
+### Edge Function: `supabase/functions/send-rental-notification/index.ts`
+- Primeste `rental_id` via POST
+- Foloseste `SUPABASE_SERVICE_ROLE_KEY` pentru a accesa datele
+- Trimite email via `supabase.auth.admin.sendRawEmail()` sau `Deno fetch` catre Resend API
+- Necesita secret `RESEND_API_KEY` pentru trimitere email
 
 ### Fisiere noi
 | Fisier | Scop |
 |--------|------|
-| `src/features/profile/notificationsApi.ts` | CRUD notificari |
-| `src/features/profile/avatarApi.ts` | Upload/delete avatar |
+| `supabase/functions/send-rental-notification/index.ts` | Edge function email |
+| `src/features/rentals/rentalsApi.ts` | Creare rental + transaction in DB |
 
 ### Fisiere modificate
 | Fisier | Ce se schimba |
 |--------|---------------|
-| `src/components/profile/ProfileTab.tsx` | Upload foto real (inlocuire "Coming soon") |
-| `src/components/profile/NotificationsTab.tsx` | Date reale din DB, stergere mock |
-| `src/components/layout/NotificationBell.tsx` | Date reale din DB, stergere mock |
-| `src/components/dashboard/RentalsTab.tsx` | Fetch din `rentals` real, stergere mockRentals |
-| `src/components/dashboard/LendingsTab.tsx` | Fetch din `products` real, stergere mock |
-| `src/components/layout/Navbar.tsx` | Linkuri `/favorite` -> `/profile#favorite`, `/rezervari` -> `/profile#inchirieri` |
-| `src/App.tsx` | Adaugare rute redirect pentru `/favorite` si `/rezervari` |
+| `src/pages/Checkout.tsx` | Integrare auth real, salvare rental in DB, apel edge function |
+| `src/components/checkout/PaymentMethodDialog.tsx` | Adaugare buton "Card de test" cu auto-fill |
+| `src/components/checkout/LoginDialog.tsx` | Integrare cu `useAuth` (login/signup real) |
+| `supabase/config.toml` | Adaugare config edge function cu `verify_jwt = false` |
+
+### Flow tehnic
+```text
+[Utilizator selecteaza produs si perioada]
+        |
+        v
+[Checkout: 4 pasi]
+  1. Alege momentul platii
+  2. Mesaj catre proprietar
+  3. Metoda de plata (cu optiune Test Card)
+  4. Review si Confirma
+        |
+        v
+[handleConfirmReservation]
+  -> INSERT into rentals (status: pending)
+  -> INSERT into transactions (type: rental_payment)
+  -> INSERT into conversations + messages (daca mesaj)
+  -> INSERT into notifications (pentru ambii)
+  -> CALL edge function send-rental-notification
+        |
+        v
+[Edge Function]
+  -> Fetch rental details cu service role
+  -> Trimite email proprietar
+  -> Trimite email chirias
+        |
+        v
+[BookingConfirmation screen]
+```
+
+### Nota despre email
+Pentru trimiterea de emailuri avem nevoie de un API key Resend. Inainte de implementare, te voi intreba daca doresti sa configurezi acest secret.
