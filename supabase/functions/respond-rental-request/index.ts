@@ -170,7 +170,7 @@ Deno.serve(async (req) => {
         title_en: "Your request was accepted! 🎉",
         description_ro: `${ownerName} a acceptat cererea ta pentru "${productTitle}". Poți discuta detaliile de predare.`,
         description_en: `${ownerName} accepted your request for "${productTitle}". You can discuss pickup details.`,
-        link: "/profile?tab=rentals",
+        link: "/profile#cereri",
       });
 
       await supabaseAdmin
@@ -186,7 +186,7 @@ Deno.serve(async (req) => {
         title_en: "Your request was declined",
         description_ro: `${ownerName} a refuzat cererea pentru "${productTitle}".${reason ? ` Motiv: ${reason}` : ""}`,
         description_en: `${ownerName} declined your request for "${productTitle}".${reason ? ` Reason: ${reason}` : ""}`,
-        link: "/profile?tab=rentals",
+        link: "/profile#cereri",
       });
     }
 

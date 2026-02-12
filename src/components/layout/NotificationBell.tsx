@@ -51,6 +51,12 @@ const NotificationBell = () => {
     });
   };
 
+  const mapLink = (link: string) => {
+    if (link.includes("?tab=lendings")) return "/profile#anunturi";
+    if (link.includes("?tab=rentals")) return "/profile#cereri";
+    return link;
+  };
+
   const handleNotificationClick = async (n: Notification) => {
     if (!n.is_read) {
       try {
@@ -59,7 +65,7 @@ const NotificationBell = () => {
       } catch (e) { console.error(e); }
     }
     if (n.link) {
-      navigate(n.link);
+      navigate(mapLink(n.link));
     }
   };
 
