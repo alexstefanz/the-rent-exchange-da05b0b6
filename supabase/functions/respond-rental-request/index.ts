@@ -6,6 +6,55 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const PLATFORM_URL = "https://the-rent-exchange.lovable.app";
+
+function buildEmailTemplate(opts: {
+  title: string;
+  greeting: string;
+  rows: { label: string; value: string }[];
+  ctaText: string;
+  ctaLink: string;
+  footerText: string;
+}) {
+  const rowsHtml = opts.rows
+    .map(
+      (r) =>
+        `<tr><td style="padding:6px 0;color:#6B6155;font-size:14px;">${r.label}</td><td style="padding:6px 0;color:#2D2517;font-size:14px;font-weight:600;text-align:right;">${r.value}</td></tr>`
+    )
+    .join("");
+
+  return `<!DOCTYPE html>
+<html lang="ro">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#FAF9F7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAF9F7;padding:32px 16px;">
+<tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+  <!-- Header -->
+  <tr><td style="background-color:#3DB86A;border-radius:12px 12px 0 0;padding:24px 32px;text-align:center;">
+    <span style="color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">RentNow</span>
+  </td></tr>
+  <!-- Card -->
+  <tr><td style="background-color:#ffffff;padding:32px;border-radius:0 0 12px 12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+    <h2 style="margin:0 0 8px;color:#2D2517;font-size:20px;">${opts.title}</h2>
+    <p style="margin:0 0 24px;color:#6B6155;font-size:15px;line-height:1.5;">${opts.greeting}</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #E8E4DF;border-bottom:1px solid #E8E4DF;margin-bottom:24px;padding:8px 0;">
+      ${rowsHtml}
+    </table>
+    <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+      <a href="${PLATFORM_URL}${opts.ctaLink}" style="display:inline-block;background-color:#3DB86A;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;">${opts.ctaText}</a>
+    </td></tr></table>
+  </td></tr>
+  <!-- Footer -->
+  <tr><td style="padding:24px 32px;text-align:center;">
+    <p style="margin:0;color:#9B9489;font-size:12px;">${opts.footerText}</p>
+    <p style="margin:8px 0 0;"><a href="${PLATFORM_URL}" style="color:#3DB86A;font-size:12px;text-decoration:none;">the-rent-exchange.lovable.app</a></p>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -21,7 +70,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Verify the caller is the owner
     const authHeader = req.headers.get("Authorization");
     const supabaseUser = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -41,7 +89,6 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Fetch rental and verify ownership
     const { data: rental, error: rentalError } = await supabaseAdmin
       .from("rentals")
       .select("*")
@@ -69,7 +116,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Update rental status
     const newStatus = action === "accept" ? "confirmed" : "cancelled";
     const updateData: Record<string, unknown> = { status: newStatus };
     if (action === "accept") {
@@ -81,7 +127,6 @@ Deno.serve(async (req) => {
 
     await supabaseAdmin.from("rentals").update(updateData).eq("id", rental_id);
 
-    // Fetch product and profiles
     const [productRes, renterRes, ownerRes] = await Promise.all([
       supabaseAdmin.from("products").select("title").eq("id", rental.product_id).single(),
       supabaseAdmin.from("profiles").select("full_name, email").eq("id", rental.renter_id).single(),
@@ -92,7 +137,6 @@ Deno.serve(async (req) => {
     const renter = renterRes.data;
     const owner = ownerRes.data;
 
-    // Get email helper
     const getEmail = async (userId: string, profileEmail: string | null): Promise<string | null> => {
       if (profileEmail) return profileEmail;
       try {
@@ -108,55 +152,72 @@ Deno.serve(async (req) => {
     };
 
     const renterEmail = await getEmail(rental.renter_id, renter?.email || null);
+    const productTitle = product?.title || "Produs";
+    const ownerName = owner?.full_name || "Proprietarul";
+
+    const rows = [
+      { label: "📦 Produs", value: productTitle },
+      { label: "📅 Perioadă", value: `${rental.start_date} → ${rental.end_date}` },
+      { label: "⏱ Durată", value: `${rental.rental_days} zile` },
+      { label: "💰 Total", value: `${rental.subtotal} RON` },
+    ];
 
     if (action === "accept") {
-      // Notify renter: accepted
       await supabaseAdmin.from("notifications").insert({
         user_id: rental.renter_id,
         type: "rental_confirmation",
         title_ro: "Cererea ta a fost acceptată! 🎉",
         title_en: "Your request was accepted! 🎉",
-        description_ro: `${owner?.full_name || "Proprietarul"} a acceptat cererea ta pentru "${product?.title}". Poți discuta detaliile de predare.`,
-        description_en: `${owner?.full_name || "The owner"} accepted your request for "${product?.title}". You can discuss pickup details.`,
+        description_ro: `${ownerName} a acceptat cererea ta pentru "${productTitle}". Poți discuta detaliile de predare.`,
+        description_en: `${ownerName} accepted your request for "${productTitle}". You can discuss pickup details.`,
         link: "/profile?tab=rentals",
       });
 
-      // Update transaction status
       await supabaseAdmin
         .from("transactions")
         .update({ status: "confirmed" })
         .eq("rental_id", rental_id)
         .eq("status", "pending");
     } else {
-      // Notify renter: rejected
       await supabaseAdmin.from("notifications").insert({
         user_id: rental.renter_id,
         type: "rental_confirmation",
         title_ro: "Cererea ta a fost refuzată",
         title_en: "Your request was declined",
-        description_ro: `${owner?.full_name || "Proprietarul"} a refuzat cererea pentru "${product?.title}".${reason ? ` Motiv: ${reason}` : ""}`,
-        description_en: `${owner?.full_name || "The owner"} declined your request for "${product?.title}".${reason ? ` Reason: ${reason}` : ""}`,
+        description_ro: `${ownerName} a refuzat cererea pentru "${productTitle}".${reason ? ` Motiv: ${reason}` : ""}`,
+        description_en: `${ownerName} declined your request for "${productTitle}".${reason ? ` Reason: ${reason}` : ""}`,
         link: "/profile?tab=rentals",
       });
     }
 
-    // Send email to renter
+    // Send email
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (resendApiKey && renterEmail) {
-      const subject = action === "accept"
-        ? `Cererea ta a fost acceptată - ${product?.title}`
-        : `Cererea ta a fost refuzată - ${product?.title}`;
-      
-      const html = action === "accept"
-        ? `<h2>Cererea ta a fost acceptată! 🎉</h2>
-           <p><strong>${owner?.full_name}</strong> a acceptat cererea ta pentru <strong>${product?.title}</strong>.</p>
-           <p><strong>Perioadă:</strong> ${rental.start_date} → ${rental.end_date} (${rental.rental_days} zile)</p>
-           <p><strong>Total:</strong> ${rental.subtotal} RON</p>
-           <p>Accesează platforma pentru a discuta detaliile de predare.</p>`
-        : `<h2>Cererea ta a fost refuzată</h2>
-           <p><strong>${owner?.full_name}</strong> a refuzat cererea pentru <strong>${product?.title}</strong>.</p>
-           ${reason ? `<p><strong>Motiv:</strong> ${reason}</p>` : ""}
-           <p>Poți căuta alte produse similare pe platformă.</p>`;
+      let html: string;
+      let subject: string;
+
+      if (action === "accept") {
+        subject = `Cererea ta a fost acceptată - ${productTitle}`;
+        html = buildEmailTemplate({
+          title: "Cererea ta a fost acceptată! 🎉",
+          greeting: `<strong>${ownerName}</strong> a acceptat cererea ta pentru <strong>${productTitle}</strong>. Poți discuta detaliile de predare.`,
+          rows,
+          ctaText: "Discută detaliile",
+          ctaLink: "/profile?tab=rentals",
+          footerText: "Contactează proprietarul pentru a stabili detaliile de predare.",
+        });
+      } else {
+        subject = `Cererea ta a fost refuzată - ${productTitle}`;
+        const reasonRow = reason ? [{ label: "📝 Motiv", value: reason }] : [];
+        html = buildEmailTemplate({
+          title: "Cererea ta a fost refuzată",
+          greeting: `<strong>${ownerName}</strong> a refuzat cererea pentru <strong>${productTitle}</strong>.`,
+          rows: [...rows, ...reasonRow],
+          ctaText: "Caută alte produse",
+          ctaLink: "/search",
+          footerText: "Poți căuta alte produse similare pe platformă.",
+        });
+      }
 
       try {
         await fetch("https://api.resend.com/emails", {
