@@ -1,45 +1,45 @@
 
 
-# Formular Resetare Parola
+# Fix Resetare Parola - Detectare prin eveniment PASSWORD_RECOVERY
 
-## Problema
-Cand utilizatorul da click pe "Reset Password" din email, este redirectionat la `/auth?reset=true`. Insa pagina Auth.tsx nu detecteaza parametrul `reset=true` si afiseaza formularul de login in loc de un formular de resetare parola.
+## Problema root cause
+
+Cand utilizatorul da click pe linkul din email, Supabase:
+1. Verifica token-ul la `/verify`
+2. Redirectioneaza la URL-ul specificat cu token-urile in **hash fragment** (`#access_token=...&type=recovery`)
+3. Supabase JS client preia token-urile si emite evenimentul `PASSWORD_RECOVERY` prin `onAuthStateChange`
+
+Problema: codul actual se bazeaza pe `?reset=true` in URL, dar Supabase nu pastreaza mereu query params-urile in redirect. In plus, `useEffect` detecteaza `user` si redirectioneaza la `/` inainte sa se verifice `isResetMode`.
 
 ## Solutia
 
-### 1. Detectare mod resetare in `src/pages/Auth.tsx`
-- Citeste parametrul `?reset=true` din URL folosind `useSearchParams`
-- Cand `reset=true` este prezent, afiseaza un formular dedicat de resetare parola **in loc de** tab-urile login/register
-- Formularul contine: "Parola noua" + "Confirma parola noua" + buton "Reseteaza parola"
-- Validare zod: minim 6 caractere, parolele trebuie sa se potriveasca
+Inlocuim detectarea prin URL param cu detectarea prin evenimentul `PASSWORD_RECOVERY` din Supabase Auth -- aceasta este metoda standard si fiabila.
 
-### 2. Logica de resetare
-- Foloseste `supabase.auth.updateUser({ password: newPassword })` pentru a seta noua parola
-- Dupa succes, afiseaza toast de confirmare si redirectioneaza la pagina de login (stergand parametrul `reset` din URL)
+### 1. Modificare `src/contexts/AuthContext.tsx`
+- Adaugam un state `isPasswordRecovery` care devine `true` cand `onAuthStateChange` primeste evenimentul `PASSWORD_RECOVERY`
+- Exportam `isPasswordRecovery` si o functie `clearPasswordRecovery()` in context
+- Cand evenimentul `PASSWORD_RECOVERY` e detectat, setam flag-ul fara sa mai depindem de URL
 
-### 3. Email de confirmare dupa resetare
-- Creez o noua edge function `send-password-changed-notification` care trimite un email de confirmare ca parola a fost schimbata
-- Template-ul va folosi acelasi design modern (verde `#3DB86A`, card, buton)
-- Emailul va include: mesaj de confirmare, data/ora schimbarii, si buton "Acceseaza contul" catre `/auth`
-- Functia este apelata din Auth.tsx dupa `updateUser` reusit, pasand emailul utilizatorului
+### 2. Modificare `src/pages/Auth.tsx`
+- Inlocuim `isResetMode` (bazat pe URL param) cu `isPasswordRecovery` din AuthContext
+- Cand formularul de resetare e trimis cu succes, apelam `clearPasswordRecovery()` pentru a curata starea
+- Eliminam dependenta de `useSearchParams` pentru modul reset (pastram doar pentru alte utilizari)
+- `useEffect` va verifica `isPasswordRecovery` in loc de `isResetMode` pentru a preveni redirect-ul la `/`
 
-### 4. Adaugare copy UX in `src/data/uxCopy.ts`
-- Adaug texte noi: `newPassword`, `confirmNewPassword`, `resetSuccess`, `resetSuccessDesc`, `resettingPassword`, `passwordChanged`
+### Flow corect dupa fix
+
+1. Utilizatorul cere resetare parola -> primeste email
+2. Click pe "Reset Password" in email -> Supabase verifica token-ul
+3. Supabase redirectioneaza la `/auth` cu hash fragments
+4. Supabase JS client detecteaza token-urile, emite `PASSWORD_RECOVERY`
+5. AuthContext seteaza `isPasswordRecovery = true`
+6. Auth.tsx vede flag-ul si afiseaza formularul de resetare parola
+7. Dupa succes -> `clearPasswordRecovery()`, sign out, redirect la login
 
 ## Fisiere modificate
 
 | Fisier | Schimbare |
 |--------|-----------|
-| `src/pages/Auth.tsx` | Detectare `?reset=true`, formular resetare, apel edge function |
-| `src/data/uxCopy.ts` | Texte noi pentru formularul de resetare |
-| `supabase/functions/send-password-changed-notification/index.ts` | Edge function noua pentru email confirmare |
-
-## Flow complet
-
-1. Utilizatorul cere resetare parola -> primeste email
-2. Click "Reset Password" in email -> ajunge pe `/auth?reset=true`
-3. Vede formularul cu "Parola noua" + "Confirma parola"
-4. Completeaza si trimite -> parola se actualizeaza
-5. Primeste email de confirmare ca parola s-a schimbat
-6. Este redirectionat la formularul de login
+| `src/contexts/AuthContext.tsx` | Adauga `isPasswordRecovery` state + `clearPasswordRecovery()` |
+| `src/pages/Auth.tsx` | Foloseste `isPasswordRecovery` din context in loc de URL param |
 
