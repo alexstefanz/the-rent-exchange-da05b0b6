@@ -1,67 +1,97 @@
 
+# Functionalizare Profil: Foto, Notificari, Review-uri si Linkuri Dropdown
 
-# Adaugare Favorite Produse (Anunturi)
+## Ce se va implementa
 
-## Situatia actuala
-Exista doar un sistem de favorite pentru **utilizatori** (`favorite_users` table). Nu exista nicio tabela sau functionalitate pentru a salva **produse/anunturi** la favorite. Butonul Heart de pe pagina de produs exista vizual dar nu salveaza nimic in baza de date.
+### 1. Upload foto profil (functional)
+Butonul Camera de pe ProfileTab afiseaza acum "Coming soon". Il vom face functional:
+- Creare bucket `avatars` in Supabase Storage (public) cu RLS policies
+- La click pe Camera, se deschide un file input pentru selectia imaginii
+- Imaginea se uploadeaza in bucket-ul `avatars` sub `{userId}/avatar.{ext}`
+- Se actualizeaza `avatar_url` in tabela `profiles` via `updateProfile()`
+- Avatarul se actualizeaza in timp real pe pagina
 
-## Ce vom implementa
+### 2. Notificari reale (inlocuire placeholder-e)
+Momentan `NotificationsTab` si `NotificationBell` folosesc date mock hardcoded.
+- Creare tabela `notifications` in baza de date cu coloane: `id`, `user_id`, `type`, `title_ro`, `title_en`, `description_ro`, `description_en`, `is_read`, `created_at`, `link`
+- RLS: utilizatorii vad/actualizeaza doar propriile notificari
+- Creare API `src/features/profile/notificationsApi.ts` cu functii: `getNotifications()`, `markAsRead()`, `markAllAsRead()`, `getUnreadCount()`
+- Actualizare `NotificationsTab` sa foloseasca date reale din DB
+- Actualizare `NotificationBell` sa afiseze count real si notificari reale
+- Activare realtime pe tabela `notifications` pentru actualizari live
 
-### 1. Creare tabela `favorite_products` in baza de date
-- Coloane: `id`, `user_id`, `product_id`, `created_at`
-- Constrangere unica pe `(user_id, product_id)` pentru a preveni duplicatele
-- Politici RLS: utilizatorii pot vedea/adauga/sterge doar propriile favorite
+### 3. Review-uri functionale (stergere placeholder-e)
+API-ul de review-uri (`reviewsApi.ts`) exista deja si e functional. Problema e ca:
+- `RentalsTab` afiseaza date mock hardcoded (mockRentals)
+- `LendingsTab` probabil la fel
 
-### 2. Creare API `src/features/profile/favoriteProductsApi.ts`
-Functii:
-- `addFavoriteProduct(productId)` - adauga la favorite
-- `removeFavoriteProduct(productId)` - sterge din favorite
-- `isProductFavorite(productId)` - verifica daca e favorit
-- `getFavoriteProducts()` - returneaza lista de produse favorite (cu detalii)
+Voi actualiza:
+- `RentalsTab` sa fetcheze din tabela `rentals` real
+- `LendingsTab` sa fetcheze din tabela `products` real (anunturile proprietarului)
+- Stergerea tuturor datelor mock/placeholder din aceste componente
 
-### 3. Buton Heart pe galeria de imagini (dreapta jos)
-Pe pagina `ProductDetail.tsx`:
-- Adaugare buton Heart in coltul dreapta-jos al containerului de imagine (atat desktop cat si mobil)
-- La click: verifica autentificare, apoi toggle favorit in baza de date
-- Afisare stare reala (plin rosu = favorit, gol = nefavorit)
-- Preluare stare initiala la incarcare pagina
+### 4. Linkuri functionale in dropdown (Rezervari si Favorite)
+In `Navbar.tsx`, linkurile `/rezervari` si `/favorite` nu au rute definite in `App.tsx`.
+- `/favorite` -> Redirect la `/profile#favorite`
+- `/rezervari` -> Redirect la `/profile#inchirieri`
+- Actualizare linkuri in `Navbar.tsx` sa pointeze direct catre hash-urile corecte din profil
 
-### 4. Tab "Favorite" in Profil
-- Adaugare tab nou in `Profile.tsx` cu iconita Heart
-- Creare componenta `FavoritesTab.tsx` care afiseaza produsele favorite ca un grid de ProductCard-uri
-- Buton de stergere rapida din favorite
+---
 
 ## Detalii Tehnice
 
-### Schema baza de date
+### Baza de date
+
+**Bucket nou `avatars`:**
 ```sql
-CREATE TABLE favorite_products (
+INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', true);
+
+CREATE POLICY "Users can upload own avatar" ON storage.objects FOR INSERT 
+WITH CHECK (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "Users can update own avatar" ON storage.objects FOR UPDATE 
+USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "Users can delete own avatar" ON storage.objects FOR DELETE 
+USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "Anyone can view avatars" ON storage.objects FOR SELECT 
+USING (bucket_id = 'avatars');
+```
+
+**Tabela `notifications`:**
+```sql
+CREATE TABLE notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
-  product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE(user_id, product_id)
+  type TEXT NOT NULL DEFAULT 'system',
+  title_ro TEXT NOT NULL,
+  title_en TEXT,
+  description_ro TEXT,
+  description_en TEXT,
+  is_read BOOLEAN NOT NULL DEFAULT false,
+  link TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-ALTER TABLE favorite_products ENABLE ROW LEVEL SECURITY;
-
--- Politici RLS
-CREATE POLICY "Users can view own favorite products" ON favorite_products FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can add favorite products" ON favorite_products FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can remove favorite products" ON favorite_products FOR DELETE USING (auth.uid() = user_id);
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+-- Politici RLS pentru SELECT, UPDATE (mark as read)
+ALTER PUBLICATION supabase_realtime ADD TABLE notifications;
 ```
 
 ### Fisiere noi
 | Fisier | Scop |
 |--------|------|
-| `src/features/profile/favoriteProductsApi.ts` | API pentru CRUD favorite produse |
-| `src/components/profile/FavoritesTab.tsx` | Tab cu lista de produse favorite |
+| `src/features/profile/notificationsApi.ts` | CRUD notificari |
+| `src/features/profile/avatarApi.ts` | Upload/delete avatar |
 
 ### Fisiere modificate
 | Fisier | Ce se schimba |
 |--------|---------------|
-| `src/pages/ProductDetail.tsx` | Buton Heart pe galeria de imagini + logica reala de toggle |
-| `src/pages/Profile.tsx` | Adaugare tab "Favorite" |
-| `src/data/uxCopy.ts` | Adaugare texte pentru sectiunea favorite |
-| `src/components/products/ProductCard.tsx` | Conectare buton Heart existent la API-ul real |
-
+| `src/components/profile/ProfileTab.tsx` | Upload foto real (inlocuire "Coming soon") |
+| `src/components/profile/NotificationsTab.tsx` | Date reale din DB, stergere mock |
+| `src/components/layout/NotificationBell.tsx` | Date reale din DB, stergere mock |
+| `src/components/dashboard/RentalsTab.tsx` | Fetch din `rentals` real, stergere mockRentals |
+| `src/components/dashboard/LendingsTab.tsx` | Fetch din `products` real, stergere mock |
+| `src/components/layout/Navbar.tsx` | Linkuri `/favorite` -> `/profile#favorite`, `/rezervari` -> `/profile#inchirieri` |
+| `src/App.tsx` | Adaugare rute redirect pentru `/favorite` si `/rezervari` |
