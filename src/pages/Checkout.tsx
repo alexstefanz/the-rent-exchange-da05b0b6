@@ -15,6 +15,9 @@ import BookingConfirmation from "@/components/booking/BookingConfirmation";
 import ReassuranceMessage from "@/components/trust/ReassuranceMessage";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { createRental } from "@/features/rentals/rentalsApi";
+import { toast } from "sonner";
 
 interface CheckoutState {
   product: {
@@ -24,6 +27,8 @@ interface CheckoutState {
     price: number;
     priceUnit: string;
     location: string;
+    ownerId: string;
+    platformFeePercent?: number;
   };
   startDate: Date;
   endDate: Date;
@@ -37,16 +42,17 @@ const Checkout = () => {
   const state = location.state as CheckoutState;
   const copy = useUxCopy();
   const { language } = useLanguage();
+  const { user } = useAuth();
   const dateLocale = language === "ro" ? ro : enUS;
 
   const [paymentOption, setPaymentOption] = useState("pay-now");
   const [currentStep, setCurrentStep] = useState(1);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [messageToOwner, setMessageToOwner] = useState("");
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!state) {
     return (
@@ -63,12 +69,36 @@ const Checkout = () => {
   const payLaterDate = new Date(startDate);
   payLaterDate.setDate(payLaterDate.getDate() - 2);
 
-  const handleNextStep1 = () => { if (!isLoggedIn) { setShowLoginDialog(true); } else { setCurrentStep(2); } };
-  const handleLoginSuccess = () => { setIsLoggedIn(true); setShowLoginDialog(false); setCurrentStep(2); };
+  const handleNextStep1 = () => { if (!user) { setShowLoginDialog(true); } else { setCurrentStep(2); } };
+  const handleLoginSuccess = () => { setShowLoginDialog(false); setCurrentStep(2); };
   const handleNextStep2 = () => { setCurrentStep(3); };
   const handleNextStep3 = () => { setShowPaymentDialog(true); };
   const handlePaymentMethodSelect = (method: string) => { setPaymentMethod(method); setShowPaymentDialog(false); setCurrentStep(4); };
-  const handleConfirmReservation = () => { setIsConfirmed(true); };
+
+  const handleConfirmReservation = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await createRental({
+        productId: product.id,
+        ownerId: product.ownerId,
+        startDate: format(new Date(startDate), "yyyy-MM-dd"),
+        endDate: format(new Date(endDate), "yyyy-MM-dd"),
+        rentalDays,
+        dailyPrice: product.price,
+        platformFeePercent: product.platformFeePercent,
+        paymentMethod: paymentMethod || "card",
+        messageToOwner: messageToOwner || undefined,
+      });
+      setIsConfirmed(true);
+      toast.success("Rezervarea a fost creată cu succes!");
+    } catch (e: any) {
+      console.error("Reservation error:", e);
+      toast.error(e?.message || "Eroare la crearea rezervării. Încearcă din nou.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (isConfirmed) {
     return (
@@ -157,7 +187,7 @@ const Checkout = () => {
 
             {/* Step 2 */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
-              <button onClick={() => isLoggedIn && currentStep >= 2 && setCurrentStep(2)} className={`w-full px-6 py-4 flex items-center justify-between text-left ${currentStep < 2 ? 'opacity-60' : ''}`} disabled={currentStep < 2}>
+              <button onClick={() => !!user && currentStep >= 2 && setCurrentStep(2)} className={`w-full px-6 py-4 flex items-center justify-between text-left ${currentStep < 2 ? 'opacity-60' : ''}`} disabled={currentStep < 2}>
                 <div className="flex items-center gap-3">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep > 2 ? 'bg-primary text-primary-foreground' : currentStep === 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>{currentStep > 2 ? '✓' : '2'}</div>
                   <h2 className="font-semibold text-lg">{copy.checkout.messageToOwner}</h2>
@@ -218,7 +248,7 @@ const Checkout = () => {
                   <p className="text-xs text-muted-foreground mt-4">
                     {copy.checkout.termsNotice} <span className="text-primary hover:underline cursor-pointer">{copy.checkout.termsLink}</span> {copy.checkout.and} <span className="text-primary hover:underline cursor-pointer">{copy.checkout.privacyLink}</span>.
                   </p>
-                  <Button onClick={handleConfirmReservation} className="w-full mt-4" size="lg">{copy.booking.ctaPrimary}</Button>
+                  <Button onClick={handleConfirmReservation} className="w-full mt-4" size="lg" disabled={isSubmitting}>{isSubmitting ? "Se procesează..." : copy.booking.ctaPrimary}</Button>
                   <p className="mt-3 text-xs text-center text-muted-foreground flex items-center justify-center gap-1"><Info className="h-3 w-3" />{copy.booking.reassurance}</p>
                 </div>
               )}
