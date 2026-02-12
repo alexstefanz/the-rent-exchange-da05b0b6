@@ -35,6 +35,7 @@ import { useCurrentUserProfile } from "@/hooks/queries/useCurrentUserProfile";
 import { useConversations } from "@/hooks/queries/useConversations";
 import LanguageSwitcher from "./LanguageSwitcher";
 import NotificationBell from "./NotificationBell";
+import MobileBottomNav from "./MobileBottomNav";
 import logoImage from "@/assets/rentnow_logo.png";
 
 const Navbar = () => {
@@ -133,6 +134,20 @@ const Navbar = () => {
               <div className="h-9 w-24 animate-pulse bg-muted rounded-lg" />
             ) : user ? (
               <>
+                {/* Chat Button - Desktop */}
+                <Link
+                  to="/mesaje"
+                  className="hidden lg:flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90 relative"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Chat
+                  {unreadMessagesCount > 0 && (
+                    <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-bold text-destructive-foreground">
+                      {unreadMessagesCount > 99 ? "99+" : unreadMessagesCount}
+                    </span>
+                  )}
+                </Link>
+
                 {/* Notification Bell - Desktop */}
                 <div className="hidden lg:flex">
                   <NotificationBell />
@@ -222,7 +237,9 @@ const Navbar = () => {
                 <Link to="/auth">{t("Autentificare", "Login")}</Link>
               </Button>
             )}
-            <Button size="sm" asChild>
+
+            {/* Add button - Desktop only */}
+            <Button size="sm" className="hidden lg:flex" asChild>
               <Link to="/owner/new-product">
                 <Plus className="h-4 w-4" />
                 {t("Adaugă", "Add")}
@@ -456,6 +473,9 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
     </>
   );
 };
