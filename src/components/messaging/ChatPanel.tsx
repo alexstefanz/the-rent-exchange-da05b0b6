@@ -121,8 +121,8 @@ export function ChatPanel({
           <AvatarFallback>{otherUserName?.charAt(0) || "U"}</AvatarFallback>
         </Avatar>
         <div className="flex flex-col min-w-0">
-          <span className="font-medium text-sm truncate">{otherUserName || "Utilizator"}</span>
-          <span className="text-xs text-muted-foreground truncate">{productTitle}</span>
+          <span className="font-medium text-sm truncate">{productTitle}</span>
+          <span className="text-xs text-muted-foreground truncate">{otherUserName || "Utilizator"}</span>
         </div>
       </div>
 
