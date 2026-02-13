@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Calendar, MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getOrCreateConversation } from "@/features/messaging/messagingApi";
 import StatusBadge from "./StatusBadge";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,6 +15,7 @@ interface Rental {
   product_id: string | null;
   product_title: string;
   product_image: string;
+  owner_id: string | null;
   owner_name: string;
   start_date: string;
   end_date: string;
@@ -37,6 +39,7 @@ const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
     product_id: r.product_id,
     product_title: r.products?.title || "Produs șters",
     product_image: r.products?.images?.[0] || "/placeholder.svg",
+    owner_id: r.products?.owner_id || null,
     owner_name: r.products?.profiles?.full_name || "Utilizator",
     start_date: format(new Date(r.start_date), "dd MMM yyyy"),
     end_date: format(new Date(r.end_date), "dd MMM yyyy"),
@@ -49,6 +52,15 @@ const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
 const RentalsTab = () => {
   const copy = useUxCopy();
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleContactOwner = async (rental: Rental) => {
+    if (!rental.product_id || !rental.owner_id) return;
+    const conv = await getOrCreateConversation(rental.product_id, rental.owner_id);
+    if (conv) {
+      navigate(`/mesaje?conv=${conv.id}`);
+    }
+  };
 
   const { data: rentals = [], isLoading } = useQuery({
     queryKey: ["my-rentals", user?.id],
@@ -106,8 +118,8 @@ const RentalsTab = () => {
                   </div>
                   <div className="mt-3 flex items-center justify-between">
                     <span className="font-semibold text-primary">{rental.subtotal} RON</span>
-                    <Button variant="outline" size="sm" asChild>
-                      <Link to="/profile#mesaje">{copy.dashboard.contactOwner}</Link>
+                    <Button variant="outline" size="sm" onClick={() => handleContactOwner(rental)}>
+                      {copy.dashboard.contactOwner}
                     </Button>
                   </div>
                 </div>
