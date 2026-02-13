@@ -1,6 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Calendar, MapPin, Search, XCircle, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getOrCreateConversation } from "@/features/messaging/messagingApi";
 import StatusBadge from "./StatusBadge";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useAuth } from "@/contexts/AuthContext";
@@ -62,6 +63,15 @@ const RequestsTab = () => {
   const copy = useUxCopy();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const handleContactOwner = async (request: Request) => {
+    if (!request.product_id || !request.owner_id) return;
+    const conv = await getOrCreateConversation(request.product_id, request.owner_id);
+    if (conv) {
+      navigate(`/mesaje?conv=${conv.id}`);
+    }
+  };
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["my-requests", user?.id],
@@ -185,8 +195,8 @@ const RequestsTab = () => {
                         </AlertDialogContent>
                       </AlertDialog>
                     )}
-                    <Button variant="outline" size="sm" className="h-7 px-2 text-xs" asChild>
-                      <Link to="/profile#mesaje">{copy.dashboard.contactOwner}</Link>
+                    <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => handleContactOwner(request)}>
+                      {copy.dashboard.contactOwner}
                     </Button>
                   </div>
                 </div>
