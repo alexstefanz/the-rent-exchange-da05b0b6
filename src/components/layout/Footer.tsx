@@ -1,6 +1,6 @@
-import { Package } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import logoImage from "@/assets/rentli_logo.png";
 
 const Footer = () => {
   const copy = useUxCopy();
@@ -10,10 +10,7 @@ const Footer = () => {
         <div className="grid gap-8 md:grid-cols-4">
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-                <Package className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="font-heading text-lg font-semibold">RentNow</span>
+              <img src={logoImage} alt="Rentli" className="h-8 w-auto" />
             </Link>
             <p className="text-sm text-muted-foreground">
               {copy.footer.description}

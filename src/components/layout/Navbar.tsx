@@ -36,7 +36,7 @@ import { useConversations } from "@/hooks/queries/useConversations";
 import LanguageSwitcher from "./LanguageSwitcher";
 import NotificationBell from "./NotificationBell";
 import MobileBottomNav from "./MobileBottomNav";
-import logoImage from "@/assets/rentnow_logo.png";
+import logoImage from "@/assets/rentli_logo.png";
 
 const Navbar = () => {
   const navigate = useNavigate();
