@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Loader2, MessageCircle } from "lucide-react";
@@ -9,7 +9,7 @@ import { useConversations } from "@/hooks/queries/useConversations";
 import { useQueryClient } from "@tanstack/react-query";
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { ChatPanel } from "@/components/messaging/ChatPanel";
-import { useEffect, useState as useStateReact } from "react";
+import { useState as useStateReact } from "react";
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useStateReact(typeof window !== "undefined" ? window.innerWidth >= 1024 : true);
@@ -25,6 +25,7 @@ function useIsDesktop() {
 export default function Messages() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const isDesktop = useIsDesktop();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -35,6 +36,15 @@ export default function Messages() {
   }
 
   const { data: conversations = [], isLoading } = useConversations(user?.id);
+
+  // Auto-select conversation from URL query param
+  useEffect(() => {
+    const convId = searchParams.get("conv");
+    if (convId && conversations.length > 0 && !selectedConversation) {
+      const found = conversations.find((c) => c.id === convId);
+      if (found) setSelectedConversation(found);
+    }
+  }, [searchParams, conversations, selectedConversation]);
 
   const handleSelect = (conv: Conversation) => {
     setSelectedConversation(conv);
