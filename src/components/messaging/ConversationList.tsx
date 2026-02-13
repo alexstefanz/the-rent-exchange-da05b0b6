@@ -55,7 +55,7 @@ export function ConversationList({
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <span className="font-medium text-sm truncate">
-            {conv.other_user?.full_name || "Utilizator"}
+            {conv.product?.title || "Produs"}
           </span>
           {conv.last_message && (
             <span className="text-xs text-muted-foreground whitespace-nowrap">
@@ -63,7 +63,7 @@ export function ConversationList({
             </span>
           )}
         </div>
-        <p className="text-xs text-muted-foreground truncate">{conv.product?.title}</p>
+        <p className="text-xs text-muted-foreground truncate">{conv.other_user?.full_name || "Utilizator"}</p>
         {conv.last_message && (
           <p
             className={`text-sm truncate mt-0.5 ${
