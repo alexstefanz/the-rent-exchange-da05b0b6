@@ -15,9 +15,8 @@ import { getProductById, Product, calculateClientPrice } from "@/features/produc
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { getOrCreateConversation, getOwnerContactInfo } from "@/features/messaging/messagingApi";
+import { getOrCreateConversation } from "@/features/messaging/messagingApi";
 import { ChatDialog } from "@/components/messaging/ChatDialog";
-import { ContactInfoCard } from "@/components/messaging/ContactInfoCard";
 import NearbyProductsSlider from "@/components/products/NearbyProductsSlider";
 import OwnerSection from "@/components/product/OwnerSection";
 import ProductIncludes from "@/components/product/ProductIncludes";
@@ -51,7 +50,7 @@ const ProductDetail = () => {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [owner, setOwner] = useState<OwnerInfo | null>(null);
-  const [ownerContact, setOwnerContact] = useState<{ full_name: string | null; phone: string | null; email: string | null; whatsapp: string | null; avatar_url: string | null; } | null>(null);
+  
   const [isLoading, setIsLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -71,8 +70,6 @@ const ProductDetail = () => {
           setProduct(productData);
           const { data: ownerData } = await supabase.rpc('get_product_owner_public_info', { owner_uuid: productData.owner_id });
           if (ownerData && ownerData.length > 0) setOwner(ownerData[0]);
-          const contactInfo = await getOwnerContactInfo(productData.owner_id);
-          if (contactInfo) setOwnerContact(contactInfo);
           // Check favorite status
           if (user) {
             const fav = await isProductFavorite(productData.id);
@@ -216,10 +213,6 @@ const ProductDetail = () => {
 
             <OwnerSection ownerId={product.owner_id} ownerName={ownerName} ownerAvatar={owner?.avatar_url} rating={4.9} reviewCount={12} memberSince="2024" responseTime={copy.owner.responseTimeValue} responseRate="98%" onStartChat={handleStartChat} isOwnProduct={user?.id === product.owner_id} />
 
-            {ownerContact && (ownerContact.phone || ownerContact.email || ownerContact.whatsapp) && (
-              <ContactInfoCard ownerName={ownerContact.full_name} avatarUrl={ownerContact.avatar_url} phone={ownerContact.phone} email={ownerContact.email} whatsapp={ownerContact.whatsapp} />
-            )}
-
             {/* Location */}
             <div className="rounded-xl border border-border bg-card p-6">
               <div className="flex items-center gap-2 text-foreground mb-4"><MapPin className="h-5 w-5 text-primary" /><span className="font-medium">{location}</span></div>
@@ -321,7 +314,7 @@ const ProductDetail = () => {
       <Footer />
 
       {conversationId && (
-        <ChatDialog open={chatOpen} onOpenChange={setChatOpen} conversationId={conversationId} otherUserName={ownerContact?.full_name || owner?.full_name || null} otherUserAvatar={ownerContact?.avatar_url || owner?.avatar_url || null} productTitle={product?.title || 'Produs'} />
+        <ChatDialog open={chatOpen} onOpenChange={setChatOpen} conversationId={conversationId} otherUserName={owner?.full_name || null} otherUserAvatar={owner?.avatar_url || null} productTitle={product?.title || 'Produs'} />
       )}
     </div>
   );
