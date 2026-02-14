@@ -103,16 +103,13 @@ const Index = () => {
                 ? "The first national peer-to-peer rental marketplace. Safe. Verified. Insured."
                 : "Primul marketplace național de închirieri între persoane. Sigur. Verificat. Asigurat."}
             </h2>
+            <div className="mt-8">
+              <TrustBadges />
+            </div>
             <Button variant="secondary" size="xl" className="mt-8" asChild>
               <Link to="/adauga-anunt">{copy.home.ctaButton}<ArrowRight className="ml-2 h-5 w-5" /></Link>
             </Button>
           </div>
-        </div>
-      </section>
-
-      <section className="py-12">
-        <div className="container">
-          <TrustBadges />
         </div>
       </section>
 
