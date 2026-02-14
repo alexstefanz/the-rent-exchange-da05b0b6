@@ -97,8 +97,8 @@ const Index = () => {
 
       <section className="py-20">
         <div className="container">
-          <div className="rounded-3xl bg-primary p-12 text-center md:p-16">
-            <h2 className="font-heading text-3xl font-semibold text-primary-foreground md:text-4xl">
+          <div className="rounded-3xl bg-primary p-[15px] text-center md:p-16">
+            <h2 className="font-heading text-[25px] font-semibold leading-tight text-primary-foreground md:text-4xl">
               {language === "en"
                 ? "The first national peer-to-peer rental marketplace. Safe. Verified. Insured."
                 : "Primul marketplace național de închirieri între persoane. Sigur. Verificat. Asigurat."}
@@ -106,9 +106,11 @@ const Index = () => {
             <div className="mt-8">
               <TrustBadges />
             </div>
-            <Button variant="secondary" size="xl" className="mt-8" asChild>
-              <Link to="/adauga-anunt">{copy.home.ctaButton}<ArrowRight className="ml-2 h-5 w-5" /></Link>
-            </Button>
+            <div className="mt-8 flex justify-center">
+              <Button variant="secondary" size="xl" asChild>
+                <Link to="/adauga-anunt">{copy.home.ctaButton}<ArrowRight className="ml-2 h-5 w-5" /></Link>
+              </Button>
+            </div>
           </div>
         </div>
       </section>
