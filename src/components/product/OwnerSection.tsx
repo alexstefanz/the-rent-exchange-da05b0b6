@@ -15,7 +15,6 @@ interface OwnerSectionProps {
   memberSince?: string;
   responseTime?: string;
   responseRate?: string;
-  onStartChat: () => void;
   isOwnProduct?: boolean;
 }
 
@@ -28,7 +27,6 @@ const OwnerSection = ({
   memberSince = "2024",
   responseTime = "< 1 oră",
   responseRate = "98%",
-  onStartChat,
   isOwnProduct = false,
 }: OwnerSectionProps) => {
   const copy = useUxCopy();
@@ -66,12 +64,6 @@ const OwnerSection = ({
             </p>
           </div>
         </div>
-        {!isOwnProduct && (
-          <Button variant="outline" size="sm" onClick={onStartChat}>
-            <MessageCircle className="mr-2 h-4 w-4" />
-            {copy.owner.sendMessage}
-          </Button>
-        )}
       </div>
 
       {/* Mobile Layout */}
@@ -104,16 +96,6 @@ const OwnerSection = ({
             </p>
           </div>
         </div>
-        {!isOwnProduct && (
-          <Button
-            className="w-full mt-4"
-            size="sm"
-            onClick={onStartChat}
-          >
-            <MessageCircle className="mr-2 h-4 w-4" />
-            {copy.owner.sendMessage}
-          </Button>
-        )}
       </div>
 
       <Separator className="my-4" />
