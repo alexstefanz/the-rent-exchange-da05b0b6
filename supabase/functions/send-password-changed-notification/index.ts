@@ -6,6 +6,20 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// In-memory rate limiting (per isolate)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+function checkRateLimit(key: string, maxRequests = 3, windowSec = 300): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + windowSec * 1000 });
+    return true;
+  }
+  if (entry.count >= maxRequests) return false;
+  entry.count++;
+  return true;
+}
+
 const PLATFORM_URL = "https://the-rent-exchange.lovable.app";
 
 function buildEmailTemplate(opts: {
@@ -59,6 +73,14 @@ Deno.serve(async (req) => {
 
   try {
     const { email } = await req.json();
+
+    // Rate limit: 3 per 5 minutes per email
+    if (email && !checkRateLimit(`pwd:${email}`)) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (!email) {
       return new Response(JSON.stringify({ error: "Email is required" }), {
