@@ -12,7 +12,7 @@ const TrustBadges = () => {
   ];
 
   return (
-    <div className="flex flex-wrap items-center justify-center gap-3 md:gap-6">
+    <div className="grid grid-cols-2 items-center justify-items-center gap-3 md:flex md:flex-wrap md:justify-center md:gap-6">
       {badges.map((badge, i) => (
         <div
           key={i}
