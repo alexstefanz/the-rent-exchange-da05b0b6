@@ -115,6 +115,41 @@ const Index = () => {
         </div>
       </section>
 
+      <section className="py-16 md:py-20">
+        <div className="container">
+          <div className="mx-auto max-w-3xl">
+            <h2 className="mb-6 font-heading text-3xl font-semibold text-foreground">
+              {language === "en" ? "About Us" : "Despre noi"}
+            </h2>
+            <div className="space-y-4 text-muted-foreground leading-relaxed">
+              <p>
+                {language === "en"
+                  ? "Rentli is Romania's national peer-to-peer rental marketplace."
+                  : "Rentli este marketplace-ul național de închirieri între persoane din România."}
+              </p>
+              <p>
+                {language === "en"
+                  ? "We connect people who have things with people who need them, in a safe and transparent environment."
+                  : "Conectăm oameni care au lucruri cu oameni care au nevoie de ele, într-un cadru sigur și transparent."}
+              </p>
+              <p className="font-medium text-foreground">
+                {language === "en" ? "With Rentli you can:" : "Prin Rentli poți:"}
+              </p>
+              <ul className="list-disc space-y-2 pl-6">
+                <li>{language === "en" ? "Quickly rent what you need" : "Închiria rapid ceea ce ai nevoie"}</li>
+                <li>{language === "en" ? "Earn money from things you don't use" : "Câștiga bani din lucrurile pe care nu le folosești"}</li>
+                <li>{language === "en" ? "Benefit from protected payments and verified users" : "Beneficia de plăți protejate și utilizatori verificați"}</li>
+              </ul>
+              <p>
+                {language === "en"
+                  ? "We're building an economy based on access, trust, and efficiency."
+                  : "Construim o economie bazată pe acces, încredere și eficiență."}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <Footer />
     </div>
   );
