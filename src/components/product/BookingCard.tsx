@@ -117,8 +117,14 @@ const BookingCard = ({
           selected={endDate || startDate}
           onSelect={handleDateSelect}
           disabled={(date) => isBefore(date, new Date())}
+          locale={dateLocale}
+          formatters={{ formatDay: (date) => date.getDate().toString() }}
           modifiers={{ start: startDate, end: endDate, range: startDate && endDate ? { from: startDate, to: endDate } : undefined }}
-          modifiersStyles={{ start: { backgroundColor: "hsl(var(--primary))", color: "white" }, end: { backgroundColor: "hsl(var(--primary))", color: "white" }, range: { backgroundColor: "hsl(var(--primary) / 0.1)" } }}
+          modifiersStyles={{
+            start: { backgroundColor: "#46B95B", color: "white", borderRadius: "50%" },
+            end: { backgroundColor: "#46B95B", color: "white", borderRadius: "50%" },
+            range: { backgroundColor: "rgba(70, 185, 91, 0.15)", color: "#1a1a1a" },
+          }}
           className="rounded-md border w-full pointer-events-auto [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-caption]:text-sm [&_.rdp-head_cell]:text-xs [&_.rdp-cell]:p-0 [&_.rdp-day]:h-8 [&_.rdp-day]:w-8 [&_.rdp-day]:text-xs"
         />
       </div>
