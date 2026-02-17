@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bell, MessageCircle, Calendar, Eye, CheckCircle2, Send } from "lucide-react";
+import { Bell, MessageCircle, Calendar, Eye, CheckCircle2, Send, ArrowLeft, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ import { getNotifications, markAsRead, markAllAsRead, type Notification } from "
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const getNotificationIcon = (type: string) => {
   switch (type) {
@@ -26,19 +27,113 @@ const getNotificationIcon = (type: string) => {
   }
 };
 
+// Shared notification list component
+const NotificationList = ({
+  notifications,
+  filter,
+  setFilter,
+  onNotificationClick,
+  onMarkAllRead,
+  language,
+  t,
+  formatTime,
+  unreadCount,
+}: {
+  notifications: Notification[];
+  filter: "all" | "unread";
+  setFilter: (f: "all" | "unread") => void;
+  onNotificationClick: (n: Notification) => void;
+  onMarkAllRead: () => void;
+  language: string;
+  t: (ro: string, en: string) => string;
+  formatTime: (d: string) => string;
+  unreadCount: number;
+}) => {
+  const filtered = filter === "unread" ? notifications.filter(n => !n.is_read) : notifications;
+
+  return (
+    <>
+      {/* Filter tabs */}
+      <div className="flex items-center gap-2 px-4 pb-3">
+        <button
+          onClick={() => setFilter("all")}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            filter === "all" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          {t("Toate", "All")}
+        </button>
+        <button
+          onClick={() => setFilter("unread")}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+            filter === "unread" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          {t("Necitite", "Unread")}
+        </button>
+      </div>
+
+      {/* Notification items */}
+      <div className="flex-1 overflow-y-auto">
+        {filtered.length > 0 ? (
+          filtered.map((n) => (
+            <button
+              key={n.id}
+              className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 ${
+                !n.is_read ? "bg-primary/5" : ""
+              }`}
+              onClick={() => onNotificationClick(n)}
+            >
+              <div className="flex-shrink-0 mt-0.5 h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                {getNotificationIcon(n.type)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm leading-snug ${!n.is_read ? "font-semibold" : "font-normal text-muted-foreground"}`}>
+                  {language === "ro" ? n.title_ro : (n.title_en || n.title_ro)}
+                </p>
+                {(n.description_ro || n.description_en) && (
+                  <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                    {language === "ro" ? n.description_ro : (n.description_en || n.description_ro)}
+                  </p>
+                )}
+                <span className={`text-xs mt-0.5 block ${!n.is_read ? "text-primary font-medium" : "text-muted-foreground/60"}`}>
+                  {formatTime(n.created_at)}
+                </span>
+              </div>
+              {!n.is_read && (
+                <div className="flex-shrink-0 mt-2">
+                  <span className="block h-2.5 w-2.5 rounded-full bg-primary" />
+                </div>
+              )}
+            </button>
+          ))
+        ) : (
+          <div className="px-4 py-12 text-sm text-muted-foreground text-center">
+            {filter === "unread"
+              ? t("Nu ai notificări necitite", "No unread notifications")
+              : t("Nu ai notificări noi", "No new notifications")}
+          </div>
+        )}
+      </div>
+    </>
+  );
+};
+
 const NotificationBell = () => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<"all" | "unread">("all");
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     const load = async () => {
       try {
         const data = await getNotifications();
-        setNotifications(data.slice(0, 10));
+        setNotifications(data.slice(0, 20));
       } catch (e) { console.error(e); }
     };
     load();
@@ -55,11 +150,9 @@ const NotificationBell = () => {
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
-  const filtered = filter === "unread" ? notifications.filter(n => !n.is_read) : notifications;
-
   const formatTime = (dateString: string) => {
     return formatDistanceToNow(new Date(dateString), {
-      addSuffix: false,
+      addSuffix: true,
       locale: language === "ro" ? ro : enUS,
     });
   };
@@ -78,6 +171,7 @@ const NotificationBell = () => {
       } catch (e) { console.error(e); }
     }
     if (n.link) {
+      if (isMobile) setMobileOpen(false);
       navigate(mapLink(n.link));
     }
   };
@@ -89,6 +183,63 @@ const NotificationBell = () => {
     } catch (e) { console.error(e); }
   };
 
+  // Lock body scroll when mobile fullscreen is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
+
+  // Mobile: full-screen overlay
+  if (isMobile) {
+    return (
+      <>
+        <Button variant="ghost" size="icon" className="relative" onClick={() => setMobileOpen(true)}>
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </Button>
+
+        {mobileOpen && (
+          <div className="fixed inset-0 z-[100] bg-background flex flex-col">
+            {/* Header */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setMobileOpen(false)}>
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h2 className="text-lg font-bold flex-1">{t("Notificări", "Notifications")}</h2>
+              {unreadCount > 0 && (
+                <Button variant="ghost" size="sm" className="text-xs text-primary h-8 px-2" onClick={handleMarkAllRead}>
+                  <CheckCheck className="h-4 w-4 mr-1" />
+                  {t("Citește toate", "Read all")}
+                </Button>
+              )}
+            </div>
+
+            <NotificationList
+              notifications={notifications}
+              filter={filter}
+              setFilter={setFilter}
+              onNotificationClick={handleNotificationClick}
+              onMarkAllRead={handleMarkAllRead}
+              language={language}
+              t={t}
+              formatTime={formatTime}
+              unreadCount={unreadCount}
+            />
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // Desktop: dropdown
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -112,71 +263,18 @@ const NotificationBell = () => {
           )}
         </div>
 
-        {/* Filter tabs */}
-        <div className="flex gap-1 px-4 pb-2">
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              filter === "all"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            {t("Toate", "All")}
-          </button>
-          <button
-            onClick={() => setFilter("unread")}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              filter === "unread"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            {t("Necitite", "Unread")}
-          </button>
-        </div>
-
-        {/* Notification list */}
-        <div className="max-h-80 overflow-y-auto">
-          {filtered.length > 0 ? (
-            filtered.map((n) => (
-              <button
-                key={n.id}
-                className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 ${
-                  !n.is_read ? "bg-primary/5" : ""
-                }`}
-                onClick={() => handleNotificationClick(n)}
-              >
-                <div className="flex-shrink-0 mt-0.5 h-9 w-9 rounded-full bg-muted flex items-center justify-center">
-                  {getNotificationIcon(n.type)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm leading-snug ${!n.is_read ? "font-semibold" : "font-normal text-muted-foreground"}`}>
-                    {language === "ro" ? n.title_ro : (n.title_en || n.title_ro)}
-                  </p>
-                  {(n.description_ro || n.description_en) && (
-                    <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                      {language === "ro" ? n.description_ro : (n.description_en || n.description_ro)}
-                    </p>
-                  )}
-                  <span className={`text-xs mt-0.5 block ${!n.is_read ? "text-primary font-medium" : "text-muted-foreground/60"}`}>
-                    {formatTime(n.created_at)}
-                  </span>
-                </div>
-                {!n.is_read && (
-                  <div className="flex-shrink-0 mt-2">
-                    <span className="block h-2.5 w-2.5 rounded-full bg-primary" />
-                  </div>
-                )}
-              </button>
-            ))
-          ) : (
-            <div className="px-4 py-8 text-sm text-muted-foreground text-center">
-              {filter === "unread"
-                ? t("Nu ai notificări necitite", "No unread notifications")
-                : t("Nu ai notificări noi", "No new notifications")}
-            </div>
-          )}
+        <div className="max-h-80">
+          <NotificationList
+            notifications={notifications}
+            filter={filter}
+            setFilter={setFilter}
+            onNotificationClick={handleNotificationClick}
+            onMarkAllRead={handleMarkAllRead}
+            language={language}
+            t={t}
+            formatTime={formatTime}
+            unreadCount={unreadCount}
+          />
         </div>
 
         {/* Footer */}
