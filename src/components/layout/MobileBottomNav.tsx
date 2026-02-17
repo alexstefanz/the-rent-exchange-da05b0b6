@@ -41,8 +41,8 @@ const MobileBottomNav = () => {
             >
               <div className="relative">
                 <tab.icon className="h-5 w-5" />
-                {tab.badge && tab.badge > 0 && (
-                  <span className="absolute -top-1.5 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                {typeof tab.badge === "number" && tab.badge > 0 && (
+                  <span className="absolute -top-1.5 -right-2.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white shadow-sm">
                     {tab.badge > 99 ? "99+" : tab.badge}
                   </span>
                 )}
