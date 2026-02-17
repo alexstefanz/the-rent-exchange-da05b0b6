@@ -1,33 +1,44 @@
 import { useState, useEffect } from "react";
-import { Bell } from "lucide-react";
+import { Bell, MessageCircle, Calendar, Eye, CheckCircle2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
-import { getNotifications, markAsRead, type Notification } from "@/features/profile/notificationsApi";
+import { getNotifications, markAsRead, markAllAsRead, type Notification } from "@/features/profile/notificationsApi";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
+
+const getNotificationIcon = (type: string) => {
+  switch (type) {
+    case "message": return <MessageCircle className="h-5 w-5 text-blue-500" />;
+    case "rental_request": return <Send className="h-5 w-5 text-orange-500" />;
+    case "rental_confirmation": return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+    case "reservation": return <Calendar className="h-5 w-5 text-green-500" />;
+    case "view": return <Eye className="h-5 w-5 text-purple-500" />;
+    case "review": return <CheckCircle2 className="h-5 w-5 text-amber-500" />;
+    default: return <Bell className="h-5 w-5 text-muted-foreground" />;
+  }
+};
 
 const NotificationBell = () => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [filter, setFilter] = useState<"all" | "unread">("all");
 
   useEffect(() => {
     if (!user) return;
     const load = async () => {
       try {
         const data = await getNotifications();
-        setNotifications(data.slice(0, 5));
+        setNotifications(data.slice(0, 10));
       } catch (e) { console.error(e); }
     };
     load();
@@ -43,6 +54,8 @@ const NotificationBell = () => {
   }, [user]);
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  const filtered = filter === "unread" ? notifications.filter(n => !n.is_read) : notifications;
 
   const formatTime = (dateString: string) => {
     return formatDistanceToNow(new Date(dateString), {
@@ -69,6 +82,13 @@ const NotificationBell = () => {
     }
   };
 
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    } catch (e) { console.error(e); }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -81,39 +101,93 @@ const NotificationBell = () => {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80 bg-background">
-        <div className="px-3 py-2 font-semibold text-sm border-b border-border">
-          {t("Notificări", "Notifications")}
+      <DropdownMenuContent align="end" className="w-80 p-0 bg-background border border-border shadow-lg rounded-xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 pt-3 pb-2">
+          <h3 className="text-lg font-bold">{t("Notificări", "Notifications")}</h3>
+          {unreadCount > 0 && (
+            <Button variant="ghost" size="sm" className="text-xs text-primary h-7 px-2" onClick={handleMarkAllRead}>
+              {t("Citește toate", "Read all")}
+            </Button>
+          )}
         </div>
-        <div className="max-h-72 overflow-y-auto">
-          {notifications.length > 0 ? (
-            notifications.map((n) => (
-              <DropdownMenuItem 
-                key={n.id} 
-                className={`flex flex-col items-start gap-1 py-3 cursor-pointer ${!n.is_read ? "bg-primary/5" : ""}`}
+
+        {/* Filter tabs */}
+        <div className="flex gap-1 px-4 pb-2">
+          <button
+            onClick={() => setFilter("all")}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              filter === "all"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            {t("Toate", "All")}
+          </button>
+          <button
+            onClick={() => setFilter("unread")}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              filter === "unread"
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            {t("Necitite", "Unread")}
+          </button>
+        </div>
+
+        {/* Notification list */}
+        <div className="max-h-80 overflow-y-auto">
+          {filtered.length > 0 ? (
+            filtered.map((n) => (
+              <button
+                key={n.id}
+                className={`w-full flex items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/50 ${
+                  !n.is_read ? "bg-primary/5" : ""
+                }`}
                 onClick={() => handleNotificationClick(n)}
               >
-                <span className="text-sm font-medium">{language === "ro" ? n.title_ro : (n.title_en || n.title_ro)}</span>
-                {(n.description_ro || n.description_en) && (
-                  <span className="text-xs text-muted-foreground line-clamp-2">
-                    {language === "ro" ? n.description_ro : (n.description_en || n.description_ro)}
+                <div className="flex-shrink-0 mt-0.5 h-9 w-9 rounded-full bg-muted flex items-center justify-center">
+                  {getNotificationIcon(n.type)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm leading-snug ${!n.is_read ? "font-semibold" : "font-normal text-muted-foreground"}`}>
+                    {language === "ro" ? n.title_ro : (n.title_en || n.title_ro)}
+                  </p>
+                  {(n.description_ro || n.description_en) && (
+                    <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
+                      {language === "ro" ? n.description_ro : (n.description_en || n.description_ro)}
+                    </p>
+                  )}
+                  <span className={`text-xs mt-0.5 block ${!n.is_read ? "text-primary font-medium" : "text-muted-foreground/60"}`}>
+                    {formatTime(n.created_at)}
                   </span>
+                </div>
+                {!n.is_read && (
+                  <div className="flex-shrink-0 mt-2">
+                    <span className="block h-2.5 w-2.5 rounded-full bg-primary" />
+                  </div>
                 )}
-                <span className="text-xs text-muted-foreground/70">{formatTime(n.created_at)}</span>
-              </DropdownMenuItem>
+              </button>
             ))
           ) : (
-            <div className="px-3 py-4 text-sm text-muted-foreground text-center">
-              {t("Nu ai notificări noi", "No new notifications")}
+            <div className="px-4 py-8 text-sm text-muted-foreground text-center">
+              {filter === "unread"
+                ? t("Nu ai notificări necitite", "No unread notifications")
+                : t("Nu ai notificări noi", "No new notifications")}
             </div>
           )}
         </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild className="justify-center">
-          <Link to="/profile#notificari" className="text-sm font-medium text-primary">
+
+        {/* Footer */}
+        <div className="border-t border-border">
+          <Link
+            to="/profile#notificari"
+            className="block w-full text-center text-sm font-medium text-primary py-3 hover:bg-muted/50 transition-colors"
+          >
             {t("Vezi toate notificările", "View all notifications")}
           </Link>
-        </DropdownMenuItem>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
