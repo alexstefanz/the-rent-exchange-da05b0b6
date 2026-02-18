@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Loader2, ArrowLeft } from "lucide-react";
+import { Send, Loader2, ArrowLeft, Phone } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -10,17 +10,20 @@ import {
   markMessagesAsRead,
   Message,
   MAX_MESSAGE_LENGTH,
+  getOwnerContactInfo,
 } from "@/features/messaging/messagingApi";
 import { useMessages } from "@/hooks/queries/useConversations";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ChatPanelProps {
   conversationId: string;
   otherUserName: string | null;
   otherUserAvatar: string | null;
   productTitle: string;
+  ownerId?: string;
   onBack?: () => void;
   className?: string;
 }
@@ -30,6 +33,7 @@ export function ChatPanel({
   otherUserName,
   otherUserAvatar,
   productTitle,
+  ownerId,
   onBack,
   className = "",
 }: ChatPanelProps) {
@@ -38,6 +42,7 @@ export function ChatPanel({
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [ownerPhone, setOwnerPhone] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: fetchedMessages, isLoading } = useMessages(conversationId);
@@ -85,6 +90,14 @@ export function ChatPanel({
     };
   }, [conversationId, user?.id, queryClient]);
 
+  // Fetch owner phone for 3CX call button
+  useEffect(() => {
+    if (!ownerId) return;
+    getOwnerContactInfo(ownerId).then((info) => {
+      setOwnerPhone(info?.phone || null);
+    });
+  }, [ownerId]);
+
   // Scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
@@ -120,10 +133,31 @@ export function ChatPanel({
           <AvatarImage src={otherUserAvatar || undefined} />
           <AvatarFallback>{otherUserName?.charAt(0) || "U"}</AvatarFallback>
         </Avatar>
-        <div className="flex flex-col min-w-0">
+        <div className="flex flex-col min-w-0 flex-1">
           <span className="font-medium text-sm truncate">{productTitle}</span>
           <span className="text-xs text-muted-foreground truncate">{otherUserName || "Utilizator"}</span>
         </div>
+        {ownerPhone && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <a href={`tel:${ownerPhone}`} className="shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-green-600 transition-colors"
+                    asChild
+                  >
+                    <span>
+                      <Phone className="h-5 w-5" />
+                    </span>
+                  </Button>
+                </a>
+              </TooltipTrigger>
+              <TooltipContent>Apelează prin 3CX</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
       </div>
 
       {/* Messages */}
