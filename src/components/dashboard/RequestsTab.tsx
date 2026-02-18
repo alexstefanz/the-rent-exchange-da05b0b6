@@ -86,19 +86,7 @@ const RequestsTab = () => {
         .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
         .eq("id", request.id);
       if (error) throw error;
-
-      // Notify owner about the cancellation
-      if (request.owner_id) {
-        await supabase.from("notifications").insert({
-          user_id: request.owner_id,
-          type: "rental",
-          title_ro: `Cerere anulată: ${request.product_title}`,
-          title_en: `Request cancelled: ${request.product_title}`,
-          description_ro: `Chiriașul a anulat cererea de închiriere pentru "${request.product_title}" (${request.start_date} - ${request.end_date}).`,
-          description_en: `The renter cancelled the rental request for "${request.product_title}" (${request.start_date} - ${request.end_date}).`,
-          link: "/profile#anunturi",
-        });
-      }
+      // Notification to owner is handled server-side by the edge function below
     },
     onSuccess: (_data, request) => {
       queryClient.invalidateQueries({ queryKey: ["my-requests"] });
