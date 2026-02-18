@@ -143,6 +143,21 @@ Deno.serve(async (req) => {
       { label: "💰 Total", value: `${rental.subtotal} RON` },
     ];
 
+    // Insert in-app notification for the owner (server-side only, uses service role)
+    if (rental.owner_id) {
+      const startDateStr = new Date(rental.start_date).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric' });
+      const endDateStr = new Date(rental.end_date).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric' });
+      await supabase.from("notifications").insert({
+        user_id: rental.owner_id,
+        type: "rental",
+        title_ro: `Cerere anulată: ${productTitle}`,
+        title_en: `Request cancelled: ${productTitle}`,
+        description_ro: `Chiriașul a anulat cererea de închiriere pentru "${productTitle}" (${startDateStr} - ${endDateStr}).`,
+        description_en: `The renter cancelled the rental request for "${productTitle}" (${startDateStr} - ${endDateStr}).`,
+        link: "/profile#anunturi",
+      }).catch((e: unknown) => console.error("Notification insert error:", e));
+    }
+
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (resendApiKey) {
       const emailPromises: Promise<unknown>[] = [];
