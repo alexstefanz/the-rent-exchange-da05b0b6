@@ -1,7 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   CheckCircle2, 
   AlertCircle, 
@@ -9,11 +15,19 @@ import {
   CreditCard, 
   Wallet,
   Shield,
-  Trash2
+  Trash2,
+  User,
+  Phone,
+  Mail,
+  MessageCircle,
+  Camera,
+  Loader2
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
+import { getProfile, updateProfile, createProfile, Profile } from "@/features/profile/profileApi";
+import { uploadAvatar } from "@/features/profile/avatarApi";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,23 +40,112 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
+const profileSchema = z.object({
+  full_name: z.string().min(2, "Numele trebuie să aibă minim 2 caractere").optional().or(z.literal("")),
+  phone: z.string()
+    .regex(/^[+0-9() -]*$/, "Format telefon invalid (doar cifre, +, (), spații, -)")
+    .max(20, "Numărul de telefon nu poate depăși 20 caractere")
+    .optional()
+    .or(z.literal("")),
+  email: z.string()
+    .email("Format email invalid")
+    .max(100, "Email-ul nu poate depăși 100 caractere")
+    .optional()
+    .or(z.literal("")),
+  whatsapp: z.string()
+    .regex(/^[+0-9() -]*$/, "Format telefon invalid (doar cifre, +, (), spații, -)")
+    .max(20, "Numărul de WhatsApp nu poate depăși 20 caractere")
+    .optional()
+    .or(z.literal("")),
+});
+
+type ProfileFormData = z.infer<typeof profileSchema>;
+
 const AccountTab = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Mock verification statuses - can be connected to real data later
-  const verificationStatus = {
-    email: true, // Email is verified if user exists
-    identity: false, // Mock - not verified
-    phone: false, // Mock - not verified
+  const form = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: { full_name: "", phone: "", email: "", whatsapp: "" },
+  });
+
+  const getInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+    }
+    if (user?.email) return user.email.slice(0, 2).toUpperCase();
+    return "U";
+  };
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user) return;
+      try {
+        let profileData = await getProfile(user.id);
+        if (!profileData) {
+          profileData = await createProfile(user.id, {
+            full_name: user.user_metadata?.full_name || null,
+          });
+        }
+        setProfile(profileData);
+        form.reset({
+          full_name: profileData.full_name || "",
+          phone: profileData.phone || "",
+          email: profileData.email || "",
+          whatsapp: profileData.whatsapp || "",
+        });
+      } catch (error) {
+        console.error("Error loading profile:", error);
+        toast({
+          title: t("Eroare", "Error"),
+          description: t("Nu s-a putut încărca profilul", "Could not load profile"),
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadProfile();
+  }, [user, form, toast, t]);
+
+  const handleSubmit = async (data: ProfileFormData) => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      const updatedProfile = await updateProfile(user.id, {
+        full_name: data.full_name || undefined,
+        phone: data.phone || undefined,
+        email: data.email || undefined,
+        whatsapp: data.whatsapp || undefined,
+      });
+      setProfile(updatedProfile);
+      toast({
+        title: t("Succes", "Success"),
+        description: t("Profil actualizat cu succes", "Profile updated successfully"),
+      });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast({
+        title: t("Eroare", "Error"),
+        description: t("Nu s-a putut actualiza profilul", "Could not update profile"),
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handlePasswordReset = async () => {
     setIsResettingPassword(true);
     try {
-      // This would call supabase.auth.resetPasswordForEmail
       toast({
         title: t("Email trimis", "Email sent"),
         description: t(
@@ -53,10 +156,7 @@ const AccountTab = () => {
     } catch (error) {
       toast({
         title: t("Eroare", "Error"),
-        description: t(
-          "Nu s-a putut trimite emailul de resetare",
-          "Could not send reset email"
-        ),
+        description: t("Nu s-a putut trimite emailul de resetare", "Could not send reset email"),
         variant: "destructive",
       });
     } finally {
@@ -67,229 +167,280 @@ const AccountTab = () => {
   const handleDeactivateAccount = async () => {
     toast({
       title: t("Funcție indisponibilă", "Feature unavailable"),
-      description: t(
-        "Dezactivarea contului nu este încă disponibilă",
-        "Account deactivation is not yet available"
-      ),
+      description: t("Dezactivarea contului nu este încă disponibilă", "Account deactivation is not yet available"),
     });
   };
 
+  const verificationStatus = {
+    email: true,
+    identity: false,
+    phone: false,
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      {/* Left Column */}
-      <div className="space-y-6">
-        {/* Account Status */}
-        <Card>
+    <div className="space-y-6">
+      {/* === PROFILE PHOTO + PERSONAL INFO === */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Avatar Card */}
+        <Card className="lg:col-span-1">
           <CardHeader>
-            <CardTitle className="text-lg">
-              {t("Starea contului", "Account status")}
-            </CardTitle>
-            <CardDescription>
-              {t("Verificările contului tău", "Your account verifications")}
-            </CardDescription>
+            <CardTitle className="text-lg">{t("Fotografie profil", "Profile photo")}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center gap-3">
-                {verificationStatus.email ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-amber-500" />
-                )}
-                <span className="text-sm font-medium">Email</span>
-              </div>
-              <Badge variant={verificationStatus.email ? "default" : "secondary"}>
-                {verificationStatus.email
-                  ? t("Verificat", "Verified")
-                  : t("Neverificat", "Unverified")}
-              </Badge>
+          <CardContent className="flex flex-col items-center">
+            <div className="relative mb-4">
+              <Avatar className="h-32 w-32 border-4 border-primary/20">
+                <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
+                <AvatarFallback className="bg-primary/10 text-primary text-3xl font-medium">
+                  {getInitials()}
+                </AvatarFallback>
+              </Avatar>
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file || !user) return;
+                  if (file.size > 5 * 1024 * 1024) {
+                    toast({ title: t("Eroare", "Error"), description: t("Fișierul este prea mare (max 5MB)", "File is too large (max 5MB)"), variant: "destructive" });
+                    return;
+                  }
+                  setIsUploadingAvatar(true);
+                  try {
+                    const newUrl = await uploadAvatar(user.id, file);
+                    setProfile(prev => prev ? { ...prev, avatar_url: newUrl } : prev);
+                    toast({ title: t("Succes", "Success"), description: t("Fotografia a fost actualizată", "Photo updated successfully") });
+                  } catch (error) {
+                    console.error("Avatar upload error:", error);
+                    toast({ title: t("Eroare", "Error"), description: t("Nu s-a putut încărca fotografia", "Could not upload photo"), variant: "destructive" });
+                  } finally {
+                    setIsUploadingAvatar(false);
+                    if (fileInputRef.current) fileInputRef.current.value = "";
+                  }
+                }}
+              />
+              <Button
+                size="icon"
+                variant="outline"
+                className="absolute bottom-0 right-0 rounded-full h-10 w-10 bg-background"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+              >
+                {isUploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+              </Button>
             </div>
-
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center gap-3">
-                {verificationStatus.identity ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-amber-500" />
-                )}
-                <span className="text-sm font-medium">
-                  {t("Identitate", "Identity")}
-                </span>
-              </div>
-              <Badge variant={verificationStatus.identity ? "default" : "secondary"}>
-                {verificationStatus.identity
-                  ? t("Verificată", "Verified")
-                  : t("Neverificată", "Unverified")}
-              </Badge>
-            </div>
-
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center gap-3">
-                {verificationStatus.phone ? (
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
-                ) : (
-                  <AlertCircle className="h-5 w-5 text-amber-500" />
-                )}
-                <span className="text-sm font-medium">
-                  {t("Telefon", "Phone")}
-                </span>
-              </div>
-              <Badge variant={verificationStatus.phone ? "default" : "secondary"}>
-                {verificationStatus.phone
-                  ? t("Verificat", "Verified")
-                  : t("Neverificat", "Unverified")}
-              </Badge>
-            </div>
+            <p className="text-sm text-muted-foreground text-center">
+              {t("Adaugă o fotografie pentru a-ți personaliza profilul", "Add a photo to personalize your profile")}
+            </p>
           </CardContent>
         </Card>
 
-        {/* Change Password */}
-        <Card>
+        {/* Personal Info Form */}
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Lock className="h-5 w-5" />
-              {t("Schimbă parola", "Change password")}
+              <User className="h-5 w-5" />
+              {t("Informații personale", "Personal information")}
             </CardTitle>
-            <CardDescription>
-              {t(
-                "Primește un email pentru a-ți reseta parola",
-                "Receive an email to reset your password"
-              )}
-            </CardDescription>
+            <CardDescription>{t("Actualizează informațiile profilului tău", "Update your profile information")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button 
-              variant="outline" 
-              onClick={handlePasswordReset}
-              disabled={isResettingPassword}
-            >
-              {isResettingPassword
-                ? t("Se trimite...", "Sending...")
-                : t("Schimbă parola", "Change password")}
-            </Button>
-          </CardContent>
-        </Card>
+            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="auth_email" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  {t("Email cont", "Account email")}
+                </Label>
+                <Input id="auth_email" type="email" value={user?.email || ""} disabled className="bg-muted" />
+                <p className="text-xs text-muted-foreground">{t("Emailul nu poate fi modificat", "Email cannot be changed")}</p>
+              </div>
 
-        {/* Deactivate Account */}
-        <Card className="border-destructive/30">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg text-destructive">
-              <Trash2 className="h-5 w-5" />
-              {t("Dezactivare cont", "Deactivate account")}
-            </CardTitle>
-            <CardDescription>
-              {t(
-                "Odată dezactivat, contul tău nu va mai fi accesibil",
-                "Once deactivated, your account will no longer be accessible"
-              )}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive">
-                  {t("Dezactivează contul", "Deactivate account")}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>
-                    {t("Ești sigur?", "Are you sure?")}
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {t(
-                      "Această acțiune este ireversibilă. Toate datele tale vor fi șterse permanent.",
-                      "This action is irreversible. All your data will be permanently deleted."
-                    )}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>
-                    {t("Anulează", "Cancel")}
-                  </AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeactivateAccount}>
-                    {t("Dezactivează", "Deactivate")}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+              <div className="space-y-2">
+                <Label htmlFor="full_name" className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  {t("Nume complet", "Full name")}
+                </Label>
+                <Input id="full_name" type="text" placeholder="Ion Popescu" {...form.register("full_name")} />
+                {form.formState.errors.full_name && <p className="text-sm text-destructive">{form.formState.errors.full_name.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  {t("Telefon", "Phone")}
+                </Label>
+                <Input id="phone" type="tel" placeholder="+40 7XX XXX XXX" maxLength={20} {...form.register("phone")} />
+                {form.formState.errors.phone && <p className="text-sm text-destructive">{form.formState.errors.phone.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email_contact" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  {t("Email de contact (public)", "Contact email (public)")}
+                </Label>
+                <Input id="email_contact" type="email" placeholder="contact@exemplu.ro" maxLength={100} {...form.register("email")} />
+                {form.formState.errors.email && <p className="text-sm text-destructive">{form.formState.errors.email.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="whatsapp" className="flex items-center gap-2">
+                  <MessageCircle className="h-4 w-4" />
+                  WhatsApp
+                </Label>
+                <Input id="whatsapp" type="tel" placeholder="+40 7XX XXX XXX" maxLength={20} {...form.register("whatsapp")} />
+                {form.formState.errors.whatsapp && <p className="text-sm text-destructive">{form.formState.errors.whatsapp.message}</p>}
+              </div>
+
+              <Button type="submit" disabled={isSaving}>
+                {isSaving ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("Se salvează...", "Saving...")}</>
+                ) : (
+                  t("Salvează modificările", "Save changes")
+                )}
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>
 
-      {/* Right Column */}
-      <div className="space-y-6">
-        {/* Payment Methods */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <CreditCard className="h-5 w-5" />
-              {t("Metoda de plată", "Payment method")}
-            </CardTitle>
-            <CardDescription>
-              {t(
-                "Adaugă un card pentru a putea face rezervări",
-                "Add a card to make reservations"
-              )}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-lg border border-dashed border-border p-6 text-center">
-              <CreditCard className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
-              <p className="text-sm text-muted-foreground mb-3">
-                {t("Nicio metodă de plată adăugată", "No payment method added")}
-              </p>
-              <Button variant="outline">
-                {t("Adaugă metodă de plată", "Add payment method")}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+      {/* === ACCOUNT SETTINGS === */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Left Column */}
+        <div className="space-y-6">
+          {/* Account Status */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">{t("Starea contului", "Account status")}</CardTitle>
+              <CardDescription>{t("Verificările contului tău", "Your account verifications")}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {[
+                { key: "email", label: "Email", verified: verificationStatus.email },
+                { key: "identity", label: t("Identitate", "Identity"), verified: verificationStatus.identity },
+                { key: "phone", label: t("Telefon", "Phone"), verified: verificationStatus.phone },
+              ].map(({ key, label, verified }) => (
+                <div key={key} className="flex items-center justify-between py-2">
+                  <div className="flex items-center gap-3">
+                    {verified ? <CheckCircle2 className="h-5 w-5 text-green-500" /> : <AlertCircle className="h-5 w-5 text-amber-500" />}
+                    <span className="text-sm font-medium">{label}</span>
+                  </div>
+                  <Badge variant={verified ? "default" : "secondary"}>
+                    {verified ? t("Verificat", "Verified") : t("Neverificat", "Unverified")}
+                  </Badge>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
 
-        {/* Payout Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Wallet className="h-5 w-5" />
-              {t("Cum primești banii?", "How do you receive payments?")}
-            </CardTitle>
-            <CardDescription>
-              {t(
-                "Configurează modul în care primești plățile pentru închirierile tale",
-                "Configure how you receive payments for your rentals"
-              )}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-lg border border-dashed border-border p-6 text-center">
-              <Wallet className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
-              <p className="text-sm text-muted-foreground mb-3">
-                {t("IBAN neconfigurat", "IBAN not configured")}
-              </p>
-              <Button variant="outline">
-                {t("Configurează încasarea", "Configure payout")}
+          {/* Change Password */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Lock className="h-5 w-5" />
+                {t("Schimbă parola", "Change password")}
+              </CardTitle>
+              <CardDescription>{t("Primește un email pentru a-ți reseta parola", "Receive an email to reset your password")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" onClick={handlePasswordReset} disabled={isResettingPassword}>
+                {isResettingPassword ? t("Se trimite...", "Sending...") : t("Schimbă parola", "Change password")}
               </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Secure Payments Info */}
-        <Card className="bg-primary/5 border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Shield className="h-5 w-5 text-primary" />
-              {t("Plăți sigure", "Secure payments")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              {t(
-                "Toate plățile sunt procesate în siguranță prin partenerii noștri de încredere. Datele tale bancare sunt criptate și protejate.",
-                "All payments are securely processed through our trusted partners. Your banking data is encrypted and protected."
-              )}
-            </p>
-          </CardContent>
-        </Card>
+          {/* Deactivate Account */}
+          <Card className="border-destructive/30">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg text-destructive">
+                <Trash2 className="h-5 w-5" />
+                {t("Dezactivare cont", "Deactivate account")}
+              </CardTitle>
+              <CardDescription>{t("Odată dezactivat, contul tău nu va mai fi accesibil", "Once deactivated, your account will no longer be accessible")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive">{t("Dezactivează contul", "Deactivate account")}</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>{t("Ești sigur?", "Are you sure?")}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t("Această acțiune este ireversibilă. Toate datele tale vor fi șterse permanent.", "This action is irreversible. All your data will be permanently deleted.")}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t("Anulează", "Cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeactivateAccount}>{t("Dezactivează", "Deactivate")}</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column */}
+        <div className="space-y-6">
+          {/* Payment Methods */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <CreditCard className="h-5 w-5" />
+                {t("Metoda de plată", "Payment method")}
+              </CardTitle>
+              <CardDescription>{t("Adaugă un card pentru a putea face rezervări", "Add a card to make reservations")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-lg border border-dashed border-border p-6 text-center">
+                <CreditCard className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+                <p className="text-sm text-muted-foreground mb-3">{t("Nicio metodă de plată adăugată", "No payment method added")}</p>
+                <Button variant="outline">{t("Adaugă metodă de plată", "Add payment method")}</Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Payout Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Wallet className="h-5 w-5" />
+                {t("Cum primești banii?", "How do you receive payments?")}
+              </CardTitle>
+              <CardDescription>{t("Configurează modul în care primești plățile pentru închirierile tale", "Configure how you receive payments for your rentals")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-lg border border-dashed border-border p-6 text-center">
+                <Wallet className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
+                <p className="text-sm text-muted-foreground mb-3">{t("IBAN neconfigurat", "IBAN not configured")}</p>
+                <Button variant="outline">{t("Configurează încasarea", "Configure payout")}</Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Secure Payments Info */}
+          <Card className="bg-primary/5 border-primary/20">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Shield className="h-5 w-5 text-primary" />
+                {t("Plăți sigure", "Secure payments")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                {t("Toate plățile sunt procesate în siguranță prin partenerii noștri de încredere. Datele tale bancare sunt criptate și protejate.", "All payments are securely processed through our trusted partners. Your banking data is encrypted and protected.")}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
