@@ -75,6 +75,7 @@ const MessagesTab = () => {
           otherUserName={selectedConversation.other_user?.full_name || null}
           otherUserAvatar={selectedConversation.other_user?.avatar_url || null}
           productTitle={selectedConversation.product?.title || "Produs"}
+          ownerId={selectedConversation.owner_id}
           onBack={handleBack}
         />
       </div>
@@ -116,6 +117,7 @@ const MessagesTab = () => {
             otherUserName={selectedConversation.other_user?.full_name || null}
             otherUserAvatar={selectedConversation.other_user?.avatar_url || null}
             productTitle={selectedConversation.product?.title || "Produs"}
+            ownerId={selectedConversation.owner_id}
           />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
