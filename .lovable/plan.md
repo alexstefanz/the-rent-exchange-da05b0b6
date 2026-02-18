@@ -1,79 +1,59 @@
 
+## Adăugarea butonului de apel 3CX în Chat
 
-# Redesign complet pagina Mesaje + Chat fullscreen pe mobil
+### Cum funcționează integrarea 3CX
 
-## Rezumat
+3CX suportă click-to-call prin protocolul standard `tel:` — același folosit de linkurile telefonice obișnuite. Când utilizatorul are:
+- **Desktop**: extensia 3CX Click2Call instalată în browser → interceptează linkul `tel:` și inițiază apelul prin 3CX
+- **Mobil**: aplicația 3CX instalată → se deschide aplicația pentru apel; altfel se deschide aplicația nativă de telefon
 
-Transformarea paginii `/mesaje` dintr-o lista simpla cu dialog popup intr-o interfata de chat completa, cu doua vizualizari diferite:
-- **Mobile**: chat fullscreen (nu popup)
-- **Desktop**: layout split-view (lista conversatii stanga + chat dreapta)
-- **Ambele**: 2 tab-uri pentru filtrare: "Rezervari" (unde esti chirias/buyer) si "De Inchiriat" (unde esti proprietar/owner)
+Nicio configurare suplimentară pe server nu este necesară — totul funcționează prin linkul `tel:+40XXXXXXXXX`.
 
-## Ce se schimba
+---
 
-### 1. Pagina Messages.tsx - redesign complet
+### Ce se va schimba
 
-**Desktop (lg+):**
-- Layout cu 2 coloane: lista conversatii (w-1/3) | zona chat (w-2/3)
-- Tab-uri "Rezervari" / "De Inchiriat" deasupra listei
-- Sectiuni "NECITITE" si "CITITE" in lista
-- Cand selectezi o conversatie, chatul apare inline in coloana dreapta (nu dialog)
-- Header chat cu avatar + nume + produs
+#### 1. `src/components/messaging/ChatPanel.tsx`
+- Se adaugă prop-ul `ownerId?: string` — ID-ul proprietarului conversației
+- Se apelează funcția existentă `getOwnerContactInfo(ownerId)` (deja securizată: returnează date **doar dacă utilizatorul are o conversație activă cu acel proprietar**)
+- Dacă numărul de telefon există în profilul proprietarului, în header-ul chat-ului apare un buton de telefon (iconița `Phone`)
+- Butonul deschide `tel:<numar>` → 3CX sau aplicația nativă de telefon
 
-**Mobile (<lg):**
-- Lista conversatii cu aceleasi tab-uri si sectiuni
-- Cand selectezi o conversatie, se deschide chatul fullscreen (nu dialog)
-- Buton back pentru a reveni la lista
-- Fara Navbar/Footer in modul chat (fullscreen)
-
-### 2. Componenta noua: ChatPanel.tsx
-- Componenta reutilizabila de chat (nu dialog)
-- Contine header, scroll area cu mesaje, input
-- Functioneaza identic cu ChatDialog dar fara wrapper Dialog
-- Suporta realtime subscriptions, mark as read
-
-### 3. Componenta noua: ConversationList.tsx
-- Lista de conversatii cu filtrare pe tab-uri
-- Tab-uri: "Rezervari" (buyer_id === user.id) si "De Inchiriat" (owner_id === user.id)
-- Grupare: NECITITE sus, CITITE jos
-- Conversatia selectata evidentiata vizual
-
-### 4. MobileBottomNav.tsx
-- Badge-ul exista deja si functioneaza - nu necesita modificari
-
-## Detalii tehnice
-
-### Filtrare conversatii pe tab-uri
-```text
-Tab "Rezervari"    -> conv.buyer_id === user.id  (userul e chirias)
-Tab "De Inchiriat" -> conv.owner_id === user.id  (userul e proprietar)
+**Design buton:**
 ```
-
-### Grupare NECITITE / CITITE
-```text
-NECITITE -> conv.unread_count > 0
-CITITE   -> conv.unread_count === 0
+[ ← ]  [Avatar]  Titlu produs      [ 📞 ]
+                  Nume utilizator
 ```
+- Butonul apare **doar dacă există număr de telefon** în profil
+- Tooltip: "Apelează prin 3CX"
+- Pe hover: culoare verde (`text-green-600`)
 
-### Structura fisiere
+#### 2. `src/pages/Messages.tsx`
+- Se transmite `ownerId` din obiectul `Conversation` selectat către `ChatPanel`
 
-| Fisier | Actiune |
-|--------|---------|
-| `src/pages/Messages.tsx` | RESCRIS - layout split desktop, fullscreen mobile |
-| `src/components/messaging/ChatPanel.tsx` | NOU - panel chat inline (fara Dialog wrapper) |
-| `src/components/messaging/ConversationList.tsx` | NOU - lista conversatii cu tab-uri si grupare |
-| `src/components/messaging/ChatDialog.tsx` | PASTRAT - folosit in alte locuri (MessagesTab, profile) |
+#### 3. `src/components/profile/MessagesTab.tsx`
+- Același lucru — se transmite `ownerId` din conversația selectată
 
-### Flow mobil
-```text
-/mesaje -> ConversationList (fullscreen)
-  -> click conversatie -> ChatPanel (fullscreen, cu buton back)
-  -> click back -> ConversationList
-```
+---
 
-### Flow desktop
-```text
-/mesaje -> [ConversationList | ChatPanel] side by side
-  -> click conversatie -> ChatPanel se populeaza in dreapta
-```
+### Securitate
 
+Funcția `getOwnerContactInfo` existentă apelează procedura de bază de date `get_contact_info_if_in_conversation` care verifică că utilizatorul curent **face parte din conversație** înainte de a returna datele de contact. Numărul de telefon nu este expus aleatoriu.
+
+---
+
+### Cine vede butonul?
+
+- **Cumpărătorul** (cel care a inițiat conversația) → vede numărul **proprietarului** → poate apela prin 3CX
+- **Proprietarul** → va vedea butonul dacă este implementat același mecanism în sens invers (poate fi adăugat ulterior cu o funcție DB separată)
+
+În prima versiune, butonul este vizibil pentru ambii participanți la conversație, dar numărul returnat va fi întotdeauna cel al proprietarului produsului.
+
+---
+
+### Fișiere modificate
+- `src/components/messaging/ChatPanel.tsx` — logica principală + UI
+- `src/pages/Messages.tsx` — transmitere `ownerId`
+- `src/components/profile/MessagesTab.tsx` — transmitere `ownerId`
+
+Nu sunt necesare modificări la baza de date sau funcții backend noi.
