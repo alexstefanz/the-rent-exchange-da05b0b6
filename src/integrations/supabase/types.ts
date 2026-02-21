@@ -309,6 +309,7 @@ export type Database = {
           location_country: string | null
           owner_id: string
           platform_fee_percent: number
+          slug: string | null
           subcategory: string | null
           title: string
         }
@@ -324,6 +325,7 @@ export type Database = {
           location_country?: string | null
           owner_id: string
           platform_fee_percent?: number
+          slug?: string | null
           subcategory?: string | null
           title: string
         }
@@ -339,6 +341,7 @@ export type Database = {
           location_country?: string | null
           owner_id?: string
           platform_fee_percent?: number
+          slug?: string | null
           subcategory?: string | null
           title?: string
         }
@@ -580,6 +583,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_slug: { Args: { title: string }; Returns: string }
       get_admin_financial_summary: {
         Args: { end_date?: string; start_date?: string }
         Returns: {

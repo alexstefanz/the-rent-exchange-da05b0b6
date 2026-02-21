@@ -3,6 +3,7 @@ import { MapPin, ArrowRight, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProducts } from "@/hooks/queries/useProducts";
 import { calculateClientPrice } from "@/features/products/productsApi";
+import { getProductUrl } from "@/lib/slugUtils";
 import { useUxCopy } from "@/hooks/useUxCopy";
 
 const FeaturedListings = () => {
@@ -47,7 +48,7 @@ const FeaturedListings = () => {
             const location = product.location_city || "România";
 
             return (
-              <Link key={product.id} to={`/produs/${product.id}`} className="group block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover">
+              <Link key={product.id} to={getProductUrl(product)} className="group block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover">
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img src={imageUrl} alt={product.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
                   <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs font-medium text-emerald-700 backdrop-blur-sm">
