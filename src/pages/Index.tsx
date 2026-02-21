@@ -32,7 +32,7 @@ const Index = () => {
             <p className="mt-6 animate-fade-up text-lg text-muted-foreground md:text-xl" style={{ animationDelay: "0.1s" }}>
               {copy.home.heroSubtitle}
             </p>
-            <div className="mx-[-12px] mt-6 animate-fade-up md:mx-0 md:mt-10" style={{ animationDelay: "0.2s" }}>
+            <div className="mx-[-15px] mt-6 animate-fade-up md:mx-0 md:mt-10" style={{ animationDelay: "0.2s" }}>
               <HeroSearchForm />
             </div>
           </div>
