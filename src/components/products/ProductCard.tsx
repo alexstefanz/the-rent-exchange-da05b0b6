@@ -33,11 +33,11 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
         className="group block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover"
       >
         <div className="flex flex-col sm:flex-row">
-          <div className="relative aspect-[4/3] sm:aspect-square sm:w-48 overflow-hidden">
+          <div className="relative aspect-[4/3] sm:aspect-square sm:w-48 overflow-hidden bg-white">
             <img
               src={imageUrl}
               alt={product.title}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
             />
             {/* Verified badge */}
             <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs font-medium text-emerald-700 backdrop-blur-sm">

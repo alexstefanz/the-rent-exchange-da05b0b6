@@ -49,8 +49,8 @@ const FeaturedListings = () => {
 
             return (
               <Link key={product.id} to={getProductUrl(product)} className="group block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover">
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <img src={imageUrl} alt={product.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                <div className="relative aspect-[4/3] overflow-hidden bg-white">
+                  <img src={imageUrl} alt={product.title} className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105" />
                   <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs font-medium text-emerald-700 backdrop-blur-sm">
                     <CheckCircle className="h-3 w-3" />
                     <span className="hidden sm:inline">{copy.trust.verified}</span>
