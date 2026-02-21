@@ -6,6 +6,7 @@ export interface Product {
   id: string;
   owner_id: string;
   title: string;
+  slug: string | null;
   description: string | null;
   daily_price_owner: number;
   platform_fee_percent: number;
@@ -75,6 +76,20 @@ export const getProductById = async (id: string): Promise<Product | null> => {
 
   if (error) {
     handleApiError("Error fetching product", error);
+  }
+
+  return data;
+};
+
+export const getProductBySlug = async (slug: string): Promise<Product | null> => {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) {
+    handleApiError("Error fetching product by slug", error);
   }
 
   return data;

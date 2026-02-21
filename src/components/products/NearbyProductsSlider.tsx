@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, MapPin, Star, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getNearbyProducts, Product, calculateClientPrice } from "@/features/products/productsApi";
+import { getProductUrl } from "@/lib/slugUtils";
 import { useUxCopy } from "@/hooks/useUxCopy";
 
 interface NearbyProductsSliderProps {
@@ -81,7 +82,7 @@ const NearbyProductCard = ({ product }: { product: Product }) => {
   const location = product.location_city || "România";
 
   return (
-    <Link to={`/produs/${product.id}`} className="group flex-shrink-0 w-[200px] md:w-[220px] snap-start">
+    <Link to={getProductUrl(product)} className="group flex-shrink-0 w-[200px] md:w-[220px] snap-start">
       <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-muted">
         <img src={imageUrl} alt={product.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
         <button className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-colors" onClick={(e) => { e.preventDefault(); }}>

@@ -11,7 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
 import { categories } from "@/data/categories";
-import { getProductById, Product, calculateClientPrice } from "@/features/products/productsApi";
+import { getProductById, getProductBySlug, Product, calculateClientPrice } from "@/features/products/productsApi";
+import { getProductUrl } from "@/lib/slugUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -42,7 +43,7 @@ const reviews = [{
 
 const ProductDetail = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { slug } = useParams();
   const { user } = useAuth();
   const copy = useUxCopy();
   const { language } = useLanguage();
@@ -62,15 +63,23 @@ const ProductDetail = () => {
 
   useEffect(() => {
     const fetchProduct = async () => {
-      if (!id) return;
+      if (!slug) return;
       setIsLoading(true);
       try {
-        const productData = await getProductById(id);
+        // Try UUID lookup first, then slug
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
+        const productData = isUuid
+          ? await getProductById(slug)
+          : await getProductBySlug(slug);
         if (productData) {
           setProduct(productData);
+          // Redirect old UUID URLs to slug URL
+          if (isUuid && productData.slug) {
+            navigate(getProductUrl(productData), { replace: true });
+            return;
+          }
           const { data: ownerData } = await supabase.rpc('get_product_owner_public_info', { owner_uuid: productData.owner_id });
           if (ownerData && ownerData.length > 0) setOwner(ownerData[0]);
-          // Check favorite status
           if (user) {
             const fav = await isProductFavorite(productData.id);
             setIsFavorite(fav);
@@ -80,7 +89,7 @@ const ProductDetail = () => {
       finally { setIsLoading(false); }
     };
     fetchProduct();
-  }, [id, user]);
+  }, [slug, user]);
 
   const handleStartChat = async () => {
     if (!user) {

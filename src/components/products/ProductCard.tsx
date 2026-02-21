@@ -3,6 +3,7 @@ import { MapPin, CheckCircle, Heart } from "lucide-react";
 import { Product, calculateClientPrice } from "@/features/products/productsApi";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { getProductUrl } from "@/lib/slugUtils";
 
 interface ProductCardProps {
   product: Product;
@@ -28,7 +29,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
   if (viewMode === "list") {
     return (
       <Link
-        to={`/produs/${product.id}`}
+        to={getProductUrl(product)}
         className="group block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover"
       >
         <div className="flex flex-col sm:flex-row">
@@ -73,7 +74,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
 
   return (
     <Link
-      to={`/produs/${product.id}`}
+      to={getProductUrl(product)}
       className="group relative block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-white">

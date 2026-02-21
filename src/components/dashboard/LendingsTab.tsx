@@ -10,6 +10,7 @@ import { useUxCopy } from "@/hooks/useUxCopy";
 import { useMyProducts } from "@/hooks/queries/useProducts";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateClientPrice } from "@/features/products/productsApi";
+import { getProductUrl } from "@/lib/slugUtils";
 import { getOwnerRentals, respondToRental, type OwnerRental } from "@/features/rentals/ownerRentalsApi";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -219,7 +220,7 @@ const LendingsTab = () => {
                     <p className="mt-1 text-sm font-semibold text-primary">{clientPrice} RON/{copy.common.perDay.replace("/ ", "")}</p>
                     <div className="mt-2 flex gap-2">
                       <Button variant="ghost" size="sm" className="h-8 px-2" asChild>
-                        <Link to={`/produs/${product.id}`}><Eye className="h-4 w-4" /></Link>
+                        <Link to={getProductUrl(product)}><Eye className="h-4 w-4" /></Link>
                       </Button>
                       <Button variant="ghost" size="sm" className="h-8 px-2" asChild>
                         <Link to={`/owner/edit-product/${product.id}`}><Edit className="h-4 w-4" /></Link>

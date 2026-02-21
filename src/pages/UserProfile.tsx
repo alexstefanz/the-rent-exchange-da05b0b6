@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Heart, Star, Search, List, LayoutGrid, ChevronRight, Check, Loader2, Calendar, Package, MessageCircle } from "lucide-react";
 import { categories } from "@/data/categories";
+import { getProductUrl } from "@/lib/slugUtils";
 import {
   Pagination,
   PaginationContent,
@@ -570,7 +571,7 @@ const UserProfile = () => {
                     {paginatedItems.map((item) => (
                       <Link
                         key={item.id}
-                        to={`/produs/${item.id}`}
+                        to={getProductUrl(item)}
                         className="group bg-card rounded-lg overflow-hidden border border-border hover:shadow-lg transition-shadow"
                       >
                         <div className="aspect-square overflow-hidden">
@@ -599,7 +600,7 @@ const UserProfile = () => {
                     {paginatedItems.map((item) => (
                       <Link
                         key={item.id}
-                        to={`/produs/${item.id}`}
+                        to={getProductUrl(item)}
                         className="flex gap-4 bg-card rounded-lg overflow-hidden border border-border hover:shadow-lg transition-shadow p-4"
                       >
                         <div className="w-32 h-32 shrink-0 rounded-lg overflow-hidden">

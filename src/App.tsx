@@ -48,7 +48,7 @@ const App = () => (
               <Route path="/categorii" element={<Categories />} />
               <Route path="/categorie/:id" element={<CategoryDetail />} />
               <Route path="/subcategorie/:id" element={<SubcategoryDetail />} />
-              <Route path="/produs/:id" element={<ProductDetail />} />
+              <Route path="/produs/:slug" element={<ProductDetail />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/cauta" element={<Search />} />
               <Route path="/adauga-anunt" element={<Navigate to="/owner/new-product" replace />} />
