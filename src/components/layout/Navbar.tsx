@@ -148,6 +148,14 @@ const Navbar = () => {
                   )}
                 </Link>
 
+                {/* Favorites - Desktop */}
+                <Link
+                  to="/profile#favorite"
+                  className="hidden lg:flex items-center justify-center rounded-full p-2 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                >
+                  <Heart className="h-5 w-5" />
+                </Link>
+
                 {/* Notification Bell - Desktop */}
                 <div className="hidden lg:flex">
                   <NotificationBell />
@@ -246,9 +254,15 @@ const Navbar = () => {
               </Link>
             </Button>
             
-            {/* Notification Bell - Mobile/Tablet */}
+            {/* Favorites & Notification Bell - Mobile/Tablet */}
             {user && (
-              <div className="lg:hidden">
+              <div className="lg:hidden flex items-center gap-1">
+                <Link
+                  to="/profile#favorite"
+                  className="flex items-center justify-center rounded-full p-2 text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
+                >
+                  <Heart className="h-5 w-5" />
+                </Link>
                 <NotificationBell />
               </div>
             )}
