@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Loader2, ClipboardList, ShoppingBag, Package, Wallet } from "lucide-react";
+import { Loader2, UserCog, ClipboardList, ShoppingBag, Package, Wallet } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -8,15 +8,17 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import AccountTab from "@/components/profile/AccountTab";
 import EarningsTab from "@/components/profile/EarningsTab";
 import FavoritesTab from "@/components/profile/FavoritesTab";
 import RequestsTab from "@/components/dashboard/RequestsTab";
 import RentalsTab from "@/components/dashboard/RentalsTab";
 import LendingsTab from "@/components/dashboard/LendingsTab";
 
-const VALID_HASHES = ["cereri", "inchirieri", "anunturi", "castiguri", "favorite"];
+const VALID_HASHES = ["contul-meu", "cereri", "inchirieri", "anunturi", "castiguri", "favorite"];
 
 const TABS = [
+  { id: "contul-meu", labelRo: "Contul meu", labelEn: "My Account", icon: UserCog },
   { id: "cereri", labelRo: "Cereri", labelEn: "Requests", icon: ClipboardList },
   { id: "inchirieri", labelRo: "Rezervări", labelEn: "Rentals", icon: ShoppingBag },
   { id: "anunturi", labelRo: "Produse active", labelEn: "Active Listings", icon: Package },
@@ -128,6 +130,10 @@ const ProfilePage = () => {
               );
             })}
           </TabsList>
+
+          <TabsContent value="contul-meu" className="mt-0">
+            <AccountTab />
+          </TabsContent>
 
           <TabsContent value="cereri" className="mt-0">
             <RequestsTab />
