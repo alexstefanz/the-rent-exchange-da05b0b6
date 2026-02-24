@@ -1,124 +1,170 @@
 
 
-## MiniCRM Integration - POC
+## Admin Dashboard Complet - Plan de Extindere
 
-### Rezumat
-Construim un proof of concept care permite crearea unui contact (lead) in MiniCRM printr-un formular din aplicatie. Comunicarea cu MiniCRM se face exclusiv prin backend (edge function), fara a expune credentiale in frontend.
+### Situatia curenta
 
-### Arhitectura
+Dashboard-ul admin existent are deja:
+- **Dashboard** cu statistici generale
+- **Rezervari** - vizualizare si schimbare status
+- **Financiar** - venituri, comisioane, grafice
+- **Analytics** - tendinte lunare, distributie statusuri (cu date mock)
+- **Utilizatori** - cautare, schimbare rol (admin/moderator/user)
+- **KYC** - aprobare/respingere verificari identitate
 
-```text
-+------------------+       +------------------------+       +------------------+
-|  Pagina React    | ----> |  Edge Function         | ----> |  MiniCRM API     |
-|  /minicrm-test   |       |  minicrm-proxy         |       |  r3.minicrm.ro   |
-|                  | <---- |                        | <---- |                  |
-|  Form + Status   |       |  Basic Auth            |       |  JSON Response   |
-+------------------+       +------------------------+       +------------------+
-```
+### Ce lipseste si trebuie adaugat
 
-### Secrets necesare
+Pe baza cerintelor tale si a best practices pentru o platforma de inchiriere, iata modulele noi:
 
-Inainte de implementare, trebuie setate 3 secrete:
-- **MINICRM_SYSTEM_ID** - System ID-ul din contul MiniCRM
-- **MINICRM_API_KEY** - API Key-ul din MiniCRM
-- **MINICRM_BASE_URL** - URL-ul de baza (ex: `https://r3.minicrm.ro`)
+---
 
-### Ce se construieste
+### 1. Sistem de Tickete / Reclamatii
 
-#### 1. Edge Function: `minicrm-proxy`
+**Pagina noua:** `/admin/tickets`
 
-**Fisier:** `supabase/functions/minicrm-proxy/index.ts`
+**Tabela noua in baza de date:** `support_tickets`
+- `id`, `user_id` (cel care reclama), `subject`, `description`, `category` (disputa, frauda, calitate, altele), `priority` (low, medium, high, urgent), `status` (open, in_progress, resolved, closed), `related_rental_id` (optional), `related_product_id` (optional), `assigned_to` (admin UUID, optional), `admin_notes` (text intern), `resolution` (text), `created_at`, `updated_at`, `resolved_at`
 
-Endpoint unic care accepta doua actiuni:
-- `POST` cu `action: "test-connection"` - face un request simplu catre MiniCRM pentru a verifica daca credentialele sunt corecte (ex: GET pe un endpoint de listare proiecte/contacte)
-- `POST` cu `action: "create-contact"` - creaza un contact nou in MiniCRM
+**Functionalitati UI:**
+- Lista tickete cu filtre (status, prioritate, categorie)
+- Detalii ticket cu timeline (mesaje user + raspunsuri admin)
+- Atribuire ticket la admin
+- Schimbare status si prioritate
+- Adaugare notite interne (vizibile doar adminilor)
+- Rezolvare cu mesaj catre user
+- Contor tickete deschise pe dashboard-ul principal
 
-Detalii tehnice:
-- Autentificare catre MiniCRM: HTTP Basic Auth (`SystemID:ApiKey` encodat Base64)
-- CORS headers standard
-- Logheaza request/response fara a afisa API key-ul in clar
-- Returneaza raspunsul complet de la MiniCRM pentru debug
-- Gestioneaza erorile (401/403 = credentiale gresite, 429 = rate limit, 5xx = eroare server)
+---
 
-Conform documentatiei MiniCRM, endpoint-ul pentru creare contact este:
-```
-PUT https://{base_url}/Api/R3/Contact
-```
-cu body JSON continand `FirstName`, `LastName`, `Email`, `Phone`, etc.
+### 2. Gestionare Anunturi (Produse)
 
-#### 2. Pagina React: `/minicrm-test`
+**Pagina noua:** `/admin/products`
 
-**Fisier:** `src/pages/MiniCrmTest.tsx`
+**Functionalitati UI:**
+- Lista toate produsele (active si inactive) cu cautare si filtre
+- Vizualizare detalii produs
+- **Editare produs** - adminul poate modifica titlu, descriere, pret, categorie, imagini
+- **Stergere produs** - cu dialog de confirmare si motiv
+- **Dezactivare/Activare produs** - toggle is_active fara stergere permanenta
+- **Marcare produs ca "flagged"** (nou camp in tabela products: `admin_flagged`, `flag_reason`)
+- Filtrare dupa categorie, oras, status (activ/inactiv/flagged)
 
-Contine:
-- **Header** cu titlu "MiniCRM Integration Test"
-- **Buton "Test Connection"** - apeleaza edge function cu `action: "test-connection"`, afiseaza daca autentificarea e OK sau nu
-- **Formular** cu campuri:
-  - FirstName (obligatoriu)
-  - LastName (obligatoriu)
-  - Email (obligatoriu, validat ca format email)
-  - Phone (optional)
-- **Buton "Trimite in MiniCRM"**
-- **Zona de status**: badge Success/Error + raspunsul JSON brut intr-un bloc `<pre>` pentru debug
+**Modificari baza de date:**
+- Adaugare coloane `admin_flagged` (boolean, default false) si `flag_reason` (text, nullable) in tabela `products`
+- RLS policy: adminii pot vedea/edita/sterge orice produs
 
-Validari client-side cu Zod:
-- FirstName si LastName: non-empty, max 100 caractere
-- Email: format valid
-- Phone: optional, max 20 caractere
+---
 
-#### 3. Ruta noua in App.tsx
+### 3. Gestionare Categorii
 
-Adaugare ruta `/minicrm-test` care pointeaza catre componenta `MiniCrmTest`.
+**Pagina noua:** `/admin/categories`
 
-#### 4. Configurare edge function
+**Tabela noua:** `platform_categories`
+- `id`, `name`, `name_en`, `icon`, `sort_order`, `is_active`, `created_at`, `updated_at`
 
-Adaugare in `supabase/config.toml`:
-```toml
-[functions.minicrm-proxy]
-verify_jwt = false
-```
+**Tabela noua:** `platform_subcategories`
+- `id`, `category_id`, `name`, `name_en`, `description`, `description_en`, `image_url`, `sort_order`, `is_active`, `created_at`
 
-#### 5. Documentatie
+**Functionalitati UI:**
+- Lista categorii cu drag-and-drop reordonare (sau campuri sort_order)
+- Adaugare/editare/stergere categorie
+- Gestionare subcategorii per categorie
+- Toggle activ/inactiv per categorie si subcategorie
+- Preview cum arata pe site
 
-**Fisier:** `docs/minicrm-integration.md`
+**Nota:** Initial categoriile sunt hardcodate in `src/data/categories.ts`. Acest modul va migra categoriile in baza de date, iar frontend-ul va citi din DB in loc de fisierul static.
 
-Continut:
-- Cum se seteaza secrets (MINICRM_SYSTEM_ID, MINICRM_API_KEY, MINICRM_BASE_URL)
-- Cum se acceseaza pagina de test
-- Cum se verifica logurile edge function-ului
-- Scenarii de test (date valide, email invalid, credentiale gresite, eroare server)
+---
 
-### Fisiere create/modificate
+### 4. Banare Utilizatori
 
-| Fisier | Actiune |
-|--------|---------|
-| `supabase/functions/minicrm-proxy/index.ts` | Creat |
-| `src/pages/MiniCrmTest.tsx` | Creat |
-| `src/App.tsx` | Modificat (ruta noua) |
-| `supabase/config.toml` | Modificat (functie noua) |
-| `docs/minicrm-integration.md` | Creat |
+**Extindere pagina existenta:** `/admin/users`
 
-### Pasi de implementare
+**Modificari baza de date:**
+- Adaugare coloane in `profiles`: `is_banned` (boolean, default false), `banned_at` (timestamp), `banned_by` (uuid), `ban_reason` (text)
+- RLS policy: utilizatorii banati nu pot crea produse sau rezervari
 
-1. Solicit setarea celor 3 secrete (MINICRM_SYSTEM_ID, MINICRM_API_KEY, MINICRM_BASE_URL)
-2. Creez edge function-ul `minicrm-proxy`
-3. Creez pagina `MiniCrmTest.tsx` cu formular si zona de debug
-4. Adaug ruta in `App.tsx`
-5. Actualizez `config.toml`
-6. Creez documentatia
+**Functionalitati UI:**
+- Buton "Baneaza" in dropdown-ul de actiuni per utilizator
+- Dialog de confirmare cu camp pentru motivul banarii
+- Buton "Debaneaza" pentru utilizatorii deja banati
+- Badge vizual "BANAT" pe utilizatorii afectati
+- Istoric banari (optional)
 
-### Scenarii de test acoperite
+**Impact pe frontend:**
+- Verificare `is_banned` la login si la actiuni critice (creare produs, creare rezervare)
+- Mesaj clar pentru utilizatorul banat
 
-| Test | Ce se intampla |
-|------|---------------|
-| Date valide | Contact creat in MiniCRM, UI arata "Success" + contactId |
-| Email invalid | Blocat in UI, eroare de validare afisata |
-| Credentiale gresite | UI arata "Unauthorized" cu mesaj clar |
-| Eroare server MiniCRM | UI arata eroarea + sugestie de retry |
-| Test Connection OK | Badge verde "Connected" |
-| Test Connection fail | Badge rosu cu detalii eroare |
+---
 
-### Nota importanta
+### 5. Verificare Plati
 
-Voi cere setarea secretelor **inainte** de a scrie codul, deoarece edge function-ul depinde de ele. Daca nu sunt setate, Test Connection va returna eroare clara.
+**Extindere pagina existenta:** `/admin/finances`
+
+**Functionalitati noi:**
+- Tab/sectiune dedicata "Verificare Plati"
+- Lista tranzactii cu status pending - admin poate marca ca "verificat" sau "suspicious"
+- Detalii per tranzactie: cine a platit, cand, metoda, suma
+- Posibilitate de a marca o plata ca "rambursata" cu motiv
+- Export CSV al tranzactiilor (bonus)
+
+---
+
+### 6. Sugestii suplimentare pentru platforma
+
+Iata ce ar mai fi util pe o platforma de inchiriere peer-to-peer:
+
+- **Audit Log** - jurnal cu toate actiunile adminilor (cine a banat, cine a sters, cand)
+- **Sistem de notificari admin** - alerte cand apar tickete noi, KYC pending, plati suspecte
+- **Content Moderation** - queue cu produse noi care trebuie aprobate inainte de publicare
+- **Rapoarte automate** - email saptamanal cu KPI-uri cheie
+- **Sistem de dispute** - workflow structurat pentru rezolvarea conflictelor intre chirias si proprietar
+- **Rate limiting / fraud detection** - detectie automata conturi suspecte (multe conturi de pe acelasi IP, etc.)
+- **Comisioane dinamice** - posibilitatea de a seta comisioane diferite per categorie sau per utilizator
+
+---
+
+### Ordinea implementarii recomandata
+
+1. **Banare utilizatori** (cel mai rapid, extinde pagina existenta)
+2. **Gestionare anunturi** (impact direct pe moderare)
+3. **Sistem tickete** (suport clienti)
+4. **Verificare plati** (extinde financiar existent)
+5. **Gestionare categorii** (necesita migrare date)
+
+---
+
+### Detalii tehnice
+
+**Fisiere noi:**
+| Fisier | Descriere |
+|--------|-----------|
+| `src/pages/admin/AdminTickets.tsx` | Pagina tickete |
+| `src/pages/admin/AdminProducts.tsx` | Pagina gestionare produse |
+| `src/pages/admin/AdminCategories.tsx` | Pagina gestionare categorii |
+| `src/features/admin/ticketsApi.ts` | API tickete |
+| `src/features/admin/adminProductsApi.ts` | API produse admin |
+| `src/features/admin/categoriesApi.ts` | API categorii |
+| `src/hooks/queries/useAdminTickets.ts` | Hook tickete |
+| `src/hooks/queries/useAdminProducts.ts` | Hook produse admin |
+| `src/hooks/queries/useAdminCategories.ts` | Hook categorii |
+
+**Fisiere modificate:**
+| Fisier | Modificare |
+|--------|-----------|
+| `src/App.tsx` | 3 rute noi |
+| `src/components/admin/AdminSidebar.tsx` | 3 link-uri noi in meniu |
+| `src/pages/admin/AdminUsers.tsx` | Butoane ban/unban |
+| `src/pages/admin/AdminFinances.tsx` | Sectiune verificare plati |
+| `src/pages/admin/AdminDashboard.tsx` | Contoare tickete si produse flagged |
+| `src/features/admin/adminApi.ts` | Functii noi pentru ban/unban, produse |
+| `src/hooks/queries/useAdminStats.ts` | Hooks noi |
+
+**Migratii baza de date:**
+- Tabela `support_tickets` + RLS policies
+- Tabela `platform_categories` + `platform_subcategories` + RLS policies + seed data din categories.ts
+- Coloane noi in `profiles`: `is_banned`, `banned_at`, `banned_by`, `ban_reason`
+- Coloane noi in `products`: `admin_flagged`, `flag_reason`
+- RLS policies noi: adminii pot CRUD pe toate tabelele noi + update pe products/profiles
+- Functie RPC `get_admin_products` pentru listare cu filtre
 
