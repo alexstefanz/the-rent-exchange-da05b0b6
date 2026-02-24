@@ -5,13 +5,18 @@ import {
   Wallet, 
   Clock,
   ShieldCheck,
-  TrendingUp
+  TrendingUp,
+  FolderTree,
+  Pencil,
+  icons
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminLayout from "@/components/admin/AdminLayout";
 import StatsCard from "@/components/admin/StatsCard";
 import { useAdminStats, useAdminRentals } from "@/hooks/queries/useAdminStats";
+import { useQuery } from "@tanstack/react-query";
+import { fetchCategories } from "@/features/admin/categoriesApi";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +42,10 @@ const statusLabels: Record<string, string> = {
 const AdminDashboard = () => {
   const { data: stats, isLoading: statsLoading } = useAdminStats();
   const { data: recentRentals, isLoading: rentalsLoading } = useAdminRentals(undefined, 5);
+  const { data: categories, isLoading: catsLoading } = useQuery({
+    queryKey: ['platformCategories'],
+    queryFn: fetchCategories,
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ro-RO', {
@@ -165,68 +174,78 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Quick Actions */}
+          {/* Categories Widget */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Acțiuni Rapide
-              </CardTitle>
-              <CardDescription>
-                Acțiuni frecvente pentru administrare
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3">
-                <a 
-                  href="/admin/reservations" 
-                  className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-                >
-                  <CalendarCheck className="h-8 w-8 text-primary" />
-                  <div>
-                    <p className="font-medium">Gestionează Rezervări</p>
-                    <p className="text-sm text-muted-foreground">
-                      Vezi și modifică statusul rezervărilor
-                    </p>
-                  </div>
-                </a>
-                <a 
-                  href="/admin/kyc" 
-                  className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-                >
-                  <ShieldCheck className="h-8 w-8 text-primary" />
-                  <div>
-                    <p className="font-medium">Verificări KYC</p>
-                    <p className="text-sm text-muted-foreground">
-                      Aprobă sau respinge verificările de identitate
-                    </p>
-                  </div>
-                </a>
-                <a 
-                  href="/admin/finances" 
-                  className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-                >
-                  <Wallet className="h-8 w-8 text-primary" />
-                  <div>
-                    <p className="font-medium">Rapoarte Financiare</p>
-                    <p className="text-sm text-muted-foreground">
-                      Vezi veniturile și tranzacțiile platformei
-                    </p>
-                  </div>
-                </a>
-                <a 
-                  href="/admin/users" 
-                  className="flex items-center gap-3 p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-                >
-                  <Users className="h-8 w-8 text-primary" />
-                  <div>
-                    <p className="font-medium">Gestionează Utilizatori</p>
-                    <p className="text-sm text-muted-foreground">
-                      Caută și administrează conturile utilizatorilor
-                    </p>
-                  </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <FolderTree className="h-5 w-5" />
+                    Categorii Platformă
+                  </CardTitle>
+                  <CardDescription>
+                    {categories?.length || 0} categorii configurate
+                  </CardDescription>
+                </div>
+                <a href="/admin/categories">
+                  <Badge variant="outline" className="cursor-pointer hover:bg-muted">
+                    Vezi toate →
+                  </Badge>
                 </a>
               </div>
+            </CardHeader>
+            <CardContent>
+              {catsLoading ? (
+                <div className="space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
+                </div>
+              ) : categories && categories.length > 0 ? (
+                <div className="space-y-2">
+                  {categories.map((cat) => {
+                    const IconComp = cat.icon && icons[cat.icon as keyof typeof icons];
+                    return (
+                      <div
+                        key={cat.id}
+                        className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          {IconComp ? (
+                            <IconComp className="h-5 w-5 text-primary" />
+                          ) : (
+                            <FolderTree className="h-5 w-5 text-muted-foreground" />
+                          )}
+                          <div>
+                            <p className="font-medium text-sm">{cat.name}</p>
+                            {cat.name_en && (
+                              <p className="text-xs text-muted-foreground">{cat.name_en}</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={cat.is_active ? "default" : "secondary"} className="text-xs">
+                            {cat.is_active ? "Activă" : "Inactivă"}
+                          </Badge>
+                          <a href="/admin/categories">
+                            <button className="p-1.5 rounded-md hover:bg-muted transition-colors" title="Editează">
+                              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FolderTree className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Nu există categorii configurate</p>
+                  <a href="/admin/categories" className="text-primary text-sm hover:underline mt-2 inline-block">
+                    Adaugă categorii →
+                  </a>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
