@@ -25,13 +25,11 @@ const Index = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,hsl(var(--primary)/0.1),transparent_50%)]" />
         <div className="container relative pt-16 pb-8 md:py-24">
           <div className="mx-auto max-w-4xl text-center">
-            <h1 className="mt-[30px] animate-fade-up font-heading text-4xl font-bold tracking-tight text-foreground md:mt-0 md:text-5xl lg:text-6xl">
+            <h1 className="mt-[30px] animate-fade-up font-heading text-2xl font-bold tracking-tight text-foreground md:mt-0 md:text-5xl lg:text-6xl">
               {copy.home.heroTitle}{" "}
+              <br className="md:hidden" />
               <span className="text-primary">{copy.home.heroTitleHighlight}</span>
             </h1>
-            <p className="mt-6 animate-fade-up text-lg text-muted-foreground md:text-xl" style={{ animationDelay: "0.1s" }}>
-              {copy.home.heroSubtitle}
-            </p>
             <div className="mt-6 animate-fade-up md:mx-0 md:mt-10" style={{ animationDelay: "0.2s" }}>
               <HeroSearchForm />
             </div>
