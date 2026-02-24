@@ -23,7 +23,7 @@ const Index = () => {
 
       <section className="relative overflow-hidden bg-gradient-to-br from-background via-background to-primary/5">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,hsl(var(--primary)/0.1),transparent_50%)]" />
-        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[300px] w-[400px] rounded-full bg-primary/20 blur-[100px] animate-blob-drift" />
+        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[700px] rounded-full bg-primary/20 blur-[120px] animate-blob-drift" />
         <div className="container relative pt-16 pb-8 md:py-24">
           <div className="mx-auto max-w-4xl text-center">
             <h1 className="mt-[30px] animate-fade-up font-heading font-bold tracking-tight text-foreground md:mt-0 md:text-4xl lg:text-5xl text-4xl">
