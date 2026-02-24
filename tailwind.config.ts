@@ -79,10 +79,15 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "blob-drift": {
+          "0%, 100%": { transform: "translateX(-20%)" },
+          "50%": { transform: "translateX(20%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "blob-drift": "blob-drift 5s ease-in-out infinite",
       },
     },
   },
