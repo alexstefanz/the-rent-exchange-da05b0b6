@@ -118,10 +118,6 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden items-center gap-4 lg:flex">
-            <Link to="/cauta" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary">
-              <Search className="h-4 w-4" />
-              {t("Caută", "Search")}
-            </Link>
           </nav>
 
           <div className="flex items-center gap-2">
