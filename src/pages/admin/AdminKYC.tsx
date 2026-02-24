@@ -133,12 +133,12 @@ const AdminKYC = () => {
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-4">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Toate statusurile" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Toate</SelectItem>
+                  <SelectItem value="all">Toate</SelectItem>
                   <SelectItem value="pending">În așteptare</SelectItem>
                   <SelectItem value="approved">Aprobate</SelectItem>
                   <SelectItem value="rejected">Respinse</SelectItem>
