@@ -6,7 +6,10 @@ import {
   BarChart3, 
   Users, 
   ShieldCheck,
-  Home
+  Home,
+  Package,
+  TicketCheck,
+  FolderTree
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -25,6 +28,9 @@ import {
 const menuItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Rezervări", url: "/admin/reservations", icon: CalendarCheck },
+  { title: "Produse", url: "/admin/products", icon: Package },
+  { title: "Tickete", url: "/admin/tickets", icon: TicketCheck },
+  { title: "Categorii", url: "/admin/categories", icon: FolderTree },
   { title: "Financiar", url: "/admin/finances", icon: Wallet },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Utilizatori", url: "/admin/users", icon: Users },

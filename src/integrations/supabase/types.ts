@@ -254,6 +254,86 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_categories: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          name_en: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          name_en?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_en?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      platform_subcategories: {
+        Row: {
+          category_id: string
+          created_at: string
+          description: string | null
+          description_en: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          name_en: string | null
+          sort_order: number
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          description?: string | null
+          description_en?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          name_en?: string | null
+          sort_order?: number
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          description?: string | null
+          description_en?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          name_en?: string | null
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "platform_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_reviews: {
         Row: {
           comment: string | null
@@ -298,10 +378,12 @@ export type Database = {
       }
       products: {
         Row: {
+          admin_flagged: boolean
           category: string | null
           created_at: string | null
           daily_price_owner: number
           description: string | null
+          flag_reason: string | null
           id: string
           images: string[] | null
           is_active: boolean
@@ -314,10 +396,12 @@ export type Database = {
           title: string
         }
         Insert: {
+          admin_flagged?: boolean
           category?: string | null
           created_at?: string | null
           daily_price_owner: number
           description?: string | null
+          flag_reason?: string | null
           id?: string
           images?: string[] | null
           is_active?: boolean
@@ -330,10 +414,12 @@ export type Database = {
           title: string
         }
         Update: {
+          admin_flagged?: boolean
           category?: string | null
           created_at?: string | null
           daily_price_owner?: number
           description?: string | null
+          flag_reason?: string | null
           id?: string
           images?: string[] | null
           is_active?: boolean
@@ -358,28 +444,40 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          ban_reason: string | null
+          banned_at: string | null
+          banned_by: string | null
           created_at: string | null
           email: string | null
           full_name: string | null
           id: string
+          is_banned: boolean
           phone: string | null
           whatsapp: string | null
         }
         Insert: {
           avatar_url?: string | null
+          ban_reason?: string | null
+          banned_at?: string | null
+          banned_by?: string | null
           created_at?: string | null
           email?: string | null
           full_name?: string | null
           id: string
+          is_banned?: boolean
           phone?: string | null
           whatsapp?: string | null
         }
         Update: {
           avatar_url?: string | null
+          ban_reason?: string | null
+          banned_at?: string | null
+          banned_by?: string | null
           created_at?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
+          is_banned?: boolean
           phone?: string | null
           whatsapp?: string | null
         }
@@ -467,6 +565,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      support_tickets: {
+        Row: {
+          admin_notes: string | null
+          assigned_to: string | null
+          category: string
+          created_at: string
+          description: string
+          id: string
+          priority: string
+          related_product_id: string | null
+          related_rental_id: string | null
+          resolution: string | null
+          resolved_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          assigned_to?: string | null
+          category?: string
+          created_at?: string
+          description: string
+          id?: string
+          priority?: string
+          related_product_id?: string | null
+          related_rental_id?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          assigned_to?: string | null
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          priority?: string
+          related_product_id?: string | null
+          related_rental_id?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       transactions: {
         Row: {
@@ -592,6 +744,32 @@ export type Database = {
           pending_payments: number
           platform_fees: number
           total_revenue: number
+        }[]
+      }
+      get_admin_products: {
+        Args: {
+          category_filter?: string
+          limit_count?: number
+          offset_count?: number
+          search_query?: string
+          status_filter?: string
+        }
+        Returns: {
+          admin_flagged: boolean
+          category: string
+          created_at: string
+          daily_price_owner: number
+          description: string
+          flag_reason: string
+          id: string
+          images: string[]
+          is_active: boolean
+          location_city: string
+          owner_id: string
+          owner_name: string
+          slug: string
+          subcategory: string
+          title: string
         }[]
       }
       get_admin_rentals: {
