@@ -23,6 +23,8 @@ import Messages from "./pages/Messages";
 import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
 import MiniCrmTest from "./pages/MiniCrmTest";
+import HowItWorks from "./pages/HowItWorks";
+import AboutUs from "./pages/AboutUs";
 import ScrollToTop from "./components/ScrollToTop";
 
 // Admin pages
@@ -66,6 +68,8 @@ const App = () => (
               <Route path="/favorite" element={<Navigate to="/profile#favorite" replace />} />
               <Route path="/rezervari" element={<Navigate to="/profile#inchirieri" replace />} />
               <Route path="/centru-asistenta" element={<HelpCenter />} />
+              <Route path="/cum-functioneaza" element={<HowItWorks />} />
+              <Route path="/despre-noi" element={<AboutUs />} />
               
               {/* Admin routes */}
               <Route path="/admin" element={<AdminDashboard />} />

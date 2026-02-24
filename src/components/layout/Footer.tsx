@@ -47,7 +47,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="#" className="transition-colors hover:text-foreground">
+                <Link to="/cum-functioneaza" className="transition-colors hover:text-foreground">
                   {copy.footer.howItWorks}
                 </Link>
               </li>
@@ -68,7 +68,7 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="#" className="transition-colors hover:text-foreground">
+                <Link to="/despre-noi" className="transition-colors hover:text-foreground">
                   {copy.footer.contactUs}
                 </Link>
               </li>

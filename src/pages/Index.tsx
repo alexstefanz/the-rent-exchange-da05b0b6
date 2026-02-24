@@ -1,10 +1,9 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Shield, Clock, Sparkles, Search, Wallet, ShieldCheck, Handshake } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import HeroSearchForm from "@/components/HeroSearchForm";
-import TrustBadges from "@/components/trust/TrustBadges";
 import FeaturedListings from "@/components/home/FeaturedListings";
 import { categories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
@@ -70,102 +69,6 @@ const Index = () => {
 
       <FeaturedListings />
 
-      <section className="border-y border-border bg-secondary/30 py-16 md:py-20">
-        <div className="container">
-          <div className="mb-12 text-center">
-            <h2 className="font-heading text-3xl font-semibold text-foreground">{copy.home.howItWorks}</h2>
-            <p className="mt-2 text-muted-foreground">{copy.home.howItWorksSubtitle}</p>
-          </div>
-          <div className="grid gap-8 md:grid-cols-3">
-            {[
-            { icon: Sparkles, title: copy.home.step1Title, description: copy.home.step1Desc },
-            { icon: Clock, title: copy.home.step2Title, description: copy.home.step2Desc },
-            { icon: Shield, title: copy.home.step3Title, description: copy.home.step3Desc }].
-            map((step) =>
-            <div key={step.title} className="group rounded-2xl bg-card p-8 shadow-card transition-all hover:shadow-card-hover">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover:bg-primary/20">
-                  <step.icon className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mb-2 font-heading text-xl font-semibold">{step.title}</h3>
-                <p className="text-muted-foreground">{step.description}</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 md:py-20">
-        <div className="container">
-          <div className="mx-auto max-w-4xl">
-            <div className="mb-8 text-center">
-              <h2 className="font-heading text-3xl font-semibold text-foreground">
-                {language === "en" ? "About Us" : "Despre noi"}
-              </h2>
-            </div>
-            <div className="space-y-6 text-center">
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                {language === "en" ?
-                "Rentli is Romania's national peer-to-peer rental marketplace." :
-                "Rentli este marketplace-ul național de închirieri între persoane din România."}
-              </p>
-              <p className="text-muted-foreground leading-relaxed">
-                {language === "en" ?
-                "We connect people who have things with people who need them, in a safe and transparent environment." :
-                "Conectăm oameni care au lucruri cu oameni care au nevoie de ele, într-un cadru sigur și transparent."}
-              </p>
-              <div className="grid gap-4 pt-4 md:grid-cols-3">
-                {[
-                {
-                  icon: Search,
-                  text: language === "en" ? "Quickly rent what you need" : "Închiriază rapid ceea ce ai nevoie"
-                },
-                {
-                  icon: Wallet,
-                  text: language === "en" ? "Earn money from things you don't use" : "Câștigă bani din lucrurile pe care nu le folosești"
-                },
-                {
-                  icon: ShieldCheck,
-                  text: language === "en" ? "Protected payments & verified users" : "Plăți protejate și utilizatori verificați"
-                }].
-                map((item) =>
-                <div key={item.text} className="flex flex-col items-center gap-3 rounded-2xl bg-secondary/40 p-6">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                      <item.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <p className="text-sm font-medium text-foreground">{item.text}</p>
-                  </div>
-                )}
-              </div>
-              <p className="flex items-center justify-center gap-2 pt-2 text-muted-foreground">
-                <Handshake className="h-5 w-5 text-primary" />
-                {language === "en" ?
-                "We're building an economy based on access, trust, and efficiency." :
-                "Construim o economie bazată pe acces, încredere și eficiență."}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20">
-        <div className="container">
-          <div className="rounded-3xl bg-primary p-[15px] text-center md:p-16">
-            <h2 className="font-heading text-[25px] font-semibold leading-tight text-primary-foreground md:text-4xl">
-              {language === "en" ?
-              "The first national peer-to-peer rental marketplace. Safe. Verified. Insured." :
-              "Primul marketplace național de închirieri între persoane. Sigur. Verificat. Asigurat."}
-            </h2>
-            <div className="mt-8">
-              <TrustBadges />
-            </div>
-            <div className="mt-8 flex justify-center">
-              <Button variant="secondary" size="xl" asChild>
-                <Link to="/adauga-anunt">{copy.home.ctaButton}<ArrowRight className="ml-2 h-5 w-5" /></Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
 
       <Footer />
     </div>);
