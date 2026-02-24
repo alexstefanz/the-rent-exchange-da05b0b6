@@ -22,6 +22,7 @@ import EditProduct from "./pages/EditProduct";
 import Messages from "./pages/Messages";
 import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
+import MiniCrmTest from "./pages/MiniCrmTest";
 import ScrollToTop from "./components/ScrollToTop";
 
 // Admin pages
@@ -70,6 +71,9 @@ const App = () => (
               <Route path="/admin/analytics" element={<AdminAnalytics />} />
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/kyc" element={<AdminKYC />} />
+              
+              {/* MiniCRM test */}
+              <Route path="/minicrm-test" element={<MiniCrmTest />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
