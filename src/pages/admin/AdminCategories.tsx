@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FolderTree, Plus, Loader2, Pencil, Trash2, ToggleLeft, ToggleRight } from "lucide-react";
+import { FolderTree, Plus, Loader2, Pencil, Trash2, ToggleLeft, ToggleRight, icons } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import AdminLayout from "@/components/admin/AdminLayout";
+import LucideIconPicker from "@/components/admin/LucideIconPicker";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   fetchCategories, fetchSubcategories, createCategory, updateCategory, deleteCategory,
@@ -160,9 +161,12 @@ const AdminCategories = () => {
                   return (
                     <AccordionItem key={cat.id} value={cat.id}>
                       <AccordionTrigger className="hover:no-underline">
-                        <div className="flex items-center gap-3 flex-1">
-                          <span className="text-xl">{cat.icon}</span>
-                          <span className="font-medium">{cat.name}</span>
+                         <div className="flex items-center gap-3 flex-1">
+                           {(() => {
+                             const IconComp = cat.icon && icons[cat.icon as keyof typeof icons];
+                             return IconComp ? <IconComp className="h-5 w-5 text-primary" /> : <span className="text-xl">{cat.icon}</span>;
+                           })()}
+                           <span className="font-medium">{cat.name}</span>
                           {cat.name_en && <span className="text-sm text-muted-foreground">({cat.name_en})</span>}
                           <Badge variant={cat.is_active ? "default" : "secondary"} className="ml-2">
                             {cat.is_active ? "Activă" : "Inactivă"}
@@ -252,7 +256,7 @@ const AdminCategories = () => {
           <div className="space-y-4">
             <div><Label>Nume (RO)</Label><Input value={catForm.name} onChange={(e) => setCatForm({ ...catForm, name: e.target.value })} /></div>
             <div><Label>Nume (EN)</Label><Input value={catForm.name_en} onChange={(e) => setCatForm({ ...catForm, name_en: e.target.value })} /></div>
-            <div><Label>Icon (emoji)</Label><Input value={catForm.icon} onChange={(e) => setCatForm({ ...catForm, icon: e.target.value })} placeholder="🎮" /></div>
+            <div><Label>Icon (Lucide)</Label><LucideIconPicker value={catForm.icon} onChange={(v) => setCatForm({ ...catForm, icon: v })} /></div>
             <div><Label>Ordine sortare</Label><Input type="number" value={catForm.sort_order} onChange={(e) => setCatForm({ ...catForm, sort_order: Number(e.target.value) })} /></div>
           </div>
           <DialogFooter>
