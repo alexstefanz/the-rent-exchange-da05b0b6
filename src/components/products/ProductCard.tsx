@@ -68,8 +68,8 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
               alt={product.title}
               className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
             />
-            <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#46B95B]">
-              <CheckCircle className="h-3.5 w-3.5 text-white" />
+            <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white">
+              <CheckCircle className="h-3.5 w-3.5 text-[#46B95B]" />
             </div>
           </div>
           <div className="flex-1 p-4">
@@ -110,17 +110,17 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
           alt={product.title}
           className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
         />
-        <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#46B95B]">
-          <CheckCircle className="h-3.5 w-3.5 text-white" />
+        <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white">
+          <CheckCircle className="h-3.5 w-3.5 text-[#46B95B]" />
         </div>
         <button
           onClick={handleFavoriteClick}
-          className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-[#46B95B] transition-colors hover:bg-[#3da550]"
+          className={cn("absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full transition-colors", isFavorite ? "bg-[#46B95B] hover:bg-[#3da550]" : "bg-white hover:bg-gray-100")}
         >
           <Heart
             className={cn(
-              "h-3.5 w-3.5 drop-shadow-sm transition-colors text-white",
-              isFavorite && "fill-white"
+              "h-3.5 w-3.5 drop-shadow-sm transition-colors",
+              isFavorite ? "text-white fill-white" : "text-[#46B95B]"
             )}
           />
         </button>
