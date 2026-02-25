@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Package, Search, MoreHorizontal, Loader2, Flag, Eye, EyeOff, Trash2, AlertTriangle } from "lucide-react";
 import SortableTableHead, { SortDirection, sortData, useToggleSort } from "@/components/admin/SortableTableHead";
+import TableColumnFilterRow, { applyColumnFilters, ColumnFilterConfig } from "@/components/admin/TableColumnFilter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,8 +29,27 @@ const AdminProducts = () => {
   const [flagReason, setFlagReason] = useState("");
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const queryClient = useQueryClient();
   const handleSort = useToggleSort(setSortKey, setSortDirection, sortKey, sortDirection);
+
+  const handleColumnFilter = (key: string, value: string) => {
+    setColumnFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const productColumnFilters: ColumnFilterConfig[] = [
+    { key: "title", type: "text", placeholder: "Titlu..." },
+    { key: "owner_name", type: "text", placeholder: "Proprietar..." },
+    { key: "daily_price_owner", type: "text", placeholder: "Preț..." },
+    { key: "category", type: "text", placeholder: "Categorie..." },
+    { key: "location_city", type: "text", placeholder: "Oraș..." },
+    { key: "is_active", type: "select", placeholder: "Status", options: [
+      { value: "true", label: "Activ" },
+      { value: "false", label: "Inactiv" },
+    ]},
+    { key: "created_at", type: "text", placeholder: "Data..." },
+    { key: "_actions", type: "text" },
+  ];
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['adminProducts', debouncedSearch, statusFilter],
@@ -145,7 +165,8 @@ const AdminProducts = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortData(products, sortKey, sortDirection).map((product) => (
+                    <TableColumnFilterRow filters={productColumnFilters} values={columnFilters} onChange={handleColumnFilter} />
+                    {sortData(applyColumnFilters(products, columnFilters), sortKey, sortDirection).map((product) => (
                       <TableRow key={product.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">
