@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CalendarCheck, Filter, MoreHorizontal, Loader2 } from "lucide-react";
 import SortableTableHead, { SortDirection, sortData, useToggleSort } from "@/components/admin/SortableTableHead";
+import TableColumnFilterRow, { applyColumnFilters, ColumnFilterConfig } from "@/components/admin/TableColumnFilter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -65,8 +66,36 @@ const AdminReservations = () => {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
   const queryClient = useQueryClient();
   const handleSort = useToggleSort(setSortKey, setSortDirection, sortKey, sortDirection);
+
+  const handleColumnFilter = (key: string, value: string) => {
+    setColumnFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const rentalColumnFilters: ColumnFilterConfig[] = [
+    { key: "product_title", type: "text", placeholder: "Produs..." },
+    { key: "renter_name", type: "text", placeholder: "Chiriaș..." },
+    { key: "owner_name", type: "text", placeholder: "Proprietar..." },
+    { key: "start_date", type: "text", placeholder: "Dată..." },
+    { key: "subtotal", type: "text", placeholder: "Sumă..." },
+    { key: "status", type: "select", placeholder: "Status", options: [
+      { value: "pending", label: "În așteptare" },
+      { value: "confirmed", label: "Confirmată" },
+      { value: "active", label: "Activă" },
+      { value: "completed", label: "Finalizată" },
+      { value: "cancelled", label: "Anulată" },
+      { value: "overdue", label: "Întârziată" },
+    ]},
+    { key: "payment_status", type: "select", placeholder: "Plată", options: [
+      { value: "pending", label: "Neplătit" },
+      { value: "paid", label: "Plătit" },
+      { value: "refunded", label: "Rambursat" },
+      { value: "failed", label: "Eșuat" },
+    ]},
+    { key: "_actions", type: "text" },
+  ];
   
   const { data: rentals, isLoading } = useAdminRentals(
     statusFilter || undefined
@@ -168,7 +197,8 @@ const AdminReservations = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortData(rentals, sortKey, sortDirection).map((rental) => (
+                    <TableColumnFilterRow filters={rentalColumnFilters} values={columnFilters} onChange={handleColumnFilter} />
+                    {sortData(applyColumnFilters(rentals, columnFilters), sortKey, sortDirection).map((rental) => (
                       <TableRow key={rental.id}>
                         <TableCell className="font-medium max-w-[200px]">
                           <span className="line-clamp-1">{rental.product_title}</span>
