@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchAdminProducts, toggleProductActive, flagProduct, unflagProduct, deleteProduct, AdminProduct } from "@/features/admin/adminProductsApi";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { toast } from "sonner";
@@ -30,6 +31,7 @@ const AdminProducts = () => {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [dateRangeFilters, setDateRangeFilters] = useState<Record<string, { from?: Date; to?: Date }>>({});
   const queryClient = useQueryClient();
   const handleSort = useToggleSort(setSortKey, setSortDirection, sortKey, sortDirection);
 
@@ -37,19 +39,18 @@ const AdminProducts = () => {
     setColumnFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  const productColumnFilters: ColumnFilterConfig[] = [
-    { key: "title", type: "text", placeholder: "Titlu..." },
-    { key: "owner_name", type: "text", placeholder: "Proprietar..." },
-    { key: "daily_price_owner", type: "text", placeholder: "Preț..." },
-    { key: "category", type: "text", placeholder: "Categorie..." },
-    { key: "location_city", type: "text", placeholder: "Oraș..." },
-    { key: "is_active", type: "select", placeholder: "Status", options: [
-      { value: "true", label: "Activ" },
-      { value: "false", label: "Inactiv" },
-    ]},
-    { key: "created_at", type: "text", placeholder: "Data..." },
-    { key: "_actions", type: "text" },
-  ];
+  const handleDateRangeChange = (key: string, range: { from?: Date; to?: Date }) => {
+    setDateRangeFilters(prev => ({ ...prev, [key]: range }));
+  };
+
+  const { data: categories } = useQuery({
+    queryKey: ['platformCategories'],
+    queryFn: async () => {
+      const { data } = await supabase.from('platform_categories').select('name').eq('is_active', true).order('sort_order');
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['adminProducts', debouncedSearch, statusFilter],
@@ -59,6 +60,32 @@ const AdminProducts = () => {
     ),
     staleTime: 30000,
   });
+
+  // Dynamic options from data
+  const cityOptions = useMemo(() => {
+    if (!products) return [];
+    const cities = [...new Set(products.map(p => p.location_city).filter(Boolean))];
+    return cities.sort((a, b) => a.localeCompare(b, 'ro')).map(c => ({ value: c, label: c }));
+  }, [products]);
+
+  const categoryOptions = useMemo(() => {
+    if (!categories) return [];
+    return categories.map(c => ({ value: c.name, label: c.name }));
+  }, [categories]);
+
+  const productColumnFilters: ColumnFilterConfig[] = [
+    { key: "title", type: "text", placeholder: "Titlu..." },
+    { key: "owner_name", type: "text", placeholder: "Proprietar..." },
+    { key: "daily_price_owner", type: "amountrange", placeholder: "Preț" },
+    { key: "category", type: "combobox", placeholder: "Categorie", options: categoryOptions },
+    { key: "location_city", type: "combobox", placeholder: "Oraș", options: cityOptions },
+    { key: "is_active", type: "select", placeholder: "Status", options: [
+      { value: "true", label: "Activ" },
+      { value: "false", label: "Inactiv" },
+    ]},
+    { key: "created_at", type: "daterange", placeholder: "Perioadă" },
+    { key: "_actions", type: "text" },
+  ];
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -111,6 +138,14 @@ const AdminProducts = () => {
 
   const formatCurrency = (v: number) => new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON', minimumFractionDigits: 0 }).format(v);
 
+  const filteredData = useMemo(() => {
+    return sortData(
+      applyColumnFilters(products, columnFilters, dateRangeFilters),
+      sortKey,
+      sortDirection
+    );
+  }, [products, columnFilters, dateRangeFilters, sortKey, sortDirection]);
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -144,7 +179,7 @@ const AdminProducts = () => {
         <Card>
           <CardHeader>
             <CardTitle>Lista Produselor</CardTitle>
-            <CardDescription>{products?.length || 0} produse găsite</CardDescription>
+            <CardDescription>{filteredData.length} produse găsite</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -165,8 +200,14 @@ const AdminProducts = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    <TableColumnFilterRow filters={productColumnFilters} values={columnFilters} onChange={handleColumnFilter} />
-                    {sortData(applyColumnFilters(products, columnFilters), sortKey, sortDirection).map((product) => (
+                    <TableColumnFilterRow
+                      filters={productColumnFilters}
+                      values={columnFilters}
+                      onChange={handleColumnFilter}
+                      dateRangeValues={dateRangeFilters}
+                      onDateRangeChange={handleDateRangeChange}
+                    />
+                    {filteredData.map((product) => (
                       <TableRow key={product.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">

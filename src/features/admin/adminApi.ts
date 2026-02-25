@@ -27,6 +27,8 @@ export interface AdminRental {
   status: string;
   payment_status: string;
   created_at: string;
+  category: string;
+  location_city: string;
 }
 
 export interface AdminUser {

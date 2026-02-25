@@ -782,10 +782,12 @@ export type Database = {
           status_filter?: string
         }
         Returns: {
+          category: string
           created_at: string
           daily_price: number
           end_date: string
           id: string
+          location_city: string
           owner_id: string
           owner_name: string
           owner_payout: number
