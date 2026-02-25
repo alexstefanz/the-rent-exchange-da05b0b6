@@ -26,6 +26,7 @@ import MiniCrmTest from "./pages/MiniCrmTest";
 import HowItWorks from "./pages/HowItWorks";
 import AboutUs from "./pages/AboutUs";
 import UserTickets from "./pages/UserTickets";
+import KycVerification from "./pages/KycVerification";
 import ScrollToTop from "./components/ScrollToTop";
 
 // Admin pages
@@ -73,6 +74,7 @@ const App = () => (
               <Route path="/rezervari" element={<Navigate to="/profile#inchirieri" replace />} />
               <Route path="/centru-asistenta" element={<HelpCenter />} />
               <Route path="/suport" element={<UserTickets />} />
+              <Route path="/verificare" element={<KycVerification />} />
               <Route path="/cum-functioneaza" element={<HowItWorks />} />
               <Route path="/despre-noi" element={<AboutUs />} />
               

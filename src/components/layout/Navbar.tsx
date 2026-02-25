@@ -226,7 +226,7 @@ const Navbar = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/profile#contul-meu" className="flex items-center gap-3 py-2">
+                      <Link to="/verificare" className="flex items-center gap-3 py-2">
                         <Shield className="h-4 w-4" />
                         {t("Verificare KYC", "KYC Verification")}
                       </Link>
@@ -418,7 +418,7 @@ const Navbar = () => {
                   </>
                 )}
                 <Link 
-                  to="/profile#contul-meu" 
+                  to="/verificare"
                   className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
                   onClick={closeMobileMenu}
                 >
