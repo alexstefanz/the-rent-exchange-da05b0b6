@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -66,6 +67,7 @@ const AccountTab = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -377,12 +379,7 @@ const AccountTab = () => {
               )}
 
               {(profile?.kyc_status === 'NOT_VERIFIED' || profile?.kyc_status === 'REJECTED') && (
-                <Button className="w-full" onClick={() => {
-                  toast({
-                    title: t("În curând", "Coming soon"),
-                    description: t("Funcționalitatea de încărcare documente va fi disponibilă în curând.", "Document upload functionality will be available soon."),
-                  });
-                }}>
+                <Button className="w-full" onClick={() => navigate("/verificare")}>
                   <Shield className="mr-2 h-4 w-4" />
                   {profile?.kyc_status === 'REJECTED' 
                     ? t("Reîncepe verificarea", "Restart verification") 
