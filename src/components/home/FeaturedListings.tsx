@@ -128,6 +128,7 @@ const ProductRow = ({
         </div>
       </div>
 
+      <div className="overflow-hidden">
       <div
         ref={scrollRef}
         className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory md:snap-none pb-2 -mb-2"
@@ -180,6 +181,7 @@ const ProductRow = ({
         })}
 
         <SeeAllCard images={allImages} copy={copy} />
+      </div>
       </div>
     </div>
   );
