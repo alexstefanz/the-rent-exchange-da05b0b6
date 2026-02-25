@@ -22,7 +22,7 @@ const Index = () => {
       <Navbar />
 
       <section className="relative overflow-hidden bg-gradient-to-br from-background via-background to-primary/5">
-        <div className="absolute inset-0 bg-center bg-no-repeat opacity-40" style={{ backgroundImage: `url(${bannerBg})`, backgroundSize: 'cover' }} />
+        <div className="absolute inset-0 bg-repeat opacity-40" style={{ backgroundImage: `url(${bannerBg})`, backgroundSize: '800px' }} />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,hsl(var(--primary)/0.1),transparent_50%)]" />
         <div className="container relative pt-16 pb-8 md:py-24">
           <div className="mx-auto max-w-4xl text-center">
