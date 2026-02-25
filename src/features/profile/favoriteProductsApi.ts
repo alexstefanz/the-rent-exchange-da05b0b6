@@ -7,7 +7,7 @@ export const addFavoriteProduct = async (productId: string): Promise<void> => {
   if (!user) throw new Error("Not authenticated");
 
   const { error } = await supabase
-    .from("favorite_products" as any)
+    .from("favorite_products")
     .insert({
       user_id: user.id,
       product_id: productId,
@@ -24,7 +24,7 @@ export const removeFavoriteProduct = async (productId: string): Promise<void> =>
   if (!user) throw new Error("Not authenticated");
 
   const { error } = await supabase
-    .from("favorite_products" as any)
+    .from("favorite_products")
     .delete()
     .eq("user_id", user.id)
     .eq("product_id", productId);
@@ -39,7 +39,7 @@ export const isProductFavorite = async (productId: string): Promise<boolean> => 
   if (!user) return false;
 
   const { data, error } = await supabase
-    .from("favorite_products" as any)
+    .from("favorite_products")
     .select("id")
     .eq("user_id", user.id)
     .eq("product_id", productId)
@@ -58,7 +58,7 @@ export const getFavoriteProducts = async (): Promise<Product[]> => {
   if (!user) return [];
 
   const { data: favorites, error: favError } = await supabase
-    .from("favorite_products" as any)
+    .from("favorite_products")
     .select("product_id")
     .eq("user_id", user.id);
 
