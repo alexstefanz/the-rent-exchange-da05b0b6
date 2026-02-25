@@ -36,10 +36,10 @@ export function AcceptedRentalDialog({ rental, open, onOpenChange, onCancelled }
     queryFn: async () => {
       if (!rental?.renter_id) return false;
       const { data } = await supabase
-        .from("kyc_verifications")
+        .from("kyc_cases" as any)
         .select("status")
         .eq("user_id", rental.renter_id)
-        .eq("status", "approved")
+        .eq("status", "APPROVED")
         .maybeSingle();
       return !!data;
     },

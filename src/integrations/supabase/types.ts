@@ -128,50 +128,147 @@ export type Database = {
           },
         ]
       }
-      kyc_verifications: {
+      kyc_audit_log: {
         Row: {
-          created_at: string | null
-          document_type: string | null
-          document_url: string | null
+          action: string
+          actor_id: string | null
+          actor_type: string
+          created_at: string
           id: string
-          rejection_reason: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          selfie_url: string | null
-          status: string
-          submitted_at: string | null
-          updated_at: string | null
-          user_id: string
+          kyc_case_id: string
+          new_value: string | null
+          old_value: string | null
         }
         Insert: {
-          created_at?: string | null
-          document_type?: string | null
-          document_url?: string | null
+          action: string
+          actor_id?: string | null
+          actor_type?: string
+          created_at?: string
           id?: string
-          rejection_reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          selfie_url?: string | null
-          status?: string
-          submitted_at?: string | null
-          updated_at?: string | null
-          user_id: string
+          kyc_case_id: string
+          new_value?: string | null
+          old_value?: string | null
         }
         Update: {
-          created_at?: string | null
-          document_type?: string | null
-          document_url?: string | null
+          action?: string
+          actor_id?: string | null
+          actor_type?: string
+          created_at?: string
           id?: string
+          kyc_case_id?: string
+          new_value?: string | null
+          old_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kyc_audit_log_kyc_case_id_fkey"
+            columns: ["kyc_case_id"]
+            isOneToOne: false
+            referencedRelation: "kyc_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kyc_cases: {
+        Row: {
+          attempts_count: number
+          created_at: string
+          decided_at: string | null
+          decided_by_admin_id: string | null
+          id: string
+          level_required: string
+          provider_case_id: string | null
+          provider_name: string | null
+          public_id: string
+          rejection_reason: string | null
+          risk_score: number
+          status: string
+          submitted_at: string | null
+          updated_at: string
+          user_id: string
+          user_role: string
+        }
+        Insert: {
+          attempts_count?: number
+          created_at?: string
+          decided_at?: string | null
+          decided_by_admin_id?: string | null
+          id?: string
+          level_required?: string
+          provider_case_id?: string | null
+          provider_name?: string | null
+          public_id?: string
           rejection_reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          selfie_url?: string | null
+          risk_score?: number
           status?: string
           submitted_at?: string | null
-          updated_at?: string | null
+          updated_at?: string
+          user_id: string
+          user_role?: string
+        }
+        Update: {
+          attempts_count?: number
+          created_at?: string
+          decided_at?: string | null
+          decided_by_admin_id?: string | null
+          id?: string
+          level_required?: string
+          provider_case_id?: string | null
+          provider_name?: string | null
+          public_id?: string
+          rejection_reason?: string | null
+          risk_score?: number
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
           user_id?: string
+          user_role?: string
         }
         Relationships: []
+      }
+      kyc_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          kyc_case_id: string
+          mime_type: string | null
+          uploaded_by_user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          kyc_case_id: string
+          mime_type?: string | null
+          uploaded_by_user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          kyc_case_id?: string
+          mime_type?: string | null
+          uploaded_by_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kyc_documents_kyc_case_id_fkey"
+            columns: ["kyc_case_id"]
+            isOneToOne: false
+            referencedRelation: "kyc_cases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       messages: {
         Row: {
@@ -666,6 +763,9 @@ export type Database = {
           full_name: string | null
           id: string
           is_banned: boolean
+          kyc_last_verified_at: string | null
+          kyc_level: string
+          kyc_status: string
           phone: string | null
           whatsapp: string | null
         }
@@ -679,6 +779,9 @@ export type Database = {
           full_name?: string | null
           id: string
           is_banned?: boolean
+          kyc_last_verified_at?: string | null
+          kyc_level?: string
+          kyc_status?: string
           phone?: string | null
           whatsapp?: string | null
         }
@@ -692,6 +795,9 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_banned?: boolean
+          kyc_last_verified_at?: string | null
+          kyc_level?: string
+          kyc_status?: string
           phone?: string | null
           whatsapp?: string | null
         }
@@ -958,6 +1064,34 @@ export type Database = {
           pending_payments: number
           platform_fees: number
           total_revenue: number
+        }[]
+      }
+      get_admin_kyc_cases: {
+        Args: {
+          level_filter?: string
+          limit_count?: number
+          offset_count?: number
+          role_filter?: string
+          search_query?: string
+          status_filter?: string
+        }
+        Returns: {
+          attempts_count: number
+          created_at: string
+          decided_at: string
+          id: string
+          level_required: string
+          provider_name: string
+          public_id: string
+          rejection_reason: string
+          risk_score: number
+          status: string
+          submitted_at: string
+          updated_at: string
+          user_email: string
+          user_id: string
+          user_name: string
+          user_role: string
         }[]
       }
       get_admin_products: {

@@ -175,6 +175,8 @@ export const updateRentalStatus = async (
   }
 };
 
+// KYC functions have been moved to src/features/admin/kycApi.ts
+// Legacy updateKycStatus kept for backward compatibility
 export const updateKycStatus = async (
   kycId: string,
   status: 'approved' | 'rejected',
@@ -182,46 +184,17 @@ export const updateKycStatus = async (
   rejectionReason?: string
 ): Promise<void> => {
   const { error } = await supabase
-    .from('kyc_verifications')
+    .from('kyc_cases' as any)
     .update({
-      status,
-      reviewed_at: new Date().toISOString(),
-      reviewed_by: reviewerId,
-      rejection_reason: rejectionReason
+      status: status === 'approved' ? 'APPROVED' : 'REJECTED',
+      decided_at: new Date().toISOString(),
+      decided_by_admin_id: reviewerId,
+      rejection_reason: rejectionReason || null,
     })
     .eq('id', kycId);
   
   if (error) {
     throw new Error(error.message);
-  }
-};
-
-export const updateUserRole = async (
-  userId: string,
-  role: 'admin' | 'moderator' | 'user'
-): Promise<void> => {
-  // First check if user already has a role
-  const { data: existing } = await supabase
-    .from('user_roles')
-    .select('id')
-    .eq('user_id', userId)
-    .maybeSingle();
-  
-  if (existing) {
-    // Update existing role
-    const { error } = await supabase
-      .from('user_roles')
-      .update({ role })
-      .eq('user_id', userId);
-    
-    if (error) throw new Error(error.message);
-  } else {
-    // Insert new role
-    const { error } = await supabase
-      .from('user_roles')
-      .insert({ user_id: userId, role });
-    
-    if (error) throw new Error(error.message);
   }
 };
 
@@ -238,7 +211,7 @@ export const fetchKycVerifications = async (
   created_at: string;
 }>> => {
   let query = supabase
-    .from('kyc_verifications')
+    .from('kyc_cases' as any)
     .select('*')
     .order('created_at', { ascending: false });
   
@@ -252,5 +225,39 @@ export const fetchKycVerifications = async (
     throw new Error(error.message);
   }
   
-  return data || [];
+  // Map kyc_cases to legacy format
+  return ((data || []) as any[]).map((c: any) => ({
+    id: c.id,
+    user_id: c.user_id,
+    status: c.status?.toLowerCase() || 'not_started',
+    document_type: null,
+    document_url: null,
+    selfie_url: null,
+    submitted_at: c.submitted_at,
+    created_at: c.created_at,
+  }));
+};
+
+export const updateUserRole = async (
+  userId: string,
+  role: 'admin' | 'moderator' | 'user'
+): Promise<void> => {
+  const { data: existing } = await supabase
+    .from('user_roles')
+    .select('id')
+    .eq('user_id', userId)
+    .maybeSingle();
+  
+  if (existing) {
+    const { error } = await supabase
+      .from('user_roles')
+      .update({ role })
+      .eq('user_id', userId);
+    if (error) throw new Error(error.message);
+  } else {
+    const { error } = await supabase
+      .from('user_roles')
+      .insert({ user_id: userId, role });
+    if (error) throw new Error(error.message);
+  }
 };

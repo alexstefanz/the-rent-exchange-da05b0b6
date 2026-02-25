@@ -40,6 +40,7 @@ import AdminTickets from "./pages/admin/AdminTickets";
 import AdminTicketDetail from "./pages/admin/AdminTicketDetail";
 import AdminTicketCreate from "./pages/admin/AdminTicketCreate";
 import AdminCategories from "./pages/admin/AdminCategories";
+import AdminKYCDetail from "./pages/admin/AdminKYCDetail";
 
 const queryClient = new QueryClient();
 
@@ -87,6 +88,7 @@ const App = () => (
               <Route path="/admin/analytics" element={<AdminAnalytics />} />
               <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/kyc" element={<AdminKYC />} />
+              <Route path="/admin/kyc/:id" element={<AdminKYCDetail />} />
               
               {/* MiniCRM test */}
               <Route path="/minicrm-test" element={<MiniCrmTest />} />
