@@ -158,7 +158,30 @@ export const fetchKycDocuments = async (caseId: string): Promise<KycDocument[]> 
     .eq('kyc_case_id', caseId)
     .order('created_at', { ascending: true });
   if (error) throw new Error(error.message);
-  return (data || []) as unknown as KycDocument[];
+  
+  const docs = (data || []) as unknown as KycDocument[];
+  
+  // Generate signed URLs for private bucket documents
+  for (const doc of docs) {
+    if (doc.file_url && !doc.file_url.startsWith('http')) {
+      // file_url is a storage path, not a URL
+      const { data: signedData } = await supabase.storage
+        .from('kyc-documents')
+        .createSignedUrl(doc.file_url, 3600); // 1 hour expiry
+      if (signedData?.signedUrl) doc.file_url = signedData.signedUrl;
+    } else if (doc.file_url?.includes('/kyc-documents/')) {
+      // Extract path from public URL and get signed URL
+      const path = doc.file_url.split('/kyc-documents/')[1];
+      if (path) {
+        const { data: signedData } = await supabase.storage
+          .from('kyc-documents')
+          .createSignedUrl(path, 3600);
+        if (signedData?.signedUrl) doc.file_url = signedData.signedUrl;
+      }
+    }
+  }
+  
+  return docs;
 };
 
 export const fetchKycAuditLog = async (caseId: string): Promise<KycAuditEntry[]> => {

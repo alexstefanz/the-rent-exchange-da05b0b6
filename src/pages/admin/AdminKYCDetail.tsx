@@ -175,7 +175,7 @@ const AdminKYCDetail = () => {
 
               <TabsContent value="documents" className="mt-4">
                 {documents?.length ? (
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-4 grid-cols-3">
                     {documents.map((doc) => (
                       <Card key={doc.id} className="overflow-hidden cursor-pointer hover:border-primary/50 transition-colors" onClick={() => setPreviewImage(doc.file_url)}>
                         <div className="aspect-[4/3] bg-muted relative">
