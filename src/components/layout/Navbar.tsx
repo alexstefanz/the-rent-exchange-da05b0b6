@@ -24,7 +24,8 @@ import {
   Heart,
   PlusCircle,
   HelpCircle,
-  Globe
+  Globe,
+  ShieldCheck
 } from "lucide-react";
 import { categories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
@@ -33,6 +34,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrentUserProfile } from "@/hooks/queries/useCurrentUserProfile";
 import { useConversations } from "@/hooks/queries/useConversations";
+import { useIsAdmin } from "@/hooks/queries/useAdminStats";
 import LanguageSwitcher from "./LanguageSwitcher";
 import NotificationBell from "./NotificationBell";
 import MobileBottomNav from "./MobileBottomNav";
@@ -45,6 +47,7 @@ const Navbar = () => {
   const { t } = useLanguage();
   const { data: profile } = useCurrentUserProfile();
   const { data: conversations } = useConversations(user?.id);
+  const { data: isAdmin } = useIsAdmin(user?.id);
   const unreadMessagesCount = conversations?.reduce((sum: number, c: any) => sum + (c.unread_count || 0), 0) || 0;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeMegaMenu, setActiveMegaMenu] = useState<number | null>(null);
@@ -169,6 +172,16 @@ const Navbar = () => {
                       </p>
                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </div>
+
+                    {/* Admin Button */}
+                    {isAdmin && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin" className="flex items-center gap-3 py-2 text-green-600 font-semibold focus:text-green-600">
+                          <ShieldCheck className="h-4 w-4" />
+                          {t("Panou Admin", "Admin Panel")}
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
 
                     {/* Profile Section */}
                     <DropdownMenuItem asChild>
@@ -340,6 +353,16 @@ const Navbar = () => {
                 </Link>
                 {user && (
                   <>
+                    {isAdmin && (
+                      <Link 
+                        to="/admin" 
+                        className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-green-600 transition-colors hover:bg-green-50" 
+                        onClick={closeMobileMenu}
+                      >
+                        <ShieldCheck className="h-5 w-5" />
+                        {t("Panou Admin", "Admin Panel")}
+                      </Link>
+                    )}
                     <Link 
                       to="/profile#contul-meu" 
                       className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
