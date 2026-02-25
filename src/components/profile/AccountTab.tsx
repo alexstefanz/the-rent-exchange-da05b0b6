@@ -172,11 +172,6 @@ const AccountTab = () => {
     });
   };
 
-  const verificationStatus = {
-    email: true,
-    identity: false,
-    phone: false,
-  };
 
   if (isLoading) {
     return (
@@ -317,28 +312,83 @@ const AccountTab = () => {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Left Column */}
         <div className="space-y-6">
-          {/* Account Status */}
-          <Card>
+          {/* KYC Verification Status */}
+          <Card className={
+            profile?.kyc_status === 'VERIFIED' ? 'border-green-500/30 bg-green-50/30 dark:bg-green-950/10' :
+            profile?.kyc_status === 'REJECTED' ? 'border-destructive/30 bg-destructive/5' :
+            (profile?.kyc_status === 'SUBMITTED' || profile?.kyc_status === 'NEEDS_MANUAL_REVIEW') ? 'border-amber-500/30 bg-amber-50/30 dark:bg-amber-950/10' :
+            ''
+          }>
             <CardHeader>
-              <CardTitle className="text-lg">{t("Starea contului", "Account status")}</CardTitle>
-              <CardDescription>{t("Verificările contului tău", "Your account verifications")}</CardDescription>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Shield className="h-5 w-5" />
+                {t("Verificare identitate (KYC)", "Identity verification (KYC)")}
+              </CardTitle>
+              <CardDescription>
+                {t("Verificarea identității tale crește încrederea celorlalți utilizatori", "Identity verification increases trust from other users")}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {[
-                { key: "email", label: "Email", verified: verificationStatus.email },
-                { key: "identity", label: t("Identitate", "Identity"), verified: verificationStatus.identity },
-                { key: "phone", label: t("Telefon", "Phone"), verified: verificationStatus.phone },
-              ].map(({ key, label, verified }) => (
-                <div key={key} className="flex items-center justify-between py-2">
-                  <div className="flex items-center gap-3">
-                    {verified ? <CheckCircle2 className="h-5 w-5 text-green-500" /> : <AlertCircle className="h-5 w-5 text-amber-500" />}
-                    <span className="text-sm font-medium">{label}</span>
-                  </div>
-                  <Badge variant={verified ? "default" : "secondary"}>
-                    {verified ? t("Verificat", "Verified") : t("Neverificat", "Unverified")}
-                  </Badge>
+              {/* Current Status */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{t("Status verificare", "Verification status")}</span>
+                <Badge variant={
+                  profile?.kyc_status === 'VERIFIED' ? 'default' :
+                  profile?.kyc_status === 'REJECTED' ? 'destructive' :
+                  (profile?.kyc_status === 'SUBMITTED' || profile?.kyc_status === 'NEEDS_MANUAL_REVIEW') ? 'secondary' :
+                  'outline'
+                } className={profile?.kyc_status === 'VERIFIED' ? 'bg-green-500 hover:bg-green-600' : ''}>
+                  {profile?.kyc_status === 'VERIFIED' ? t("Verificat", "Verified") :
+                   profile?.kyc_status === 'SUBMITTED' ? t("În curs de verificare", "Under review") :
+                   profile?.kyc_status === 'NEEDS_MANUAL_REVIEW' ? t("În curs de verificare", "Under review") :
+                   profile?.kyc_status === 'REJECTED' ? t("Respins", "Rejected") :
+                   t("Neverificat", "Not verified")}
+                </Badge>
+              </div>
+
+              {/* Level */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">{t("Nivel verificare", "Verification level")}</span>
+                <span className="text-sm text-muted-foreground">
+                  {profile?.kyc_level === 'NONE' ? t("Niciunul", "None") : profile?.kyc_level?.replace('_', ' ')}
+                </span>
+              </div>
+
+              {/* Status-specific content */}
+              {profile?.kyc_status === 'VERIFIED' && (
+                <div className="flex items-center gap-2 rounded-lg bg-green-100/50 dark:bg-green-900/20 p-3 text-sm text-green-700 dark:text-green-400">
+                  <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                  {t("Identitatea ta a fost verificată cu succes. Bucură-te de toate funcționalitățile platformei!", "Your identity has been verified successfully. Enjoy all platform features!")}
                 </div>
-              ))}
+              )}
+
+              {(profile?.kyc_status === 'SUBMITTED' || profile?.kyc_status === 'NEEDS_MANUAL_REVIEW') && (
+                <div className="flex items-center gap-2 rounded-lg bg-amber-100/50 dark:bg-amber-900/20 p-3 text-sm text-amber-700 dark:text-amber-400">
+                  <Loader2 className="h-5 w-5 flex-shrink-0 animate-spin" />
+                  {t("Documentele tale sunt în curs de verificare. Te vom notifica când procesul este finalizat.", "Your documents are being reviewed. We'll notify you when the process is complete.")}
+                </div>
+              )}
+
+              {profile?.kyc_status === 'REJECTED' && (
+                <div className="flex items-center gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                  <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                  {t("Verificarea a fost respinsă. Te rugăm să reîncarci documentele.", "Verification was rejected. Please re-upload your documents.")}
+                </div>
+              )}
+
+              {(profile?.kyc_status === 'NOT_VERIFIED' || profile?.kyc_status === 'REJECTED') && (
+                <Button className="w-full" onClick={() => {
+                  toast({
+                    title: t("În curând", "Coming soon"),
+                    description: t("Funcționalitatea de încărcare documente va fi disponibilă în curând.", "Document upload functionality will be available soon."),
+                  });
+                }}>
+                  <Shield className="mr-2 h-4 w-4" />
+                  {profile?.kyc_status === 'REJECTED' 
+                    ? t("Reîncepe verificarea", "Restart verification") 
+                    : t("Începe verificarea", "Start verification")}
+                </Button>
+              )}
             </CardContent>
           </Card>
 
