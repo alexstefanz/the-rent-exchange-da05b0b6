@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import bannerBg from "@/assets/banner_icon_background.jpg";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
@@ -21,8 +22,8 @@ const Index = () => {
       <Navbar />
 
       <section className="relative overflow-hidden bg-gradient-to-br from-background via-background to-primary/5">
+        <div className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40" style={{ backgroundImage: `url(${bannerBg})` }} />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,hsl(var(--primary)/0.1),transparent_50%)]" />
-        <div className="pointer-events-none absolute top-1/2 left-1/3 -translate-x-1/2 -translate-y-1/2 h-[500px] w-[800px] rounded-full bg-primary/20 blur-[120px] animate-blob-drift" />
         <div className="container relative pt-16 pb-8 md:py-24">
           <div className="mx-auto max-w-4xl text-center">
             <h1 className="mt-[30px] animate-fade-up font-heading font-bold tracking-tight text-foreground md:mt-0 text-4xl">
