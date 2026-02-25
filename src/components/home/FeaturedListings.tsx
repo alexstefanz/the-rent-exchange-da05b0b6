@@ -154,14 +154,14 @@ const ProductRow = ({
                   alt={product.title}
                   className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
                 />
-                <div className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm">
-                  <CheckCircle className="h-4.5 w-4.5 text-emerald-600" />
+                <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm">
+                  <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
                 </div>
                 <button
                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                  className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/10 backdrop-blur-sm transition-colors hover:bg-black/20"
+                  className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/10 backdrop-blur-sm transition-colors hover:bg-black/20"
                 >
-                  <Heart className="h-4.5 w-4.5 text-white drop-shadow-sm" />
+                  <Heart className="h-3.5 w-3.5 text-white drop-shadow-sm" />
                 </button>
               </div>
               <div className="p-3 md:p-4">
