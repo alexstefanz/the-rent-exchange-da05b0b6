@@ -225,9 +225,9 @@ const Navbar = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/centru-asistenta" className="flex items-center gap-3 py-2">
+                      <Link to="/suport" className="flex items-center gap-3 py-2">
                         <HelpCircle className="h-4 w-4" />
-                        {t("Centru de asistență", "Help Center")}
+                        {t("Suport & Tickete", "Support & Tickets")}
                       </Link>
                     </DropdownMenuItem>
 
@@ -411,12 +411,12 @@ const Navbar = () => {
                   </>
                 )}
                 <Link 
-                  to="/centru-asistenta" 
+                  to="/suport" 
                   className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
                   onClick={closeMobileMenu}
                 >
                   <HelpCircle className="h-5 w-5" />
-                  {t("Centru de asistență", "Help Center")}
+                  {t("Suport & Tickete", "Support & Tickets")}
                 </Link>
               </div>
               

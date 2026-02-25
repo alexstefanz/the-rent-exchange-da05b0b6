@@ -21,7 +21,8 @@ import {
   Mail,
   MessageCircle,
   Camera,
-  Loader2
+  Loader2,
+  LifeBuoy
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -439,6 +440,21 @@ const AccountTab = () => {
                 {t("Toate plățile sunt procesate în siguranță prin partenerii noștri de încredere. Datele tale bancare sunt criptate și protejate.", "All payments are securely processed through our trusted partners. Your banking data is encrypted and protected.")}
               </p>
             </CardContent>
+          </Card>
+
+          {/* Support Link */}
+          <Card className="border-primary/20 hover:border-primary/40 transition-colors">
+            <a href="/suport" className="block">
+              <CardContent className="flex items-center gap-4 py-5">
+                <div className="rounded-full bg-primary/10 p-3">
+                  <LifeBuoy className="h-6 w-6 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-medium text-sm">{t("Ai o problemă?", "Having an issue?")}</p>
+                  <p className="text-xs text-muted-foreground">{t("Deschide un ticket de suport", "Open a support ticket")}</p>
+                </div>
+              </CardContent>
+            </a>
           </Card>
         </div>
       </div>
