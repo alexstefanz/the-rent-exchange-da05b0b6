@@ -40,9 +40,8 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
               className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
             />
             {/* Verified badge */}
-            <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs font-medium text-emerald-700 backdrop-blur-sm">
-              <CheckCircle className="h-3 w-3" />
-              <span>Verificat</span>
+            <div className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm">
+              <CheckCircle className="h-4.5 w-4.5 text-emerald-600" />
             </div>
           </div>
           <div className="flex-1 p-4">
@@ -84,19 +83,18 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
           className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
         />
         {/* Verified badge */}
-        <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs font-medium text-emerald-700 backdrop-blur-sm">
-          <CheckCircle className="h-3 w-3" />
-          <span className="hidden sm:inline">Verificat</span>
+        <div className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm">
+          <CheckCircle className="h-4.5 w-4.5 text-emerald-600" />
         </div>
         {/* Favorite button */}
         <button
           onClick={handleFavoriteClick}
-          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm transition-colors hover:bg-white"
+          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/10 backdrop-blur-sm transition-colors hover:bg-black/20"
         >
           <Heart
             className={cn(
-              "h-4 w-4 transition-colors",
-              isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"
+              "h-4.5 w-4.5 drop-shadow-sm transition-colors",
+              isFavorite ? "fill-red-500 text-red-500" : "text-white"
             )}
           />
         </button>
