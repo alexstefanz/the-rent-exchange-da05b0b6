@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Package, Search, MoreHorizontal, Loader2, Flag, Eye, EyeOff, Trash2, AlertTriangle } from "lucide-react";
+import SortableTableHead, { SortDirection, sortData, useToggleSort } from "@/components/admin/SortableTableHead";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,10 @@ const AdminProducts = () => {
   const [flagDialog, setFlagDialog] = useState<{ open: boolean; productId: string }>({ open: false, productId: "" });
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; productId: string; title: string }>({ open: false, productId: "", title: "" });
   const [flagReason, setFlagReason] = useState("");
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const queryClient = useQueryClient();
+  const handleSort = useToggleSort(setSortKey, setSortDirection, sortKey, sortDirection);
 
   const { data: products, isLoading } = useQuery({
     queryKey: ['adminProducts', debouncedSearch, statusFilter],
@@ -130,18 +134,18 @@ const AdminProducts = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Produs</TableHead>
-                      <TableHead>Proprietar</TableHead>
-                      <TableHead>Preț/zi</TableHead>
-                      <TableHead>Categorie</TableHead>
-                      <TableHead>Oraș</TableHead>
+                      <SortableTableHead label="Produs" sortKey="title" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                      <SortableTableHead label="Proprietar" sortKey="owner_name" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                      <SortableTableHead label="Preț/zi" sortKey="daily_price_owner" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                      <SortableTableHead label="Categorie" sortKey="category" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                      <SortableTableHead label="Oraș" sortKey="location_city" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
                       <TableHead>Status</TableHead>
-                      <TableHead>Data</TableHead>
+                      <SortableTableHead label="Data" sortKey="created_at" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
                       <TableHead className="text-right">Acțiuni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {products.map((product) => (
+                    {sortData(products, sortKey, sortDirection).map((product) => (
                       <TableRow key={product.id}>
                         <TableCell>
                           <div className="flex items-center gap-3">

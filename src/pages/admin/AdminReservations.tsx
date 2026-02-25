@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { CalendarCheck, Filter, Search, MoreHorizontal, Loader2 } from "lucide-react";
+import { CalendarCheck, Filter, MoreHorizontal, Loader2 } from "lucide-react";
+import SortableTableHead, { SortDirection, sortData, useToggleSort } from "@/components/admin/SortableTableHead";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -62,7 +63,10 @@ const paymentStatusLabels: Record<string, string> = {
 const AdminReservations = () => {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const queryClient = useQueryClient();
+  const handleSort = useToggleSort(setSortKey, setSortDirection, sortKey, sortDirection);
   
   const { data: rentals, isLoading } = useAdminRentals(
     statusFilter || undefined
@@ -153,18 +157,18 @@ const AdminReservations = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Produs</TableHead>
-                      <TableHead>Chiriaș</TableHead>
-                      <TableHead>Proprietar</TableHead>
-                      <TableHead>Perioada</TableHead>
-                      <TableHead>Suma</TableHead>
+                      <SortableTableHead label="Produs" sortKey="product_title" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                      <SortableTableHead label="Chiriaș" sortKey="renter_name" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                      <SortableTableHead label="Proprietar" sortKey="owner_name" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                      <SortableTableHead label="Perioada" sortKey="start_date" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                      <SortableTableHead label="Suma" sortKey="subtotal" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
                       <TableHead>Status</TableHead>
                       <TableHead>Plată</TableHead>
                       <TableHead className="text-right">Acțiuni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rentals.map((rental) => (
+                    {sortData(rentals, sortKey, sortDirection).map((rental) => (
                       <TableRow key={rental.id}>
                         <TableCell className="font-medium max-w-[200px]">
                           <span className="line-clamp-1">{rental.product_title}</span>
