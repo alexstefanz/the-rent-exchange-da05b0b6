@@ -36,6 +36,8 @@ import AdminUsers from "./pages/admin/AdminUsers";
 import AdminKYC from "./pages/admin/AdminKYC";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminTickets from "./pages/admin/AdminTickets";
+import AdminTicketDetail from "./pages/admin/AdminTicketDetail";
+import AdminTicketCreate from "./pages/admin/AdminTicketCreate";
 import AdminCategories from "./pages/admin/AdminCategories";
 
 const queryClient = new QueryClient();
@@ -76,6 +78,8 @@ const App = () => (
               <Route path="/admin/reservations" element={<AdminReservations />} />
               <Route path="/admin/products" element={<AdminProducts />} />
               <Route path="/admin/tickets" element={<AdminTickets />} />
+              <Route path="/admin/tickets/new" element={<AdminTicketCreate />} />
+              <Route path="/admin/tickets/:id" element={<AdminTicketDetail />} />
               <Route path="/admin/categories" element={<AdminCategories />} />
               <Route path="/admin/finances" element={<AdminFinances />} />
               <Route path="/admin/analytics" element={<AdminAnalytics />} />

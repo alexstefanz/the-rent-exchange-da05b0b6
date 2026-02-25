@@ -1,146 +1,105 @@
 import { useState } from "react";
-import { TicketCheck, Search, Loader2, MessageSquare, Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { TicketCheck, Search, Clock, AlertTriangle, Plus, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchTickets, updateTicketStatus, updateTicketPriority, updateTicketNotes, resolveTicket, SupportTicket } from "@/features/admin/ticketsApi";
-import { format } from "date-fns";
+import { useOpsTickets } from "@/hooks/queries/useOpsTickets";
+import {
+  CATEGORY_GROUP_LABELS,
+  CATEGORY_GROUPS,
+  PRIORITY_OPTIONS,
+  STATUS_OPTIONS,
+  type FetchTicketsFilters,
+} from "@/features/admin/opsTicketsApi";
+import { format, differenceInHours } from "date-fns";
 import { ro } from "date-fns/locale";
-import { toast } from "sonner";
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  open: { label: "Deschis", variant: "destructive" },
-  in_progress: { label: "În lucru", variant: "default" },
-  resolved: { label: "Rezolvat", variant: "secondary" },
-  closed: { label: "Închis", variant: "outline" },
+const statusColors: Record<string, string> = {
+  NEW: "bg-blue-100 text-blue-800",
+  IN_PROGRESS: "bg-yellow-100 text-yellow-800",
+  WAITING_CUSTOMER: "bg-purple-100 text-purple-800",
+  WAITING_OWNER: "bg-purple-100 text-purple-800",
+  WAITING_INTERNAL: "bg-gray-100 text-gray-800",
+  RESOLVED: "bg-green-100 text-green-800",
+  CLOSED: "bg-gray-200 text-gray-600",
 };
 
-const priorityConfig: Record<string, { label: string; color: string }> = {
-  low: { label: "Scăzut", color: "bg-blue-100 text-blue-800" },
-  medium: { label: "Mediu", color: "bg-yellow-100 text-yellow-800" },
-  high: { label: "Ridicat", color: "bg-orange-100 text-orange-800" },
-  urgent: { label: "Urgent", color: "bg-red-100 text-red-800" },
-};
-
-const categoryLabels: Record<string, string> = {
-  dispute: "Dispută",
-  fraud: "Fraudă",
-  quality: "Calitate",
-  other: "Altele",
+const priorityColors: Record<string, string> = {
+  LOW: "bg-blue-100 text-blue-800",
+  MEDIUM: "bg-yellow-100 text-yellow-800",
+  HIGH: "bg-orange-100 text-orange-800",
+  URGENT: "bg-red-100 text-red-800",
 };
 
 const AdminTickets = () => {
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [priorityFilter, setPriorityFilter] = useState<string>("all");
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [detailTicket, setDetailTicket] = useState<SupportTicket | null>(null);
-  const [resolveDialog, setResolveDialog] = useState<{ open: boolean; ticketId: string }>({ open: false, ticketId: "" });
-  const [resolution, setResolution] = useState("");
-  const [adminNotes, setAdminNotes] = useState("");
-  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const [filters, setFilters] = useState<FetchTicketsFilters>({});
+  const [searchInput, setSearchInput] = useState("");
+  const { data: tickets, isLoading } = useOpsTickets(filters);
 
-  const { data: tickets, isLoading } = useQuery({
-    queryKey: ['adminTickets', statusFilter, priorityFilter],
-    queryFn: () => fetchTickets(
-      statusFilter === 'all' ? undefined : statusFilter,
-      priorityFilter === 'all' ? undefined : priorityFilter
-    ),
-    staleTime: 30000,
-  });
-
-  const handleStatusChange = async (ticketId: string, status: string) => {
-    setActionLoading(ticketId);
-    try {
-      await updateTicketStatus(ticketId, status);
-      toast.success("Status actualizat");
-      queryClient.invalidateQueries({ queryKey: ['adminTickets'] });
-    } catch { toast.error("Eroare"); }
-    finally { setActionLoading(null); }
+  const handleSearch = () => {
+    setFilters(f => ({ ...f, search: searchInput || undefined }));
   };
 
-  const handlePriorityChange = async (ticketId: string, priority: string) => {
-    setActionLoading(ticketId);
-    try {
-      await updateTicketPriority(ticketId, priority);
-      toast.success("Prioritate actualizată");
-      queryClient.invalidateQueries({ queryKey: ['adminTickets'] });
-    } catch { toast.error("Eroare"); }
-    finally { setActionLoading(null); }
+  const stats = {
+    newCount: tickets?.filter(t => t.status === 'NEW').length || 0,
+    inProgress: tickets?.filter(t => t.status === 'IN_PROGRESS').length || 0,
+    urgent: tickets?.filter(t => t.priority === 'URGENT' && !['RESOLVED', 'CLOSED'].includes(t.status)).length || 0,
   };
 
-  const handleResolve = async () => {
-    if (!resolution.trim()) return;
-    setActionLoading(resolveDialog.ticketId);
-    try {
-      await resolveTicket(resolveDialog.ticketId, resolution);
-      toast.success("Ticket rezolvat");
-      queryClient.invalidateQueries({ queryKey: ['adminTickets'] });
-      setResolveDialog({ open: false, ticketId: "" });
-      setResolution("");
-    } catch { toast.error("Eroare"); }
-    finally { setActionLoading(null); }
-  };
+  const getStatusLabel = (s: string) => STATUS_OPTIONS.find(o => o.value === s)?.label || s;
+  const getPriorityLabel = (p: string) => PRIORITY_OPTIONS.find(o => o.value === p)?.label || p;
 
-  const handleSaveNotes = async (ticketId: string) => {
-    setActionLoading(ticketId);
-    try {
-      await updateTicketNotes(ticketId, adminNotes);
-      toast.success("Notițe salvate");
-      queryClient.invalidateQueries({ queryKey: ['adminTickets'] });
-    } catch { toast.error("Eroare"); }
-    finally { setActionLoading(null); }
-  };
-
-  const openStats = {
-    open: tickets?.filter(t => t.status === 'open').length || 0,
-    in_progress: tickets?.filter(t => t.status === 'in_progress').length || 0,
-    urgent: tickets?.filter(t => t.priority === 'urgent' && t.status !== 'resolved' && t.status !== 'closed').length || 0,
-  };
+  const isSlaBreached = (ticket: { priority: string; status: string; created_at: string }) =>
+    ticket.priority === 'URGENT' && ticket.status === 'NEW' && differenceInHours(new Date(), new Date(ticket.created_at)) >= 2;
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <TicketCheck className="h-8 w-8" /> Tickete Suport
-          </h1>
-          <p className="text-muted-foreground">Gestionează reclamațiile și cererile utilizatorilor</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+              <TicketCheck className="h-8 w-8" /> Tickete Operaționale
+            </h1>
+            <p className="text-muted-foreground">Gestionează probleme operaționale marketplace</p>
+          </div>
+          <Button onClick={() => navigate('/admin/tickets/new')}>
+            <Plus className="h-4 w-4 mr-2" /> Ticket nou
+          </Button>
         </div>
 
-        {/* Quick Stats */}
+        {/* Stats */}
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardContent className="pt-6 flex items-center gap-4">
-              <MessageSquare className="h-8 w-8 text-destructive" />
+              <TicketCheck className="h-8 w-8 text-blue-500" />
               <div>
-                <p className="text-2xl font-bold">{openStats.open}</p>
-                <p className="text-sm text-muted-foreground">Tickete deschise</p>
+                <p className="text-2xl font-bold">{stats.newCount}</p>
+                <p className="text-sm text-muted-foreground">Noi</p>
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6 flex items-center gap-4">
-              <Clock className="h-8 w-8 text-primary" />
+              <Clock className="h-8 w-8 text-yellow-500" />
               <div>
-                <p className="text-2xl font-bold">{openStats.in_progress}</p>
+                <p className="text-2xl font-bold">{stats.inProgress}</p>
                 <p className="text-sm text-muted-foreground">În lucru</p>
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6 flex items-center gap-4">
-              <AlertTriangle className="h-8 w-8 text-orange-500" />
+              <AlertTriangle className="h-8 w-8 text-red-500" />
               <div>
-                <p className="text-2xl font-bold">{openStats.urgent}</p>
-                <p className="text-sm text-muted-foreground">Urgente</p>
+                <p className="text-2xl font-bold">{stats.urgent}</p>
+                <p className="text-sm text-muted-foreground">Urgente nerezolvate</p>
               </div>
             </CardContent>
           </Card>
@@ -149,32 +108,45 @@ const AdminTickets = () => {
         {/* Filters */}
         <Card>
           <CardContent className="pt-6">
-            <div className="flex gap-4">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]"><SelectValue placeholder="Status" /></SelectTrigger>
+            <div className="flex flex-wrap gap-3">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Caută TCK-... sau titlu"
+                  value={searchInput}
+                  onChange={e => setSearchInput(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                  className="w-[220px]"
+                />
+                <Button variant="outline" size="icon" onClick={handleSearch}>
+                  <Search className="h-4 w-4" />
+                </Button>
+              </div>
+              <Select value={filters.status || "all"} onValueChange={v => setFilters(f => ({ ...f, status: v === 'all' ? undefined : v }))}>
+                <SelectTrigger className="w-[170px]"><SelectValue placeholder="Status" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Toate statusurile</SelectItem>
-                  <SelectItem value="open">Deschise</SelectItem>
-                  <SelectItem value="in_progress">În lucru</SelectItem>
-                  <SelectItem value="resolved">Rezolvate</SelectItem>
-                  <SelectItem value="closed">Închise</SelectItem>
+                  {STATUS_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
                 </SelectContent>
               </Select>
-              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger className="w-[180px]"><SelectValue placeholder="Prioritate" /></SelectTrigger>
+              <Select value={filters.priority || "all"} onValueChange={v => setFilters(f => ({ ...f, priority: v === 'all' ? undefined : v }))}>
+                <SelectTrigger className="w-[170px]"><SelectValue placeholder="Prioritate" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Toate prioritățile</SelectItem>
-                  <SelectItem value="urgent">Urgent</SelectItem>
-                  <SelectItem value="high">Ridicat</SelectItem>
-                  <SelectItem value="medium">Mediu</SelectItem>
-                  <SelectItem value="low">Scăzut</SelectItem>
+                  {PRIORITY_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Select value={filters.category_group || "all"} onValueChange={v => setFilters(f => ({ ...f, category_group: v === 'all' ? undefined : v, category_type: undefined }))}>
+                <SelectTrigger className="w-[170px]"><SelectValue placeholder="Categorie" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toate categoriile</SelectItem>
+                  {CATEGORY_GROUPS.map(g => <SelectItem key={g} value={g}>{CATEGORY_GROUP_LABELS[g]}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           </CardContent>
         </Card>
 
-        {/* Tickets Table */}
+        {/* Table */}
         <Card>
           <CardHeader>
             <CardTitle>Lista Ticketelor</CardTitle>
@@ -182,54 +154,45 @@ const AdminTickets = () => {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="space-y-4">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
+              <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
             ) : tickets && tickets.length > 0 ? (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Subiect</TableHead>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Titlu</TableHead>
                       <TableHead>Categorie</TableHead>
                       <TableHead>Prioritate</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Data</TableHead>
-                      <TableHead className="text-right">Acțiuni</TableHead>
+                      <TableHead>SLA</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {tickets.map((ticket) => (
-                      <TableRow key={ticket.id} className="cursor-pointer" onClick={() => { setDetailTicket(ticket); setAdminNotes(ticket.admin_notes || ""); }}>
+                    {tickets.map(ticket => (
+                      <TableRow
+                        key={ticket.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => navigate(`/admin/tickets/${ticket.id}`)}
+                      >
+                        <TableCell className="font-mono text-xs">{ticket.public_id}</TableCell>
                         <TableCell>
-                          <div>
-                            <p className="font-medium">{ticket.subject}</p>
-                            <p className="text-xs text-muted-foreground line-clamp-1">{ticket.description}</p>
-                          </div>
+                          <p className="font-medium line-clamp-1">{ticket.title}</p>
                         </TableCell>
-                        <TableCell>{categoryLabels[ticket.category] || ticket.category}</TableCell>
+                        <TableCell className="text-sm">{CATEGORY_GROUP_LABELS[ticket.category_group] || ticket.category_group}</TableCell>
                         <TableCell>
-                          <Badge className={priorityConfig[ticket.priority]?.color || ""}>
-                            {priorityConfig[ticket.priority]?.label || ticket.priority}
-                          </Badge>
+                          <Badge className={priorityColors[ticket.priority] || ''}>{getPriorityLabel(ticket.priority)}</Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={statusConfig[ticket.status]?.variant || "outline"}>
-                            {statusConfig[ticket.status]?.label || ticket.status}
-                          </Badge>
+                          <Badge className={statusColors[ticket.status] || ''}>{getStatusLabel(ticket.status)}</Badge>
                         </TableCell>
-                        <TableCell className="text-muted-foreground whitespace-nowrap">
+                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
                           {format(new Date(ticket.created_at), 'd MMM yyyy', { locale: ro })}
                         </TableCell>
-                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                          {actionLoading === ticket.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin ml-auto" />
-                          ) : (
-                            <div className="flex gap-2 justify-end">
-                              {ticket.status !== 'resolved' && ticket.status !== 'closed' && (
-                                <Button size="sm" variant="outline" onClick={() => { setResolveDialog({ open: true, ticketId: ticket.id }); }}>
-                                  <CheckCircle2 className="h-3 w-3 mr-1" /> Rezolvă
-                                </Button>
-                              )}
-                            </div>
+                        <TableCell>
+                          {isSlaBreached(ticket) && (
+                            <AlertTriangle className="h-4 w-4 text-red-500" />
                           )}
                         </TableCell>
                       </TableRow>
@@ -246,81 +209,6 @@ const AdminTickets = () => {
           </CardContent>
         </Card>
       </div>
-
-      {/* Detail Dialog */}
-      <Dialog open={!!detailTicket} onOpenChange={(open) => { if (!open) setDetailTicket(null); }}>
-        <DialogContent className="max-w-2xl">
-          {detailTicket && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{detailTicket.subject}</DialogTitle>
-                <DialogDescription>
-                  Creat pe {format(new Date(detailTicket.created_at), 'd MMMM yyyy, HH:mm', { locale: ro })}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="flex gap-2">
-                  <Badge className={priorityConfig[detailTicket.priority]?.color}>{priorityConfig[detailTicket.priority]?.label}</Badge>
-                  <Badge variant={statusConfig[detailTicket.status]?.variant}>{statusConfig[detailTicket.status]?.label}</Badge>
-                  <Badge variant="outline">{categoryLabels[detailTicket.category]}</Badge>
-                </div>
-                <div className="p-4 rounded-lg border bg-muted/30">
-                  <p className="text-sm font-medium mb-1">Descriere</p>
-                  <p className="text-sm text-muted-foreground">{detailTicket.description}</p>
-                </div>
-                {detailTicket.resolution && (
-                  <div className="p-4 rounded-lg border border-green-200 bg-green-50">
-                    <p className="text-sm font-medium mb-1 text-green-800">Rezoluție</p>
-                    <p className="text-sm text-green-700">{detailTicket.resolution}</p>
-                  </div>
-                )}
-                <div>
-                  <p className="text-sm font-medium mb-2">Notițe admin (interne)</p>
-                  <Textarea value={adminNotes} onChange={(e) => setAdminNotes(e.target.value)} placeholder="Notițe interne..." rows={3} />
-                  <Button size="sm" className="mt-2" onClick={() => handleSaveNotes(detailTicket.id)} disabled={actionLoading === detailTicket.id}>
-                    Salvează notițe
-                  </Button>
-                </div>
-                <div className="flex gap-2">
-                  <Select value={detailTicket.status} onValueChange={(v) => handleStatusChange(detailTicket.id, v)}>
-                    <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="open">Deschis</SelectItem>
-                      <SelectItem value="in_progress">În lucru</SelectItem>
-                      <SelectItem value="resolved">Rezolvat</SelectItem>
-                      <SelectItem value="closed">Închis</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={detailTicket.priority} onValueChange={(v) => handlePriorityChange(detailTicket.id, v)}>
-                    <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Scăzut</SelectItem>
-                      <SelectItem value="medium">Mediu</SelectItem>
-                      <SelectItem value="high">Ridicat</SelectItem>
-                      <SelectItem value="urgent">Urgent</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Resolve Dialog */}
-      <Dialog open={resolveDialog.open} onOpenChange={(open) => { setResolveDialog({ ...resolveDialog, open }); if (!open) setResolution(""); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rezolvă ticket</DialogTitle>
-            <DialogDescription>Descrie rezoluția pentru acest ticket.</DialogDescription>
-          </DialogHeader>
-          <Textarea placeholder="Rezoluția..." value={resolution} onChange={(e) => setResolution(e.target.value)} rows={4} />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setResolveDialog({ open: false, ticketId: "" })}>Anulează</Button>
-            <Button onClick={handleResolve} disabled={!resolution.trim()}>Marchează rezolvat</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </AdminLayout>
   );
 };
