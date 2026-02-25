@@ -1,17 +1,16 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { CalendarCheck, Filter, MoreHorizontal, Loader2 } from "lucide-react";
 import SortableTableHead, { SortDirection, sortData, useToggleSort } from "@/components/admin/SortableTableHead";
 import TableColumnFilterRow, { applyColumnFilters, ColumnFilterConfig } from "@/components/admin/TableColumnFilter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
   Table,
@@ -34,7 +33,8 @@ import { updateRentalStatus } from "@/features/admin/adminApi";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -67,19 +67,49 @@ const AdminReservations = () => {
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
+  const [dateRangeFilters, setDateRangeFilters] = useState<Record<string, { from?: Date; to?: Date }>>({});
   const queryClient = useQueryClient();
   const handleSort = useToggleSort(setSortKey, setSortDirection, sortKey, sortDirection);
+
+  const { data: categories } = useQuery({
+    queryKey: ['platformCategories'],
+    queryFn: async () => {
+      const { data } = await supabase.from('platform_categories').select('name').eq('is_active', true).order('sort_order');
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   const handleColumnFilter = (key: string, value: string) => {
     setColumnFilters(prev => ({ ...prev, [key]: value }));
   };
 
+  const handleDateRangeChange = (key: string, range: { from?: Date; to?: Date }) => {
+    setDateRangeFilters(prev => ({ ...prev, [key]: range }));
+  };
+
+  const { data: rentals, isLoading } = useAdminRentals(statusFilter || undefined);
+
+  // Extract unique cities from data
+  const cityOptions = useMemo(() => {
+    if (!rentals) return [];
+    const cities = [...new Set(rentals.map(r => r.location_city).filter(c => c && c !== '-'))];
+    return cities.sort((a, b) => a.localeCompare(b, 'ro')).map(c => ({ value: c, label: c }));
+  }, [rentals]);
+
+  const categoryOptions = useMemo(() => {
+    if (!categories) return [];
+    return categories.map(c => ({ value: c.name, label: c.name }));
+  }, [categories]);
+
   const rentalColumnFilters: ColumnFilterConfig[] = [
     { key: "product_title", type: "text", placeholder: "Produs..." },
     { key: "renter_name", type: "text", placeholder: "Chiriaș..." },
     { key: "owner_name", type: "text", placeholder: "Proprietar..." },
-    { key: "start_date", type: "text", placeholder: "Dată..." },
-    { key: "subtotal", type: "text", placeholder: "Sumă..." },
+    { key: "start_date", type: "daterange", placeholder: "Perioadă..." },
+    { key: "subtotal", type: "amountrange", placeholder: "Sumă" },
+    { key: "category", type: "combobox", placeholder: "Categorie", options: categoryOptions },
+    { key: "location_city", type: "combobox", placeholder: "Oraș", options: cityOptions },
     { key: "status", type: "select", placeholder: "Status", options: [
       { value: "pending", label: "În așteptare" },
       { value: "confirmed", label: "Confirmată" },
@@ -96,10 +126,6 @@ const AdminReservations = () => {
     ]},
     { key: "_actions", type: "text" },
   ];
-  
-  const { data: rentals, isLoading } = useAdminRentals(
-    statusFilter || undefined
-  );
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('ro-RO', {
@@ -124,10 +150,17 @@ const AdminReservations = () => {
     }
   };
 
+  const filteredData = useMemo(() => {
+    return sortData(
+      applyColumnFilters(rentals, columnFilters, dateRangeFilters),
+      sortKey,
+      sortDirection
+    );
+  }, [rentals, columnFilters, dateRangeFilters, sortKey, sortDirection]);
+
   return (
     <AdminLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <CalendarCheck className="h-8 w-8" />
@@ -138,7 +171,6 @@ const AdminReservations = () => {
           </p>
         </div>
 
-        {/* Filters */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
@@ -166,12 +198,11 @@ const AdminReservations = () => {
           </CardContent>
         </Card>
 
-        {/* Rentals Table */}
         <Card>
           <CardHeader>
             <CardTitle>Lista Rezervărilor</CardTitle>
             <CardDescription>
-              {rentals?.length || 0} rezervări găsite
+              {filteredData.length} rezervări găsite
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -191,14 +222,22 @@ const AdminReservations = () => {
                       <SortableTableHead label="Proprietar" sortKey="owner_name" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
                       <SortableTableHead label="Perioada" sortKey="start_date" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
                       <SortableTableHead label="Suma" sortKey="subtotal" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                      <SortableTableHead label="Categorie" sortKey="category" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                      <SortableTableHead label="Oraș" sortKey="location_city" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
                       <TableHead>Status</TableHead>
                       <TableHead>Plată</TableHead>
                       <TableHead className="text-right">Acțiuni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    <TableColumnFilterRow filters={rentalColumnFilters} values={columnFilters} onChange={handleColumnFilter} />
-                    {sortData(applyColumnFilters(rentals, columnFilters), sortKey, sortDirection).map((rental) => (
+                    <TableColumnFilterRow
+                      filters={rentalColumnFilters}
+                      values={columnFilters}
+                      onChange={handleColumnFilter}
+                      dateRangeValues={dateRangeFilters}
+                      onDateRangeChange={handleDateRangeChange}
+                    />
+                    {filteredData.map((rental) => (
                       <TableRow key={rental.id}>
                         <TableCell className="font-medium max-w-[200px]">
                           <span className="line-clamp-1">{rental.product_title}</span>
@@ -220,6 +259,8 @@ const AdminReservations = () => {
                             </div>
                           </div>
                         </TableCell>
+                        <TableCell className="text-muted-foreground text-sm">{rental.category || '-'}</TableCell>
+                        <TableCell className="text-muted-foreground text-sm">{rental.location_city || '-'}</TableCell>
                         <TableCell>
                           <Badge className={statusColors[rental.status] || "bg-gray-100"}>
                             {statusLabels[rental.status] || rental.status}
@@ -242,39 +283,27 @@ const AdminReservations = () => {
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 {rental.status === 'pending' && (
-                                  <DropdownMenuItem 
-                                    onClick={() => handleStatusChange(rental.id, 'confirmed')}
-                                  >
+                                  <DropdownMenuItem onClick={() => handleStatusChange(rental.id, 'confirmed')}>
                                     Confirmă rezervarea
                                   </DropdownMenuItem>
                                 )}
                                 {rental.status === 'confirmed' && (
-                                  <DropdownMenuItem 
-                                    onClick={() => handleStatusChange(rental.id, 'active')}
-                                  >
+                                  <DropdownMenuItem onClick={() => handleStatusChange(rental.id, 'active')}>
                                     Marchează ca activă
                                   </DropdownMenuItem>
                                 )}
                                 {rental.status === 'active' && (
                                   <>
-                                    <DropdownMenuItem 
-                                      onClick={() => handleStatusChange(rental.id, 'completed')}
-                                    >
+                                    <DropdownMenuItem onClick={() => handleStatusChange(rental.id, 'completed')}>
                                       Marchează finalizată
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem 
-                                      onClick={() => handleStatusChange(rental.id, 'overdue')}
-                                      className="text-orange-600"
-                                    >
+                                    <DropdownMenuItem onClick={() => handleStatusChange(rental.id, 'overdue')} className="text-orange-600">
                                       Marchează întârziată
                                     </DropdownMenuItem>
                                   </>
                                 )}
                                 {!['completed', 'cancelled'].includes(rental.status) && (
-                                  <DropdownMenuItem 
-                                    onClick={() => handleStatusChange(rental.id, 'cancelled')}
-                                    className="text-destructive"
-                                  >
+                                  <DropdownMenuItem onClick={() => handleStatusChange(rental.id, 'cancelled')} className="text-destructive">
                                     Anulează rezervarea
                                   </DropdownMenuItem>
                                 )}
