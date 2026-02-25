@@ -254,6 +254,217 @@ export type Database = {
         }
         Relationships: []
       }
+      ops_ticket_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_type: string | null
+          file_url: string
+          id: string
+          message_id: string | null
+          ticket_id: string
+          uploaded_by_id: string | null
+          uploaded_by_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url: string
+          id?: string
+          message_id?: string | null
+          ticket_id: string
+          uploaded_by_id?: string | null
+          uploaded_by_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          message_id?: string | null
+          ticket_id?: string
+          uploaded_by_id?: string | null
+          uploaded_by_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ops_ticket_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "ops_ticket_messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ops_ticket_attachments_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "ops_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ops_ticket_audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          ticket_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          ticket_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ops_ticket_audit_log_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "ops_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ops_ticket_messages: {
+        Row: {
+          author_id: string | null
+          author_type: string
+          created_at: string
+          id: string
+          is_internal: boolean | null
+          message_text: string
+          ticket_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          author_type: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean | null
+          message_text: string
+          ticket_id: string
+        }
+        Update: {
+          author_id?: string | null
+          author_type?: string
+          created_at?: string
+          id?: string
+          is_internal?: boolean | null
+          message_text?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ops_ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "ops_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ops_tickets: {
+        Row: {
+          assigned_to: string | null
+          category_group: string
+          category_type: string
+          closed_at: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          owner_user_id: string | null
+          priority: string
+          product_id: string | null
+          public_id: string
+          rental_user_id: string | null
+          requester_user_id: string | null
+          reservation_id: string | null
+          status: string
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category_group: string
+          category_type: string
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          owner_user_id?: string | null
+          priority?: string
+          product_id?: string | null
+          public_id?: string
+          rental_user_id?: string | null
+          requester_user_id?: string | null
+          reservation_id?: string | null
+          status?: string
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category_group?: string
+          category_type?: string
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          owner_user_id?: string | null
+          priority?: string
+          product_id?: string | null
+          public_id?: string
+          rental_user_id?: string | null
+          requester_user_id?: string | null
+          reservation_id?: string | null
+          status?: string
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ops_tickets_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ops_tickets_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_categories: {
         Row: {
           created_at: string
