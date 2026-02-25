@@ -1,26 +1,45 @@
 
 
-## Animated Blurred Green Gradient on Hero Banner
+## Transform Product Sections into Airbnb-style Sliders
 
-### What will change
-The hero section background will get a large, blurred green gradient blob that animates horizontally (left to right and back) with a smooth ease-in-out transition over 5 seconds, creating a subtle living background effect.
+### What changes
 
-### Technical Details
+Each product section on the homepage (Popular, Categories, Recent, Best Reviews) will become a horizontal slider with:
+- Navigation arrows (left/right) to scroll through products in groups of 4-5
+- The **last visible card** replaced with a "Vezi toate" (See All) card that links to `/cauta`, styled like the Airbnb screenshot (rotated image thumbnails + "See all" text)
+- Smooth scrolling between pages of products
 
-**1. Add a new keyframe animation in `tailwind.config.ts`**
-- New keyframe `blob-drift` that translates horizontally from ~-20% to ~20% and back
-- Duration: 5s, ease-in-out, infinite
+### How it works
 
-**2. Update the hero section in `src/pages/Index.tsx`**
-- Replace or augment the existing static radial gradient overlay with an animated blurred green blob
-- The blob will be an absolutely positioned `div` with:
-  - Large green (`hsl(var(--primary))`) radial gradient background
-  - `blur(80px)` or similar for the blurred effect
-  - `opacity` kept low so it's subtle
-  - The new `animate-blob-drift` class applied
-  - `pointer-events-none` so it doesn't interfere with interactions
+Currently each section shows 5 products in a static grid. The new behavior:
+- Products are loaded in larger batches (e.g. up to 10-15 per section)
+- Desktop: show 5 cards at a time (4 products + 1 "See All" card), with prev/next arrows positioned top-right like Airbnb
+- Mobile: horizontal scroll with snap, 2 cards visible
+- Arrows appear/disappear based on scroll position
+- The "See All" card shows 2-3 stacked/rotated thumbnail images from the remaining products + "Vezi toate" text
+
+### Technical details
+
+**File: `src/components/home/FeaturedListings.tsx`** (major rewrite of `ProductRow`)
+
+1. Replace the static `grid` layout with a scrollable flex container (CSS-based, no Embla needed for simplicity)
+2. Add `useState` for scroll position tracking via `ref`
+3. Add left/right arrow buttons positioned top-right of the section header (like Airbnb)
+4. Increase product slices from 5 to ~10 to have content to scroll through
+5. Append a "See All" card as the last item in each row
+
+**New component inside the file: `SeeAllCard`**
+- Rounded card matching product card dimensions
+- Contains 2 small product thumbnail images rotated at slight angles (-6deg, 6deg)
+- "Vezi toate" text below
+- Links to `/cauta`
+
+**Scroll logic:**
+- Use a `useRef` on the scroll container
+- `scrollBy` with smooth behavior, scrolling by the width of ~4 cards
+- Track `scrollLeft` to disable prev arrow at start, next arrow at end
+- Hide arrows on mobile (touch scroll with snap instead)
 
 ### Files to modify
-- `tailwind.config.ts` — add `blob-drift` keyframe + animation
-- `src/pages/Index.tsx` — add the animated blurred div to the hero section
+- `src/components/home/FeaturedListings.tsx` — transform ProductRow into slider with arrows + See All card
 
