@@ -1,9 +1,12 @@
 import { Link } from "react-router-dom";
 import { MapPin, CheckCircle, Heart } from "lucide-react";
 import { Product, calculateClientPrice } from "@/features/products/productsApi";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { getProductUrl } from "@/lib/slugUtils";
+import { useAuth } from "@/contexts/AuthContext";
+import { addFavoriteProduct, removeFavoriteProduct, isProductFavorite } from "@/features/profile/favoriteProductsApi";
+import { toast } from "@/hooks/use-toast";
 
 interface ProductCardProps {
   product: Product;
@@ -12,6 +15,8 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isToggling, setIsToggling] = useState(false);
+  const { user } = useAuth();
   const clientPrice = calculateClientPrice(
     product.daily_price_owner,
     product.platform_fee_percent
@@ -20,10 +25,34 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
   const imageUrl = product.images?.[0] || "/placeholder.svg";
   const location = product.location_city || "România";
 
-  const handleFavoriteClick = (e: React.MouseEvent) => {
+  useEffect(() => {
+    if (user) {
+      isProductFavorite(product.id).then(setIsFavorite);
+    }
+  }, [user, product.id]);
+
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsFavorite(!isFavorite);
+    if (!user) {
+      toast({ title: "Trebuie să fii autentificat pentru a adăuga la favorite.", variant: "destructive" });
+      return;
+    }
+    if (isToggling) return;
+    setIsToggling(true);
+    try {
+      if (isFavorite) {
+        await removeFavoriteProduct(product.id);
+        setIsFavorite(false);
+      } else {
+        await addFavoriteProduct(product.id);
+        setIsFavorite(true);
+      }
+    } catch {
+      toast({ title: "Eroare la actualizarea favoritelor.", variant: "destructive" });
+    } finally {
+      setIsToggling(false);
+    }
   };
 
   if (viewMode === "list") {
@@ -39,9 +68,8 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
               alt={product.title}
               className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
             />
-            {/* Verified badge */}
-            <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm">
-              <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
+            <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#46B95B]">
+              <CheckCircle className="h-3.5 w-3.5 text-white" />
             </div>
           </div>
           <div className="flex-1 p-4">
@@ -82,19 +110,17 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
           alt={product.title}
           className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
         />
-        {/* Verified badge */}
-        <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm">
-          <CheckCircle className="h-3.5 w-3.5 text-emerald-600" />
+        <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-[#46B95B]">
+          <CheckCircle className="h-3.5 w-3.5 text-white" />
         </div>
-        {/* Favorite button */}
         <button
           onClick={handleFavoriteClick}
-          className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/10 backdrop-blur-sm transition-colors hover:bg-black/20"
+          className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-[#46B95B] transition-colors hover:bg-[#3da550]"
         >
           <Heart
             className={cn(
-              "h-3.5 w-3.5 drop-shadow-sm transition-colors",
-              isFavorite ? "fill-red-500 text-red-500" : "text-white"
+              "h-3.5 w-3.5 drop-shadow-sm transition-colors text-white",
+              isFavorite && "fill-white"
             )}
           />
         </button>
