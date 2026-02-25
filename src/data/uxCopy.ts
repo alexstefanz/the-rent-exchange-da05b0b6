@@ -165,7 +165,7 @@ const createUxCopy = () => ({
     helpCenter: { ro: "Centru de Ajutor", en: "Help Center" },
     contactUs: { ro: "Contactează-ne", en: "Contact Us" },
     terms: { ro: "Termeni și Condiții", en: "Terms & Conditions" },
-    copyright: { ro: "ÎnchiriazăAcum. Toate drepturile rezervate.", en: "RentNow. All rights reserved." },
+    copyright: { ro: "Rentli. Toate drepturile rezervate.", en: "Rentli. All rights reserved." },
   },
   search_page: {
     title: { ro: "Rezultatele Căutării", en: "Search Results" },
