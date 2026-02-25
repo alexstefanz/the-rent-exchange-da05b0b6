@@ -390,6 +390,7 @@ export type Database = {
           location_city: string | null
           location_country: string | null
           owner_id: string
+          pickup_address: string | null
           platform_fee_percent: number
           slug: string | null
           subcategory: string | null
@@ -408,6 +409,7 @@ export type Database = {
           location_city?: string | null
           location_country?: string | null
           owner_id: string
+          pickup_address?: string | null
           platform_fee_percent?: number
           slug?: string | null
           subcategory?: string | null
@@ -426,6 +428,7 @@ export type Database = {
           location_city?: string | null
           location_country?: string | null
           owner_id?: string
+          pickup_address?: string | null
           platform_fee_percent?: number
           slug?: string | null
           subcategory?: string | null
