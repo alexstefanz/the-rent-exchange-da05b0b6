@@ -25,7 +25,8 @@ import {
   PlusCircle,
   HelpCircle,
   Globe,
-  ShieldCheck
+  ShieldCheck,
+  Shield
 } from "lucide-react";
 import { categories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
@@ -225,6 +226,12 @@ const Navbar = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
+                      <Link to="/profile#contul-meu" className="flex items-center gap-3 py-2">
+                        <Shield className="h-4 w-4" />
+                        {t("Verificare KYC", "KYC Verification")}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <Link to="/suport" className="flex items-center gap-3 py-2">
                         <HelpCircle className="h-4 w-4" />
                         {t("Suport & Tickete", "Support & Tickets")}
@@ -411,8 +418,16 @@ const Navbar = () => {
                   </>
                 )}
                 <Link 
-                  to="/suport" 
+                  to="/profile#contul-meu" 
                   className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
+                  onClick={closeMobileMenu}
+                >
+                  <Shield className="h-5 w-5" />
+                  {t("Verificare KYC", "KYC Verification")}
+                </Link>
+                <Link 
+                  to="/suport" 
+                  className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary"
                   onClick={closeMobileMenu}
                 >
                   <HelpCircle className="h-5 w-5" />

@@ -9,6 +9,8 @@ export interface Profile {
   whatsapp: string | null;
   avatar_url: string | null;
   created_at: string;
+  kyc_status: string;
+  kyc_level: string;
 }
 
 export const getProfile = async (userId: string): Promise<Profile | null> => {
