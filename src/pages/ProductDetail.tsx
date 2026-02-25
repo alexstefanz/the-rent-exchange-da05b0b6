@@ -222,20 +222,20 @@ const ProductDetail = () => {
 
             <OwnerSection ownerId={product.owner_id} ownerName={ownerName} ownerAvatar={owner?.avatar_url} rating={4.9} reviewCount={12} memberSince="2024" responseTime={copy.owner.responseTimeValue} responseRate="98%" isOwnProduct={user?.id === product.owner_id} />
 
-            {/* Location */}
-            <div className="rounded-xl border border-border bg-card p-6">
-              <div className="flex items-center gap-2 text-foreground mb-4"><MapPin className="h-5 w-5 text-primary" /><span className="font-medium">{location}</span></div>
-              <div className="rounded-lg overflow-hidden h-[200px] bg-muted flex items-center justify-center">
-                <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location + ', Romania')}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
-                  <MapPin className="h-12 w-12" /><span className="text-sm font-medium">{copy.product.viewOnMap}</span><span className="text-xs">{location}, Romania</span>
-                </a>
-              </div>
-            </div>
-
             {/* Description */}
             <div className="rounded-xl border border-border bg-card p-6">
               <h2 className="mb-4 font-heading text-xl font-semibold text-foreground">{copy.product.description}</h2>
               <p className="text-muted-foreground">{product.description || copy.product.noDescription}</p>
+            </div>
+
+            {/* Location */}
+            <div className="rounded-xl border border-border bg-card p-6">
+              <div className="flex items-center gap-2 text-foreground mb-4"><MapPin className="h-5 w-5 text-primary" /><span className="font-medium">{product.pickup_address || location}</span></div>
+              <div className="rounded-lg overflow-hidden h-[200px] bg-muted flex items-center justify-center">
+                <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((product.pickup_address || location) + ', Romania')}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                  <MapPin className="h-12 w-12" /><span className="text-sm font-medium">{copy.product.viewOnMap}</span><span className="text-xs">{product.pickup_address || location}, Romania</span>
+                </a>
+              </div>
             </div>
 
             <ProductIncludes />

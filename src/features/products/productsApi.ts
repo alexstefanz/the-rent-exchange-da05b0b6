@@ -14,6 +14,7 @@ export interface Product {
   subcategory: string | null;
   location_city: string | null;
   location_country: string | null;
+  pickup_address: string | null;
   images: string[];
   is_active: boolean;
   created_at: string;
@@ -134,6 +135,7 @@ export const createProduct = async (
     subcategory?: string;
     location_city?: string;
     location_country?: string;
+    pickup_address?: string;
     images?: string[];
   },
   ownerId: string
@@ -150,6 +152,7 @@ export const createProduct = async (
       subcategory: data.subcategory || null,
       location_city: data.location_city || null,
       location_country: data.location_country || "Romania",
+      pickup_address: data.pickup_address || null,
       images: data.images || [],
       is_active: true,
     })
@@ -173,6 +176,7 @@ export const updateProduct = async (
     subcategory?: string;
     location_city?: string;
     location_country?: string;
+    pickup_address?: string;
     images?: string[];
     is_active?: boolean;
   },

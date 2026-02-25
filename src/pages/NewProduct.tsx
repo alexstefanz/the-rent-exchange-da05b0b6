@@ -26,6 +26,7 @@ const productSchema = z.object({
   subcategory: z.string().optional(),
   location_city: z.string().optional(),
   location_country: z.string().optional(),
+  pickup_address: z.string().max(200, "Adresa nu poate depăși 200 caractere").optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -48,6 +49,7 @@ const NewProduct = () => {
       subcategory: "",
       location_city: "",
       location_country: "Romania",
+      pickup_address: "",
     },
   });
 
@@ -72,6 +74,7 @@ const NewProduct = () => {
         subcategory: data.subcategory,
         location_city: data.location_city,
         location_country: data.location_country || "Romania",
+        pickup_address: data.pickup_address,
         images: images,
       }, user.id);
 
@@ -223,7 +226,22 @@ const NewProduct = () => {
                     placeholder="Romania"
                     {...form.register("location_country")}
                   />
-                </div>
+              </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="pickup_address">Adresă ridicare produs</Label>
+                <Input
+                  id="pickup_address"
+                  placeholder="Ex: Strada Exemplu nr. 10, Sector 1, București"
+                  {...form.register("pickup_address")}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Adresa de unde se poate ridica produsul. Va apărea pe hartă.
+                </p>
+                {form.formState.errors.pickup_address && (
+                  <p className="text-sm text-destructive">{form.formState.errors.pickup_address.message}</p>
+                )}
               </div>
               
               <div className="space-y-2">
