@@ -23,6 +23,7 @@ import Messages from "./pages/Messages";
 import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
 import MiniCrmTest from "./pages/MiniCrmTest";
+import OdooTest from "./pages/OdooTest";
 import HowItWorks from "./pages/HowItWorks";
 import AboutUs from "./pages/AboutUs";
 import UserTickets from "./pages/UserTickets";
@@ -92,8 +93,9 @@ const App = () => (
               <Route path="/admin/kyc" element={<AdminKYC />} />
               <Route path="/admin/kyc/:id" element={<AdminKYCDetail />} />
               
-              {/* MiniCRM test */}
+              {/* Integration tests */}
               <Route path="/minicrm-test" element={<MiniCrmTest />} />
+              <Route path="/odoo-test" element={<OdooTest />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
