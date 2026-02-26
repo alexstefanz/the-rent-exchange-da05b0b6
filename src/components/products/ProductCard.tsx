@@ -66,6 +66,10 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
             <img
               src={imageUrl}
               alt={product.title}
+              width={480}
+              height={360}
+              loading="lazy"
+              decoding="async"
               className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
             />
             <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white">
@@ -108,6 +112,10 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
         <img
           src={imageUrl}
           alt={product.title}
+          width={480}
+          height={360}
+          loading="lazy"
+          decoding="async"
           className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105"
         />
         <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white">
