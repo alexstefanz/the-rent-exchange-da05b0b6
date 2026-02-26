@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+/* Fonts loaded via index.html <link> tags for non-render-blocking loading */
 
 @tailwind base;
 @tailwind components;

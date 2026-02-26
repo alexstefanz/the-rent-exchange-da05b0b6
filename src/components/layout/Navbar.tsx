@@ -117,7 +117,7 @@ const Navbar = () => {
         {/* Main navbar */}
         <div className="container h-16 flex items-center justify-between gap-[10px] px-[10px]">
           <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
-            <img src={logoImage} alt="RentNow" className="h-10 w-auto" />
+            <img src={logoImage} alt="Rentli" width={120} height={40} className="h-10 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}
@@ -301,7 +301,7 @@ const Navbar = () => {
           {/* Mobile Menu Header */}
           <div className="flex items-center justify-between border-b border-border p-4">
             <Link to="/" onClick={closeMobileMenu}>
-              <img src={logoImage} alt="RentNow" className="h-8 w-auto" />
+              <img src={logoImage} alt="Rentli" width={96} height={32} className="h-8 w-auto" />
             </Link>
             <Button 
               variant="ghost" 
