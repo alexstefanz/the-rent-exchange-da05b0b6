@@ -1,20 +1,47 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Menu } from "lucide-react";
 import AdminSidebar from "./AdminSidebar";
 import AdminGuard from "./AdminGuard";
+import MobileAdminMenu from "./MobileAdminMenu";
 
 interface AdminLayoutProps {
   children: ReactNode;
 }
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   return (
     <AdminGuard>
       <SidebarProvider>
         <div className="min-h-screen flex w-full bg-muted/30">
-          <AdminSidebar />
-          <main className="flex-1 p-6 overflow-auto">
-            {children}
+          {/* Desktop sidebar */}
+          <div className="hidden md:block">
+            <AdminSidebar />
+          </div>
+
+          <main className="flex-1 overflow-auto">
+            {/* Mobile header with hamburger */}
+            <div className="md:hidden sticky top-0 z-40 flex items-center gap-3 border-b bg-background px-4 py-3">
+              <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[280px] p-0">
+                  <MobileAdminMenu onClose={() => setMobileOpen(false)} />
+                </SheetContent>
+              </Sheet>
+              <span className="font-bold text-primary">Admin Panel</span>
+            </div>
+
+            <div className="p-6">
+              {children}
+            </div>
           </main>
         </div>
       </SidebarProvider>
