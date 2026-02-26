@@ -37,11 +37,17 @@ async function authenticate(): Promise<{ uid: number; sessionCookie: string }> {
   const ODOO_LOGIN = Deno.env.get("ODOO_LOGIN")!;
   const ODOO_PASSWORD = Deno.env.get("ODOO_PASSWORD")!;
 
+  console.log(`[odoo-proxy] Authenticating to: ${ODOO_URL}/web/session/authenticate`);
+  console.log(`[odoo-proxy] DB: "${ODOO_DB}", Login: "${ODOO_LOGIN}", Password length: ${ODOO_PASSWORD.length}`);
+
   const result = await odooJsonRpc(`${ODOO_URL}/web/session/authenticate`, {
     db: ODOO_DB,
     login: ODOO_LOGIN,
     password: ODOO_PASSWORD,
   });
+
+  console.log(`[odoo-proxy] Auth response uid:`, (result.result as Record<string, unknown>)?.uid);
+  if (result.error) console.error(`[odoo-proxy] Auth error:`, JSON.stringify(result.error));
 
   if (result.error) {
     throw new Error(result.error.data?.message || result.error.message || "Authentication failed");
