@@ -160,6 +160,50 @@ serve(async (req) => {
 
       const leadId = await callKw(sessionCookie, "crm.lead", "create", [[leadData]]);
 
+      // Send email notification to office@rentli.ro
+      const resendApiKey = Deno.env.get("RESEND_API_KEY");
+      if (resendApiKey) {
+        try {
+          const rows = [
+            data.name ? `<tr><td style="padding:6px 12px;color:#6B6155;">Nume lead</td><td style="padding:6px 12px;color:#2D2517;font-weight:600;">${data.name}</td></tr>` : '',
+            data.contact_name ? `<tr><td style="padding:6px 12px;color:#6B6155;">Contact</td><td style="padding:6px 12px;color:#2D2517;font-weight:600;">${data.contact_name}</td></tr>` : '',
+            data.email_from ? `<tr><td style="padding:6px 12px;color:#6B6155;">Email</td><td style="padding:6px 12px;color:#2D2517;font-weight:600;">${data.email_from}</td></tr>` : '',
+            data.phone ? `<tr><td style="padding:6px 12px;color:#6B6155;">Telefon</td><td style="padding:6px 12px;color:#2D2517;font-weight:600;">${data.phone}</td></tr>` : '',
+            data.expected_revenue ? `<tr><td style="padding:6px 12px;color:#6B6155;">Venit estimat</td><td style="padding:6px 12px;color:#2D2517;font-weight:600;">${data.expected_revenue} RON</td></tr>` : '',
+          ].filter(Boolean).join('');
+
+          const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#FAF9F7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#FAF9F7;padding:32px 16px;"><tr><td align="center">
+<table width="100%" style="max-width:520px;">
+  <tr><td style="background:#3DB86A;border-radius:12px 12px 0 0;padding:24px 32px;text-align:center;">
+    <span style="color:#fff;font-size:24px;font-weight:700;">RentNow</span>
+  </td></tr>
+  <tr><td style="background:#fff;padding:32px;border-radius:0 0 12px 12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+    <h2 style="margin:0 0 8px;color:#2D2517;font-size:20px;">🎉 Lead nou creat în Odoo</h2>
+    <p style="margin:0 0 24px;color:#6B6155;font-size:15px;">Un nou lead a fost creat automat din platforma RentNow.</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #E8E4DF;border-bottom:1px solid #E8E4DF;margin-bottom:24px;padding:8px 0;">${rows}</table>
+    <p style="margin:0;color:#9B9489;font-size:12px;">Lead ID în Odoo: ${leadId}</p>
+  </td></tr>
+</table>
+</td></tr></table></body></html>`;
+
+          await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${resendApiKey}` },
+            body: JSON.stringify({
+              from: "RentNow <noreply@rentli.ro>",
+              to: ["office@rentli.ro"],
+              subject: `Nou lead Rentli: ${data.name}`,
+              html,
+            }),
+          });
+          console.log("[odoo-proxy] Email notification sent to office@rentli.ro");
+        } catch (emailErr) {
+          console.error("[odoo-proxy] Email notification failed:", emailErr.message);
+        }
+      }
+
       return new Response(
         JSON.stringify({ success: true, uid, leadId }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
