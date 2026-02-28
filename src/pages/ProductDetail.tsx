@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { format, differenceInDays, isBefore } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
@@ -60,6 +60,30 @@ const ProductDetail = () => {
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const reviewsRef = useRef<HTMLDivElement>(null);
+  const sidebarWrapperRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+
+  // Constrain sidebar wrapper height so sticky stops before reviews
+  useEffect(() => {
+    const updateSidebarHeight = () => {
+      if (!reviewsRef.current || !sidebarWrapperRef.current || !gridRef.current) return;
+      const gridTop = gridRef.current.getBoundingClientRect().top + window.scrollY;
+      const reviewsTop = reviewsRef.current.getBoundingClientRect().top + window.scrollY;
+      const height = reviewsTop - gridTop;
+      sidebarWrapperRef.current.style.height = `${height}px`;
+    };
+    updateSidebarHeight();
+    window.addEventListener('resize', updateSidebarHeight);
+    // Re-calc after images load
+    const timer = setTimeout(updateSidebarHeight, 500);
+    const timer2 = setTimeout(updateSidebarHeight, 1500);
+    return () => {
+      window.removeEventListener('resize', updateSidebarHeight);
+      clearTimeout(timer);
+      clearTimeout(timer2);
+    };
+  }, [product]);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -201,7 +225,7 @@ const ProductDetail = () => {
           <span className="text-foreground whitespace-nowrap">{product.title}</span>
         </nav>
 
-        <div className="grid gap-8 lg:grid-cols-3 lg:items-start">
+        <div ref={gridRef} className="grid gap-8 lg:grid-cols-3 lg:items-start">
           <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
             {/* Desktop Gallery */}
             <div className="relative overflow-hidden rounded-xl bg-muted hidden lg:block">
@@ -248,7 +272,7 @@ const ProductDetail = () => {
             <UsageRules />
 
             {/* Reviews */}
-            <div className="rounded-xl border border-border bg-card p-6">
+            <div ref={reviewsRef} className="rounded-xl border border-border bg-card p-6">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-heading text-xl font-semibold text-foreground">{copy.product.reviews} ({reviews.length})</h2>
                 <div className="flex items-center gap-1"><Star className="h-5 w-5 fill-yellow-400 text-yellow-400" /><span className="font-semibold">4.9</span></div>
@@ -274,7 +298,7 @@ const ProductDetail = () => {
           </div>
 
           {/* Right Sidebar - Booking */}
-          <div className="lg:col-span-1 order-1 lg:order-2">
+          <div ref={sidebarWrapperRef} className="lg:col-span-1 order-1 lg:order-2">
             <div className="sticky top-24 rounded-xl border border-border bg-card p-4 sm:p-6 overflow-hidden">
               <div className="flex items-start justify-between gap-3 mb-3 lg:hidden">
                 <h1 className="font-heading text-[25px] font-semibold text-foreground leading-tight flex-1">{product.title}</h1>
