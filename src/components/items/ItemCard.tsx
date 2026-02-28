@@ -28,12 +28,14 @@ const ItemCard = ({
       to={`/item/${id}`}
       className="group block overflow-hidden rounded-xl bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover"
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-white p-4">
-        <img
-          src={image}
-          alt={title}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
+      <div className="relative aspect-[4/3] overflow-hidden bg-[#F7F6F2] p-3">
+        <div className="w-full h-full rounded-[30px] bg-white flex items-center justify-center overflow-hidden p-4">
+          <img
+            src={image}
+            alt={title}
+            className="max-h-[80%] max-w-[90%] object-contain transition-transform duration-500 group-hover:scale-105"
+          />
+        </div>
         <Badge className="absolute left-3 top-3 bg-background/90 text-foreground backdrop-blur-sm">
           {category}
         </Badge>

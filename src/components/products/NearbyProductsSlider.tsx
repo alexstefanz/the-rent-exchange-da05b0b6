@@ -83,8 +83,10 @@ const NearbyProductCard = ({ product }: { product: Product }) => {
 
   return (
     <Link to={getProductUrl(product)} className="group flex-shrink-0 w-[200px] md:w-[220px] snap-start">
-      <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-white p-3">
-        <img src={imageUrl} alt={product.title} className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105" />
+      <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-[#F7F6F2] p-2">
+        <div className="w-full h-full rounded-[30px] bg-white flex items-center justify-center overflow-hidden p-3">
+          <img src={imageUrl} alt={product.title} className="max-h-[80%] max-w-[90%] object-contain transition-transform duration-300 group-hover:scale-105" />
+        </div>
         <button className="absolute top-3 right-3 p-2 rounded-full bg-white/80 hover:bg-white transition-colors" onClick={(e) => { e.preventDefault(); }}>
           <Heart className="h-4 w-4 text-foreground" />
         </button>
