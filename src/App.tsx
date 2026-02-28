@@ -33,6 +33,12 @@ const AboutUs = lazy(() => import("./pages/AboutUs"));
 const UserTickets = lazy(() => import("./pages/UserTickets"));
 const KycVerification = lazy(() => import("./pages/KycVerification"));
 
+// Legal pages
+const TermsAndConditions = lazy(() => import("./pages/legal/TermsAndConditions"));
+const PrivacyPolicy = lazy(() => import("./pages/legal/PrivacyPolicy"));
+const CancellationPolicy = lazy(() => import("./pages/legal/CancellationPolicy"));
+const CookiePolicy = lazy(() => import("./pages/legal/CookiePolicy"));
+
 // Admin pages
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminReservations = lazy(() => import("./pages/admin/AdminReservations"));
@@ -82,6 +88,10 @@ const App = () => (
                 <Route path="/verificare" element={<KycVerification />} />
                 <Route path="/cum-functioneaza" element={<HowItWorks />} />
                 <Route path="/despre-noi" element={<AboutUs />} />
+                <Route path="/termeni-si-conditii" element={<TermsAndConditions />} />
+                <Route path="/politica-confidentialitate" element={<PrivacyPolicy />} />
+                <Route path="/politica-anulare" element={<CancellationPolicy />} />
+                <Route path="/politica-cookies" element={<CookiePolicy />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminDashboard />} />

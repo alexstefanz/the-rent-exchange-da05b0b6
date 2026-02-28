@@ -63,7 +63,7 @@ const Footer = () => {
             <h4 className="font-heading text-sm font-semibold">{copy.footer.support}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
-                <Link to="#" className="transition-colors hover:text-foreground">
+                <Link to="/centru-asistenta" className="transition-colors hover:text-foreground">
                   {copy.footer.helpCenter}
                 </Link>
               </li>
@@ -73,8 +73,23 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="#" className="transition-colors hover:text-foreground">
+                <Link to="/termeni-si-conditii" className="transition-colors hover:text-foreground">
                   {copy.footer.terms}
+                </Link>
+              </li>
+              <li>
+                <Link to="/politica-confidentialitate" className="transition-colors hover:text-foreground">
+                  Confidențialitate
+                </Link>
+              </li>
+              <li>
+                <Link to="/politica-anulare" className="transition-colors hover:text-foreground">
+                  Politica de anulare
+                </Link>
+              </li>
+              <li>
+                <Link to="/politica-cookies" className="transition-colors hover:text-foreground">
+                  Cookie-uri
                 </Link>
               </li>
             </ul>
