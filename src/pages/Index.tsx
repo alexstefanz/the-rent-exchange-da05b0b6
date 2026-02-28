@@ -35,7 +35,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden h-[500px]">
         <img src={bannerBg} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 w-full h-[130%] object-cover" style={{ transform: 'translateZ(0)' }} id="hero-parallax-img" />
         <div className="absolute inset-0 bg-black/50" />
         <div className="container relative pt-16 pb-8 md:py-24">
