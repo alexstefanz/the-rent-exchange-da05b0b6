@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import bannerBg from "@/assets/banner_icon_background.jpg";
+import bannerBg from "@/assets/banner_hero.png";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
@@ -21,12 +21,12 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <section className="relative overflow-hidden bg-gradient-to-br from-background via-background to-primary/5">
-        <img src={bannerBg} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 w-full h-full object-cover opacity-40" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,hsl(var(--primary)/0.1),transparent_50%)]" />
+      <section className="relative overflow-hidden">
+        <img src={bannerBg} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-black/50" />
         <div className="container relative pt-16 pb-8 md:py-24">
           <div className="mx-auto max-w-4xl text-center">
-            <h1 className="mt-[30px] animate-fade-up font-heading font-bold tracking-tight text-foreground md:mt-0 text-4xl">
+            <h1 className="mt-[30px] animate-fade-up font-heading font-bold tracking-tight text-white md:mt-0 text-4xl">
               {copy.home.heroTitle}{" "}
               <br className="md:hidden" />
               <span className="text-primary">{copy.home.heroTitleHighlight}</span>
