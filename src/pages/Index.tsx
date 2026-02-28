@@ -38,8 +38,8 @@ const Index = () => {
       <section className="relative overflow-hidden h-[500px]">
         <img src={bannerBg} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 w-full h-[130%] object-cover" style={{ transform: 'translateZ(0)' }} id="hero-parallax-img" />
         <div className="absolute inset-0 bg-black/50" />
-        <div className="container relative h-full flex items-center justify-center">
-          <div className="mx-auto max-w-4xl text-center">
+        <div className="container relative h-full flex flex-col items-center justify-center">
+          <div className="mx-auto w-full max-w-4xl text-center">
             <h1 className="mt-[30px] animate-fade-up font-heading font-bold tracking-tight text-white md:mt-0 text-4xl">
               {copy.home.heroTitle}{" "}
               <br className="md:hidden" />
