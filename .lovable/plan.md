@@ -1,37 +1,23 @@
 
 
-## Plan: Create 4 Legal Pages for Rentli
+## Plan: Update BookingCard on Product Page
 
-### Overview
-Create 4 new legal pages with rewritten (not copied) content adapted for Rentli, with a unique design distinct from the source. Each page will use a consistent legal page layout with Navbar + Footer, a clean typographic design using cards and sections.
+### Changes to `src/components/product/BookingCard.tsx`
 
-### Pages to Create
+1. **Remove trust indicators section** (lines 163-170): Delete the `<Separator>`, `<Shield>` free cancellation line, and `<TrustIndicators>` component at the bottom.
 
-1. **Termeni și Condiții** (`/termeni-si-conditii`) - `src/pages/legal/TermsAndConditions.tsx`
-2. **Politica de Confidențialitate** (`/politica-confidentialitate`) - `src/pages/legal/PrivacyPolicy.tsx`
-3. **Politica de Anulare** (`/politica-anulare`) - `src/pages/legal/CancellationPolicy.tsx`
-4. **Politica privind Cookie-uri** (`/politica-cookies`) - `src/pages/legal/CookiePolicy.tsx`
+2. **Add date summary with styled input-like display** after dates are selected: A rounded bordered container showing "DD MMM YYYY > DD MMM YYYY" with a calendar icon (matching image 1 style).
 
-### Design Approach
-- Hero section with gradient background (using Rentli's orange tones) and page title
-- Table of contents sidebar on desktop (sticky), collapsible on mobile
-- Content organized in numbered accordion sections instead of flat scrolling
-- Each section in a Card with clean spacing
-- "Last updated" badge at the top
-- Different from source: sidebar TOC, accordion-style sections, orange accent design
+3. **Add "Anulare gratuită" section** (matching image 2): A block with thumbs-up icon, bold "Anulare gratuită" title, description text about 48h free cancellation, and a link to `/politica-anulare`.
 
-### Content Strategy
-All content will be rewritten for "Rentli" brand, maintaining the same legal meaning but with different phrasing. References to "RENTX S.R.L" replaced with generic "Rentli" / "platforma". Amounts and specific company details will be adapted.
+4. **Sticky behavior** is already implemented via `sticky top-24` on line 77 — this should work on desktop. Will verify the parent container allows sticky positioning (needs a scrollable parent without `overflow: hidden`).
 
-### Implementation Steps
+### Implementation Details
 
-1. **Create 4 legal page components** with rewritten Romanian text, using Navbar/Footer, Card components, and accordion sections
-2. **Add routes** in `App.tsx` for the 4 new pages
-3. **Update Footer** to link to the legal pages (replace `#` links with actual routes, add links for privacy/cookies/cancellation)
-
-### Technical Details
-- Lazy-load all 4 pages in `App.tsx`
-- Use existing UI components: `Card`, `Accordion`, `Breadcrumb`
-- No new dependencies needed
-- Pages are static content, no backend needed
+- Remove `TrustIndicators` import and usage
+- Remove `Shield` from lucide imports (keep others)
+- Add `Link` from react-router-dom for the cancellation policy link
+- Add `ThumbsUp` from lucide-react for the cancellation icon
+- The date summary bar appears when both dates are selected, styled as a rounded pill with border
+- The cancellation section replaces the old trust indicators section
 
