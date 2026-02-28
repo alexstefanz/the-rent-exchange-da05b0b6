@@ -83,8 +83,8 @@ const NearbyProductCard = ({ product }: { product: Product }) => {
 
   return (
     <Link to={getProductUrl(product)} className="group flex-shrink-0 w-[200px] md:w-[220px] snap-start">
-      <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-[#F7F6F2] p-2">
-        <div className="w-full h-full rounded-[30px] bg-white flex items-center justify-center overflow-hidden px-[15px] py-3">
+      <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-white">
+        <div className="flex h-full w-full items-center justify-center px-[15px] py-3">
           <div className="h-[250px] w-[250px] max-h-full max-w-full">
             <img src={imageUrl} alt={product.title} className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105" />
           </div>
