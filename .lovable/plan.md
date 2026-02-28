@@ -1,19 +1,24 @@
 
 
-# Plan: Add padding to product card images
+# Plan: Inner rounded container for product card images
 
-Add internal padding to the image container in ProductCard so images sit inset from the card edges, creating a cleaner, more consistent look regardless of aspect ratio.
+Wrap the product image in an inner container with `rounded-[30px]` and `bg-white` inside the card's image area. The outer area becomes the card background (`bg-[#F7F6F2]`), and the image sits fully contained inside the rounded inner box.
 
 ## Changes
 
 ### `src/components/products/ProductCard.tsx`
-- **Gallery view** (line 111): Add `p-4` padding to the image container div (`relative aspect-[4/3] overflow-hidden bg-white` → `relative aspect-[4/3] overflow-hidden bg-white p-4`)
-- **List view** (line 65): Add `p-3` padding to the list image container similarly
-- Both keep `object-contain` + `bg-white` so images scale within the padded area
+**Gallery view (line 111-120):**
+- Change outer div bg from `bg-white` to `bg-[#F7F6F2]` (or `bg-background`)
+- Inside, wrap `<img>` in a new div: `<div className="w-full h-full rounded-[30px] bg-white flex items-center justify-center overflow-hidden p-4">`
+- Image uses `max-h-[80%] max-w-[90%] object-contain`
+- Badges (CheckCircle, Heart) stay absolutely positioned on the outer div
+
+**List view (lines 65-78):**
+- Same pattern: outer bg neutral, inner rounded container for image
 
 ### `src/components/products/NearbyProductsSlider.tsx`
-- Add `p-3` padding to the NearbyProductCard image container for consistency
+- Same inner rounded container pattern for NearbyProductCard image
 
 ### `src/components/items/ItemCard.tsx`
-- Add `p-4` padding to image container for consistency across all card types
+- Same inner rounded container pattern
 
