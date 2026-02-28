@@ -1,14 +1,13 @@
 import { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { format, differenceInDays, isBefore } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
-import { Calendar as CalendarIcon, Heart, Info, Shield } from "lucide-react";
+import { Calendar as CalendarIcon, Heart, Info, ThumbsUp, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
-import TrustIndicators from "@/components/trust/TrustIndicators";
 import { cn } from "@/lib/utils";
 
 interface BookingCardProps {
@@ -160,13 +159,37 @@ const BookingCard = ({
         {copy.booking.reassurance}
       </p>
 
-      <Separator className="my-4" />
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Shield className="h-4 w-4 text-primary" />
-          <span>{copy.booking.freeCancellation}</span>
+      {startDate && endDate && (
+        <div className="mt-4 flex items-center gap-2 rounded-full border border-border bg-muted/50 px-4 py-2.5">
+          <CalendarIcon className="h-4 w-4 text-primary flex-shrink-0" />
+          <span className="text-sm font-medium text-foreground">
+            {format(startDate, "dd MMM yyyy", { locale: dateLocale })}
+          </span>
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+          <span className="text-sm font-medium text-foreground">
+            {format(endDate, "dd MMM yyyy", { locale: dateLocale })}
+          </span>
         </div>
-        <TrustIndicators variant="vertical" size="sm" />
+      )}
+
+      <div className="mt-4 rounded-xl border border-border bg-muted/30 p-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
+            <ThumbsUp className="h-4.5 w-4.5 text-primary" />
+          </div>
+          <div>
+            <p className="font-semibold text-foreground text-sm">Anulare gratuită</p>
+            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+              Poți anula gratuit în primele 48 de ore de la rezervare.
+            </p>
+            <Link
+              to="/politica-anulare"
+              className="text-xs text-primary hover:underline mt-1 inline-block font-medium"
+            >
+              Află mai multe
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
