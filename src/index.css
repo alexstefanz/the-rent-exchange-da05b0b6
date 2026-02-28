@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 30 25% 97%;
+    --background: 50 20% 95%;
     --foreground: 20 20% 15%;
 
     --card: 0 0% 100%;
@@ -15,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 20 20% 15%;
 
-    --primary: 131 45% 50%;
+    --primary: 30 95% 53%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 30 20% 92%;
@@ -32,7 +32,7 @@
 
     --border: 30 15% 88%;
     --input: 30 15% 88%;
-    --ring: 131 45% 50%;
+    --ring: 30 95% 53%;
 
     --radius: 0.75rem;
 
@@ -46,8 +46,8 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
 
     /* Custom tokens */
-    --font-heading: 'Playfair Display', serif;
-    --font-body: 'DM Sans', sans-serif;
+    --font-heading: 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'Plus Jakarta Sans', sans-serif;
     
     --shadow-soft: 0 4px 20px -4px hsl(20 20% 15% / 0.08);
     --shadow-card: 0 2px 12px -2px hsl(20 20% 15% / 0.06);
@@ -67,7 +67,7 @@
     --popover: 20 15% 14%;
     --popover-foreground: 30 20% 95%;
 
-    --primary: 131 45% 50%;
+    --primary: 30 95% 53%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 20 15% 18%;
@@ -76,7 +76,7 @@
     --muted: 20 12% 20%;
     --muted-foreground: 30 10% 60%;
 
-    --accent: 165 45% 45%;
+    --accent: 30 90% 60%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 30.6%;
@@ -84,7 +84,7 @@
 
     --border: 20 12% 22%;
     --input: 20 12% 22%;
-    --ring: 131 45% 50%;
+    --ring: 30 95% 53%;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
