@@ -30,11 +30,13 @@ const ItemCard = ({
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-[#F7F6F2] p-3">
         <div className="w-full h-full rounded-[30px] bg-white flex items-center justify-center overflow-hidden px-[15px] py-4">
-          <img
-            src={image}
-            alt={title}
-            className="max-h-[65%] max-w-[75%] object-contain transition-transform duration-500 group-hover:scale-105"
-          />
+          <div className="h-[250px] w-[250px] max-h-full max-w-full">
+            <img
+              src={image}
+              alt={title}
+              className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+            />
+          </div>
         </div>
         <Badge className="absolute left-3 top-3 bg-background/90 text-foreground backdrop-blur-sm">
           {category}
