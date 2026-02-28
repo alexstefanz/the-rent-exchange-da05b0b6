@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import bannerBg from "@/assets/banner_hero.png";
 import { ArrowRight } from "lucide-react";
@@ -14,6 +15,19 @@ import { useLanguage } from "@/contexts/LanguageContext";
 const Index = () => {
   const copy = useUxCopy();
   const { language } = useLanguage();
+  const heroRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const img = document.getElementById("hero-parallax-img") as HTMLImageElement | null;
+      if (!img) return;
+      const scrollY = window.scrollY;
+      img.style.transform = `translateY(${scrollY * 0.4}px)`;
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const popularCategoryIds = [1, 2, 6, 7, 22, 19, 4, 5, 9];
   const popularCategories = categories.filter((c) => popularCategoryIds.includes(c.id));
 
@@ -22,7 +36,7 @@ const Index = () => {
       <Navbar />
 
       <section className="relative overflow-hidden">
-        <img src={bannerBg} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
+        <img src={bannerBg} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 w-full h-[130%] object-cover" style={{ transform: 'translateZ(0)' }} id="hero-parallax-img" />
         <div className="absolute inset-0 bg-black/50" />
         <div className="container relative pt-16 pb-8 md:py-24">
           <div className="mx-auto max-w-4xl text-center">
