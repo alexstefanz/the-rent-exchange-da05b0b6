@@ -1,20 +1,37 @@
 
 
-# Plan: Add explicit horizontal padding to card images
+## Plan: Create 4 Legal Pages for Rentli
 
-The inner container already has `p-4` but the images still appear too large. Replace the percentage-based constraints with fixed pixel padding on the inner container to guarantee visible spacing.
+### Overview
+Create 4 new legal pages with rewritten (not copied) content adapted for Rentli, with a unique design distinct from the source. Each page will use a consistent legal page layout with Navbar + Footer, a clean typographic design using cards and sections.
 
-## Changes
+### Pages to Create
 
-### `src/components/products/ProductCard.tsx`
-- **Gallery view (line 114):** Change inner container padding from `p-4` to `px-[15px] py-4`
-- **List view (line ~67):** Same: `px-[15px] py-3`
+1. **Termeni și Condiții** (`/termeni-si-conditii`) - `src/pages/legal/TermsAndConditions.tsx`
+2. **Politica de Confidențialitate** (`/politica-confidentialitate`) - `src/pages/legal/PrivacyPolicy.tsx`
+3. **Politica de Anulare** (`/politica-anulare`) - `src/pages/legal/CancellationPolicy.tsx`
+4. **Politica privind Cookie-uri** (`/politica-cookies`) - `src/pages/legal/CookiePolicy.tsx`
 
-### `src/components/products/NearbyProductsSlider.tsx`
-- Change inner container padding from `p-3` to `px-[15px] py-3`
+### Design Approach
+- Hero section with gradient background (using Rentli's orange tones) and page title
+- Table of contents sidebar on desktop (sticky), collapsible on mobile
+- Content organized in numbered accordion sections instead of flat scrolling
+- Each section in a Card with clean spacing
+- "Last updated" badge at the top
+- Different from source: sidebar TOC, accordion-style sections, orange accent design
 
-### `src/components/items/ItemCard.tsx`
-- Change inner container padding from `p-4` to `px-[15px] py-4`
+### Content Strategy
+All content will be rewritten for "Rentli" brand, maintaining the same legal meaning but with different phrasing. References to "RENTX S.R.L" replaced with generic "Rentli" / "platforma". Amounts and specific company details will be adapted.
 
-Additionally, the images themselves should not have max-width/max-height percentage limits that are too generous. Keep `max-h-[65%] max-w-[75%]` as-is since the added horizontal padding will visually reduce image width.
+### Implementation Steps
+
+1. **Create 4 legal page components** with rewritten Romanian text, using Navbar/Footer, Card components, and accordion sections
+2. **Add routes** in `App.tsx` for the 4 new pages
+3. **Update Footer** to link to the legal pages (replace `#` links with actual routes, add links for privacy/cookies/cancellation)
+
+### Technical Details
+- Lazy-load all 4 pages in `App.tsx`
+- Use existing UI components: `Card`, `Accordion`, `Breadcrumb`
+- No new dependencies needed
+- Pages are static content, no backend needed
 
