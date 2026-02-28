@@ -121,7 +121,16 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden items-center gap-4 lg:flex">
+          <nav className="hidden items-center gap-6 lg:flex">
+            <Link to="/categorii" className="text-sm font-medium text-foreground/80 transition-colors hover:text-primary">
+              {t("Explorează", "Explore")}
+            </Link>
+            <Link to="/cum-functioneaza" className="text-sm font-medium text-foreground/80 transition-colors hover:text-primary">
+              {t("Cum funcționează", "How it works")}
+            </Link>
+            <Link to="/despre-noi" className="text-sm font-medium text-foreground/80 transition-colors hover:text-primary">
+              {t("Despre noi", "About us")}
+            </Link>
           </nav>
 
           <div className="flex items-center gap-2">
