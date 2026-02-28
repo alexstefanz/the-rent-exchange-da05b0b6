@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { format, differenceInDays, isBefore } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, MapPin, Star, Shield, Clock, MessageCircle, Check, User, Calendar, ArrowLeft, Share2, Heart, Loader2, Phone, Mail, Info } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Star, Shield, Clock, MessageCircle, Check, User, Calendar, ArrowLeft, Share2, Heart, Loader2, Phone, Mail, Info, ThumbsUp } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -22,7 +22,7 @@ import NearbyProductsSlider from "@/components/products/NearbyProductsSlider";
 import OwnerSection from "@/components/product/OwnerSection";
 import ProductIncludes from "@/components/product/ProductIncludes";
 import UsageRules from "@/components/product/UsageRules";
-import TrustIndicators from "@/components/trust/TrustIndicators";
+
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { addFavoriteProduct, removeFavoriteProduct, isProductFavorite } from "@/features/profile/favoriteProductsApi";
@@ -316,7 +316,19 @@ const ProductDetail = () => {
 
               <p className="mt-3 text-xs text-center text-muted-foreground flex items-center justify-center gap-1"><Info className="h-3 w-3" />{copy.booking.reassurance}</p>
               <Separator className="my-4" />
-              <TrustIndicators variant="vertical" size="sm" />
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
+                  <ThumbsUp className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground text-sm">Anulare gratuită</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                    Anulează gratuit cu 48h înainte de începerea închirierii. Rambursare parțială după. Consultă{" "}
+                    <Link to="/politica-anulare" className="text-primary hover:underline font-medium">politica de anulare</Link>
+                    {" "}pentru mai multe detalii.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
