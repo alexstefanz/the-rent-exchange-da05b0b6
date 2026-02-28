@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
-import logoImage from "@/assets/rentnow_logo.png";
+import logoImage from "@/assets/rentli_logo.png";
 import { useUxCopy } from "@/hooks/useUxCopy";
 
 const Auth = () => {

@@ -46,12 +46,10 @@ const Index = () => {
           <div className="grid grid-cols-3 gap-6 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-9">
             {popularCategories.map((category) => {
               const Icon = getCategoryIcon(category.id);
-              const colors = ["bg-yellow-100", "bg-blue-100", "bg-amber-100", "bg-orange-100", "bg-indigo-100", "bg-emerald-100", "bg-pink-100", "bg-cyan-100", "bg-rose-100"];
-              const bgColor = colors[(category.id - 1) % colors.length];
               return (
                 <Link key={category.id} to={`/categorie/${category.id}`} className="group flex flex-col items-center text-center">
-                  <div className={`mb-3 flex h-16 w-16 items-center justify-center rounded-full ${bgColor} transition-transform group-hover:scale-110 sm:h-20 sm:w-20`}>
-                    <Icon className="h-8 w-8 text-foreground sm:h-10 sm:w-10" />
+                  <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 transition-transform group-hover:scale-110 sm:h-20 sm:w-20">
+                    <Icon className="h-8 w-8 text-primary sm:h-10 sm:w-10" />
                   </div>
                   <p className="text-xs font-medium text-foreground sm:text-sm">
                     {(() => {const n = language === "en" ? category.nameEn : category.name;return <>{n.split(" & ")[0]}{n.includes("&") && <><br /><span className="text-muted-foreground">{n.split(" & ")[1]?.split(" ")[0]}</span></>}</>;})()}
