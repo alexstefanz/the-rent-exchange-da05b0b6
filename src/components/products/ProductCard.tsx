@@ -71,7 +71,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
                 height={360}
                 loading="lazy"
                 decoding="async"
-                className="max-h-[80%] max-w-[90%] object-contain transition-transform duration-300 group-hover:scale-105"
+                className="max-h-[65%] max-w-[75%] object-contain transition-transform duration-300 group-hover:scale-105"
               />
             </div>
             <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white">
@@ -119,7 +119,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
             height={360}
             loading="lazy"
             decoding="async"
-            className="max-h-[80%] max-w-[90%] object-contain transition-transform duration-300 group-hover:scale-105"
+            className="max-h-[65%] max-w-[75%] object-contain transition-transform duration-300 group-hover:scale-105"
           />
         </div>
         <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white">

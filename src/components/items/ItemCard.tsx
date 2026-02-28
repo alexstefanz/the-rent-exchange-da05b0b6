@@ -33,7 +33,7 @@ const ItemCard = ({
           <img
             src={image}
             alt={title}
-            className="max-h-[80%] max-w-[90%] object-contain transition-transform duration-500 group-hover:scale-105"
+            className="max-h-[65%] max-w-[75%] object-contain transition-transform duration-500 group-hover:scale-105"
           />
         </div>
         <Badge className="absolute left-3 top-3 bg-background/90 text-foreground backdrop-blur-sm">
