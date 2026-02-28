@@ -1,24 +1,20 @@
 
 
-# Plan: Inner rounded container for product card images
+# Plan: Constrain product card images to be smaller and more contained
 
-Wrap the product image in an inner container with `rounded-[30px]` and `bg-white` inside the card's image area. The outer area becomes the card background (`bg-[#F7F6F2]`), and the image sits fully contained inside the rounded inner box.
+The images currently use `max-h-[80%] max-w-[90%]` which still lets them fill most of the container. Reduce these constraints so images are visually smaller and more "inset" with more white space around them.
 
 ## Changes
 
 ### `src/components/products/ProductCard.tsx`
-**Gallery view (line 111-120):**
-- Change outer div bg from `bg-white` to `bg-[#F7F6F2]` (or `bg-background`)
-- Inside, wrap `<img>` in a new div: `<div className="w-full h-full rounded-[30px] bg-white flex items-center justify-center overflow-hidden p-4">`
-- Image uses `max-h-[80%] max-w-[90%] object-contain`
-- Badges (CheckCircle, Heart) stay absolutely positioned on the outer div
-
-**List view (lines 65-78):**
-- Same pattern: outer bg neutral, inner rounded container for image
+- **Gallery view (line 122):** Change image from `max-h-[80%] max-w-[90%]` to `max-h-[65%] max-w-[75%]`
+- **List view (line 74):** Same change: `max-h-[65%] max-w-[75%]`
 
 ### `src/components/products/NearbyProductsSlider.tsx`
-- Same inner rounded container pattern for NearbyProductCard image
+- Change NearbyProductCard image from `max-h-[80%] max-w-[90%]` to `max-h-[65%] max-w-[75%]`
 
 ### `src/components/items/ItemCard.tsx`
-- Same inner rounded container pattern
+- Change image from `max-h-[80%] max-w-[90%]` to `max-h-[65%] max-w-[75%]`
+
+This ensures all images have consistent sizing with generous whitespace padding inside the rounded container, regardless of aspect ratio.
 
