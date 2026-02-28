@@ -9,7 +9,7 @@ import { getCategoryIcon } from "@/data/categoryIcons";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-const colors = ["bg-yellow-100","bg-blue-100","bg-amber-100","bg-orange-100","bg-indigo-100","bg-emerald-100","bg-pink-100","bg-cyan-100","bg-rose-100"];
+
 
 const Categories = () => {
   const copy = useUxCopy();
@@ -36,13 +36,12 @@ const Categories = () => {
         <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
           {filteredCategories.map((category, index) => {
             const Icon = getCategoryIcon(category.id);
-            const colorClass = colors[index % colors.length];
             const displayName = language === "en" ? category.nameEn : category.name;
             const nameParts = displayName.split(" & ");
             return (
               <Link key={category.id} to={`/categorie/${category.id}`} className="group flex flex-col items-center gap-2 animate-fade-up" style={{ animationDelay: `${Math.min(index * 0.03, 0.3)}s` }}>
-                <div className={`flex h-16 w-16 items-center justify-center rounded-full ${colorClass} transition-transform duration-200 group-hover:scale-110 sm:h-20 sm:w-20`}>
-                  <Icon className="h-8 w-8 text-foreground sm:h-10 sm:w-10" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 transition-transform duration-200 group-hover:scale-110 sm:h-20 sm:w-20">
+                  <Icon className="h-8 w-8 text-primary sm:h-10 sm:w-10" />
                 </div>
                 <div className="text-center">
                   <span className="block text-xs font-medium text-foreground sm:text-sm">{nameParts[0]}</span>
