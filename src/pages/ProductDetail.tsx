@@ -201,7 +201,7 @@ const ProductDetail = () => {
           <span className="text-foreground whitespace-nowrap">{product.title}</span>
         </nav>
 
-        <div className="grid gap-8 lg:grid-cols-3">
+        <div className="grid gap-8 lg:grid-cols-3 lg:items-start">
           <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
             {/* Desktop Gallery */}
             <div className="relative overflow-hidden rounded-xl bg-muted hidden lg:block">

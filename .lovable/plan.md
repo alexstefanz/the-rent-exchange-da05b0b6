@@ -1,32 +1,23 @@
 
 
-## Plan: Make BookingCard sticky with scroll limit at reviews section
+## Plan: Update BookingCard on Product Page
 
-### Problem
-The booking sidebar card needs to stay fixed while scrolling, but stop scrolling when it reaches the reviews section.
+### Changes to `src/components/product/BookingCard.tsx`
 
-### Approach
-Use a `useRef` + `useEffect` with `IntersectionObserver` or scroll event to detect when the reviews section is in view, and switch the card from `sticky` to `relative` positioning. A simpler CSS-only approach: wrap the left column content up to (but not including) NearbyProductsSlider in a container that acts as the sticky boundary.
+1. **Remove trust indicators section** (lines 163-170): Delete the `<Separator>`, `<Shield>` free cancellation line, and `<TrustIndicators>` component at the bottom.
 
-**Simpler solution**: The `sticky` element stops being sticky when its parent container ends. Currently the sidebar parent is `div.lg:col-span-1` which spans the full grid. We need to give this parent a defined height that ends at the reviews section boundary.
+2. **Add date summary with styled input-like display** after dates are selected: A rounded bordered container showing "DD MMM YYYY > DD MMM YYYY" with a calendar icon (matching image 1 style).
 
-**Best approach**: Use JavaScript to calculate the stop point. Add a ref to the reviews section and use a scroll listener to toggle between `sticky` and `relative` when the card would overlap reviews.
+3. **Add "Anulare gratuită" section** (matching image 2): A block with thumbs-up icon, bold "Anulare gratuită" title, description text about 48h free cancellation, and a link to `/politica-anulare`.
 
-### Changes to `src/pages/ProductDetail.tsx`
+4. **Sticky behavior** is already implemented via `sticky top-24` on line 77 — this should work on desktop. Will verify the parent container allows sticky positioning (needs a scrollable parent without `overflow: hidden`).
 
-1. Add a `ref` to the reviews section div (line 251)
-2. Add a `ref` to the sidebar container (line 277)
-3. Add a `useEffect` with scroll listener that:
-   - Gets the reviews section top position
-   - Gets the sidebar card height
-   - When `scrollY + card.offsetTop + card.height > reviews.top`, switch card to `relative` + calculated top
-4. Alternatively (cleaner): set `max-height` on the sidebar column wrapper to match the left column height up to the reviews section, so `sticky` naturally stops there.
+### Implementation Details
 
-**Cleanest implementation**: Use `position: sticky` with a wrapper div whose height is constrained. Add an `id="reviews-section"` to the reviews div, and use a `useRef` + `ResizeObserver` to set the sidebar wrapper height dynamically.
-
-### Implementation
-- Add `useRef` for reviews section
-- Add `useRef` for sidebar wrapper  
-- Add `useEffect` that calculates and sets the sidebar wrapper's `style.height` to match the distance from grid top to reviews section top
-- This makes `sticky` naturally stop before reviews
+- Remove `TrustIndicators` import and usage
+- Remove `Shield` from lucide imports (keep others)
+- Add `Link` from react-router-dom for the cancellation policy link
+- Add `ThumbsUp` from lucide-react for the cancellation icon
+- The date summary bar appears when both dates are selected, styled as a rounded pill with border
+- The cancellation section replaces the old trust indicators section
 
