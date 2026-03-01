@@ -38,7 +38,7 @@ const TermsAndConditions = lazy(() => import("./pages/legal/TermsAndConditions")
 const PrivacyPolicy = lazy(() => import("./pages/legal/PrivacyPolicy"));
 const CancellationPolicy = lazy(() => import("./pages/legal/CancellationPolicy"));
 const CookiePolicy = lazy(() => import("./pages/legal/CookiePolicy"));
-
+const FAQ = lazy(() => import("./pages/FAQ"));
 // Admin pages
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const AdminReservations = lazy(() => import("./pages/admin/AdminReservations"));
@@ -92,6 +92,7 @@ const App = () => (
                 <Route path="/politica-confidentialitate" element={<PrivacyPolicy />} />
                 <Route path="/politica-anulare" element={<CancellationPolicy />} />
                 <Route path="/politica-cookies" element={<CookiePolicy />} />
+                <Route path="/intrebari-frecvente" element={<FAQ />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminDashboard />} />
