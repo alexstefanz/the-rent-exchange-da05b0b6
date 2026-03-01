@@ -61,7 +61,6 @@ const HeroSearchForm = () => {
             </div>
           </SelectTrigger>
           <SelectContent className="max-h-[300px] bg-card z-50">
-            <SelectItem value="all">{copy.search_page.allCategoriesFilter}</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category.id} value={category.name}>
                 {category.name}
