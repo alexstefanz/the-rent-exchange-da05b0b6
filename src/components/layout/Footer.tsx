@@ -30,11 +30,6 @@ const Footer = () => {
                   {copy.footer.searchProducts}
                 </Link>
               </li>
-              <li>
-                <Link to="/categorie/1" className="transition-colors hover:text-foreground">
-                  {copy.footer.outdoorAdventure}
-                </Link>
-              </li>
             </ul>
           </div>
 
