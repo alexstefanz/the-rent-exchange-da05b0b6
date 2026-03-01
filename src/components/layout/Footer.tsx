@@ -62,27 +62,6 @@ const Footer = () => {
           </div>
 
           <div className="space-y-4">
-            <h4 className="font-heading text-sm font-semibold">{copy.footer.publish}</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                <Link to="/adauga-anunt" className="transition-colors hover:text-foreground">
-                  {copy.footer.addListing}
-                </Link>
-              </li>
-              <li>
-                <Link to="/cum-functioneaza" className="transition-colors hover:text-foreground">
-                  {copy.footer.howItWorks}
-                </Link>
-              </li>
-              <li>
-                <Link to="#" className="transition-colors hover:text-foreground">
-                  {copy.footer.pricing}
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div className="space-y-4">
             <h4 className="font-heading text-sm font-semibold">{copy.footer.support}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
@@ -113,6 +92,27 @@ const Footer = () => {
               <li>
                 <Link to="/politica-cookies" className="transition-colors hover:text-foreground">
                   Cookie-uri
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="font-heading text-sm font-semibold">{copy.footer.publish}</h4>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>
+                <Link to="/adauga-anunt" className="transition-colors hover:text-foreground">
+                  {copy.footer.addListing}
+                </Link>
+              </li>
+              <li>
+                <Link to="/cum-functioneaza" className="transition-colors hover:text-foreground">
+                  {copy.footer.howItWorks}
+                </Link>
+              </li>
+              <li>
+                <Link to="#" className="transition-colors hover:text-foreground">
+                  {copy.footer.pricing}
                 </Link>
               </li>
             </ul>
