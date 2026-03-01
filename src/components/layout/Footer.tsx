@@ -48,6 +48,16 @@ const Footer = () => {
                   {copy.footer.searchProducts}
                 </Link>
               </li>
+              <li>
+                <Link to="/despre-noi" className="transition-colors hover:text-foreground">
+                  Despre Noi
+                </Link>
+              </li>
+              <li>
+                <a href="https://rentli.ro/contact" className="transition-colors hover:text-foreground">
+                  Contact
+                </a>
+              </li>
             </ul>
           </div>
 
@@ -83,11 +93,6 @@ const Footer = () => {
               <li>
                 <Link to="/centru-asistenta" className="transition-colors hover:text-foreground">
                   {copy.footer.helpCenter}
-                </Link>
-              </li>
-              <li>
-                <Link to="/despre-noi" className="transition-colors hover:text-foreground">
-                  Despre Noi
                 </Link>
               </li>
               <li>
