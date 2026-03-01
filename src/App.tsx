@@ -32,6 +32,7 @@ const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const AboutUs = lazy(() => import("./pages/AboutUs"));
 const UserTickets = lazy(() => import("./pages/UserTickets"));
 const KycVerification = lazy(() => import("./pages/KycVerification"));
+const Contact = lazy(() => import("./pages/Contact"));
 
 // Legal pages
 const TermsAndConditions = lazy(() => import("./pages/legal/TermsAndConditions"));
@@ -93,6 +94,7 @@ const App = () => (
                 <Route path="/politica-anulare" element={<CancellationPolicy />} />
                 <Route path="/politica-cookies" element={<CookiePolicy />} />
                 <Route path="/intrebari-frecvente" element={<FAQ />} />
+                <Route path="/contact" element={<Contact />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminDashboard />} />
