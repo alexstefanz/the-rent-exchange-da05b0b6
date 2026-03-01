@@ -36,7 +36,7 @@ const Footer = () => {
           </div>
 
           <div className="space-y-4">
-            <h4 className="font-heading text-sm font-semibold">{copy.footer.explore}</h4>
+            <h4 className="font-heading text-sm font-semibold">Quicklinks</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link to="/categorii" className="transition-colors hover:text-foreground">
