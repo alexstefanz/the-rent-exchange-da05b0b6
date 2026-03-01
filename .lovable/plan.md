@@ -1,28 +1,45 @@
 
 
-## Plan: Restructure Help Center Page
+## Plan: Active Reviews Section with Tabs and Multi-Criteria Ratings
 
-### What changes
+### Database Changes
 
-The Help Center page (`/centru-asistenta`) will be updated to have 3 sections inline (cards that expand/navigate):
+Alter `product_reviews` table to support multi-criteria ratings and review types:
 
-1. **Intrebari frecvente** -- Links to the existing FAQ page (`/intrebari-frecvente`)
-2. **Asistenta & Contact** -- Instead of linking to a sub-route, clicking opens/scrolls to a contact form section on the same page with fields: Nume, E-mail, Subiect, Mesaj, file upload (max 3 files, 5MB each). Submits via `mailto:office@rentli.ro` or sends email via edge function.
-3. **Feedback** -- Replaces "Ghiduri & Tutoriale". Shows a feedback form with emoji rating (5 levels), feedback type selection (Sugestie / Ceva nu a mers bine / Compliment), and a submit button. Also sends to `office@rentli.ro`.
+- Add `rating_product_condition` (integer, 1-5, nullable) -- Stare produs
+- Add `rating_communication` (integer, 1-5, nullable) -- Comunicare
+- Add `rating_punctuality` (integer, 1-5, nullable) -- Punctualitate
+- Add `review_type` (text, default 'owner') -- 'owner' for owner reviews, 'renter' for renter reviews
+- Keep existing `rating` as the overall average
+- Keep existing `comment` as the "alte detalii" text field
 
-### Technical approach
+### New Component: `src/components/product/ProductReviewsSection.tsx`
 
-**File: `src/pages/HelpCenter.tsx`** -- Major rewrite:
-- Update the 3 category cards: FAQ links to `/intrebari-frecvente`, the other two scroll to form sections below
-- Add **Asistenta section** below cards: a card with form fields (Nume*, E-mail*, Subiect*, Mesaj*), file upload area (max 3 files, 5MB), and "Trimite" button. On submit, opens a `mailto:office@rentli.ro` link with subject and body populated, or shows a toast confirmation
-- Add **Feedback section**: a card with "Parerea ta conteaza!" header, 5 emoji rating buttons, 3 type-selection cards (Sugestie, Ceva nu a mers bine, Compliment), and "Trimite" button. Same email target
-- Remove the "Popular Articles" section and the old bottom contact section since they're replaced by the new inline forms
-- Both forms use `mailto:office@rentli.ro` to send data (no backend needed)
+A self-contained reviews component with:
 
-**No routing changes needed** -- FAQ already has `/intrebari-frecvente` route. The contact and feedback forms live directly on the HelpCenter page.
+- **Tabs** using the existing Tabs UI component: "Recenzii proprietar" and "Recenzii chiriaș"
+- **Review list** per tab showing: avatar, name, date, 3 star-rating rows (Stare produs, Comunicare, Punctualitate), and comment text
+- **Empty state** per tab: "Nu există recenzii momentan"
+- **Add review form** (visible to authenticated users who are not the product owner): 3 star-rating selectors + textarea for "Alte detalii" + submit button
+- Average rating display in the header
 
-### Form behavior
-- Both forms construct a `mailto:` link with pre-filled subject/body and open the user's email client
-- File upload in the contact form is visual only (mailto can't attach files) -- alternatively we can show a toast saying "Please attach files to the email that opens"
-- Validation with required fields before submission
+### New API: `src/features/products/productReviewsApi.ts`
+
+- `getProductReviews(productId)` -- fetches reviews with reviewer profile info, returns separated by type
+- `createProductReview(productId, reviewType, ratings, comment)` -- inserts review with all rating fields
+- Computes `rating` as average of the 3 sub-ratings
+
+### Changes to `src/pages/ProductDetail.tsx`
+
+- Remove hardcoded `reviews` array at the top
+- Remove the old static reviews section (lines 250-273)
+- Replace with `<ProductReviewsSection productId={product.id} isOwnProduct={user?.id === product.owner_id} />`
+
+### Review Form Behavior
+
+- 3 rows of clickable stars for each criterion
+- Textarea for optional comment ("Alte detalii")
+- Submit button disabled until all 3 ratings are selected
+- After submit: toast confirmation, form resets, list refreshes
+- Only authenticated non-owner users see the form
 
