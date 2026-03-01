@@ -1,23 +1,28 @@
 
 
-## Plan: Update BookingCard on Product Page
+## Plan: Restructure Help Center Page
 
-### Changes to `src/components/product/BookingCard.tsx`
+### What changes
 
-1. **Remove trust indicators section** (lines 163-170): Delete the `<Separator>`, `<Shield>` free cancellation line, and `<TrustIndicators>` component at the bottom.
+The Help Center page (`/centru-asistenta`) will be updated to have 3 sections inline (cards that expand/navigate):
 
-2. **Add date summary with styled input-like display** after dates are selected: A rounded bordered container showing "DD MMM YYYY > DD MMM YYYY" with a calendar icon (matching image 1 style).
+1. **Intrebari frecvente** -- Links to the existing FAQ page (`/intrebari-frecvente`)
+2. **Asistenta & Contact** -- Instead of linking to a sub-route, clicking opens/scrolls to a contact form section on the same page with fields: Nume, E-mail, Subiect, Mesaj, file upload (max 3 files, 5MB each). Submits via `mailto:office@rentli.ro` or sends email via edge function.
+3. **Feedback** -- Replaces "Ghiduri & Tutoriale". Shows a feedback form with emoji rating (5 levels), feedback type selection (Sugestie / Ceva nu a mers bine / Compliment), and a submit button. Also sends to `office@rentli.ro`.
 
-3. **Add "Anulare gratuită" section** (matching image 2): A block with thumbs-up icon, bold "Anulare gratuită" title, description text about 48h free cancellation, and a link to `/politica-anulare`.
+### Technical approach
 
-4. **Sticky behavior** is already implemented via `sticky top-24` on line 77 — this should work on desktop. Will verify the parent container allows sticky positioning (needs a scrollable parent without `overflow: hidden`).
+**File: `src/pages/HelpCenter.tsx`** -- Major rewrite:
+- Update the 3 category cards: FAQ links to `/intrebari-frecvente`, the other two scroll to form sections below
+- Add **Asistenta section** below cards: a card with form fields (Nume*, E-mail*, Subiect*, Mesaj*), file upload area (max 3 files, 5MB), and "Trimite" button. On submit, opens a `mailto:office@rentli.ro` link with subject and body populated, or shows a toast confirmation
+- Add **Feedback section**: a card with "Parerea ta conteaza!" header, 5 emoji rating buttons, 3 type-selection cards (Sugestie, Ceva nu a mers bine, Compliment), and "Trimite" button. Same email target
+- Remove the "Popular Articles" section and the old bottom contact section since they're replaced by the new inline forms
+- Both forms use `mailto:office@rentli.ro` to send data (no backend needed)
 
-### Implementation Details
+**No routing changes needed** -- FAQ already has `/intrebari-frecvente` route. The contact and feedback forms live directly on the HelpCenter page.
 
-- Remove `TrustIndicators` import and usage
-- Remove `Shield` from lucide imports (keep others)
-- Add `Link` from react-router-dom for the cancellation policy link
-- Add `ThumbsUp` from lucide-react for the cancellation icon
-- The date summary bar appears when both dates are selected, styled as a rounded pill with border
-- The cancellation section replaces the old trust indicators section
+### Form behavior
+- Both forms construct a `mailto:` link with pre-filled subject/body and open the user's email client
+- File upload in the contact form is visual only (mailto can't attach files) -- alternatively we can show a toast saying "Please attach files to the email that opens"
+- Validation with required fields before submission
 
