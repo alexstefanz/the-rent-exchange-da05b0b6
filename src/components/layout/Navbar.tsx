@@ -143,20 +143,6 @@ const Navbar = () => {
               <div className="h-9 w-24 animate-pulse bg-muted rounded-lg" />
             ) : user ? (
               <>
-                {/* Chat Button - Desktop */}
-                <Link
-                  to="/mesaje"
-                  className="hidden lg:flex items-center gap-2 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90 relative"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  Chat
-                  {unreadMessagesCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-bold text-destructive-foreground">
-                      {unreadMessagesCount > 99 ? "99+" : unreadMessagesCount}
-                    </span>
-                  )}
-                </Link>
-
                 {/* Notification Bell - Desktop */}
                 <div className="hidden lg:flex">
                   <NotificationBell />
@@ -182,6 +168,19 @@ const Navbar = () => {
                       </p>
                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </div>
+
+                    {/* Chat Button */}
+                    <DropdownMenuItem asChild>
+                      <Link to="/mesaje" className="flex items-center gap-3 py-2 relative">
+                        <MessageCircle className="h-4 w-4" />
+                        Chat
+                        {unreadMessagesCount > 0 && (
+                          <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-bold text-destructive-foreground">
+                            {unreadMessagesCount > 99 ? "99+" : unreadMessagesCount}
+                          </span>
+                        )}
+                      </Link>
+                    </DropdownMenuItem>
 
                     {/* Admin Button */}
                     {isAdmin && (
