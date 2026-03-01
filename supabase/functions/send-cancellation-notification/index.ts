@@ -22,6 +22,11 @@ function checkRateLimit(key: string, maxRequests = 5, windowSec = 60): boolean {
 
 const PLATFORM_URL = "https://the-rent-exchange.lovable.app";
 
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
 function buildEmailTemplate(opts: {
   title: string;
   greeting: string;
@@ -113,9 +118,9 @@ Deno.serve(async (req) => {
       supabase.from("profiles").select("full_name, email").eq("id", rental.owner_id).single(),
     ]);
 
-    const productTitle = productRes.data?.title || "Produs";
-    const renterName = renterRes.data?.full_name || "Chiriașul";
-    const ownerName = ownerRes.data?.full_name || "Proprietarul";
+    const productTitle = escapeHtml(productRes.data?.title || "Produs");
+    const renterName = escapeHtml(renterRes.data?.full_name || "Chiriașul");
+    const ownerName = escapeHtml(ownerRes.data?.full_name || "Proprietarul");
 
     const getEmail = async (userId: string, profileEmail: string | null): Promise<string | null> => {
       if (profileEmail) return profileEmail;

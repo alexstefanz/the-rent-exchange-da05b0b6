@@ -22,6 +22,11 @@ function checkRateLimit(key: string, maxRequests = 10, windowSec = 60): boolean 
 
 const PLATFORM_URL = "https://the-rent-exchange.lovable.app";
 
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
 function buildEmailTemplate(opts: {
   title: string;
   greeting: string;
@@ -174,8 +179,8 @@ Deno.serve(async (req) => {
     };
 
     const renterEmail = await getEmail(rental.renter_id, renter?.email || null);
-    const productTitle = product?.title || "Produs";
-    const ownerName = owner?.full_name || "Proprietarul";
+    const productTitle = escapeHtml(product?.title || "Produs");
+    const ownerName = escapeHtml(owner?.full_name || "Proprietarul");
 
     const rows = [
       { label: "📦 Produs", value: productTitle },
@@ -215,7 +220,7 @@ Deno.serve(async (req) => {
     // Send emails to both renter and owner
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     const ownerEmail = await getEmail(rental.owner_id, owner?.email || null);
-    const renterName = renter?.full_name || "Chiriașul";
+    const renterName = escapeHtml(renter?.full_name || "Chiriașul");
 
     if (resendApiKey) {
       const emailPromises: Promise<unknown>[] = [];
@@ -237,7 +242,7 @@ Deno.serve(async (req) => {
           });
         } else {
           renterSubject = `Cererea ta a fost refuzată - ${productTitle}`;
-          const reasonRow = reason ? [{ label: "📝 Motiv", value: reason }] : [];
+          const reasonRow = reason ? [{ label: "📝 Motiv", value: escapeHtml(reason) }] : [];
           renterHtml = buildEmailTemplate({
             title: "Cererea ta a fost refuzată",
             greeting: `<strong>${ownerName}</strong> a refuzat cererea pentru <strong>${productTitle}</strong>.`,
@@ -279,7 +284,7 @@ Deno.serve(async (req) => {
           });
         } else {
           ownerSubject = `Ai refuzat cererea - ${productTitle}`;
-          const reasonRow = reason ? [{ label: "📝 Motiv", value: reason }] : [];
+          const reasonRow = reason ? [{ label: "📝 Motiv", value: escapeHtml(reason) }] : [];
           ownerHtml = buildEmailTemplate({
             title: "Ai refuzat cererea",
             greeting: `Ai refuzat cererea lui <strong>${renterName}</strong> pentru <strong>${productTitle}</strong>.`,
