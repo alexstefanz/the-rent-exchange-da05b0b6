@@ -63,6 +63,11 @@ const Footer = () => {
             <h4 className="font-heading text-sm font-semibold">{copy.footer.support}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
+                <Link to="/intrebari-frecvente" className="transition-colors hover:text-foreground">
+                  Întrebări frecvente
+                </Link>
+              </li>
+              <li>
                 <Link to="/centru-asistenta" className="transition-colors hover:text-foreground">
                   {copy.footer.helpCenter}
                 </Link>
