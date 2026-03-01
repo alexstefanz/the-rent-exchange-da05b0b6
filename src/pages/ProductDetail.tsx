@@ -283,7 +283,7 @@ const ProductDetail = () => {
               <h1 className="hidden lg:block font-heading text-2xl font-semibold text-foreground mb-3">{product.title}</h1>
               
               <div className="mb-4">
-                <div className="flex items-baseline gap-1"><span className="font-heading text-2xl font-bold text-[#57BE6A]">{clientPrice} RON</span><span className="text-muted-foreground">{copy.common.perDay}</span></div>
+                <div className="flex items-baseline gap-1"><span className="font-heading text-2xl font-bold text-primary">{clientPrice} RON</span><span className="text-muted-foreground">{copy.common.perDay}</span></div>
                 <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                   <p>{priceWeek} RON / {copy.productDetail.week}</p>
                   <p>{priceMonth} RON / {copy.productDetail.month}</p>
