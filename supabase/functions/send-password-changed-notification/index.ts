@@ -22,6 +22,11 @@ function checkRateLimit(key: string, maxRequests = 3, windowSec = 300): boolean 
 
 const PLATFORM_URL = "https://the-rent-exchange.lovable.app";
 
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
 function buildEmailTemplate(opts: {
   title: string;
   greeting: string;
@@ -108,7 +113,7 @@ Deno.serve(async (req) => {
       greeting: "Parola contului tău RentNow a fost schimbată cu succes. Dacă nu tu ai făcut această modificare, te rugăm să ne contactezi imediat.",
       rows: [
         { label: "Data schimbării", value: dateStr },
-        { label: "Cont", value: email },
+        { label: "Cont", value: escapeHtml(email) },
       ],
       ctaText: "Accesează contul",
       ctaLink: "/auth",

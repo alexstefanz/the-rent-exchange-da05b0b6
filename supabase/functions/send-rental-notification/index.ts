@@ -22,6 +22,11 @@ function checkRateLimit(key: string, maxRequests = 5, windowSec = 60): boolean {
 
 const PLATFORM_URL = "https://the-rent-exchange.lovable.app";
 
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
 function buildEmailTemplate(opts: {
   title: string;
   greeting: string;
@@ -175,8 +180,8 @@ Deno.serve(async (req) => {
     // Send emails
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (resendApiKey && (ownerEmail || renterEmail)) {
-      const productTitle = product?.title || "Produs";
-      const renterName = renter?.full_name || "Un utilizator";
+      const productTitle = escapeHtml(product?.title || "Produs");
+      const renterName = escapeHtml(renter?.full_name || "Un utilizator");
       const rows = [
         { label: "📦 Produs", value: productTitle },
         { label: "📅 Perioadă", value: `${rental.start_date} → ${rental.end_date}` },

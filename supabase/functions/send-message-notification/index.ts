@@ -22,6 +22,11 @@ function checkRateLimit(key: string, maxRequests = 10, windowSec = 60): boolean 
 
 const PLATFORM_URL = "https://the-rent-exchange.lovable.app";
 
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
 function buildEmailTemplate(opts: {
   title: string;
   greeting: string;
@@ -118,8 +123,8 @@ Deno.serve(async (req) => {
       supabase.from("products").select("title").eq("id", conv.product_id).single(),
     ]);
 
-    const senderName = senderRes.data?.full_name || "Cineva";
-    const productTitle = productRes.data?.title || "un produs";
+    const senderName = escapeHtml(senderRes.data?.full_name || "Cineva");
+    const productTitle = escapeHtml(productRes.data?.title || "un produs");
 
     // Get recipient email with fallback
     let recipientEmail = recipientRes.data?.email || null;
@@ -138,7 +143,7 @@ Deno.serve(async (req) => {
     // Send email
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
     if (resendApiKey && recipientEmail) {
-      const preview = message_content.length > 100 ? message_content.substring(0, 100) + "..." : message_content;
+      const preview = escapeHtml(message_content.length > 100 ? message_content.substring(0, 100) + "..." : message_content);
 
       const html = buildEmailTemplate({
         title: "Ai primit un mesaj nou 💬",
