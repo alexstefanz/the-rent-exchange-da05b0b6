@@ -649,6 +649,10 @@ export type Database = {
           id: string
           product_id: string
           rating: number
+          rating_communication: number | null
+          rating_product_condition: number | null
+          rating_punctuality: number | null
+          review_type: string
           reviewer_id: string
         }
         Insert: {
@@ -657,6 +661,10 @@ export type Database = {
           id?: string
           product_id: string
           rating: number
+          rating_communication?: number | null
+          rating_product_condition?: number | null
+          rating_punctuality?: number | null
+          review_type?: string
           reviewer_id: string
         }
         Update: {
@@ -665,6 +673,10 @@ export type Database = {
           id?: string
           product_id?: string
           rating?: number
+          rating_communication?: number | null
+          rating_product_condition?: number | null
+          rating_punctuality?: number | null
+          review_type?: string
           reviewer_id?: string
         }
         Relationships: [
