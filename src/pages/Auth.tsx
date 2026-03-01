@@ -271,6 +271,10 @@ const Auth = () => {
         </Tabs>
       </Card>
 
+      <a href="/" className="mt-6 text-sm text-muted-foreground hover:text-primary transition-colors">
+        ← Înapoi la pagina principală
+      </a>
+
       <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
