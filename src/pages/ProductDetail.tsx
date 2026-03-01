@@ -22,6 +22,7 @@ import NearbyProductsSlider from "@/components/products/NearbyProductsSlider";
 import OwnerSection from "@/components/product/OwnerSection";
 import ProductIncludes from "@/components/product/ProductIncludes";
 import UsageRules from "@/components/product/UsageRules";
+import ProductReviewsSection from "@/components/product/ProductReviewsSection";
 
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -33,13 +34,6 @@ interface OwnerInfo {
   avatar_url: string | null;
 }
 
-const reviews = [{
-  id: "r1", userName: "Maria Ionescu", userAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&q=80", rating: 5, comment: "Produs excelent, în stare perfectă! Recomand cu încredere!", date: "2024-11-15"
-}, {
-  id: "r2", userName: "Andrei Marin", userAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&q=80", rating: 5, comment: "Am închiriat pentru un weekend. Totul a fost perfect!", date: "2024-10-28"
-}, {
-  id: "r3", userName: "Elena Dumitrescu", userAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&q=80", rating: 4, comment: "Foarte bun, recomand!", date: "2024-09-12"
-}];
 
 const ProductDetail = () => {
   const navigate = useNavigate();
@@ -57,7 +51,7 @@ const ProductDetail = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [showAllReviews, setShowAllReviews] = useState(false);
+  
   const [chatOpen, setChatOpen] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
 
@@ -131,7 +125,7 @@ const ProductDetail = () => {
     return rentalDays * clientPrice;
   }, [rentalDays, clientPrice, priceWeek, priceMonth]);
 
-  const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 3);
+  
 
   const handleShare = async () => {
     if (navigator.share) { try { await navigator.share({ title: product?.title || "Produs", url: window.location.href }); } catch (err) { console.log('Share cancelled'); } }
@@ -247,30 +241,7 @@ const ProductDetail = () => {
             <ProductIncludes />
             <UsageRules />
 
-            {/* Reviews */}
-            <div className="rounded-xl border border-border bg-card p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-heading text-xl font-semibold text-foreground">{copy.product.reviews} ({reviews.length})</h2>
-                <div className="flex items-center gap-1"><Star className="h-5 w-5 fill-yellow-400 text-yellow-400" /><span className="font-semibold">4.9</span></div>
-              </div>
-              <div className="space-y-4">
-                {displayedReviews.map(review => (
-                  <div key={review.id} className="border-b border-border pb-4 last:border-b-0 last:pb-0">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10"><AvatarImage src={review.userAvatar} /><AvatarFallback><User className="h-5 w-5" /></AvatarFallback></Avatar>
-                      <div>
-                        <p className="font-medium text-foreground">{review.userName}</p>
-                        <div className="flex items-center gap-2">
-                          <div className="flex">{Array.from({ length: 5 }).map((_, i) => (<Star key={i} className={`h-3 w-3 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-muted"}`} />))}</div>
-                          <span className="text-xs text-muted-foreground">{format(new Date(review.date), "d MMMM yyyy", { locale: dateLocale })}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <p className="mt-2 text-sm text-muted-foreground">{review.comment}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ProductReviewsSection productId={product.id} isOwnProduct={user?.id === product.owner_id} />
           </div>
 
           {/* Right Sidebar - Booking */}
