@@ -1,76 +1,149 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Search, HelpCircle, MessageCircle, FileText, ChevronRight, BookOpen, Mail, Phone } from "lucide-react";
+import { Search, HelpCircle, MessageCircle, FileText, ChevronRight, Star, Upload, X, Smile, Meh, Frown, ThumbsUp, Lightbulb, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useToast } from "@/hooks/use-toast";
+
+const EMOJI_RATINGS = [
+  { emoji: "😡", label: "Foarte nemulțumit", value: 1 },
+  { emoji: "😞", label: "Nemulțumit", value: 2 },
+  { emoji: "😐", label: "Neutru", value: 3 },
+  { emoji: "😊", label: "Mulțumit", value: 4 },
+  { emoji: "😍", label: "Foarte mulțumit", value: 5 },
+];
+
+const FEEDBACK_TYPES = [
+  { icon: Lightbulb, label: "Sugestie", labelEn: "Suggestion", color: "text-yellow-500" },
+  { icon: AlertTriangle, label: "Ceva nu a mers bine", labelEn: "Something went wrong", color: "text-red-500" },
+  { icon: ThumbsUp, label: "Compliment", labelEn: "Compliment", color: "text-green-500" },
+];
+
+const MAX_FILES = 3;
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const HelpCenter = () => {
   const { t } = useLanguage();
-  const [searchQuery, setSearchQuery] = useState("");
+  const { toast } = useToast();
+
+  // Contact form state
+  const contactRef = useRef<HTMLDivElement>(null);
+  const feedbackRef = useRef<HTMLDivElement>(null);
+  const [contactForm, setContactForm] = useState({ name: "", email: "", subject: "", message: "" });
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Feedback form state
+  const [emojiRating, setEmojiRating] = useState<number | null>(null);
+  const [feedbackType, setFeedbackType] = useState<string | null>(null);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+
+  const scrollTo = (ref: React.RefObject<HTMLDivElement>) => {
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  // Contact form handlers
+  const handleContactChange = (field: string, value: string) => {
+    setContactForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validFiles = files.filter((f) => {
+      if (f.size > MAX_FILE_SIZE) {
+        toast({ title: t("Fișierul este prea mare", "File is too large"), description: t("Dimensiunea maximă este 5MB", "Maximum size is 5MB"), variant: "destructive" });
+        return false;
+      }
+      return true;
+    });
+    setAttachedFiles((prev) => [...prev, ...validFiles].slice(0, MAX_FILES));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeFile = (index: number) => {
+    setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleContactSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const { name, email, subject, message } = contactForm;
+    if (!name.trim() || !email.trim() || !subject.trim() || !message.trim()) {
+      toast({ title: t("Completează toate câmpurile obligatorii", "Fill in all required fields"), variant: "destructive" });
+      return;
+    }
+
+    const body = `Nume: ${name}\nEmail: ${email}\n\n${message}`;
+    const mailtoUrl = `mailto:office@rentli.ro?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailtoUrl, "_blank");
+
+    if (attachedFiles.length > 0) {
+      toast({ title: t("Atașează fișierele în emailul care se deschide", "Please attach the files to the email that opens"), description: t(`Ai ${attachedFiles.length} fișier(e) de atașat manual.`, `You have ${attachedFiles.length} file(s) to attach manually.`) });
+    }
+
+    setContactForm({ name: "", email: "", subject: "", message: "" });
+    setAttachedFiles([]);
+  };
+
+  // Feedback form handler
+  const handleFeedbackSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emojiRating) {
+      toast({ title: t("Selectează o evaluare", "Select a rating"), variant: "destructive" });
+      return;
+    }
+    if (!feedbackType) {
+      toast({ title: t("Selectează tipul de feedback", "Select feedback type"), variant: "destructive" });
+      return;
+    }
+
+    const ratingLabel = EMOJI_RATINGS.find((r) => r.value === emojiRating)?.label || "";
+    const subject = `Feedback Rentli - ${feedbackType}`;
+    const body = `Evaluare: ${ratingLabel} (${emojiRating}/5)\nTip: ${feedbackType}\n\n${feedbackMessage || "(fără mesaj suplimentar)"}`;
+    const mailtoUrl = `mailto:office@rentli.ro?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.open(mailtoUrl, "_blank");
+
+    setEmojiRating(null);
+    setFeedbackType(null);
+    setFeedbackMessage("");
+  };
 
   const categories = [
     {
       icon: FileText,
       title: t("Întrebări frecvente", "FAQ"),
       description: t("Găsește răspunsuri la cele mai comune întrebări", "Find answers to the most common questions"),
-      link: "/centru-asistenta/faq",
       color: "bg-primary/10 text-primary",
+      action: "link" as const,
+      link: "/intrebari-frecvente",
     },
     {
       icon: MessageCircle,
       title: t("Asistență & Contact", "Support & Contact"),
       description: t("Contactează echipa noastră pentru ajutor personalizat", "Contact our team for personalized help"),
-      link: "/centru-asistenta/contact",
       color: "bg-accent/10 text-accent",
+      action: "scroll" as const,
+      scrollRef: contactRef,
     },
     {
-      icon: BookOpen,
-      title: t("Ghiduri & Tutoriale", "Guides & Tutorials"),
-      description: t("Învață cum să folosești platforma eficient", "Learn how to use the platform efficiently"),
-      link: "/centru-asistenta/ghiduri",
+      icon: Star,
+      title: t("Feedback", "Feedback"),
+      description: t("Spune-ne părerea ta despre platformă", "Tell us what you think about the platform"),
       color: "bg-secondary text-secondary-foreground",
+      action: "scroll" as const,
+      scrollRef: feedbackRef,
     },
   ];
-
-  const popularArticles = [
-    {
-      title: t("Cum să închiriez un produs?", "How do I rent a product?"),
-      category: "FAQ",
-    },
-    {
-      title: t("Cum să adaug un anunț?", "How do I add a listing?"),
-      category: "Ghiduri",
-    },
-    {
-      title: t("Politica de anulare", "Cancellation policy"),
-      category: "Reguli",
-    },
-    {
-      title: t("Metode de plată acceptate", "Accepted payment methods"),
-      category: "Plăți",
-    },
-    {
-      title: t("Cum funcționează verificarea utilizatorilor?", "How does user verification work?"),
-      category: "Siguranță",
-    },
-    {
-      title: t("Ce fac dacă am o problemă cu produsul?", "What if I have a problem with the product?"),
-      category: "Asistență",
-    },
-  ];
-
-  const filteredArticles = popularArticles.filter(article =>
-    article.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       {/* Hero Section */}
       <section className="bg-gradient-to-b from-primary/5 to-background py-16 lg:py-24">
         <div className="container px-4">
@@ -79,106 +152,252 @@ const HelpCenter = () => {
             <h1 className="mb-4 text-3xl font-bold tracking-tight lg:text-4xl">
               {t("Centru de Asistență", "Help Center")}
             </h1>
-            <p className="mb-8 text-muted-foreground">
+            <p className="text-muted-foreground">
               {t(
-                "Cum te putem ajuta astăzi? Caută răspunsuri sau contactează-ne.",
-                "How can we help you today? Search for answers or contact us."
+                "Cum te putem ajuta astăzi? Găsește răspunsuri sau contactează-ne.",
+                "How can we help you today? Find answers or contact us."
               )}
             </p>
-            
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder={t("Caută ajutor...", "Search for help...")}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-12 pl-12 text-base shadow-soft"
-              />
-            </div>
           </div>
         </div>
       </section>
 
-      {/* Categories Section */}
+      {/* 3 Category Cards */}
       <section className="py-12">
         <div className="container px-4">
           <div className="grid gap-6 md:grid-cols-3">
-            {categories.map((category) => (
-              <Link key={category.title} to={category.link}>
-                <Card className="group h-full transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1">
+            {categories.map((cat) => {
+              const inner = (
+                <Card className="group h-full transition-all duration-300 hover:shadow-card-hover hover:-translate-y-1 cursor-pointer">
                   <CardHeader>
-                    <div className={`mb-3 inline-flex h-12 w-12 items-center justify-center rounded-lg ${category.color}`}>
-                      <category.icon className="h-6 w-6" />
+                    <div className={`mb-3 inline-flex h-12 w-12 items-center justify-center rounded-lg ${cat.color}`}>
+                      <cat.icon className="h-6 w-6" />
                     </div>
                     <CardTitle className="flex items-center justify-between text-lg">
-                      {category.title}
+                      {cat.title}
                       <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-1" />
                     </CardTitle>
-                    <CardDescription>{category.description}</CardDescription>
+                    <CardDescription>{cat.description}</CardDescription>
                   </CardHeader>
                 </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+              );
 
-      {/* Popular Articles Section */}
-      <section className="bg-muted/30 py-12">
-        <div className="container px-4">
-          <h2 className="mb-6 text-xl font-semibold">
-            {t("Articole populare", "Popular articles")}
-          </h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            {filteredArticles.map((article, index) => (
-              <Link
-                key={index}
-                to="#"
-                className="group flex items-center justify-between rounded-lg bg-background p-4 shadow-card transition-all hover:shadow-card-hover"
-              >
-                <div className="flex items-center gap-3">
-                  <FileText className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-sm font-medium group-hover:text-primary transition-colors">
-                    {article.title}
-                  </span>
+              if (cat.action === "link") {
+                return <Link key={cat.title} to={cat.link!}>{inner}</Link>;
+              }
+              return (
+                <div key={cat.title} onClick={() => scrollTo(cat.scrollRef!)}>
+                  {inner}
                 </div>
-                <span className="text-xs text-muted-foreground">{article.category}</span>
-              </Link>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section className="py-12">
+      {/* Contact Form Section */}
+      <section ref={contactRef} className="py-12 bg-muted/30 scroll-mt-20">
         <div className="container px-4">
-          <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="flex flex-col items-center gap-6 py-8 text-center md:flex-row md:text-left">
-              <div className="flex-1">
-                <h3 className="mb-2 text-lg font-semibold">
-                  {t("Nu ai găsit ce căutai?", "Didn't find what you were looking for?")}
-                </h3>
-                <p className="text-sm text-muted-foreground">
+          <div className="mx-auto max-w-2xl">
+            <Card>
+              <CardHeader>
+                <div className="mb-2 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-accent/10 text-accent">
+                  <MessageCircle className="h-6 w-6" />
+                </div>
+                <CardTitle className="text-xl">
+                  {t("Asistență & Contact", "Support & Contact")}
+                </CardTitle>
+                <CardDescription>
                   {t(
-                    "Echipa noastră de suport este disponibilă să te ajute.",
-                    "Our support team is available to help you."
+                    "Completează formularul și te vom contacta cât mai curând posibil.",
+                    "Fill in the form and we'll get back to you as soon as possible."
                   )}
-                </p>
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Button variant="outline" className="gap-2">
-                  <Mail className="h-4 w-4" />
-                  {t("Trimite email", "Send email")}
-                </Button>
-                <Button className="gap-2">
-                  <Phone className="h-4 w-4" />
-                  {t("Sună-ne", "Call us")}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleContactSubmit} className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="contact-name">{t("Nume", "Name")} *</Label>
+                      <Input
+                        id="contact-name"
+                        value={contactForm.name}
+                        onChange={(e) => handleContactChange("name", e.target.value)}
+                        placeholder={t("Numele tău", "Your name")}
+                        maxLength={100}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contact-email">{t("E-mail", "Email")} *</Label>
+                      <Input
+                        id="contact-email"
+                        type="email"
+                        value={contactForm.email}
+                        onChange={(e) => handleContactChange("email", e.target.value)}
+                        placeholder={t("email@exemplu.ro", "email@example.com")}
+                        maxLength={255}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="contact-subject">{t("Subiect", "Subject")} *</Label>
+                    <Input
+                      id="contact-subject"
+                      value={contactForm.subject}
+                      onChange={(e) => handleContactChange("subject", e.target.value)}
+                      placeholder={t("Despre ce este vorba?", "What is it about?")}
+                      maxLength={200}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="contact-message">{t("Mesaj", "Message")} *</Label>
+                    <Textarea
+                      id="contact-message"
+                      value={contactForm.message}
+                      onChange={(e) => handleContactChange("message", e.target.value)}
+                      placeholder={t("Descrie problema sau întrebarea ta...", "Describe your issue or question...")}
+                      rows={5}
+                      maxLength={2000}
+                      required
+                    />
+                  </div>
+
+                  {/* File Upload */}
+                  <div className="space-y-2">
+                    <Label>{t("Atașamente", "Attachments")} ({t(`max ${MAX_FILES} fișiere, 5MB fiecare`, `max ${MAX_FILES} files, 5MB each`)})</Label>
+                    <div
+                      className="flex items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 p-6 cursor-pointer hover:border-primary/50 transition-colors"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <div className="text-center">
+                        <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          {t("Click pentru a adăuga fișiere", "Click to add files")}
+                        </p>
+                      </div>
+                    </div>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      className="hidden"
+                      onChange={handleFileAdd}
+                      accept="image/*,.pdf,.doc,.docx"
+                    />
+                    {attachedFiles.length > 0 && (
+                      <div className="space-y-2 mt-2">
+                        {attachedFiles.map((file, i) => (
+                          <div key={i} className="flex items-center justify-between rounded-md bg-secondary px-3 py-2 text-sm">
+                            <span className="truncate">{file.name}</span>
+                            <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeFile(i)}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <Button type="submit" className="w-full">
+                    {t("Trimite mesajul", "Send message")}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Feedback Form Section */}
+      <section ref={feedbackRef} className="py-12 scroll-mt-20">
+        <div className="container px-4">
+          <div className="mx-auto max-w-2xl">
+            <Card>
+              <CardHeader>
+                <div className="mb-2 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                  <Star className="h-6 w-6" />
+                </div>
+                <CardTitle className="text-xl">
+                  {t("Părerea ta contează!", "Your opinion matters!")}
+                </CardTitle>
+                <CardDescription>
+                  {t(
+                    "Ajută-ne să îmbunătățim platforma cu feedback-ul tău.",
+                    "Help us improve the platform with your feedback."
+                  )}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleFeedbackSubmit} className="space-y-6">
+                  {/* Emoji Rating */}
+                  <div className="space-y-3">
+                    <Label>{t("Cum a fost experiența ta?", "How was your experience?")}</Label>
+                    <div className="flex items-center justify-center gap-3">
+                      {EMOJI_RATINGS.map((r) => (
+                        <button
+                          key={r.value}
+                          type="button"
+                          onClick={() => setEmojiRating(r.value)}
+                          className={`flex h-14 w-14 items-center justify-center rounded-full text-2xl transition-all hover:scale-110 ${
+                            emojiRating === r.value
+                              ? "bg-primary/15 ring-2 ring-primary scale-110"
+                              : "bg-secondary hover:bg-secondary/80"
+                          }`}
+                          title={r.label}
+                        >
+                          {r.emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Feedback Type */}
+                  <div className="space-y-3">
+                    <Label>{t("Ce tip de feedback ai?", "What type of feedback do you have?")}</Label>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {FEEDBACK_TYPES.map((ft) => (
+                        <button
+                          key={ft.label}
+                          type="button"
+                          onClick={() => setFeedbackType(ft.label)}
+                          className={`flex flex-col items-center gap-2 rounded-lg border p-4 transition-all hover:shadow-sm ${
+                            feedbackType === ft.label
+                              ? "border-primary bg-primary/5 ring-1 ring-primary"
+                              : "border-border hover:border-muted-foreground/50"
+                          }`}
+                        >
+                          <ft.icon className={`h-6 w-6 ${ft.color}`} />
+                          <span className="text-sm font-medium">{t(ft.label, ft.labelEn)}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Optional Message */}
+                  <div className="space-y-2">
+                    <Label htmlFor="feedback-message">{t("Mesaj (opțional)", "Message (optional)")}</Label>
+                    <Textarea
+                      id="feedback-message"
+                      value={feedbackMessage}
+                      onChange={(e) => setFeedbackMessage(e.target.value)}
+                      placeholder={t("Spune-ne mai multe...", "Tell us more...")}
+                      rows={4}
+                      maxLength={1000}
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full">
+                    {t("Trimite feedback", "Send feedback")}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
 
