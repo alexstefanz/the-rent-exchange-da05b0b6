@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   ShieldCheck, ArrowLeft, CheckCircle, XCircle, RefreshCw, AlertTriangle,
-  User, Mail, Phone, Calendar, Package, FileText, Clock, Eye, Loader2
+  User, Mail, Phone, Calendar, Package, FileText, Clock, Eye, Loader2, Activity
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useKycCase, useKycDocuments, useKycAuditLog, useKycUserContext } from "@/hooks/queries/useKyc";
+import { useUserActivityLogs } from "@/hooks/queries/useUserActivityLogs";
 import {
   approveKycCase, rejectKycCase, requestReupload, setNeedsManualReview,
   KYC_STATUSES, KYC_STATUS_COLORS, REJECTION_REASONS, DOCUMENT_TYPES,
@@ -21,6 +22,27 @@ import {
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { toast } from "sonner";
+
+const ACTION_LABELS: Record<string, string> = {
+  PRODUCT_CREATED: 'Produs creat',
+  PRODUCT_DELETED: 'Produs șters',
+  PRODUCT_DEACTIVATED: 'Produs dezactivat',
+  PRODUCT_REACTIVATED: 'Produs reactivat',
+  PRICE_CHANGED: 'Preț modificat',
+  PHONE_UPDATED: 'Telefon actualizat',
+  KYC_STATUS_CHANGED: 'Status KYC modificat',
+  KYC_CASE_CREATED: 'Caz KYC creat',
+  KYC_SUBMITTED: 'KYC trimis',
+  KYC_APPROVED: 'KYC aprobat',
+  KYC_REJECTED: 'KYC respins',
+  KYC_NEEDS_MANUAL_REVIEW: 'KYC - revizuire manuală',
+  RENTAL_CREATED: 'Rezervare creată',
+  RENTAL_CONFIRMED: 'Rezervare confirmată',
+  RENTAL_CANCELLED: 'Rezervare anulată',
+  RENTAL_COMPLETED: 'Rezervare finalizată',
+};
+
+const formatAction = (action: string) => ACTION_LABELS[action] || action;
 
 const AdminKYCDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -33,6 +55,7 @@ const AdminKYCDetail = () => {
   const { data: documents } = useKycDocuments(id);
   const { data: auditLog } = useKycAuditLog(id);
   const { data: userContext } = useKycUserContext(kycCase?.user_id);
+  const { data: activityLogs } = useUserActivityLogs(kycCase?.user_id);
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ['kycCase', id] });
@@ -171,6 +194,7 @@ const AdminKYCDetail = () => {
               <TabsList>
                 <TabsTrigger value="documents">Documente ({documents?.length || 0})</TabsTrigger>
                 <TabsTrigger value="audit">Audit Log ({auditLog?.length || 0})</TabsTrigger>
+                <TabsTrigger value="activity">Activitate ({activityLogs?.length || 0})</TabsTrigger>
               </TabsList>
 
               <TabsContent value="documents" className="mt-4">
@@ -232,6 +256,41 @@ const AdminKYCDetail = () => {
                       </div>
                     ) : (
                       <p className="text-center text-muted-foreground py-8">Nicio intrare în audit log</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="activity" className="mt-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    {activityLogs?.length ? (
+                      <div className="space-y-3">
+                        {activityLogs.map((log) => (
+                          <div key={log.id} className="flex items-start gap-3 text-sm border-b border-border pb-3 last:border-0">
+                            <Activity className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium">{formatAction(log.action)}</p>
+                              {log.metadata && (
+                                <div className="text-xs text-muted-foreground mt-0.5 space-y-0.5">
+                                  {log.metadata.title && <p>Produs: {log.metadata.title}</p>}
+                                  {log.metadata.old_price !== undefined && (
+                                    <p>Preț: {log.metadata.old_price} → {log.metadata.new_price} RON</p>
+                                  )}
+                                  {log.metadata.old_status && log.metadata.new_status && (
+                                    <p>Status: {log.metadata.old_status} → {log.metadata.new_status}</p>
+                                  )}
+                                </div>
+                              )}
+                              <p className="text-[10px] text-muted-foreground mt-1">
+                                {log.entity_type} • {format(new Date(log.created_at), "d MMM yyyy HH:mm", { locale: ro })}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-center text-muted-foreground py-8">Nicio activitate înregistrată</p>
                     )}
                   </CardContent>
                 </Card>
