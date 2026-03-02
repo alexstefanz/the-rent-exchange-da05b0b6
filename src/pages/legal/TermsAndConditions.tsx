@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import LegalPageLayout from "./LegalPageLayout";
 
-const sections = [
+export const sections = [
   {
     id: "definitii",
     title: "Definiții",

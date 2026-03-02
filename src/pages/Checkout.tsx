@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import LoginDialog from "@/components/checkout/LoginDialog";
 import PaymentMethodDialog from "@/components/checkout/PaymentMethodDialog";
+import TermsDialog from "@/components/checkout/TermsDialog";
 import ProgressIndicator from "@/components/booking/ProgressIndicator";
 import BookingConfirmation from "@/components/booking/BookingConfirmation";
 import ReassuranceMessage from "@/components/trust/ReassuranceMessage";
@@ -54,6 +55,7 @@ const Checkout = () => {
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdRentalId, setCreatedRentalId] = useState<string | null>(null);
+  const [showTermsDialog, setShowTermsDialog] = useState(false);
 
   if (!state) {
     return (
@@ -250,9 +252,9 @@ const Checkout = () => {
                     <div className="flex justify-between text-base font-semibold"><span>{copy.checkout.totalToPay}</span><span className="text-primary">{totalPrice} RON</span></div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-4">
-                    {copy.checkout.termsNotice} <span className="text-primary hover:underline cursor-pointer">{copy.checkout.termsLink}</span> {copy.checkout.and} <span className="text-primary hover:underline cursor-pointer">{copy.checkout.privacyLink}</span>.
+                    {copy.checkout.termsNotice} <span className="text-primary hover:underline cursor-pointer" onClick={() => setShowTermsDialog(true)}>{copy.checkout.termsLink}</span> {copy.checkout.and} <span className="text-primary hover:underline cursor-pointer">{copy.checkout.privacyLink}</span>.
                   </p>
-                  <Button onClick={handleConfirmReservation} className="w-full mt-4" size="lg" disabled={isSubmitting}>{isSubmitting ? "Se procesează..." : copy.booking.ctaPrimary}</Button>
+                  <Button onClick={() => setShowTermsDialog(true)} className="w-full mt-4" size="lg" disabled={isSubmitting}>{isSubmitting ? "Se procesează..." : copy.booking.ctaPrimary}</Button>
                   <p className="mt-3 text-xs text-center text-muted-foreground flex items-center justify-center gap-1"><Info className="h-3 w-3" />{copy.booking.reassurance}</p>
                 </div>
               )}
@@ -292,6 +294,7 @@ const Checkout = () => {
 
       <LoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} onLoginSuccess={handleLoginSuccess} />
       <PaymentMethodDialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog} onSelectMethod={handlePaymentMethodSelect} />
+      <TermsDialog open={showTermsDialog} onOpenChange={setShowTermsDialog} onAccept={handleConfirmReservation} isSubmitting={isSubmitting} />
     </div>
   );
 };
