@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
@@ -26,7 +26,10 @@ import {
   HelpCircle,
   Globe,
   ShieldCheck,
-  Shield
+  Shield,
+  Wallet,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { categories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
@@ -36,6 +39,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useCurrentUserProfile } from "@/hooks/queries/useCurrentUserProfile";
 import { useConversations } from "@/hooks/queries/useConversations";
 import { useIsAdmin } from "@/hooks/queries/useAdminStats";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import LanguageSwitcher from "./LanguageSwitcher";
 import NotificationBell from "./NotificationBell";
 import MobileBottomNav from "./MobileBottomNav";
@@ -53,6 +58,39 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeMegaMenu, setActiveMegaMenu] = useState<number | null>(null);
   const [expandedMobileCategory, setExpandedMobileCategory] = useState<number | null>(null);
+  const [showBalance, setShowBalance] = useState(() => {
+    return localStorage.getItem("show_balance") !== "false";
+  });
+
+  const { data: balance } = useQuery({
+    queryKey: ["user-balance", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("amount, type")
+        .eq("user_id", user!.id)
+        .eq("status", "completed");
+      if (error) throw error;
+      let total = 0;
+      for (const tx of data || []) {
+        if (tx.type === "owner_payout") total += Number(tx.amount);
+        else if (tx.type === "withdrawal") total -= Number(tx.amount);
+      }
+      return total;
+    },
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const toggleBalance = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowBalance(prev => {
+      const next = !prev;
+      localStorage.setItem("show_balance", String(next));
+      return next;
+    });
+  };
 
   // Get user initials for avatar fallback
   const getInitials = () => {
@@ -167,6 +205,21 @@ const Navbar = () => {
                         {profile?.full_name || user.email?.split("@")[0]}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                    </div>
+
+                    {/* Balance Display */}
+                    <div className="px-3 py-2 border-b border-border flex items-center gap-2">
+                      <Wallet className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-medium">
+                        {showBalance ? `${(balance ?? 0).toFixed(2)} RON` : "••••••"}
+                      </span>
+                      <button
+                        onClick={toggleBalance}
+                        className="ml-auto p-1 rounded hover:bg-muted transition-colors"
+                        aria-label={showBalance ? t("Ascunde balanța", "Hide balance") : t("Arată balanța", "Show balance")}
+                      >
+                        {showBalance ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5 text-muted-foreground" />}
+                      </button>
                     </div>
 
                     {/* Chat Button */}
