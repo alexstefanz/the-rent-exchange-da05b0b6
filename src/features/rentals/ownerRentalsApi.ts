@@ -40,12 +40,12 @@ export async function getOwnerRentals(ownerId: string): Promise<OwnerRental[]> {
       ? supabase.from("products").select("id, title, images").in("id", productIds)
       : Promise.resolve({ data: [] }),
     renterIds.length > 0
-      ? supabase.from("profiles").select("id, full_name, avatar_url").in("id", renterIds)
+      ? supabase.rpc("get_rental_renter_info", { renter_ids: renterIds })
       : Promise.resolve({ data: [] }),
   ]);
 
   const productsMap = new Map((productsRes.data || []).map(p => [p.id, p]));
-  const rentersMap = new Map((rentersRes.data || []).map(r => [r.id, r]));
+  const rentersMap = new Map((rentersRes.data || []).map((r: any) => [r.id, r]));
 
   return rentals.map(r => {
     const product = r.product_id ? productsMap.get(r.product_id) : null;
