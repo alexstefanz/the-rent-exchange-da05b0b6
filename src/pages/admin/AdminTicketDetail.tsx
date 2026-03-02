@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft, Send, Paperclip, Lock, User, Package, Calendar, FileText, History,
-  AlertTriangle, Loader2
+  AlertTriangle, Loader2, MessageCircle
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -344,6 +344,14 @@ const AdminTicketDetail = () => {
                     <User className="h-4 w-4 text-muted-foreground" />
                     <Link to={`/utilizator/${ticket.owner_user_id}`} className="text-primary hover:underline">
                       Owner
+                    </Link>
+                  </div>
+                )}
+                {ticket.rental_user_id && ticket.owner_user_id && (
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                    <Link to={`/admin/conversations?buyer=${ticket.rental_user_id}&owner=${ticket.owner_user_id}`} className="text-primary hover:underline">
+                      Vezi conversația
                     </Link>
                   </div>
                 )}

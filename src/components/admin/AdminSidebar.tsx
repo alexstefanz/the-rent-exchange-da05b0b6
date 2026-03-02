@@ -9,7 +9,8 @@ import {
   Home,
   Package,
   TicketCheck,
-  FolderTree
+  FolderTree,
+  MessageCircle
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -30,6 +31,7 @@ const menuItems = [
   { title: "Rezervări", url: "/admin/reservations", icon: CalendarCheck },
   { title: "Produse", url: "/admin/products", icon: Package },
   { title: "Tickete", url: "/admin/tickets", icon: TicketCheck },
+  { title: "Conversații", url: "/admin/conversations", icon: MessageCircle },
   { title: "Categorii", url: "/admin/categories", icon: FolderTree },
   { title: "Financiar", url: "/admin/finances", icon: Wallet },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
