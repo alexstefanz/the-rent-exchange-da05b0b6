@@ -202,7 +202,7 @@ const ProductRow = ({
 };
 
 const FeaturedListings = () => {
-  const { data: products, isLoading } = useProducts();
+  const { data: products, isLoading, isError, refetch } = useProducts();
   const copy = useUxCopy();
   const { language } = useLanguage();
 
@@ -245,6 +245,21 @@ const FeaturedListings = () => {
         <div className="container">
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (isError) {
+    return (
+      <section className="py-12">
+        <div className="container">
+          <div className="flex flex-col items-center justify-center py-12 gap-4">
+            <p className="text-muted-foreground">{language === "en" ? "Could not load products." : "Nu am putut încărca produsele."}</p>
+            <button onClick={() => refetch()} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
+              {language === "en" ? "Retry" : "Reîncearcă"}
+            </button>
           </div>
         </div>
       </section>
