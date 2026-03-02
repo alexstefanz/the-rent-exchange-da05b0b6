@@ -1,33 +1,42 @@
 
 
-## Plan: Terms & Conditions Popup at Checkout
+## Plan: Verificare cont prin cod OTP pe email la înregistrare
 
-### What we'll build
-A dialog that appears at checkout Step 4 (Review & Confirm) when the user clicks the confirm button. The dialog displays the full Terms & Conditions text in a scrollable container. The checkbox to accept terms is disabled until the user scrolls to the bottom. Only after checking the box can they proceed with the reservation.
+### Ce construim
+Înlocuim fluxul clasic de confirmare cont (click pe link din email) cu un flux OTP: după înregistrare, utilizatorul introduce un cod de 6 cifre primit pe email direct în aplicație.
 
-### Implementation
+### Implementare
 
-#### 1. Create `TermsDialog` component (`src/components/checkout/TermsDialog.tsx`)
-- A Dialog with the full T&C content inside a ScrollArea with a fixed max height
-- Track scroll position via `onScroll` -- when scrolled to bottom, enable the checkbox
-- Checkbox labeled "Am citit și accept Termenii și Condițiile"
-- "Confirmă" button disabled until checkbox is checked
-- On confirm, closes dialog and triggers the actual reservation creation
+#### 1. Modifică `AuthContext.tsx` — metoda `signUp`
+- Schimbă `signUp` să folosească `supabase.auth.signUp()` fără `emailRedirectTo` (nu mai avem nevoie de redirect link)
+- După signup reușit, returnează și indicația că trebuie verificare OTP
 
-#### 2. Modify `Checkout.tsx` Step 4
-- Replace the direct `handleConfirmReservation` call on the confirm button with opening the TermsDialog
-- The terms notice text (line 252-253) becomes a clickable trigger that also opens the dialog
-- After user accepts terms in the dialog, the reservation is created
+#### 2. Modifică `Auth.tsx` — adaugă stare OTP
+- După înregistrare cu succes, în loc să navigheze la `/`, arată un ecran de verificare OTP
+- Noi state-uri: `showOtpVerification`, `otpEmail`
+- Ecranul OTP conține:
+  - Mesaj "Am trimis un cod de verificare pe {email}"
+  - Componenta `InputOTP` (deja instalată — `input-otp`) cu 6 sloturi
+  - Buton "Verifică" care apelează `supabase.auth.verifyOtp({ email, token, type: 'signup' })`
+  - Buton "Retrimite codul" care apelează `supabase.auth.resend({ type: 'signup', email })`
+- La verificare reușită: toast de succes + navigare la `/`
 
-### Flow
-1. User clicks "Trimite cererea" at Step 4
-2. Terms dialog opens with full T&C text
-3. User scrolls to bottom → checkbox becomes enabled
-4. User checks the checkbox → "Confirmă" button becomes enabled
-5. User clicks confirm → dialog closes, reservation is created
+#### 3. Activează auto-confirm OFF (implicit)
+- Verificăm că auto-confirm este dezactivat (utilizatorul trebuie să confirme emailul)
+- Supabase trimite automat email-ul cu codul OTP când se folosește signup flow
 
-### Technical details
-- Reuses existing T&C content from `src/pages/legal/TermsAndConditions.tsx` sections array
-- Uses existing `Dialog`, `ScrollArea`, and `Checkbox` UI components
-- No database changes needed
+#### 4. Actualizează `LoginDialog.tsx` (checkout)
+- Același pattern: după signup, arată input OTP inline în dialog
+- Verificare OTP + apoi apelează `onLoginSuccess`
+
+### Detalii tehnice
+- Folosim `InputOTP`, `InputOTPGroup`, `InputOTPSlot` din `src/components/ui/input-otp.tsx` (deja există)
+- API Supabase: `verifyOtp({ email, token, type: 'signup' })` și `resend({ type: 'signup', email })`
+- Nu necesită modificări de bază de date
+- Nu necesită edge functions noi — Supabase trimite automat emailul cu OTP
+
+### Fișiere modificate
+- `src/contexts/AuthContext.tsx` — actualizare `signUp`
+- `src/pages/Auth.tsx` — adaugă ecran OTP post-înregistrare
+- `src/components/checkout/LoginDialog.tsx` — adaugă OTP inline post-signup
 
