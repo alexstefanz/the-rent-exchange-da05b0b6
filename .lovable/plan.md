@@ -1,42 +1,33 @@
 
 
-## Plan: Fixed Support Chat Button
+## Plan: Terms & Conditions Popup at Checkout
 
 ### What we'll build
-A floating action button (FAB) fixed in the bottom-right corner of the screen. Clicking it opens a dialog/drawer with a form (name, subject, description). After submitting, it creates an ops_ticket and opens an inline chat view where the user can exchange messages with admins in real-time.
+A dialog that appears at checkout Step 4 (Review & Confirm) when the user clicks the confirm button. The dialog displays the full Terms & Conditions text in a scrollable container. The checkbox to accept terms is disabled until the user scrolls to the bottom. Only after checking the box can they proceed with the reservation.
 
 ### Implementation
 
-#### 1. Create `SupportChatWidget` component (`src/components/support/SupportChatWidget.tsx`)
-- Fixed button in bottom-right (above mobile nav on mobile: `bottom-20 lg:bottom-6 right-4`)
-- Uses `Headphones` or `MessageSquare` icon
-- Opens a popover/card overlay (not a full dialog) anchored to bottom-right
-- Two states:
-  - **Form state**: Name, Subject, Description fields. On submit, calls `createUserTicket` to create an ops_ticket
-  - **Chat state**: Shows messages for the created ticket using `fetchUserTicketMessages` / `addUserTicketMessage`. Polls or uses realtime for updates. Shows admin replies (non-internal messages)
+#### 1. Create `TermsDialog` component (`src/components/checkout/TermsDialog.tsx`)
+- A Dialog with the full T&C content inside a ScrollArea with a fixed max height
+- Track scroll position via `onScroll` -- when scrolled to bottom, enable the checkbox
+- Checkbox labeled "Am citit și accept Termenii și Condițiile"
+- "Confirmă" button disabled until checkbox is checked
+- On confirm, closes dialog and triggers the actual reservation creation
 
-#### 2. Form details
-- Name field (pre-filled from profile if logged in)
-- Subject (text input)
-- Description (textarea)
-- Category auto-set to `USER` / `GENERAL_INQUIRY` (or similar existing category type)
-- User must be authenticated; if not, show a message to log in first
+#### 2. Modify `Checkout.tsx` Step 4
+- Replace the direct `handleConfirmReservation` call on the confirm button with opening the TermsDialog
+- The terms notice text (line 252-253) becomes a clickable trigger that also opens the dialog
+- After user accepts terms in the dialog, the reservation is created
 
-#### 3. Chat view after submission
-- Display ticket `public_id` as reference
-- Show message timeline (customer vs admin messages)
-- Input field to send new messages via `addUserTicketMessage`
-- Poll messages every 10 seconds with react-query
-
-#### 4. Persistence
-- Store active ticket ID in localStorage so reopening the widget resumes the conversation
-- "New conversation" button to start fresh
-
-#### 5. Integration
-- Add `<SupportChatWidget />` in `App.tsx` alongside `<Toaster />` etc., so it appears on all pages
+### Flow
+1. User clicks "Trimite cererea" at Step 4
+2. Terms dialog opens with full T&C text
+3. User scrolls to bottom → checkbox becomes enabled
+4. User checks the checkbox → "Confirmă" button becomes enabled
+5. User clicks confirm → dialog closes, reservation is created
 
 ### Technical details
-- No database changes needed -- uses existing `ops_tickets` and `ops_ticket_messages` tables with existing RLS policies
-- Need to add a `GENERAL_INQUIRY` category type or use existing `USER` group. Looking at the existing categories, `USER` group likely has suitable types. Will check and use the closest match or add one to the constant.
-- The widget will be hidden on admin routes (`/admin/*`) to avoid clutter
+- Reuses existing T&C content from `src/pages/legal/TermsAndConditions.tsx` sections array
+- Uses existing `Dialog`, `ScrollArea`, and `Checkbox` UI components
+- No database changes needed
 
