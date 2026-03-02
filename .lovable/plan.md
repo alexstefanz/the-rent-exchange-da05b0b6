@@ -1,45 +1,47 @@
 
 
-## Plan: Active Reviews Section with Tabs and Multi-Criteria Ratings
+## Plan
 
-### Database Changes
+### 1. Make KYC table rows clickable (remove Acțiuni column)
 
-Alter `product_reviews` table to support multi-criteria ratings and review types:
+In `src/pages/admin/AdminKYC.tsx`:
+- Remove the "Acțiuni" `TableHead` and corresponding `TableCell` with the "Detalii" button
+- Add `onClick` + `cursor-pointer` + `hover:bg-muted/50` to each `TableRow` to navigate to `/admin/kyc/${kycCase.id}` using `useNavigate`
 
-- Add `rating_product_condition` (integer, 1-5, nullable) -- Stare produs
-- Add `rating_communication` (integer, 1-5, nullable) -- Comunicare
-- Add `rating_punctuality` (integer, 1-5, nullable) -- Punctualitate
-- Add `review_type` (text, default 'owner') -- 'owner' for owner reviews, 'renter' for renter reviews
-- Keep existing `rating` as the overall average
-- Keep existing `comment` as the "alte detalii" text field
+### 2. Create user activity logs system
 
-### New Component: `src/components/product/ProductReviewsSection.tsx`
+This requires a new database table and corresponding UI.
 
-A self-contained reviews component with:
+**Database migration** -- create `user_activity_logs` table:
+- `id` (uuid, PK)
+- `user_id` (uuid, not null)
+- `action` (text) -- e.g. `PRODUCT_CREATED`, `PRODUCT_DELETED`, `PRICE_CHANGED`, `KYC_SUBMITTED`, `KYC_APPROVED`, `PHONE_UPDATED`, `IDENTITY_VERIFIED`
+- `entity_type` (text, nullable) -- e.g. `product`, `kyc_case`, `profile`
+- `entity_id` (text, nullable)
+- `metadata` (jsonb, nullable) -- extra details like old/new price, product title
+- `created_at` (timestamptz, default now())
+- RLS: admin-only read access
 
-- **Tabs** using the existing Tabs UI component: "Recenzii proprietar" and "Recenzii chiriaș"
-- **Review list** per tab showing: avatar, name, date, 3 star-rating rows (Stare produs, Comunicare, Punctualitate), and comment text
-- **Empty state** per tab: "Nu există recenzii momentan"
-- **Add review form** (visible to authenticated users who are not the product owner): 3 star-rating selectors + textarea for "Alte detalii" + submit button
-- Average rating display in the header
+**Add a "Logs" tab in KYC Detail page** (`AdminKYCDetail.tsx`):
+- New tab alongside "Documente" and "Audit Log" showing activity logs for that user
+- Query `user_activity_logs` filtered by `user_id`
+- Display timeline with action descriptions, timestamps, and metadata
 
-### New API: `src/features/products/productReviewsApi.ts`
+**Create API and hook**:
+- `src/features/admin/userActivityLogsApi.ts` -- fetch logs by user ID
+- Add hook in `src/hooks/queries/useUserActivityLogs.ts`
 
-- `getProductReviews(productId)` -- fetches reviews with reviewer profile info, returns separated by type
-- `createProductReview(productId, reviewType, ratings, comment)` -- inserts review with all rating fields
-- Computes `rating` as average of the 3 sub-ratings
+**Log insertion points** -- add inserts to `user_activity_logs` in existing API functions:
+- `productsApi.ts` -- on create/delete product, price change
+- `kycApi.ts` -- on KYC status changes (already has audit log, will also write to activity logs)
+- `profileApi.ts` -- on phone/identity updates
 
-### Changes to `src/pages/ProductDetail.tsx`
+Alternatively, database triggers could auto-log changes to products and profiles, which would be more reliable. We can create triggers on the `products` and `profiles` tables that insert into `user_activity_logs` on INSERT/UPDATE/DELETE.
 
-- Remove hardcoded `reviews` array at the top
-- Remove the old static reviews section (lines 250-273)
-- Replace with `<ProductReviewsSection productId={product.id} isOwnProduct={user?.id === product.owner_id} />`
+### Technical details
 
-### Review Form Behavior
-
-- 3 rows of clickable stars for each criterion
-- Textarea for optional comment ("Alte detalii")
-- Submit button disabled until all 3 ratings are selected
-- After submit: toast confirmation, form resets, list refreshes
-- Only authenticated non-owner users see the form
+- The `user_activity_logs` table uses `jsonb` for flexible metadata storage
+- Database triggers on `products` (INSERT, UPDATE, DELETE) and `profiles` (UPDATE of phone, kyc_status) will automatically capture events without modifying existing frontend code
+- The KYC audit log already exists separately and will remain; the new activity logs provide a broader user-level view
+- Conversations are already stored in the `messages`/`conversations` tables -- the Logs tab will show a summary count or link, not duplicate message content
 
