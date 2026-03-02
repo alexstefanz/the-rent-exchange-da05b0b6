@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ShieldCheck, Search, Loader2, Filter, Eye } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 
 const AdminKYC = () => {
+  const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [roleFilter, setRoleFilter] = useState<string>("");
   const [levelFilter, setLevelFilter] = useState<string>("");
@@ -147,12 +148,11 @@ const AdminKYC = () => {
                       <TableHead>Risk</TableHead>
                       <TableHead>Încercări</TableHead>
                       <TableHead>Creat la</TableHead>
-                      <TableHead className="text-right">Acțiuni</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {cases.map((kycCase) => (
-                      <TableRow key={kycCase.id}>
+                      <TableRow key={kycCase.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/admin/kyc/${kycCase.id}`)}>
                         <TableCell className="font-mono text-xs">{kycCase.public_id}</TableCell>
                         <TableCell>
                           <div>
@@ -182,14 +182,6 @@ const AdminKYC = () => {
                         <TableCell className="text-center">{kycCase.attempts_count}</TableCell>
                         <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
                           {format(new Date(kycCase.created_at), 'd MMM yyyy', { locale: ro })}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="outline" size="sm" asChild>
-                            <Link to={`/admin/kyc/${kycCase.id}`}>
-                              <Eye className="h-4 w-4 mr-1" />
-                              Detalii
-                            </Link>
-                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
