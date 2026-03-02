@@ -1,24 +1,42 @@
 
 
-## Plan: Add Balance Section to Profile Page
+## Plan: Fixed Support Chat Button
 
 ### What we'll build
-A balance card displayed at the top of the Profile page (above the tabs), showing the user's current account balance calculated from their transactions in the database.
+A floating action button (FAB) fixed in the bottom-right corner of the screen. Clicking it opens a dialog/drawer with a form (name, subject, description). After submitting, it creates an ops_ticket and opens an inline chat view where the user can exchange messages with admins in real-time.
 
 ### Implementation
 
-1. **Create a `BalanceCard` component** (`src/components/profile/BalanceCard.tsx`)
-   - Fetches the user's balance by querying the `transactions` table (summing completed payouts minus withdrawals)
-   - Displays a prominent card with a Wallet icon, the balance in RON, and a brief description
-   - Shows loading skeleton while fetching
+#### 1. Create `SupportChatWidget` component (`src/components/support/SupportChatWidget.tsx`)
+- Fixed button in bottom-right (above mobile nav on mobile: `bottom-20 lg:bottom-6 right-4`)
+- Uses `Headphones` or `MessageSquare` icon
+- Opens a popover/card overlay (not a full dialog) anchored to bottom-right
+- Two states:
+  - **Form state**: Name, Subject, Description fields. On submit, calls `createUserTicket` to create an ops_ticket
+  - **Chat state**: Shows messages for the created ticket using `fetchUserTicketMessages` / `addUserTicketMessage`. Polls or uses realtime for updates. Shows admin replies (non-internal messages)
 
-2. **Add `BalanceCard` to `Profile.tsx`**
-   - Place it between the page header and the tabs section
-   - Query: sum of `amount` from `transactions` where `user_id = current user`, `status = 'completed'`, grouped by type (owner_payout adds, withdrawal subtracts)
+#### 2. Form details
+- Name field (pre-filled from profile if logged in)
+- Subject (text input)
+- Description (textarea)
+- Category auto-set to `USER` / `GENERAL_INQUIRY` (or similar existing category type)
+- User must be authenticated; if not, show a message to log in first
+
+#### 3. Chat view after submission
+- Display ticket `public_id` as reference
+- Show message timeline (customer vs admin messages)
+- Input field to send new messages via `addUserTicketMessage`
+- Poll messages every 10 seconds with react-query
+
+#### 4. Persistence
+- Store active ticket ID in localStorage so reopening the widget resumes the conversation
+- "New conversation" button to start fresh
+
+#### 5. Integration
+- Add `<SupportChatWidget />` in `App.tsx` alongside `<Toaster />` etc., so it appears on all pages
 
 ### Technical details
-- Uses existing `transactions` table which already has RLS allowing users to view their own transactions
-- No database changes needed -- the `transactions` table already exists with the right structure and policies
-- Balance = SUM(completed payouts) - SUM(completed withdrawals)
-- Uses `@tanstack/react-query` for data fetching, consistent with the rest of the app
+- No database changes needed -- uses existing `ops_tickets` and `ops_ticket_messages` tables with existing RLS policies
+- Need to add a `GENERAL_INQUIRY` category type or use existing `USER` group. Looking at the existing categories, `USER` group likely has suitable types. Will check and use the closest match or add one to the constant.
+- The widget will be hidden on admin routes (`/admin/*`) to avoid clutter
 
