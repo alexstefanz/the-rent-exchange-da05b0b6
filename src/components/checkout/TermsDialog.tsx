@@ -40,10 +40,10 @@ const TermsDialog = ({ open, onOpenChange, onAccept, isSubmitting }: TermsDialog
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
-          <DialogTitle className="text-xl">Termeni și Condiții</DialogTitle>
-          <p className="text-sm text-muted-foreground mt-1">
+      <DialogContent className="max-w-2xl max-h-[85vh] sm:max-h-[90vh] flex flex-col p-0 gap-0 w-[95vw] sm:w-full">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-border">
+          <DialogTitle className="text-lg sm:text-xl">Termeni și Condiții</DialogTitle>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Citește termenii și condițiile până la final pentru a putea continua.
           </p>
         </DialogHeader>
@@ -51,8 +51,8 @@ const TermsDialog = ({ open, onOpenChange, onAccept, isSubmitting }: TermsDialog
         <div
           ref={scrollRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-6 py-4 min-h-0"
-          style={{ maxHeight: "50vh" }}
+          className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4 min-h-0"
+          style={{ maxHeight: "45vh" }}
         >
           <div className="space-y-6">
             {sections.map((section) => (
@@ -64,7 +64,7 @@ const TermsDialog = ({ open, onOpenChange, onAccept, isSubmitting }: TermsDialog
           </div>
         </div>
 
-        <DialogFooter className="px-6 py-4 border-t border-border flex-col gap-3 sm:flex-col">
+        <DialogFooter className="px-4 sm:px-6 py-3 sm:py-4 border-t border-border flex-col gap-2 sm:gap-3 sm:flex-col">
           <div className="flex items-center gap-2">
             <Checkbox
               id="accept-terms"
