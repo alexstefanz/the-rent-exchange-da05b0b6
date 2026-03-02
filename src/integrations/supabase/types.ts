@@ -1262,6 +1262,14 @@ export type Database = {
           id: string
         }[]
       }
+      get_rental_renter_info: {
+        Args: { renter_ids: string[] }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          id: string
+        }[]
+      }
       get_user_conversations: {
         Args: { user_uuid: string }
         Returns: {
