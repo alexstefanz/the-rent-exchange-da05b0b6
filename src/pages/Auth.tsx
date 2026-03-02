@@ -140,6 +140,19 @@ const Auth = () => {
       toast({ title: "Cod invalid", description: "Codul introdus este greșit sau a expirat. Încearcă din nou.", variant: "destructive" });
     } else {
       toast({ title: "Cont verificat!", description: "Contul tău a fost confirmat cu succes." });
+      // Send welcome email (fire and forget)
+      try {
+        const { data: { user: verifiedUser } } = await supabase.auth.getUser();
+        await supabase.functions.invoke("send-general-notification", {
+          body: {
+            type: "welcome",
+            email: otpEmail,
+            full_name: verifiedUser?.user_metadata?.full_name || "",
+          },
+        });
+      } catch (e) {
+        console.error("Failed to send welcome email:", e);
+      }
       navigate("/");
     }
   };
