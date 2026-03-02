@@ -13,7 +13,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Mail } from "lucide-react";
+import { Loader2, Mail, Building2, User } from "lucide-react";
 import logoImage from "@/assets/rentli_logo.png";
 import { useUxCopy } from "@/hooks/useUxCopy";
 
@@ -31,6 +31,7 @@ const Auth = () => {
   const [otpCode, setOtpCode] = useState("");
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isResendingOtp, setIsResendingOtp] = useState(false);
+  const [accountType, setAccountType] = useState<"individual" | "business">("individual");
   const copy = useUxCopy();
 
   const isResetMode = isPasswordRecovery || searchParams.get("reset") === "true";
@@ -45,9 +46,28 @@ const Auth = () => {
     email: z.string().email(copy.auth.invalidEmail),
     password: z.string().min(6, copy.auth.passwordMin),
     confirmPassword: z.string(),
+    companyName: z.string().max(100).optional().or(z.literal("")),
+    cui: z.string().max(20).optional().or(z.literal("")),
+    regCom: z.string().max(30).optional().or(z.literal("")),
   }).refine((data) => data.password === data.confirmPassword, {
     message: copy.auth.passwordMismatch,
     path: ["confirmPassword"],
+  }).refine((data) => {
+    if (accountType === "business") {
+      return !!data.companyName && data.companyName.length >= 2;
+    }
+    return true;
+  }, {
+    message: "Denumirea firmei este obligatorie",
+    path: ["companyName"],
+  }).refine((data) => {
+    if (accountType === "business") {
+      return !!data.cui && data.cui.length >= 2;
+    }
+    return true;
+  }, {
+    message: "CUI-ul este obligatoriu",
+    path: ["cui"],
   });
 
   const resetPasswordSchema = z.object({
@@ -85,7 +105,7 @@ const Auth = () => {
 
   const registerForm = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { fullName: "", email: "", password: "", confirmPassword: "" },
+    defaultValues: { fullName: "", email: "", password: "", confirmPassword: "", companyName: "", cui: "", regCom: "" },
   });
 
   const resetForm = useForm<ResetPasswordFormData>({
@@ -115,6 +135,13 @@ const Auth = () => {
 
   const handleRegister = async (data: RegisterFormData) => {
     setIsLoading(true);
+    const metadata: Record<string, string> = { full_name: data.fullName };
+    if (accountType === "business") {
+      metadata.account_type = "business";
+      metadata.company_name = data.companyName || "";
+      metadata.cui = data.cui || "";
+      metadata.reg_com = data.regCom || "";
+    }
     const { error } = await signUp(data.email, data.password, data.fullName);
     setIsLoading(false);
     if (error) {
@@ -122,6 +149,22 @@ const Auth = () => {
       if (error.message.includes("already registered")) message = copy.auth.accountExists;
       toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
     } else {
+      // Update profile with business data after signup
+      if (accountType === "business") {
+        try {
+          const { data: { user: newUser } } = await supabase.auth.getUser();
+          if (newUser) {
+            await supabase.from("profiles").update({
+              account_type: "business",
+              company_name: data.companyName || null,
+              cui: data.cui || null,
+              reg_com: data.regCom || null,
+            }).eq("id", newUser.id);
+          }
+        } catch (e) {
+          console.error("Failed to save business data:", e);
+        }
+      }
       setOtpEmail(data.email);
       setShowOtpVerification(true);
     }
@@ -341,11 +384,55 @@ const Auth = () => {
               <CardDescription>{copy.auth.registerSubtitle}</CardDescription>
               
               <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4 mt-4">
+                {/* Account type toggle */}
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant={accountType === "individual" ? "default" : "outline"}
+                    className="w-full gap-2"
+                    onClick={() => setAccountType("individual")}
+                  >
+                    <User className="h-4 w-4" />
+                    Persoană fizică
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={accountType === "business" ? "default" : "outline"}
+                    className="w-full gap-2"
+                    onClick={() => setAccountType("business")}
+                  >
+                    <Building2 className="h-4 w-4" />
+                    Persoană juridică
+                  </Button>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="register-name">{copy.auth.fullName}</Label>
                   <Input id="register-name" type="text" placeholder="Ion Popescu" {...registerForm.register("fullName")} />
                   {registerForm.formState.errors.fullName && <p className="text-sm text-destructive">{registerForm.formState.errors.fullName.message}</p>}
                 </div>
+
+                {accountType === "business" && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="register-company">Denumire firmă *</Label>
+                      <Input id="register-company" type="text" placeholder="SC Exemplu SRL" maxLength={100} {...registerForm.register("companyName")} />
+                      {registerForm.formState.errors.companyName && <p className="text-sm text-destructive">{registerForm.formState.errors.companyName.message}</p>}
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="register-cui">CUI *</Label>
+                        <Input id="register-cui" type="text" placeholder="RO12345678" maxLength={20} {...registerForm.register("cui")} />
+                        {registerForm.formState.errors.cui && <p className="text-sm text-destructive">{registerForm.formState.errors.cui.message}</p>}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="register-regcom">Nr. Reg. Comerț</Label>
+                        <Input id="register-regcom" type="text" placeholder="J40/1234/2024" maxLength={30} {...registerForm.register("regCom")} />
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="register-email">{copy.auth.email}</Label>
                   <Input id="register-email" type="email" placeholder="email@exemplu.ro" {...registerForm.register("email")} />

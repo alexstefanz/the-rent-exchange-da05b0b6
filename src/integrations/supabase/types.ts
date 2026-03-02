@@ -766,11 +766,15 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_type: string
           avatar_url: string | null
           ban_reason: string | null
           banned_at: string | null
           banned_by: string | null
+          company_address: string | null
+          company_name: string | null
           created_at: string | null
+          cui: string | null
           email: string | null
           full_name: string | null
           id: string
@@ -779,14 +783,19 @@ export type Database = {
           kyc_level: string
           kyc_status: string
           phone: string | null
+          reg_com: string | null
           whatsapp: string | null
         }
         Insert: {
+          account_type?: string
           avatar_url?: string | null
           ban_reason?: string | null
           banned_at?: string | null
           banned_by?: string | null
+          company_address?: string | null
+          company_name?: string | null
           created_at?: string | null
+          cui?: string | null
           email?: string | null
           full_name?: string | null
           id: string
@@ -795,14 +804,19 @@ export type Database = {
           kyc_level?: string
           kyc_status?: string
           phone?: string | null
+          reg_com?: string | null
           whatsapp?: string | null
         }
         Update: {
+          account_type?: string
           avatar_url?: string | null
           ban_reason?: string | null
           banned_at?: string | null
           banned_by?: string | null
+          company_address?: string | null
+          company_name?: string | null
           created_at?: string | null
+          cui?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
@@ -811,6 +825,7 @@ export type Database = {
           kyc_level?: string
           kyc_status?: string
           phone?: string | null
+          reg_com?: string | null
           whatsapp?: string | null
         }
         Relationships: []

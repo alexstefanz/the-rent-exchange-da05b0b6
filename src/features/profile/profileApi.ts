@@ -11,6 +11,11 @@ export interface Profile {
   created_at: string;
   kyc_status: string;
   kyc_level: string;
+  account_type: string;
+  company_name: string | null;
+  cui: string | null;
+  reg_com: string | null;
+  company_address: string | null;
 }
 
 export const getProfile = async (userId: string): Promise<Profile | null> => {
@@ -29,7 +34,7 @@ export const getProfile = async (userId: string): Promise<Profile | null> => {
 
 export const createProfile = async (
   userId: string,
-  data: { full_name?: string; phone?: string }
+  data: { full_name?: string; phone?: string; account_type?: string; company_name?: string; cui?: string; reg_com?: string; company_address?: string }
 ): Promise<Profile> => {
   const { data: profile, error } = await supabase
     .from("profiles")
@@ -37,6 +42,11 @@ export const createProfile = async (
       id: userId,
       full_name: data.full_name || null,
       phone: data.phone || null,
+      account_type: data.account_type || 'individual',
+      company_name: data.company_name || null,
+      cui: data.cui || null,
+      reg_com: data.reg_com || null,
+      company_address: data.company_address || null,
     })
     .select()
     .single();
@@ -50,7 +60,7 @@ export const createProfile = async (
 
 export const updateProfile = async (
   userId: string,
-  data: { full_name?: string; phone?: string; email?: string; whatsapp?: string; avatar_url?: string }
+  data: { full_name?: string; phone?: string; email?: string; whatsapp?: string; avatar_url?: string; account_type?: string; company_name?: string; cui?: string; reg_com?: string; company_address?: string }
 ): Promise<Profile> => {
   const { data: profile, error } = await supabase
     .from("profiles")
