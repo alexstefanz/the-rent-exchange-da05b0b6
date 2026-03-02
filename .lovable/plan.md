@@ -1,51 +1,31 @@
 
 
-## Plan: Notificări email esențiale pentru platformă
+## Plan: Rânduri clickabile pe pagina Admin Utilizatori
 
-### Stare curentă
-Email-urile existente acoperă deja:
-- **Cerere nouă de închiriere** (owner + renter) ✅
-- **Acceptare / Respingere cerere** (owner + renter) ✅
-- **Mesaj nou în chat** (recipient) ✅
-- **Anulare cerere** (owner + renter) ✅
-- **Schimbare parolă** ✅
+### Ce se schimbă
 
-### Ce lipsește și vom adăuga
-
-#### 1. Email de bun venit la înregistrare
-- Se trimite după verificarea OTP cu succes (contul confirmat)
-- Conținut: salut personalizat, ce poate face pe platformă, CTA spre homepage
-- Trigger: apel din `Auth.tsx` după `verifyOtp` reușit
-
-#### 2. Email review primit (recenzie nouă)
-- Când cineva primește o recenzie pe profil sau pe un produs
-- Trigger: apel din codul de creare recenzie (`productReviewsApi.ts` / `reviewsApi.ts`)
-- Conținut: cine a lăsat recenzia, rating, comentariu, CTA spre profil
-
-#### 3. Notificare produs nou publicat (confirmare proprietar)
-- Când un utilizator publică un produs nou
-- Trigger: apel din `NewProduct.tsx` după insert reușit
-- Conținut: confirmare produs publicat, titlu, CTA spre anunț
+Exact ca la KYC: eliminăm coloana "Acțiuni" din tabel și facem rândurile clickabile. La click pe un utilizator, se deschide o pagină de detaliu dedicată cu toate opțiunile (schimbare rol, banare/debanare, profil public).
 
 ### Implementare
 
-#### Edge function nouă: `send-general-notification`
-O singură edge function generică care acceptă un `type` și trimite email-ul corespunzător. Tipuri suportate:
-- `welcome` — email bun venit (primește `email`, `full_name`)
-- `review_received` — recenzie primită (primește `reviewer_name`, `rating`, `comment`, `recipient_user_id`, `product_title?`)
-- `product_published` — produs publicat (primește `user_id`, `product_title`, `product_slug`)
+#### 1. Pagină nouă: `src/pages/admin/AdminUserDetail.tsx`
+- Rută: `/admin/users/:id`
+- Afișează informațiile complete ale utilizatorului (avatar, nume, email, telefon, dată înregistrare, KYC status, rol, status ban)
+- Conține butoanele de acțiune: schimbare rol (Utilizator/Moderator/Admin), banare/debanare cu dialog de motivare, link spre profil public
+- Folosește `fetchAdminUsers` cu search pe ID sau o funcție dedicată pentru a obține datele utilizatorului
 
-Reutilizează `buildEmailTemplate` identic cu celelalte funcții, aceleași stiluri RentNow.
+#### 2. Modificare `src/pages/admin/AdminUsers.tsx`
+- Eliminăm coloana "Acțiuni" din `TableHeader` și `TableBody`
+- Eliminăm dropdown-ul cu meniul de acțiuni
+- Adăugăm `className="cursor-pointer hover:bg-muted/50"` și `onClick={() => navigate(`/admin/users/${u.id}`)}` pe fiecare `TableRow`
+- Eliminăm starea și logica de ban/role change (se mută în pagina de detaliu)
+- Eliminăm dialogul de ban din această pagină
 
-#### Modificări frontend
-- `src/pages/Auth.tsx` — după OTP verificat, apelează `send-general-notification` cu type `welcome`
-- `src/features/products/productReviewsApi.ts` — după insert recenzie, apelează cu type `review_received`
-- `src/pages/NewProduct.tsx` — după publicare produs, apelează cu type `product_published`
+#### 3. Modificare `src/App.tsx`
+- Adăugăm ruta `<Route path="/admin/users/:id" element={<AdminUserDetail />} />`
+- Lazy import pentru `AdminUserDetail`
 
-#### Config
-- Adaugă `[functions.send-general-notification] verify_jwt = false` în `config.toml` (gestionat automat)
-
-### Fișiere
-- **Creat**: `supabase/functions/send-general-notification/index.ts`
-- **Modificat**: `src/pages/Auth.tsx`, `src/features/products/productReviewsApi.ts`, `src/pages/NewProduct.tsx`
+### Fișiere afectate
+- **Creat**: `src/pages/admin/AdminUserDetail.tsx`
+- **Modificat**: `src/pages/admin/AdminUsers.tsx`, `src/App.tsx`
 
