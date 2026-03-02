@@ -85,6 +85,42 @@ export const createUserReview = async (
   return data;
 };
 
+export interface GivenReview {
+  id: string;
+  reviewer_id: string;
+  reviewed_user_id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  reviewed_user?: {
+    full_name: string | null;
+    avatar_url: string | null;
+  };
+}
+
+export const getUserGivenReviews = async (userId: string): Promise<GivenReview[]> => {
+  const { data, error } = await supabase
+    .rpc('get_user_given_reviews_with_targets', { target_user_id: userId });
+
+  if (error) {
+    console.error("Error fetching given reviews:", error);
+    return [];
+  }
+
+  return (data || []).map((review: any) => ({
+    id: review.id,
+    reviewer_id: review.reviewer_id,
+    reviewed_user_id: review.reviewed_user_id,
+    rating: review.rating,
+    comment: review.comment,
+    created_at: review.created_at,
+    reviewed_user: {
+      full_name: review.reviewed_full_name,
+      avatar_url: review.reviewed_avatar_url,
+    },
+  }));
+};
+
 export const deleteUserReview = async (reviewId: string): Promise<void> => {
   const { error } = await supabase
     .from("user_reviews")
