@@ -1,33 +1,38 @@
 
 
-## Plan: Înregistrare și profil pentru Persoană Juridică
+## Plan: Vizualizare chat admin pentru dispute
 
-### Modificări necesare
+### Ce se adaugă
 
-#### 1. Migrare bază de date — coloane noi pe `profiles`
-Adăugăm câmpuri pentru datele companiei:
-- `account_type` (text, default `'individual'`) — valori: `individual` / `business`
-- `company_name` (text, nullable)
-- `cui` (text, nullable) — Cod Unic de Înregistrare
-- `reg_com` (text, nullable) — Nr. Registrul Comerțului
-- `company_address` (text, nullable)
+Adminul va putea vizualiza conversațiile dintre chiriaș și proprietar direct din admin. Se adaugă:
 
-#### 2. Formularul de înregistrare (`src/pages/Auth.tsx`)
-- Adăugăm un toggle/selector „Persoană fizică" / „Persoană juridică" în tab-ul de Register
-- Când se selectează „Persoană juridică", apar câmpuri suplimentare: Denumire firmă, CUI, Nr. Reg. Comerțului
-- Datele companiei se salvează în `profiles` la crearea automată a contului (prin `user_metadata` sau update imediat după signup)
+1. **Pagină nouă: `src/pages/admin/AdminConversations.tsx`** — listează toate conversațiile de pe platformă cu search și filtrare. La click pe o conversație, se deschide chat-ul read-only.
 
-#### 3. Profilul utilizatorului (`src/components/profile/ProfileTab.tsx`)
-- Adăugăm secțiune „Date companie" care apare dacă `account_type === 'business'`
-- Adăugăm switch pentru a comuta între persoană fizică și juridică
-- Câmpuri editabile: Denumire firmă, CUI, Nr. Reg. Comerțului, Adresa companiei
-- Schema Zod extinsă cu validări pentru câmpurile de companie
+2. **Pagină nouă: `src/pages/admin/AdminConversationDetail.tsx`** — afișează mesajele unei conversații în format read-only (adminul nu poate trimite mesaje, doar vizualiza). Include info despre produs, chiriaș și proprietar.
 
-#### 4. API profil (`src/features/profile/profileApi.ts`)
-- Extindem interfața `Profile` cu câmpurile noi
-- Extindem `updateProfile` și `createProfile` să accepte datele de companie
+3. **Migrare DB — RLS policies** pentru a permite adminilor să citească `conversations` și `messages`:
+   ```sql
+   -- Admin can view all conversations
+   CREATE POLICY "Admins can view all conversations"
+     ON conversations FOR SELECT TO authenticated
+     USING (has_role(auth.uid(), 'admin'));
+
+   -- Admin can view all messages
+   CREATE POLICY "Admins can view all messages"
+     ON messages FOR SELECT TO authenticated
+     USING (has_role(auth.uid(), 'admin'));
+   ```
+
+4. **Rută nouă în sidebar** — adăugăm „Conversații" în `AdminSidebar.tsx` cu iconul `MessageCircle`.
+
+5. **Rute în `App.tsx`**:
+   - `/admin/conversations` — lista conversațiilor
+   - `/admin/conversations/:id` — detaliu conversație
+
+6. **Link din context ticket** — pe `AdminTicketDetail`, dacă ticketul are `rental_user_id` și `owner_user_id`, adăugăm un link rapid „Vezi conversația" care caută conversația relevantă.
 
 ### Fișiere afectate
-- **Migrare SQL**: coloane noi pe `profiles`
-- **Modificat**: `src/pages/Auth.tsx`, `src/components/profile/ProfileTab.tsx`, `src/features/profile/profileApi.ts`
+- **Migrare SQL**: RLS pe `conversations` și `messages`
+- **Creat**: `AdminConversations.tsx`, `AdminConversationDetail.tsx`
+- **Modificat**: `App.tsx`, `AdminSidebar.tsx`, `AdminTicketDetail.tsx`
 
