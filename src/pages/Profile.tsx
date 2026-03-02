@@ -16,6 +16,7 @@ import RequestsTab from "@/components/dashboard/RequestsTab";
 import RentalsTab from "@/components/dashboard/RentalsTab";
 import LendingsTab from "@/components/dashboard/LendingsTab";
 import FavoritesTab from "@/components/profile/FavoritesTab";
+import BalanceCard from "@/components/profile/BalanceCard";
 
 const TABS = [
   { id: "contul-meu", labelRo: "Contul meu", labelEn: "My Account", icon: UserCog },
@@ -120,6 +121,9 @@ const ProfilePage = () => {
             )}
           </p>
         </div>
+
+        {/* Balance Card */}
+        <BalanceCard />
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
