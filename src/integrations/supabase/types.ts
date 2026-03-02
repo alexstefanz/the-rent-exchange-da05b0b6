@@ -775,10 +775,13 @@ export type Database = {
           company_name: string | null
           created_at: string | null
           cui: string | null
+          deactivation_token: string | null
+          deactivation_token_expires_at: string | null
           email: string | null
           full_name: string | null
           id: string
           is_banned: boolean
+          is_deactivated: boolean
           kyc_last_verified_at: string | null
           kyc_level: string
           kyc_status: string
@@ -796,10 +799,13 @@ export type Database = {
           company_name?: string | null
           created_at?: string | null
           cui?: string | null
+          deactivation_token?: string | null
+          deactivation_token_expires_at?: string | null
           email?: string | null
           full_name?: string | null
           id: string
           is_banned?: boolean
+          is_deactivated?: boolean
           kyc_last_verified_at?: string | null
           kyc_level?: string
           kyc_status?: string
@@ -817,10 +823,13 @@ export type Database = {
           company_name?: string | null
           created_at?: string | null
           cui?: string | null
+          deactivation_token?: string | null
+          deactivation_token_expires_at?: string | null
           email?: string | null
           full_name?: string | null
           id?: string
           is_banned?: boolean
+          is_deactivated?: boolean
           kyc_last_verified_at?: string | null
           kyc_level?: string
           kyc_status?: string

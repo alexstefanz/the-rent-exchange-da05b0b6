@@ -23,12 +23,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const clearPasswordRecovery = () => setIsPasswordRecovery(false);
 
+  const checkDeactivated = async (userId: string) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("is_deactivated")
+      .eq("id", userId)
+      .single();
+    if (data?.is_deactivated) {
+      await supabase.auth.signOut();
+      alert("Acest cont a fost dezactivat.");
+      return true;
+    }
+    return false;
+  };
+
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (event === 'PASSWORD_RECOVERY') {
           setIsPasswordRecovery(true);
+        }
+        if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+          const deactivated = await checkDeactivated(session.user.id);
+          if (deactivated) return;
         }
         setSession(session);
         setUser(session?.user ?? null);
@@ -36,8 +53,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const deactivated = await checkDeactivated(session.user.id);
+        if (deactivated) {
+          setLoading(false);
+          return;
+        }
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);

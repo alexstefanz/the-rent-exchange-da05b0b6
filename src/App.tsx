@@ -35,6 +35,7 @@ const AboutUs = lazy(() => import("./pages/AboutUs"));
 const UserTickets = lazy(() => import("./pages/UserTickets"));
 const KycVerification = lazy(() => import("./pages/KycVerification"));
 const Contact = lazy(() => import("./pages/Contact"));
+const DeactivateAccount = lazy(() => import("./pages/DeactivateAccount"));
 
 // Legal pages
 const TermsAndConditions = lazy(() => import("./pages/legal/TermsAndConditions"));
@@ -102,6 +103,7 @@ const App = () => (
                 <Route path="/politica-cookies" element={<CookiePolicy />} />
                 <Route path="/intrebari-frecvente" element={<FAQ />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/dezactivare-cont" element={<DeactivateAccount />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminDashboard />} />

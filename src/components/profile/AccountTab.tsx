@@ -30,6 +30,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 import { getProfile, updateProfile, createProfile, Profile } from "@/features/profile/profileApi";
 import { uploadAvatar } from "@/features/profile/avatarApi";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -167,11 +168,35 @@ const AccountTab = () => {
     }
   };
 
+  const [isDeactivating, setIsDeactivating] = useState(false);
+
   const handleDeactivateAccount = async () => {
-    toast({
-      title: t("Funcție indisponibilă", "Feature unavailable"),
-      description: t("Dezactivarea contului nu este încă disponibilă", "Account deactivation is not yet available"),
-    });
+    setIsDeactivating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("request-account-deactivation");
+      if (error || data?.error) {
+        throw new Error(data?.error || error?.message);
+      }
+      toast({
+        title: t("Email trimis", "Email sent"),
+        description: t(
+          "Verifică-ți emailul pentru a confirma dezactivarea contului.",
+          "Check your email to confirm account deactivation."
+        ),
+      });
+    } catch (error: any) {
+      console.error("Deactivation request error:", error);
+      toast({
+        title: t("Eroare", "Error"),
+        description: t(
+          "Nu s-a putut trimite cererea de dezactivare. Încearcă din nou.",
+          "Could not send deactivation request. Try again."
+        ),
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeactivating(false);
+    }
   };
 
 
@@ -423,12 +448,18 @@ const AccountTab = () => {
                   <AlertDialogHeader>
                     <AlertDialogTitle>{t("Ești sigur?", "Are you sure?")}</AlertDialogTitle>
                     <AlertDialogDescription>
-                      {t("Această acțiune este ireversibilă. Toate datele tale vor fi șterse permanent.", "This action is irreversible. All your data will be permanently deleted.")}
+                      {t(
+                        "Vei primi un email de confirmare. Contul va fi dezactivat doar după ce confirmi prin link-ul din email.",
+                        "You will receive a confirmation email. Your account will only be deactivated after you confirm via the email link."
+                      )}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>{t("Anulează", "Cancel")}</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeactivateAccount}>{t("Dezactivează", "Deactivate")}</AlertDialogAction>
+                    <AlertDialogAction onClick={handleDeactivateAccount} disabled={isDeactivating}>
+                      {isDeactivating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      {t("Dezactivează", "Deactivate")}
+                    </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
