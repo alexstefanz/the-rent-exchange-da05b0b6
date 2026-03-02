@@ -319,7 +319,7 @@ const NotificationBell = () => {
           )}
         </div>
 
-        <div className="max-h-80">
+        <div className="max-h-80 overflow-y-auto">
           <NotificationList
             notifications={notifications}
             filter={filter}
