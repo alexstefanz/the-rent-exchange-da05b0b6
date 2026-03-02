@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { MapPin, ArrowRight, CheckCircle, Loader2, ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { MapPin, ArrowRight, CheckCircle, Loader2, ChevronLeft, ChevronRight, Heart, Star } from "lucide-react";
 import { useProducts } from "@/hooks/queries/useProducts";
 import { calculateClientPrice } from "@/features/products/productsApi";
 import { getProductUrl } from "@/lib/slugUtils";
@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { addFavoriteProduct, removeFavoriteProduct, getFavoriteProducts } from "@/features/profile/favoriteProductsApi";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 
 const SeeAllCard = ({ images, copy }: { images: string[]; copy: any }) => {
   const thumbs = images.slice(0, 3);
@@ -47,11 +48,13 @@ const ProductRow = ({
   products,
   allImages,
   copy,
+  ratings,
 }: {
   title: string;
   products: any[];
   allImages: string[];
   copy: any;
+  ratings: Record<string, number>;
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -175,9 +178,17 @@ const ProductRow = ({
                     <MapPin className="h-3 w-3 shrink-0" />
                     <span className="truncate">{location}</span>
                   </div>
-                  <div className="mt-2 md:mt-3">
-                    <span className="font-heading text-base font-bold text-primary md:text-lg">{clientPrice} RON</span>
-                    <span className="text-xs text-muted-foreground md:text-sm">{copy.common.perDay}</span>
+                  <div className="mt-2 md:mt-3 flex items-center justify-between">
+                    <div>
+                      <span className="font-heading text-base font-bold text-primary md:text-lg">{clientPrice} RON</span>
+                      <span className="text-xs text-muted-foreground md:text-sm">{copy.common.perDay}</span>
+                    </div>
+                    {ratings[product.id] > 0 && (
+                      <div className="flex items-center gap-1">
+                        <Star className="h-3.5 w-3.5 fill-primary text-primary" />
+                        <span className="text-xs font-semibold text-foreground">{ratings[product.id].toFixed(1)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </Link>
@@ -200,6 +211,31 @@ const FeaturedListings = () => {
   const topCategoryProducts = allProducts.slice(0, 10);
   const recentProducts = [...allProducts].reverse().slice(0, 10);
   const bestReviewedProducts = allProducts.slice(0, 10);
+
+  const [ratings, setRatings] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    if (allProducts.length === 0) return;
+    const productIds = allProducts.map((p) => p.id);
+    supabase
+      .from("product_reviews")
+      .select("product_id, rating")
+      .in("product_id", productIds)
+      .then(({ data }) => {
+        if (!data) return;
+        const map: Record<string, { sum: number; count: number }> = {};
+        data.forEach((r) => {
+          if (!map[r.product_id]) map[r.product_id] = { sum: 0, count: 0 };
+          map[r.product_id].sum += r.rating;
+          map[r.product_id].count += 1;
+        });
+        const avg: Record<string, number> = {};
+        Object.entries(map).forEach(([id, v]) => {
+          avg[id] = v.sum / v.count;
+        });
+        setRatings(avg);
+      });
+  }, [allProducts]);
 
   const allImages = allProducts.flatMap((p) => p.images || []).filter(Boolean).slice(0, 10);
 
@@ -228,7 +264,7 @@ const FeaturedListings = () => {
     <section className="py-12 md:py-16">
       <div className="container">
         {sections.map((section) => (
-          <ProductRow key={section.title} title={section.title} products={section.products} allImages={allImages} copy={copy} />
+          <ProductRow key={section.title} title={section.title} products={section.products} allImages={allImages} copy={copy} ratings={ratings} />
         ))}
       </div>
     </section>
