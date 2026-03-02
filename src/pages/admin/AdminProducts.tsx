@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Package, Search, MoreHorizontal, Loader2, Flag, Eye, EyeOff, Trash2, AlertTriangle } from "lucide-react";
+import { Package, Search, MoreHorizontal, Loader2, Flag, Eye, EyeOff, Trash2, AlertTriangle, Star, MessageSquare } from "lucide-react";
 import SortableTableHead, { SortDirection, sortData, useToggleSort } from "@/components/admin/SortableTableHead";
 import TableColumnFilterRow, { applyColumnFilters, ColumnFilterConfig } from "@/components/admin/TableColumnFilter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,10 +11,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchAdminProducts, toggleProductActive, flagProduct, unflagProduct, deleteProduct, AdminProduct } from "@/features/admin/adminProductsApi";
+import { fetchProductReviews, deleteProductReview, AdminProductReview } from "@/features/admin/adminReviewsApi";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
@@ -28,6 +31,10 @@ const AdminProducts = () => {
   const [flagDialog, setFlagDialog] = useState<{ open: boolean; productId: string }>({ open: false, productId: "" });
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; productId: string; title: string }>({ open: false, productId: "", title: "" });
   const [flagReason, setFlagReason] = useState("");
+  const [reviewsDialog, setReviewsDialog] = useState<{ open: boolean; productId: string; title: string }>({ open: false, productId: "", title: "" });
+  const [reviewsData, setReviewsData] = useState<AdminProductReview[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
@@ -134,6 +141,26 @@ const AdminProducts = () => {
       setDeleteDialog({ open: false, productId: "", title: "" });
     } catch { toast.error("Eroare la ștergere"); }
     finally { setActionLoading(null); }
+  };
+
+  const handleOpenReviews = async (productId: string, title: string) => {
+    setReviewsDialog({ open: true, productId, title });
+    setReviewsLoading(true);
+    try {
+      const reviews = await fetchProductReviews(productId);
+      setReviewsData(reviews);
+    } catch { toast.error("Eroare la încărcarea recenziilor"); }
+    finally { setReviewsLoading(false); }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    setDeletingReviewId(reviewId);
+    try {
+      await deleteProductReview(reviewId);
+      setReviewsData(prev => prev.filter(r => r.id !== reviewId));
+      toast.success("Recenzie ștearsă");
+    } catch { toast.error("Eroare la ștergerea recenziei"); }
+    finally { setDeletingReviewId(null); }
   };
 
   const formatCurrency = (v: number) => new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON', minimumFractionDigits: 0 }).format(v);
@@ -264,6 +291,9 @@ const AdminProducts = () => {
                                     <Flag className="h-4 w-4 mr-2" /> Marchează suspect
                                   </DropdownMenuItem>
                                 )}
+                                <DropdownMenuItem onClick={() => handleOpenReviews(product.id, product.title)}>
+                                  <MessageSquare className="h-4 w-4 mr-2" /> Recenzii
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem className="text-destructive" onClick={() => setDeleteDialog({ open: true, productId: product.id, title: product.title })}>
                                   <Trash2 className="h-4 w-4 mr-2" /> Șterge definitiv
@@ -313,6 +343,71 @@ const AdminProducts = () => {
             <Button variant="outline" onClick={() => setDeleteDialog({ open: false, productId: "", title: "" })}>Anulează</Button>
             <Button variant="destructive" onClick={handleDelete}>Șterge definitiv</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reviews Dialog */}
+      <Dialog open={reviewsDialog.open} onOpenChange={(open) => { if (!open) setReviewsDialog({ open: false, productId: "", title: "" }); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Star className="h-5 w-5 text-yellow-500" /> Recenzii — {reviewsDialog.title}
+            </DialogTitle>
+            <DialogDescription>{reviewsData.length} recenzii</DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[400px]">
+            {reviewsLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+            ) : reviewsData.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">Nicio recenzie pentru acest produs.</p>
+            ) : (
+              <div className="space-y-4 pr-2">
+                {reviewsData.map((review) => (
+                  <div key={review.id} className="border rounded-lg p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={review.reviewer_avatar || undefined} />
+                          <AvatarFallback>{(review.reviewer_name || "?")[0]}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium">{review.reviewer_name || "Anonim"}</p>
+                          <p className="text-xs text-muted-foreground">{format(new Date(review.created_at), 'd MMM yyyy', { locale: ro })}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="gap-1">
+                          <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+                          {review.rating}/5
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">{review.review_type === "owner" ? "Proprietar" : "Chiriaș"}</Badge>
+                      </div>
+                    </div>
+                    {review.comment && <p className="text-sm text-muted-foreground">{review.comment}</p>}
+                    {(review.rating_product_condition || review.rating_communication || review.rating_punctuality) && (
+                      <div className="flex gap-3 text-xs text-muted-foreground">
+                        {review.rating_product_condition && <span>Stare: {review.rating_product_condition}/5</span>}
+                        {review.rating_communication && <span>Comunicare: {review.rating_communication}/5</span>}
+                        {review.rating_punctuality && <span>Punctualitate: {review.rating_punctuality}/5</span>}
+                      </div>
+                    )}
+                    <div className="flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDeleteReview(review.id)}
+                        disabled={deletingReviewId === review.id}
+                      >
+                        {deletingReviewId === review.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Trash2 className="h-3 w-3 mr-1" />}
+                        Șterge
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </AdminLayout>
