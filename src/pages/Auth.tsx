@@ -9,10 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import logoImage from "@/assets/rentli_logo.png";
 import { useUxCopy } from "@/hooks/useUxCopy";
 
@@ -25,6 +26,11 @@ const Auth = () => {
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [isResetting, setIsResetting] = useState(false);
+  const [showOtpVerification, setShowOtpVerification] = useState(false);
+  const [otpEmail, setOtpEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [isResendingOtp, setIsResendingOtp] = useState(false);
   const copy = useUxCopy();
 
   const isResetMode = isPasswordRecovery || searchParams.get("reset") === "true";
@@ -116,8 +122,40 @@ const Auth = () => {
       if (error.message.includes("already registered")) message = copy.auth.accountExists;
       toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
     } else {
-      toast({ title: copy.auth.accountCreated, description: copy.auth.accountCreatedDesc });
+      setOtpEmail(data.email);
+      setShowOtpVerification(true);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otpCode.length !== 6) return;
+    setIsVerifyingOtp(true);
+    const { error } = await supabase.auth.verifyOtp({
+      email: otpEmail,
+      token: otpCode,
+      type: "signup",
+    });
+    setIsVerifyingOtp(false);
+    if (error) {
+      toast({ title: "Cod invalid", description: "Codul introdus este greșit sau a expirat. Încearcă din nou.", variant: "destructive" });
+    } else {
+      toast({ title: "Cont verificat!", description: "Contul tău a fost confirmat cu succes." });
       navigate("/");
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setIsResendingOtp(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: otpEmail,
+    });
+    setIsResendingOtp(false);
+    if (error) {
+      toast({ title: "Eroare", description: "Nu am putut retrimite codul. Încearcă mai târziu.", variant: "destructive" });
+    } else {
+      toast({ title: "Cod retrimis", description: `Am trimis un nou cod pe ${otpEmail}` });
+      setOtpCode("");
     }
   };
 
@@ -152,6 +190,54 @@ const Auth = () => {
     await supabase.auth.signOut();
     navigate("/auth");
   };
+
+  // OTP Verification screen
+  if (showOtpVerification) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted/30 px-4 py-8">
+        <div className="mb-8">
+          <img src={logoImage} alt="RentNow" className="h-12 w-auto" />
+        </div>
+        <Card className="w-full max-w-md">
+          <CardHeader className="space-y-1 text-center">
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <Mail className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-xl">Verifică-ți emailul</CardTitle>
+            <CardDescription>
+              Am trimis un cod de verificare pe <strong>{otpEmail}</strong>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex justify-center">
+              <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+            <Button onClick={handleVerifyOtp} className="w-full" disabled={otpCode.length !== 6 || isVerifyingOtp}>
+              {isVerifyingOtp ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Se verifică...</> : "Verifică codul"}
+            </Button>
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground mb-2">Nu ai primit codul?</p>
+              <Button variant="link" onClick={handleResendOtp} disabled={isResendingOtp} className="text-sm">
+                {isResendingOtp ? "Se retrimite..." : "Retrimite codul"}
+              </Button>
+            </div>
+            <Button variant="ghost" className="w-full text-sm" onClick={() => { setShowOtpVerification(false); setOtpCode(""); }}>
+              ← Înapoi la înregistrare
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (authLoading) {
     return (
