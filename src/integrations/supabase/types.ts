@@ -1290,6 +1290,19 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_user_given_reviews_with_targets: {
+        Args: { target_user_id: string }
+        Returns: {
+          comment: string
+          created_at: string
+          id: string
+          rating: number
+          reviewed_avatar_url: string
+          reviewed_full_name: string
+          reviewed_user_id: string
+          reviewer_id: string
+        }[]
+      }
       get_user_reviews_with_reviewers: {
         Args: { target_user_id: string }
         Returns: {

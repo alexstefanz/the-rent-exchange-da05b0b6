@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Loader2, UserCog, MessageCircle, Wallet, Bell, ShoppingBag, Package, Heart, ClipboardList } from "lucide-react";
+import { Loader2, UserCog, MessageCircle, Wallet, Bell, ShoppingBag, Package, Heart, ClipboardList, Star } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -17,6 +17,7 @@ import RentalsTab from "@/components/dashboard/RentalsTab";
 import LendingsTab from "@/components/dashboard/LendingsTab";
 import FavoritesTab from "@/components/profile/FavoritesTab";
 import BalanceCard from "@/components/profile/BalanceCard";
+import ReviewsTab from "@/components/profile/ReviewsTab";
 
 const TABS = [
   { id: "contul-meu", labelRo: "Contul meu", labelEn: "My Account", icon: UserCog },
@@ -26,6 +27,7 @@ const TABS = [
   { id: "anunturi", labelRo: "Anunțurile mele", labelEn: "My Listings", icon: Package },
   { id: "mesaje", labelRo: "Mesaje", labelEn: "Messages", icon: MessageCircle },
   { id: "castiguri", labelRo: "Câștiguri", labelEn: "Earnings", icon: Wallet },
+  { id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star },
   { id: "notificari", labelRo: "Notificări", labelEn: "Notifications", icon: Bell },
 ];
 
@@ -178,6 +180,10 @@ const ProfilePage = () => {
 
           <TabsContent value="castiguri" className="mt-0">
             <EarningsTab />
+          </TabsContent>
+
+          <TabsContent value="recenzii" className="mt-0">
+            <ReviewsTab />
           </TabsContent>
 
           <TabsContent value="notificari" className="mt-0">
