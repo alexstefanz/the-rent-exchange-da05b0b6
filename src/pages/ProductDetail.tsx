@@ -22,6 +22,7 @@ import NearbyProductsSlider from "@/components/products/NearbyProductsSlider";
 import OwnerSection from "@/components/product/OwnerSection";
 import ProductIncludes from "@/components/product/ProductIncludes";
 import UsageRules from "@/components/product/UsageRules";
+import OwnerOtherListings from "@/components/product/OwnerOtherListings";
 import ProductReviewsSection from "@/components/product/ProductReviewsSection";
 
 import { useUxCopy } from "@/hooks/useUxCopy";
@@ -238,6 +239,7 @@ const ProductDetail = () => {
               </div>
             </div>
 
+            <OwnerOtherListings ownerId={product.owner_id} currentProductId={product.id} ownerName={ownerName} />
             <ProductIncludes />
             <UsageRules />
 
