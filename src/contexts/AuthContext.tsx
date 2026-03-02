@@ -24,15 +24,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const clearPasswordRecovery = () => setIsPasswordRecovery(false);
 
   const checkDeactivated = async (userId: string) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("is_deactivated")
-      .eq("id", userId)
-      .single();
-    if (data?.is_deactivated) {
-      await supabase.auth.signOut();
-      alert("Acest cont a fost dezactivat.");
-      return true;
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("is_deactivated")
+        .eq("id", userId)
+        .single();
+      if (data?.is_deactivated) {
+        await supabase.auth.signOut();
+        alert("Acest cont a fost dezactivat.");
+        return true;
+      }
+    } catch (err) {
+      console.error("checkDeactivated error:", err);
     }
     return false;
   };
