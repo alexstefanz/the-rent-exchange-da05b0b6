@@ -302,10 +302,11 @@ const ProductDetail = () => {
                 </div>
               </div>
             </div>
-            <div className="mt-6">
-              <OwnerOtherListings ownerId={product.owner_id} currentProductId={product.id} ownerName={ownerName} />
-            </div>
           </div>
+        </div>
+
+        <div className="mt-6">
+          <OwnerOtherListings ownerId={product.owner_id} currentProductId={product.id} ownerName={ownerName} />
         </div>
 
         <div className="mt-8">
