@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -20,55 +20,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const deactivationChecked = useRef<Set<string>>(new Set());
 
   const clearPasswordRecovery = () => setIsPasswordRecovery(false);
 
-  const checkDeactivated = async (userId: string) => {
-    try {
-      const { data } = await supabase
-        .from("profiles")
-        .select("is_deactivated")
-        .eq("id", userId)
-        .single();
-      if (data?.is_deactivated) {
-        await supabase.auth.signOut();
-        alert("Acest cont a fost dezactivat.");
-        return true;
+  // Separate effect for deactivation check — runs AFTER auth state is set
+  useEffect(() => {
+    if (!user) return;
+    if (deactivationChecked.current.has(user.id)) return;
+    deactivationChecked.current.add(user.id);
+
+    const checkDeactivated = async () => {
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("is_deactivated")
+          .eq("id", user.id)
+          .single();
+        if (data?.is_deactivated) {
+          await supabase.auth.signOut();
+          alert("Acest cont a fost dezactivat.");
+        }
+      } catch (err) {
+        console.error("checkDeactivated error:", err);
       }
-    } catch (err) {
-      console.error("checkDeactivated error:", err);
-    }
-    return false;
-  };
+    };
+
+    checkDeactivated();
+  }, [user]);
 
   useEffect(() => {
+    // Get initial session — synchronous state update
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes — strictly synchronous callback
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (event === 'PASSWORD_RECOVERY') {
           setIsPasswordRecovery(true);
-        }
-        if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-          const deactivated = await checkDeactivated(session.user.id);
-          if (deactivated) return;
         }
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
       }
     );
-
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const deactivated = await checkDeactivated(session.user.id);
-        if (deactivated) {
-          setLoading(false);
-          return;
-        }
-      }
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
 
     return () => subscription.unsubscribe();
   }, []);
