@@ -17,3 +17,9 @@ verify_jwt = false
 
 [functions.odoo-proxy]
 verify_jwt = false
+
+[functions.request-account-deactivation]
+verify_jwt = false
+
+[functions.confirm-account-deactivation]
+verify_jwt = false
