@@ -110,11 +110,6 @@ const Footer = () => {
                   {copy.footer.howItWorks}
                 </Link>
               </li>
-              <li>
-                <Link to="#" className="transition-colors hover:text-foreground">
-                  {copy.footer.pricing}
-                </Link>
-              </li>
             </ul>
           </div>
         </div>
