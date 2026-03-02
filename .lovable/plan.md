@@ -1,31 +1,33 @@
 
 
-## Plan: Rânduri clickabile pe pagina Admin Utilizatori
+## Plan: Înregistrare și profil pentru Persoană Juridică
 
-### Ce se schimbă
+### Modificări necesare
 
-Exact ca la KYC: eliminăm coloana "Acțiuni" din tabel și facem rândurile clickabile. La click pe un utilizator, se deschide o pagină de detaliu dedicată cu toate opțiunile (schimbare rol, banare/debanare, profil public).
+#### 1. Migrare bază de date — coloane noi pe `profiles`
+Adăugăm câmpuri pentru datele companiei:
+- `account_type` (text, default `'individual'`) — valori: `individual` / `business`
+- `company_name` (text, nullable)
+- `cui` (text, nullable) — Cod Unic de Înregistrare
+- `reg_com` (text, nullable) — Nr. Registrul Comerțului
+- `company_address` (text, nullable)
 
-### Implementare
+#### 2. Formularul de înregistrare (`src/pages/Auth.tsx`)
+- Adăugăm un toggle/selector „Persoană fizică" / „Persoană juridică" în tab-ul de Register
+- Când se selectează „Persoană juridică", apar câmpuri suplimentare: Denumire firmă, CUI, Nr. Reg. Comerțului
+- Datele companiei se salvează în `profiles` la crearea automată a contului (prin `user_metadata` sau update imediat după signup)
 
-#### 1. Pagină nouă: `src/pages/admin/AdminUserDetail.tsx`
-- Rută: `/admin/users/:id`
-- Afișează informațiile complete ale utilizatorului (avatar, nume, email, telefon, dată înregistrare, KYC status, rol, status ban)
-- Conține butoanele de acțiune: schimbare rol (Utilizator/Moderator/Admin), banare/debanare cu dialog de motivare, link spre profil public
-- Folosește `fetchAdminUsers` cu search pe ID sau o funcție dedicată pentru a obține datele utilizatorului
+#### 3. Profilul utilizatorului (`src/components/profile/ProfileTab.tsx`)
+- Adăugăm secțiune „Date companie" care apare dacă `account_type === 'business'`
+- Adăugăm switch pentru a comuta între persoană fizică și juridică
+- Câmpuri editabile: Denumire firmă, CUI, Nr. Reg. Comerțului, Adresa companiei
+- Schema Zod extinsă cu validări pentru câmpurile de companie
 
-#### 2. Modificare `src/pages/admin/AdminUsers.tsx`
-- Eliminăm coloana "Acțiuni" din `TableHeader` și `TableBody`
-- Eliminăm dropdown-ul cu meniul de acțiuni
-- Adăugăm `className="cursor-pointer hover:bg-muted/50"` și `onClick={() => navigate(`/admin/users/${u.id}`)}` pe fiecare `TableRow`
-- Eliminăm starea și logica de ban/role change (se mută în pagina de detaliu)
-- Eliminăm dialogul de ban din această pagină
-
-#### 3. Modificare `src/App.tsx`
-- Adăugăm ruta `<Route path="/admin/users/:id" element={<AdminUserDetail />} />`
-- Lazy import pentru `AdminUserDetail`
+#### 4. API profil (`src/features/profile/profileApi.ts`)
+- Extindem interfața `Profile` cu câmpurile noi
+- Extindem `updateProfile` și `createProfile` să accepte datele de companie
 
 ### Fișiere afectate
-- **Creat**: `src/pages/admin/AdminUserDetail.tsx`
-- **Modificat**: `src/pages/admin/AdminUsers.tsx`, `src/App.tsx`
+- **Migrare SQL**: coloane noi pe `profiles`
+- **Modificat**: `src/pages/Auth.tsx`, `src/components/profile/ProfileTab.tsx`, `src/features/profile/profileApi.ts`
 
