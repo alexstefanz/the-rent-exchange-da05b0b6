@@ -1,49 +1,28 @@
 
 
-## Plan: Dezactivare cont cu confirmare prin email
+## Plan: Secțiune "Mai multe anunțuri de la acest utilizator"
 
-### Flux
-1. User click "Dezactivează contul" → apare dialog de confirmare (existent deja)
-2. User confirmă → se apelează un edge function care generează un token unic de dezactivare, îl salvează în DB și trimite un email cu link de confirmare
-3. User click link din email → se deschide o pagină `/dezactivare-cont?token=...` care apelează alt edge function pentru a dezactiva efectiv contul (setează `is_deactivated = true`, face sign out)
+Adăugăm o secțiune nouă pe pagina de produs, între harta Google Maps și secțiunea "Ce este inclus", care afișează alte produse active ale aceluiași proprietar.
 
-### Modificări
+### Implementare
 
-**1. Migrare DB** — adăugăm coloane pe `profiles`:
-- `is_deactivated boolean DEFAULT false`
-- `deactivation_token text`
-- `deactivation_token_expires_at timestamptz`
+**1. Creare component `OwnerOtherListings.tsx`** (`src/components/product/OwnerOtherListings.tsx`)
+- Primește `ownerId`, `currentProductId`, `ownerName` ca props
+- Folosește `usePublicUserProducts` din `useProducts.ts` pentru a fetch-ui produsele owner-ului
+- Filtrează produsul curent din rezultate
+- Afișează un slider orizontal cu `ProductCard` (max 4-6 produse)
+- Include un link "Vezi toate anunțurile" care duce la `/utilizator/{ownerId}`
+- Design: card cu border, similar celorlalte secțiuni, cu titlu "Mai multe anunțuri de la {ownerName}"
+- Dacă nu există alte produse, secțiunea nu se afișează
 
-**2. Edge function `request-account-deactivation`**:
-- Primește user ID din JWT
-- Generează token random, salvează în profiles cu expirare 24h
-- Trimite email cu Resend (RESEND_API_KEY existent) conținând link de confirmare
-- Returnează success
-
-**3. Edge function `confirm-account-deactivation`**:
-- Primește token din query
-- Verifică token valid + neexpirat
-- Setează `is_deactivated = true`, golește tokenul
-- Face invalidarea sesiunii prin admin API (sau user-ul va fi blocat la login)
-
-**4. Pagină `/dezactivare-cont`** — `src/pages/DeactivateAccount.tsx`:
-- Citește token din URL
-- Apelează edge function-ul de confirmare
-- Afișează mesaj de succes/eroare
-
-**5. Modificări `AccountTab.tsx`**:
-- `handleDeactivateAccount` apelează edge function-ul `request-account-deactivation`
-- Afișează toast de succes: "Verifică-ți emailul pentru a confirma dezactivarea"
-- Update dialog text: menționează că va primi email de confirmare
-
-**6. Blocare login** — modificare `AuthContext.tsx`:
-- După login, verifică `is_deactivated` pe profil
-- Dacă `true`, face sign out și afișează mesaj
-
-**7. Rută nouă în `App.tsx`**: `/dezactivare-cont`
+**2. Modificare `ProductDetail.tsx`**
+- Import `OwnerOtherListings`
+- Inserare între secțiunea de hartă (linia 239) și `ProductIncludes` (linia 241):
+  ```
+  <OwnerOtherListings ownerId={product.owner_id} currentProductId={product.id} ownerName={ownerName} />
+  ```
 
 ### Fișiere afectate
-- **Migrare SQL**: coloane noi pe `profiles`
-- **Creat**: `supabase/functions/request-account-deactivation/index.ts`, `supabase/functions/confirm-account-deactivation/index.ts`, `src/pages/DeactivateAccount.tsx`
-- **Modificat**: `AccountTab.tsx`, `AuthContext.tsx`, `App.tsx`
+- **Creat**: `src/components/product/OwnerOtherListings.tsx`
+- **Modificat**: `src/pages/ProductDetail.tsx`
 
