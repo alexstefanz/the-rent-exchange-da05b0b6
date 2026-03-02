@@ -1,42 +1,51 @@
 
 
-## Plan: Verificare cont prin cod OTP pe email la înregistrare
+## Plan: Notificări email esențiale pentru platformă
 
-### Ce construim
-Înlocuim fluxul clasic de confirmare cont (click pe link din email) cu un flux OTP: după înregistrare, utilizatorul introduce un cod de 6 cifre primit pe email direct în aplicație.
+### Stare curentă
+Email-urile existente acoperă deja:
+- **Cerere nouă de închiriere** (owner + renter) ✅
+- **Acceptare / Respingere cerere** (owner + renter) ✅
+- **Mesaj nou în chat** (recipient) ✅
+- **Anulare cerere** (owner + renter) ✅
+- **Schimbare parolă** ✅
+
+### Ce lipsește și vom adăuga
+
+#### 1. Email de bun venit la înregistrare
+- Se trimite după verificarea OTP cu succes (contul confirmat)
+- Conținut: salut personalizat, ce poate face pe platformă, CTA spre homepage
+- Trigger: apel din `Auth.tsx` după `verifyOtp` reușit
+
+#### 2. Email review primit (recenzie nouă)
+- Când cineva primește o recenzie pe profil sau pe un produs
+- Trigger: apel din codul de creare recenzie (`productReviewsApi.ts` / `reviewsApi.ts`)
+- Conținut: cine a lăsat recenzia, rating, comentariu, CTA spre profil
+
+#### 3. Notificare produs nou publicat (confirmare proprietar)
+- Când un utilizator publică un produs nou
+- Trigger: apel din `NewProduct.tsx` după insert reușit
+- Conținut: confirmare produs publicat, titlu, CTA spre anunț
 
 ### Implementare
 
-#### 1. Modifică `AuthContext.tsx` — metoda `signUp`
-- Schimbă `signUp` să folosească `supabase.auth.signUp()` fără `emailRedirectTo` (nu mai avem nevoie de redirect link)
-- După signup reușit, returnează și indicația că trebuie verificare OTP
+#### Edge function nouă: `send-general-notification`
+O singură edge function generică care acceptă un `type` și trimite email-ul corespunzător. Tipuri suportate:
+- `welcome` — email bun venit (primește `email`, `full_name`)
+- `review_received` — recenzie primită (primește `reviewer_name`, `rating`, `comment`, `recipient_user_id`, `product_title?`)
+- `product_published` — produs publicat (primește `user_id`, `product_title`, `product_slug`)
 
-#### 2. Modifică `Auth.tsx` — adaugă stare OTP
-- După înregistrare cu succes, în loc să navigheze la `/`, arată un ecran de verificare OTP
-- Noi state-uri: `showOtpVerification`, `otpEmail`
-- Ecranul OTP conține:
-  - Mesaj "Am trimis un cod de verificare pe {email}"
-  - Componenta `InputOTP` (deja instalată — `input-otp`) cu 6 sloturi
-  - Buton "Verifică" care apelează `supabase.auth.verifyOtp({ email, token, type: 'signup' })`
-  - Buton "Retrimite codul" care apelează `supabase.auth.resend({ type: 'signup', email })`
-- La verificare reușită: toast de succes + navigare la `/`
+Reutilizează `buildEmailTemplate` identic cu celelalte funcții, aceleași stiluri RentNow.
 
-#### 3. Activează auto-confirm OFF (implicit)
-- Verificăm că auto-confirm este dezactivat (utilizatorul trebuie să confirme emailul)
-- Supabase trimite automat email-ul cu codul OTP când se folosește signup flow
+#### Modificări frontend
+- `src/pages/Auth.tsx` — după OTP verificat, apelează `send-general-notification` cu type `welcome`
+- `src/features/products/productReviewsApi.ts` — după insert recenzie, apelează cu type `review_received`
+- `src/pages/NewProduct.tsx` — după publicare produs, apelează cu type `product_published`
 
-#### 4. Actualizează `LoginDialog.tsx` (checkout)
-- Același pattern: după signup, arată input OTP inline în dialog
-- Verificare OTP + apoi apelează `onLoginSuccess`
+#### Config
+- Adaugă `[functions.send-general-notification] verify_jwt = false` în `config.toml` (gestionat automat)
 
-### Detalii tehnice
-- Folosim `InputOTP`, `InputOTPGroup`, `InputOTPSlot` din `src/components/ui/input-otp.tsx` (deja există)
-- API Supabase: `verifyOtp({ email, token, type: 'signup' })` și `resend({ type: 'signup', email })`
-- Nu necesită modificări de bază de date
-- Nu necesită edge functions noi — Supabase trimite automat emailul cu OTP
-
-### Fișiere modificate
-- `src/contexts/AuthContext.tsx` — actualizare `signUp`
-- `src/pages/Auth.tsx` — adaugă ecran OTP post-înregistrare
-- `src/components/checkout/LoginDialog.tsx` — adaugă OTP inline post-signup
+### Fișiere
+- **Creat**: `supabase/functions/send-general-notification/index.ts`
+- **Modificat**: `src/pages/Auth.tsx`, `src/features/products/productReviewsApi.ts`, `src/pages/NewProduct.tsx`
 
