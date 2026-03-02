@@ -68,4 +68,35 @@ export async function createProductReview(
   });
 
   if (error) throw error;
+
+  // Send review notification (fire and forget)
+  try {
+    // Get product info to find owner
+    const { data: product } = await supabase
+      .from("products")
+      .select("owner_id, title")
+      .eq("id", productId)
+      .single();
+
+    const { data: reviewer } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .single();
+
+    if (product?.owner_id && product.owner_id !== user.id) {
+      await supabase.functions.invoke("send-general-notification", {
+        body: {
+          type: "review_received",
+          reviewer_name: reviewer?.full_name || "Un utilizator",
+          rating: overall,
+          comment: comment || null,
+          recipient_user_id: product.owner_id,
+          product_title: product.title,
+        },
+      });
+    }
+  } catch (e) {
+    console.error("Failed to send review notification:", e);
+  }
 }

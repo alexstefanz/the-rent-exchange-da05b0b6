@@ -61,6 +61,27 @@ export const createUserReview = async (
     handleApiError("Error creating review", error);
   }
 
+  // Send review notification (fire and forget)
+  try {
+    const { data: reviewer } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .single();
+
+    await supabase.functions.invoke("send-general-notification", {
+      body: {
+        type: "review_received",
+        reviewer_name: reviewer?.full_name || "Un utilizator",
+        rating,
+        comment: comment || null,
+        recipient_user_id: reviewedUserId,
+      },
+    });
+  } catch (e) {
+    console.error("Failed to send review notification:", e);
+  }
+
   return data;
 };
 

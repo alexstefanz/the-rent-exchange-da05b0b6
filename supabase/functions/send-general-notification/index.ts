@@ -1,0 +1,321 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+function checkRateLimit(key: string, maxRequests = 5, windowSec = 60): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + windowSec * 1000 });
+    return true;
+  }
+  if (entry.count >= maxRequests) return false;
+  entry.count++;
+  return true;
+}
+
+const PLATFORM_URL = "https://the-rent-exchange.lovable.app";
+
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
+function buildEmailTemplate(opts: {
+  title: string;
+  greeting: string;
+  rows: { label: string; value: string }[];
+  ctaText: string;
+  ctaLink: string;
+  footerText: string;
+}) {
+  const rowsHtml = opts.rows
+    .map(
+      (r) =>
+        `<tr><td style="padding:6px 0;color:#6B6155;font-size:14px;">${r.label}</td><td style="padding:6px 0;color:#2D2517;font-size:14px;font-weight:600;text-align:right;">${r.value}</td></tr>`
+    )
+    .join("");
+
+  return `<!DOCTYPE html>
+<html lang="ro">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background-color:#FAF9F7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAF9F7;padding:32px 16px;">
+<tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+  <!-- Header -->
+  <tr><td style="background-color:#3DB86A;border-radius:12px 12px 0 0;padding:24px 32px;text-align:center;">
+    <span style="color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">RentNow</span>
+  </td></tr>
+  <!-- Card -->
+  <tr><td style="background-color:#ffffff;padding:32px;border-radius:0 0 12px 12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
+    <h2 style="margin:0 0 8px;color:#2D2517;font-size:20px;">${opts.title}</h2>
+    <p style="margin:0 0 24px;color:#6B6155;font-size:15px;line-height:1.5;">${opts.greeting}</p>
+    ${rowsHtml ? `<table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #E8E4DF;border-bottom:1px solid #E8E4DF;margin-bottom:24px;padding:8px 0;">
+      ${rowsHtml}
+    </table>` : ''}
+    <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+      <a href="${PLATFORM_URL}${opts.ctaLink}" style="display:inline-block;background-color:#3DB86A;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;">${opts.ctaText}</a>
+    </td></tr></table>
+  </td></tr>
+  <!-- Footer -->
+  <tr><td style="padding:24px 32px;text-align:center;">
+    <p style="margin:0;color:#9B9489;font-size:12px;">${opts.footerText}</p>
+    <p style="margin:8px 0 0;"><a href="${PLATFORM_URL}" style="color:#3DB86A;font-size:12px;text-decoration:none;">the-rent-exchange.lovable.app</a></p>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>`;
+}
+
+async function sendEmail(resendApiKey: string, to: string, subject: string, html: string) {
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "RentNow <noreply@rentli.ro>",
+        to: [to],
+        subject,
+        html,
+      }),
+    });
+    const result = await res.text();
+    console.log(`Email sent to ${to}:`, result);
+  } catch (e) {
+    console.error("Email send error:", e);
+  }
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const body = await req.json();
+    const { type } = body;
+
+    if (!type) {
+      return new Response(JSON.stringify({ error: "type is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+    if (!resendApiKey) {
+      console.error("RESEND_API_KEY not configured");
+      return new Response(JSON.stringify({ error: "Email service not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // Helper to get email from user_id
+    const getUserEmail = async (userId: string): Promise<{ email: string | null; fullName: string | null }> => {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("email, full_name")
+        .eq("id", userId)
+        .single();
+
+      if (profile?.email) return { email: profile.email, fullName: profile.full_name };
+
+      try {
+        const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
+        if (data?.user?.email) {
+          await supabaseAdmin.from("profiles").update({ email: data.user.email }).eq("id", userId);
+          return { email: data.user.email, fullName: profile?.full_name || null };
+        }
+      } catch (e) {
+        console.error("Error fetching auth user email:", e);
+      }
+      return { email: null, fullName: profile?.full_name || null };
+    };
+
+    // ==================== WELCOME ====================
+    if (type === "welcome") {
+      const { email, full_name } = body;
+      if (!email) {
+        return new Response(JSON.stringify({ error: "email required for welcome" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!checkRateLimit(`welcome:${email}`)) {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const name = escapeHtml(full_name || "");
+      const greeting = name ? `Salut ${name}! 👋` : "Salut! 👋";
+
+      const html = buildEmailTemplate({
+        title: "Bine ai venit pe RentNow! 🎉",
+        greeting: `${greeting}<br><br>Contul tău a fost creat cu succes. Pe RentNow poți închiria sau lista produse în câteva minute. Explorează categoriile și începe acum!`,
+        rows: [
+          { label: "🔍 Caută produse", value: "Găsește ce ai nevoie" },
+          { label: "📦 Listează produse", value: "Câștigă din ce ai" },
+          { label: "💬 Chat integrat", value: "Comunică ușor" },
+        ],
+        ctaText: "Explorează platforma",
+        ctaLink: "/",
+        footerText: "Mulțumim că te-ai alăturat comunității RentNow!",
+      });
+
+      await sendEmail(resendApiKey, email, "Bine ai venit pe RentNow! 🎉", html);
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ==================== REVIEW RECEIVED ====================
+    if (type === "review_received") {
+      const { reviewer_name, rating, comment, recipient_user_id, product_title } = body;
+      if (!recipient_user_id) {
+        return new Response(JSON.stringify({ error: "recipient_user_id required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!checkRateLimit(`review:${recipient_user_id}`, 10, 60)) {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { email, fullName } = await getUserEmail(recipient_user_id);
+      if (!email) {
+        return new Response(JSON.stringify({ success: true, skipped: "no email" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const stars = "⭐".repeat(Math.min(rating || 0, 5));
+      const reviewerDisplay = escapeHtml(reviewer_name || "Un utilizator");
+      const recipientName = escapeHtml(fullName || "");
+      const greetingName = recipientName ? `Salut ${recipientName},` : "Salut,";
+
+      const rows: { label: string; value: string }[] = [
+        { label: "👤 De la", value: reviewerDisplay },
+        { label: "⭐ Rating", value: `${stars} (${rating}/5)` },
+      ];
+      if (product_title) {
+        rows.push({ label: "📦 Produs", value: escapeHtml(product_title) });
+      }
+      if (comment) {
+        rows.push({ label: "💬 Comentariu", value: escapeHtml(comment) });
+      }
+
+      const html = buildEmailTemplate({
+        title: "Ai primit o recenzie nouă! ⭐",
+        greeting: `${greetingName}<br>Cineva ți-a lăsat o recenzie pe platforma RentNow.`,
+        rows,
+        ctaText: "Vezi recenzia",
+        ctaLink: "/profile",
+        footerText: "Recenziile ajută comunitatea să funcționeze mai bine.",
+      });
+
+      await sendEmail(resendApiKey, email, `Ai primit o recenzie nouă - ${stars}`, html);
+
+      // Also insert a notification
+      await supabaseAdmin.from("notifications").insert({
+        user_id: recipient_user_id,
+        type: "review_received",
+        title_ro: "Ai primit o recenzie nouă",
+        title_en: "You received a new review",
+        description_ro: `${reviewerDisplay} ți-a lăsat o recenzie de ${rating} stele.${product_title ? ` Produs: ${product_title}` : ""}`,
+        description_en: `${reviewerDisplay} left you a ${rating}-star review.${product_title ? ` Product: ${product_title}` : ""}`,
+        link: "/profile",
+      });
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ==================== PRODUCT PUBLISHED ====================
+    if (type === "product_published") {
+      const { user_id, product_title, product_slug } = body;
+      if (!user_id || !product_title) {
+        return new Response(JSON.stringify({ error: "user_id and product_title required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      if (!checkRateLimit(`product:${user_id}`, 10, 60)) {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { email, fullName } = await getUserEmail(user_id);
+      if (!email) {
+        return new Response(JSON.stringify({ success: true, skipped: "no email" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const title = escapeHtml(product_title);
+      const name = escapeHtml(fullName || "");
+      const greetingName = name ? `Felicitări ${name}! 🎊` : "Felicitări! 🎊";
+      const productLink = product_slug ? `/product/${product_slug}` : "/owner";
+
+      const html = buildEmailTemplate({
+        title: "Produsul tau a fost publicat! \u{1F680}",
+        greeting: `${greetingName}<br>Produsul tau <strong>${title}</strong> este acum vizibil pe platforma RentNow si poate fi inchiriat de alti utilizatori.`,
+        rows: [
+          { label: "\u{1F4E6} Produs", value: title },
+          { label: "\u{1F4CA} Status", value: "Activ \u2705" },
+        ],
+        ctaText: "Vezi anuntul",
+        ctaLink: productLink,
+        footerText: "Poti gestiona produsele tale oricand din sectiunea Produsele mele.",
+      });
+
+      await sendEmail(resendApiKey, email, `Produsul tău „${product_title}" a fost publicat!`, html);
+
+      // Also insert a notification
+      await supabaseAdmin.from("notifications").insert({
+        user_id,
+        type: "product_published",
+        title_ro: "Produsul tău a fost publicat",
+        title_en: "Your product has been published",
+        description_ro: `Produsul „${product_title}" este acum activ pe platformă.`,
+        description_en: `The product "${product_title}" is now active on the platform.`,
+        link: productLink,
+      });
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(JSON.stringify({ error: `Unknown type: ${type}` }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});

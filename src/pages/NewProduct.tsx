@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -82,6 +83,21 @@ const NewProduct = () => {
         title: "Succes",
         description: "Produsul a fost creat cu succes",
       });
+
+      // Send product published notification (fire and forget)
+      try {
+        await supabase.functions.invoke("send-general-notification", {
+          body: {
+            type: "product_published",
+            user_id: user.id,
+            product_title: data.title,
+            product_slug: null, // slug is generated server-side
+          },
+        });
+      } catch (e) {
+        console.error("Failed to send product published notification:", e);
+      }
+
       navigate("/owner");
     } catch (error) {
       console.error("Error creating product:", error);
