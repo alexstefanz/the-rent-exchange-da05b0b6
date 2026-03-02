@@ -115,6 +115,7 @@ export const CATEGORY_TYPES: Record<string, { value: string; label: string }[]> 
     { value: 'KYC_REVIEW', label: 'Verificare KYC' },
     { value: 'FRAUD_SUSPECTED', label: 'Suspiciune fraudă' },
     { value: 'ABUSIVE_BEHAVIOR', label: 'Comportament abuziv' },
+    { value: 'GENERAL_INQUIRY', label: 'Întrebare generală' },
   ],
 };
 
