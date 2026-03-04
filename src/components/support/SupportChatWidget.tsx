@@ -162,7 +162,7 @@ const SupportChatWidget = () => {
           <div className="flex items-center gap-3 px-4 py-3 border-b bg-primary text-primary-foreground rounded-t-2xl">
             <MessageSquare className="h-5 w-5 shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm">{t("Suport RentNow", "RentNow Support")}</p>
+              <p className="font-semibold text-sm">{t("Suport Rentli", "Rentli Support")}</p>
               {ticketPublicId && (
                 <p className="text-xs opacity-80">{ticketPublicId}</p>
               )}
