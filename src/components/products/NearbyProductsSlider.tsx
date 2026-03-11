@@ -258,7 +258,7 @@ const NearbyProductsSlider = ({ currentProductId, locationCity, category }: Near
                 {/* Info below image */}
                 <div className="p-3 md:p-4">
                   {product.category && (
-                    <span className="inline-block rounded bg-primary px-2 py-0.5 text-[10px] md:text-xs font-semibold text-primary-foreground mb-1.5">
+                    <span className="inline-block rounded-sm bg-primary px-1.5 py-0.5 text-[9px] md:text-[11px] font-semibold text-primary-foreground mb-1.5 whitespace-nowrap truncate max-w-full">
                       {product.category}
                     </span>
                   )}
