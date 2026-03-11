@@ -89,7 +89,7 @@ const ProductDetail = () => {
   const handleStartChat = async () => {
     if (!user) {
       toast({ title: copy.productDetail.authRequired, description: copy.productDetail.authRequiredDesc, variant: "destructive" });
-      navigate('/auth');
+      navigate('/auth', { replace: true });
       return;
     }
     if (!product || user.id === product.owner_id) {
