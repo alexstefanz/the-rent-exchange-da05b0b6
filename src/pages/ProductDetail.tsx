@@ -111,6 +111,19 @@ const ProductDetail = () => {
   const images = product?.images && product.images.length > 0 ? product.images : ["/placeholder.svg"];
   const nextImage = () => setCurrentImageIndex(prev => (prev + 1) % images.length);
   const prevImage = () => setCurrentImageIndex(prev => (prev - 1 + images.length) % images.length);
+  const openLightbox = (index: number) => { setLightboxIndex(index); setLightboxOpen(true); };
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxOpen(false);
+      if (e.key === 'ArrowRight') setLightboxIndex(prev => (prev + 1) % images.length);
+      if (e.key === 'ArrowLeft') setLightboxIndex(prev => (prev - 1 + images.length) % images.length);
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKey);
+    return () => { window.removeEventListener('keydown', handleKey); document.body.style.overflow = ''; };
+  }, [lightboxOpen, images.length]);
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
