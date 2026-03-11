@@ -92,11 +92,7 @@ const Search = () => {
             )}
           </div>
           <TabsContent value="products" className="mt-0">
-            <div className="flex gap-8">
-              <div className="hidden lg:block">
-                <SearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} priceRange={priceRange} onPriceRangeChange={setPriceRange} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
-              </div>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0">
                 {isLoading && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
                 {!isLoading && filteredProducts.length > 0 && (
                   <div>
