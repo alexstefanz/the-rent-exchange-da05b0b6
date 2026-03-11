@@ -359,7 +359,6 @@ const ProductDetail = () => {
           )}
         </div>
       )}
-      )}
     </div>
   );
 };
