@@ -215,7 +215,7 @@ const ProductDetail = () => {
           <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
             {/* Desktop Gallery */}
             <div className="relative overflow-hidden rounded-xl bg-muted hidden lg:block">
-              <div className="aspect-[4/3] bg-muted"><img src={images[currentImageIndex]} alt={product.title} className="h-full w-full object-contain" /></div>
+              <div className="aspect-[4/3] bg-muted cursor-pointer" onClick={() => openLightbox(currentImageIndex)}><img src={images[currentImageIndex]} alt={product.title} className="h-full w-full object-cover" /></div>
               {images.length > 1 && (
                 <>
                   <Button variant="ghost" size="icon" className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80" onClick={prevImage}><ChevronLeft className="h-5 w-5" /></Button>
