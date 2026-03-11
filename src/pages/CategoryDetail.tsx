@@ -1,9 +1,10 @@
-import { useParams, Link } from "react-router-dom";
+import { useMemo } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import SubcategoryCard from "@/components/items/SubcategoryCard";
 import ProductCard from "@/components/products/ProductCard";
 import { getCategoryById } from "@/data/categories";
 import { useProducts } from "@/hooks/queries/useProducts";
@@ -12,6 +13,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 const CategoryDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const category = getCategoryById(Number(id));
   const copy = useUxCopy();
   const { language } = useLanguage();
@@ -21,6 +23,17 @@ const CategoryDetail = () => {
   );
 
   const catName = category ? (language === "en" ? category.nameEn : category.name) : "";
+
+  // Count products per subcategory
+  const subcategoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    products.forEach((p) => {
+      if (p.subcategory) {
+        counts[p.subcategory] = (counts[p.subcategory] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [products]);
 
   if (!category) {
     return (
@@ -53,53 +66,38 @@ const CategoryDetail = () => {
         </Link>
 
         <div className="mb-8">
-          <div className="flex items-center gap-4">
-            <span className="hidden text-5xl md:block">{category.icon}</span>
-            <div className="w-full">
-              <div className="flex items-center gap-3">
-                <span className="hidden h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground md:flex">
-                  {category.id}
-                </span>
-                <h1 className="font-heading text-3xl font-bold text-foreground text-center md:text-left md:text-4xl">
-                  {catName}
-                </h1>
-              </div>
-              <p className="mt-2 text-muted-foreground">
-                {copy.categoryDetail.subcategoriesAvailable(category.subcategories.length)}
-                {!isLoading && products.length > 0 && ` • ${copy.categoryDetail.listings(products.length)}`}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-12">
-          <h2 className="mb-4 font-heading text-xl font-semibold text-foreground">
-            {copy.categoryDetail.subcategories}
-          </h2>
-          <div className="grid grid-cols-2 gap-4 md:gap-6 lg:grid-cols-3 xl:grid-cols-4">
-            {category.subcategories.map((subcategory, index) => (
-              <div
-                key={subcategory.id}
-                className="animate-fade-up"
-                style={{ animationDelay: `${Math.min(index * 0.05, 0.5)}s` }}
-              >
-                <SubcategoryCard
-                  id={subcategory.id}
-                  name={subcategory.name}
-                  nameEn={subcategory.nameEn}
-                  description={subcategory.description}
-                  image={subcategory.image}
-                  categoryId={category.id}
-                />
-              </div>
-            ))}
-          </div>
+          <h1 className="font-heading text-3xl font-bold text-foreground text-center md:text-left md:text-4xl">
+            {catName}
+          </h1>
+          <p className="mt-2 text-muted-foreground">
+            {copy.categoryDetail.subcategoriesAvailable(category.subcategories.length)}
+            {!isLoading && products.length > 0 && ` • ${copy.categoryDetail.listings(products.length)}`}
+          </p>
         </div>
 
         <div>
-          <h2 className="mb-4 font-heading text-xl font-semibold text-foreground">
-            {copy.categoryDetail.listingsInCategory}
-          </h2>
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="font-heading text-xl font-semibold text-foreground">
+              {copy.categoryDetail.listingsInCategory}
+            </h2>
+
+            <Select onValueChange={(val) => navigate(`/subcategorie/${val}`)}>
+              <SelectTrigger className="w-full sm:w-[240px]">
+                <SelectValue placeholder={language === "en" ? "Subcategories" : "Subcategorii"} />
+              </SelectTrigger>
+              <SelectContent>
+                {category.subcategories.map((sub) => {
+                  const subName = language === "en" && sub.nameEn ? sub.nameEn : sub.name;
+                  const count = subcategoryCounts[sub.name] || 0;
+                  return (
+                    <SelectItem key={sub.id} value={sub.id}>
+                      {subName} ({count})
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
 
           {isLoading && (
             <div className="flex items-center justify-center py-12">
