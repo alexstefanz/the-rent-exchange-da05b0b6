@@ -1,27 +1,33 @@
 
 
-## Plan: Move filters inline between tabs and grid/list toggle
+## Plan: Add Reviews section to Profile page
+
+### Overview
+Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
 
 ### Changes
 
-**`src/pages/Search.tsx`**
+**1. New database function** — `get_user_given_reviews_with_targets`
+- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
+- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
 
-1. **Remove the sidebar filter** — delete the `<div className="hidden lg:block">` wrapping `<SearchFilters>` inside TabsContent (lines 97-99), and remove the `flex gap-8` wrapper around the sidebar + content
-2. **Add inline filters** in the toolbar bar (line 72-93) between TabsList and the grid/list buttons: render 3 inline `Select` dropdowns (Category, Sort) + a price range popover, directly in the top bar
-3. **Update product grid** to use `grid-cols-2 lg:grid-cols-4` instead of `lg:grid-cols-3` since sidebar is gone
-4. **Keep mobile Sheet** — on small screens, keep the existing Sheet-based filter (already in the toolbar via `lg:hidden`)
+**2. New API function** in `src/features/profile/reviewsApi.ts`
+- Add `getUserGivenReviews(userId)` that calls the new RPC function.
 
-**`src/components/search/SearchFilters.tsx`**
+**3. New component** — `src/components/profile/ReviewsTab.tsx`
+- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
+- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
+- Shows counts in tab headers
+- Empty state when no reviews exist
 
-5. **Add new inline variant**: Export an `InlineSearchFilters` component that renders Category select, price range (as a Popover with slider inside), and Sort select — all inline with `flex items-center gap-3`, hidden on mobile (`hidden lg:flex`)
-6. **Keep Sheet variant** for mobile unchanged
-
-### Layout after changes
-```text
-[Produse 11] [Utilizatori]   [Categorie ▼] [Preț ▼] [Sortare ▼] [Clear]   [⊞] [≡]
-```
+**4. Update `src/pages/Profile.tsx`**
+- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
+- Add corresponding `TabsContent` rendering `ReviewsTab`
 
 ### Files affected
-- `src/pages/Search.tsx`
-- `src/components/search/SearchFilters.tsx`
+- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
+- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
+- `src/components/profile/ReviewsTab.tsx` — new component
+- `src/pages/Profile.tsx` — add tab
+- `src/integrations/supabase/types.ts` — auto-updated
 

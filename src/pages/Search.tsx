@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ProductCard from "@/components/products/ProductCard";
-import SearchFilters from "@/components/search/SearchFilters";
+import SearchFilters, { InlineSearchFilters } from "@/components/search/SearchFilters";
 import EmptySearchState from "@/components/search/EmptySearchState";
 import { useProducts } from "@/hooks/queries/useProducts";
 import { useSearchUsers } from "@/hooks/queries/useSearch";
@@ -82,9 +82,8 @@ const Search = () => {
             </TabsList>
             {activeTab === "products" && (
               <div className="flex items-center gap-2">
-                <div className="lg:hidden">
-                  <SearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} priceRange={priceRange} onPriceRangeChange={setPriceRange} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
-                </div>
+                <InlineSearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} priceRange={priceRange} onPriceRangeChange={setPriceRange} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
+                <SearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} priceRange={priceRange} onPriceRangeChange={setPriceRange} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
                 <div className="hidden sm:flex items-center gap-1 rounded-lg border border-border p-1">
                   <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("gallery")}><LayoutGrid className="h-4 w-4" /></Button>
                   <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("list")}><List className="h-4 w-4" /></Button>
@@ -93,23 +92,18 @@ const Search = () => {
             )}
           </div>
           <TabsContent value="products" className="mt-0">
-            <div className="flex gap-8">
-              <div className="hidden lg:block">
-                <SearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} priceRange={priceRange} onPriceRangeChange={setPriceRange} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
-              </div>
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0">
                 {isLoading && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
                 {!isLoading && filteredProducts.length > 0 && (
                   <div>
                     <p className="mb-4 text-sm text-muted-foreground">{copy.search.resultsCount(filteredProducts.length)}</p>
-                    <div className={viewMode === "gallery" ? "grid gap-3 sm:gap-4 md:gap-6 grid-cols-2 lg:grid-cols-3" : "flex flex-col gap-4"}>
+                    <div className={viewMode === "gallery" ? "grid gap-3 sm:gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4" : "flex flex-col gap-4"}>
                       {filteredProducts.map((product) => <ProductCard key={product.id} product={product} viewMode={viewMode} />)}
                     </div>
                   </div>
                 )}
                 {!isLoading && filteredProducts.length === 0 && <EmptySearchState searchQuery={searchQuery} type="products" />}
               </div>
-            </div>
           </TabsContent>
           <TabsContent value="users" className="mt-0">
             {isLoadingUsers && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
