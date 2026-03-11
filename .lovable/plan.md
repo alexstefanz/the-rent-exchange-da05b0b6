@@ -1,33 +1,20 @@
 
 
-## Plan: Add Reviews section to Profile page
+## Plan: Format category badge to fit text only + single line
 
-### Overview
-Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
+### Change
 
-### Changes
+**`src/components/products/ProductCard.tsx`** — Update the category badge (line 174) to:
+- Add `whitespace-nowrap` and `truncate` with `max-w-full` so text stays on 1 line and truncates if too long
+- Reduce font size to `text-[9px] md:text-[11px]` for better fit
+- Reduce padding to `px-1.5 py-0.5` so the background hugs the text tighter
+- Add `rounded-sm` for a tighter pill shape
 
-**1. New database function** — `get_user_given_reviews_with_targets`
-- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
-- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
+Same change applies to the **list view** variant (line 97) for consistency.
 
-**2. New API function** in `src/features/profile/reviewsApi.ts`
-- Add `getUserGivenReviews(userId)` that calls the new RPC function.
-
-**3. New component** — `src/components/profile/ReviewsTab.tsx`
-- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
-- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
-- Shows counts in tab headers
-- Empty state when no reviews exist
-
-**4. Update `src/pages/Profile.tsx`**
-- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
-- Add corresponding `TabsContent` rendering `ReviewsTab`
+Also check and apply same fix in **`NearbyProductsSlider.tsx`** if it has the same badge pattern.
 
 ### Files affected
-- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
-- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
-- `src/components/profile/ReviewsTab.tsx` — new component
-- `src/pages/Profile.tsx` — add tab
-- `src/integrations/supabase/types.ts` — auto-updated
+- `src/components/products/ProductCard.tsx` (gallery + list view badges)
+- `src/components/products/NearbyProductsSlider.tsx` (if applicable)
 
