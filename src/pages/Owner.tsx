@@ -31,7 +31,7 @@ const Owner = () => {
   
   // Redirect if not logged in
   if (!authLoading && !user) {
-    navigate("/auth");
+    navigate("/auth", { replace: true });
   }
   
   // Use React Query for products

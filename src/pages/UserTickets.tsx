@@ -50,7 +50,7 @@ const UserTickets = () => {
 
   // Redirect if not logged in
   if (!authLoading && !user) {
-    navigate("/auth");
+    navigate("/auth", { replace: true });
     return null;
   }
 

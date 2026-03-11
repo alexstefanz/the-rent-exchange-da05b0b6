@@ -129,7 +129,7 @@ const Auth = () => {
       });
     } else {
       toast({ title: copy.auth.loginSuccess, description: copy.auth.welcomeBackToast });
-      navigate("/");
+      navigate("/", { replace: true });
     }
   };
 

@@ -136,7 +136,7 @@ const ProductDetail = () => {
   const handleToggleFavorite = async () => {
     if (!user) {
       toast({ title: copy.favorites?.loginRequired || "Login required", variant: "destructive" });
-      navigate('/auth');
+      navigate('/auth', { replace: true });
       return;
     }
     if (!product) return;
