@@ -114,7 +114,7 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    if (user && !isResetMode) navigate("/");
+    if (user && !isResetMode) navigate("/", { replace: true });
   }, [user, navigate, isResetMode]);
 
   const handleLogin = async (data: LoginFormData) => {
