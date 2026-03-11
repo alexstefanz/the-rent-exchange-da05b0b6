@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { format, differenceInDays, isBefore } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, MapPin, Star, Shield, Clock, MessageCircle, Check, User, Calendar, ArrowLeft, Share2, Heart, Loader2, Phone, Mail, Info, ThumbsUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Star, Shield, Clock, MessageCircle, Check, User, Calendar, ArrowLeft, Share2, Heart, Loader2, Phone, Mail, Info, ThumbsUp, X } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -55,6 +55,8 @@ const ProductDetail = () => {
   
   const [chatOpen, setChatOpen] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -109,6 +111,19 @@ const ProductDetail = () => {
   const images = product?.images && product.images.length > 0 ? product.images : ["/placeholder.svg"];
   const nextImage = () => setCurrentImageIndex(prev => (prev + 1) % images.length);
   const prevImage = () => setCurrentImageIndex(prev => (prev - 1 + images.length) % images.length);
+  const openLightbox = (index: number) => { setLightboxIndex(index); setLightboxOpen(true); };
+
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightboxOpen(false);
+      if (e.key === 'ArrowRight') setLightboxIndex(prev => (prev + 1) % images.length);
+      if (e.key === 'ArrowLeft') setLightboxIndex(prev => (prev - 1 + images.length) % images.length);
+    };
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKey);
+    return () => { window.removeEventListener('keydown', handleKey); document.body.style.overflow = ''; };
+  }, [lightboxOpen, images.length]);
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
@@ -173,7 +188,7 @@ const ProductDetail = () => {
       {/* Mobile Image Gallery */}
       <div className="lg:hidden mt-16">
         <div className="relative">
-          <img src={images[0]} alt={product.title} className="w-full aspect-[4/3] object-contain bg-muted" />
+          <img src={images[0]} alt={product.title} className="w-full aspect-[4/3] object-cover bg-muted cursor-pointer" onClick={() => openLightbox(0)} />
           <button onClick={() => navigate(-1)} className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white"><ArrowLeft className="h-5 w-5" /></button>
           <button onClick={handleShare} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white"><Share2 className="h-5 w-5" /></button>
           <button onClick={handleToggleFavorite} className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
@@ -182,7 +197,7 @@ const ProductDetail = () => {
         </div>
         {images.length > 1 && (
           <div className="flex gap-2 px-[10px] mt-2 overflow-x-auto pb-2">
-            {images.slice(1).map((image, index) => (<img key={index + 1} src={image} alt={`${product.title} ${index + 2}`} className="h-20 w-20 rounded-lg object-cover flex-shrink-0" />))}
+            {images.slice(1).map((image, index) => (<img key={index + 1} src={image} alt={`${product.title} ${index + 2}`} className="h-20 w-20 rounded-lg object-cover flex-shrink-0 cursor-pointer" onClick={() => openLightbox(index + 1)} />))}
           </div>
         )}
       </div>
@@ -200,7 +215,7 @@ const ProductDetail = () => {
           <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
             {/* Desktop Gallery */}
             <div className="relative overflow-hidden rounded-xl bg-muted hidden lg:block">
-              <div className="aspect-[4/3] bg-muted"><img src={images[currentImageIndex]} alt={product.title} className="h-full w-full object-contain" /></div>
+              <div className="aspect-[4/3] bg-muted cursor-pointer" onClick={() => openLightbox(currentImageIndex)}><img src={images[currentImageIndex]} alt={product.title} className="h-full w-full object-cover" /></div>
               {images.length > 1 && (
                 <>
                   <Button variant="ghost" size="icon" className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80" onClick={prevImage}><ChevronLeft className="h-5 w-5" /></Button>
@@ -318,6 +333,31 @@ const ProductDetail = () => {
 
       {conversationId && (
         <ChatDialog open={chatOpen} onOpenChange={setChatOpen} conversationId={conversationId} otherUserName={owner?.full_name || null} otherUserAvatar={owner?.avatar_url || null} productTitle={product?.title || 'Produs'} />
+      )}
+
+      {/* Lightbox */}
+      {lightboxOpen && (
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center" onClick={() => setLightboxOpen(false)}>
+          <button className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white" onClick={() => setLightboxOpen(false)}>
+            <X className="h-6 w-6" />
+          </button>
+          {images.length > 1 && (
+            <>
+              <button className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white" onClick={(e) => { e.stopPropagation(); setLightboxIndex(prev => (prev - 1 + images.length) % images.length); }}>
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <button className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white" onClick={(e) => { e.stopPropagation(); setLightboxIndex(prev => (prev + 1) % images.length); }}>
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </>
+          )}
+          <img src={images[lightboxIndex]} alt={product?.title} className="max-h-[90vh] max-w-[90vw] object-contain" onClick={(e) => e.stopPropagation()} />
+          {images.length > 1 && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+              {images.map((_, i) => (<button key={i} className={`h-2.5 w-2.5 rounded-full transition-colors ${i === lightboxIndex ? "bg-white" : "bg-white/40"}`} onClick={(e) => { e.stopPropagation(); setLightboxIndex(i); }} />))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
