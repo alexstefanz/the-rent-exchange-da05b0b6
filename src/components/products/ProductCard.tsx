@@ -87,7 +87,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
               className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
             <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 shadow-sm">
-              <CheckCircle className="h-3.5 w-3.5 text-[#46B95B]" />
+              <CheckCircle className="h-3.5 w-3.5 text-[#F98715]" />
             </div>
             {rating && rating.avg > 0 && (
               <div className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-white text-xs font-medium">
@@ -146,16 +146,16 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 shadow-sm">
-          <CheckCircle className="h-3.5 w-3.5 text-[#46B95B]" />
+          <CheckCircle className="h-3.5 w-3.5 text-[#F98715]" />
         </div>
         <button
           onClick={handleFavoriteClick}
-          className={cn("absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full transition-colors shadow-sm", isFavorite ? "bg-[#46B95B] hover:bg-[#3da550]" : "bg-white/90 hover:bg-white")}
+          className={cn("absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full transition-colors shadow-sm", isFavorite ? "bg-[#F98715] hover:bg-[#e07a12]" : "bg-white/90 hover:bg-white")}
         >
           <Heart
             className={cn(
               "h-3.5 w-3.5 drop-shadow-sm transition-colors",
-              isFavorite ? "text-white fill-white" : "text-[#46B95B]"
+              isFavorite ? "text-white fill-white" : "text-[#F98715]"
             )}
           />
         </button>

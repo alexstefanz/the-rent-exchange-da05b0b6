@@ -223,14 +223,14 @@ const ProductRow = ({
                   
                   {/* Check badge top-left */}
                   <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 shadow-sm">
-                    <CheckCircle className="h-3.5 w-3.5 text-[#46B95B]" />
+                    <CheckCircle className="h-3.5 w-3.5 text-[#F98715]" />
                   </div>
                   {/* Favorite top-right */}
                   <button
                     onClick={(e) => handleFavoriteClick(e, product.id)}
-                    className={cn("absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full transition-colors shadow-sm", isFav ? "bg-[#46B95B] hover:bg-[#3da550]" : "bg-white/90 hover:bg-white")}>
+                    className={cn("absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full transition-colors shadow-sm", isFav ? "bg-[#F98715] hover:bg-[#e07a12]" : "bg-white/90 hover:bg-white")}>
                     
-                    <Heart className={cn("h-3.5 w-3.5 drop-shadow-sm transition-colors", isFav ? "text-white fill-white" : "text-[#46B95B]")} />
+                    <Heart className={cn("h-3.5 w-3.5 drop-shadow-sm transition-colors", isFav ? "text-white fill-white" : "text-[#F98715]")} />
                   </button>
                   {/* Rating bottom-right */}
                   {rating > 0 &&
