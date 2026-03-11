@@ -1,33 +1,33 @@
 
 
-## Plan: Redesign CategoryDetail page layout
+## Plan: Add Reviews section to Profile page
 
-### Changes to `src/pages/CategoryDetail.tsx`
+### Overview
+Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
 
-1. **Remove icon and number badge** from the title area (lines 57, 60-62) — keep only the category name `<h1>` and subtitle text
+### Changes
 
-2. **Reorder sections**: Show product listings **first**, then subcategories dropdown
+**1. New database function** — `get_user_given_reviews_with_targets`
+- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
+- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
 
-3. **Replace subcategory grid with a dropdown** (Select component) in the header area:
-   - Position it to the right of the "Anunțuri în categorie" title
-   - Each option shows subcategory name + product count in parentheses (e.g., "Biciclete (5)")
-   - Selecting a subcategory navigates to `/subcategorie/{id}`
-   - Need to fetch per-subcategory product counts from the database (query products grouped by subcategory)
+**2. New API function** in `src/features/profile/reviewsApi.ts`
+- Add `getUserGivenReviews(userId)` that calls the new RPC function.
 
-4. **Product count per subcategory**: Use the already-fetched `products` array and group by `subcategory` field to get counts, or run a separate query. Will use the existing products data and count by subcategory match.
+**3. New component** — `src/components/profile/ReviewsTab.tsx`
+- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
+- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
+- Shows counts in tab headers
+- Empty state when no reviews exist
 
-### Layout structure (after changes)
-```text
-< Înapoi la Categorii
-
-OUTDOOR & AVENTURĂ
-12 subcategorii disponibile • 2 anunțuri
-
-Anunțuri în categorie          [Dropdown: Subcategorii ▼]
-
-[product grid...]
-```
+**4. Update `src/pages/Profile.tsx`**
+- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
+- Add corresponding `TabsContent` rendering `ReviewsTab`
 
 ### Files affected
-- `src/pages/CategoryDetail.tsx`
+- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
+- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
+- `src/components/profile/ReviewsTab.tsx` — new component
+- `src/pages/Profile.tsx` — add tab
+- `src/integrations/supabase/types.ts` — auto-updated
 
