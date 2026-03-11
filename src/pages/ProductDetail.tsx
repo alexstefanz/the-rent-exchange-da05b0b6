@@ -188,7 +188,7 @@ const ProductDetail = () => {
       {/* Mobile Image Gallery */}
       <div className="lg:hidden mt-16">
         <div className="relative">
-          <img src={images[0]} alt={product.title} className="w-full aspect-[4/3] object-contain bg-muted" />
+          <img src={images[0]} alt={product.title} className="w-full aspect-[4/3] object-cover bg-muted cursor-pointer" onClick={() => openLightbox(0)} />
           <button onClick={() => navigate(-1)} className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white"><ArrowLeft className="h-5 w-5" /></button>
           <button onClick={handleShare} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white"><Share2 className="h-5 w-5" /></button>
           <button onClick={handleToggleFavorite} className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
