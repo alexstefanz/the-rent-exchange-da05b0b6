@@ -104,7 +104,6 @@ const Search = () => {
                 )}
                 {!isLoading && filteredProducts.length === 0 && <EmptySearchState searchQuery={searchQuery} type="products" />}
               </div>
-            </div>
           </TabsContent>
           <TabsContent value="users" className="mt-0">
             {isLoadingUsers && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
