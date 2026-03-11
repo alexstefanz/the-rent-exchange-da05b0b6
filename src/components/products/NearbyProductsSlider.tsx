@@ -258,16 +258,16 @@ const NearbyProductsSlider = ({ currentProductId, locationCity, category }: Near
                 {/* Info below image */}
                 <div className="p-3 md:p-4">
                   {product.category && (
-                    <span className="inline-block rounded-sm bg-primary px-1.5 py-0.5 text-[9px] md:text-[11px] font-semibold text-primary-foreground mb-1.5 whitespace-nowrap truncate max-w-full">
+                    <span className="inline-block rounded-sm bg-primary px-1.5 py-0.5 text-[9px] md:text-[11px] font-semibold text-primary-foreground mb-2 whitespace-nowrap truncate max-w-full">
                       {product.category}
                     </span>
                   )}
                   <h3 className="font-heading text-sm text-foreground line-clamp-2 md:text-base font-bold">{product.title}</h3>
-                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <div className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                     <MapPin className="h-3 w-3 shrink-0" />
                     <span className="truncate">{location}</span>
                   </div>
-                  <div className="mt-2">
+                  <div className="mt-3.5">
                     <span className="font-heading text-base font-bold text-primary">{clientPrice} RON</span>
                     <span className="text-xs text-muted-foreground"> {copy.common.perDay}</span>
                   </div>

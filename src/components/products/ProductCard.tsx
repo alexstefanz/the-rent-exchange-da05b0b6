@@ -171,18 +171,18 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
       {/* Info section */}
       <div className="p-3 md:p-4">
         {product.category && (
-          <span className="inline-block rounded-sm bg-primary px-1.5 py-0.5 text-[9px] md:text-[11px] font-semibold text-primary-foreground mb-1.5 whitespace-nowrap truncate max-w-full">
+          <span className="inline-block rounded-sm bg-primary px-1.5 py-0.5 text-[9px] md:text-[11px] font-semibold text-primary-foreground mb-2 whitespace-nowrap truncate max-w-full">
             {product.category}
           </span>
         )}
         <h3 className="font-heading text-base md:text-lg font-semibold text-foreground line-clamp-2">
           {product.title}
         </h3>
-        <div className="mt-2 flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+        <div className="mt-2.5 flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
           <MapPin className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
           <span className="truncate">{location}</span>
         </div>
-        <div className="mt-3">
+        <div className="mt-3.5">
           <span className="font-heading text-lg md:text-xl font-bold text-primary">
             {clientPrice} RON
           </span>
