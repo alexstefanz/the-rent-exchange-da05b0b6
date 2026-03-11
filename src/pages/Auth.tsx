@@ -114,7 +114,7 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    if (user && !isResetMode) navigate("/");
+    if (user && !isResetMode) navigate("/", { replace: true });
   }, [user, navigate, isResetMode]);
 
   const handleLogin = async (data: LoginFormData) => {
@@ -129,7 +129,7 @@ const Auth = () => {
       });
     } else {
       toast({ title: copy.auth.loginSuccess, description: copy.auth.welcomeBackToast });
-      navigate("/");
+      navigate("/", { replace: true });
     }
   };
 

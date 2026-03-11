@@ -1,39 +1,33 @@
 
 
-## Plan: Fix browser back navigation on Auth page
+## Plan: Add Reviews section to Profile page
 
-### Problem
-When navigating to `/auth` (e.g., from protected pages or directly), pressing the browser back button doesn't work because:
-1. Most redirects to `/auth` use `navigate("/auth")` without `replace: true`, pushing multiple `/auth` entries into history
-2. On login success, `navigate("/")` pushes instead of replacing, creating back-button loops
+### Overview
+Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
 
 ### Changes
 
-**1. `src/pages/Auth.tsx`**
-- Line 117: Change `navigate("/")` to `navigate("/", { replace: true })` so the auth page is replaced in history on auto-redirect
-- Line 132: Change `navigate("/")` to `navigate("/", { replace: true })` on login success
-- Add a visible back button or ensure the browser back works by not replacing the entry when the user navigated there intentionally
+**1. New database function** — `get_user_given_reviews_with_targets`
+- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
+- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
 
-**2. All files that redirect to `/auth`** -- Add `replace: true` to prevent stacking auth entries:
-- `src/pages/Owner.tsx` (line 34)
-- `src/pages/ProductDetail.tsx` (lines 92, 139)
-- `src/pages/ListItem.tsx` (line 38)
-- `src/pages/UserTickets.tsx` (line 53)
-- `src/pages/EditProduct.tsx` (line 64)
-- `src/pages/NewProduct.tsx` (line 59)
-- `src/pages/Messages.tsx` (line 35)
-- `src/pages/Profile.tsx` (line 97)
+**2. New API function** in `src/features/profile/reviewsApi.ts`
+- Add `getUserGivenReviews(userId)` that calls the new RPC function.
 
-All these will change from `navigate("/auth")` to `navigate("/auth", { replace: true })` so pressing back from `/auth` goes to the page before the protected page, not back into a redirect loop.
+**3. New component** — `src/components/profile/ReviewsTab.tsx`
+- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
+- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
+- Shows counts in tab headers
+- Empty state when no reviews exist
+
+**4. Update `src/pages/Profile.tsx`**
+- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
+- Add corresponding `TabsContent` rendering `ReviewsTab`
 
 ### Files affected
-- `src/pages/Auth.tsx`
-- `src/pages/Owner.tsx`
-- `src/pages/ProductDetail.tsx`
-- `src/pages/ListItem.tsx`
-- `src/pages/UserTickets.tsx`
-- `src/pages/EditProduct.tsx`
-- `src/pages/NewProduct.tsx`
-- `src/pages/Messages.tsx`
-- `src/pages/Profile.tsx`
+- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
+- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
+- `src/components/profile/ReviewsTab.tsx` — new component
+- `src/pages/Profile.tsx` — add tab
+- `src/integrations/supabase/types.ts` — auto-updated
 

@@ -32,7 +32,7 @@ export default function Messages() {
   const [activeTab, setActiveTab] = useState("rezervari");
 
   if (!authLoading && !user) {
-    navigate("/auth");
+    navigate("/auth", { replace: true });
   }
 
   const { data: conversations = [], isLoading } = useConversations(user?.id);
