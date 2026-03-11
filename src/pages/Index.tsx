@@ -76,19 +76,26 @@ const Index = () => {
           <div className="mb-10 text-center">
             <h2 className="font-heading text-3xl font-semibold text-foreground">{copy.home.popularCategories}</h2>
           </div>
-          <div className="grid grid-cols-3 gap-6 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-9">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
             {popularCategories.map((category) => {
               const Icon = getCategoryIcon(category.id);
+              const name = language === "en" ? (category.nameEn || category.name) : category.name;
+              const count = categoryCounts?.[category.name] || 0;
               return (
-                <Link key={category.id} to={`/categorie/${category.id}`} className="group flex flex-col items-center text-center">
-                  <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 transition-transform group-hover:scale-110 sm:h-20 sm:w-20">
-                    <Icon className="h-8 w-8 text-primary sm:h-10 sm:w-10" />
+                <Link
+                  key={category.id}
+                  to={`/categorie/${category.id}`}
+                  className="group flex flex-col items-center rounded-xl border border-border bg-card p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+                >
+                  <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                    <Icon className="h-7 w-7 text-primary" />
                   </div>
-                  <p className="text-xs font-medium text-foreground sm:text-sm">
-                    {(() => {const n = language === "en" ? category.nameEn : category.name;return <>{n.split(" & ")[0]}{n.includes("&") && <><br /><span className="text-muted-foreground">{n.split(" & ")[1]?.split(" ")[0]}</span></>}</>;})()}
+                  <p className="text-sm font-semibold text-foreground">{name}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {count} {language === "en" ? "listings" : "anunțuri"}
                   </p>
-                </Link>);
-
+                </Link>
+              );
             })}
           </div>
           <div className="mt-8 text-center">
