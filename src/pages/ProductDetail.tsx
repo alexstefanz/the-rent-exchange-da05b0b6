@@ -197,7 +197,7 @@ const ProductDetail = () => {
         </div>
         {images.length > 1 && (
           <div className="flex gap-2 px-[10px] mt-2 overflow-x-auto pb-2">
-            {images.slice(1).map((image, index) => (<img key={index + 1} src={image} alt={`${product.title} ${index + 2}`} className="h-20 w-20 rounded-lg object-cover flex-shrink-0" />))}
+            {images.slice(1).map((image, index) => (<img key={index + 1} src={image} alt={`${product.title} ${index + 2}`} className="h-20 w-20 rounded-lg object-cover flex-shrink-0 cursor-pointer" onClick={() => openLightbox(index + 1)} />))}
           </div>
         )}
       </div>
