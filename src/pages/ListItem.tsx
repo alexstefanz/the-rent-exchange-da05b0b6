@@ -18,6 +18,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { categories } from "@/data/mockItems";
 import { toast } from "@/hooks/use-toast";
+import { containsContactInfo } from "@/lib/inputValidation";
 
 const ListItem = () => {
   const navigate = useNavigate();
