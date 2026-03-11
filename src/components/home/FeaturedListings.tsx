@@ -18,7 +18,7 @@ const SeeAllCard = ({ images, copy }: { images: string[]; copy: any }) => {
   return (
     <Link
       to="/cauta"
-      className="group block shrink-0 snap-start overflow-hidden rounded-xl bg-muted/40 border border-border transition-all hover:-translate-y-1 hover:shadow-card-hover w-[calc(50%-8px)] md:w-[calc(20%-16px)]"
+      className="group block shrink-0 snap-start overflow-hidden rounded-xl bg-muted/40 border border-border transition-all hover:-translate-y-1 hover:shadow-card-hover w-[calc(50%-8px)] md:w-[calc(33.333%-11px)]"
     >
       <div className="flex flex-col items-center justify-center aspect-[4/3] relative overflow-hidden">
         <div className="relative h-20 w-28 md:h-24 md:w-32">
@@ -49,12 +49,14 @@ const ProductRow = ({
   allImages,
   copy,
   ratings,
+  reviewCounts,
 }: {
   title: string;
   products: any[];
   allImages: string[];
   copy: any;
   ratings: Record<string, number>;
+  reviewCounts: Record<string, number>;
 }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -62,6 +64,12 @@ const ProductRow = ({
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
   const { user } = useAuth();
+
+  // Drag state
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftStart = useRef(0);
+  const hasDragged = useRef(false);
 
   useEffect(() => {
     if (!user) return;
@@ -118,9 +126,48 @@ const ProductRow = ({
     if (!el) return;
     const cardWidth = el.querySelector<HTMLElement>(":scope > *")?.offsetWidth || 300;
     const gap = 16;
-    const scrollAmount = (cardWidth + gap) * 4;
+    const scrollAmount = (cardWidth + gap) * 3;
     el.scrollBy({ left: direction === "left" ? -scrollAmount : scrollAmount, behavior: "smooth" });
   };
+
+  // Mouse drag handlers
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    isDragging.current = true;
+    hasDragged.current = false;
+    startX.current = e.pageX - el.offsetLeft;
+    scrollLeftStart.current = el.scrollLeft;
+    el.style.cursor = "grabbing";
+    el.style.userSelect = "none";
+  }, []);
+
+  const onMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging.current) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    e.preventDefault();
+    const x = e.pageX - el.offsetLeft;
+    const walk = (x - startX.current) * 1.5;
+    if (Math.abs(walk) > 5) hasDragged.current = true;
+    el.scrollLeft = scrollLeftStart.current - walk;
+  }, []);
+
+  const onMouseUpOrLeave = useCallback(() => {
+    isDragging.current = false;
+    const el = scrollRef.current;
+    if (el) {
+      el.style.cursor = "grab";
+      el.style.userSelect = "";
+    }
+  }, []);
+
+  const onCardClick = useCallback((e: React.MouseEvent) => {
+    if (hasDragged.current) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }, []);
 
   if (products.length === 0) return null;
 
@@ -141,54 +188,76 @@ const ProductRow = ({
       <div className="overflow-hidden">
         <div
           ref={scrollRef}
-          className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory md:snap-none pb-2 -mb-2"
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={onMouseUpOrLeave}
+          onMouseLeave={onMouseUpOrLeave}
+          className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory md:snap-none pb-2 -mb-2 cursor-grab"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {products.map((product) => {
             const clientPrice = calculateClientPrice(product.daily_price_owner, product.platform_fee_percent);
             const imageUrl = product.images?.[0] || "/placeholder.svg";
-            const location = product.location_city || "România";
+            const location = [product.location_city, product.pickup_address].filter(Boolean).join(", ") || "România";
             const isFav = favoriteIds.has(product.id);
+            const rating = ratings[product.id];
+            const count = reviewCounts[product.id] || 0;
 
             return (
               <Link
                 key={product.id}
                 to={getProductUrl(product)}
-                className="group block shrink-0 snap-start overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover w-[calc(50%-8px)] md:w-[calc(20%-16px)]"
+                onClick={onCardClick}
+                className="group block shrink-0 snap-start overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover w-[calc(50%-8px)] md:w-[calc(33.333%-11px)]"
               >
-                <div className="relative aspect-[4/3] overflow-hidden bg-white">
-                  <div className="flex h-full w-full items-center justify-center px-[15px] py-4">
-                    <div className="h-[250px] w-[250px] max-h-full max-w-full">
-                      <img src={imageUrl} alt={product.title} width={480} height={360} loading="lazy" decoding="async" className="h-full w-full object-contain transition-transform duration-300 group-hover:scale-105" />
-                    </div>
-                  </div>
-                  <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white">
+                {/* Image container */}
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <img
+                    src={imageUrl}
+                    alt={product.title}
+                    width={480}
+                    height={360}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                  {/* Check badge top-left */}
+                  <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 shadow-sm">
                     <CheckCircle className="h-3.5 w-3.5 text-[#46B95B]" />
                   </div>
+                  {/* Favorite top-right */}
                   <button
                     onClick={(e) => handleFavoriteClick(e, product.id)}
-                    className={cn("absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full transition-colors", isFav ? "bg-[#46B95B] hover:bg-[#3da550]" : "bg-white hover:bg-gray-100")}
+                    className={cn("absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full transition-colors shadow-sm", isFav ? "bg-[#46B95B] hover:bg-[#3da550]" : "bg-white/90 hover:bg-white")}
                   >
                     <Heart className={cn("h-3.5 w-3.5 drop-shadow-sm transition-colors", isFav ? "text-white fill-white" : "text-[#46B95B]")} />
                   </button>
+                  {/* Rating bottom-right */}
+                  {rating > 0 && (
+                    <div className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-white text-xs font-medium shadow-sm">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <span>{rating.toFixed(1)}</span>
+                      {count > 0 && <span className="opacity-75">({count})</span>}
+                    </div>
+                  )}
                 </div>
+
+                {/* Info below image */}
                 <div className="p-3 md:p-4">
+                  {/* Category label */}
+                  {product.category && (
+                    <span className="inline-block rounded bg-primary px-2 py-0.5 text-[10px] md:text-xs font-semibold text-primary-foreground mb-1.5">
+                      {product.category}
+                    </span>
+                  )}
                   <h3 className="font-heading text-sm font-semibold text-foreground line-clamp-2 md:text-base">{product.title}</h3>
                   <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground md:text-sm">
                     <MapPin className="h-3 w-3 shrink-0" />
                     <span className="truncate">{location}</span>
                   </div>
-                  <div className="mt-2 md:mt-3 flex items-center justify-between">
-                    <div>
-                      <span className="font-heading text-base font-bold text-primary md:text-lg">{clientPrice} RON</span>
-                      <span className="text-xs text-muted-foreground md:text-sm">{copy.common.perDay}</span>
-                    </div>
-                    {ratings[product.id] > 0 && (
-                      <div className="flex items-center gap-1">
-                        <Star className="h-3.5 w-3.5 fill-primary text-primary" />
-                        <span className="text-xs font-semibold text-foreground">{ratings[product.id].toFixed(1)}</span>
-                      </div>
-                    )}
+                  <div className="mt-2 md:mt-3">
+                    <span className="font-heading text-base font-bold text-primary md:text-lg">{clientPrice} RON</span>
+                    <span className="text-xs text-muted-foreground md:text-sm"> {copy.common.perDay}</span>
                   </div>
                 </div>
               </Link>
@@ -213,6 +282,7 @@ const FeaturedListings = () => {
   const bestReviewedProducts = allProducts.slice(0, 10);
 
   const [ratings, setRatings] = useState<Record<string, number>>({});
+  const [reviewCounts, setReviewCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (allProducts.length === 0) return;
@@ -230,10 +300,13 @@ const FeaturedListings = () => {
           map[r.product_id].count += 1;
         });
         const avg: Record<string, number> = {};
+        const counts: Record<string, number> = {};
         Object.entries(map).forEach(([id, v]) => {
           avg[id] = v.sum / v.count;
+          counts[id] = v.count;
         });
         setRatings(avg);
+        setReviewCounts(counts);
       });
   }, [allProducts]);
 
@@ -279,7 +352,7 @@ const FeaturedListings = () => {
     <section className="py-12 md:py-16">
       <div className="container">
         {sections.map((section) => (
-          <ProductRow key={section.title} title={section.title} products={section.products} allImages={allImages} copy={copy} ratings={ratings} />
+          <ProductRow key={section.title} title={section.title} products={section.products} allImages={allImages} copy={copy} ratings={ratings} reviewCounts={reviewCounts} />
         ))}
       </div>
     </section>
