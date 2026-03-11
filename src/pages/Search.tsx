@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ProductCard from "@/components/products/ProductCard";
-import SearchFilters from "@/components/search/SearchFilters";
+import SearchFilters, { InlineSearchFilters } from "@/components/search/SearchFilters";
 import EmptySearchState from "@/components/search/EmptySearchState";
 import { useProducts } from "@/hooks/queries/useProducts";
 import { useSearchUsers } from "@/hooks/queries/useSearch";
