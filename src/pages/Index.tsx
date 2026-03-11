@@ -30,6 +30,23 @@ const Index = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const { data: categoryCounts } = useQuery({
+    queryKey: ["category-counts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("category")
+        .eq("is_active", true);
+      if (error) return {};
+      const counts: Record<string, number> = {};
+      data?.forEach((p) => {
+        if (p.category) counts[p.category] = (counts[p.category] || 0) + 1;
+      });
+      return counts;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
   const popularCategoryIds = [1, 2, 6, 7, 22, 19, 4, 5, 9];
   const popularCategories = categories.filter((c) => popularCategoryIds.includes(c.id));
 
