@@ -1,33 +1,42 @@
 
 
-## Plan: Add Reviews section to Profile page
+## Plan: Add contact info validation to product description
 
 ### Overview
-Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
+Add a Zod custom validator that blocks phone numbers, email addresses, and URLs in the product description field. Show a warning message and prevent form submission.
+
+### Validation rules
+- **Phone**: digits sequences of 7+ digits (with optional spaces, dashes, dots, parens)
+- **Email**: pattern with `@` and domain
+- **URLs**: `http://`, `https://`, `www.`, or common TLDs like `.com`, `.ro`, `.net`
 
 ### Changes
 
-**1. New database function** — `get_user_given_reviews_with_targets`
-- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
-- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
+**1. `src/lib/inputValidation.ts`** -- Add a `containsContactInfo` function:
+```typescript
+export const containsContactInfo = (text: string): string | null => {
+  // Phone: 7+ digits (allowing separators)
+  if (/(\+?\d[\d\s\-().]{6,}\d)/.test(text)) return 'phone';
+  // Email
+  if (/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(text)) return 'email';
+  // URLs
+  if (/(https?:\/\/|www\.)|(\.[a-z]{2,4}\/)/i.test(text)) return 'url';
+  return null;
+};
+```
 
-**2. New API function** in `src/features/profile/reviewsApi.ts`
-- Add `getUserGivenReviews(userId)` that calls the new RPC function.
+**2. `src/pages/NewProduct.tsx`** -- Update `productSchema.description` with `.refine()` that calls `containsContactInfo` and returns a Romanian error message.
 
-**3. New component** — `src/components/profile/ReviewsTab.tsx`
-- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
-- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
-- Shows counts in tab headers
-- Empty state when no reviews exist
+**3. `src/pages/EditProduct.tsx`** -- Same schema change.
 
-**4. Update `src/pages/Profile.tsx`**
-- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
-- Add corresponding `TabsContent` rendering `ReviewsTab`
+**4. `src/pages/ListItem.tsx`** -- Add the same validation in the `handleSubmit` before allowing publish (this page doesn't use Zod, so add a manual check with toast).
+
+### Error message
+"Descrierea nu poate conține date de contact (telefon, email sau link-uri). Comunicarea se face prin platforma Rentli."
 
 ### Files affected
-- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
-- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
-- `src/components/profile/ReviewsTab.tsx` — new component
-- `src/pages/Profile.tsx` — add tab
-- `src/integrations/supabase/types.ts` — auto-updated
+- `src/lib/inputValidation.ts`
+- `src/pages/NewProduct.tsx`
+- `src/pages/EditProduct.tsx`
+- `src/pages/ListItem.tsx`
 
