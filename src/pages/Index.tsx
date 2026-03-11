@@ -47,7 +47,7 @@ const Index = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const popularCategoryIds = [1, 2, 6, 7, 22, 19, 4, 5, 9];
+  const popularCategoryIds = [1, 2, 6, 7, 22, 19, 4, 5, 9, 3, 10, 11];
   const popularCategories = categories.filter((c) => popularCategoryIds.includes(c.id));
 
   return (
