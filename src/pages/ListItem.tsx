@@ -81,6 +81,15 @@ const ListItem = () => {
       return;
     }
 
+    if (containsContactInfo(formData.description)) {
+      toast({
+        title: "Date de contact detectate",
+        description: "Descrierea nu poate conține date de contact (telefon, email sau link-uri). Comunicarea se face prin platforma Rentli.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     toast({
       title: "Item Listed Successfully!",
       description: "Your item is now available for rent.",
