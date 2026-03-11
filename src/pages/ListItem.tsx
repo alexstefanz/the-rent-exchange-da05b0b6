@@ -18,6 +18,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { categories } from "@/data/mockItems";
 import { toast } from "@/hooks/use-toast";
+import { containsContactInfo } from "@/lib/inputValidation";
 
 const ListItem = () => {
   const navigate = useNavigate();
@@ -75,6 +76,15 @@ const ListItem = () => {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (containsContactInfo(formData.description)) {
+      toast({
+        title: "Date de contact detectate",
+        description: "Descrierea nu poate conține date de contact (telefon, email sau link-uri). Comunicarea se face prin platforma Rentli.",
         variant: "destructive",
       });
       return;

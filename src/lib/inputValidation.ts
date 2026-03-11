@@ -49,6 +49,27 @@ export const sanitizeTextInput = (input: string, maxLength: number = 1000): stri
  * Normalizes Romanian diacritics to ASCII equivalents for search matching
  * ă/â → a, î → i, ș → s, ț → t
  */
+/**
+ * Checks if text contains contact information (phone, email, URLs)
+ * Returns the type of contact info found, or null if clean
+ */
+export const containsContactInfo = (text: string): 'phone' | 'email' | 'url' | null => {
+  if (!text || typeof text !== 'string') return null;
+  
+  // Phone: 7+ digits with optional separators
+  if (/(\+?\d[\d\s\-().]{6,}\d)/.test(text)) return 'phone';
+  // Email
+  if (/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(text)) return 'email';
+  // URLs: protocols, www, or common TLDs followed by path
+  if (/(https?:\/\/|www\.)|(\.[a-z]{2,4}\/)/i.test(text)) return 'url';
+  
+  return null;
+};
+
+/**
+ * Normalizes Romanian diacritics to ASCII equivalents for search matching
+ * ă/â → a, î → i, ș → s, ț → t
+ */
 export const normalizeDiacritics = (text: string): string => {
   if (!text || typeof text !== 'string') {
     return '';

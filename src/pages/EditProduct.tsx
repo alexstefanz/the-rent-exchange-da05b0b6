@@ -18,10 +18,16 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ImageUpload from "@/components/products/ImageUpload";
+import { containsContactInfo } from "@/lib/inputValidation";
+
+const CONTACT_INFO_ERROR = "Descrierea nu poate conține date de contact (telefon, email sau link-uri). Comunicarea se face prin platforma Rentli.";
 
 const productSchema = z.object({
   title: z.string().min(5, "Titlul trebuie să aibă minim 5 caractere").max(100, "Titlul nu poate depăși 100 caractere"),
-  description: z.string().max(2000, "Descrierea nu poate depăși 2000 caractere").optional(),
+  description: z.string().max(2000, "Descrierea nu poate depăși 2000 caractere").optional().refine(
+    (val) => !val || !containsContactInfo(val),
+    { message: CONTACT_INFO_ERROR }
+  ),
   daily_price_owner: z.number({ invalid_type_error: "Introdu un preț valid" }).min(1, "Prețul minim este 1 RON"),
   category: z.string().optional(),
   subcategory: z.string().optional(),
