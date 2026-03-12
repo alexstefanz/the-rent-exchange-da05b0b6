@@ -136,7 +136,6 @@ const NotificationsTab = () => {
     if (!user || !details.product_id) return;
     
     const otherUserId = details.renter_id === user.id ? details.owner_id : details.renter_id;
-    const otherUserName = details.renter_id === user.id ? details.owner_name : details.renter_name;
     if (!otherUserId) return;
 
     // Find or create conversation
@@ -164,11 +163,7 @@ const NotificationsTab = () => {
     }
 
     if (conversationId) {
-      setChatConversationId(conversationId);
-      setChatOtherUserName(otherUserName || null);
-      setChatOtherUserAvatar(null);
-      setChatProductTitle(details.product_title);
-      setChatOpen(true);
+      navigate(`/mesaje?conv=${conversationId}`);
     }
   };
 
