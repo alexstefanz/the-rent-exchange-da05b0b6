@@ -85,7 +85,7 @@ const Index = () => {
                 <Link
                   key={category.id}
                   to={`/categorie/${category.slug}`}
-                  className="group flex flex-col items-center rounded-xl border border-border bg-card p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+                  className="group flex flex-col items-center rounded-xl bg-card p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
                   style={{ boxShadow: 'rgba(35, 29, 26, 0.08) 0px 4px 20px -4px' }}
                 >
                   <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
