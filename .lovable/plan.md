@@ -1,33 +1,30 @@
 
 
-## Plan: Add Reviews section to Profile page
+## Simplificare meniu tab-uri profil
 
-### Overview
-Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
+### Ce se schimbă
 
-### Changes
+**Ștergere din tab-uri:** favorite, mesaje, câștiguri, recenzii, notificări (acestea rămân accesibile doar din cardurile dashboard de sus).
 
-**1. New database function** — `get_user_given_reviews_with_targets`
-- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
-- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
+**Rămân 4 tab-uri:** Detalii cont, Cereri, Rezervări, Anunțuri — stilizate mai mari cu fundal portocaliu permanent.
 
-**2. New API function** in `src/features/profile/reviewsApi.ts`
-- Add `getUserGivenReviews(userId)` that calls the new RPC function.
+**Notă:** Tab-urile șterse din meniu rămân ca `TabsContent` ascuns, accesibil prin click pe cardurile BalanceCard care fac `navigate("#mesaje")` etc.
 
-**3. New component** — `src/components/profile/ReviewsTab.tsx`
-- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
-- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
-- Shows counts in tab headers
-- Empty state when no reviews exist
+### Implementare
 
-**4. Update `src/pages/Profile.tsx`**
-- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
-- Add corresponding `TabsContent` rendering `ReviewsTab`
+**Fișier:** `src/pages/Profile.tsx`
 
-### Files affected
-- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
-- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
-- `src/components/profile/ReviewsTab.tsx` — new component
-- `src/pages/Profile.tsx` — add tab
-- `src/integrations/supabase/types.ts` — auto-updated
+1. **TABS array** — păstrăm doar 4 intrări vizibile în meniu:
+   - `contul-meu`, `cereri`, `inchirieri`, `anunturi`
+
+2. **TabsList styling** — tab-urile rămase primesc stil mai mare:
+   - `px-6 py-3 text-base font-semibold` 
+   - Fundal portocaliu gradient permanent: `bg-gradient-to-r from-[#F97717] to-[#FAA73C] text-white`
+   - Active state cu opacity/shadow diferit pentru distincție
+
+3. **TabsContent** — toate 9 rămân funcționale (pentru navigare din dashboard cards), doar tab-urile din meniu se reduc la 4.
+
+4. **getTabFromHash** — funcționează în continuare cu toate ID-urile (inclusiv `#mesaje`, `#castiguri` etc. din BalanceCard).
+
+5. Curățare importuri nefolosite din TABS (dar păstrate pentru TabsContent).
 
