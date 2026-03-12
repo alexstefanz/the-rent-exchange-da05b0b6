@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Package, Search, MoreHorizontal, Loader2, Flag, Eye, EyeOff, Trash2, AlertTriangle, Star, MessageSquare } from "lucide-react";
+import { Package, Search, MoreHorizontal, Loader2, Flag, Eye, EyeOff, Trash2, AlertTriangle, Star, MessageSquare, CheckCircle, XCircle } from "lucide-react";
 import SortableTableHead, { SortDirection, sortData, useToggleSort } from "@/components/admin/SortableTableHead";
 import TableColumnFilterRow, { applyColumnFilters, ColumnFilterConfig } from "@/components/admin/TableColumnFilter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
