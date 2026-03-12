@@ -334,6 +334,7 @@ export const categories: Category[] = [
   },
   {
     id: 21,
+    slug: "industrial-cleaning",
     name: "INDUSTRIAL CLEANING",
     nameEn: "INDUSTRIAL CLEANING",
     icon: "🧹",
