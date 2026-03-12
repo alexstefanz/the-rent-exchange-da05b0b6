@@ -341,7 +341,7 @@ const NotificationBell = () => {
         {/* Footer */}
         <div className="border-t border-border">
           <Link
-            to="/profile#notificari"
+            to="/notificari"
             className="block w-full text-center text-sm font-medium text-primary py-3 hover:bg-muted/50 transition-colors"
           >
             {t("Vezi toate notificările", "View all notifications")}

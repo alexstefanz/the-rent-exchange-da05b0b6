@@ -33,6 +33,7 @@ import { useNavigate } from "react-router-dom";
 const NotificationsTab = () => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
