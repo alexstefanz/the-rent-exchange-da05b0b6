@@ -16,6 +16,7 @@ export interface Product {
   location_country: string | null;
   pickup_address: string | null;
   images: string[];
+  included_items: string[] | null;
   is_active: boolean;
   created_at: string;
 }
