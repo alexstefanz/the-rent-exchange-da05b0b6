@@ -108,6 +108,32 @@ const Index = () => {
 
       <FeaturedListings />
 
+      {/* CTA Banner */}
+      <section className="bg-gradient-to-r from-[#F97717] to-[#FAA73C] py-16">
+        <div className="container text-center">
+          <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-4">
+            {language === "ro" ? "Ai ceva de închiriat?" : "Have something to rent?"}
+          </h2>
+          <p className="text-white/90 text-lg mb-8 max-w-xl mx-auto">
+            {language === "ro"
+              ? "Transformă obiectele neutilizate în bani. Listează gratuit și începe să câștigi."
+              : "Turn unused items into money. List for free and start earning."}
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Button asChild size="lg" className="bg-white text-foreground hover:bg-white/90 font-semibold rounded-xl px-8">
+              <Link to="/owner/new-product">
+                {language === "ro" ? "Listează acum" : "List now"}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button asChild size="lg" className="bg-black text-white hover:bg-black/80 font-semibold rounded-xl px-8">
+              <Link to="/cum-functioneaza">
+                {language === "ro" ? "Cum funcționează" : "How it works"}
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
 
       <Footer />
     </div>);
