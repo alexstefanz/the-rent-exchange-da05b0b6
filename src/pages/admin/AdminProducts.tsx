@@ -195,10 +195,12 @@ const AdminProducts = () => {
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Toate</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="flagged">Marcate</SelectItem>
+                   <SelectItem value="all">Toate</SelectItem>
+                   <SelectItem value="pending">În așteptare</SelectItem>
+                   <SelectItem value="active">Active</SelectItem>
+                   <SelectItem value="inactive">Inactive</SelectItem>
+                   <SelectItem value="rejected">Respinse</SelectItem>
+                   <SelectItem value="flagged">Marcate</SelectItem>
                 </SelectContent>
               </Select>
             </div>
