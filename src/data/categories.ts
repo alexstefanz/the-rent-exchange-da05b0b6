@@ -376,6 +376,14 @@ export const getCategoryById = (id: number) => {
   return categories.find((cat) => cat.id === id);
 };
 
+export const getCategoryBySlug = (slug: string) => {
+  return categories.find((cat) => cat.slug === slug);
+};
+
+export const getCategoryUrl = (category: Category) => {
+  return `/categorie/${category.slug}`;
+};
+
 export const searchCategories = (query: string) => {
   const lowerQuery = query.toLowerCase();
   
