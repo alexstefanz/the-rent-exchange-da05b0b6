@@ -158,6 +158,7 @@ export const categories: Category[] = [
   },
   {
     id: 9,
+    slug: "evenimente-hobby",
     name: "EVENIMENTE & HOBBY",
     nameEn: "EVENTS & HOBBY",
     icon: "🎉",
