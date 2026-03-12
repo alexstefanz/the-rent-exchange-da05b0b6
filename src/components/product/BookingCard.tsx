@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 
 interface BookingCardProps {
   productId: string;
