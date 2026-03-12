@@ -20,11 +20,11 @@ import BalanceCard from "@/components/profile/BalanceCard";
 import ReviewsTab from "@/components/profile/ReviewsTab";
 
 const TABS = [
-  { id: "contul-meu", labelRo: "Contul meu", labelEn: "My Account", icon: UserCog },
+  { id: "contul-meu", labelRo: "Detalii cont", labelEn: "Account Details", icon: UserCog },
   { id: "favorite", labelRo: "Favorite", labelEn: "Favorites", icon: Heart },
   { id: "cereri", labelRo: "Cereri", labelEn: "Requests", icon: ClipboardList },
-  { id: "inchirieri", labelRo: "Închirierile mele", labelEn: "My Rentals", icon: ShoppingBag },
-  { id: "anunturi", labelRo: "Anunțurile mele", labelEn: "My Listings", icon: Package },
+  { id: "inchirieri", labelRo: "Rezervări", labelEn: "Reservations", icon: ShoppingBag },
+  { id: "anunturi", labelRo: "Anunțuri", labelEn: "Listings", icon: Package },
   { id: "mesaje", labelRo: "Mesaje", labelEn: "Messages", icon: MessageCircle },
   { id: "castiguri", labelRo: "Câștiguri", labelEn: "Earnings", icon: Wallet },
   { id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star },
