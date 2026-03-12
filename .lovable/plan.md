@@ -1,33 +1,38 @@
 
 
-## Plan: Add Reviews section to Profile page
+## Plan: Add Price Filter, Sort, and Grid/List Toggle to Category Detail Page
 
-### Overview
-Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
+### What
+Add three inline filter controls next to the existing subcategory dropdown on `CategoryDetail.tsx`:
+1. **Price range popover** ("Interval preț") — same as search page
+2. **Sort dropdown** ("Relevanță") — relevance, price asc, price desc
+3. **Grid/List toggle buttons** — same as SubcategoryDetail page
 
 ### Changes
 
-**1. New database function** — `get_user_given_reviews_with_targets`
-- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
-- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
+**File: `src/pages/CategoryDetail.tsx`**
 
-**2. New API function** in `src/features/profile/reviewsApi.ts`
-- Add `getUserGivenReviews(userId)` that calls the new RPC function.
+1. **Add state** for `priceRange`, `sortBy`, and `viewMode`
+2. **Move the filter bar** (line 94-114) to include all 4 controls in a single row:
+   - Subcategory dropdown (existing)
+   - Price range popover (using `Popover` + `Slider`, reusing pattern from `SearchFilters.tsx`)
+   - Sort by select (Relevanță, Preț crescător, Preț descrescător)
+   - Grid/List toggle (using `Grid3X3` and `List` icons, same pattern as `SubcategoryDetail`)
+3. **Add filtering logic** — `useMemo` to filter products by price range and sort by selected order
+4. **Update product grid** — switch between grid and list view based on `viewMode`, pass `viewMode` prop to `ProductCard`
 
-**3. New component** — `src/components/profile/ReviewsTab.tsx`
-- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
-- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
-- Shows counts in tab headers
-- Empty state when no reviews exist
+### Layout (desktop)
+```text
+┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌────┬────┐
+│ Subcategorii │ │ Interval preț│ │  Relevanță   │ │ ⊞ │ ☰ │
+└──────────────┘ └──────────────┘ └──────────────┘ └────┴────┘
+```
 
-**4. Update `src/pages/Profile.tsx`**
-- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
-- Add corresponding `TabsContent` rendering `ReviewsTab`
+### Imports to add
+- `Grid3X3`, `List` from lucide-react
+- `Popover`, `PopoverContent`, `PopoverTrigger` from ui/popover
+- `Slider` from ui/slider
+- `useState`, `useMemo` (useState already imported partially)
 
-### Files affected
-- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
-- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
-- `src/components/profile/ReviewsTab.tsx` — new component
-- `src/pages/Profile.tsx` — add tab
-- `src/integrations/supabase/types.ts` — auto-updated
+### No new files needed — all patterns already exist in the codebase.
 
