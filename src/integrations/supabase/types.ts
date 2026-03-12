@@ -1173,6 +1173,7 @@ export type Database = {
         }
         Returns: {
           admin_flagged: boolean
+          approval_status: string
           category: string
           created_at: string
           daily_price_owner: number
