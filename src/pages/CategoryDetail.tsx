@@ -117,22 +117,81 @@ const CategoryDetail = () => {
               {copy.categoryDetail.listingsInCategory}
             </h2>
 
-            <Select onValueChange={(val) => navigate(`/subcategorie/${val}`)}>
-              <SelectTrigger className="w-full sm:w-[240px]">
-                <SelectValue placeholder={language === "en" ? "Subcategories" : "Subcategorii"} />
-              </SelectTrigger>
-              <SelectContent>
-                {category.subcategories.map((sub) => {
-                  const subName = language === "en" && sub.nameEn ? sub.nameEn : sub.name;
-                  const count = subcategoryCounts[sub.name] || 0;
-                  return (
-                    <SelectItem key={sub.id} value={sub.id}>
-                      {subName} ({count})
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select onValueChange={(val) => navigate(`/subcategorie/${val}`)}>
+                <SelectTrigger className="h-9 w-auto min-w-[160px] text-sm">
+                  <SelectValue placeholder={language === "en" ? "Subcategories" : "Subcategorii"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {category.subcategories.map((sub) => {
+                    const subName = language === "en" && sub.nameEn ? sub.nameEn : sub.name;
+                    const count = subcategoryCounts[sub.name] || 0;
+                    return (
+                      <SelectItem key={sub.id} value={sub.id}>
+                        {subName} ({count})
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 text-sm font-normal gap-1">
+                    {priceRange[0] === 0 && priceRange[1] === 1000
+                      ? (language === "en" ? "Price range" : "Interval preț")
+                      : `${priceRange[0]} - ${priceRange[1]} RON`}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64" align="start">
+                  <div className="space-y-3">
+                    <p className="text-sm font-medium">{language === "en" ? "Price range" : "Interval preț"}</p>
+                    <Slider
+                      value={priceRange}
+                      onValueChange={(value) => setPriceRange(value as [number, number])}
+                      max={1000}
+                      min={0}
+                      step={10}
+                      className="w-full"
+                    />
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{priceRange[0]} RON</span>
+                      <span>{priceRange[1]} RON</span>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="h-9 w-auto min-w-[130px] text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="relevance">{language === "en" ? "Relevance" : "Relevanță"}</SelectItem>
+                  <SelectItem value="price_asc">{language === "en" ? "Price ascending" : "Preț crescător"}</SelectItem>
+                  <SelectItem value="price_desc">{language === "en" ? "Price descending" : "Preț descrescător"}</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <div className="flex items-center rounded-md border border-input">
+                <Button
+                  variant={viewMode === "gallery" ? "default" : "ghost"}
+                  size="sm"
+                  className="h-9 w-9 p-0 rounded-r-none"
+                  onClick={() => setViewMode("gallery")}
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === "list" ? "default" : "ghost"}
+                  size="sm"
+                  className="h-9 w-9 p-0 rounded-l-none"
+                  onClick={() => setViewMode("list")}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
 
           {isLoading && (
@@ -141,7 +200,7 @@ const CategoryDetail = () => {
             </div>
           )}
 
-          {!isLoading && products.length === 0 && (
+          {!isLoading && filteredProducts.length === 0 && (
             <div className="py-8 text-center rounded-xl bg-muted/30">
               <p className="text-muted-foreground">
                 {copy.categoryDetail.noListings}
@@ -152,10 +211,10 @@ const CategoryDetail = () => {
             </div>
           )}
 
-          {!isLoading && products.length > 0 && (
-            <div className="grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} />
+          {!isLoading && filteredProducts.length > 0 && (
+            <div className={viewMode === "gallery" ? "grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4" : "flex flex-col gap-4"}>
+              {filteredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} viewMode={viewMode} />
               ))}
             </div>
           )}
