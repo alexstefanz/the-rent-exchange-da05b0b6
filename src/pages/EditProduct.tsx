@@ -49,6 +49,8 @@ const EditProduct = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [images, setImages] = useState<string[]>([]);
+  const [includedItems, setIncludedItems] = useState<string[]>([]);
+  const [newIncludedItem, setNewIncludedItem] = useState("");
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
