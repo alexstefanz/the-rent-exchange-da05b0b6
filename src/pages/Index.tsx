@@ -71,7 +71,7 @@ const Index = () => {
         </div>
       </section>
 
-      <section className="py-16">
+      <section className="pt-16 pb-10">
         <div className="container">
           <div className="mb-10 text-center">
             <h2 className="font-heading text-3xl font-semibold text-foreground">{copy.home.popularCategories}</h2>
