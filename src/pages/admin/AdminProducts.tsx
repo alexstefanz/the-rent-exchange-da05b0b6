@@ -30,6 +30,8 @@ const AdminProducts = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [flagDialog, setFlagDialog] = useState<{ open: boolean; productId: string }>({ open: false, productId: "" });
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; productId: string; title: string }>({ open: false, productId: "", title: "" });
+  const [rejectDialog, setRejectDialog] = useState<{ open: boolean; productId: string }>({ open: false, productId: "" });
+  const [rejectReason, setRejectReason] = useState("");
   const [flagReason, setFlagReason] = useState("");
   const [reviewsDialog, setReviewsDialog] = useState<{ open: boolean; productId: string; title: string }>({ open: false, productId: "", title: "" });
   const [reviewsData, setReviewsData] = useState<AdminProductReview[]>([]);
