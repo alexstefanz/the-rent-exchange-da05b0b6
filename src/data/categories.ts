@@ -262,6 +262,7 @@ export const categories: Category[] = [
   },
   {
     id: 15,
+    slug: "bebe-family-rentals",
     name: "BEBE & FAMILY RENTALS",
     nameEn: "BABY & FAMILY RENTALS",
     icon: "👶",
