@@ -103,6 +103,7 @@ const EditProduct = () => {
         setProduct(data);
         setSelectedCategory(data.category || "");
         setImages(data.images || []);
+        setIncludedItems((data as any).included_items || []);
         form.reset({
           title: data.title,
           description: data.description || "",
