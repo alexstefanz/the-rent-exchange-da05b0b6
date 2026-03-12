@@ -305,7 +305,6 @@ const AdminProducts = () => {
                                 <DropdownMenuItem onClick={() => handleToggleActive(product)}>
                                   {product.is_active ? <><EyeOff className="h-4 w-4 mr-2" /> Dezactivează</> : <><Eye className="h-4 w-4 mr-2" /> Activează</>}
                                 </DropdownMenuItem>
-                                </DropdownMenuItem>
                                 {product.admin_flagged ? (
                                   <DropdownMenuItem onClick={() => handleUnflag(product.id)}>
                                     <Flag className="h-4 w-4 mr-2" /> Ridică flag
