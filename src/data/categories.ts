@@ -348,6 +348,7 @@ export const categories: Category[] = [
   },
   {
     id: 22,
+    slug: "rulote-campervan-uri",
     name: "RULOTE & CAMPERVAN-URI",
     nameEn: "RVs & CAMPERVANS",
     icon: "🚐",
