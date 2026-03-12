@@ -247,6 +247,7 @@ export const categories: Category[] = [
   },
   {
     id: 14,
+    slug: "remorci-transport",
     name: "REMORCI & TRANSPORT",
     nameEn: "TRAILERS & TRANSPORT",
     icon: "🚚",
