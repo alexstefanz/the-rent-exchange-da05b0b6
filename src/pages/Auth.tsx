@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -251,9 +251,9 @@ const Auth = () => {
   if (showOtpVerification) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted/30 px-4 py-8">
-        <div className="mb-8">
+        <Link to="/" className="mb-8 block">
           <img src={logoImage} alt="RentNow" className="h-12 w-auto" />
-        </div>
+        </Link>
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1 text-center">
             <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
@@ -307,9 +307,9 @@ const Auth = () => {
   if (isResetMode) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted/30 px-4 py-8">
-        <div className="mb-8">
+        <Link to="/" className="mb-8 block">
           <img src={logoImage} alt="RentNow" className="h-12 w-auto" />
-        </div>
+        </Link>
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
             <CardTitle className="text-xl">{copy.auth.setNewPassword}</CardTitle>
@@ -339,9 +339,9 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted/30 px-4 py-8">
-      <div className="mb-8">
+      <Link to="/" className="mb-8 block">
         <img src={logoImage} alt="RentNow" className="h-12 w-auto" />
-      </div>
+      </Link>
       
       <Card className="w-full max-w-md">
         <Tabs defaultValue="login" className="w-full">
