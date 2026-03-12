@@ -101,7 +101,10 @@ const App = () => (
                 <Route path="/castiguri" element={<EarningsPage />} />
                 <Route path="/recenzii" element={<ReviewsPage />} />
                 <Route path="/notificari" element={<NotificationsPage />} />
-                <Route path="/rezervari" element={<Navigate to="/profile#inchirieri" replace />} />
+                <Route path="/cereri" element={<RequestsPage />} />
+                <Route path="/rezervari" element={<RentalsPage />} />
+                <Route path="/anunturi" element={<ListingsPage />} />
+                <Route path="/rezervari-old" element={<Navigate to="/rezervari" replace />} />
                 <Route path="/centru-asistenta" element={<HelpCenter />} />
                 <Route path="/suport" element={<UserTickets />} />
                 <Route path="/verificare" element={<KycVerification />} />
