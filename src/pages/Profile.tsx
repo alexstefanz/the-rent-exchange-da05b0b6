@@ -115,7 +115,7 @@ const ProfilePage = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="w-full h-auto flex flex-wrap justify-start gap-2 bg-transparent p-0 mb-6">
+          <TabsList className="w-full h-auto grid grid-cols-2 md:flex md:flex-wrap md:justify-start gap-2 bg-transparent p-0 mb-6">
             {TABS.map((tab) => {
               const Icon = tab.icon;
               const badgeCount = tab.id === "cereri" ? pendingCount : 0;
@@ -124,7 +124,7 @@ const ProfilePage = () => {
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="relative flex items-center gap-2 px-6 py-3 text-base font-semibold rounded-lg bg-gradient-to-r from-[#F97717] to-[#FAA73C] text-white shadow-sm data-[state=active]:shadow-lg data-[state=active]:scale-105 data-[state=inactive]:opacity-80 hover:opacity-100 transition-all"
+                  className="relative flex items-center justify-center gap-2 w-full px-4 py-3 text-base font-semibold rounded-lg bg-gradient-to-r from-[#F97717] to-[#FAA73C] text-white shadow-sm data-[state=active]:shadow-lg data-[state=active]:scale-105 data-[state=inactive]:opacity-80 hover:opacity-100 transition-all"
                 >
                   <Icon className="h-5 w-5" />
                   <span>

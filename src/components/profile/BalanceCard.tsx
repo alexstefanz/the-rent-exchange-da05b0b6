@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface DashboardCardProps {
   icon: React.ElementType;
@@ -43,6 +44,7 @@ const BalanceCard = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   // Balance query
   const { data: balance, isLoading: balanceLoading } = useQuery({
@@ -134,10 +136,12 @@ const BalanceCard = () => {
 
   const isLoading = balanceLoading || favLoading || msgLoading || reviewsLoading || notifLoading;
 
+  const skeletonCount = isMobile ? 4 : 5;
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-        {Array.from({ length: 5 }).map((_, i) => (
+        {Array.from({ length: skeletonCount }).map((_, i) => (
           <Card key={i}>
             <CardContent className="flex flex-col items-center gap-2 p-4 sm:p-5">
               <Skeleton className="h-11 w-11 rounded-full" />
@@ -179,13 +183,15 @@ const BalanceCard = () => {
         badge={newReviewsCount}
         onClick={() => navigate("/recenzii")}
       />
-      <DashboardCard
-        icon={Bell}
-        label={t("Notificări", "Notifications")}
-        value={unreadNotifCount > 0 ? unreadNotifCount : t("0 noi", "0 new")}
-        badge={unreadNotifCount}
-        onClick={() => navigate("/notificari")}
-      />
+      {!isMobile && (
+        <DashboardCard
+          icon={Bell}
+          label={t("Notificări", "Notifications")}
+          value={unreadNotifCount > 0 ? unreadNotifCount : t("0 noi", "0 new")}
+          badge={unreadNotifCount}
+          onClick={() => navigate("/notificari")}
+        />
+      )}
     </div>
   );
 };
