@@ -1,17 +1,33 @@
 
 
-## Bug: Dashboard cards nu funcționează — `getTabFromHash` validează doar tab-urile vizibile
+## Plan: Add Reviews section to Profile page
 
-### Cauza problemei
+### Overview
+Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
 
-Pe linia 69 din `Profile.tsx`, `getTabFromHash` verifică hash-ul doar în array-ul `TABS` (care acum conține doar 4 tab-uri: contul-meu, cereri, inchirieri, anunturi). Când dai click pe un card din dashboard (ex: `#mesaje`, `#favorite`, `#castiguri`), hash-ul NU se găsește în `TABS`, deci funcția returnează default-ul `"contul-meu"` — și conținutul tab-ului nu se schimbă.
+### Changes
 
-### Soluție
+**1. New database function** — `get_user_given_reviews_with_targets`
+- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
+- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
 
-În `src/pages/Profile.tsx`:
+**2. New API function** in `src/features/profile/reviewsApi.ts`
+- Add `getUserGivenReviews(userId)` that calls the new RPC function.
 
-1. Creez o listă separată cu TOATE ID-urile valide de tab (inclusiv cele ascunse): `contul-meu`, `cereri`, `inchirieri`, `anunturi`, `favorite`, `mesaje`, `castiguri`, `recenzii`, `notificari`.
-2. Modific `getTabFromHash` să valideze hash-ul contra listei complete, nu doar contra `TABS`.
+**3. New component** — `src/components/profile/ReviewsTab.tsx`
+- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
+- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
+- Shows counts in tab headers
+- Empty state when no reviews exist
 
-Un singur fișier modificat, fix minimal.
+**4. Update `src/pages/Profile.tsx`**
+- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
+- Add corresponding `TabsContent` rendering `ReviewsTab`
+
+### Files affected
+- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
+- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
+- `src/components/profile/ReviewsTab.tsx` — new component
+- `src/pages/Profile.tsx` — add tab
+- `src/integrations/supabase/types.ts` — auto-updated
 

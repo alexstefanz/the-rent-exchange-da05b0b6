@@ -63,11 +63,11 @@ const ProfilePage = () => {
     enabled: !!user?.id,
   });
 
-  // Get tab from URL hash or default to first tab
+  const ALL_TAB_IDS = ["contul-meu", "cereri", "inchirieri", "anunturi", "favorite", "mesaje", "castiguri", "recenzii", "notificari"];
+
   const getTabFromHash = () => {
     const hash = location.hash.replace("#", "");
-    const validTab = TABS.find(tab => tab.id === hash);
-    return validTab ? hash : TABS[0].id;
+    return ALL_TAB_IDS.includes(hash) ? hash : TABS[0].id;
   };
 
   const [activeTab, setActiveTab] = useState(getTabFromHash);
