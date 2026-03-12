@@ -97,8 +97,22 @@ export function ConversationList({
         <h1 className="text-xl font-bold mb-3">Mesaje</h1>
         <Tabs value={activeTab} onValueChange={onTabChange}>
           <TabsList className="w-full">
-            <TabsTrigger value="rezervari" className="flex-1">Rezervări</TabsTrigger>
-            <TabsTrigger value="de-inchiriat" className="flex-1">De Închiriat</TabsTrigger>
+            <TabsTrigger value="rezervari" className="flex-1 gap-1.5">
+              Rezervări
+              {rezervariUnread > 0 && (
+                <Badge variant="destructive" className="rounded-full h-5 min-w-5 flex items-center justify-center text-[10px] px-1.5 py-0">
+                  {rezervariUnread}
+                </Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="de-inchiriat" className="flex-1 gap-1.5">
+              De Închiriat
+              {deInchiriatUnread > 0 && (
+                <Badge variant="destructive" className="rounded-full h-5 min-w-5 flex items-center justify-center text-[10px] px-1.5 py-0">
+                  {deInchiriatUnread}
+                </Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
