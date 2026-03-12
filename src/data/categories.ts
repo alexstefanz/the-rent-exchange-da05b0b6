@@ -212,6 +212,7 @@ export const categories: Category[] = [
   },
   {
     id: 12,
+    slug: "echipamente-medicale-recuperare",
     name: "ECHIPAMENTE MEDICALE & RECUPERARE",
     nameEn: "MEDICAL EQUIPMENT & RECOVERY",
     icon: "🏥",
