@@ -1,33 +1,34 @@
 
 
-## Plan: Add Reviews section to Profile page
+## Plan: Fix notification click navigation to dedicated pages
 
-### Overview
-Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
+### Problem
+Notification links are stored as `/profile#cereri`, `/profile#anunturi`, etc., but these sections now live on dedicated pages (`/cereri`, `/anunturi`, `/rezervari`, `/notificari`). Clicking a notification doesn't navigate to the correct page.
 
 ### Changes
 
-**1. New database function** — `get_user_given_reviews_with_targets`
-- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
-- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
+**1. Update `mapLink` in `src/components/layout/NotificationBell.tsx`** (line 160-164)
 
-**2. New API function** in `src/features/profile/reviewsApi.ts`
-- Add `getUserGivenReviews(userId)` that calls the new RPC function.
+Update the mapping to route to the new dedicated pages:
+- `/profile#anunturi` → `/anunturi`
+- `/profile#cereri` → `/cereri`  
+- `/profile#rezervari` → `/rezervari`
+- `/profile#notificari` → `/notificari`
+- `/profile` (for reviews) → `/recenzii`
 
-**3. New component** — `src/components/profile/ReviewsTab.tsx`
-- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
-- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
-- Shows counts in tab headers
-- Empty state when no reviews exist
+**2. Update `src/components/profile/NotificationsTab.tsx`**
 
-**4. Update `src/pages/Profile.tsx`**
-- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
-- Add corresponding `TabsContent` rendering `ReviewsTab`
+Add navigation on notification click (using `useNavigate`). When a notification has a `link`, clicking it should navigate to the mapped destination page instead of only expanding inline. Keep the expand behavior for rental notifications as secondary detail, but also add a navigation action.
 
-### Files affected
-- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
-- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
-- `src/components/profile/ReviewsTab.tsx` — new component
-- `src/pages/Profile.tsx` — add tab
-- `src/integrations/supabase/types.ts` — auto-updated
+Apply the same `mapLink` logic as in NotificationBell.
+
+**3. Update Edge Functions to use new links** (prevents stale data for future notifications)
+
+Update the `link` field in all 4 edge functions:
+- `send-rental-notification/index.ts`: `/profile#anunturi` → `/anunturi`, `/profile#cereri` → `/cereri`
+- `respond-rental-request/index.ts`: `/profile#cereri` → `/cereri`
+- `send-cancellation-notification/index.ts`: `/profile#anunturi` → `/anunturi`
+- `send-general-notification/index.ts`: `/profile` → `/recenzii` (for review_received)
+
+**4 files modified, no new files or dependencies.**
 
