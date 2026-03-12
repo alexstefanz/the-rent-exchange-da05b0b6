@@ -35,14 +35,21 @@ const BookingCard = ({
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
+  const { bookedDates } = useBookedDates(productId);
+
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
+    if (isDateBooked(date, bookedDates)) return;
     if (!startDate || (startDate && endDate)) {
       setStartDate(date);
       setEndDate(undefined);
     } else if (isBefore(date, startDate)) {
       setStartDate(date);
     } else {
+      if (hasBookedDateInRange(startDate, date, bookedDates)) {
+        toast({ title: language === "ro" ? "Perioada indisponibilă" : "Period unavailable", description: language === "ro" ? "Există zile rezervate în intervalul selectat." : "There are booked days in the selected range.", variant: "destructive" });
+        return;
+      }
       setEndDate(date);
     }
   };
