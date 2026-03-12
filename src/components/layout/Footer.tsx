@@ -43,13 +43,13 @@ const Footer = () => {
               {copy.footer.description}
             </p>
             <div className="flex items-center gap-3">
-              <a href="https://www.facebook.com/profile.php?id=61587757203847" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-colors hover:text-foreground">
-                <Facebook size={20} />
+              <a href="https://www.facebook.com/profile.php?id=61587757203847" target="_blank" rel="noopener noreferrer" className="transition-opacity hover:opacity-80">
+                <FacebookIcon size={20} />
               </a>
-              <a href="https://www.instagram.com/rentli_romania/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-colors hover:text-foreground">
-                <Instagram size={20} />
+              <a href="https://www.instagram.com/rentli_romania/" target="_blank" rel="noopener noreferrer" className="transition-opacity hover:opacity-80">
+                <InstagramIcon size={20} />
               </a>
-              <a href="https://www.tiktok.com/@rentli_romania" target="_blank" rel="noopener noreferrer" className="text-muted-foreground transition-colors hover:text-foreground">
+              <a href="https://www.tiktok.com/@rentli_romania" target="_blank" rel="noopener noreferrer" className="transition-opacity hover:opacity-80">
                 <TiktokIcon size={20} />
               </a>
             </div>
