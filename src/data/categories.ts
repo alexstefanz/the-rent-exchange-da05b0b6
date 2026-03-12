@@ -278,6 +278,7 @@ export const categories: Category[] = [
   },
   {
     id: 16,
+    slug: "imprimante-3d-cnc",
     name: "IMPRIMANTE 3D & CNC",
     nameEn: "3D PRINTERS & CNC",
     icon: "🖨️",
