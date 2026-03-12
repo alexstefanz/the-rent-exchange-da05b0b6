@@ -292,6 +292,7 @@ export const categories: Category[] = [
   },
   {
     id: 17,
+    slug: "telescop-observatie",
     name: "TELESCOP & OBSERVAȚIE",
     nameEn: "TELESCOPES & OBSERVATION",
     icon: "🔭",
