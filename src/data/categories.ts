@@ -112,6 +112,7 @@ export const categories: Category[] = [
   },
   {
     id: 6,
+    slug: "gaming-electronice",
     name: "GAMING & ELECTRONICE",
     nameEn: "GAMING & ELECTRONICS",
     icon: "🎮",
