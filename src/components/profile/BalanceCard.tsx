@@ -183,13 +183,15 @@ const BalanceCard = () => {
         badge={newReviewsCount}
         onClick={() => navigate("/recenzii")}
       />
-      <DashboardCard
-        icon={Bell}
-        label={t("Notificări", "Notifications")}
-        value={unreadNotifCount > 0 ? unreadNotifCount : t("0 noi", "0 new")}
-        badge={unreadNotifCount}
-        onClick={() => navigate("/notificari")}
-      />
+      {!isMobile && (
+        <DashboardCard
+          icon={Bell}
+          label={t("Notificări", "Notifications")}
+          value={unreadNotifCount > 0 ? unreadNotifCount : t("0 noi", "0 new")}
+          badge={unreadNotifCount}
+          onClick={() => navigate("/notificari")}
+        />
+      )}
     </div>
   );
 };
