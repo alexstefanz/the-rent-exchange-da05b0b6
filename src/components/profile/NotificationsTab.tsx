@@ -27,7 +27,6 @@ import {
 } from "@/features/profile/notificationsApi";
 import { getRentalDetailsForNotification, type RentalDetails } from "@/features/rentals/rentalDetailsApi";
 import { supabase } from "@/integrations/supabase/client";
-import { ChatDialog } from "@/components/messaging/ChatDialog";
 import { useNavigate } from "react-router-dom";
 
 const NotificationsTab = () => {
@@ -40,12 +39,6 @@ const NotificationsTab = () => {
   const [rentalDetails, setRentalDetails] = useState<Record<string, RentalDetails>>({});
   const [loadingDetails, setLoadingDetails] = useState<string | null>(null);
   
-  // Chat state
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatConversationId, setChatConversationId] = useState("");
-  const [chatOtherUserName, setChatOtherUserName] = useState<string | null>(null);
-  const [chatOtherUserAvatar, setChatOtherUserAvatar] = useState<string | null>(null);
-  const [chatProductTitle, setChatProductTitle] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -143,7 +136,6 @@ const NotificationsTab = () => {
     if (!user || !details.product_id) return;
     
     const otherUserId = details.renter_id === user.id ? details.owner_id : details.renter_id;
-    const otherUserName = details.renter_id === user.id ? details.owner_name : details.renter_name;
     if (!otherUserId) return;
 
     // Find or create conversation
@@ -171,11 +163,7 @@ const NotificationsTab = () => {
     }
 
     if (conversationId) {
-      setChatConversationId(conversationId);
-      setChatOtherUserName(otherUserName || null);
-      setChatOtherUserAvatar(null);
-      setChatProductTitle(details.product_title);
-      setChatOpen(true);
+      navigate(`/mesaje?conv=${conversationId}`);
     }
   };
 
@@ -344,14 +332,6 @@ const NotificationsTab = () => {
         })}
       </div>
 
-      <ChatDialog
-        open={chatOpen}
-        onOpenChange={setChatOpen}
-        conversationId={chatConversationId}
-        otherUserName={chatOtherUserName}
-        otherUserAvatar={chatOtherUserAvatar}
-        productTitle={chatProductTitle}
-      />
     </div>
   );
 };
