@@ -94,7 +94,10 @@ const App = () => (
                 <Route path="/owner/new-product" element={<NewProduct />} />
                 <Route path="/owner/edit-product/:id" element={<EditProduct />} />
                 <Route path="/mesaje" element={<Messages />} />
-                <Route path="/favorite" element={<Navigate to="/profile#favorite" replace />} />
+                <Route path="/favorite" element={<FavoritesPage />} />
+                <Route path="/castiguri" element={<EarningsPage />} />
+                <Route path="/recenzii" element={<ReviewsPage />} />
+                <Route path="/notificari" element={<NotificationsPage />} />
                 <Route path="/rezervari" element={<Navigate to="/profile#inchirieri" replace />} />
                 <Route path="/centru-asistenta" element={<HelpCenter />} />
                 <Route path="/suport" element={<UserTickets />} />

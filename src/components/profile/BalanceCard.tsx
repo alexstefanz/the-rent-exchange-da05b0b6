@@ -156,35 +156,35 @@ const BalanceCard = () => {
         icon={Wallet}
         label={t("Balanță", "Balance")}
         value={`${(balance ?? 0).toFixed(2)} RON`}
-        onClick={() => navigate("#castiguri")}
+        onClick={() => navigate("/castiguri")}
       />
       <DashboardCard
         icon={Heart}
         label={t("Favorite", "Favorites")}
         value={favCount}
         badge={favCount}
-        onClick={() => navigate("#favorite")}
+        onClick={() => navigate("/favorite")}
       />
       <DashboardCard
         icon={MessageCircle}
         label={t("Mesaje", "Messages")}
         value={unreadMsgCount > 0 ? unreadMsgCount : t("0 noi", "0 new")}
         badge={unreadMsgCount}
-        onClick={() => navigate("#mesaje")}
+        onClick={() => navigate("/mesaje")}
       />
       <DashboardCard
         icon={Star}
         label={t("Recenzii", "Reviews")}
         value={newReviewsCount > 0 ? newReviewsCount : t("0 noi", "0 new")}
         badge={newReviewsCount}
-        onClick={() => navigate("#recenzii")}
+        onClick={() => navigate("/recenzii")}
       />
       <DashboardCard
         icon={Bell}
         label={t("Notificări", "Notifications")}
         value={unreadNotifCount > 0 ? unreadNotifCount : t("0 noi", "0 new")}
         badge={unreadNotifCount}
-        onClick={() => navigate("#notificari")}
+        onClick={() => navigate("/notificari")}
       />
     </div>
   );

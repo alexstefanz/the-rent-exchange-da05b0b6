@@ -155,22 +155,6 @@ const ProfilePage = () => {
           <TabsContent value="anunturi" className="mt-0">
             <LendingsTab />
           </TabsContent>
-
-          <TabsContent value="mesaje" className="mt-0">
-            <MessagesTab />
-          </TabsContent>
-
-          <TabsContent value="castiguri" className="mt-0">
-            <EarningsTab />
-          </TabsContent>
-
-          <TabsContent value="recenzii" className="mt-0">
-            <ReviewsTab />
-          </TabsContent>
-
-          <TabsContent value="notificari" className="mt-0">
-            <NotificationsTab />
-          </TabsContent>
         </Tabs>
       </main>
       
