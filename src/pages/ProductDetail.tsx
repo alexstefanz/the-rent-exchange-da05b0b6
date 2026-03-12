@@ -192,7 +192,7 @@ const ProductDetail = () => {
   const ownerName = owner?.full_name || copy.dashboard.owner;
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen bg-background">
       <Navbar />
       
       {/* Mobile Image Gallery */}
