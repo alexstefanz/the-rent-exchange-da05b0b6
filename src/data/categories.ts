@@ -129,6 +129,7 @@ export const categories: Category[] = [
   },
   {
     id: 7,
+    slug: "foto-video",
     name: "FOTO & VIDEO",
     nameEn: "PHOTO & VIDEO",
     icon: "📷",
