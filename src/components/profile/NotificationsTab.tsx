@@ -39,12 +39,6 @@ const NotificationsTab = () => {
   const [rentalDetails, setRentalDetails] = useState<Record<string, RentalDetails>>({});
   const [loadingDetails, setLoadingDetails] = useState<string | null>(null);
   
-  // Chat state
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatConversationId, setChatConversationId] = useState("");
-  const [chatOtherUserName, setChatOtherUserName] = useState<string | null>(null);
-  const [chatOtherUserAvatar, setChatOtherUserAvatar] = useState<string | null>(null);
-  const [chatProductTitle, setChatProductTitle] = useState("");
 
   useEffect(() => {
     if (!user) return;
