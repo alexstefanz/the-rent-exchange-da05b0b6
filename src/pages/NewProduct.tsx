@@ -85,6 +85,7 @@ const NewProduct = () => {
         location_country: data.location_country || "Romania",
         pickup_address: data.pickup_address,
         images: images,
+        included_items: includedItems,
       }, user.id);
 
       toast({
