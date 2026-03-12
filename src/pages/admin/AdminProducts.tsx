@@ -291,8 +291,20 @@ const AdminProducts = () => {
                                   <Eye className="h-4 w-4 mr-2" /> Vezi pe site
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
+                                {product.approval_status === 'pending' && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => handleApprove(product.id)}>
+                                      <CheckCircle className="h-4 w-4 mr-2" /> Aprobă
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setRejectDialog({ open: true, productId: product.id })}>
+                                      <XCircle className="h-4 w-4 mr-2" /> Respinge
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                  </>
+                                )}
                                 <DropdownMenuItem onClick={() => handleToggleActive(product)}>
                                   {product.is_active ? <><EyeOff className="h-4 w-4 mr-2" /> Dezactivează</> : <><Eye className="h-4 w-4 mr-2" /> Activează</>}
+                                </DropdownMenuItem>
                                 </DropdownMenuItem>
                                 {product.admin_flagged ? (
                                   <DropdownMenuItem onClick={() => handleUnflag(product.id)}>
