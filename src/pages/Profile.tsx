@@ -7,11 +7,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import AccountTab from "@/components/profile/AccountTab";
 import BalanceCard from "@/components/profile/BalanceCard";
 
 const NAV_ITEMS = [
-  { id: "contul-meu", labelRo: "Detalii cont", labelEn: "Account Details", icon: UserCog, href: null },
+  { id: "contul-meu", labelRo: "Detalii cont", labelEn: "Account Details", icon: UserCog, href: "/contul-meu" },
   { id: "cereri", labelRo: "Cereri", labelEn: "Requests", icon: ClipboardList, href: "/cereri" },
   { id: "inchirieri", labelRo: "Rezervări", labelEn: "Reservations", icon: ShoppingBag, href: "/rezervari" },
   { id: "anunturi", labelRo: "Anunțuri", labelEn: "Listings", icon: Package, href: "/anunturi" },
