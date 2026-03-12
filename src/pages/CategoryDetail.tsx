@@ -52,28 +52,39 @@ const CategoryDetail = () => {
     );
   }
 
+  const bannerImage = category.subcategories[0]?.image || "";
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <main className="w-full max-w-7xl mx-auto py-8 px-[10px] md:px-6 lg:px-8">
-        <Link
-          to="/categorii"
-          className="mb-6 inline-flex items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ChevronLeft className="mr-1 h-4 w-4" />
-          {copy.categoryDetail.backToCategories}
-        </Link>
-
-        <div className="mb-8">
-          <h1 className="font-heading text-3xl font-bold text-foreground text-center md:text-left md:text-4xl">
+      {/* Hero Banner */}
+      <div className="relative h-[300px] w-full overflow-hidden">
+        <img
+          src={bannerImage}
+          alt={catName}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
+          <Link
+            to="/categorii"
+            className="mb-4 inline-flex items-center text-sm text-white/80 transition-colors hover:text-white"
+          >
+            <ChevronLeft className="mr-1 h-4 w-4" />
+            {copy.categoryDetail.backToCategories}
+          </Link>
+          <h1 className="font-heading text-3xl font-bold text-white md:text-4xl drop-shadow-lg">
             {catName}
           </h1>
-          <p className="mt-2 text-muted-foreground">
+          <p className="mt-2 text-white/90 text-sm md:text-base">
             {copy.categoryDetail.subcategoriesAvailable(category.subcategories.length)}
             {!isLoading && products.length > 0 && ` • ${copy.categoryDetail.listings(products.length)}`}
           </p>
         </div>
+      </div>
+
+      <main className="w-full max-w-7xl mx-auto py-8 px-[10px] md:px-6 lg:px-8">
 
         <div>
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
