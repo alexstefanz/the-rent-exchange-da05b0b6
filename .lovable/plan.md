@@ -1,33 +1,21 @@
 
 
-## Plan: Add Reviews section to Profile page
+## Modificari profile mobile
 
-### Overview
-Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
+### 1. BalanceCard — ascunde cardul Notificari pe mobil (4 carduri in grid 2x2)
 
-### Changes
+In `src/components/profile/BalanceCard.tsx`:
+- Import `useIsMobile` hook
+- Ascunde cardul Notificari pe mobil (`!isMobile` condition pe ultimul DashboardCard)
+- Grid-ul ramane `grid-cols-2` pe mobil = 4 carduri (Balanta, Favorite, Mesaje, Recenzii) in 2x2 perfect
+- Skeleton loading: afiseaza 4 pe mobil, 5 pe desktop
 
-**1. New database function** — `get_user_given_reviews_with_targets`
-- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
-- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
+### 2. TabsList — grid 2x2 cu width-uri egale pe mobil
 
-**2. New API function** in `src/features/profile/reviewsApi.ts`
-- Add `getUserGivenReviews(userId)` that calls the new RPC function.
+In `src/pages/Profile.tsx`:
+- Schimb TabsList din `flex flex-wrap` in `grid grid-cols-2` pe mobil
+- Fiecare TabsTrigger primeste `w-full` pentru a umple celula
+- Pe desktop ramane flex normal
 
-**3. New component** — `src/components/profile/ReviewsTab.tsx`
-- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
-- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
-- Shows counts in tab headers
-- Empty state when no reviews exist
-
-**4. Update `src/pages/Profile.tsx`**
-- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
-- Add corresponding `TabsContent` rendering `ReviewsTab`
-
-### Files affected
-- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
-- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
-- `src/components/profile/ReviewsTab.tsx` — new component
-- `src/pages/Profile.tsx` — add tab
-- `src/integrations/supabase/types.ts` — auto-updated
+Doua fisiere modificate.
 
