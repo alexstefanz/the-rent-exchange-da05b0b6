@@ -233,6 +233,7 @@ export const categories: Category[] = [
   },
   {
     id: 13,
+    slug: "animale-companie",
     name: "ANIMALE DE COMPANIE",
     nameEn: "PETS",
     icon: "🐾",
