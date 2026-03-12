@@ -178,6 +178,7 @@ export const categories: Category[] = [
   },
   {
     id: 10,
+    slug: "instrumente-muzicale-dj",
     name: "INSTRUMENTE MUZICALE & DJ",
     nameEn: "MUSICAL INSTRUMENTS & DJ",
     icon: "🎸",
