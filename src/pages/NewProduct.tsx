@@ -145,6 +145,7 @@ const NewProduct = () => {
           
           <CardContent>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+              {/* 1. Titlu */}
               <div className="space-y-2">
                 <Label htmlFor="title">Titlu *</Label>
                 <Input
@@ -156,36 +157,21 @@ const NewProduct = () => {
                   <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
                 )}
               </div>
-              
+
+              {/* 2. Imagini */}
               <div className="space-y-2">
-                <Label htmlFor="description">Descriere</Label>
-                <Textarea
-                  id="description"
-                  placeholder="Descrie produsul în detaliu..."
-                  rows={4}
-                  {...form.register("description")}
-                />
-                {form.formState.errors.description && (
-                  <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
+                <Label>Imagini produs</Label>
+                {user && (
+                  <ImageUpload
+                    userId={user.id}
+                    images={images}
+                    onChange={setImages}
+                    maxImages={5}
+                  />
                 )}
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="price">Preț pe zi (RON) *</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  placeholder="50"
-                  {...form.register("daily_price_owner", { valueAsNumber: true })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Acesta este prețul pe care îl primești. Clientul va plăti cu 20% mai mult (comision platformă).
-                </p>
-                {form.formState.errors.daily_price_owner && (
-                  <p className="text-sm text-destructive">{form.formState.errors.daily_price_owner.message}</p>
-                )}
-              </div>
-              
+
+              {/* 3. Categorie + Subcategorie */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label>Categorie</Label>
@@ -230,7 +216,56 @@ const NewProduct = () => {
                   </Select>
                 </div>
               </div>
-              
+
+              {/* 4. Preț + comision live */}
+              <div className="space-y-2">
+                <Label htmlFor="price">Preț pe zi (RON) *</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  placeholder="50"
+                  {...form.register("daily_price_owner", { valueAsNumber: true })}
+                />
+                {(() => {
+                  const ownerPrice = form.watch("daily_price_owner");
+                  if (ownerPrice && ownerPrice > 0) {
+                    const commission = Math.round(ownerPrice * 0.2 * 100) / 100;
+                    const clientPrice = Math.round((ownerPrice + commission) * 100) / 100;
+                    return (
+                      <div className="rounded-md bg-muted p-3 text-sm">
+                        <p>Clientul va plăti: <span className="font-semibold">{clientPrice} RON</span></p>
+                        <p className="text-muted-foreground text-xs mt-1">
+                          Include {commission} RON comision platformă (20%)
+                        </p>
+                      </div>
+                    );
+                  }
+                  return (
+                    <p className="text-xs text-muted-foreground">
+                      Acesta este prețul pe care îl primești. Clientul va plăti cu 20% mai mult (comision platformă).
+                    </p>
+                  );
+                })()}
+                {form.formState.errors.daily_price_owner && (
+                  <p className="text-sm text-destructive">{form.formState.errors.daily_price_owner.message}</p>
+                )}
+              </div>
+
+              {/* 5. Descriere */}
+              <div className="space-y-2">
+                <Label htmlFor="description">Descriere</Label>
+                <Textarea
+                  id="description"
+                  placeholder="Descrie produsul în detaliu..."
+                  rows={4}
+                  {...form.register("description")}
+                />
+                {form.formState.errors.description && (
+                  <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
+                )}
+              </div>
+
+              {/* 6. Locație */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="city">Oraș</Label>
@@ -240,7 +275,6 @@ const NewProduct = () => {
                     {...form.register("location_city")}
                   />
                 </div>
-                
                 <div className="space-y-2">
                   <Label htmlFor="country">Țară</Label>
                   <Input
@@ -248,9 +282,10 @@ const NewProduct = () => {
                     placeholder="Romania"
                     {...form.register("location_country")}
                   />
-              </div>
+                </div>
               </div>
 
+              {/* 7. Adresă ridicare */}
               <div className="space-y-2">
                 <Label htmlFor="pickup_address">Adresă ridicare produs</Label>
                 <Input
@@ -263,18 +298,6 @@ const NewProduct = () => {
                 </p>
                 {form.formState.errors.pickup_address && (
                   <p className="text-sm text-destructive">{form.formState.errors.pickup_address.message}</p>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Imagini produs</Label>
-                {user && (
-                  <ImageUpload
-                    userId={user.id}
-                    images={images}
-                    onChange={setImages}
-                    maxImages={5}
-                  />
                 )}
               </div>
               
