@@ -36,6 +36,10 @@ const UserTickets = lazy(() => import("./pages/UserTickets"));
 const KycVerification = lazy(() => import("./pages/KycVerification"));
 const Contact = lazy(() => import("./pages/Contact"));
 const DeactivateAccount = lazy(() => import("./pages/DeactivateAccount"));
+const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
+const EarningsPage = lazy(() => import("./pages/EarningsPage"));
+const ReviewsPage = lazy(() => import("./pages/ReviewsPage"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 
 // Legal pages
 const TermsAndConditions = lazy(() => import("./pages/legal/TermsAndConditions"));
