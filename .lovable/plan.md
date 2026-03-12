@@ -1,33 +1,29 @@
 
 
-## Plan: Add Reviews section to Profile page
+## Fix: Booking Card sticky pe desktop
 
-### Overview
-Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
+Containerul de booking **deja are** `sticky top-24` aplicat, iar grid-ul părinte are `lg:items-start` — deci configurarea CSS este corectă pentru sticky positioning.
 
-### Changes
+**Problema probabilă**: Cardul de booking este mai înalt decât viewport-ul (titlu + preț + calendar + buton + anulare gratuită), ceea ce face ca sticky să nu funcționeze vizibil — elementul nu are unde să "plutească" pentru că depășește ecranul.
 
-**1. New database function** — `get_user_given_reviews_with_targets`
-- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
-- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
+### Soluție
+Adăugăm `max-height` și `overflow-y: auto` pe containerul sticky, astfel încât dacă conținutul depășește viewport-ul, cardul devine scrollabil intern dar rămâne fixat în viewport:
 
-**2. New API function** in `src/features/profile/reviewsApi.ts`
-- Add `getUserGivenReviews(userId)` that calls the new RPC function.
+**Fișier**: `src/pages/ProductDetail.tsx` (linia 275)
 
-**3. New component** — `src/components/profile/ReviewsTab.tsx`
-- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
-- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
-- Shows counts in tab headers
-- Empty state when no reviews exist
+Schimbăm div-ul sticky:
+```tsx
+// De la:
+<div className="sticky top-24 rounded-xl border border-border bg-card p-4 sm:p-6 overflow-hidden">
 
-**4. Update `src/pages/Profile.tsx`**
-- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
-- Add corresponding `TabsContent` rendering `ReviewsTab`
+// La:
+<div className="sticky top-24 rounded-xl border border-border bg-card p-4 sm:p-6 overflow-y-auto max-h-[calc(100vh-7rem)]">
+```
 
-### Files affected
-- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
-- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
-- `src/components/profile/ReviewsTab.tsx` — new component
-- `src/pages/Profile.tsx` — add tab
-- `src/integrations/supabase/types.ts` — auto-updated
+Aceasta:
+- Păstrează comportamentul sticky existent
+- Adaugă `max-h-[calc(100vh-7rem)]` — limita de înălțime = viewport minus spațiul de sus (top-24 = 6rem + 1rem extra)
+- Schimbă `overflow-hidden` → `overflow-y-auto` pentru scroll intern dacă conținutul depășește
+
+**Un singur fișier modificat**: `src/pages/ProductDetail.tsx`
 
