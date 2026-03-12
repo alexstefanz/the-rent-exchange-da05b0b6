@@ -40,6 +40,7 @@ const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
 const EarningsPage = lazy(() => import("./pages/EarningsPage"));
 const ReviewsPage = lazy(() => import("./pages/ReviewsPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const AccountDetailsPage = lazy(() => import("./pages/AccountDetailsPage"));
 const RequestsPage = lazy(() => import("./pages/RequestsPage"));
 const RentalsPage = lazy(() => import("./pages/RentalsPage"));
 const ListingsPage = lazy(() => import("./pages/ListingsPage"));
@@ -93,6 +94,7 @@ const App = () => (
                 <Route path="/utilizator/:id" element={<UserProfile />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/contul-meu" element={<AccountDetailsPage />} />
                 <Route path="/owner" element={<Owner />} />
                 <Route path="/owner/new-product" element={<NewProduct />} />
                 <Route path="/owner/edit-product/:id" element={<EditProduct />} />

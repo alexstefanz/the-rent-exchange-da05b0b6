@@ -7,11 +7,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import AccountTab from "@/components/profile/AccountTab";
 import BalanceCard from "@/components/profile/BalanceCard";
 
 const NAV_ITEMS = [
-  { id: "contul-meu", labelRo: "Detalii cont", labelEn: "Account Details", icon: UserCog, href: null },
+  { id: "contul-meu", labelRo: "Detalii cont", labelEn: "Account Details", icon: UserCog, href: "/contul-meu" },
   { id: "cereri", labelRo: "Cereri", labelEn: "Requests", icon: ClipboardList, href: "/cereri" },
   { id: "inchirieri", labelRo: "Rezervări", labelEn: "Reservations", icon: ShoppingBag, href: "/rezervari" },
   { id: "anunturi", labelRo: "Anunțuri", labelEn: "Listings", icon: Package, href: "/anunturi" },
@@ -74,37 +73,26 @@ const ProfilePage = () => {
         <div className="w-full grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const isActive = !item.href;
             const badgeCount = item.id === "cereri" ? pendingCount : 0;
             const showBadge = badgeCount > 0;
 
-            const className = "relative flex items-center justify-center gap-2 w-full px-4 py-3 text-base font-semibold rounded-lg bg-gradient-to-r from-[#F97717] to-[#FAA73C] text-white shadow-sm hover:opacity-100 transition-all" +
-              (isActive ? " shadow-lg ring-2 ring-white/50" : " opacity-80");
-
-            if (item.href) {
-              return (
-                <Link key={item.id} to={item.href} className={className}>
-                  <Icon className="h-5 w-5" />
-                  <span>{language === "ro" ? item.labelRo : item.labelEn}</span>
-                  {showBadge && (
-                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold px-1">
-                      {badgeCount}
-                    </span>
-                  )}
-                </Link>
-              );
-            }
-
             return (
-              <div key={item.id} className={className}>
+              <Link
+                key={item.id}
+                to={item.href}
+                className="relative flex items-center justify-center gap-2 w-full px-4 py-3 text-base font-semibold rounded-lg bg-gradient-to-r from-[#F97717] to-[#FAA73C] text-white shadow-sm hover:opacity-90 transition-all"
+              >
                 <Icon className="h-5 w-5" />
                 <span>{language === "ro" ? item.labelRo : item.labelEn}</span>
-              </div>
+                {showBadge && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold px-1">
+                    {badgeCount}
+                  </span>
+                )}
+              </Link>
             );
           })}
         </div>
-
-        <AccountTab />
       </main>
       
       <Footer />
