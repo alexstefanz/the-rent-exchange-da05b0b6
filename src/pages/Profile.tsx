@@ -58,7 +58,7 @@ const ProfilePage = () => {
     enabled: !!user?.id,
   });
 
-  const ALL_TAB_IDS = ["contul-meu", "cereri", "inchirieri", "anunturi", "favorite", "mesaje", "castiguri", "recenzii", "notificari"];
+  const ALL_TAB_IDS = ["contul-meu", "cereri", "inchirieri", "anunturi"];
 
   const getTabFromHash = () => {
     const hash = location.hash.replace("#", "");
