@@ -1244,6 +1244,13 @@ export type Database = {
           user_role: string
         }[]
       }
+      get_booked_dates: {
+        Args: { p_product_id: string }
+        Returns: {
+          end_date: string
+          start_date: string
+        }[]
+      }
       get_contact_info_if_in_conversation: {
         Args: { owner_uuid: string }
         Returns: {
