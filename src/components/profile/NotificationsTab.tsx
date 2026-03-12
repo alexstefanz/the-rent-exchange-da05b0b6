@@ -103,31 +103,39 @@ const NotificationsTab = () => {
     type === "rental_request" || type === "rental_confirmation";
 
   const handleToggleExpand = async (notification: Notification) => {
-    if (expandedId === notification.id) {
-      setExpandedId(null);
-      return;
-    }
-    
-    setExpandedId(notification.id);
-    
     // Mark as read
     if (!notification.is_read) {
       handleMarkAsRead(notification.id);
     }
 
-    // Load rental details if not cached
-    if (isRentalNotification(notification.type) && !rentalDetails[notification.id]) {
-      setLoadingDetails(notification.id);
-      try {
-        const details = await getRentalDetailsForNotification(notification.link || "");
-        if (details) {
-          setRentalDetails(prev => ({ ...prev, [notification.id]: details }));
-        }
-      } catch (e) {
-        console.error("Error loading rental details:", e);
-      } finally {
-        setLoadingDetails(null);
+    // For rental notifications, expand inline details
+    if (isRentalNotification(notification.type)) {
+      if (expandedId === notification.id) {
+        setExpandedId(null);
+        return;
       }
+      setExpandedId(notification.id);
+
+      // Load rental details if not cached
+      if (!rentalDetails[notification.id]) {
+        setLoadingDetails(notification.id);
+        try {
+          const details = await getRentalDetailsForNotification(notification.link || "");
+          if (details) {
+            setRentalDetails(prev => ({ ...prev, [notification.id]: details }));
+          }
+        } catch (e) {
+          console.error("Error loading rental details:", e);
+        } finally {
+          setLoadingDetails(null);
+        }
+      }
+      return;
+    }
+
+    // For non-rental notifications, navigate to the linked page
+    if (notification.link) {
+      navigate(mapLink(notification.link));
     }
   };
 
