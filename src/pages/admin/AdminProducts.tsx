@@ -260,10 +260,18 @@ const AdminProducts = () => {
                         <TableCell className="text-muted-foreground text-sm">{product.category || '-'}</TableCell>
                         <TableCell className="text-muted-foreground text-sm">{product.location_city || '-'}</TableCell>
                         <TableCell>
-                          <div className="flex gap-1">
-                            <Badge variant={product.is_active ? "default" : "secondary"}>
-                              {product.is_active ? "Activ" : "Inactiv"}
-                            </Badge>
+                          <div className="flex flex-wrap gap-1">
+                            {product.approval_status === 'pending' && (
+                              <Badge variant="outline" className="border-yellow-500 text-yellow-700 bg-yellow-50">În așteptare</Badge>
+                            )}
+                            {product.approval_status === 'rejected' && (
+                              <Badge variant="destructive">Respins</Badge>
+                            )}
+                            {product.approval_status === 'approved' && (
+                              <Badge variant={product.is_active ? "default" : "secondary"}>
+                                {product.is_active ? "Activ" : "Inactiv"}
+                              </Badge>
+                            )}
                             {product.admin_flagged && <Badge variant="destructive">Marcat</Badge>}
                           </div>
                         </TableCell>
