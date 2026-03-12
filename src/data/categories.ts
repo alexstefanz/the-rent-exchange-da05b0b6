@@ -305,6 +305,7 @@ export const categories: Category[] = [
   },
   {
     id: 19,
+    slug: "nunti-evenimente-premium",
     name: "NUNȚI & EVENIMENTE PREMIUM",
     nameEn: "WEDDINGS & PREMIUM EVENTS",
     icon: "💒",
