@@ -40,6 +40,7 @@ const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
 const EarningsPage = lazy(() => import("./pages/EarningsPage"));
 const ReviewsPage = lazy(() => import("./pages/ReviewsPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const AccountDetailsPage = lazy(() => import("./pages/AccountDetailsPage"));
 const RequestsPage = lazy(() => import("./pages/RequestsPage"));
 const RentalsPage = lazy(() => import("./pages/RentalsPage"));
 const ListingsPage = lazy(() => import("./pages/ListingsPage"));
