@@ -85,7 +85,7 @@ const Index = () => {
                 <Link
                   key={category.id}
                   to={`/categorie/${category.slug}`}
-                  className="group flex flex-col items-center rounded-xl border border-border bg-card p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+                  className="group flex flex-col items-center rounded-xl border border-border bg-card p-6 text-center shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
                 >
                   <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
                     <Icon className="h-7 w-7 text-primary" />
