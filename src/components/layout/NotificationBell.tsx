@@ -158,8 +158,13 @@ const NotificationBell = () => {
   };
 
   const mapLink = (link: string) => {
-    if (link.includes("?tab=lendings")) return "/profile#anunturi";
-    if (link.includes("?tab=rentals")) return "/profile#cereri";
+    if (link.includes("?tab=lendings")) return "/anunturi";
+    if (link.includes("?tab=rentals")) return "/cereri";
+    if (link.includes("#anunturi") || link === "/profile#anunturi") return "/anunturi";
+    if (link.includes("#cereri") || link === "/profile#cereri") return "/cereri";
+    if (link.includes("#rezervari") || link === "/profile#rezervari") return "/rezervari";
+    if (link.includes("#notificari") || link === "/profile#notificari") return "/notificari";
+    if (link === "/profile" && !link.includes("#") && !link.includes("?")) return "/recenzii";
     return link;
   };
 
