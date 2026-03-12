@@ -369,7 +369,6 @@ const AdminProducts = () => {
         </DialogContent>
       </Dialog>
 
-      </Dialog>
 
       {/* Reject Dialog */}
       <Dialog open={rejectDialog.open} onOpenChange={(open) => { setRejectDialog({ open, productId: rejectDialog.productId }); if (!open) setRejectReason(""); }}>
