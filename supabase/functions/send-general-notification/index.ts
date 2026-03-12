@@ -242,7 +242,7 @@ Deno.serve(async (req) => {
         title_en: "You received a new review",
         description_ro: `${reviewerDisplay} ți-a lăsat o recenzie de ${rating} stele.${product_title ? ` Produs: ${product_title}` : ""}`,
         description_en: `${reviewerDisplay} left you a ${rating}-star review.${product_title ? ` Product: ${product_title}` : ""}`,
-        link: "/profile",
+        link: "/recenzii",
       });
 
       return new Response(JSON.stringify({ success: true }), {

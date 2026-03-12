@@ -28,10 +28,12 @@ import {
 import { getRentalDetailsForNotification, type RentalDetails } from "@/features/rentals/rentalDetailsApi";
 import { supabase } from "@/integrations/supabase/client";
 import { ChatDialog } from "@/components/messaging/ChatDialog";
+import { useNavigate } from "react-router-dom";
 
 const NotificationsTab = () => {
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -88,35 +90,52 @@ const NotificationsTab = () => {
     }
   };
 
+  const mapLink = (link: string) => {
+    if (link.includes("#anunturi") || link.includes("?tab=lendings")) return "/anunturi";
+    if (link.includes("#cereri") || link.includes("?tab=rentals")) return "/cereri";
+    if (link.includes("#rezervari")) return "/rezervari";
+    if (link.includes("#notificari")) return "/notificari";
+    if (link === "/profile") return "/recenzii";
+    return link;
+  };
+
   const isRentalNotification = (type: string) => 
     type === "rental_request" || type === "rental_confirmation";
 
   const handleToggleExpand = async (notification: Notification) => {
-    if (expandedId === notification.id) {
-      setExpandedId(null);
-      return;
-    }
-    
-    setExpandedId(notification.id);
-    
     // Mark as read
     if (!notification.is_read) {
       handleMarkAsRead(notification.id);
     }
 
-    // Load rental details if not cached
-    if (isRentalNotification(notification.type) && !rentalDetails[notification.id]) {
-      setLoadingDetails(notification.id);
-      try {
-        const details = await getRentalDetailsForNotification(notification.link || "");
-        if (details) {
-          setRentalDetails(prev => ({ ...prev, [notification.id]: details }));
-        }
-      } catch (e) {
-        console.error("Error loading rental details:", e);
-      } finally {
-        setLoadingDetails(null);
+    // For rental notifications, expand inline details
+    if (isRentalNotification(notification.type)) {
+      if (expandedId === notification.id) {
+        setExpandedId(null);
+        return;
       }
+      setExpandedId(notification.id);
+
+      // Load rental details if not cached
+      if (!rentalDetails[notification.id]) {
+        setLoadingDetails(notification.id);
+        try {
+          const details = await getRentalDetailsForNotification(notification.link || "");
+          if (details) {
+            setRentalDetails(prev => ({ ...prev, [notification.id]: details }));
+          }
+        } catch (e) {
+          console.error("Error loading rental details:", e);
+        } finally {
+          setLoadingDetails(null);
+        }
+      }
+      return;
+    }
+
+    // For non-rental notifications, navigate to the linked page
+    if (notification.link) {
+      navigate(mapLink(notification.link));
     }
   };
 
