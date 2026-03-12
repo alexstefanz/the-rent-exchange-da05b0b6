@@ -9,15 +9,10 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AccountTab from "@/components/profile/AccountTab";
-import MessagesTab from "@/components/profile/MessagesTab";
-import EarningsTab from "@/components/profile/EarningsTab";
-import NotificationsTab from "@/components/profile/NotificationsTab";
 import RequestsTab from "@/components/dashboard/RequestsTab";
 import RentalsTab from "@/components/dashboard/RentalsTab";
 import LendingsTab from "@/components/dashboard/LendingsTab";
-import FavoritesTab from "@/components/profile/FavoritesTab";
 import BalanceCard from "@/components/profile/BalanceCard";
-import ReviewsTab from "@/components/profile/ReviewsTab";
 
 const TABS = [
   { id: "contul-meu", labelRo: "Detalii cont", labelEn: "Account Details", icon: UserCog },
