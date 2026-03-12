@@ -28,6 +28,7 @@ import {
 import { getRentalDetailsForNotification, type RentalDetails } from "@/features/rentals/rentalDetailsApi";
 import { supabase } from "@/integrations/supabase/client";
 import { ChatDialog } from "@/components/messaging/ChatDialog";
+import { useNavigate } from "react-router-dom";
 
 const NotificationsTab = () => {
   const { t, language } = useLanguage();
