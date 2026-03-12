@@ -79,12 +79,8 @@ const ProfilePage = () => {
 
   // Update tab when hash changes
   useEffect(() => {
-    const handleHashChange = () => {
-      setActiveTab(getTabFromHash());
-    };
-    window.addEventListener("hashchange", handleHashChange);
-    return () => window.removeEventListener("hashchange", handleHashChange);
-  }, []);
+    setActiveTab(getTabFromHash());
+  }, [location.hash]);
 
   // Update URL hash when tab changes
   const handleTabChange = (value: string) => {
