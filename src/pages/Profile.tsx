@@ -144,10 +144,6 @@ const ProfilePage = () => {
             <AccountTab />
           </TabsContent>
 
-          <TabsContent value="favorite" className="mt-0">
-            <FavoritesTab />
-          </TabsContent>
-
           <TabsContent value="cereri" className="mt-0">
             <RequestsTab />
           </TabsContent>
