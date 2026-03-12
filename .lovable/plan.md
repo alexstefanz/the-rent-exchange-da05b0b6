@@ -1,33 +1,38 @@
 
 
-## Plan: Add Reviews section to Profile page
-
-### Overview
-Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
+## Plan: Simplify Homepage Featured Listings
 
 ### Changes
 
-**1. New database function** — `get_user_given_reviews_with_targets`
-- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
-- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
+**File: `src/components/home/FeaturedListings.tsx`**
 
-**2. New API function** in `src/features/profile/reviewsApi.ts`
-- Add `getUserGivenReviews(userId)` that calls the new RPC function.
+1. **Remove 3 sections** — Keep only one section renamed to "Închirieri populare" (EN: "Popular Rentals")
+   - Delete the `sections` array and the `ProductRow` loop
+   - Remove unused product slices (`topCategoryProducts`, `recentProducts`, `bestReviewedProducts`)
 
-**3. New component** — `src/components/profile/ReviewsTab.tsx`
-- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
-- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
-- Shows counts in tab headers
-- Empty state when no reviews exist
+2. **Replace horizontal slider with a 4-column grid layout**
+   - Show 7 products + 1 "See All" card in a `grid grid-cols-2 md:grid-cols-4` layout (2 rows × 4 columns on desktop, 4 rows × 2 columns on mobile)
+   - Slice `allProducts` to first 7 items
+   - Reuse existing product card markup and `SeeAllCard` component
+   - Remove `ProductRow` component entirely (no longer needed — no horizontal scrolling, no drag logic, no scroll arrows)
 
-**4. Update `src/pages/Profile.tsx`**
-- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
-- Add corresponding `TabsContent` rendering `ReviewsTab`
+3. **Update section title**
+   - Romanian: "Închirieri populare"
+   - English: "Popular Rentals"
 
-### Files affected
-- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
-- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
-- `src/components/profile/ReviewsTab.tsx` — new component
-- `src/pages/Profile.tsx` — add tab
-- `src/integrations/supabase/types.ts` — auto-updated
+4. **Adjust `SeeAllCard`** width class from the old slider width to `w-full` so it fits naturally in the grid
+
+### Layout Result
+```text
+Desktop (md+):
+┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐
+│ Product1 │ │ Product2 │ │ Product3 │ │ Product4 │
+└─────────┘ └─────────┘ └─────────┘ └─────────┘
+┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐
+│ Product5 │ │ Product6 │ │ Product7 │ │ See All  │
+└─────────┘ └─────────┘ └─────────┘ └─────────┘
+
+Mobile:
+2 columns × 4 rows (same 7 + See All)
+```
 
