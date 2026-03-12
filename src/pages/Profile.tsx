@@ -115,7 +115,7 @@ const ProfilePage = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="w-full h-auto grid grid-cols-2 md:flex md:flex-wrap md:justify-start gap-2 bg-transparent p-0 mb-6">
+          <TabsList className="w-full h-auto grid grid-cols-2 lg:grid-cols-4 gap-3 bg-transparent p-0 mb-6">
             {TABS.map((tab) => {
               const Icon = tab.icon;
               const badgeCount = tab.id === "cereri" ? pendingCount : 0;
