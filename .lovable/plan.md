@@ -1,33 +1,36 @@
 
 
-## Plan: Add Reviews section to Profile page
+## Plan: Dashboard Cards cu badge-uri de notificare
 
-### Overview
-Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
+### Ce se schimbă
 
-### Changes
+Transformăm secțiunea `BalanceCard` (cardul unic cu balanța) într-un grid de 5 carduri compacte, fiecare cu badge numeric (stil NotificationBell) când există noutăți:
 
-**1. New database function** — `get_user_given_reviews_with_targets`
-- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
-- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
+1. **Balanță** - sumă RON (fără badge)
+2. **Favorite** - nr. favorite, badge dacă există discount-uri pe produse favorite (placeholder - momentan = nr. favorite)
+3. **Mesaje** - badge cu mesaje necitite
+4. **Recenzii** - badge cu recenzii noi (necitite/recente)
+5. **Notificări** - badge cu notificări necitite
 
-**2. New API function** in `src/features/profile/reviewsApi.ts`
-- Add `getUserGivenReviews(userId)` that calls the new RPC function.
+Fiecare card va fi clickable și va naviga la tab-ul corespunzător din profil.
 
-**3. New component** — `src/components/profile/ReviewsTab.tsx`
-- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
-- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
-- Shows counts in tab headers
-- Empty state when no reviews exist
+### Implementare
 
-**4. Update `src/pages/Profile.tsx`**
-- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
-- Add corresponding `TabsContent` rendering `ReviewsTab`
+**Fișier modificat:** `src/components/profile/BalanceCard.tsx` → redenumit logic în `DashboardCards` (sau rescris în loc)
 
-### Files affected
-- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
-- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
-- `src/components/profile/ReviewsTab.tsx` — new component
-- `src/pages/Profile.tsx` — add tab
-- `src/integrations/supabase/types.ts` — auto-updated
+- Rescriu componenta `BalanceCard` ca un grid responsive (`grid-cols-2 sm:grid-cols-3 lg:grid-cols-5`) cu 5 mini-carduri
+- Fiecare card: icon cu badge numeric suprapus (stil `absolute -top-1 -right-1 rounded-full bg-destructive`), titlu, valoare
+- Query-uri existente reutilizate din `Profile.tsx` + query-uri noi:
+  - **Mesaje necitite**: query pe `messages` cu `is_read = false` și `sender_id != user.id`
+  - **Recenzii noi**: query pe `product_reviews` + `user_reviews` din ultimele 30 zile unde `reviewed_user_id = user.id` sau produsele userului
+  - **Notificări necitite**: query existent pe `notifications`
+  - **Favorite count**: query pe `favorite_products`
+- Click pe card → `navigate('#tab-id')` pentru navigare la tab-ul corespunzător
+
+**Fișier modificat:** `src/pages/Profile.tsx` - importul rămâne `BalanceCard` (sau actualizez numele)
+
+### Stil vizual
+- Grid cu carduri cu fundal gradient subtil (similar cu cardul actual de balanță)
+- Badge roșu cu număr (identic cu cel din NotificationBell) pe iconul fiecărui card
+- Hover effect subtil pe fiecare card
 
