@@ -1,34 +1,28 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { Loader2, UserCog, ClipboardList, ShoppingBag, Package } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AccountTab from "@/components/profile/AccountTab";
-import RequestsTab from "@/components/dashboard/RequestsTab";
-import RentalsTab from "@/components/dashboard/RentalsTab";
-import LendingsTab from "@/components/dashboard/LendingsTab";
 import BalanceCard from "@/components/profile/BalanceCard";
 
-const TABS = [
-  { id: "contul-meu", labelRo: "Detalii cont", labelEn: "Account Details", icon: UserCog },
-  { id: "cereri", labelRo: "Cereri", labelEn: "Requests", icon: ClipboardList },
-  { id: "inchirieri", labelRo: "Rezervări", labelEn: "Reservations", icon: ShoppingBag },
-  { id: "anunturi", labelRo: "Anunțuri", labelEn: "Listings", icon: Package },
+const NAV_ITEMS = [
+  { id: "contul-meu", labelRo: "Detalii cont", labelEn: "Account Details", icon: UserCog, href: null },
+  { id: "cereri", labelRo: "Cereri", labelEn: "Requests", icon: ClipboardList, href: "/cereri" },
+  { id: "inchirieri", labelRo: "Rezervări", labelEn: "Reservations", icon: ShoppingBag, href: "/rezervari" },
+  { id: "anunturi", labelRo: "Anunțuri", labelEn: "Listings", icon: Package, href: "/anunturi" },
 ];
 
 const ProfilePage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const { language } = useLanguage();
   const t = (ro: string, en: string) => language === "ro" ? ro : en;
 
-  // Fetch pending requests count for badge
   const { data: pendingCount = 0 } = useQuery({
     queryKey: ["pending-requests-count", user?.id],
     queryFn: async () => {
@@ -42,41 +36,6 @@ const ProfilePage = () => {
     },
     enabled: !!user?.id,
   });
-
-  // Fetch unread notifications count for badge
-  const { data: unreadNotifCount = 0 } = useQuery({
-    queryKey: ["unread-notifications-count", user?.id],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from("notifications")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user!.id)
-        .eq("is_read", false);
-      if (error) throw error;
-      return count || 0;
-    },
-    enabled: !!user?.id,
-  });
-
-  const ALL_TAB_IDS = ["contul-meu", "cereri", "inchirieri", "anunturi"];
-
-  const getTabFromHash = () => {
-    const hash = location.hash.replace("#", "");
-    return ALL_TAB_IDS.includes(hash) ? hash : TABS[0].id;
-  };
-
-  const [activeTab, setActiveTab] = useState(getTabFromHash);
-
-  // Update tab when hash changes
-  useEffect(() => {
-    setActiveTab(getTabFromHash());
-  }, [location.hash]);
-
-  // Update URL hash when tab changes
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    navigate(`#${value}`, { replace: true });
-  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -97,7 +56,6 @@ const ProfilePage = () => {
       <Navbar />
       
       <main className="flex-1 container py-8 pt-24 lg:pt-8">
-        {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">
             {t("Contul Meu", "My Account")}
@@ -110,52 +68,43 @@ const ProfilePage = () => {
           </p>
         </div>
 
-        {/* Balance Card */}
         <BalanceCard />
 
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="w-full h-auto grid grid-cols-2 lg:grid-cols-4 gap-3 bg-transparent p-0 mb-6">
-            {TABS.map((tab) => {
-              const Icon = tab.icon;
-              const badgeCount = tab.id === "cereri" ? pendingCount : 0;
-              const showBadge = badgeCount > 0;
+        {/* Navigation buttons */}
+        <div className="w-full grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          {NAV_ITEMS.map((item) => {
+            const Icon = item.icon;
+            const isActive = !item.href;
+            const badgeCount = item.id === "cereri" ? pendingCount : 0;
+            const showBadge = badgeCount > 0;
+
+            const className = "relative flex items-center justify-center gap-2 w-full px-4 py-3 text-base font-semibold rounded-lg bg-gradient-to-r from-[#F97717] to-[#FAA73C] text-white shadow-sm hover:opacity-100 transition-all" +
+              (isActive ? " shadow-lg ring-2 ring-white/50" : " opacity-80");
+
+            if (item.href) {
               return (
-                <TabsTrigger
-                  key={tab.id}
-                  value={tab.id}
-                  className="relative flex items-center justify-center gap-2 w-full px-4 py-3 text-base font-semibold rounded-lg bg-gradient-to-r from-[#F97717] to-[#FAA73C] text-white shadow-sm data-[state=active]:shadow-lg data-[state=active]:ring-2 data-[state=active]:ring-white/50 data-[state=inactive]:opacity-80 hover:opacity-100 transition-all"
-                >
+                <Link key={item.id} to={item.href} className={className}>
                   <Icon className="h-5 w-5" />
-                  <span>
-                    {language === "ro" ? tab.labelRo : tab.labelEn}
-                  </span>
+                  <span>{language === "ro" ? item.labelRo : item.labelEn}</span>
                   {showBadge && (
                     <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-xs font-bold px-1">
                       {badgeCount}
                     </span>
                   )}
-                </TabsTrigger>
+                </Link>
               );
-            })}
-          </TabsList>
+            }
 
-          <TabsContent value="contul-meu" className="mt-0">
-            <AccountTab />
-          </TabsContent>
+            return (
+              <div key={item.id} className={className}>
+                <Icon className="h-5 w-5" />
+                <span>{language === "ro" ? item.labelRo : item.labelEn}</span>
+              </div>
+            );
+          })}
+        </div>
 
-          <TabsContent value="cereri" className="mt-0">
-            <RequestsTab />
-          </TabsContent>
-
-          <TabsContent value="inchirieri" className="mt-0">
-            <RentalsTab />
-          </TabsContent>
-
-          <TabsContent value="anunturi" className="mt-0">
-            <LendingsTab />
-          </TabsContent>
-        </Tabs>
+        <AccountTab />
       </main>
       
       <Footer />
