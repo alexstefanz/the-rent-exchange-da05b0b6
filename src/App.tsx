@@ -36,6 +36,10 @@ const UserTickets = lazy(() => import("./pages/UserTickets"));
 const KycVerification = lazy(() => import("./pages/KycVerification"));
 const Contact = lazy(() => import("./pages/Contact"));
 const DeactivateAccount = lazy(() => import("./pages/DeactivateAccount"));
+const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
+const EarningsPage = lazy(() => import("./pages/EarningsPage"));
+const ReviewsPage = lazy(() => import("./pages/ReviewsPage"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 
 // Legal pages
 const TermsAndConditions = lazy(() => import("./pages/legal/TermsAndConditions"));
@@ -90,7 +94,10 @@ const App = () => (
                 <Route path="/owner/new-product" element={<NewProduct />} />
                 <Route path="/owner/edit-product/:id" element={<EditProduct />} />
                 <Route path="/mesaje" element={<Messages />} />
-                <Route path="/favorite" element={<Navigate to="/profile#favorite" replace />} />
+                <Route path="/favorite" element={<FavoritesPage />} />
+                <Route path="/castiguri" element={<EarningsPage />} />
+                <Route path="/recenzii" element={<ReviewsPage />} />
+                <Route path="/notificari" element={<NotificationsPage />} />
                 <Route path="/rezervari" element={<Navigate to="/profile#inchirieri" replace />} />
                 <Route path="/centru-asistenta" element={<HelpCenter />} />
                 <Route path="/suport" element={<UserTickets />} />

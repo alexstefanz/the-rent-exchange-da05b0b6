@@ -9,15 +9,10 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AccountTab from "@/components/profile/AccountTab";
-import MessagesTab from "@/components/profile/MessagesTab";
-import EarningsTab from "@/components/profile/EarningsTab";
-import NotificationsTab from "@/components/profile/NotificationsTab";
 import RequestsTab from "@/components/dashboard/RequestsTab";
 import RentalsTab from "@/components/dashboard/RentalsTab";
 import LendingsTab from "@/components/dashboard/LendingsTab";
-import FavoritesTab from "@/components/profile/FavoritesTab";
 import BalanceCard from "@/components/profile/BalanceCard";
-import ReviewsTab from "@/components/profile/ReviewsTab";
 
 const TABS = [
   { id: "contul-meu", labelRo: "Detalii cont", labelEn: "Account Details", icon: UserCog },
@@ -63,7 +58,7 @@ const ProfilePage = () => {
     enabled: !!user?.id,
   });
 
-  const ALL_TAB_IDS = ["contul-meu", "cereri", "inchirieri", "anunturi", "favorite", "mesaje", "castiguri", "recenzii", "notificari"];
+  const ALL_TAB_IDS = ["contul-meu", "cereri", "inchirieri", "anunturi"];
 
   const getTabFromHash = () => {
     const hash = location.hash.replace("#", "");
@@ -149,10 +144,6 @@ const ProfilePage = () => {
             <AccountTab />
           </TabsContent>
 
-          <TabsContent value="favorite" className="mt-0">
-            <FavoritesTab />
-          </TabsContent>
-
           <TabsContent value="cereri" className="mt-0">
             <RequestsTab />
           </TabsContent>
@@ -163,22 +154,6 @@ const ProfilePage = () => {
 
           <TabsContent value="anunturi" className="mt-0">
             <LendingsTab />
-          </TabsContent>
-
-          <TabsContent value="mesaje" className="mt-0">
-            <MessagesTab />
-          </TabsContent>
-
-          <TabsContent value="castiguri" className="mt-0">
-            <EarningsTab />
-          </TabsContent>
-
-          <TabsContent value="recenzii" className="mt-0">
-            <ReviewsTab />
-          </TabsContent>
-
-          <TabsContent value="notificari" className="mt-0">
-            <NotificationsTab />
           </TabsContent>
         </Tabs>
       </main>
