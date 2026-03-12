@@ -1,33 +1,39 @@
 
 
-## Plan: Add Reviews section to Profile page
+## Banner cu fundal pe paginile de categorii
 
-### Overview
-Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
+### Ce se schimbă
 
-### Changes
+Fiecare pagină de categorie (`CategoryDetail.tsx`) va avea un banner hero cu:
+- Imagine de fundal specifică categoriei (folosesc prima imagine de subcategorie, deja disponibilă în date)
+- Overlay negru 50% pentru lizibilitate
+- Conținut centrat: link "Înapoi la Categorii", titlu categorie, subtitlu cu nr. subcategorii/anunțuri
+- Înălțime ~300px, `object-cover` pe imagine
 
-**1. New database function** — `get_user_given_reviews_with_targets`
-- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
-- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
+### Implementare
 
-**2. New API function** in `src/features/profile/reviewsApi.ts`
-- Add `getUserGivenReviews(userId)` that calls the new RPC function.
+**Fișier:** `src/pages/CategoryDetail.tsx`
 
-**3. New component** — `src/components/profile/ReviewsTab.tsx`
-- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
-- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
-- Shows counts in tab headers
-- Empty state when no reviews exist
+1. Mut secțiunea header (back link + titlu + subtitlu) într-un banner full-width cu imagine de fundal
+2. Imaginea de fundal = `category.subcategories[0]?.image` (exact ca în `CategoryCard.tsx`)
+3. Overlay: `bg-black/50` absolute
+4. Text alb, centrat vertical și orizontal
+5. Back link stilizat cu text alb
+6. Sub banner, rămâne conținutul existent (dropdown subcategorii + grid produse)
 
-**4. Update `src/pages/Profile.tsx`**
-- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
-- Add corresponding `TabsContent` rendering `ReviewsTab`
+Structura banner:
+```text
+┌──────────────────────────────────────┐
+│  [imagine fundal categorie]          │
+│  ████████ overlay 50% ██████████████ │
+│                                      │
+│        ‹ Înapoi la Categorii         │
+│        CAMPING & DRUMEȚII            │
+│     9 subcategorii • 12 anunțuri     │
+│                                      │
+└──────────────────────────────────────┘
+│  [Subcategorii dropdown] [Produse]   │
+```
 
-### Files affected
-- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
-- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
-- `src/components/profile/ReviewsTab.tsx` — new component
-- `src/pages/Profile.tsx` — add tab
-- `src/integrations/supabase/types.ts` — auto-updated
+Un singur fișier modificat.
 
