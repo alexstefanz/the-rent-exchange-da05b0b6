@@ -181,6 +181,7 @@ export const updateProduct = async (
     location_country?: string;
     pickup_address?: string;
     images?: string[];
+    included_items?: string[];
     is_active?: boolean;
   },
   ownerId: string

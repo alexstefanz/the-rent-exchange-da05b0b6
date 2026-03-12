@@ -264,7 +264,7 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            <ProductIncludes />
+            <ProductIncludes items={(product as any).included_items} />
             <UsageRules />
 
             <ProductReviewsSection productId={product.id} isOwnProduct={user?.id === product.owner_id} />

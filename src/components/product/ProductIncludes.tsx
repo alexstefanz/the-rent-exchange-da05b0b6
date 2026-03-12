@@ -15,7 +15,7 @@ const ProductIncludes = ({ items }: ProductIncludesProps) => {
     copy.productIncludes.item4,
   ];
 
-  const displayItems = items || defaultItems;
+  const displayItems = items && items.length > 0 ? items : defaultItems;
 
   return (
     <div className="rounded-xl border border-border bg-card p-6">
