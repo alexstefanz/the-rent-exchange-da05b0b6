@@ -74,7 +74,7 @@ const Categories = () => {
             return (
               <Link
                 key={category.id}
-                to={`/categorie/${category.id}`}
+                to={`/categorie/${category.slug}`}
                 className="group flex flex-col items-center rounded-xl border border-border bg-card p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md animate-fade-up"
                 style={{ animationDelay: `${Math.min(index * 0.03, 0.3)}s` }}
               >

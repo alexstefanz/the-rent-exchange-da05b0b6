@@ -12,9 +12,9 @@ import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const CategoryDetail = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
-  const category = getCategoryById(Number(id));
+  const category = getCategoryBySlug(slug || "");
   const copy = useUxCopy();
   const { language } = useLanguage();
   

@@ -534,7 +534,7 @@ const Navbar = () => {
                               ))}
                             </div>
                             <Link 
-                              to={`/categorie/${category.id}`} 
+                              to={`/categorie/${category.slug}`} 
                               className="mt-3 flex items-center gap-1 px-3 text-sm font-medium text-primary hover:underline" 
                               onClick={closeMobileMenu}
                             >

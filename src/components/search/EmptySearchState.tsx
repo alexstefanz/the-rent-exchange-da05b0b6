@@ -44,7 +44,7 @@ const EmptySearchState = ({ searchQuery, type = "products" }: EmptySearchStatePr
               {popularCategories.map((category) => (
                 <Link
                   key={category.id}
-                  to={`/categorie/${category.id}`}
+                  to={`/categorie/${category.slug}`}
                   className="rounded-full bg-muted px-4 py-2 text-sm text-foreground transition-colors hover:bg-muted/80"
                 >
                   {category.name}

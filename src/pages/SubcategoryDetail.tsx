@@ -105,7 +105,7 @@ const SubcategoryDetail = () => {
       <Navbar />
       <main className="container py-8">
         <Link
-          to={`/categorie/${category.id}`}
+          to={`/categorie/${category.slug}`}
           className="mb-6 inline-flex items-center text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ChevronLeft className="mr-1 h-4 w-4" />

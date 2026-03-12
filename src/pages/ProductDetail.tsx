@@ -206,7 +206,7 @@ const ProductDetail = () => {
         <nav className="mb-6 hidden md:flex items-center gap-2 text-sm text-muted-foreground overflow-x-auto">
           <Link to="/categorii" className="hover:text-primary text-xs whitespace-nowrap">{copy.product.allCategories}</Link>
           <ChevronRight className="h-4 w-4 flex-shrink-0" />
-          {category && (<><Link to={`/categorie/${category.id}`} className="hover:text-primary text-xs whitespace-nowrap">{category.name}</Link><ChevronRight className="h-4 w-4 flex-shrink-0" /></>)}
+          {category && (<><Link to={`/categorie/${category.slug}`} className="hover:text-primary text-xs whitespace-nowrap">{category.name}</Link><ChevronRight className="h-4 w-4 flex-shrink-0" /></>)}
           {subcategory && (<><Link to={`/subcategorie/${subcategory.id}`} className="hover:text-primary whitespace-nowrap">{subcategory.name}</Link><ChevronRight className="h-4 w-4 flex-shrink-0" /></>)}
           <span className="text-foreground whitespace-nowrap">{product.title}</span>
         </nav>

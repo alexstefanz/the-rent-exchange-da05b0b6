@@ -11,7 +11,7 @@ const CategoryCard = ({ category }: CategoryCardProps) => {
   
   return (
     <Link
-      to={`/categorie/${category.id}`}
+      to={`/categorie/${category.slug}`}
       className="group relative block aspect-[4/3] overflow-hidden transition-all duration-300 hover:-translate-y-1"
       style={{ borderRadius: "15px" }}
     >
