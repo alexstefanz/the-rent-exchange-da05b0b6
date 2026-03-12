@@ -109,7 +109,7 @@ const Index = () => {
       <FeaturedListings />
 
       {/* CTA Banner */}
-      <section className="py-16" style={{ background: 'linear-gradient(to right, #F98C33, #FAA63B)' }}>
+      <section className="py-16" style={{ background: 'linear-gradient(to right, #F97B1D, #FAA738)' }}>
         <div className="container text-center">
           <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-4">
             {language === "ro" ? "Ai ceva de închiriat?" : "Have something to rent?"}
