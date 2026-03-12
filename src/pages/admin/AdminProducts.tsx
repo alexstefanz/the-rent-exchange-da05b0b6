@@ -16,7 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchAdminProducts, toggleProductActive, flagProduct, unflagProduct, deleteProduct, AdminProduct } from "@/features/admin/adminProductsApi";
+import { fetchAdminProducts, toggleProductActive, flagProduct, unflagProduct, deleteProduct, approveProduct, rejectProduct, AdminProduct } from "@/features/admin/adminProductsApi";
 import { fetchProductReviews, deleteProductReview, AdminProductReview } from "@/features/admin/adminReviewsApi";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";

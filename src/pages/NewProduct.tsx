@@ -89,23 +89,9 @@ const NewProduct = () => {
       }, user.id);
 
       toast({
-        title: "Succes",
-        description: "Produsul a fost creat cu succes",
+        title: "Anunț trimis spre aprobare",
+        description: "Anunțul tău a fost trimis spre aprobare. Vei fi notificat când va fi publicat.",
       });
-
-      // Send product published notification (fire and forget)
-      try {
-        await supabase.functions.invoke("send-general-notification", {
-          body: {
-            type: "product_published",
-            user_id: user.id,
-            product_title: data.title,
-            product_slug: null, // slug is generated server-side
-          },
-        });
-      } catch (e) {
-        console.error("Failed to send product published notification:", e);
-      }
 
       navigate("/owner");
     } catch (error) {
