@@ -96,6 +96,7 @@ export const categories: Category[] = [
   },
   {
     id: 5,
+    slug: "jucarii-gonflabile-copii",
     name: "JUCĂRII GONFLABILE & COPII",
     nameEn: "INFLATABLES & KIDS",
     icon: "🎈",
