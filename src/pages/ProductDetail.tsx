@@ -192,7 +192,7 @@ const ProductDetail = () => {
   const ownerName = owner?.full_name || copy.dashboard.owner;
 
   return (
-    <div className="min-h-screen bg-background overflow-x-hidden">
+    <div className="min-h-screen bg-background">
       <Navbar />
       
       {/* Mobile Image Gallery */}
@@ -212,7 +212,7 @@ const ProductDetail = () => {
         )}
       </div>
 
-      <main className="w-full max-w-7xl mx-auto py-6 px-[10px] md:px-6 lg:px-8 overflow-x-hidden">
+      <main className="w-full max-w-7xl mx-auto py-6 px-[10px] md:px-6 lg:px-8">
         <nav className="mb-6 hidden md:flex items-center gap-2 text-sm text-muted-foreground overflow-x-auto">
           <Link to="/categorii" className="hover:text-primary text-xs whitespace-nowrap">{copy.product.allCategories}</Link>
           <ChevronRight className="h-4 w-4 flex-shrink-0" />
@@ -221,8 +221,8 @@ const ProductDetail = () => {
           <span className="text-foreground whitespace-nowrap">{product.title}</span>
         </nav>
 
-        <div className="grid gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start">
+          <div className="space-y-6 order-2 lg:order-1">
             {/* Desktop Gallery */}
             <div className="relative overflow-hidden rounded-xl bg-muted hidden lg:block">
               <div className="aspect-[4/3] bg-muted cursor-pointer" onClick={() => openLightbox(currentImageIndex)}><img src={images[currentImageIndex]} alt={product.title} className="h-full w-full object-cover" /></div>
@@ -271,8 +271,8 @@ const ProductDetail = () => {
           </div>
 
           {/* Right Sidebar - Booking */}
-          <div className="lg:col-span-1 order-1 lg:order-2">
-            <div className="sticky top-24 rounded-xl border border-border bg-card p-4 sm:p-6 overflow-y-auto max-h-[calc(100vh-7rem)]">
+          <div className="order-1 lg:order-2 lg:self-stretch">
+            <div className="lg:sticky lg:top-24 rounded-xl border border-border bg-card p-4 sm:p-6 lg:overflow-y-auto lg:max-h-[calc(100vh-7rem)]">
               <div className="flex items-start justify-between gap-3 mb-3 lg:hidden">
                 <h1 className="font-heading text-[25px] font-semibold text-foreground leading-tight flex-1">{product.title}</h1>
                 <button onClick={handleToggleFavorite} className="flex-shrink-0 mt-1"><Heart className={`h-6 w-6 ${isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} /></button>
