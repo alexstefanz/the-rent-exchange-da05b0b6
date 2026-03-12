@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Loader2, UserCog, MessageCircle, Wallet, Bell, ShoppingBag, Package, Heart, ClipboardList, Star } from "lucide-react";
+import { Loader2, UserCog, ClipboardList, ShoppingBag, Package } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -21,14 +21,9 @@ import ReviewsTab from "@/components/profile/ReviewsTab";
 
 const TABS = [
   { id: "contul-meu", labelRo: "Detalii cont", labelEn: "Account Details", icon: UserCog },
-  { id: "favorite", labelRo: "Favorite", labelEn: "Favorites", icon: Heart },
   { id: "cereri", labelRo: "Cereri", labelEn: "Requests", icon: ClipboardList },
   { id: "inchirieri", labelRo: "Rezervări", labelEn: "Reservations", icon: ShoppingBag },
   { id: "anunturi", labelRo: "Anunțuri", labelEn: "Listings", icon: Package },
-  { id: "mesaje", labelRo: "Mesaje", labelEn: "Messages", icon: MessageCircle },
-  { id: "castiguri", labelRo: "Câștiguri", labelEn: "Earnings", icon: Wallet },
-  { id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star },
-  { id: "notificari", labelRo: "Notificări", labelEn: "Notifications", icon: Bell },
 ];
 
 const ProfilePage = () => {
@@ -125,19 +120,19 @@ const ProfilePage = () => {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="w-full h-auto flex flex-wrap justify-start gap-1 bg-muted/50 p-1 rounded-lg mb-6">
+          <TabsList className="w-full h-auto flex flex-wrap justify-start gap-2 bg-transparent p-0 mb-6">
             {TABS.map((tab) => {
               const Icon = tab.icon;
-              const badgeCount = tab.id === "cereri" ? pendingCount : tab.id === "notificari" ? unreadNotifCount : 0;
+              const badgeCount = tab.id === "cereri" ? pendingCount : 0;
               const showBadge = badgeCount > 0;
               return (
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="relative flex items-center gap-2 px-4 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-all"
+                  className="relative flex items-center gap-2 px-6 py-3 text-base font-semibold rounded-lg bg-gradient-to-r from-[#F97717] to-[#FAA73C] text-white shadow-sm data-[state=active]:shadow-lg data-[state=active]:scale-105 data-[state=inactive]:opacity-80 hover:opacity-100 transition-all"
                 >
-                  <Icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">
+                  <Icon className="h-5 w-5" />
+                  <span>
                     {language === "ro" ? tab.labelRo : tab.labelEn}
                   </span>
                   {showBadge && (
