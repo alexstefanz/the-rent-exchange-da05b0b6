@@ -58,6 +58,7 @@ export const categories: Category[] = [
   },
   {
     id: 3,
+    slug: "sporturi-iarna",
     name: "SPORTURI DE IARNĂ",
     nameEn: "WINTER SPORTS",
     icon: "🎿",
