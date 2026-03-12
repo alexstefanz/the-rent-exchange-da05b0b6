@@ -339,9 +339,9 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted/30 px-4 py-8">
-      <div className="mb-8">
+      <Link to="/" className="mb-8 block">
         <img src={logoImage} alt="RentNow" className="h-12 w-auto" />
-      </div>
+      </Link>
       
       <Card className="w-full max-w-md">
         <Tabs defaultValue="login" className="w-full">
