@@ -145,6 +145,7 @@ export const categories: Category[] = [
   },
   {
     id: 8,
+    slug: "mobilitate-urbana",
     name: "MOBILITATE URBANĂ",
     nameEn: "URBAN MOBILITY",
     icon: "🛴",
