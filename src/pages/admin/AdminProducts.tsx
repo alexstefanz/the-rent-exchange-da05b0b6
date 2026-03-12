@@ -145,6 +145,29 @@ const AdminProducts = () => {
     finally { setActionLoading(null); }
   };
 
+  const handleApprove = async (productId: string) => {
+    setActionLoading(productId);
+    try {
+      await approveProduct(productId);
+      toast.success("Produs aprobat și publicat");
+      queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+    } catch { toast.error("Eroare la aprobare"); }
+    finally { setActionLoading(null); }
+  };
+
+  const handleReject = async () => {
+    if (!rejectReason.trim()) return;
+    setActionLoading(rejectDialog.productId);
+    try {
+      await rejectProduct(rejectDialog.productId, rejectReason);
+      toast.success("Produs respins");
+      queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+      setRejectDialog({ open: false, productId: "" });
+      setRejectReason("");
+    } catch { toast.error("Eroare la respingere"); }
+    finally { setActionLoading(null); }
+  };
+
   const handleOpenReviews = async (productId: string, title: string) => {
     setReviewsDialog({ open: true, productId, title });
     setReviewsLoading(true);
