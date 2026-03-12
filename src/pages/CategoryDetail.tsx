@@ -52,7 +52,11 @@ const CategoryDetail = () => {
     );
   }
 
-  const bannerImage = category.subcategories[0]?.image || "";
+  // Use high-res version for the full-width banner
+  const rawImage = category.subcategories[0]?.image || "";
+  const bannerImage = rawImage.includes("unsplash.com")
+    ? rawImage.replace(/w=\d+/, "w=1920").replace(/q=\d+/, "q=85")
+    : rawImage;
 
   return (
     <div className="min-h-screen bg-background">
