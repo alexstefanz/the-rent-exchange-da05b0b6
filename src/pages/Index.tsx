@@ -120,13 +120,13 @@ const Index = () => {
               : "Turn unused items into money. List for free and start earning."}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button asChild size="lg" className="bg-white text-foreground hover:bg-white/90 font-semibold rounded-xl px-8">
+            <Button asChild size="lg" className="bg-[#FFFFFF] text-[#000000] hover:bg-[#FFFFFF]/90 font-semibold rounded-xl px-8">
               <Link to="/owner/new-product">
                 {language === "ro" ? "Listează acum" : "List now"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild size="lg" className="bg-[#000000] text-white hover:bg-[#000000]/80 font-semibold rounded-xl px-8">
+            <Button asChild size="lg" className="bg-[#000000] text-[#FFFFFF] hover:bg-[#000000]/80 font-semibold rounded-xl px-8">
               <Link to="/cum-functioneaza">
                 {language === "ro" ? "Cum funcționează" : "How it works"}
               </Link>
