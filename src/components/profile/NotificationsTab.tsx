@@ -332,14 +332,6 @@ const NotificationsTab = () => {
         })}
       </div>
 
-      <ChatDialog
-        open={chatOpen}
-        onOpenChange={setChatOpen}
-        conversationId={chatConversationId}
-        otherUserName={chatOtherUserName}
-        otherUserAvatar={chatOtherUserAvatar}
-        productTitle={chatProductTitle}
-      />
     </div>
   );
 };
