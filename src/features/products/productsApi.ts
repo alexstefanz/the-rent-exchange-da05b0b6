@@ -138,6 +138,7 @@ export const createProduct = async (
     location_country?: string;
     pickup_address?: string;
     images?: string[];
+    included_items?: string[];
   },
   ownerId: string
 ): Promise<Product> => {
@@ -155,6 +156,7 @@ export const createProduct = async (
       location_country: data.location_country || "Romania",
       pickup_address: data.pickup_address || null,
       images: data.images || [],
+      included_items: data.included_items || [],
       is_active: true,
     })
     .select()
