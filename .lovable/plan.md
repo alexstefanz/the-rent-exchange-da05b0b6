@@ -1,33 +1,17 @@
 
 
-## Plan: Add Reviews section to Profile page
+## Plan: Fix scroll-to-top on product-to-product navigation
 
-### Overview
-Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
+### Problem
+When navigating from one product to another via "Other listings from this user", the page doesn't scroll to the top properly on mobile. The user sees the title/price card first instead of the product image. This happens because `ScrollToTop` uses `behavior: "smooth"`, which races with content rendering — the smooth animation can get interrupted or miscalculated as new content loads.
 
-### Changes
+### Fix
+In `src/components/ScrollToTop.tsx`, change `behavior: "smooth"` to `behavior: "instant"` so the scroll happens immediately before the new page renders.
 
-**1. New database function** — `get_user_given_reviews_with_targets`
-- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
-- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
-
-**2. New API function** in `src/features/profile/reviewsApi.ts`
-- Add `getUserGivenReviews(userId)` that calls the new RPC function.
-
-**3. New component** — `src/components/profile/ReviewsTab.tsx`
-- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
-- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
-- Shows counts in tab headers
-- Empty state when no reviews exist
-
-**4. Update `src/pages/Profile.tsx`**
-- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
-- Add corresponding `TabsContent` rendering `ReviewsTab`
+```tsx
+window.scrollTo({ top: 0, behavior: "instant" });
+```
 
 ### Files affected
-- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
-- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
-- `src/components/profile/ReviewsTab.tsx` — new component
-- `src/pages/Profile.tsx` — add tab
-- `src/integrations/supabase/types.ts` — auto-updated
+- `src/components/ScrollToTop.tsx` — one-line change
 
