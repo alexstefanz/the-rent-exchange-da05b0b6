@@ -1,43 +1,33 @@
 
 
-## Plan: Add "Ce este inclus" field to product creation and edit forms
+## Plan: Add Reviews section to Profile page
 
-The `products` table currently has no column for included items. We need to add one, then wire it through the forms and display.
+### Overview
+Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
 
-### 1. Database migration
-Add a `text[]` column `included_items` to the `products` table, defaulting to an empty array:
-```sql
-ALTER TABLE public.products ADD COLUMN included_items text[] DEFAULT '{}';
-```
+### Changes
 
-### 2. Update `src/features/products/productsApi.ts`
-- Add `included_items` to the `Product` interface as `included_items: string[] | null`
-- Add `included_items` to `createProduct` and `updateProduct` parameters and insert/update calls
+**1. New database function** — `get_user_given_reviews_with_targets`
+- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
+- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
 
-### 3. Update `src/pages/NewProduct.tsx`
-- Add state `const [includedItems, setIncludedItems] = useState<string[]>([])` 
-- Below the "Descriere" field, add a list-builder UI:
-  - An input + "Adaugă" button to add items
-  - Display added items as a list with remove buttons
-- Pass `included_items` to `createProduct`
+**2. New API function** in `src/features/profile/reviewsApi.ts`
+- Add `getUserGivenReviews(userId)` that calls the new RPC function.
 
-### 4. Update `src/pages/EditProduct.tsx`
-- Same list-builder UI as NewProduct
-- Pre-populate from `product.included_items` on load
-- Pass `included_items` to `updateProduct`
+**3. New component** — `src/components/profile/ReviewsTab.tsx`
+- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
+- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
+- Shows counts in tab headers
+- Empty state when no reviews exist
 
-### 5. Update `src/components/product/ProductIncludes.tsx`
-- Accept `items` prop from product data instead of showing defaults when product has saved items
-- Only show defaults when no items are saved
-
-### 6. Update `src/pages/ProductDetail.tsx`
-- Pass `product.included_items` to `<ProductIncludes items={product.included_items} />`
+**4. Update `src/pages/Profile.tsx`**
+- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
+- Add corresponding `TabsContent` rendering `ReviewsTab`
 
 ### Files affected
-- DB migration (new column `included_items`)
-- `src/features/products/productsApi.ts`
-- `src/pages/NewProduct.tsx`
-- `src/pages/EditProduct.tsx`
-- `src/components/product/ProductIncludes.tsx`
-- `src/pages/ProductDetail.tsx`
+- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
+- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
+- `src/components/profile/ReviewsTab.tsx` — new component
+- `src/pages/Profile.tsx` — add tab
+- `src/integrations/supabase/types.ts` — auto-updated
 

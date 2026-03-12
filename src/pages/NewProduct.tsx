@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { createProduct } from "@/features/products/productsApi";
 import { categories } from "@/data/categories";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, X } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ImageUpload from "@/components/products/ImageUpload";
@@ -45,6 +45,8 @@ const NewProduct = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [images, setImages] = useState<string[]>([]);
+  const [includedItems, setIncludedItems] = useState<string[]>([]);
+  const [newIncludedItem, setNewIncludedItem] = useState("");
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -83,6 +85,7 @@ const NewProduct = () => {
         location_country: data.location_country || "Romania",
         pickup_address: data.pickup_address,
         images: images,
+        included_items: includedItems,
       }, user.id);
 
       toast({
@@ -263,6 +266,60 @@ const NewProduct = () => {
                 {form.formState.errors.description && (
                   <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
                 )}
+              </div>
+
+              {/* 5b. Ce este inclus */}
+              <div className="space-y-2">
+                <Label>Ce este inclus (accesorii)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Ex: Husă transport, Încărcător"
+                    value={newIncludedItem}
+                    onChange={(e) => setNewIncludedItem(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        const trimmed = newIncludedItem.trim();
+                        if (trimmed && !includedItems.includes(trimmed)) {
+                          setIncludedItems([...includedItems, trimmed]);
+                          setNewIncludedItem("");
+                        }
+                      }
+                    }}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const trimmed = newIncludedItem.trim();
+                      if (trimmed && !includedItems.includes(trimmed)) {
+                        setIncludedItems([...includedItems, trimmed]);
+                        setNewIncludedItem("");
+                      }
+                    }}
+                  >
+                    Adaugă
+                  </Button>
+                </div>
+                {includedItems.length > 0 && (
+                  <ul className="space-y-1 mt-2">
+                    {includedItems.map((item, index) => (
+                      <li key={index} className="flex items-center justify-between rounded-md bg-muted px-3 py-2 text-sm">
+                        <span>{item}</span>
+                        <button
+                          type="button"
+                          className="text-muted-foreground hover:text-destructive"
+                          onClick={() => setIncludedItems(includedItems.filter((_, i) => i !== index))}
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Adaugă accesoriile sau elementele incluse cu produsul.
+                </p>
               </div>
 
               {/* 6. Locație */}

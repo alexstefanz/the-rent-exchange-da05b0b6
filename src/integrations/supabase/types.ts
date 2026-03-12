@@ -706,6 +706,7 @@ export type Database = {
           flag_reason: string | null
           id: string
           images: string[] | null
+          included_items: string[] | null
           is_active: boolean
           location_city: string | null
           location_country: string | null
@@ -725,6 +726,7 @@ export type Database = {
           flag_reason?: string | null
           id?: string
           images?: string[] | null
+          included_items?: string[] | null
           is_active?: boolean
           location_city?: string | null
           location_country?: string | null
@@ -744,6 +746,7 @@ export type Database = {
           flag_reason?: string | null
           id?: string
           images?: string[] | null
+          included_items?: string[] | null
           is_active?: boolean
           location_city?: string | null
           location_country?: string | null

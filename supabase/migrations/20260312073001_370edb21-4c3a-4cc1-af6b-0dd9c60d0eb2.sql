@@ -1,0 +1,1 @@
+ALTER TABLE public.products ADD COLUMN included_items text[] DEFAULT '{}';
