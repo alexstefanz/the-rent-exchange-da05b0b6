@@ -320,6 +320,7 @@ export const categories: Category[] = [
   },
   {
     id: 20,
+    slug: "costume-recuzita",
     name: "COSTUME & RECUZITĂ",
     nameEn: "COSTUMES & PROPS",
     icon: "🎭",
