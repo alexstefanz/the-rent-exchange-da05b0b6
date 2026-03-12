@@ -369,6 +369,23 @@ const AdminProducts = () => {
         </DialogContent>
       </Dialog>
 
+      </Dialog>
+
+      {/* Reject Dialog */}
+      <Dialog open={rejectDialog.open} onOpenChange={(open) => { setRejectDialog({ open, productId: rejectDialog.productId }); if (!open) setRejectReason(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Respinge produs</DialogTitle>
+            <DialogDescription>Introdu motivul respingerii.</DialogDescription>
+          </DialogHeader>
+          <Textarea placeholder="Motivul respingerii..." value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectDialog({ open: false, productId: "" })}>Anulează</Button>
+            <Button variant="destructive" onClick={handleReject} disabled={!rejectReason.trim()}>Respinge</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Reviews Dialog */}
       <Dialog open={reviewsDialog.open} onOpenChange={(open) => { if (!open) setReviewsDialog({ open: false, productId: "", title: "" }); }}>
         <DialogContent className="max-w-lg">
