@@ -402,7 +402,7 @@ const Navbar = () => {
                 <LanguageSwitcher />
               </div>
               
-              <div className="mb-4 flex flex-col gap-2">
+              <div className="mb-2 flex flex-col gap-1 pb-3 border-b border-border">
                 <Link 
                   to="/cauta" 
                   className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
@@ -419,7 +419,9 @@ const Navbar = () => {
                   <PlusCircle className="h-5 w-5" />
                   {t("Adaugă Anunț", "Add Listing")}
                 </Link>
-                {user && (
+              </div>
+              <div className="mb-4 flex flex-col gap-2">
+              {user && (
                   <>
                     {isAdmin && (
                       <Link 
