@@ -40,6 +40,7 @@ export const categories: Category[] = [
   },
   {
     id: 2,
+    slug: "camping-drumetii",
     name: "CAMPING & DRUMEȚII",
     nameEn: "CAMPING & HIKING",
     icon: "⛺",
