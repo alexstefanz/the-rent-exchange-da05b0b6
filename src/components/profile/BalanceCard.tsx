@@ -44,6 +44,7 @@ const BalanceCard = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   // Balance query
   const { data: balance, isLoading: balanceLoading } = useQuery({
