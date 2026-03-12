@@ -124,7 +124,7 @@ const BookingCard = ({
           mode="single"
           selected={endDate || startDate}
           onSelect={handleDateSelect}
-          disabled={(date) => isBefore(date, new Date())}
+          disabled={(date) => isBefore(date, new Date()) || isDateBooked(date, bookedDates)}
           locale={dateLocale}
           formatters={{ formatDay: (date) => date.getDate().toString() }}
           modifiers={{ start: startDate, end: endDate, range: startDate && endDate ? { from: startDate, to: endDate } : undefined }}
