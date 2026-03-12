@@ -25,6 +25,13 @@ export function ConversationList({
   onTabChange,
   onSelect,
 }: ConversationListProps) {
+  const rezervariUnread = conversations
+    .filter(c => c.buyer_id === userId)
+    .reduce((acc, c) => acc + (c.unread_count || 0), 0);
+  const deInchiriatUnread = conversations
+    .filter(c => c.owner_id === userId)
+    .reduce((acc, c) => acc + (c.unread_count || 0), 0);
+
   const filtered = conversations.filter((conv) =>
     activeTab === "rezervari" ? conv.buyer_id === userId : conv.owner_id === userId
   );
