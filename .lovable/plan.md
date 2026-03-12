@@ -1,33 +1,42 @@
 
 
-## Plan: Add Reviews section to Profile page
+## Pagini dedicate pentru cardurile din dashboard
 
-### Overview
-Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
+### Problema
+Cardurile din dashboard (Favorite, Mesaje, Câștiguri, Recenzii, Notificări) navighează prin hash pe aceeași pagină `/profile`. Pe mobil, utilizatorul trebuie să dea scroll manual în jos pentru a vedea conținutul — experiență proastă.
 
-### Changes
+### Soluție
+Creez 5 pagini dedicate, fiecare cu Navbar + Footer + conținut complet. Cardurile din BalanceCard vor naviga la rute proprii în loc de hash-uri.
 
-**1. New database function** — `get_user_given_reviews_with_targets`
-- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
-- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
+### Pagini noi (în `src/pages/`)
 
-**2. New API function** in `src/features/profile/reviewsApi.ts`
-- Add `getUserGivenReviews(userId)` that calls the new RPC function.
+| Pagină | Rută | Component reutilizat |
+|--------|------|---------------------|
+| `FavoritesPage.tsx` | `/favorite` | `<FavoritesTab />` |
+| `MessagesPage.tsx` | `/mesaje` | `<MessagesTab />` (deja există pagina Messages) |
+| `EarningsPage.tsx` | `/castiguri` | `<EarningsTab />` |
+| `ReviewsPage.tsx` | `/recenzii` | `<ReviewsTab />` |
+| `NotificationsPage.tsx` | `/notificari` | `<NotificationsTab />` |
 
-**3. New component** — `src/components/profile/ReviewsTab.tsx`
-- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
-- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
-- Shows counts in tab headers
-- Empty state when no reviews exist
+**Notă:** `/mesaje` deja există ca rută cu pagina `Messages`. Deci doar 4 pagini noi de creat.
 
-**4. Update `src/pages/Profile.tsx`**
-- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
-- Add corresponding `TabsContent` rendering `ReviewsTab`
+### Modificări
 
-### Files affected
-- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
-- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
-- `src/components/profile/ReviewsTab.tsx` — new component
-- `src/pages/Profile.tsx` — add tab
-- `src/integrations/supabase/types.ts` — auto-updated
+1. **4 pagini noi** (`FavoritesPage`, `EarningsPage`, `ReviewsPage`, `NotificationsPage`) — fiecare cu layout simplu: Navbar, titlu, componenta tab existentă, Footer. Protejate cu auth redirect.
+
+2. **`src/App.tsx`** — actualizare rute:
+   - `/favorite` → `<FavoritesPage />` (înlocuiește `Navigate to /profile#favorite`)
+   - `/castiguri` → `<EarningsPage />`
+   - `/recenzii` → `<ReviewsPage />`
+   - `/notificari` → `<NotificationsPage />`
+   - `/mesaje` rămâne cum e
+
+3. **`src/components/profile/BalanceCard.tsx`** — schimb navigarea:
+   - `navigate("#castiguri")` → `navigate("/castiguri")`
+   - `navigate("#favorite")` → `navigate("/favorite")`
+   - `navigate("#mesaje")` → `navigate("/mesaje")` (deja funcționează)
+   - `navigate("#recenzii")` → `navigate("/recenzii")`
+   - `navigate("#notificari")` → `navigate("/notificari")`
+
+4. **`src/pages/Profile.tsx`** — șterg `TabsContent` pentru favorite, mesaje, castiguri, recenzii, notificari + curăț importurile și `ALL_TAB_IDS`.
 
