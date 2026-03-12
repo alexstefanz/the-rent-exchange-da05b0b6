@@ -21,14 +21,9 @@ import ReviewsTab from "@/components/profile/ReviewsTab";
 
 const TABS = [
   { id: "contul-meu", labelRo: "Detalii cont", labelEn: "Account Details", icon: UserCog },
-  { id: "favorite", labelRo: "Favorite", labelEn: "Favorites", icon: Heart },
   { id: "cereri", labelRo: "Cereri", labelEn: "Requests", icon: ClipboardList },
   { id: "inchirieri", labelRo: "Rezervări", labelEn: "Reservations", icon: ShoppingBag },
   { id: "anunturi", labelRo: "Anunțuri", labelEn: "Listings", icon: Package },
-  { id: "mesaje", labelRo: "Mesaje", labelEn: "Messages", icon: MessageCircle },
-  { id: "castiguri", labelRo: "Câștiguri", labelEn: "Earnings", icon: Wallet },
-  { id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star },
-  { id: "notificari", labelRo: "Notificări", labelEn: "Notifications", icon: Bell },
 ];
 
 const ProfilePage = () => {
