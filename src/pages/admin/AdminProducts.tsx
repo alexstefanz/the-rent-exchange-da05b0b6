@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Package, Search, MoreHorizontal, Loader2, Flag, Eye, EyeOff, Trash2, AlertTriangle, Star, MessageSquare } from "lucide-react";
+import { Package, Search, MoreHorizontal, Loader2, Flag, Eye, EyeOff, Trash2, AlertTriangle, Star, MessageSquare, CheckCircle, XCircle } from "lucide-react";
 import SortableTableHead, { SortDirection, sortData, useToggleSort } from "@/components/admin/SortableTableHead";
 import TableColumnFilterRow, { applyColumnFilters, ColumnFilterConfig } from "@/components/admin/TableColumnFilter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchAdminProducts, toggleProductActive, flagProduct, unflagProduct, deleteProduct, AdminProduct } from "@/features/admin/adminProductsApi";
+import { fetchAdminProducts, toggleProductActive, flagProduct, unflagProduct, deleteProduct, approveProduct, rejectProduct, AdminProduct } from "@/features/admin/adminProductsApi";
 import { fetchProductReviews, deleteProductReview, AdminProductReview } from "@/features/admin/adminReviewsApi";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -30,6 +30,8 @@ const AdminProducts = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [flagDialog, setFlagDialog] = useState<{ open: boolean; productId: string }>({ open: false, productId: "" });
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; productId: string; title: string }>({ open: false, productId: "", title: "" });
+  const [rejectDialog, setRejectDialog] = useState<{ open: boolean; productId: string }>({ open: false, productId: "" });
+  const [rejectReason, setRejectReason] = useState("");
   const [flagReason, setFlagReason] = useState("");
   const [reviewsDialog, setReviewsDialog] = useState<{ open: boolean; productId: string; title: string }>({ open: false, productId: "", title: "" });
   const [reviewsData, setReviewsData] = useState<AdminProductReview[]>([]);
@@ -143,6 +145,29 @@ const AdminProducts = () => {
     finally { setActionLoading(null); }
   };
 
+  const handleApprove = async (productId: string) => {
+    setActionLoading(productId);
+    try {
+      await approveProduct(productId);
+      toast.success("Produs aprobat și publicat");
+      queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+    } catch { toast.error("Eroare la aprobare"); }
+    finally { setActionLoading(null); }
+  };
+
+  const handleReject = async () => {
+    if (!rejectReason.trim()) return;
+    setActionLoading(rejectDialog.productId);
+    try {
+      await rejectProduct(rejectDialog.productId, rejectReason);
+      toast.success("Produs respins");
+      queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+      setRejectDialog({ open: false, productId: "" });
+      setRejectReason("");
+    } catch { toast.error("Eroare la respingere"); }
+    finally { setActionLoading(null); }
+  };
+
   const handleOpenReviews = async (productId: string, title: string) => {
     setReviewsDialog({ open: true, productId, title });
     setReviewsLoading(true);
@@ -193,10 +218,12 @@ const AdminProducts = () => {
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Toate</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="flagged">Marcate</SelectItem>
+                   <SelectItem value="all">Toate</SelectItem>
+                   <SelectItem value="pending">În așteptare</SelectItem>
+                   <SelectItem value="active">Active</SelectItem>
+                   <SelectItem value="inactive">Inactive</SelectItem>
+                   <SelectItem value="rejected">Respinse</SelectItem>
+                   <SelectItem value="flagged">Marcate</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -256,10 +283,18 @@ const AdminProducts = () => {
                         <TableCell className="text-muted-foreground text-sm">{product.category || '-'}</TableCell>
                         <TableCell className="text-muted-foreground text-sm">{product.location_city || '-'}</TableCell>
                         <TableCell>
-                          <div className="flex gap-1">
-                            <Badge variant={product.is_active ? "default" : "secondary"}>
-                              {product.is_active ? "Activ" : "Inactiv"}
-                            </Badge>
+                          <div className="flex flex-wrap gap-1">
+                            {product.approval_status === 'pending' && (
+                              <Badge variant="outline" className="border-yellow-500 text-yellow-700 bg-yellow-50">În așteptare</Badge>
+                            )}
+                            {product.approval_status === 'rejected' && (
+                              <Badge variant="destructive">Respins</Badge>
+                            )}
+                            {product.approval_status === 'approved' && (
+                              <Badge variant={product.is_active ? "default" : "secondary"}>
+                                {product.is_active ? "Activ" : "Inactiv"}
+                              </Badge>
+                            )}
                             {product.admin_flagged && <Badge variant="destructive">Marcat</Badge>}
                           </div>
                         </TableCell>
@@ -279,6 +314,17 @@ const AdminProducts = () => {
                                   <Eye className="h-4 w-4 mr-2" /> Vezi pe site
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
+                                {product.approval_status === 'pending' && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => handleApprove(product.id)}>
+                                      <CheckCircle className="h-4 w-4 mr-2" /> Aprobă
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setRejectDialog({ open: true, productId: product.id })}>
+                                      <XCircle className="h-4 w-4 mr-2" /> Respinge
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                  </>
+                                )}
                                 <DropdownMenuItem onClick={() => handleToggleActive(product)}>
                                   {product.is_active ? <><EyeOff className="h-4 w-4 mr-2" /> Dezactivează</> : <><Eye className="h-4 w-4 mr-2" /> Activează</>}
                                 </DropdownMenuItem>
@@ -342,6 +388,22 @@ const AdminProducts = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialog({ open: false, productId: "", title: "" })}>Anulează</Button>
             <Button variant="destructive" onClick={handleDelete}>Șterge definitiv</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
+      {/* Reject Dialog */}
+      <Dialog open={rejectDialog.open} onOpenChange={(open) => { setRejectDialog({ open, productId: rejectDialog.productId }); if (!open) setRejectReason(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Respinge produs</DialogTitle>
+            <DialogDescription>Introdu motivul respingerii.</DialogDescription>
+          </DialogHeader>
+          <Textarea placeholder="Motivul respingerii..." value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectDialog({ open: false, productId: "" })}>Anulează</Button>
+            <Button variant="destructive" onClick={handleReject} disabled={!rejectReason.trim()}>Respinge</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

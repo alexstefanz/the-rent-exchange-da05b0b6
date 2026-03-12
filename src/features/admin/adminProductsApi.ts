@@ -16,7 +16,24 @@ export interface AdminProduct {
   owner_name: string;
   slug: string | null;
   created_at: string;
+  approval_status: string;
 }
+
+export const approveProduct = async (productId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('products')
+    .update({ approval_status: 'approved', is_active: true } as Record<string, unknown>)
+    .eq('id', productId);
+  if (error) throw new Error(error.message);
+};
+
+export const rejectProduct = async (productId: string, reason: string): Promise<void> => {
+  const { error } = await supabase
+    .from('products')
+    .update({ approval_status: 'rejected', is_active: false, flag_reason: reason } as Record<string, unknown>)
+    .eq('id', productId);
+  if (error) throw new Error(error.message);
+};
 
 export const fetchAdminProducts = async (
   searchQuery?: string,
