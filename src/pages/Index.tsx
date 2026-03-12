@@ -109,7 +109,7 @@ const Index = () => {
       <FeaturedListings />
 
       {/* CTA Banner */}
-      <section className="bg-gradient-to-r from-[#F97717] to-[#FAA73C] py-16">
+      <section className="py-16" style={{ background: 'linear-gradient(to right, #F98C33, #FAA63B)' }}>
         <div className="container text-center">
           <h2 className="font-heading text-3xl md:text-4xl font-bold text-white mb-4">
             {language === "ro" ? "Ai ceva de închiriat?" : "Have something to rent?"}
@@ -126,7 +126,7 @@ const Index = () => {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild size="lg" className="bg-black text-white hover:bg-black/80 font-semibold rounded-xl px-8">
+            <Button asChild size="lg" className="bg-[#000000] text-white hover:bg-[#000000]/80 font-semibold rounded-xl px-8">
               <Link to="/cum-functioneaza">
                 {language === "ro" ? "Cum funcționează" : "How it works"}
               </Link>
