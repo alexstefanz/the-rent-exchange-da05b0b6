@@ -17,7 +17,8 @@ import { calculateClientPrice, deleteProduct } from "@/features/products/product
 import { useMyProducts } from "@/hooks/queries/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus, Package, Edit, MapPin, Trash2 } from "lucide-react";
+import { Loader2, Plus, Package, Edit, MapPin, Trash2, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
