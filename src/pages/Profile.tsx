@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Loader2, UserCog, MessageCircle, Wallet, Bell, ShoppingBag, Package, Heart, ClipboardList, Star } from "lucide-react";
+import { Loader2, UserCog, ClipboardList, ShoppingBag, Package } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
