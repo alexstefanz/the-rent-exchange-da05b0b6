@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { format, differenceInDays, isBefore } from "date-fns";
+import { useBookedDates, isDateBooked, hasBookedDateInRange } from "@/hooks/queries/useBookedDates";
 import { ro, enUS } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, MapPin, Star, Shield, Clock, MessageCircle, Check, User, Calendar, ArrowLeft, Share2, Heart, Loader2, Phone, Mail, Info, ThumbsUp, X } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
@@ -125,11 +126,20 @@ const ProductDetail = () => {
     return () => { window.removeEventListener('keydown', handleKey); document.body.style.overflow = ''; };
   }, [lightboxOpen, images.length]);
 
+  const { bookedDates } = useBookedDates(product?.id);
+
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
+    if (isDateBooked(date, bookedDates)) return;
     if (!startDate || (startDate && endDate)) { setStartDate(date); setEndDate(undefined); }
     else if (isBefore(date, startDate)) { setStartDate(date); }
-    else { setEndDate(date); }
+    else {
+      if (hasBookedDateInRange(startDate, date, bookedDates)) {
+        toast({ title: language === "ro" ? "Perioada indisponibilă" : "Period unavailable", description: language === "ro" ? "Există zile rezervate în intervalul selectat." : "There are booked days in the selected range.", variant: "destructive" });
+        return;
+      }
+      setEndDate(date);
+    }
   };
   const clearDates = () => { setStartDate(undefined); setEndDate(undefined); };
 
@@ -284,7 +294,7 @@ const ProductDetail = () => {
                   <h3 className="font-medium text-foreground flex items-center gap-2"><Calendar className="h-4 w-4" />{copy.booking.steps.period}</h3>
                   {(startDate || endDate) && <button onClick={clearDates} className="text-xs text-primary hover:underline">{copy.common.clear}</button>}
                 </div>
-                <CalendarComponent mode="single" selected={endDate || startDate} onSelect={handleDateSelect} disabled={date => isBefore(date, new Date())} modifiers={{ start: startDate, end: endDate, range: startDate && endDate ? { from: startDate, to: endDate } : undefined, today: new Date() }} modifiersStyles={{ start: { backgroundColor: "#FA8729", color: "white", borderRadius: "10px" }, end: { backgroundColor: "#FA8729", color: "white", borderRadius: "10px" }, range: { backgroundColor: "#FA8729", color: "white", borderRadius: "10px" }, today: { backgroundColor: "#000000", color: "#ffffff", borderRadius: "10px", fontWeight: 700 } }} classNames={{ day_selected: "!bg-[#FA8729] !text-white !rounded-[10px] !opacity-100" }} className="rounded-md border w-full pointer-events-auto [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-caption]:text-sm [&_.rdp-head_cell]:text-xs [&_.rdp-cell]:p-0 [&_.rdp-day]:h-8 [&_.rdp-day]:w-8 [&_.rdp-day]:text-xs [&_.rdp-day]:rounded-[10px]" />
+                <CalendarComponent mode="single" selected={endDate || startDate} onSelect={handleDateSelect} disabled={date => isBefore(date, new Date()) || isDateBooked(date, bookedDates)} modifiers={{ start: startDate, end: endDate, range: startDate && endDate ? { from: startDate, to: endDate } : undefined, today: new Date() }} modifiersStyles={{ start: { backgroundColor: "#FA8729", color: "white", borderRadius: "10px" }, end: { backgroundColor: "#FA8729", color: "white", borderRadius: "10px" }, range: { backgroundColor: "#FA8729", color: "white", borderRadius: "10px" }, today: { backgroundColor: "#000000", color: "#ffffff", borderRadius: "10px", fontWeight: 700 } }} classNames={{ day_selected: "!bg-[#FA8729] !text-white !rounded-[10px] !opacity-100" }} className="rounded-md border w-full pointer-events-auto [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-caption]:text-sm [&_.rdp-head_cell]:text-xs [&_.rdp-cell]:p-0 [&_.rdp-day]:h-8 [&_.rdp-day]:w-8 [&_.rdp-day]:text-xs [&_.rdp-day]:rounded-[10px]" />
               </div>
 
               {startDate && endDate && (

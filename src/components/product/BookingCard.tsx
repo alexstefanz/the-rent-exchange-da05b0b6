@@ -3,12 +3,14 @@ import { useNavigate, Link } from "react-router-dom";
 import { format, differenceInDays, isBefore } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
 import { Calendar as CalendarIcon, Heart, Info, ThumbsUp, ChevronRight } from "lucide-react";
+import { useBookedDates, isDateBooked, hasBookedDateInRange } from "@/hooks/queries/useBookedDates";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 
 interface BookingCardProps {
   productId: string;
@@ -34,14 +36,21 @@ const BookingCard = ({
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
+  const { bookedDates } = useBookedDates(productId);
+
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
+    if (isDateBooked(date, bookedDates)) return;
     if (!startDate || (startDate && endDate)) {
       setStartDate(date);
       setEndDate(undefined);
     } else if (isBefore(date, startDate)) {
       setStartDate(date);
     } else {
+      if (hasBookedDateInRange(startDate, date, bookedDates)) {
+        toast({ title: language === "ro" ? "Perioada indisponibilă" : "Period unavailable", description: language === "ro" ? "Există zile rezervate în intervalul selectat." : "There are booked days in the selected range.", variant: "destructive" });
+        return;
+      }
       setEndDate(date);
     }
   };
@@ -115,7 +124,7 @@ const BookingCard = ({
           mode="single"
           selected={endDate || startDate}
           onSelect={handleDateSelect}
-          disabled={(date) => isBefore(date, new Date())}
+          disabled={(date) => isBefore(date, new Date()) || isDateBooked(date, bookedDates)}
           locale={dateLocale}
           formatters={{ formatDay: (date) => date.getDate().toString() }}
           modifiers={{ start: startDate, end: endDate, range: startDate && endDate ? { from: startDate, to: endDate } : undefined }}

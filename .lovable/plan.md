@@ -1,40 +1,33 @@
 
 
-## Plan: Block confirmed rental dates in product calendar
+## Plan: Add Reviews section to Profile page
 
-### Approach
-
-Fetch all confirmed/active rentals for the product and disable those date ranges in the calendar, so no other user can select overlapping dates.
+### Overview
+Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
 
 ### Changes
 
-**1. Create a hook `src/hooks/queries/useBookedDates.ts`**
-- Accepts `productId`
-- Queries `rentals` table for rentals with `status` in (`confirmed`, `active`) matching the product
-- Returns an array of `Date` objects covering all booked ranges (start_date through end_date inclusive)
-- Uses `react-query` with appropriate caching
+**1. New database function** — `get_user_given_reviews_with_targets`
+- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
+- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
 
-**2. Update `src/components/product/BookingCard.tsx`**
-- Import and call `useBookedDates(productId)`
-- Update the `disabled` prop on `<Calendar>` to also disable booked dates:
-  ```ts
-  disabled={(date) => isBefore(date, new Date()) || bookedDates.some(d => isSameDay(d, date))}
-  ```
-- Add visual styling for booked dates via `modifiers` (e.g. strikethrough or greyed out)
+**2. New API function** in `src/features/profile/reviewsApi.ts`
+- Add `getUserGivenReviews(userId)` that calls the new RPC function.
 
-**3. Update `src/pages/ProductDetail.tsx`**
-- Same changes as BookingCard — import `useBookedDates`, update the calendar's `disabled` prop to include booked dates
-- Also update `handleDateSelect` to prevent selecting a range that spans across blocked dates
+**3. New component** — `src/components/profile/ReviewsTab.tsx`
+- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
+- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
+- Shows counts in tab headers
+- Empty state when no reviews exist
 
-**4. Validate range selection**
-- When user selects end date, check if any booked date falls between start and end — if so, reject and show toast
+**4. Update `src/pages/Profile.tsx`**
+- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
+- Add corresponding `TabsContent` rendering `ReviewsTab`
 
 ### Files affected
-- `src/hooks/queries/useBookedDates.ts` (new)
-- `src/components/product/BookingCard.tsx`
-- `src/pages/ProductDetail.tsx`
-
-### Notes
-- Only rentals with status `confirmed` or `active` block dates (not `pending` — those are awaiting owner approval)
-- RLS already allows anyone to see rentals where they are renter/owner, but we need public read for product availability. We'll query via a simple select filtered by product_id — the existing RLS policy `Users can view own rentals` won't work for other users viewing availability. **Solution**: Create a database function `get_booked_dates(product_id uuid)` with `SECURITY DEFINER` that returns start/end date pairs for confirmed/active rentals, avoiding RLS issues.
+- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
+- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
+- `src/components/profile/ReviewsTab.tsx` — new component
+- `src/pages/Profile.tsx` — add tab
+- `src/integrations/supabase/types.ts` — auto-updated
 
