@@ -19,6 +19,9 @@ const CategoryDetail = () => {
   const category = getCategoryBySlug(slug || "");
   const copy = useUxCopy();
   const { language } = useLanguage();
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [sortBy, setSortBy] = useState("relevance");
+  const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
   
   const { data: products = [], isLoading } = useProducts(
     category ? { category: category.name } : undefined
@@ -36,6 +39,22 @@ const CategoryDetail = () => {
     });
     return counts;
   }, [products]);
+
+  // Filter and sort products
+  const filteredProducts = useMemo(() => {
+    let result = products.filter((p) => {
+      const price = p.daily_price_owner;
+      return price >= priceRange[0] && price <= priceRange[1];
+    });
+
+    if (sortBy === "price_asc") {
+      result = [...result].sort((a, b) => a.daily_price_owner - b.daily_price_owner);
+    } else if (sortBy === "price_desc") {
+      result = [...result].sort((a, b) => b.daily_price_owner - a.daily_price_owner);
+    }
+
+    return result;
+  }, [products, priceRange, sortBy]);
 
   if (!category) {
     return (
