@@ -126,7 +126,7 @@ const Index = () => {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button asChild size="lg" className="bg-[#000000] text-[#FFFFFF] hover:bg-[#000000]/80 font-semibold rounded-xl px-8">
+            <Button asChild variant="ghost" size="lg" className="bg-[#000000] text-[#FFFFFF] hover:bg-[#000000]/80 font-semibold rounded-xl px-8">
               <Link to="/cum-functioneaza">
                 {language === "ro" ? "Cum funcționează" : "How it works"}
               </Link>
