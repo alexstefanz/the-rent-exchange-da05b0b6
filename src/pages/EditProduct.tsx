@@ -150,6 +150,7 @@ const EditProduct = () => {
         pickup_address: data.pickup_address,
         is_active: data.is_active,
         images: images,
+        included_items: includedItems,
       }, user.id);
 
       toast({
