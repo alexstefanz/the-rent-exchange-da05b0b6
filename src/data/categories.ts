@@ -19,6 +19,7 @@ export interface Category {
 export const categories: Category[] = [
   {
     id: 1,
+    slug: "outdoor-aventura",
     name: "OUTDOOR & AVENTURĂ",
     nameEn: "OUTDOOR & ADVENTURE",
     icon: "🚴",
