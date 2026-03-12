@@ -126,11 +126,20 @@ const ProductDetail = () => {
     return () => { window.removeEventListener('keydown', handleKey); document.body.style.overflow = ''; };
   }, [lightboxOpen, images.length]);
 
+  const { bookedDates } = useBookedDates(product?.id);
+
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
+    if (isDateBooked(date, bookedDates)) return;
     if (!startDate || (startDate && endDate)) { setStartDate(date); setEndDate(undefined); }
     else if (isBefore(date, startDate)) { setStartDate(date); }
-    else { setEndDate(date); }
+    else {
+      if (hasBookedDateInRange(startDate, date, bookedDates)) {
+        toast({ title: language === "ro" ? "Perioada indisponibilă" : "Period unavailable", description: language === "ro" ? "Există zile rezervate în intervalul selectat." : "There are booked days in the selected range.", variant: "destructive" });
+        return;
+      }
+      setEndDate(date);
+    }
   };
   const clearDates = () => { setStartDate(undefined); setEndDate(undefined); };
 
