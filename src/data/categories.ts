@@ -73,6 +73,7 @@ export const categories: Category[] = [
   },
   {
     id: 4,
+    slug: "scule-unelte-constructii",
     name: "SCULE, UNELTE & CONSTRUCȚII",
     nameEn: "TOOLS & CONSTRUCTION",
     icon: "🔧",
