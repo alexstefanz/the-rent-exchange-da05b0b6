@@ -18,7 +18,7 @@ export interface Product {
   images: string[];
   included_items: string[] | null;
   is_active: boolean;
-  approval_status: string;
+  approval_status?: string;
   created_at: string;
 }
 
