@@ -195,6 +195,7 @@ export const categories: Category[] = [
   },
   {
     id: 11,
+    slug: "fitness-wellness",
     name: "FITNESS & WELLNESS",
     nameEn: "FITNESS & WELLNESS",
     icon: "💪",
