@@ -126,7 +126,21 @@ const Owner = () => {
                         <Package className="h-12 w-12 text-muted-foreground" />
                       </div>
                     )}
-                    {!product.is_active && (
+                    {product.approval_status === 'pending' && (
+                      <div className="absolute top-2 left-2">
+                        <Badge variant="outline" className="border-yellow-500 text-yellow-700 bg-yellow-50 gap-1">
+                          <Clock className="h-3 w-3" /> În așteptare
+                        </Badge>
+                      </div>
+                    )}
+                    {product.approval_status === 'rejected' && (
+                      <div className="absolute top-2 left-2">
+                        <Badge variant="destructive" className="gap-1">
+                          <XCircle className="h-3 w-3" /> Respins
+                        </Badge>
+                      </div>
+                    )}
+                    {product.approval_status === 'approved' && !product.is_active && (
                       <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
                         <span className="text-sm font-medium text-muted-foreground">Inactiv</span>
                       </div>
