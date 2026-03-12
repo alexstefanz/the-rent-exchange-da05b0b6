@@ -221,8 +221,8 @@ const ProductDetail = () => {
           <span className="text-foreground whitespace-nowrap">{product.title}</span>
         </nav>
 
-        <div className="grid gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-6 order-2 lg:order-1">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start">
+          <div className="space-y-6 order-2 lg:order-1">
             {/* Desktop Gallery */}
             <div className="relative overflow-hidden rounded-xl bg-muted hidden lg:block">
               <div className="aspect-[4/3] bg-muted cursor-pointer" onClick={() => openLightbox(currentImageIndex)}><img src={images[currentImageIndex]} alt={product.title} className="h-full w-full object-cover" /></div>
