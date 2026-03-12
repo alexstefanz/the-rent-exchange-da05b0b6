@@ -124,7 +124,7 @@ const ProfilePage = () => {
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className="relative flex items-center justify-center gap-2 w-full px-4 py-3 text-base font-semibold rounded-lg bg-gradient-to-r from-[#F97717] to-[#FAA73C] text-white shadow-sm data-[state=active]:shadow-lg data-[state=active]:scale-105 data-[state=inactive]:opacity-80 hover:opacity-100 transition-all"
+                  className="relative flex items-center justify-center gap-2 w-full px-4 py-3 text-base font-semibold rounded-lg bg-gradient-to-r from-[#F97717] to-[#FAA73C] text-white shadow-sm data-[state=active]:shadow-lg data-[state=active]:ring-2 data-[state=active]:ring-white/50 data-[state=inactive]:opacity-80 hover:opacity-100 transition-all"
                 >
                   <Icon className="h-5 w-5" />
                   <span>
