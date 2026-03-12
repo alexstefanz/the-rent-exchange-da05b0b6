@@ -90,6 +90,15 @@ const NotificationsTab = () => {
     }
   };
 
+  const mapLink = (link: string) => {
+    if (link.includes("#anunturi") || link.includes("?tab=lendings")) return "/anunturi";
+    if (link.includes("#cereri") || link.includes("?tab=rentals")) return "/cereri";
+    if (link.includes("#rezervari")) return "/rezervari";
+    if (link.includes("#notificari")) return "/notificari";
+    if (link === "/profile") return "/recenzii";
+    return link;
+  };
+
   const isRentalNotification = (type: string) => 
     type === "rental_request" || type === "rental_confirmation";
 
