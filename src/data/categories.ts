@@ -9,6 +9,7 @@ export interface Subcategory {
 
 export interface Category {
   id: number;
+  slug: string;
   name: string;
   nameEn: string;
   subcategories: Subcategory[];
@@ -18,6 +19,7 @@ export interface Category {
 export const categories: Category[] = [
   {
     id: 1,
+    slug: "outdoor-aventura",
     name: "OUTDOOR & AVENTURĂ",
     nameEn: "OUTDOOR & ADVENTURE",
     icon: "🚴",
@@ -38,6 +40,7 @@ export const categories: Category[] = [
   },
   {
     id: 2,
+    slug: "camping-drumetii",
     name: "CAMPING & DRUMEȚII",
     nameEn: "CAMPING & HIKING",
     icon: "⛺",
@@ -55,6 +58,7 @@ export const categories: Category[] = [
   },
   {
     id: 3,
+    slug: "sporturi-iarna",
     name: "SPORTURI DE IARNĂ",
     nameEn: "WINTER SPORTS",
     icon: "🎿",
@@ -69,6 +73,7 @@ export const categories: Category[] = [
   },
   {
     id: 4,
+    slug: "scule-unelte-constructii",
     name: "SCULE, UNELTE & CONSTRUCȚII",
     nameEn: "TOOLS & CONSTRUCTION",
     icon: "🔧",
@@ -91,6 +96,7 @@ export const categories: Category[] = [
   },
   {
     id: 5,
+    slug: "jucarii-gonflabile-copii",
     name: "JUCĂRII GONFLABILE & COPII",
     nameEn: "INFLATABLES & KIDS",
     icon: "🎈",
@@ -106,6 +112,7 @@ export const categories: Category[] = [
   },
   {
     id: 6,
+    slug: "gaming-electronice",
     name: "GAMING & ELECTRONICE",
     nameEn: "GAMING & ELECTRONICS",
     icon: "🎮",
@@ -122,6 +129,7 @@ export const categories: Category[] = [
   },
   {
     id: 7,
+    slug: "foto-video",
     name: "FOTO & VIDEO",
     nameEn: "PHOTO & VIDEO",
     icon: "📷",
@@ -137,6 +145,7 @@ export const categories: Category[] = [
   },
   {
     id: 8,
+    slug: "mobilitate-urbana",
     name: "MOBILITATE URBANĂ",
     nameEn: "URBAN MOBILITY",
     icon: "🛴",
@@ -149,6 +158,7 @@ export const categories: Category[] = [
   },
   {
     id: 9,
+    slug: "evenimente-hobby",
     name: "EVENIMENTE & HOBBY",
     nameEn: "EVENTS & HOBBY",
     icon: "🎉",
@@ -168,6 +178,7 @@ export const categories: Category[] = [
   },
   {
     id: 10,
+    slug: "instrumente-muzicale-dj",
     name: "INSTRUMENTE MUZICALE & DJ",
     nameEn: "MUSICAL INSTRUMENTS & DJ",
     icon: "🎸",
@@ -184,6 +195,7 @@ export const categories: Category[] = [
   },
   {
     id: 11,
+    slug: "fitness-wellness",
     name: "FITNESS & WELLNESS",
     nameEn: "FITNESS & WELLNESS",
     icon: "💪",
@@ -200,6 +212,7 @@ export const categories: Category[] = [
   },
   {
     id: 12,
+    slug: "echipamente-medicale-recuperare",
     name: "ECHIPAMENTE MEDICALE & RECUPERARE",
     nameEn: "MEDICAL EQUIPMENT & RECOVERY",
     icon: "🏥",
@@ -220,6 +233,7 @@ export const categories: Category[] = [
   },
   {
     id: 13,
+    slug: "animale-companie",
     name: "ANIMALE DE COMPANIE",
     nameEn: "PETS",
     icon: "🐾",
@@ -233,6 +247,7 @@ export const categories: Category[] = [
   },
   {
     id: 14,
+    slug: "remorci-transport",
     name: "REMORCI & TRANSPORT",
     nameEn: "TRAILERS & TRANSPORT",
     icon: "🚚",
@@ -247,6 +262,7 @@ export const categories: Category[] = [
   },
   {
     id: 15,
+    slug: "bebe-family-rentals",
     name: "BEBE & FAMILY RENTALS",
     nameEn: "BABY & FAMILY RENTALS",
     icon: "👶",
@@ -262,6 +278,7 @@ export const categories: Category[] = [
   },
   {
     id: 16,
+    slug: "imprimante-3d-cnc",
     name: "IMPRIMANTE 3D & CNC",
     nameEn: "3D PRINTERS & CNC",
     icon: "🖨️",
@@ -275,6 +292,7 @@ export const categories: Category[] = [
   },
   {
     id: 17,
+    slug: "telescop-observatie",
     name: "TELESCOP & OBSERVAȚIE",
     nameEn: "TELESCOPES & OBSERVATION",
     icon: "🔭",
@@ -287,6 +305,7 @@ export const categories: Category[] = [
   },
   {
     id: 19,
+    slug: "nunti-evenimente-premium",
     name: "NUNȚI & EVENIMENTE PREMIUM",
     nameEn: "WEDDINGS & PREMIUM EVENTS",
     icon: "💒",
@@ -301,6 +320,7 @@ export const categories: Category[] = [
   },
   {
     id: 20,
+    slug: "costume-recuzita",
     name: "COSTUME & RECUZITĂ",
     nameEn: "COSTUMES & PROPS",
     icon: "🎭",
@@ -314,6 +334,7 @@ export const categories: Category[] = [
   },
   {
     id: 21,
+    slug: "industrial-cleaning",
     name: "INDUSTRIAL CLEANING",
     nameEn: "INDUSTRIAL CLEANING",
     icon: "🧹",
@@ -327,6 +348,7 @@ export const categories: Category[] = [
   },
   {
     id: 22,
+    slug: "rulote-campervan-uri",
     name: "RULOTE & CAMPERVAN-URI",
     nameEn: "RVs & CAMPERVANS",
     icon: "🚐",
@@ -352,6 +374,14 @@ export const getAllSubcategories = () => {
 
 export const getCategoryById = (id: number) => {
   return categories.find((cat) => cat.id === id);
+};
+
+export const getCategoryBySlug = (slug: string) => {
+  return categories.find((cat) => cat.slug === slug);
+};
+
+export const getCategoryUrl = (category: Category) => {
+  return `/categorie/${category.slug}`;
 };
 
 export const searchCategories = (query: string) => {
