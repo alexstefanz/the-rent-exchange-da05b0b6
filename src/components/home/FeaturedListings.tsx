@@ -148,7 +148,7 @@ const FeaturedListings = () => {
   const sectionTitle = language === "en" ? "Popular Rentals" : "Închirieri populare";
 
   return (
-    <section className="py-12 md:py-16">
+    <section className="pt-6 pb-12 md:pt-8 md:pb-16">
       <div className="container">
         <h2 className="font-heading text-2xl font-semibold text-foreground md:text-2xl mb-6">{sectionTitle}</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
