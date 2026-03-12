@@ -1,33 +1,43 @@
 
 
-## Plan: Add Reviews section to Profile page
+## Plan: Pagini dedicate pentru Cereri, Rezervări și Anunțuri
 
-### Overview
-Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
+Urmând exact pattern-ul existent de la `/favorite`, `/castiguri`, `/recenzii`, `/notificari`, voi crea 3 pagini dedicate noi. Pagina "Detalii cont" rămâne pe `/profile` deoarece este tab-ul principal.
 
-### Changes
+### Fișiere noi (3 pagini)
 
-**1. New database function** — `get_user_given_reviews_with_targets`
-- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
-- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
+1. **`src/pages/RequestsPage.tsx`** — pagină dedicată pentru Cereri
+   - Back button → `/profile`
+   - Titlu "Cereri" / "Requests"
+   - Render `<RequestsTab />`
+   - Structură identică cu `FavoritesPage.tsx`
 
-**2. New API function** in `src/features/profile/reviewsApi.ts`
-- Add `getUserGivenReviews(userId)` that calls the new RPC function.
+2. **`src/pages/RentalsPage.tsx`** — pagină dedicată pentru Rezervări
+   - Back button → `/profile`
+   - Titlu "Rezervări" / "Reservations"
+   - Render `<RentalsTab />`
 
-**3. New component** — `src/components/profile/ReviewsTab.tsx`
-- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
-- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
-- Shows counts in tab headers
-- Empty state when no reviews exist
+3. **`src/pages/ListingsPage.tsx`** — pagină dedicată pentru Anunțuri
+   - Back button → `/profile`
+   - Titlu "Anunțuri" / "Listings"
+   - Render `<LendingsTab />`
 
-**4. Update `src/pages/Profile.tsx`**
-- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
-- Add corresponding `TabsContent` rendering `ReviewsTab`
+### Fișiere modificate
 
-### Files affected
-- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
-- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
-- `src/components/profile/ReviewsTab.tsx` — new component
-- `src/pages/Profile.tsx` — add tab
-- `src/integrations/supabase/types.ts` — auto-updated
+4. **`src/App.tsx`** — adaug 3 rute noi:
+   - `/cereri` → `RequestsPage`
+   - `/rezervari` → `RentalsPage` (actualizez redirect-ul existent)
+   - `/anunturi` → `ListingsPage`
+
+5. **`src/pages/Profile.tsx`** — transform butoanele portocalii din tab-uri în linkuri (`<Link>`) către paginile dedicate:
+   - "Detalii cont" → rămâne pe `/profile` (content inline)
+   - "Cereri" → navigare la `/cereri`
+   - "Rezervări" → navigare la `/rezervari`
+   - "Anunțuri" → navigare la `/anunturi`
+   - Elimin `TabsContent` pentru cereri/inchirieri/anunturi și păstrez doar contul
+
+### Detalii tehnice
+- Fiecare pagină nouă: auth guard, Navbar, Footer, back button, titlu, componentă tab existentă
+- Badge-ul de pending count pe "Cereri" se mută pe linkul din Profile
+- Pattern identic cu cele 4 pagini dedicate existente
 
