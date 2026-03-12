@@ -1,33 +1,49 @@
 
+Obiectiv: booking card-ul să fie aliniat sus cu imaginea pe desktop și să rămână vizibil (sticky) până la zona de recenzii, fără „dispariție” prematură și fără gol mare în coloana din dreapta.
 
-## Plan: Add Reviews section to Profile page
+Ce am observat din capturile tale:
+- Cardul începe corect sus.
+- La scroll, cardul este împins în sus prea devreme (se vede doar partea de jos), apoi dispare înainte de zona de recenzii.
+- Asta indică un „sticky track” prea scurt pe coloana dreaptă (parentul sticky se termină înainte de finalul conținutului din stânga).
 
-### Overview
-Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
+Plan de implementare (fix structural, nu doar tweak de o clasă):
+1) Refactor layout-ul desktop al blocului principal din `ProductDetail.tsx` ca să garantăm track-ul sticky:
+   - Grid-ul rămâne pentru 2 coloane pe desktop, dar îl fac explicit cu stretch:
+     - `lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]`
+     - `lg:items-stretch`
+   - Eliminăm dependența de `col-span` pe 3 coloane pentru această zonă.
 
-### Changes
+2) Forțăm coloana din dreapta să aibă aceeași înălțime cu coloana de conținut:
+   - Pe wrapper-ul sidebar:
+     - `lg:self-stretch lg:h-full`
+   - Adăugăm un wrapper intern de track:
+     - `className="h-full"` (parent clar pentru sticky boundary)
 
-**1. New database function** — `get_user_given_reviews_with_targets`
-- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
-- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
+3) Separăm clar „track-ul” de „card”:
+   - Sticky pe wrapper-ul interior de sidebar (desktop only):
+     - `lg:sticky lg:top-24`
+   - Cardul efectiv rămâne normal în interior (border/padding etc), iar scroll intern rămâne doar dacă e necesar:
+     - `lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto`
+   - Pe mobile păstrăm comportamentul actual (fără sticky desktop classes active).
 
-**2. New API function** in `src/features/profile/reviewsApi.ts`
-- Add `getUserGivenReviews(userId)` that calls the new RPC function.
+4) Eliminăm clase care pot afecta comportamentul sticky pe verticală:
+   - Scoatem `overflow-x-hidden` de pe wrapper-ele mari din `ProductDetail` (root + `main`) pentru a evita clipping/containment nedorit al sticky-ului în unele browsere.
 
-**3. New component** — `src/components/profile/ReviewsTab.tsx`
-- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
-- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
-- Shows counts in tab headers
-- Empty state when no reviews exist
+5) Validare manuală strictă după implementare (desktop):
+   - La top: cardul aliniat cu imaginea.
+   - Scroll în zona owner/descriere/hartă: cardul rămâne sticky sus.
+   - Scroll în zona recenzii: cardul încă vizibil.
+   - Aproape de finalul recenziilor: cardul începe să „se dezlipească” doar la finalul track-ului, nu înainte.
+   - Verificare și pe 1366x768 + viewport mare (ca în cazul tău).
 
-**4. Update `src/pages/Profile.tsx`**
-- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
-- Add corresponding `TabsContent` rendering `ReviewsTab`
+Detalii tehnice (pe scurt):
+- Problema nu este doar `top` sau `max-h`, ci boundary-ul sticky (înălțimea parentului sticky).
+- Fixul corect este să asigurăm:
+  1) parent de sticky suficient de înalt (egal cu coloana stângă),
+  2) sticky aplicat pe stratul potrivit,
+  3) fără overflow pe straturi superioare care pot rupe sticky logic.
+- Fișier vizat: `src/pages/ProductDetail.tsx` (doar frontend layout/classes).
 
-### Files affected
-- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
-- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
-- `src/components/profile/ReviewsTab.tsx` — new component
-- `src/pages/Profile.tsx` — add tab
-- `src/integrations/supabase/types.ts` — auto-updated
-
+Impact:
+- Nu atinge backend, auth sau date.
+- Doar comportament UI desktop în pagina de produs.
