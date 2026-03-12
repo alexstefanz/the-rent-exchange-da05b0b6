@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { format, differenceInDays, isBefore } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
 import { Calendar as CalendarIcon, Heart, Info, ThumbsUp, ChevronRight } from "lucide-react";
+import { useBookedDates, isDateBooked, hasBookedDateInRange } from "@/hooks/queries/useBookedDates";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Separator } from "@/components/ui/separator";
