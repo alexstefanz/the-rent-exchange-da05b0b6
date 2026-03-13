@@ -213,7 +213,7 @@ Deno.serve(async (req) => {
         title_en: "Your request was declined",
         description_ro: `${ownerName} a refuzat cererea pentru "${productTitle}".${reason ? ` Motiv: ${reason}` : ""}`,
         description_en: `${ownerName} declined your request for "${productTitle}".${reason ? ` Reason: ${reason}` : ""}`,
-        link: "/cereri",
+        link: `/cereri?rental_id=${rental_id}`,
       });
     }
 

@@ -37,14 +37,19 @@ export default function Messages() {
 
   const { data: conversations = [], isLoading } = useConversations(user?.id);
 
-  // Auto-select conversation from URL query param
+  // Auto-select conversation from URL query param and switch to correct tab
   useEffect(() => {
     const convId = searchParams.get("conv");
     if (convId && conversations.length > 0 && !selectedConversation) {
       const found = conversations.find((c) => c.id === convId);
-      if (found) setSelectedConversation(found);
+      if (found) {
+        // Switch to the correct tab based on user role in conversation
+        const correctTab = found.buyer_id === user?.id ? "rezervari" : "de_inchiriat";
+        setActiveTab(correctTab);
+        setSelectedConversation(found);
+      }
     }
-  }, [searchParams, conversations, selectedConversation]);
+  }, [searchParams, conversations, selectedConversation, user?.id]);
 
   const handleSelect = (conv: Conversation) => {
     setSelectedConversation(conv);

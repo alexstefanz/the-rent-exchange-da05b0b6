@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
         title_en: `Request sent successfully`,
         description_ro: `Cererea ta pentru "${product?.title}" a fost trimisă proprietarului. Vei fi notificat când va răspunde.`,
         description_en: `Your request for "${product?.title}" has been sent to the owner. You'll be notified when they respond.`,
-        link: `/cereri`,
+        link: `/cereri?rental_id=${rental.id}`,
       },
     ]);
 
