@@ -1,33 +1,38 @@
 
 
-## Plan: Add Reviews section to Profile page
+## Plan: Fix "Discută cu proprietarul" to open the correct conversation
 
-### Overview
-Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
+### Problem
+Two issues prevent the correct conversation from opening:
+
+1. **`getRentalDetailsForNotification` fetches the WRONG rental** — it always gets the *most recent* rental for the user, ignoring which notification was clicked. So `details.product_id` may point to a completely different product.
+
+2. **Messages page auto-select has a tab mismatch** — the conversation may be in the "De Închiriat" tab but `activeTab` defaults to "rezervari", so the user doesn't see it selected in the list.
 
 ### Changes
 
-**1. New database function** — `get_user_given_reviews_with_targets`
-- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
-- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
+**1. Store `rental_id` in notification link (Edge Functions)**
 
-**2. New API function** in `src/features/profile/reviewsApi.ts`
-- Add `getUserGivenReviews(userId)` that calls the new RPC function.
+Update the notification `link` field in `send-rental-notification/index.ts` and `respond-rental-request/index.ts` to include the rental ID:
+- `/cereri?rental_id={rental_id}` instead of just `/cereri`
+- `/anunturi?rental_id={rental_id}` instead of just `/anunturi`
 
-**3. New component** — `src/components/profile/ReviewsTab.tsx`
-- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
-- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
-- Shows counts in tab headers
-- Empty state when no reviews exist
+**2. Fix `getRentalDetailsForNotification` to use the rental ID**
 
-**4. Update `src/pages/Profile.tsx`**
-- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
-- Add corresponding `TabsContent` rendering `ReviewsTab`
+In `src/features/rentals/rentalDetailsApi.ts`, parse the `rental_id` query param from the notification link and fetch that specific rental instead of the most recent one. Fall back to current behavior if no ID is present (backward compat).
 
-### Files affected
-- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
-- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
-- `src/components/profile/ReviewsTab.tsx` — new component
-- `src/pages/Profile.tsx` — add tab
-- `src/integrations/supabase/types.ts` — auto-updated
+**3. Fix Messages page auto-select to switch tab**
+
+In `src/pages/Messages.tsx`, when auto-selecting from `?conv=` param, also determine the correct tab (check if `buyer_id === user.id` → "rezervari", else "de_inchiriat") and call `setActiveTab` accordingly.
+
+**4. Ensure `handleStartChat` query is robust**
+
+In `src/components/profile/NotificationsTab.tsx`, the conversation lookup query uses `.or(buyer_id.eq, owner_id.eq)` which could match wrong conversations. Tighten it to also filter by the other participant to find the exact conversation between both parties for that product.
+
+### Files modified
+- `supabase/functions/send-rental-notification/index.ts`
+- `supabase/functions/respond-rental-request/index.ts`  
+- `src/features/rentals/rentalDetailsApi.ts`
+- `src/pages/Messages.tsx`
+- `src/components/profile/NotificationsTab.tsx`
 
