@@ -19,13 +19,18 @@ export interface RentalDetails {
 }
 
 export async function getRentalDetailsForNotification(notificationLink: string): Promise<RentalDetails | null> {
-  // We need to find the rental associated with this notification
-  // The link is like /profile?tab=lendings or /profile?tab=rentals
-  // We fetch the most recent rental for the current user based on context
+  // Parse rental_id from the notification link query params
+  const url = new URL(notificationLink, "https://placeholder.com");
+  const rentalId = url.searchParams.get("rental_id");
+
+  if (rentalId) {
+    return getRentalById(rentalId);
+  }
+
+  // Fallback: get the most recent rental for the current user
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  // Get the latest rental for this user (as renter or owner)
   const { data, error } = await supabase
     .from("rentals")
     .select("*")

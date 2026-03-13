@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
         title_en: `New rental request`,
         description_ro: `${renter?.full_name || "Un utilizator"} dorește să închirieze "${product?.title}" pentru ${rental.rental_days} zile.`,
         description_en: `${renter?.full_name || "A user"} wants to rent "${product?.title}" for ${rental.rental_days} days.`,
-        link: `/anunturi`,
+        link: `/anunturi?rental_id=${rental.id}`,
       },
       {
         user_id: rental.renter_id,
@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
         title_en: `Request sent successfully`,
         description_ro: `Cererea ta pentru "${product?.title}" a fost trimisă proprietarului. Vei fi notificat când va răspunde.`,
         description_en: `Your request for "${product?.title}" has been sent to the owner. You'll be notified when they respond.`,
-        link: `/cereri`,
+        link: `/cereri?rental_id=${rental.id}`,
       },
     ]);
 

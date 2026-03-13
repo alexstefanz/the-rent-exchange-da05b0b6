@@ -138,12 +138,16 @@ const NotificationsTab = () => {
     const otherUserId = details.renter_id === user.id ? details.owner_id : details.renter_id;
     if (!otherUserId) return;
 
-    // Find or create conversation
+    // Find or create conversation — match exact participants
+    const buyerId = details.renter_id === user.id ? user.id : otherUserId;
+    const ownerId = details.owner_id === user.id ? user.id : otherUserId;
+
     const { data: existing } = await supabase
       .from("conversations")
       .select("id")
       .eq("product_id", details.product_id)
-      .or(`buyer_id.eq.${user.id},owner_id.eq.${user.id}`)
+      .eq("buyer_id", buyerId)
+      .eq("owner_id", ownerId)
       .limit(1)
       .maybeSingle();
 
