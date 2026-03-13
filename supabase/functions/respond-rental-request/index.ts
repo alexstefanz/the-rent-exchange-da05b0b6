@@ -197,7 +197,7 @@ Deno.serve(async (req) => {
         title_en: "Your request was accepted! 🎉",
         description_ro: `${ownerName} a acceptat cererea ta pentru "${productTitle}". Poți discuta detaliile de predare.`,
         description_en: `${ownerName} accepted your request for "${productTitle}". You can discuss pickup details.`,
-        link: "/cereri",
+        link: `/cereri?rental_id=${rental_id}`,
       });
 
       await supabaseAdmin
