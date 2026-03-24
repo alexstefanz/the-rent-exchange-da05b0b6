@@ -1,33 +1,50 @@
 
 
-## Plan: Add Reviews section to Profile page
+## Plan: Add Database Indexes for Performance Optimization
 
-### Overview
-Add a new "Recenzii" (Reviews) tab to the profile page with two sub-tabs: reviews received from other users and reviews given to other users.
+### Analysis
 
-### Changes
+After comparing query patterns in the codebase against existing indexes, several high-traffic tables are missing critical indexes. The **products** table is well-indexed, but **rentals**, **notifications**, **product_reviews**, **profiles**, **transactions**, and **support_tickets** have only primary key indexes despite being frequently queried with filters.
 
-**1. New database function** — `get_user_given_reviews_with_targets`
-- Fetches reviews where `reviewer_id = target_user_id`, joining profiles to get the reviewed user's name and avatar.
-- Similar pattern to the existing `get_user_reviews_with_reviewers` function but reversed.
+### Missing Indexes by Table
 
-**2. New API function** in `src/features/profile/reviewsApi.ts`
-- Add `getUserGivenReviews(userId)` that calls the new RPC function.
+**rentals** (most critical -- used in dashboard, admin, booked dates):
+- `renter_id` -- dashboard "my rentals"
+- `owner_id` -- dashboard "my lendings" + requests
+- `product_id` -- booked dates lookup
+- `status` -- filtered by status everywhere
+- `(product_id, status)` -- composite for `get_booked_dates` function
+- `created_at DESC` -- ordering
 
-**3. New component** — `src/components/profile/ReviewsTab.tsx`
-- Two sub-tabs using existing Tabs component: "Primite" (Received) and "Date" (Given)
-- Each tab shows a list of review cards with: avatar, name (linked to user profile), star rating, comment, date
-- Shows counts in tab headers
-- Empty state when no reviews exist
+**notifications**:
+- `user_id` -- every user fetches their own
+- `(user_id, is_read)` -- unread count query
 
-**4. Update `src/pages/Profile.tsx`**
-- Add new tab entry `{ id: "recenzii", labelRo: "Recenzii", labelEn: "Reviews", icon: Star }` to the TABS array
-- Add corresponding `TabsContent` rendering `ReviewsTab`
+**product_reviews**:
+- `product_id` -- product detail page reviews
+- `reviewer_id` -- user's own reviews
 
-### Files affected
-- `supabase/migrations/` — new migration for `get_user_given_reviews_with_targets`
-- `src/features/profile/reviewsApi.ts` — add `getUserGivenReviews`
-- `src/components/profile/ReviewsTab.tsx` — new component
-- `src/pages/Profile.tsx` — add tab
-- `src/integrations/supabase/types.ts` — auto-updated
+**profiles**:
+- `full_name` using `gin_trgm_ops` -- user search (ILIKE queries)
+
+**transactions**:
+- `user_id` -- earnings page
+- `rental_id` -- rental detail lookups
+
+**support_tickets**:
+- `user_id` -- user's own tickets
+- `status` -- admin filtering
+
+### Migration
+
+A single migration will add ~15 indexes using `CREATE INDEX IF NOT EXISTS` and `CONCURRENTLY` where possible. All indexes are non-destructive (no schema changes, no data changes).
+
+### Technical Details
+
+```text
+Tables affected:     6
+Indexes to add:     ~15
+Risk:               Zero (additive only, IF NOT EXISTS)
+Downtime:           None
+```
 
