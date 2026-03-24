@@ -19,7 +19,6 @@ export interface RentalDetails {
 }
 
 export async function getRentalDetailsForNotification(notificationLink: string): Promise<RentalDetails | null> {
-  // Parse rental_id from the notification link query params
   const url = new URL(notificationLink, "https://placeholder.com");
   const rentalId = url.searchParams.get("rental_id");
 
@@ -33,70 +32,38 @@ export async function getRentalDetailsForNotification(notificationLink: string):
 
   const { data, error } = await supabase
     .from("rentals")
-    .select("*")
+    .select("id")
     .or(`renter_id.eq.${user.id},owner_id.eq.${user.id}`)
     .order("created_at", { ascending: false })
     .limit(1)
     .single();
 
   if (error || !data) return null;
-
-  // Fetch product and profiles
-  const [productRes, renterRes, ownerRes] = await Promise.all([
-    data.product_id ? supabase.from("products").select("title, images").eq("id", data.product_id).single() : Promise.resolve({ data: null }),
-    data.renter_id ? supabase.from("profiles").select("full_name").eq("id", data.renter_id).single() : Promise.resolve({ data: null }),
-    data.owner_id ? supabase.from("profiles").select("full_name").eq("id", data.owner_id).single() : Promise.resolve({ data: null }),
-  ]);
-
-  return {
-    id: data.id,
-    product_id: data.product_id,
-    renter_id: data.renter_id,
-    owner_id: data.owner_id,
-    start_date: data.start_date,
-    end_date: data.end_date,
-    rental_days: data.rental_days,
-    subtotal: data.subtotal,
-    owner_payout: data.owner_payout,
-    status: data.status,
-    payment_status: data.payment_status,
-    product_title: productRes.data?.title || "Produs",
-    product_images: productRes.data?.images || null,
-    renter_name: renterRes.data?.full_name || null,
-    owner_name: ownerRes.data?.full_name || null,
-  };
+  return getRentalById(data.id);
 }
 
 export async function getRentalById(rentalId: string): Promise<RentalDetails | null> {
-  const { data, error } = await supabase
-    .from("rentals")
-    .select("*")
-    .eq("id", rentalId)
-    .single();
+  const { data, error } = await supabase.rpc("get_rental_details", {
+    rental_uuid: rentalId,
+  });
 
-  if (error || !data) return null;
-
-  const [productRes, renterRes, ownerRes] = await Promise.all([
-    data.product_id ? supabase.from("products").select("title, images").eq("id", data.product_id).single() : Promise.resolve({ data: null }),
-    data.renter_id ? supabase.from("profiles").select("full_name").eq("id", data.renter_id).single() : Promise.resolve({ data: null }),
-    data.owner_id ? supabase.from("profiles").select("full_name").eq("id", data.owner_id).single() : Promise.resolve({ data: null }),
-  ]);
-
+  if (error || !data || (data as any[]).length === 0) return null;
+  const row = (data as any[])[0];
   return {
-    id: data.id,
-    product_id: data.product_id,
-    renter_id: data.renter_id,
-    owner_id: data.owner_id,
-    start_date: data.start_date,
-    end_date: data.end_date,
-    rental_days: data.rental_days,
-    subtotal: data.subtotal,
-    owner_payout: data.owner_payout,
-    status: data.status,
-    payment_status: data.payment_status,
-    product_title: productRes.data?.title || "Produs",
-    product_images: productRes.data?.images || null,
-    renter_name: renterRes.data?.full_name || null,
-    owner_name: ownerRes.data?.full_name || null,
+    id: row.id,
+    product_id: row.product_id,
+    renter_id: row.renter_id,
+    owner_id: row.owner_id,
+    start_date: row.start_date,
+    end_date: row.end_date,
+    rental_days: row.rental_days,
+    subtotal: row.subtotal,
+    owner_payout: row.owner_payout,
+    status: row.status,
+    payment_status: row.payment_status,
+    product_title: row.product_title,
+    product_images: row.product_images,
+    renter_name: row.renter_name,
+    owner_name: row.owner_name,
   };
 }

@@ -1244,6 +1244,26 @@ export type Database = {
         Returns: number
       }
       generate_slug: { Args: { title: string }; Returns: string }
+      get_admin_conversations_list: {
+        Args: { search_text?: string }
+        Returns: {
+          buyer_avatar: string
+          buyer_id: string
+          buyer_name: string
+          created_at: string
+          id: string
+          last_message_content: string
+          last_message_created_at: string
+          message_count: number
+          owner_avatar: string
+          owner_id: string
+          owner_name: string
+          product_id: string
+          product_images: string[]
+          product_title: string
+          updated_at: string
+        }[]
+      }
       get_admin_financial_summary: {
         Args: { end_date?: string; start_date?: string }
         Returns: {
@@ -1384,12 +1404,55 @@ export type Database = {
           whatsapp: string
         }[]
       }
+      get_owner_rentals: {
+        Args: { owner_uuid: string }
+        Returns: {
+          created_at: string
+          daily_price: number
+          end_date: string
+          id: string
+          owner_payout: number
+          payment_method: string
+          payment_status: string
+          platform_fee: number
+          product_id: string
+          product_image: string
+          product_title: string
+          rental_days: number
+          renter_avatar: string
+          renter_id: string
+          renter_name: string
+          start_date: string
+          status: string
+          subtotal: number
+        }[]
+      }
       get_product_owner_public_info: {
         Args: { owner_uuid: string }
         Returns: {
           avatar_url: string
           full_name: string
           id: string
+        }[]
+      }
+      get_rental_details: {
+        Args: { rental_uuid: string }
+        Returns: {
+          end_date: string
+          id: string
+          owner_id: string
+          owner_name: string
+          owner_payout: number
+          payment_status: string
+          product_id: string
+          product_images: string[]
+          product_title: string
+          rental_days: number
+          renter_id: string
+          renter_name: string
+          start_date: string
+          status: string
+          subtotal: number
         }[]
       }
       get_rental_renter_info: {

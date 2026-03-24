@@ -22,55 +22,12 @@ export interface OwnerRental {
 }
 
 export async function getOwnerRentals(ownerId: string): Promise<OwnerRental[]> {
-  const { data: rentals, error } = await supabase
-    .from("rentals")
-    .select("*")
-    .eq("owner_id", ownerId)
-    .order("created_at", { ascending: false });
+  const { data, error } = await supabase.rpc("get_owner_rentals", {
+    owner_uuid: ownerId,
+  });
 
   if (error) throw error;
-  if (!rentals || rentals.length === 0) return [];
-
-  // Gather unique product and renter IDs
-  const productIds = [...new Set(rentals.map(r => r.product_id).filter(Boolean))] as string[];
-  const renterIds = [...new Set(rentals.map(r => r.renter_id).filter(Boolean))] as string[];
-
-  const [productsRes, rentersRes] = await Promise.all([
-    productIds.length > 0
-      ? supabase.from("products").select("id, title, images").in("id", productIds)
-      : Promise.resolve({ data: [] }),
-    renterIds.length > 0
-      ? supabase.rpc("get_rental_renter_info", { renter_ids: renterIds })
-      : Promise.resolve({ data: [] }),
-  ]);
-
-  const productsMap = new Map((productsRes.data || []).map(p => [p.id, p]));
-  const rentersMap = new Map((rentersRes.data || []).map((r: any) => [r.id, r]));
-
-  return rentals.map(r => {
-    const product = r.product_id ? productsMap.get(r.product_id) : null;
-    const renter = r.renter_id ? rentersMap.get(r.renter_id) : null;
-    return {
-      id: r.id,
-      product_id: r.product_id,
-      renter_id: r.renter_id,
-      start_date: r.start_date,
-      end_date: r.end_date,
-      rental_days: r.rental_days,
-      daily_price: r.daily_price,
-      subtotal: r.subtotal,
-      platform_fee: r.platform_fee,
-      owner_payout: r.owner_payout,
-      status: r.status,
-      payment_status: r.payment_status,
-      payment_method: r.payment_method,
-      created_at: r.created_at,
-      product_title: product?.title || "Produs",
-      product_image: product?.images?.[0] || null,
-      renter_name: renter?.full_name || null,
-      renter_avatar: renter?.avatar_url || null,
-    };
-  });
+  return (data || []) as OwnerRental[];
 }
 
 export async function respondToRental(rentalId: string, action: "accept" | "reject", reason?: string) {
