@@ -90,7 +90,7 @@ const NewProduct = () => {
 
       toast({
         title: "Anunț trimis spre aprobare",
-        description: "Anunțul tău a fost trimis spre aprobare. Vei fi notificat când va fi publicat.",
+        description: "Anunțul tău a fost trimis spre aprobare. Vei fi notificat când un administrator îl aprobă.",
       });
 
       navigate("/owner");

@@ -158,8 +158,9 @@ export const createProduct = async (
       pickup_address: data.pickup_address || null,
       images: data.images || [],
       included_items: data.included_items || [],
-      is_active: true,
-    })
+      is_active: false,
+      approval_status: 'pending',
+    } as Record<string, unknown>)
     .select()
     .single();
 
