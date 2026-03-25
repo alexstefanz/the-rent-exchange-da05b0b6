@@ -1,35 +1,39 @@
 
 
-## Plan: Enforce Admin Approval Before Product Visibility
+## Plan: Slide Animation for Product Image Gallery
 
-The approval system is **partially built** -- admin UI for approve/reject exists, Owner page shows pending badges. But products are currently created with `is_active: true`, bypassing approval entirely.
+### What changes
 
-### Changes needed
+Replace the current static image display (both mobile and desktop) with an Embla Carousel that has smooth slide transitions and is draggable on touch devices.
 
-#### 1. Database migration -- tighten RLS policy
-Update the "Anyone can view active products" RLS policy to also require `approval_status = 'approved'`:
-```sql
-DROP POLICY "Anyone can view active products" ON products;
-CREATE POLICY "Anyone can view active products" ON products
-  FOR SELECT TO public
-  USING (is_active = true AND approval_status = 'approved');
-```
+### Implementation
 
-#### 2. `productsApi.ts` -- create products as pending
-Change `createProduct` to set `is_active: false` so new products are invisible until admin approval. The admin `approveProduct` function already sets `is_active: true`.
+#### 1. Create `src/components/product/ProductImageGallery.tsx`
 
-#### 3. `productsApi.ts` -- filter public queries
-Add `approval_status = 'approved'` filter to `getProducts()`, `getPublicUserProducts()`, and `getNearbyProducts()` so unapproved products never appear in listings.
+A new reusable component wrapping Embla Carousel (already installed in the project) with:
+- Smooth horizontal slide animation between images
+- **Draggable on mobile/tablet** (Embla's default touch behavior) -- disabled drag on desktop (`lg:` breakpoint) where arrow buttons are used instead
+- Dot indicators showing current slide position
+- Prev/Next arrow buttons on desktop
+- Favorite button overlay
+- Back/Share buttons on mobile
+- Click to open lightbox
+- Syncs `currentImageIndex` state with the carousel API
 
-#### 4. `NewProduct.tsx` -- update success message
-Change the toast from "Anunțul a fost publicat" to "Anunțul tău a fost trimis spre aprobare. Vei fi notificat când este aprobat."
+#### 2. Update `src/pages/ProductDetail.tsx`
 
-#### 5. `Owner.tsx` -- no changes needed
-Already shows pending/rejected badges correctly.
+Replace both the mobile image gallery (lines 199-213) and the desktop gallery (lines 227-241) with the single `ProductImageGallery` component, passing the required props (images, callbacks, isFavorite, etc.).
 
-### Impact
-- New products: invisible until admin approves
-- Existing approved products: unaffected
-- Admin workflow: already functional (approve/reject buttons exist)
-- Owner dashboard: already shows status badges
+### Technical details
+
+- Uses `embla-carousel-react` already in the project (from `carousel.tsx`)
+- Embla handles touch/drag natively -- no extra library needed
+- Desktop: `watchDrag: false` to prevent mouse-drag, use arrow buttons instead
+- Mobile/tablet: `watchDrag: true` for swipe gestures
+- Slide transition is Embla's default smooth animation
+- Thumbnail strip below on mobile stays as-is (scrollable row of remaining images)
+
+### Files changed
+- **New**: `src/components/product/ProductImageGallery.tsx`
+- **Edit**: `src/pages/ProductDetail.tsx` (replace gallery sections)
 
