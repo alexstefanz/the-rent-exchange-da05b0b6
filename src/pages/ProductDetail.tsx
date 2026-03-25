@@ -206,6 +206,19 @@ const ProductDetail = () => {
         onOpenLightbox={openLightbox}
       />
 
+      <main className="w-full max-w-7xl mx-auto py-6 px-[10px] md:px-6 lg:px-8">
+        <nav className="mb-6 hidden md:flex items-center gap-2 text-sm text-muted-foreground overflow-x-auto">
+          <Link to="/categorii" className="hover:text-primary text-xs whitespace-nowrap">{copy.product.allCategories}</Link>
+          <ChevronRight className="h-4 w-4 flex-shrink-0" />
+          {category && (<><Link to={`/categorie/${category.slug}`} className="hover:text-primary text-xs whitespace-nowrap">{category.name}</Link><ChevronRight className="h-4 w-4 flex-shrink-0" /></>)}
+          {subcategory && (<><Link to={`/subcategorie/${subcategory.id}`} className="hover:text-primary whitespace-nowrap">{subcategory.name}</Link><ChevronRight className="h-4 w-4 flex-shrink-0" /></>)}
+          <span className="text-foreground whitespace-nowrap">{product.title}</span>
+        </nav>
+
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start">
+          <div className="space-y-6 order-2 lg:order-1">
+            {/* Desktop Gallery - handled by ProductImageGallery above on mobile, inline here for grid */}
+
             <OwnerSection ownerId={product.owner_id} ownerName={ownerName} ownerAvatar={owner?.avatar_url} rating={4.9} reviewCount={12} memberSince="2024" responseTime={copy.owner.responseTimeValue} responseRate="98%" isOwnProduct={user?.id === product.owner_id} />
 
             {/* Description */}
