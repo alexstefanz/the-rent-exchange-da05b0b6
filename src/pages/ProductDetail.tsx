@@ -194,6 +194,7 @@ const ProductDetail = () => {
       <Navbar />
       
       <ProductImageGallery
+        variant="mobile"
         images={images}
         title={product.title}
         isFavorite={isFavorite}
@@ -214,7 +215,14 @@ const ProductDetail = () => {
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start">
           <div className="space-y-6 order-2 lg:order-1">
-            {/* Desktop Gallery - handled by ProductImageGallery above on mobile, inline here for grid */}
+            <ProductImageGallery
+              variant="desktop"
+              images={images}
+              title={product.title}
+              isFavorite={isFavorite}
+              onToggleFavorite={handleToggleFavorite}
+              onOpenLightbox={openLightbox}
+            />
 
             <OwnerSection ownerId={product.owner_id} ownerName={ownerName} ownerAvatar={owner?.avatar_url} rating={4.9} reviewCount={12} memberSince="2024" responseTime={copy.owner.responseTimeValue} responseRate="98%" isOwnProduct={user?.id === product.owner_id} />
 
