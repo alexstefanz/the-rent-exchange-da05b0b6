@@ -115,11 +115,12 @@ export const getMyProducts = async (ownerId: string): Promise<Product[]> => {
 
 // Get public products for a specific user (for public profile page)
 export const getPublicUserProducts = async (ownerId: string): Promise<Product[]> => {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase
     .from("products")
-    .select("*")
+    .select("*") as any)
     .eq("owner_id", ownerId)
     .eq("is_active", true)
+    .eq("approval_status", "approved")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -224,10 +225,11 @@ export const getNearbyProducts = async (
   category: string | null,
   limit: number = 8
 ): Promise<Product[]> => {
-  let query = supabase
+  let query = (supabase
     .from("products")
-    .select("*")
+    .select("*") as any)
     .eq("is_active", true)
+    .eq("approval_status", "approved")
     .neq("id", currentProductId)
     .order("created_at", { ascending: false })
     .limit(limit);
