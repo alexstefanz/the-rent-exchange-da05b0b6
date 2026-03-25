@@ -50,7 +50,6 @@ const ProductDetail = () => {
   const [owner, setOwner] = useState<OwnerInfo | null>(null);
   
   const [isLoading, setIsLoading] = useState(true);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
@@ -111,8 +110,6 @@ const ProductDetail = () => {
   const priceWeek = Math.round(clientPrice * 6);
   const priceMonth = Math.round(clientPrice * 22);
   const images = product?.images && product.images.length > 0 ? product.images : ["/placeholder.svg"];
-  const nextImage = () => setCurrentImageIndex(prev => (prev + 1) % images.length);
-  const prevImage = () => setCurrentImageIndex(prev => (prev - 1 + images.length) % images.length);
   const openLightbox = (index: number) => { setLightboxIndex(index); setLightboxOpen(true); };
 
   useEffect(() => {
