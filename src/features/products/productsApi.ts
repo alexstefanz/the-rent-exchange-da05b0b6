@@ -38,6 +38,7 @@ export const getProducts = async (filters?: ProductFilters): Promise<Product[]> 
     .from("products")
     .select("*")
     .eq("is_active", true)
+    .eq("approval_status" as any, "approved")
     .order("created_at", { ascending: false });
 
   if (filters?.category) {
