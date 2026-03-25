@@ -143,24 +143,26 @@ export const createProduct = async (
   },
   ownerId: string
 ): Promise<Product> => {
+  const insertData: Record<string, unknown> = {
+    owner_id: ownerId,
+    title: data.title,
+    description: data.description || null,
+    daily_price_owner: data.daily_price_owner,
+    platform_fee_percent: 20.0,
+    category: data.category || null,
+    subcategory: data.subcategory || null,
+    location_city: data.location_city || null,
+    location_country: data.location_country || "Romania",
+    pickup_address: data.pickup_address || null,
+    images: data.images || [],
+    included_items: data.included_items || [],
+    is_active: false,
+    approval_status: 'pending',
+  };
+
   const { data: product, error } = await supabase
     .from("products")
-    .insert({
-      owner_id: ownerId,
-      title: data.title,
-      description: data.description || null,
-      daily_price_owner: data.daily_price_owner,
-      platform_fee_percent: 20.0,
-      category: data.category || null,
-      subcategory: data.subcategory || null,
-      location_city: data.location_city || null,
-      location_country: data.location_country || "Romania",
-      pickup_address: data.pickup_address || null,
-      images: data.images || [],
-      included_items: data.included_items || [],
-      is_active: false,
-      approval_status: 'pending',
-    } as Record<string, unknown>)
+    .insert(insertData)
     .select()
     .single();
 
