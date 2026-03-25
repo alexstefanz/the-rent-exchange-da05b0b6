@@ -248,10 +248,11 @@ export const getNearbyProducts = async (
   // If we don't have enough products from the same city, get more from same category
   if ((data?.length || 0) < limit && category) {
     const existingIds = data?.map(p => p.id) || [];
-    const { data: categoryData, error: categoryError } = await supabase
+    const { data: categoryData, error: categoryError } = await (supabase
       .from("products")
-      .select("*")
+      .select("*") as any)
       .eq("is_active", true)
+      .eq("approval_status", "approved")
       .eq("category", category)
       .not("id", "in", `(${[currentProductId, ...existingIds].join(",")})`)
       .order("created_at", { ascending: false })
