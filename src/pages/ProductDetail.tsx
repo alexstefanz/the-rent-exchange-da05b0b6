@@ -20,6 +20,7 @@ import { toast } from "@/hooks/use-toast";
 import { getOrCreateConversation } from "@/features/messaging/messagingApi";
 import { ChatDialog } from "@/components/messaging/ChatDialog";
 import NearbyProductsSlider from "@/components/products/NearbyProductsSlider";
+import ProductImageGallery from "@/components/product/ProductImageGallery";
 import OwnerSection from "@/components/product/OwnerSection";
 import ProductIncludes from "@/components/product/ProductIncludes";
 import UsageRules from "@/components/product/UsageRules";
@@ -49,7 +50,6 @@ const ProductDetail = () => {
   const [owner, setOwner] = useState<OwnerInfo | null>(null);
   
   const [isLoading, setIsLoading] = useState(true);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
@@ -110,8 +110,6 @@ const ProductDetail = () => {
   const priceWeek = Math.round(clientPrice * 6);
   const priceMonth = Math.round(clientPrice * 22);
   const images = product?.images && product.images.length > 0 ? product.images : ["/placeholder.svg"];
-  const nextImage = () => setCurrentImageIndex(prev => (prev + 1) % images.length);
-  const prevImage = () => setCurrentImageIndex(prev => (prev - 1 + images.length) % images.length);
   const openLightbox = (index: number) => { setLightboxIndex(index); setLightboxOpen(true); };
 
   useEffect(() => {
@@ -195,22 +193,16 @@ const ProductDetail = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      {/* Mobile Image Gallery */}
-      <div className="lg:hidden mt-16">
-        <div className="relative">
-          <img src={images[0]} alt={product.title} className="w-full aspect-[4/3] object-cover bg-muted cursor-pointer" onClick={() => openLightbox(0)} />
-          <button onClick={() => navigate(-1)} className="absolute top-4 left-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white"><ArrowLeft className="h-5 w-5" /></button>
-          <button onClick={handleShare} className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center text-white"><Share2 className="h-5 w-5" /></button>
-          <button onClick={handleToggleFavorite} className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-            <Heart className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : "text-white"}`} />
-          </button>
-        </div>
-        {images.length > 1 && (
-          <div className="flex gap-2 px-[10px] mt-2 overflow-x-auto pb-2">
-            {images.slice(1).map((image, index) => (<img key={index + 1} src={image} alt={`${product.title} ${index + 2}`} className="h-20 w-20 rounded-lg object-cover flex-shrink-0 cursor-pointer" onClick={() => openLightbox(index + 1)} />))}
-          </div>
-        )}
-      </div>
+      <ProductImageGallery
+        variant="mobile"
+        images={images}
+        title={product.title}
+        isFavorite={isFavorite}
+        onToggleFavorite={handleToggleFavorite}
+        onShare={handleShare}
+        onBack={() => navigate(-1)}
+        onOpenLightbox={openLightbox}
+      />
 
       <main className="w-full max-w-7xl mx-auto py-6 px-[10px] md:px-6 lg:px-8">
         <nav className="mb-6 hidden md:flex items-center gap-2 text-sm text-muted-foreground overflow-x-auto">
@@ -223,22 +215,14 @@ const ProductDetail = () => {
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start">
           <div className="space-y-6 order-2 lg:order-1">
-            {/* Desktop Gallery */}
-            <div className="relative overflow-hidden rounded-xl bg-muted hidden lg:block">
-              <div className="aspect-[4/3] bg-muted cursor-pointer" onClick={() => openLightbox(currentImageIndex)}><img src={images[currentImageIndex]} alt={product.title} className="h-full w-full object-cover" /></div>
-              {images.length > 1 && (
-                <>
-                  <Button variant="ghost" size="icon" className="absolute left-4 top-1/2 -translate-y-1/2 bg-background/80" onClick={prevImage}><ChevronLeft className="h-5 w-5" /></Button>
-                  <Button variant="ghost" size="icon" className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/80" onClick={nextImage}><ChevronRight className="h-5 w-5" /></Button>
-                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                    {images.map((_, index) => (<button key={index} className={`h-2 w-2 rounded-full ${index === currentImageIndex ? "bg-primary" : "bg-background/60"}`} onClick={() => setCurrentImageIndex(index)} />))}
-                  </div>
-                </>
-              )}
-              <button onClick={handleToggleFavorite} className="absolute bottom-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center">
-                <Heart className={`h-5 w-5 ${isFavorite ? "fill-red-500 text-red-500" : "text-white"}`} />
-              </button>
-            </div>
+            <ProductImageGallery
+              variant="desktop"
+              images={images}
+              title={product.title}
+              isFavorite={isFavorite}
+              onToggleFavorite={handleToggleFavorite}
+              onOpenLightbox={openLightbox}
+            />
 
             <OwnerSection ownerId={product.owner_id} ownerName={ownerName} ownerAvatar={owner?.avatar_url} rating={4.9} reviewCount={12} memberSince="2024" responseTime={copy.owner.responseTimeValue} responseRate="98%" isOwnProduct={user?.id === product.owner_id} />
 
