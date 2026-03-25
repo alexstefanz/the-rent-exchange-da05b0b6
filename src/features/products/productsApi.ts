@@ -34,10 +34,11 @@ export const calculateClientPrice = (ownerPrice: number, feePercent: number): nu
 };
 
 export const getProducts = async (filters?: ProductFilters): Promise<Product[]> => {
-  let query = supabase
+  let query = (supabase
     .from("products")
-    .select("*")
+    .select("*") as any)
     .eq("is_active", true)
+    .eq("approval_status", "approved")
     .order("created_at", { ascending: false });
 
   if (filters?.category) {
@@ -114,11 +115,12 @@ export const getMyProducts = async (ownerId: string): Promise<Product[]> => {
 
 // Get public products for a specific user (for public profile page)
 export const getPublicUserProducts = async (ownerId: string): Promise<Product[]> => {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase
     .from("products")
-    .select("*")
+    .select("*") as any)
     .eq("owner_id", ownerId)
     .eq("is_active", true)
+    .eq("approval_status", "approved")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -143,23 +145,26 @@ export const createProduct = async (
   },
   ownerId: string
 ): Promise<Product> => {
+  const insertData: Record<string, unknown> = {
+    owner_id: ownerId,
+    title: data.title,
+    description: data.description || null,
+    daily_price_owner: data.daily_price_owner,
+    platform_fee_percent: 20.0,
+    category: data.category || null,
+    subcategory: data.subcategory || null,
+    location_city: data.location_city || null,
+    location_country: data.location_country || "Romania",
+    pickup_address: data.pickup_address || null,
+    images: data.images || [],
+    included_items: data.included_items || [],
+    is_active: false,
+    approval_status: 'pending',
+  };
+
   const { data: product, error } = await supabase
     .from("products")
-    .insert({
-      owner_id: ownerId,
-      title: data.title,
-      description: data.description || null,
-      daily_price_owner: data.daily_price_owner,
-      platform_fee_percent: 20.0,
-      category: data.category || null,
-      subcategory: data.subcategory || null,
-      location_city: data.location_city || null,
-      location_country: data.location_country || "Romania",
-      pickup_address: data.pickup_address || null,
-      images: data.images || [],
-      included_items: data.included_items || [],
-      is_active: true,
-    })
+    .insert(insertData as any)
     .select()
     .single();
 
@@ -220,10 +225,11 @@ export const getNearbyProducts = async (
   category: string | null,
   limit: number = 8
 ): Promise<Product[]> => {
-  let query = supabase
+  let query = (supabase
     .from("products")
-    .select("*")
+    .select("*") as any)
     .eq("is_active", true)
+    .eq("approval_status", "approved")
     .neq("id", currentProductId)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -242,10 +248,11 @@ export const getNearbyProducts = async (
   // If we don't have enough products from the same city, get more from same category
   if ((data?.length || 0) < limit && category) {
     const existingIds = data?.map(p => p.id) || [];
-    const { data: categoryData, error: categoryError } = await supabase
+    const { data: categoryData, error: categoryError } = await (supabase
       .from("products")
-      .select("*")
+      .select("*") as any)
       .eq("is_active", true)
+      .eq("approval_status", "approved")
       .eq("category", category)
       .not("id", "in", `(${[currentProductId, ...existingIds].join(",")})`)
       .order("created_at", { ascending: false })
