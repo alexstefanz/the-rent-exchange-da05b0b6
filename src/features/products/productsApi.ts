@@ -34,11 +34,11 @@ export const calculateClientPrice = (ownerPrice: number, feePercent: number): nu
 };
 
 export const getProducts = async (filters?: ProductFilters): Promise<Product[]> => {
-  let query = supabase
+  let query = (supabase
     .from("products")
-    .select("*")
+    .select("*") as any)
     .eq("is_active", true)
-    .eq("approval_status" as any, "approved")
+    .eq("approval_status", "approved")
     .order("created_at", { ascending: false });
 
   if (filters?.category) {
