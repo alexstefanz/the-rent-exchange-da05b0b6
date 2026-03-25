@@ -20,6 +20,7 @@ import { toast } from "@/hooks/use-toast";
 import { getOrCreateConversation } from "@/features/messaging/messagingApi";
 import { ChatDialog } from "@/components/messaging/ChatDialog";
 import NearbyProductsSlider from "@/components/products/NearbyProductsSlider";
+import ProductImageGallery from "@/components/product/ProductImageGallery";
 import OwnerSection from "@/components/product/OwnerSection";
 import ProductIncludes from "@/components/product/ProductIncludes";
 import UsageRules from "@/components/product/UsageRules";
