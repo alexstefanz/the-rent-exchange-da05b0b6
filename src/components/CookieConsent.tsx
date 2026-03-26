@@ -35,7 +35,7 @@ const CookieConsent = () => {
     <div className="fixed bottom-0 left-0 right-0 z-[9999] p-4 md:p-6 animate-fade-up">
       <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card shadow-xl p-5 md:p-6">
         <div className="flex items-start gap-4">
-          <div className="hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+          <div className="hidden sm:flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
             <Cookie className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 space-y-3">

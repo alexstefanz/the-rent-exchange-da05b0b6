@@ -47,7 +47,7 @@ const HowItWorks = () => {
   const StepCard = ({ step, index }: { step: typeof tenantSteps[0]; index: number }) => (
     <div className="group relative rounded-2xl bg-card p-6 shadow-card transition-all hover:shadow-card-hover">
       <div className="mb-4 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-heading text-sm font-bold text-primary">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 font-heading text-sm font-bold text-primary">
           {index + 1}
         </div>
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover:bg-primary/20">
