@@ -524,7 +524,7 @@ const AccountTab = () => {
           <Card className="border-primary/20 hover:border-primary/40 transition-colors">
             <a href="/suport" className="block">
               <CardContent className="flex items-center gap-4 py-5">
-                <div className="rounded-full bg-primary/10 p-3">
+                <div className="rounded-2xl bg-primary/10 p-3">
                   <LifeBuoy className="h-6 w-6 text-primary" />
                 </div>
                 <div className="flex-1">
