@@ -257,9 +257,17 @@ const ProductDetail = () => {
           {/* Right Sidebar - Booking */}
           <div className="order-1 lg:order-2 lg:self-stretch">
             <div className="lg:sticky lg:top-24 rounded-xl border border-border bg-card p-4 sm:p-6">
+              <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-1.5 lg:hidden">
+                <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+                <span>{location}</span>
+              </div>
               <div className="flex items-start justify-between gap-3 mb-3 lg:hidden">
                 <h1 className="font-heading text-[25px] font-semibold text-foreground leading-tight flex-1">{product.title}</h1>
                 <button onClick={handleToggleFavorite} className="flex-shrink-0 mt-1"><Heart className={`h-6 w-6 ${isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} /></button>
+              </div>
+              <div className="hidden lg:flex items-center gap-1.5 text-sm text-muted-foreground mb-1.5">
+                <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
+                <span>{location}</span>
               </div>
               <h1 className="hidden lg:block font-heading text-2xl font-semibold text-foreground mb-3">{product.title}</h1>
               
