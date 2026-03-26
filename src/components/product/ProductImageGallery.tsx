@@ -73,10 +73,8 @@ const ProductImageGallery = ({
             <Heart className={cn("h-5 w-5", isFavorite ? "fill-red-500 text-red-500" : "text-white")} />
           </button>
           {images.length > 1 && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-              {images.map((_, i) => (
-                <button key={i} className={cn("h-2 w-2 rounded-full transition-colors", i === currentIndex ? "bg-white" : "bg-white/40")} onClick={() => emblaApi?.scrollTo(i)} />
-              ))}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full z-10">
+              {currentIndex + 1} / {images.length}
             </div>
           )}
         </div>
@@ -113,10 +111,8 @@ const ProductImageGallery = ({
           <Button variant="ghost" size="icon" className="absolute right-4 top-1/2 -translate-y-1/2 bg-background/80" onClick={() => emblaApi?.scrollNext()}>
             <ChevronRight className="h-5 w-5" />
           </Button>
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-            {images.map((_, i) => (
-              <button key={i} className={cn("h-2 w-2 rounded-full transition-colors", i === currentIndex ? "bg-primary" : "bg-background/60")} onClick={() => emblaApi?.scrollTo(i)} />
-            ))}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full">
+            {currentIndex + 1} / {images.length}
           </div>
         </>
       )}
