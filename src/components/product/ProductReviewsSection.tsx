@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Star, User } from "lucide-react";
+import { Star, User, Info } from "lucide-react";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   getProductReviews,
   createProductReview,
@@ -83,6 +84,7 @@ export default function ProductReviewsSection({ productId, isOwnProduct }: Props
   const [renterReviews, setRenterReviews] = useState<ProductReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [hasCompletedRental, setHasCompletedRental] = useState(false);
 
   // Form state
   const [reviewType, setReviewType] = useState<"owner" | "renter">("owner");
@@ -102,6 +104,20 @@ export default function ProductReviewsSection({ productId, isOwnProduct }: Props
   };
 
   useEffect(() => { fetchReviews(); }, [productId]);
+
+  useEffect(() => {
+    const checkEligibility = async () => {
+      if (!user || isOwnProduct) return;
+      const { count } = await supabase
+        .from("rentals")
+        .select("id", { count: "exact", head: true })
+        .eq("renter_id", user.id)
+        .eq("product_id", productId)
+        .eq("status", "completed");
+      setHasCompletedRental((count || 0) > 0);
+    };
+    checkEligibility();
+  }, [user, productId, isOwnProduct]);
 
   const canSubmit = ratings.condition > 0 && ratings.communication > 0 && ratings.punctuality > 0;
 
@@ -159,7 +175,7 @@ export default function ProductReviewsSection({ productId, isOwnProduct }: Props
       </Tabs>
 
       {/* Add review form */}
-      {user && !isOwnProduct && (
+      {user && !isOwnProduct && hasCompletedRental && (
         <div className="mt-6 border-t border-border pt-4">
           <h3 className="font-medium text-foreground mb-3">
             {language === "ro" ? "Adaugă o recenzie" : "Add a review"}
@@ -183,6 +199,15 @@ export default function ProductReviewsSection({ productId, isOwnProduct }: Props
                 ? (language === "ro" ? "Se trimite..." : "Submitting...")
                 : (language === "ro" ? "Trimite recenzia" : "Submit review")}
             </Button>
+          </div>
+        </div>
+      )}
+
+      {user && !isOwnProduct && !hasCompletedRental && (
+        <div className="mt-6 border-t border-border pt-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Info className="h-4 w-4 shrink-0" />
+            <span>{language === "ro" ? "Poți lăsa o recenzie după finalizarea unei închirieri." : "You can leave a review after completing a rental."}</span>
           </div>
         </div>
       )}
