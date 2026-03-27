@@ -105,6 +105,20 @@ export default function ProductReviewsSection({ productId, isOwnProduct }: Props
 
   useEffect(() => { fetchReviews(); }, [productId]);
 
+  useEffect(() => {
+    const checkEligibility = async () => {
+      if (!user || isOwnProduct) return;
+      const { count } = await supabase
+        .from("rentals")
+        .select("id", { count: "exact", head: true })
+        .eq("renter_id", user.id)
+        .eq("product_id", productId)
+        .eq("status", "completed");
+      setHasCompletedRental((count || 0) > 0);
+    };
+    checkEligibility();
+  }, [user, productId, isOwnProduct]);
+
   const canSubmit = ratings.condition > 0 && ratings.communication > 0 && ratings.punctuality > 0;
 
   const handleSubmit = async () => {
