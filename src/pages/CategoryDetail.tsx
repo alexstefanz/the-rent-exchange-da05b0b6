@@ -22,6 +22,7 @@ const CategoryDetail = () => {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [sortBy, setSortBy] = useState("relevance");
   const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("all");
   
   const { data: products = [], isLoading } = useProducts(
     category ? { category: category.name } : undefined
@@ -44,7 +45,9 @@ const CategoryDetail = () => {
   const filteredProducts = useMemo(() => {
     let result = products.filter((p) => {
       const price = p.daily_price_owner;
-      return price >= priceRange[0] && price <= priceRange[1];
+      const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
+      const matchesSub = selectedSubcategory === "all" || p.subcategory === selectedSubcategory;
+      return matchesPrice && matchesSub;
     });
 
     if (sortBy === "price_asc") {
@@ -54,7 +57,7 @@ const CategoryDetail = () => {
     }
 
     return result;
-  }, [products, priceRange, sortBy]);
+  }, [products, priceRange, sortBy, selectedSubcategory]);
 
   if (!category) {
     return (
@@ -118,16 +121,17 @@ const CategoryDetail = () => {
             </h2>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Select onValueChange={(val) => navigate(`/subcategorie/${val}`)}>
+              <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory}>
                 <SelectTrigger className="h-9 w-auto min-w-[160px] text-sm">
-                  <SelectValue placeholder={language === "en" ? "Subcategories" : "Subcategorii"} />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="all">{language === "en" ? "All subcategories" : "Toate subcategoriile"}</SelectItem>
                   {category.subcategories.map((sub) => {
                     const subName = language === "en" && sub.nameEn ? sub.nameEn : sub.name;
                     const count = subcategoryCounts[sub.name] || 0;
                     return (
-                      <SelectItem key={sub.id} value={sub.id}>
+                      <SelectItem key={sub.id} value={sub.name}>
                         {subName} ({count})
                       </SelectItem>
                     );
