@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Star, User } from "lucide-react";
+import { Star, User, Info } from "lucide-react";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,6 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   getProductReviews,
   createProductReview,
