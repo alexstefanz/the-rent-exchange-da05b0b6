@@ -1,29 +1,36 @@
 
 
-## Plan: Add Location Above Product Title
+## Plan: Filter by Subcategory on Same Page
 
-Add the product location with a MapPin icon above the title in the booking sidebar, for both mobile and desktop views.
+**Problem**: The subcategories dropdown in `CategoryDetail.tsx` navigates away to `/subcategorie/{id}`, losing context. User wants inline filtering.
 
-### File: `src/pages/ProductDetail.tsx`
+### Changes in `src/pages/CategoryDetail.tsx`
 
-**Before the mobile title (line 260)**, insert:
+1. Add a `selectedSubcategory` state (default `"all"`)
+2. Change the `Select onValueChange` (line 121) from `navigate(...)` to `setSelectedSubcategory(value)`
+3. Update `filteredProducts` memo to also filter by subcategory when one is selected
+4. Update the empty state to show "Adaugă primul anunț" button linking to `/adauga-anunt`
+
+### Technical detail
+
 ```tsx
-<div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-1.5 lg:hidden">
-  <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
-  <span>{location}</span>
-</div>
+// New state
+const [selectedSubcategory, setSelectedSubcategory] = useState("all");
+
+// Updated Select (line 121)
+<Select value={selectedSubcategory} onValueChange={setSelectedSubcategory}>
+
+// Updated filter memo - add subcategory filtering
+let result = products.filter((p) => {
+  const price = p.daily_price_owner;
+  const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
+  const matchesSub = selectedSubcategory === "all" || p.subcategory === selectedSubcategory;
+  return matchesPrice && matchesSub;
+});
 ```
 
-**Before the desktop title (line 264)**, insert:
-```tsx
-<div className="hidden lg:flex items-center gap-1.5 text-sm text-muted-foreground mb-1.5">
-  <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
-  <span>{location}</span>
-</div>
-```
-
-`MapPin` is already imported. `location` is already defined as `product.location_city || "România"`.
+Also add an `"all"` option to the SelectContent so users can reset the filter.
 
 ### Files changed
-- `src/pages/ProductDetail.tsx` (2 small insertions)
+- `src/pages/CategoryDetail.tsx` (4 small edits)
 
