@@ -84,6 +84,7 @@ export default function ProductReviewsSection({ productId, isOwnProduct }: Props
   const [renterReviews, setRenterReviews] = useState<ProductReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [hasCompletedRental, setHasCompletedRental] = useState(false);
 
   // Form state
   const [reviewType, setReviewType] = useState<"owner" | "renter">("owner");
