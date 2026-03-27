@@ -175,7 +175,7 @@ export default function ProductReviewsSection({ productId, isOwnProduct }: Props
       </Tabs>
 
       {/* Add review form */}
-      {user && !isOwnProduct && (
+      {user && !isOwnProduct && hasCompletedRental && (
         <div className="mt-6 border-t border-border pt-4">
           <h3 className="font-medium text-foreground mb-3">
             {language === "ro" ? "Adaugă o recenzie" : "Add a review"}
@@ -199,6 +199,15 @@ export default function ProductReviewsSection({ productId, isOwnProduct }: Props
                 ? (language === "ro" ? "Se trimite..." : "Submitting...")
                 : (language === "ro" ? "Trimite recenzia" : "Submit review")}
             </Button>
+          </div>
+        </div>
+      )}
+
+      {user && !isOwnProduct && !hasCompletedRental && (
+        <div className="mt-6 border-t border-border pt-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Info className="h-4 w-4 shrink-0" />
+            <span>{language === "ro" ? "Poți lăsa o recenzie după finalizarea unei închirieri." : "You can leave a review after completing a rental."}</span>
           </div>
         </div>
       )}
