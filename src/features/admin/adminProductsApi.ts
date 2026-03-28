@@ -106,12 +106,5 @@ export const updateProductAdmin = async (
     .eq('id', productId);
   if (error) throw new Error(error.message);
 };
-  productId: string,
-  updates: { title?: string; description?: string; daily_price_owner?: number; category?: string; is_active?: boolean }
-): Promise<void> => {
-  const { error } = await supabase
-    .from('products')
-    .update(updates as Record<string, unknown>)
-    .eq('id', productId);
   if (error) throw new Error(error.message);
 };
