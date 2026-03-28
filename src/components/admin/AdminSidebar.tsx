@@ -11,7 +11,8 @@ import {
   ClipboardCheck,
   TicketCheck,
   FolderTree,
-  MessageCircle
+  MessageCircle,
+  Mail
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -39,6 +40,7 @@ const menuItems = [
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Utilizatori", url: "/admin/users", icon: Users },
   { title: "Verificări KYC", url: "/admin/kyc", icon: ShieldCheck },
+  { title: "Test Emailuri", url: "/admin/test-emails", icon: Mail },
 ];
 
 const AdminSidebar = () => {
