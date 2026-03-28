@@ -8,7 +8,7 @@ project_id = "tsffyecastudajmgrckt"
   [functions.odoo-proxy]
     verify_jwt = false
   [functions.process-email-queue]
-    verify_jwt = false
+    verify_jwt = true
   [functions.request-account-deactivation]
     verify_jwt = false
   [functions.respond-rental-request]
