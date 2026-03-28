@@ -1,63 +1,29 @@
 
 
-## Plan: Titluri mai mici + Acordeoane mobile-friendly pe toate paginile admin
+## Plan: Fix accordion content responsive layout on mobile
 
-### 1. Titluri mai mici pe 1 rând (toate paginile admin)
+The issue is that all expanded panels use `grid grid-cols-2` which causes text overlap on 390px screens. The fix is to change the grid to `grid-cols-1` on mobile and `grid-cols-2` on larger screens across all admin expanded panels.
 
-Schimbare pe toate cele 6 pagini: `text-3xl` → `text-xl`, icon `h-8 w-8` → `h-5 w-5`, titlu + descriere pe un singur rând flexibil.
+### Changes
 
-**Fișiere afectate**: AdminUsers, AdminReservations, AdminTickets, AdminKYC, AdminFinances, AdminCategories
+**1. `src/pages/admin/AdminReservations.tsx` — `RentalExpandedPanel`**
+- Line 60: Change `grid grid-cols-2 gap-3` to `grid grid-cols-1 sm:grid-cols-2 gap-3`
+- Add `break-words` / `truncate` on long text spans (period, email)
 
-### 2. Acordeoane pe fiecare pagină (înlocuind tabelele cu horizontal scroll)
+**2. `src/pages/admin/AdminTickets.tsx` — `TicketExpandedPanel`**
+- Line 43: Change `grid grid-cols-2 gap-3` to `grid grid-cols-1 sm:grid-cols-2 gap-3`
+- Wrap long date/category text properly
 
-Același pattern ca AdminProducts — pe mobile se afișează carduri clickabile care se expandează cu detalii + acțiuni, iar pe desktop se păstrează tabelul dar cu rânduri expandabile.
+**3. `src/pages/admin/AdminKYC.tsx` — `KycExpandedPanel`**
+- Line 26: Change `grid grid-cols-2 gap-3` to `grid grid-cols-1 sm:grid-cols-2 gap-3`
+- Add `break-all` or `truncate` on email field to prevent overflow
 
-#### AdminReservations
-- Card mobil: Produs, Chiriaș, Perioadă, Sumă, Status badge
-- Expand: Proprietar, Categorie, Oraș, Comision, Plată status, Acțiuni (Confirmă / Activă / Finalizată / Anulează)
-- Desktop: rânduri clickabile, expand inline cu acțiuni (eliminare DropdownMenu)
+**4. `src/pages/admin/AdminFinances.tsx` — `TxExpandedPanel`**
+- Line 40: Change `grid grid-cols-2 gap-3` to `grid grid-cols-1 sm:grid-cols-2 gap-3`
 
-#### AdminTickets  
-- Card mobil: Public ID, Titlu, Prioritate badge, Status badge
-- Expand: Categorie, Data, SLA indicator, buton "Vezi detalii" (navigare la ticket detail)
+**5. `src/pages/admin/AdminUsers.tsx` — `UserExpandedPanel`**
+- Line 34 (in the provided file): Change `grid grid-cols-2 gap-3` to `grid grid-cols-1 sm:grid-cols-2 gap-3`
 
-#### AdminUsers
-- Card mobil: Avatar + Nume, Email, Rol badge, Status (Activ/Banat)
-- Expand: Produse count, Rezervări count, KYC status, Data înregistrare, buton "Vezi profil"
-
-#### AdminKYC
-- Card mobil: Public ID, Nume utilizator, Status badge, Risk score
-- Expand: Email, Rol, Nivel, Încercări, Data creare, buton "Vezi detalii"
-
-#### AdminFinances (tab "Verificare Plăți")
-- Card mobil: Tip, Sumă, Status badge
-- Expand: Descriere, Data, Acțiuni (Verificat/Suspect/Rambursează)
-
-#### AdminCategories
-- Deja folosește Accordion — rămâne la fel, dar subcategoriile din interior vor fi și ele card-uri pe mobil în loc de table cu scroll
-
-### Structura tehnică (pattern comun)
-
-Fiecare pagină va folosi:
-```text
-<div className="hidden md:block">
-  <Table>... (desktop, cu rânduri expandabile)</Table>
-</div>
-<div className="md:hidden space-y-3">
-  {items.map(item => (
-    <Card onClick={toggle} ...>
-      <summary info>
-      {expanded && <detail panel + actions>}
-    </Card>
-  ))}
-</div>
-```
-
-### Fișiere modificate
-- `src/pages/admin/AdminReservations.tsx` — acordeon + titlu mic
-- `src/pages/admin/AdminTickets.tsx` — acordeon + titlu mic  
-- `src/pages/admin/AdminUsers.tsx` — acordeon + titlu mic
-- `src/pages/admin/AdminKYC.tsx` — acordeon + titlu mic
-- `src/pages/admin/AdminFinances.tsx` — acordeon pentru tab plăți + titlu mic
-- `src/pages/admin/AdminCategories.tsx` — titlu mic + subcategorii mobile-friendly
+### Summary
+Single change pattern applied to 5 files: `grid-cols-2` → `grid-cols-1 sm:grid-cols-2` in all expanded panel components, plus `truncate`/`break-all` on long text fields (emails, addresses).
 
