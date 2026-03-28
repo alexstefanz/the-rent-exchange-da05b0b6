@@ -1,0 +1,366 @@
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { approveProduct, rejectProduct } from "@/features/admin/adminProductsApi";
+import AdminLayout from "@/components/admin/AdminLayout";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { toast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { ro } from "date-fns/locale";
+import {
+  Search,
+  Check,
+  X,
+  MapPin,
+  Calendar,
+  User,
+  Package,
+  Tag,
+  FileText,
+  ImageIcon,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+
+interface PendingProduct {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  subcategory: string | null;
+  daily_price_owner: number;
+  location_city: string | null;
+  location_country: string | null;
+  pickup_address: string | null;
+  images: string[] | null;
+  included_items: string[] | null;
+  is_active: boolean;
+  admin_flagged: boolean;
+  flag_reason: string | null;
+  owner_id: string;
+  owner_name: string;
+  slug: string | null;
+  created_at: string;
+  approval_status: string;
+}
+
+const AdminApprovals = () => {
+  const queryClient = useQueryClient();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [imageIndices, setImageIndices] = useState<Record<string, number>>({});
+
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: ["admin-pending-products", searchQuery],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_admin_pending_products", {
+        search_query: searchQuery || null,
+      });
+      if (error) throw new Error(error.message);
+      return (data || []) as PendingProduct[];
+    },
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: approveProduct,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-pending-products"] });
+      toast({ title: "Anunț aprobat cu succes" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Eroare", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) => rejectProduct(id, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-pending-products"] });
+      setRejectDialogOpen(false);
+      setRejectReason("");
+      setSelectedProductId(null);
+      toast({ title: "Anunț respins" });
+    },
+    onError: (err: Error) => {
+      toast({ title: "Eroare", description: err.message, variant: "destructive" });
+    },
+  });
+
+  const handleRejectClick = (productId: string) => {
+    setSelectedProductId(productId);
+    setRejectDialogOpen(true);
+  };
+
+  const handleRejectConfirm = () => {
+    if (!selectedProductId || !rejectReason.trim()) return;
+    rejectMutation.mutate({ id: selectedProductId, reason: rejectReason });
+  };
+
+  const getImageIndex = (productId: string) => imageIndices[productId] || 0;
+
+  const setImageIndex = (productId: string, index: number) => {
+    setImageIndices((prev) => ({ ...prev, [productId]: index }));
+  };
+
+  return (
+    <AdminLayout title="Confirmări Anunțuri">
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Caută după titlu..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Badge variant="secondary" className="text-sm">
+            {products.length} anunțuri în așteptare
+          </Badge>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          </div>
+        ) : products.length === 0 ? (
+          <Card>
+            <CardContent className="py-12 text-center text-muted-foreground">
+              Nu sunt anunțuri în așteptare pentru confirmare.
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-6">
+            {products.map((product) => {
+              const images = product.images || [];
+              const currentIdx = getImageIndex(product.id);
+
+              return (
+                <Card key={product.id} className="overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="grid md:grid-cols-[400px_1fr] gap-0">
+                      {/* Images */}
+                      <div className="relative bg-muted aspect-square md:aspect-auto md:min-h-[320px]">
+                        {images.length > 0 ? (
+                          <>
+                            <img
+                              src={images[currentIdx]}
+                              alt={product.title}
+                              className="w-full h-full object-cover"
+                            />
+                            {images.length > 1 && (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    setImageIndex(
+                                      product.id,
+                                      (currentIdx - 1 + images.length) % images.length
+                                    )
+                                  }
+                                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 rounded-full p-1 hover:bg-background"
+                                >
+                                  <ChevronLeft className="h-5 w-5" />
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    setImageIndex(
+                                      product.id,
+                                      (currentIdx + 1) % images.length
+                                    )
+                                  }
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 rounded-full p-1 hover:bg-background"
+                                >
+                                  <ChevronRight className="h-5 w-5" />
+                                </button>
+                                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                                  {images.map((_, i) => (
+                                    <div
+                                      key={i}
+                                      className={`w-2 h-2 rounded-full ${
+                                        i === currentIdx
+                                          ? "bg-primary"
+                                          : "bg-background/60"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                            <div className="absolute top-2 right-2">
+                              <Badge variant="outline" className="bg-background/80">
+                                <ImageIcon className="h-3 w-3 mr-1" />
+                                {images.length} imagini
+                              </Badge>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                            <ImageIcon className="h-12 w-12" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Details */}
+                      <div className="p-6 space-y-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <h3 className="text-xl font-semibold text-foreground">
+                              {product.title}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+                              <User className="h-4 w-4" />
+                              <span>{product.owner_name}</span>
+                              <span className="mx-1">•</span>
+                              <Calendar className="h-4 w-4" />
+                              <span>
+                                {format(new Date(product.created_at), "dd MMM yyyy, HH:mm", {
+                                  locale: ro,
+                                })}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-2xl font-bold text-primary">
+                              {product.daily_price_owner} RON
+                            </div>
+                            <div className="text-xs text-muted-foreground">/ zi</div>
+                          </div>
+                        </div>
+
+                        {/* Category */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Tag className="h-4 w-4 text-muted-foreground" />
+                          {product.category && (
+                            <Badge variant="secondary">{product.category}</Badge>
+                          )}
+                          {product.subcategory && (
+                            <Badge variant="outline">{product.subcategory}</Badge>
+                          )}
+                        </div>
+
+                        {/* Description */}
+                        {product.description && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium text-foreground">
+                                Descriere
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground whitespace-pre-line">
+                              {product.description}
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Included items */}
+                        {product.included_items && product.included_items.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <Package className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium text-foreground">
+                                Ce este inclus
+                              </span>
+                            </div>
+                            <ul className="text-sm text-muted-foreground space-y-1">
+                              {product.included_items.map((item, i) => (
+                                <li key={i} className="flex items-center gap-2">
+                                  <Check className="h-3 w-3 text-emerald-500" />
+                                  {item}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Location */}
+                        <div className="flex items-start gap-2">
+                          <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                          <div className="text-sm text-muted-foreground">
+                            <div>
+                              {[product.location_city, product.location_country]
+                                .filter(Boolean)
+                                .join(", ") || "Nedefinit"}
+                            </div>
+                            {product.pickup_address && (
+                              <div className="mt-0.5">
+                                Adresa ridicare: {product.pickup_address}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-3 pt-2 border-t border-border">
+                          <Button
+                            onClick={() => approveMutation.mutate(product.id)}
+                            disabled={approveMutation.isPending}
+                            className="gap-2"
+                          >
+                            <Check className="h-4 w-4" />
+                            Aprobă
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            onClick={() => handleRejectClick(product.id)}
+                            disabled={rejectMutation.isPending}
+                            className="gap-2"
+                          >
+                            <X className="h-4 w-4" />
+                            Respinge
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Respinge anunțul</DialogTitle>
+          </DialogHeader>
+          <Textarea
+            placeholder="Motivul respingerii..."
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            rows={4}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
+              Anulează
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleRejectConfirm}
+              disabled={!rejectReason.trim() || rejectMutation.isPending}
+            >
+              Respinge
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </AdminLayout>
+  );
+};
+
+export default AdminApprovals;

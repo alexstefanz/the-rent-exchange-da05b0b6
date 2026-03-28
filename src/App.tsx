@@ -67,6 +67,7 @@ const AdminKYCDetail = lazy(() => import("./pages/admin/AdminKYCDetail"));
 const AdminUserDetail = lazy(() => import("./pages/admin/AdminUserDetail"));
 const AdminConversations = lazy(() => import("./pages/admin/AdminConversations"));
 const AdminConversationDetail = lazy(() => import("./pages/admin/AdminConversationDetail"));
+const AdminApprovals = lazy(() => import("./pages/admin/AdminApprovals"));
 
 const queryClient = new QueryClient();
 

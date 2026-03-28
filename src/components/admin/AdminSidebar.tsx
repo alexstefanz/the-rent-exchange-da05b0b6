@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Home,
   Package,
+  ClipboardCheck,
   TicketCheck,
   FolderTree,
   MessageCircle
