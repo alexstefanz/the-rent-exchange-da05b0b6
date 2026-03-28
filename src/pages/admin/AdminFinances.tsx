@@ -37,7 +37,7 @@ const TxExpandedPanel = ({
   tx: Transaction; updatingTx: string | null; onUpdateStatus: (id: string, status: string) => void; formatCurrency: (v: number) => string;
 }) => (
   <div className="p-4 space-y-3 bg-muted/30 border-t">
-    <div className="grid grid-cols-2 gap-3 text-sm">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
       <div>
         <span className="text-muted-foreground">Descriere:</span>
         <p className="font-medium">{tx.description || '-'}</p>
