@@ -1,38 +1,54 @@
 
 
-## Plan: Fix user statistics to include product reviews
+## Plan: AI-Powered Support Chat with Admin Handoff
 
-### Problem
-The `get_user_statistics` database function only queries `user_reviews` table for rating/count. Product reviews (stored in `product_reviews`) where the user is the product owner are not counted. So "Tilihi Andrei" has a product review but his profile shows "Fără recenzii" and rating N/A.
+Replace the current support form in the `SupportChatWidget` with a two-phase flow: first an AI assistant gathers context through conversational questions, then creates a ticket and hands off to a human admin.
 
-### Solution — Update the database function
+### How it works
 
-Create a migration to replace `get_user_statistics` so it combines both review sources:
+1. User opens the chat widget → instead of a form, the AI greets them and asks what they need help with
+2. The AI asks 2-3 clarifying questions (category, details, urgency) in a conversational way
+3. Once enough context is gathered, the AI automatically creates an `ops_ticket` with the collected info (subject, description, category) and notifies the user that a human admin will take over
+4. From that point, the chat becomes the existing ticket messaging system — user and admin exchange messages as before
 
-```sql
-CREATE OR REPLACE FUNCTION get_user_statistics(target_user_id uuid)
-RETURNS TABLE(products_count bigint, member_since timestamptz, average_rating numeric, reviews_count bigint)
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $$
-  WITH all_reviews AS (
-    -- User reviews (direct user-to-user)
-    SELECT rating FROM user_reviews WHERE reviewed_user_id = target_user_id
-    UNION ALL
-    -- Product reviews where target user is the product owner
-    SELECT pr.rating FROM product_reviews pr
-    JOIN products p ON p.id = pr.product_id
-    WHERE p.owner_id = target_user_id
-  )
-  SELECT 
-    (SELECT COUNT(*) FROM products WHERE owner_id = target_user_id AND is_active = true),
-    (SELECT created_at FROM profiles WHERE id = target_user_id),
-    COALESCE((SELECT AVG(rating)::numeric FROM all_reviews), 0),
-    (SELECT COUNT(*) FROM all_reviews);
-$$;
-```
+### Technical Implementation
 
-### Files changed
-- **1 new migration** — `CREATE OR REPLACE FUNCTION get_user_statistics` to combine `user_reviews` + `product_reviews` (owner's products)
+**1. New Edge Function: `supabase/functions/support-ai-chat/index.ts`**
+- Receives the conversation history (array of messages) from the client
+- Uses Lovable AI (Gemini Flash) with a system prompt in Romanian that:
+  - Greets the user warmly as "Rentli Support"
+  - Asks about their issue category (rental problem, account issue, product listing, payment, other)
+  - Asks for details about the specific problem
+  - When enough info is gathered, returns a structured tool call with `{ ready: true, subject, description, category_type }` to signal ticket creation
+- Uses tool calling to extract structured data when ready to create a ticket
+- Streams responses for a natural chat feel
 
-No frontend code changes needed — the existing `useUserStatistics` hook and `OwnerSection` component already handle the data correctly; they just need real numbers from the database.
+**2. Refactor `SupportChatWidget.tsx`**
+- Remove the form (subject, description, name fields)
+- Add a new "AI phase" state before the ticket is created:
+  - Local `aiMessages` state with `{role, content}[]`
+  - On user message → call edge function with full history → stream AI response
+  - When AI signals readiness (via a special marker in response or separate call), auto-create the ticket using existing `createUserTicket`
+  - Insert the AI conversation summary as the ticket description
+  - Transition to existing ticket chat view seamlessly
+- The AI messages are displayed with a "bot" avatar/style (different from admin messages)
+- Show typing indicator while AI is responding
+
+**3. Message display distinction**
+- AI messages: shown with a bot icon, slightly different styling (e.g., subtle gradient or bot label)
+- Admin messages: existing `AGENT` author_type styling
+- User messages: existing `CUSTOMER` styling
+
+### Files to create/modify
+- **Create** `supabase/functions/support-ai-chat/index.ts` — AI chat edge function with streaming
+- **Modify** `src/components/support/SupportChatWidget.tsx` — replace form with AI conversation flow, add streaming, add auto-ticket creation on handoff
+
+### AI System Prompt (Romanian)
+The AI will be instructed to:
+- Be concise and friendly
+- Ask maximum 3 questions before creating the ticket
+- Categorize the issue into existing category types (GENERAL_INQUIRY, PAYMENT_ISSUE, ACCOUNT_ISSUE, etc.)
+- When it has enough info, signal readiness with a specific format
+
+No database changes needed — reuses existing `ops_tickets` and `ops_ticket_messages` tables.
 
