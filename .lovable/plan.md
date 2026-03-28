@@ -1,54 +1,55 @@
 
 
-## Plan: AI-Powered Support Chat with Admin Handoff
+## Plan: Notificări prin email pentru utilizatori
 
-Replace the current support form in the `SupportChatWidget` with a two-phase flow: first an AI assistant gathers context through conversational questions, then creates a ticket and hands off to a human admin.
+### Situația curentă
 
-### How it works
+Proiectul are deja **7 Edge Functions** care trimit emailuri direct prin **Resend API** (cu cheia `RESEND_API_KEY`):
+- `send-rental-notification` — notificări la cereri de închiriere noi
+- `send-message-notification` — notificări la mesaje noi
+- `send-cancellation-notification` — notificări la anulări
+- `send-password-changed-notification` — notificări la schimbare parolă
+- `send-general-notification` — welcome, review, produs publicat
+- `respond-rental-request` — răspuns la cereri (accept/refuz)
+- `request-account-deactivation` — email cu token de dezactivare
 
-1. User opens the chat widget → instead of a form, the AI greets them and asks what they need help with
-2. The AI asks 2-3 clarifying questions (category, details, urgency) in a conversational way
-3. Once enough context is gathered, the AI automatically creates an `ops_ticket` with the collected info (subject, description, category) and notifies the user that a human admin will take over
-4. From that point, the chat becomes the existing ticket messaging system — user and admin exchange messages as before
+De asemenea, există un domeniu email configurat (`notify.rentli.ro`), dar **verificarea DNS a eșuat** — emailurile nu pot fi trimise de pe acest domeniu momentan.
 
-### Technical Implementation
+Există și un sistem de cozi (`process-email-queue`) deja funcțional cu pgmq.
 
-**1. New Edge Function: `supabase/functions/support-ai-chat/index.ts`**
-- Receives the conversation history (array of messages) from the client
-- Uses Lovable AI (Gemini Flash) with a system prompt in Romanian that:
-  - Greets the user warmly as "Rentli Support"
-  - Asks about their issue category (rental problem, account issue, product listing, payment, other)
-  - Asks for details about the specific problem
-  - When enough info is gathered, returns a structured tool call with `{ ready: true, subject, description, category_type }` to signal ticket creation
-- Uses tool calling to extract structured data when ready to create a ticket
-- Streams responses for a natural chat feel
+### Ce propun
 
-**2. Refactor `SupportChatWidget.tsx`**
-- Remove the form (subject, description, name fields)
-- Add a new "AI phase" state before the ticket is created:
-  - Local `aiMessages` state with `{role, content}[]`
-  - On user message → call edge function with full history → stream AI response
-  - When AI signals readiness (via a special marker in response or separate call), auto-create the ticket using existing `createUserTicket`
-  - Insert the AI conversation summary as the ticket description
-  - Transition to existing ticket chat view seamlessly
-- The AI messages are displayed with a "bot" avatar/style (different from admin messages)
-- Show typing indicator while AI is responding
+Lovable are un sistem integrat de email care oferă:
+1. **Emailuri de autentificare** (verificare email, resetare parolă, magic link) — cu template-uri personalizate branded Rentli
+2. **Emailuri tranzacționale** (notificări la închirieri, mesaje, recenzii etc.) — prin cozi cu retry automat, rate-limit handling, și dead-letter queue
 
-**3. Message display distinction**
-- AI messages: shown with a bot icon, slightly different styling (e.g., subtle gradient or bot label)
-- Admin messages: existing `AGENT` author_type styling
-- User messages: existing `CUSTOMER` styling
+**Primul pas** este să rezolvăm problema DNS pentru domeniul `notify.rentli.ro`. Trebuie să verifici configurarea DNS în **Cloud → Emails** și să te asiguri că recordurile NS sunt corect setate la provider-ul tău de domeniu (rentli.ro).
 
-### Files to create/modify
-- **Create** `supabase/functions/support-ai-chat/index.ts` — AI chat edge function with streaming
-- **Modify** `src/components/support/SupportChatWidget.tsx` — replace form with AI conversation flow, add streaming, add auto-ticket creation on handoff
+### Două tipuri de emailuri de configurat
 
-### AI System Prompt (Romanian)
-The AI will be instructed to:
-- Be concise and friendly
-- Ask maximum 3 questions before creating the ticket
-- Categorize the issue into existing category types (GENERAL_INQUIRY, PAYMENT_ISSUE, ACCOUNT_ISSUE, etc.)
-- When it has enough info, signal readiness with a specific format
+**1. Emailuri de autentificare (Auth Emails)**
+- Verificare email la înregistrare
+- Resetare parolă
+- Magic link login
+- Template-uri branded cu logo-ul și culorile Rentli
 
-No database changes needed — reuses existing `ops_tickets` and `ops_ticket_messages` tables.
+**2. Emailuri aplicație (App Emails)**  
+- Migrarea funcțiilor existente (rental, message, cancellation etc.) pe noul sistem cu template-uri React Email
+- Adăugare unsubscribe automat (conform GDPR)
+- Retry automat și tracking (email_send_log)
+- Suppression list (bounce/complaint handling)
+
+### Pași de implementare
+
+1. **Rezolvare DNS** — Tu verifici și corectezi recordurile NS pentru `notify.rentli.ro` la provider-ul tău de domeniu
+2. **Setup infrastructură email** — pregătirea cozilor și funcțiilor de bază
+3. **Auth email templates** — template-uri branded pentru verificare/resetare parolă
+4. **Migrare notificări existente** — trecerea de la Resend direct la sistemul cu cozi și template-uri React Email
+5. **Pagină de unsubscribe** — pagină branded în aplicație
+
+### Ce trebuie de la tine
+
+**Trebuie să verifici configurarea DNS** pentru domeniul `notify.rentli.ro`. Mergi în **Cloud → Emails** și verifică ce recorduri DNS trebuie adăugate/corectate la provider-ul tău de domeniu. Fără DNS verificat, emailurile nu pot fi trimise de pe domeniul tău.
+
+Vrei să începem cu rezolvarea DNS-ului?
 
