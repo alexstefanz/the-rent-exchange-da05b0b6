@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Heart, Star, Search, List, LayoutGrid, ChevronRight, Check, Loader2, Calendar, Package, MessageCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { categories } from "@/data/categories";
 import { getProductUrl } from "@/lib/slugUtils";
 import {

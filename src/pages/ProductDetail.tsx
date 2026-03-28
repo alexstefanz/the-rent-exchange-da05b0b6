@@ -26,6 +26,7 @@ import ProductIncludes from "@/components/product/ProductIncludes";
 import UsageRules from "@/components/product/UsageRules";
 import OwnerOtherListings from "@/components/product/OwnerOtherListings";
 import ProductReviewsSection from "@/components/product/ProductReviewsSection";
+import { useUserStatistics } from "@/hooks/queries/useUserProfile";
 
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
