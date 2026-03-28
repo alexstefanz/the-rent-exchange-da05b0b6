@@ -38,6 +38,26 @@ interface OwnerInfo {
   avatar_url: string | null;
 }
 
+const OwnerSectionWithStats = ({ ownerId, ownerName, ownerAvatar, responseTime, responseRate, isOwnProduct }: {
+  ownerId: string; ownerName: string; ownerAvatar?: string | null; responseTime?: string; responseRate?: string; isOwnProduct?: boolean;
+}) => {
+  const { data: statistics } = useUserStatistics(ownerId);
+  const memberSinceYear = statistics?.member_since ? new Date(statistics.member_since).getFullYear().toString() : "N/A";
+  return (
+    <OwnerSection
+      ownerId={ownerId}
+      ownerName={ownerName}
+      ownerAvatar={ownerAvatar}
+      rating={statistics?.average_rating ?? 0}
+      reviewCount={statistics?.reviews_count ?? 0}
+      memberSince={memberSinceYear}
+      responseTime={responseTime}
+      responseRate={responseRate}
+      isOwnProduct={isOwnProduct}
+    />
+  );
+};
+
 
 const ProductDetail = () => {
   const navigate = useNavigate();
@@ -149,26 +169,6 @@ const ProductDetail = () => {
     if (rentalDays >= 7) { const weeks = Math.floor(rentalDays / 7); const extraDays = rentalDays % 7; return weeks * priceWeek + extraDays * clientPrice; }
     return rentalDays * clientPrice;
   }, [rentalDays, clientPrice, priceWeek, priceMonth]);
-
-const OwnerSectionWithStats = ({ ownerId, ownerName, ownerAvatar, responseTime, responseRate, isOwnProduct }: {
-  ownerId: string; ownerName: string; ownerAvatar?: string | null; responseTime?: string; responseRate?: string; isOwnProduct?: boolean;
-}) => {
-  const { data: statistics } = useUserStatistics(ownerId);
-  const memberSinceYear = statistics?.member_since ? new Date(statistics.member_since).getFullYear().toString() : "N/A";
-  return (
-    <OwnerSection
-      ownerId={ownerId}
-      ownerName={ownerName}
-      ownerAvatar={ownerAvatar}
-      rating={statistics?.average_rating ?? 0}
-      reviewCount={statistics?.reviews_count ?? 0}
-      memberSince={memberSinceYear}
-      responseTime={responseTime}
-      responseRate={responseRate}
-      isOwnProduct={isOwnProduct}
-    />
-  );
-};
 
 
   const handleShare = async () => {
