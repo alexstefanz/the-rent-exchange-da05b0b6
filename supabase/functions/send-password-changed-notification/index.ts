@@ -20,7 +20,7 @@ function checkRateLimit(key: string, maxRequests = 3, windowSec = 300): boolean 
   return true;
 }
 
-const PLATFORM_URL = "https://the-rent-exchange.lovable.app";
+const PLATFORM_URL = "https://rentli.ro";
 
 function escapeHtml(text: string): string {
   const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
@@ -45,24 +45,24 @@ function buildEmailTemplate(opts: {
   return `<!DOCTYPE html>
 <html lang="ro">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#FAF9F7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<body style="margin:0;padding:0;background-color:#FAF9F7;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAF9F7;padding:32px 16px;">
 <tr><td align="center">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
-  <tr><td style="background-color:#3DB86A;border-radius:12px 12px 0 0;padding:24px 32px;text-align:center;">
-    <span style="color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">RentNow</span>
+  <tr><td style="background-color:#F59E0B;border-radius:12px 12px 0 0;padding:24px 32px;text-align:center;">
+    <span style="color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">Rentli</span>
   </td></tr>
   <tr><td style="background-color:#ffffff;padding:32px;border-radius:0 0 12px 12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
     <h2 style="margin:0 0 8px;color:#2D2517;font-size:20px;">${opts.title}</h2>
     <p style="margin:0 0 24px;color:#6B6155;font-size:15px;line-height:1.5;">${opts.greeting}</p>
     ${rowsHtml ? `<table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #E8E4DF;border-bottom:1px solid #E8E4DF;margin-bottom:24px;padding:8px 0;">${rowsHtml}</table>` : ''}
     <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
-      <a href="${PLATFORM_URL}${opts.ctaLink}" style="display:inline-block;background-color:#3DB86A;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;">${opts.ctaText}</a>
+      <a href="${PLATFORM_URL}${opts.ctaLink}" style="display:inline-block;background-color:#F59E0B;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;">${opts.ctaText}</a>
     </td></tr></table>
   </td></tr>
   <tr><td style="padding:24px 32px;text-align:center;">
     <p style="margin:0;color:#9B9489;font-size:12px;">${opts.footerText}</p>
-    <a href="${PLATFORM_URL}" style="color:#3DB86A;font-size:12px;text-decoration:none;">the-rent-exchange.lovable.app</a>
+    <a href="${PLATFORM_URL}" style="color:#F59E0B;font-size:12px;text-decoration:none;">rentli.ro</a>
   </td></tr>
 </table>
 </td></tr>
@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
 
     const html = buildEmailTemplate({
       title: "Parola ta a fost schimbată",
-      greeting: "Parola contului tău RentNow a fost schimbată cu succes. Dacă nu tu ai făcut această modificare, te rugăm să ne contactezi imediat.",
+      greeting: "Parola contului tău Rentli a fost schimbată cu succes. Dacă nu tu ai făcut această modificare, te rugăm să ne contactezi imediat.",
       rows: [
         { label: "Data schimbării", value: dateStr },
         { label: "Cont", value: escapeHtml(email) },
@@ -127,9 +127,9 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: "RentNow <noreply@rentli.ro>",
+        from: "Rentli <noreply@rentli.ro>",
         to: [email],
-        subject: "Parola ta a fost schimbată - RentNow",
+        subject: "Parola ta a fost schimbată - Rentli",
         html,
       }),
     });

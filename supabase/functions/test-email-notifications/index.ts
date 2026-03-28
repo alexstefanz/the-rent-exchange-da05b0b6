@@ -5,7 +5,7 @@ const corsHeaders = {
 };
 
 const TEST_EMAIL = "z.alexstefan@gmail.com";
-const PLATFORM_URL = "https://the-rent-exchange.lovable.app";
+const PLATFORM_URL = "https://rentli.ro";
 
 function buildEmailTemplate(opts: {
   title: string;
@@ -25,24 +25,24 @@ function buildEmailTemplate(opts: {
   return `<!DOCTYPE html>
 <html lang="ro">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#FAF9F7;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<body style="margin:0;padding:0;background-color:#FAF9F7;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAF9F7;padding:32px 16px;">
 <tr><td align="center">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
-  <tr><td style="background-color:#3DB86A;border-radius:12px 12px 0 0;padding:24px 32px;text-align:center;">
-    <span style="color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">RentNow</span>
+  <tr><td style="background-color:#F59E0B;border-radius:12px 12px 0 0;padding:24px 32px;text-align:center;">
+    <span style="color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">Rentli</span>
   </td></tr>
   <tr><td style="background-color:#ffffff;padding:32px;border-radius:0 0 12px 12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
     <h2 style="margin:0 0 8px;color:#2D2517;font-size:20px;">${opts.title}</h2>
     <p style="margin:0 0 24px;color:#6B6155;font-size:15px;line-height:1.5;">${opts.greeting}</p>
     ${rowsHtml ? `<table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #E8E4DF;border-bottom:1px solid #E8E4DF;margin-bottom:24px;padding:8px 0;">${rowsHtml}</table>` : ''}
     <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
-      <a href="${PLATFORM_URL}${opts.ctaLink}" style="display:inline-block;background-color:#3DB86A;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;">${opts.ctaText}</a>
+      <a href="${PLATFORM_URL}${opts.ctaLink}" style="display:inline-block;background-color:#F59E0B;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;">${opts.ctaText}</a>
     </td></tr></table>
   </td></tr>
   <tr><td style="padding:24px 32px;text-align:center;">
     <p style="margin:0;color:#9B9489;font-size:12px;">${opts.footerText}</p>
-    <p style="margin:8px 0 0;"><a href="${PLATFORM_URL}" style="color:#3DB86A;font-size:12px;text-decoration:none;">the-rent-exchange.lovable.app</a></p>
+    <p style="margin:8px 0 0;"><a href="${PLATFORM_URL}" style="color:#F59E0B;font-size:12px;text-decoration:none;">rentli.ro</a></p>
   </td></tr>
 </table>
 </td></tr></table>
@@ -57,7 +57,7 @@ async function sendTestEmail(resendApiKey: string, subject: string, html: string
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: `RentNow <${fromDomain}>`,
+      from: `Rentli <${fromDomain}>`,
       to: [TEST_EMAIL],
       subject: `[TEST] ${subject}`,
       html,
@@ -74,8 +74,8 @@ const TEMPLATES: Record<string, (resendApiKey: string) => Promise<unknown>> = {
   // 1. Welcome
   welcome: async (key) => {
     const html = buildEmailTemplate({
-      title: "Bine ai venit pe RentNow! 🎉",
-      greeting: "Salut Alexandru! 👋<br><br>Contul tău a fost creat cu succes. Pe RentNow poți închiria sau lista produse în câteva minute. Explorează categoriile și începe acum!",
+      title: "Bine ai venit pe Rentli! 🎉",
+      greeting: "Salut Alexandru! 👋<br><br>Contul tău a fost creat cu succes. Pe Rentli poți închiria sau lista produse în câteva minute. Explorează categoriile și începe acum!",
       rows: [
         { label: "🔍 Caută produse", value: "Găsește ce ai nevoie" },
         { label: "📦 Listează produse", value: "Câștigă din ce ai" },
@@ -83,16 +83,16 @@ const TEMPLATES: Record<string, (resendApiKey: string) => Promise<unknown>> = {
       ],
       ctaText: "Explorează platforma",
       ctaLink: "/",
-      footerText: "Mulțumim că te-ai alăturat comunității RentNow!",
+      footerText: "Mulțumim că te-ai alăturat comunității Rentli!",
     });
-    return sendTestEmail(key, "Bine ai venit pe RentNow! 🎉", html);
+    return sendTestEmail(key, "Bine ai venit pe Rentli! 🎉", html);
   },
 
   // 2. Review received
   review_received: async (key) => {
     const html = buildEmailTemplate({
       title: "Ai primit o recenzie nouă! ⭐",
-      greeting: "Salut Alexandru,<br>Cineva ți-a lăsat o recenzie pe platforma RentNow.",
+      greeting: "Salut Alexandru,<br>Cineva ți-a lăsat o recenzie pe platforma Rentli.",
       rows: [
         { label: "👤 De la", value: "Maria Popescu" },
         { label: "⭐ Rating", value: "⭐⭐⭐⭐⭐ (5/5)" },
@@ -110,7 +110,7 @@ const TEMPLATES: Record<string, (resendApiKey: string) => Promise<unknown>> = {
   product_published: async (key) => {
     const html = buildEmailTemplate({
       title: "Produsul tău a fost publicat! 🚀",
-      greeting: "Felicitări Alexandru! 🎊<br>Produsul tău <strong>Canon EOS R5 - Body</strong> este acum vizibil pe platforma RentNow și poate fi închiriat de alți utilizatori.",
+      greeting: "Felicitări Alexandru! 🎊<br>Produsul tău <strong>Canon EOS R5 - Body</strong> este acum vizibil pe platforma Rentli și poate fi închiriat de alți utilizatori.",
       rows: [
         { label: "📦 Produs", value: "Canon EOS R5 - Body" },
         { label: "📊 Status", value: "Activ ✅" },
@@ -224,7 +224,7 @@ const TEMPLATES: Record<string, (resendApiKey: string) => Promise<unknown>> = {
     });
     const html = buildEmailTemplate({
       title: "Parola ta a fost schimbată",
-      greeting: "Parola contului tău RentNow a fost schimbată cu succes. Dacă nu tu ai făcut această modificare, te rugăm să ne contactezi imediat.",
+      greeting: "Parola contului tău Rentli a fost schimbată cu succes. Dacă nu tu ai făcut această modificare, te rugăm să ne contactezi imediat.",
       rows: [
         { label: "Data schimbării", value: dateStr },
         { label: "Cont", value: TEST_EMAIL },
@@ -233,7 +233,7 @@ const TEMPLATES: Record<string, (resendApiKey: string) => Promise<unknown>> = {
       ctaLink: "/auth",
       footerText: "Ai primit acest email deoarece parola contului tău a fost schimbată.",
     });
-    return sendTestEmail(key, "Parola ta a fost schimbată - RentNow", html);
+    return sendTestEmail(key, "Parola ta a fost schimbată - Rentli", html);
   },
 
   // 10. Rental accepted
@@ -280,7 +280,7 @@ const TEMPLATES: Record<string, (resendApiKey: string) => Promise<unknown>> = {
     const token = "test-token-" + crypto.randomUUID();
     const confirmLink = `${PLATFORM_URL}/dezactivare-cont?token=${token}`;
     const html = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
         <h2 style="color: #333;">Confirmare dezactivare cont</h2>
         <p>Ai solicitat dezactivarea contului tău pe Rentli.</p>
         <p>Dacă ești sigur că dorești să dezactivezi contul, apasă butonul de mai jos:</p>
