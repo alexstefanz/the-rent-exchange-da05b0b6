@@ -26,6 +26,7 @@ import ProductIncludes from "@/components/product/ProductIncludes";
 import UsageRules from "@/components/product/UsageRules";
 import OwnerOtherListings from "@/components/product/OwnerOtherListings";
 import ProductReviewsSection from "@/components/product/ProductReviewsSection";
+import { useUserStatistics } from "@/hooks/queries/useUserProfile";
 
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -36,6 +37,26 @@ interface OwnerInfo {
   full_name: string | null;
   avatar_url: string | null;
 }
+
+const OwnerSectionWithStats = ({ ownerId, ownerName, ownerAvatar, responseTime, responseRate, isOwnProduct }: {
+  ownerId: string; ownerName: string; ownerAvatar?: string | null; responseTime?: string; responseRate?: string; isOwnProduct?: boolean;
+}) => {
+  const { data: statistics } = useUserStatistics(ownerId);
+  const memberSinceYear = statistics?.member_since ? new Date(statistics.member_since).getFullYear().toString() : "N/A";
+  return (
+    <OwnerSection
+      ownerId={ownerId}
+      ownerName={ownerName}
+      ownerAvatar={ownerAvatar}
+      rating={statistics?.average_rating ?? 0}
+      reviewCount={statistics?.reviews_count ?? 0}
+      memberSince={memberSinceYear}
+      responseTime={responseTime}
+      responseRate={responseRate}
+      isOwnProduct={isOwnProduct}
+    />
+  );
+};
 
 
 const ProductDetail = () => {
@@ -149,7 +170,6 @@ const ProductDetail = () => {
     return rentalDays * clientPrice;
   }, [rentalDays, clientPrice, priceWeek, priceMonth]);
 
-  
 
   const handleShare = async () => {
     if (navigator.share) { try { await navigator.share({ title: product?.title || "Produs", url: window.location.href }); } catch (err) { console.log('Share cancelled'); } }
@@ -224,7 +244,7 @@ const ProductDetail = () => {
               onOpenLightbox={openLightbox}
             />
 
-            <OwnerSection ownerId={product.owner_id} ownerName={ownerName} ownerAvatar={owner?.avatar_url} rating={4.9} reviewCount={12} memberSince="2024" responseTime={copy.owner.responseTimeValue} responseRate="98%" isOwnProduct={user?.id === product.owner_id} />
+            <OwnerSectionWithStats ownerId={product.owner_id} ownerName={ownerName} ownerAvatar={owner?.avatar_url} responseTime={copy.owner.responseTimeValue} responseRate="98%" isOwnProduct={user?.id === product.owner_id} />
 
             {/* Description */}
             <div className="rounded-xl border border-border bg-card p-6">
