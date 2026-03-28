@@ -1,43 +1,38 @@
 
 
-## Plan: Îmbunătățiri pagina profil utilizator
+## Plan: Fix user statistics to include product reviews
 
-### 1. Mutare filtre + search lângă "Sortează după" (eliminare sidebar)
+### Problem
+The `get_user_statistics` database function only queries `user_reviews` table for rating/count. Product reviews (stored in `product_reviews`) where the user is the product owner are not counted. So "Tilihi Andrei" has a product review but his profile shows "Fără recenzii" and rating N/A.
 
-**`src/pages/UserProfile.tsx`**
-- Eliminare sidebar-ul `<aside>` cu "Filtrează anunțurile" și "Caută pe această pagină"
-- Mutare search input în bara de sus, lângă sort/view controls
-- Convertire filtrele de categorii într-un `<Select>` dropdown (cu opțiunea "Toate anunțurile" + categoriile disponibile)
-- Toate controalele pe un singur rând: Search | Categorie dropdown | Sort dropdown | View toggle | Pagination
-- Grid-ul de produse devine full-width → `lg:grid-cols-4` pe grid mode
-- Layout-ul `flex-col lg:flex-row gap-8` cu aside se elimină complet
+### Solution — Update the database function
 
-### 2. Recenzii funcționale — rating real pe profil și pe pagina de produs
+Create a migration to replace `get_user_statistics` so it combines both review sources:
 
-**`src/pages/ProductDetail.tsx`** (linia 227)
-- OwnerSection primește rating/reviewCount hardcodate (`4.9`, `12`). Trebuie să fetch-uim statisticile reale ale owner-ului folosind `getUserStatistics(product.owner_id)` și să le pasăm ca props
-- Adăugare `useUserStatistics` hook import și apel cu `product?.owner_id`
-- Înlocuire `rating={4.9} reviewCount={12} memberSince="2024"` cu date reale din statistics
+```sql
+CREATE OR REPLACE FUNCTION get_user_statistics(target_user_id uuid)
+RETURNS TABLE(products_count bigint, member_since timestamptz, average_rating numeric, reviews_count bigint)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+  WITH all_reviews AS (
+    -- User reviews (direct user-to-user)
+    SELECT rating FROM user_reviews WHERE reviewed_user_id = target_user_id
+    UNION ALL
+    -- Product reviews where target user is the product owner
+    SELECT pr.rating FROM product_reviews pr
+    JOIN products p ON p.id = pr.product_id
+    WHERE p.owner_id = target_user_id
+  )
+  SELECT 
+    (SELECT COUNT(*) FROM products WHERE owner_id = target_user_id AND is_active = true),
+    (SELECT created_at FROM profiles WHERE id = target_user_id),
+    COALESCE((SELECT AVG(rating)::numeric FROM all_reviews), 0),
+    (SELECT COUNT(*) FROM all_reviews);
+$$;
+```
 
-**`src/components/product/OwnerSection.tsx`**
-- Eliminare default values hardcodate pentru rating/reviewCount (sau setare la 0)
-- Afișare condițională: dacă reviewCount === 0, afișează "Fără recenzii" în loc de rating
+### Files changed
+- **1 new migration** — `CREATE OR REPLACE FUNCTION get_user_statistics` to combine `user_reviews` + `product_reviews` (owner's products)
 
-### 3. Buton "Distribuie" funcțional
-
-**`src/pages/UserProfile.tsx`** (linia 294)
-- Implementare Web Share API (navigator.share) cu fallback pe clipboard copy
-- Share URL = `window.location.href`, title = numele utilizatorului
-- Toast de confirmare "Link copiat!"
-
-### 4. Etichetă "Membru nou" / "Membru standard" bazată pe vechime
-
-**`src/pages/UserProfile.tsx`** (linia 283)
-- Verificare `statistics.member_since`: dacă diferența față de `now()` < 3 luni → "Nou" (verde), altfel → "Membru standard" sau fără etichetă
-- Aceeași logică aplicată și în `OwnerSection.tsx` — adăugare prop opțional `memberSinceDate` pentru calcul
-
-### Fișiere modificate
-- `src/pages/UserProfile.tsx` — restructurare layout (sidebar → dropdown), share button, etichetă membru
-- `src/pages/ProductDetail.tsx` — fetch real owner stats, pass to OwnerSection
-- `src/components/product/OwnerSection.tsx` — afișare condițională rating, etichetă membru bazată pe dată
+No frontend code changes needed — the existing `useUserStatistics` hook and `OwnerSection` component already handle the data correctly; they just need real numbers from the database.
 
