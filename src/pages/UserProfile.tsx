@@ -280,7 +280,15 @@ const UserProfile = () => {
                         </span>
                       </>
                     ) : (
-                      <span className="text-[#57be6a] font-semibold">Nou</span>
+                      (() => {
+                        const isNew = statistics?.member_since && 
+                          (new Date().getTime() - new Date(statistics.member_since).getTime()) < 90 * 24 * 60 * 60 * 1000;
+                        return isNew ? (
+                          <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200">Membru nou</Badge>
+                        ) : (
+                          <Badge variant="secondary">Membru standard</Badge>
+                        );
+                      })()
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -291,7 +299,25 @@ const UserProfile = () => {
 
               {/* Actions */}
               <div className="flex items-center gap-3">
-                <Button variant="outline" className="gap-2">
+                <Button variant="outline" className="gap-2" onClick={async () => {
+                  const shareData = {
+                    title: profile.full_name || "Profil utilizator",
+                    url: window.location.href,
+                  };
+                  try {
+                    if (navigator.share) {
+                      await navigator.share(shareData);
+                    } else {
+                      await navigator.clipboard.writeText(window.location.href);
+                      toast.success("Link copiat în clipboard!");
+                    }
+                  } catch (err) {
+                    if ((err as Error).name !== "AbortError") {
+                      await navigator.clipboard.writeText(window.location.href);
+                      toast.success("Link copiat în clipboard!");
+                    }
+                  }
+                }}>
                   Distribuie
                 </Button>
                 {user && user.id !== id && (
@@ -362,212 +388,133 @@ const UserProfile = () => {
 
         {/* Products Section */}
         <div className="container mx-auto px-4 py-8">
-          {/* Search and Sort Bar */}
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 mb-6">
+          {/* Controls Bar */}
+          <div className="flex flex-wrap items-end gap-3 mb-6">
             {/* Search */}
-            <div className="w-full lg:w-auto">
-              <p className="text-sm text-muted-foreground mb-2">
-                Caută pe această pagină
-              </p>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Caută..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
+            <div className="relative w-full sm:w-48">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Caută..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Category Filter Dropdown */}
+            {availableCategories.length > 0 && (
+              <Select
+                value={selectedCategory || "all"}
+                onValueChange={(val) => {
+                  if (val === "all") {
+                    handleAllItems();
+                  } else {
+                    setSelectedCategory(val);
+                    setSelectedSubcategory(null);
                     setCurrentPage(1);
-                  }}
-                  className="pl-10 w-full lg:w-64"
-                />
-              </div>
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full sm:w-44">
+                  <SelectValue placeholder="Filtrează" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toate anunțurile ({products.length})</SelectItem>
+                  {availableCategories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.name}>
+                      {cat.name} ({categoryCounts[cat.name]})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {/* Sort */}
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full sm:w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="new">Cele mai noi</SelectItem>
+                <SelectItem value="expensive">Preț descrescător</SelectItem>
+                <SelectItem value="cheap">Preț crescător</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1">
+              <Button
+                variant={viewMode === "list" ? "default" : "ghost"}
+                size="icon"
+                onClick={() => setViewMode("list")}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "grid" ? "default" : "ghost"}
+                size="icon"
+                onClick={() => setViewMode("grid")}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
             </div>
 
-            {/* Sort and View Controls */}
-            <div className="flex items-center gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Sortează după
-                </p>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="new">Noi</SelectItem>
-                    <SelectItem value="expensive">Scumpe</SelectItem>
-                    <SelectItem value="cheap">Ieftine</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* View Mode Toggle */}
-              <div className="flex items-center gap-2 pt-6">
-                <Button
-                  variant={viewMode === "list" ? "default" : "ghost"}
-                  size="icon"
-                  onClick={() => setViewMode("list")}
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "grid" ? "default" : "ghost"}
-                  size="icon"
-                  onClick={() => setViewMode("grid")}
-                >
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="pt-6">
-                  <Pagination>
-                    <PaginationContent>
-                      {currentPage > 1 && (
-                        <PaginationItem>
-                          <PaginationPrevious
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setCurrentPage(currentPage - 1);
-                            }}
-                          />
-                        </PaginationItem>
-                      )}
-                      {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                        const page = i + 1;
-                        return (
-                          <PaginationItem key={page}>
-                            <PaginationLink
-                              href="#"
-                              isActive={currentPage === page}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setCurrentPage(page);
-                              }}
-                            >
-                              {page}
-                            </PaginationLink>
-                          </PaginationItem>
-                        );
-                      })}
-                      {currentPage < totalPages && (
-                        <PaginationItem>
-                          <PaginationNext
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setCurrentPage(currentPage + 1);
-                            }}
-                          />
-                        </PaginationItem>
-                      )}
-                    </PaginationContent>
-                  </Pagination>
-                </div>
-              )}
-            </div>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <Pagination className="w-auto ml-auto">
+                <PaginationContent>
+                  {currentPage > 1 && (
+                    <PaginationItem>
+                      <PaginationPrevious
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setCurrentPage(currentPage - 1);
+                        }}
+                      />
+                    </PaginationItem>
+                  )}
+                  {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
+                    const page = i + 1;
+                    return (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          href="#"
+                          isActive={currentPage === page}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setCurrentPage(page);
+                          }}
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  })}
+                  {currentPage < totalPages && (
+                    <PaginationItem>
+                      <PaginationNext
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setCurrentPage(currentPage + 1);
+                        }}
+                      />
+                    </PaginationItem>
+                  )}
+                </PaginationContent>
+              </Pagination>
+            )}
           </div>
 
-          {/* Main Content with Sidebar */}
-          <div className="flex flex-col lg:flex-row gap-8">
-            {/* Sidebar - Filters */}
-            <aside className="w-full lg:w-64 shrink-0">
-              <h2 className="text-xl font-heading font-bold text-foreground mb-2">
-                Filtrează anunțurile
-              </h2>
-              <p className="text-sm text-muted-foreground mb-4">
-                Am găsit {filteredProducts.length} rezultate pentru tine
-              </p>
-              <p className="text-sm font-medium text-foreground mb-3">
-                Categorii
-              </p>
-
-              {/* All Items */}
-              <button
-                onClick={handleAllItems}
-                className={`flex items-center justify-between w-full py-2 text-left hover:text-primary transition-colors ${
-                  !selectedCategory ? "font-semibold text-primary" : "text-foreground"
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  {!selectedCategory && <Check className="h-4 w-4 text-primary" />}
-                  Toate anunțurile
-                </span>
-                <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
-                  {products.length}
-                </span>
-              </button>
-
-              {/* Categories List */}
-              <div className="space-y-1 mt-2">
-                {availableCategories.map((category) => (
-                  <div key={category.id}>
-                    <button
-                      onClick={() => handleCategoryClick(category.name)}
-                      className={`flex items-center justify-between w-full py-2 text-left hover:text-primary transition-colors ${
-                        selectedCategory === category.name
-                          ? "font-semibold text-primary"
-                          : "text-foreground"
-                      }`}
-                    >
-                      <span className="flex items-center gap-2 text-sm">
-                        {selectedCategory === category.name && !selectedSubcategory && (
-                          <Check className="h-4 w-4 text-primary" />
-                        )}
-                        {category.name}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
-                          {categoryCounts[category.name]}
-                        </span>
-                        <ChevronRight
-                          className={`h-4 w-4 transition-transform ${
-                            expandedCategory === category.name ? "rotate-90" : ""
-                          }`}
-                        />
-                      </div>
-                    </button>
-
-                    {/* Subcategories */}
-                    {expandedCategory === category.name && (
-                      <div className="ml-4 mt-1 space-y-1 border-l-2 border-border pl-3">
-                        {category.subcategories
-                          .filter((sub) => subcategoryCounts[sub.id])
-                          .map((subcategory) => (
-                            <button
-                              key={subcategory.id}
-                              onClick={() => handleSubcategoryClick(subcategory.id)}
-                              className={`flex items-center justify-between w-full py-1.5 text-left text-sm hover:text-primary transition-colors ${
-                                selectedSubcategory === subcategory.id
-                                  ? "font-semibold text-primary"
-                                  : "text-muted-foreground"
-                              }`}
-                            >
-                              <span className="flex items-center gap-2">
-                                {selectedSubcategory === subcategory.id && (
-                                  <Check className="h-3 w-3 text-primary" />
-                                )}
-                                {subcategory.name}
-                              </span>
-                              <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full">
-                                {subcategoryCounts[subcategory.id]}
-                              </span>
-                            </button>
-                          ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </aside>
-
-            {/* Products Grid/List */}
-            <div className="flex-1">
+          {/* Products Grid/List */}
+          <div>
               {paginatedItems.length > 0 ? (
                 viewMode === "grid" ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {paginatedItems.map((item) => (
                       <Link
                         key={item.id}
@@ -635,7 +582,6 @@ const UserProfile = () => {
                   <p className="text-muted-foreground">Nu s-au găsit produse.</p>
                 </div>
               )}
-            </div>
           </div>
 
           {/* Reviews Section */}
