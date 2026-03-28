@@ -1,55 +1,46 @@
 
 
-## Plan: Notificări prin email pentru utilizatori
+## Plan: Testare individuală a fiecărei notificări prin email
 
-### Situația curentă
+Am identificat **9 tipuri de notificări** prin email trimise de 7 Edge Functions. Voi crea o pagină de test în panoul admin care permite trimiterea fiecărei notificări către `aleczanderr20@gmail.com`.
 
-Proiectul are deja **7 Edge Functions** care trimit emailuri direct prin **Resend API** (cu cheia `RESEND_API_KEY`):
-- `send-rental-notification` — notificări la cereri de închiriere noi
-- `send-message-notification` — notificări la mesaje noi
-- `send-cancellation-notification` — notificări la anulări
-- `send-password-changed-notification` — notificări la schimbare parolă
-- `send-general-notification` — welcome, review, produs publicat
-- `respond-rental-request` — răspuns la cereri (accept/refuz)
-- `request-account-deactivation` — email cu token de dezactivare
+### Notificările identificate
 
-De asemenea, există un domeniu email configurat (`notify.rentli.ro`), dar **verificarea DNS a eșuat** — emailurile nu pot fi trimise de pe acest domeniu momentan.
+| # | Edge Function | Tip email | Destinatar |
+|---|---|---|---|
+| 1 | `send-general-notification` | Welcome (bun venit) | Utilizator nou |
+| 2 | `send-general-notification` | Review received (recenzie primită) | Proprietar produs |
+| 3 | `send-general-notification` | Product published (produs publicat) | Proprietar produs |
+| 4 | `send-rental-notification` | Cerere nouă de închiriere (owner) | Proprietar |
+| 5 | `send-rental-notification` | Cerere trimisă (renter) | Chiriaș |
+| 6 | `send-message-notification` | Mesaj nou primit | Destinatar mesaj |
+| 7 | `send-cancellation-notification` | Cerere anulată | Owner + Renter |
+| 8 | `send-password-changed-notification` | Parolă schimbată | Utilizator |
+| 9 | `respond-rental-request` | Accept/Refuz cerere | Owner + Renter |
+| 10 | `request-account-deactivation` | Confirmare dezactivare | Utilizator |
 
-Există și un sistem de cozi (`process-email-queue`) deja funcțional cu pgmq.
+### Ce voi face
 
-### Ce propun
+**1. Creez un Edge Function de test: `test-email-notifications`**
+- Acceptă un parametru `type` care specifică ce notificare să trimită
+- Trimite direct emailul către `aleczanderr20@gmail.com` cu date mock realiste (nu depinde de date reale din DB)
+- Reutilizează exact template-urile HTML din funcțiile existente pentru a testa output-ul real
+- Tipuri suportate: `welcome`, `review_received`, `product_published`, `rental_new_owner`, `rental_new_renter`, `message_new`, `cancellation_owner`, `cancellation_renter`, `password_changed`, `rental_accepted`, `rental_rejected`, `deactivation`
 
-Lovable are un sistem integrat de email care oferă:
-1. **Emailuri de autentificare** (verificare email, resetare parolă, magic link) — cu template-uri personalizate branded Rentli
-2. **Emailuri tranzacționale** (notificări la închirieri, mesaje, recenzii etc.) — prin cozi cu retry automat, rate-limit handling, și dead-letter queue
+**2. Adaug o pagină admin `/admin/test-emails`**
+- Butoane pentru fiecare tip de notificare
+- La click, invocă funcția de test și afișează rezultatul (succes/eroare)
+- Accesibilă doar adminilor
 
-**Primul pas** este să rezolvăm problema DNS pentru domeniul `notify.rentli.ro`. Trebuie să verifici configurarea DNS în **Cloud → Emails** și să te asiguri că recordurile NS sunt corect setate la provider-ul tău de domeniu (rentli.ro).
+**3. Adaug link în sidebar-ul admin**
+- Opțiune "Test Emailuri" vizibilă doar în dev/test
 
-### Două tipuri de emailuri de configurat
+### Observație importantă
+Toate funcțiile existente trimit prin **Resend API** de pe `noreply@rentli.ro`. Dacă domeniul `rentli.ro` nu este încă verificat în Resend, emailurile nu vor ajunge. Funcția `request-account-deactivation` trimite de pe `noreply@resend.dev` (domeniul de test Resend) — aceasta ar trebui să funcționeze.
 
-**1. Emailuri de autentificare (Auth Emails)**
-- Verificare email la înregistrare
-- Resetare parolă
-- Magic link login
-- Template-uri branded cu logo-ul și culorile Rentli
-
-**2. Emailuri aplicație (App Emails)**  
-- Migrarea funcțiilor existente (rental, message, cancellation etc.) pe noul sistem cu template-uri React Email
-- Adăugare unsubscribe automat (conform GDPR)
-- Retry automat și tracking (email_send_log)
-- Suppression list (bounce/complaint handling)
-
-### Pași de implementare
-
-1. **Rezolvare DNS** — Tu verifici și corectezi recordurile NS pentru `notify.rentli.ro` la provider-ul tău de domeniu
-2. **Setup infrastructură email** — pregătirea cozilor și funcțiilor de bază
-3. **Auth email templates** — template-uri branded pentru verificare/resetare parolă
-4. **Migrare notificări existente** — trecerea de la Resend direct la sistemul cu cozi și template-uri React Email
-5. **Pagină de unsubscribe** — pagină branded în aplicație
-
-### Ce trebuie de la tine
-
-**Trebuie să verifici configurarea DNS** pentru domeniul `notify.rentli.ro`. Mergi în **Cloud → Emails** și verifică ce recorduri DNS trebuie adăugate/corectate la provider-ul tău de domeniu. Fără DNS verificat, emailurile nu pot fi trimise de pe domeniul tău.
-
-Vrei să începem cu rezolvarea DNS-ului?
+### Fișiere
+- **Creez** `supabase/functions/test-email-notifications/index.ts`
+- **Creez** `src/pages/admin/AdminTestEmails.tsx`
+- **Modific** `src/App.tsx` — adaug ruta `/admin/test-emails`
+- **Modific** `src/components/admin/AdminSidebar.tsx` — adaug link
 
