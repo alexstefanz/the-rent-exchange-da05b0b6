@@ -105,6 +105,5 @@ export const updateProductAdmin = async (
     .update(updates as Record<string, unknown>)
     .eq('id', productId);
   if (error) throw new Error(error.message);
-};
   if (error) throw new Error(error.message);
 };
