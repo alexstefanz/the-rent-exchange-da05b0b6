@@ -119,7 +119,7 @@ const TEMPLATES: Record<string, (resendApiKey: string) => Promise<unknown>> = {
       ctaLink: "/owner",
       footerText: "Poți gestiona produsele tale oricând din secțiunea Produsele mele.",
     });
-    return sendTestEmail(key, "Produsul tău „Canon EOS R5 - Body" a fost publicat!", html);
+    return sendTestEmail(key, 'Produsul tau "Canon EOS R5 - Body" a fost publicat!', html);
   },
 
   // 4. Rental new - owner
