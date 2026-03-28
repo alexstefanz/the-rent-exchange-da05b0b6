@@ -86,6 +86,16 @@ export const deleteProduct = async (productId: string): Promise<void> => {
   if (error) throw new Error(error.message);
 };
 
+export const fetchProductFullDetails = async (productId: string) => {
+  const { data, error } = await supabase
+    .from('products')
+    .select('description, included_items, location_country, pickup_address')
+    .eq('id', productId)
+    .single();
+  if (error) throw new Error(error.message);
+  return data;
+};
+
 export const updateProductAdmin = async (
   productId: string,
   updates: { title?: string; description?: string; daily_price_owner?: number; category?: string; is_active?: boolean }
@@ -94,5 +104,6 @@ export const updateProductAdmin = async (
     .from('products')
     .update(updates as Record<string, unknown>)
     .eq('id', productId);
+  if (error) throw new Error(error.message);
   if (error) throw new Error(error.message);
 };

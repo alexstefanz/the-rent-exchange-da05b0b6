@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Package, Search, MoreHorizontal, Loader2, Flag, Eye, EyeOff, Trash2, AlertTriangle, Star, MessageSquare, CheckCircle, XCircle } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Package, Search, Loader2, Flag, Eye, EyeOff, Trash2, AlertTriangle, Star, MessageSquare, CheckCircle, XCircle, ChevronDown, ChevronUp, MapPin, Calendar, Tag, User, DollarSign, FileText, List } from "lucide-react";
 import SortableTableHead, { SortDirection, sortData, useToggleSort } from "@/components/admin/SortableTableHead";
 import TableColumnFilterRow, { applyColumnFilters, ColumnFilterConfig } from "@/components/admin/TableColumnFilter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,26 +8,199 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchAdminProducts, toggleProductActive, flagProduct, unflagProduct, deleteProduct, approveProduct, rejectProduct, AdminProduct } from "@/features/admin/adminProductsApi";
+import { fetchAdminProducts, toggleProductActive, flagProduct, unflagProduct, deleteProduct, approveProduct, rejectProduct, fetchProductFullDetails, AdminProduct } from "@/features/admin/adminProductsApi";
 import { fetchProductReviews, deleteProductReview, AdminProductReview } from "@/features/admin/adminReviewsApi";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { toast } from "sonner";
 
+// Expanded detail panel showing full product info + action buttons
+const ProductExpandedPanel = ({
+  product,
+  extraDetails,
+  extraLoading,
+  actionLoading,
+  onApprove,
+  onReject,
+  onToggleActive,
+  onFlag,
+  onUnflag,
+  onDelete,
+  onOpenReviews,
+  formatCurrency,
+}: {
+  product: AdminProduct;
+  extraDetails: { description: string | null; included_items: string[] | null; location_country: string | null; pickup_address: string | null } | null;
+  extraLoading: boolean;
+  actionLoading: string | null;
+  onApprove: (id: string) => void;
+  onReject: (id: string) => void;
+  onToggleActive: (p: AdminProduct) => void;
+  onFlag: (id: string) => void;
+  onUnflag: (id: string) => void;
+  onDelete: (id: string, title: string) => void;
+  onOpenReviews: (id: string, title: string) => void;
+  formatCurrency: (v: number) => string;
+}) => {
+  const isLoading = actionLoading === product.id;
+
+  return (
+    <div className="p-4 space-y-4 bg-muted/30 border-t">
+      {/* Images gallery */}
+      {product.images && product.images.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {product.images.map((img, i) => (
+            <img key={i} src={img} alt={`${product.title} ${i + 1}`} className="h-24 w-24 md:h-32 md:w-32 rounded-lg object-cover flex-shrink-0 border" />
+          ))}
+        </div>
+      )}
+
+      {/* Details grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+        <div className="flex items-start gap-2">
+          <Tag className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div><span className="text-muted-foreground">Categorie:</span> <span className="font-medium">{product.category || '-'}</span></div>
+        </div>
+        <div className="flex items-start gap-2">
+          <Tag className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div><span className="text-muted-foreground">Subcategorie:</span> <span className="font-medium">{product.subcategory || '-'}</span></div>
+        </div>
+        <div className="flex items-start gap-2">
+          <DollarSign className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div><span className="text-muted-foreground">Preț/zi:</span> <span className="font-medium">{formatCurrency(product.daily_price_owner)}</span></div>
+        </div>
+        <div className="flex items-start gap-2">
+          <User className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div><span className="text-muted-foreground">Proprietar:</span> <span className="font-medium">{product.owner_name}</span></div>
+        </div>
+        <div className="flex items-start gap-2">
+          <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div><span className="text-muted-foreground">Oraș:</span> <span className="font-medium">{product.location_city || '-'}</span></div>
+        </div>
+        {extraLoading ? (
+          <Skeleton className="h-5 w-32" />
+        ) : extraDetails && (
+          <>
+            <div className="flex items-start gap-2">
+              <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <div><span className="text-muted-foreground">Țară:</span> <span className="font-medium">{extraDetails.location_country || '-'}</span></div>
+            </div>
+            <div className="flex items-start gap-2 sm:col-span-2">
+              <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+              <div><span className="text-muted-foreground">Adresă ridicare:</span> <span className="font-medium">{extraDetails.pickup_address || '-'}</span></div>
+            </div>
+          </>
+        )}
+        <div className="flex items-start gap-2">
+          <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div><span className="text-muted-foreground">Creat:</span> <span className="font-medium">{format(new Date(product.created_at), 'd MMM yyyy', { locale: ro })}</span></div>
+        </div>
+      </div>
+
+      {/* Description */}
+      {(product.description || (extraDetails && extraDetails.description)) && (
+        <div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+            <FileText className="h-4 w-4" /> Descriere
+          </div>
+          <p className="text-sm bg-background rounded-md p-3 border">{product.description || extraDetails?.description || '-'}</p>
+        </div>
+      )}
+
+      {/* Included items */}
+      {!extraLoading && extraDetails?.included_items && extraDetails.included_items.length > 0 && (
+        <div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+            <List className="h-4 w-4" /> Ce este inclus
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {extraDetails.included_items.map((item, i) => (
+              <Badge key={i} variant="secondary" className="text-xs">{item}</Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <Separator />
+
+      {/* Action buttons */}
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" onClick={() => window.open(`/produs/${product.slug}`, '_blank')} disabled={isLoading}>
+          <Eye className="h-4 w-4 mr-1" /> Vezi pe site
+        </Button>
+
+        {product.approval_status === 'pending' && (
+          <>
+            <Button size="sm" onClick={() => onApprove(product.id)} disabled={isLoading} className="bg-green-600 hover:bg-green-700 text-white">
+              <CheckCircle className="h-4 w-4 mr-1" /> Aprobă
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => onReject(product.id)} disabled={isLoading}>
+              <XCircle className="h-4 w-4 mr-1" /> Respinge
+            </Button>
+          </>
+        )}
+
+        <Button variant="outline" size="sm" onClick={() => onToggleActive(product)} disabled={isLoading}>
+          {product.is_active ? <><EyeOff className="h-4 w-4 mr-1" /> Dezactivează</> : <><Eye className="h-4 w-4 mr-1" /> Activează</>}
+        </Button>
+
+        {product.admin_flagged ? (
+          <Button variant="outline" size="sm" onClick={() => onUnflag(product.id)} disabled={isLoading}>
+            <Flag className="h-4 w-4 mr-1" /> Ridică flag
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm" onClick={() => onFlag(product.id)} disabled={isLoading}>
+            <Flag className="h-4 w-4 mr-1" /> Marchează suspect
+          </Button>
+        )}
+
+        <Button variant="outline" size="sm" onClick={() => onOpenReviews(product.id, product.title)} disabled={isLoading}>
+          <MessageSquare className="h-4 w-4 mr-1" /> Recenzii
+        </Button>
+
+        <Button variant="destructive" size="sm" onClick={() => onDelete(product.id, product.title)} disabled={isLoading}>
+          <Trash2 className="h-4 w-4 mr-1" /> Șterge
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+// Status badge helper
+const ProductStatusBadges = ({ product }: { product: AdminProduct }) => (
+  <div className="flex flex-wrap gap-1">
+    {product.approval_status === 'pending' && (
+      <Badge variant="outline" className="border-yellow-500 text-yellow-700 bg-yellow-50">În așteptare</Badge>
+    )}
+    {product.approval_status === 'rejected' && (
+      <Badge variant="destructive">Respins</Badge>
+    )}
+    {product.approval_status === 'approved' && (
+      <Badge variant={product.is_active ? "default" : "secondary"}>
+        {product.is_active ? "Activ" : "Inactiv"}
+      </Badge>
+    )}
+    {product.admin_flagged && <Badge variant="destructive">Marcat</Badge>}
+  </div>
+);
+
 const AdminProducts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
+  const [extraDetails, setExtraDetails] = useState<Record<string, { description: string | null; included_items: string[] | null; location_country: string | null; pickup_address: string | null }>>({});
+  const [extraLoading, setExtraLoading] = useState<string | null>(null);
   const [flagDialog, setFlagDialog] = useState<{ open: boolean; productId: string }>({ open: false, productId: "" });
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; productId: string; title: string }>({ open: false, productId: "", title: "" });
   const [rejectDialog, setRejectDialog] = useState<{ open: boolean; productId: string }>({ open: false, productId: "" });
@@ -74,7 +247,7 @@ const AdminProducts = () => {
   const cityOptions = useMemo(() => {
     if (!products) return [];
     const cities = [...new Set(products.map(p => p.location_city).filter(Boolean))];
-    return cities.sort((a, b) => a.localeCompare(b, 'ro')).map(c => ({ value: c, label: c }));
+    return cities.sort((a, b) => a!.localeCompare(b!, 'ro')).map(c => ({ value: c!, label: c! }));
   }, [products]);
 
   const categoryOptions = useMemo(() => {
@@ -93,8 +266,24 @@ const AdminProducts = () => {
       { value: "false", label: "Inactiv" },
     ]},
     { key: "created_at", type: "daterange", placeholder: "Perioadă" },
-    { key: "_actions", type: "text" },
   ];
+
+  // Fetch extra details when a product is expanded
+  useEffect(() => {
+    if (expandedProductId && !extraDetails[expandedProductId]) {
+      setExtraLoading(expandedProductId);
+      fetchProductFullDetails(expandedProductId)
+        .then(data => {
+          setExtraDetails(prev => ({ ...prev, [expandedProductId]: data }));
+        })
+        .catch(() => {})
+        .finally(() => setExtraLoading(null));
+    }
+  }, [expandedProductId]);
+
+  const handleToggleExpand = (productId: string) => {
+    setExpandedProductId(prev => prev === productId ? null : productId);
+  };
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -198,25 +387,38 @@ const AdminProducts = () => {
     );
   }, [products, columnFilters, dateRangeFilters, sortKey, sortDirection]);
 
+  const expandedPanelProps = {
+    actionLoading,
+    onApprove: handleApprove,
+    onReject: (id: string) => setRejectDialog({ open: true, productId: id }),
+    onToggleActive: handleToggleActive,
+    onFlag: (id: string) => setFlagDialog({ open: true, productId: id }),
+    onUnflag: handleUnflag,
+    onDelete: (id: string, title: string) => setDeleteDialog({ open: true, productId: id, title }),
+    onOpenReviews: handleOpenReviews,
+    formatCurrency,
+  };
+
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Package className="h-8 w-8" /> Gestionare Produse
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
+            <Package className="h-6 w-6 md:h-8 md:w-8" /> Gestionare Produse
           </h1>
-          <p className="text-muted-foreground">Administrează toate anunțurile de pe platformă</p>
+          <p className="text-sm md:text-base text-muted-foreground">Administrează toate anunțurile de pe platformă</p>
         </div>
 
+        {/* Search & Filter */}
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex gap-4">
+          <CardContent className="pt-4 md:pt-6">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Caută după titlu..." value={searchQuery} onChange={(e) => handleSearch(e.target.value)} className="pl-10" />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[180px]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="w-full sm:w-[180px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
                    <SelectItem value="all">Toate</SelectItem>
                    <SelectItem value="pending">În așteptare</SelectItem>
@@ -231,128 +433,139 @@ const AdminProducts = () => {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Lista Produselor</CardTitle>
+          <CardHeader className="pb-3 md:pb-6">
+            <CardTitle className="text-lg md:text-2xl">Lista Produselor</CardTitle>
             <CardDescription>{filteredData.length} produse găsite</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="space-y-4">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
             ) : products && products.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <SortableTableHead label="Produs" sortKey="title" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
-                      <SortableTableHead label="Proprietar" sortKey="owner_name" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
-                      <SortableTableHead label="Preț/zi" sortKey="daily_price_owner" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
-                      <SortableTableHead label="Categorie" sortKey="category" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
-                      <SortableTableHead label="Oraș" sortKey="location_city" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
-                      <TableHead>Status</TableHead>
-                      <SortableTableHead label="Data" sortKey="created_at" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
-                      <TableHead className="text-right">Acțiuni</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableColumnFilterRow
-                      filters={productColumnFilters}
-                      values={columnFilters}
-                      onChange={handleColumnFilter}
-                      dateRangeValues={dateRangeFilters}
-                      onDateRangeChange={handleDateRangeChange}
-                    />
-                    {filteredData.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            {product.images?.[0] && (
-                              <img src={product.images[0]} alt="" className="h-10 w-10 rounded object-cover" />
-                            )}
-                            <div>
-                              <span className="font-medium line-clamp-1">{product.title}</span>
-                              {product.admin_flagged && (
-                                <div className="flex items-center gap-1 text-xs text-destructive">
-                                  <AlertTriangle className="h-3 w-3" /> {product.flag_reason}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">{product.owner_name}</TableCell>
-                        <TableCell>{formatCurrency(product.daily_price_owner)}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm">{product.category || '-'}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm">{product.location_city || '-'}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {product.approval_status === 'pending' && (
-                              <Badge variant="outline" className="border-yellow-500 text-yellow-700 bg-yellow-50">În așteptare</Badge>
-                            )}
-                            {product.approval_status === 'rejected' && (
-                              <Badge variant="destructive">Respins</Badge>
-                            )}
-                            {product.approval_status === 'approved' && (
-                              <Badge variant={product.is_active ? "default" : "secondary"}>
-                                {product.is_active ? "Activ" : "Inactiv"}
-                              </Badge>
-                            )}
-                            {product.admin_flagged && <Badge variant="destructive">Marcat</Badge>}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground whitespace-nowrap">
-                          {format(new Date(product.created_at), 'd MMM yyyy', { locale: ro })}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {actionLoading === product.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin ml-auto" />
-                          ) : (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => window.open(`/produs/${product.slug}`, '_blank')}>
-                                  <Eye className="h-4 w-4 mr-2" /> Vezi pe site
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                {product.approval_status === 'pending' && (
-                                  <>
-                                    <DropdownMenuItem onClick={() => handleApprove(product.id)}>
-                                      <CheckCircle className="h-4 w-4 mr-2" /> Aprobă
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => setRejectDialog({ open: true, productId: product.id })}>
-                                      <XCircle className="h-4 w-4 mr-2" /> Respinge
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                  </>
-                                )}
-                                <DropdownMenuItem onClick={() => handleToggleActive(product)}>
-                                  {product.is_active ? <><EyeOff className="h-4 w-4 mr-2" /> Dezactivează</> : <><Eye className="h-4 w-4 mr-2" /> Activează</>}
-                                </DropdownMenuItem>
-                                {product.admin_flagged ? (
-                                  <DropdownMenuItem onClick={() => handleUnflag(product.id)}>
-                                    <Flag className="h-4 w-4 mr-2" /> Ridică flag
-                                  </DropdownMenuItem>
-                                ) : (
-                                  <DropdownMenuItem onClick={() => setFlagDialog({ open: true, productId: product.id })}>
-                                    <Flag className="h-4 w-4 mr-2" /> Marchează suspect
-                                  </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem onClick={() => handleOpenReviews(product.id, product.title)}>
-                                  <MessageSquare className="h-4 w-4 mr-2" /> Recenzii
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-destructive" onClick={() => setDeleteDialog({ open: true, productId: product.id, title: product.title })}>
-                                  <Trash2 className="h-4 w-4 mr-2" /> Șterge definitiv
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </TableCell>
+              <>
+                {/* DESKTOP TABLE — hidden on mobile */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <SortableTableHead label="Produs" sortKey="title" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                        <SortableTableHead label="Proprietar" sortKey="owner_name" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                        <SortableTableHead label="Preț/zi" sortKey="daily_price_owner" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                        <SortableTableHead label="Categorie" sortKey="category" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                        <SortableTableHead label="Oraș" sortKey="location_city" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                        <TableHead>Status</TableHead>
+                        <SortableTableHead label="Data" sortKey="created_at" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                        <TableHead className="w-10"></TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      <TableColumnFilterRow
+                        filters={productColumnFilters}
+                        values={columnFilters}
+                        onChange={handleColumnFilter}
+                        dateRangeValues={dateRangeFilters}
+                        onDateRangeChange={handleDateRangeChange}
+                      />
+                      {filteredData.map((product) => (
+                        <>
+                          <TableRow
+                            key={product.id}
+                            className="cursor-pointer hover:bg-muted/50"
+                            onClick={() => handleToggleExpand(product.id)}
+                          >
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                {product.images?.[0] && (
+                                  <img src={product.images[0]} alt="" className="h-10 w-10 rounded object-cover" />
+                                )}
+                                <div>
+                                  <span className="font-medium line-clamp-1">{product.title}</span>
+                                  {product.admin_flagged && (
+                                    <div className="flex items-center gap-1 text-xs text-destructive">
+                                      <AlertTriangle className="h-3 w-3" /> {product.flag_reason}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">{product.owner_name}</TableCell>
+                            <TableCell>{formatCurrency(product.daily_price_owner)}</TableCell>
+                            <TableCell className="text-muted-foreground text-sm">{product.category || '-'}</TableCell>
+                            <TableCell className="text-muted-foreground text-sm">{product.location_city || '-'}</TableCell>
+                            <TableCell><ProductStatusBadges product={product} /></TableCell>
+                            <TableCell className="text-muted-foreground whitespace-nowrap">
+                              {format(new Date(product.created_at), 'd MMM yyyy', { locale: ro })}
+                            </TableCell>
+                            <TableCell>
+                              {expandedProductId === product.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            </TableCell>
+                          </TableRow>
+                          {expandedProductId === product.id && (
+                            <TableRow key={`${product.id}-expanded`}>
+                              <TableCell colSpan={8} className="p-0">
+                                <ProductExpandedPanel
+                                  product={product}
+                                  extraDetails={extraDetails[product.id] || null}
+                                  extraLoading={extraLoading === product.id}
+                                  {...expandedPanelProps}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* MOBILE CARDS — hidden on desktop */}
+                <div className="md:hidden space-y-3">
+                  {filteredData.map((product) => (
+                    <div key={product.id} className="border rounded-lg overflow-hidden">
+                      {/* Card header — always visible */}
+                      <div
+                        className="flex items-center gap-3 p-3 cursor-pointer active:bg-muted/50"
+                        onClick={() => handleToggleExpand(product.id)}
+                      >
+                        {product.images?.[0] && (
+                          <img src={product.images[0]} alt="" className="h-14 w-14 rounded-lg object-cover flex-shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm line-clamp-1">{product.title}</p>
+                          <p className="text-xs text-muted-foreground">{product.owner_name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-sm font-semibold">{formatCurrency(product.daily_price_owner)}</span>
+                            <ProductStatusBadges product={product} />
+                          </div>
+                          {product.admin_flagged && (
+                            <div className="flex items-center gap-1 text-xs text-destructive mt-1">
+                              <AlertTriangle className="h-3 w-3" /> {product.flag_reason}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-shrink-0">
+                          {actionLoading === product.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : expandedProductId === product.id ? (
+                            <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                          ) : (
+                            <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Expanded content */}
+                      {expandedProductId === product.id && (
+                        <ProductExpandedPanel
+                          product={product}
+                          extraDetails={extraDetails[product.id] || null}
+                          extraLoading={extraLoading === product.id}
+                          {...expandedPanelProps}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="text-center py-12 text-muted-foreground">
                 <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -391,7 +604,6 @@ const AdminProducts = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
 
       {/* Reject Dialog */}
       <Dialog open={rejectDialog.open} onOpenChange={(open) => { setRejectDialog({ open, productId: rejectDialog.productId }); if (!open) setRejectReason(""); }}>
