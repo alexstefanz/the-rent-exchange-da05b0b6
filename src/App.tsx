@@ -67,6 +67,7 @@ const AdminKYCDetail = lazy(() => import("./pages/admin/AdminKYCDetail"));
 const AdminUserDetail = lazy(() => import("./pages/admin/AdminUserDetail"));
 const AdminConversations = lazy(() => import("./pages/admin/AdminConversations"));
 const AdminConversationDetail = lazy(() => import("./pages/admin/AdminConversationDetail"));
+const AdminApprovals = lazy(() => import("./pages/admin/AdminApprovals"));
 
 const queryClient = new QueryClient();
 
@@ -136,6 +137,7 @@ const App = () => (
                 <Route path="/admin/kyc/:id" element={<AdminKYCDetail />} />
                 <Route path="/admin/conversations" element={<AdminConversations />} />
                 <Route path="/admin/conversations/:id" element={<AdminConversationDetail />} />
+                <Route path="/admin/approvals" element={<AdminApprovals />} />
                 
                 {/* Integration tests */}
                 <Route path="/minicrm-test" element={<MiniCrmTest />} />

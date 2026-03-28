@@ -1305,6 +1305,34 @@ export type Database = {
           user_role: string
         }[]
       }
+      get_admin_pending_products: {
+        Args: {
+          limit_count?: number
+          offset_count?: number
+          search_query?: string
+        }
+        Returns: {
+          admin_flagged: boolean
+          approval_status: string
+          category: string
+          created_at: string
+          daily_price_owner: number
+          description: string
+          flag_reason: string
+          id: string
+          images: string[]
+          included_items: string[]
+          is_active: boolean
+          location_city: string
+          location_country: string
+          owner_id: string
+          owner_name: string
+          pickup_address: string
+          slug: string
+          subcategory: string
+          title: string
+        }[]
+      }
       get_admin_products: {
         Args: {
           category_filter?: string
