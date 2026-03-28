@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
     }
 
     // Get site URL for the confirmation link
-    const siteUrl = req.headers.get("origin") || "https://the-rent-exchange.lovable.app";
+    const siteUrl = req.headers.get("origin") || "https://rentli.ro";
     const confirmLink = `${siteUrl}/dezactivare-cont?token=${token}`;
 
     // Send email via Resend
@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
         to: [user.email],
         subject: "Confirmare dezactivare cont",
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <h2 style="color: #333;">Confirmare dezactivare cont</h2>
             <p>Ai solicitat dezactivarea contului tău pe Rentli.</p>
             <p>Dacă ești sigur că dorești să dezactivezi contul, apasă butonul de mai jos:</p>
