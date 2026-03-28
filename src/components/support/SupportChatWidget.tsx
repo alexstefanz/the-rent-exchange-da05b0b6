@@ -1,10 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "react-router-dom";
-import { Headphones, Send, X, MessageSquare, Plus } from "lucide-react";
+import { Headphones, Send, X, MessageSquare, Plus, Bot, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCurrentUserProfile } from "@/hooks/queries/useCurrentUserProfile";
@@ -17,8 +15,22 @@ import {
 } from "@/features/tickets/userTicketsApi";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { toast } from "sonner";
 
 const STORAGE_KEY = "support_chat_ticket_id";
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/support-ai-chat`;
+
+interface AiMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+interface ToolCallData {
+  subject: string;
+  description: string;
+  category_group: string;
+  category_type: string;
+}
 
 const SupportChatWidget = () => {
   const { pathname } = useLocation();
@@ -33,22 +45,17 @@ const SupportChatWidget = () => {
   );
   const [ticketPublicId, setTicketPublicId] = useState<string | null>(null);
 
-  // Form state
-  const [name, setName] = useState("");
-  const [subject, setSubject] = useState("");
-  const [description, setDescription] = useState("");
-  const [messageText, setMessageText] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  // AI chat phase state
+  const [aiMessages, setAiMessages] = useState<AiMessage[]>([]);
+  const [aiInput, setAiInput] = useState("");
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [isCreatingTicket, setIsCreatingTicket] = useState(false);
 
+  // Ticket chat state
+  const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isAdminRoute = pathname.startsWith("/admin");
-
-  // Pre-fill name from profile
-  useEffect(() => {
-    if (profile?.full_name && !name) {
-      setName(profile.full_name);
-    }
-  }, [profile?.full_name]);
+  const hasInitiatedAi = useRef(false);
 
   // Load ticket info if we have an ID
   const { data: ticketInfo } = useQuery({
@@ -60,7 +67,6 @@ const SupportChatWidget = () => {
         .eq("id", ticketId!)
         .single();
       if (error) {
-        // Ticket doesn't exist anymore, clear it
         localStorage.removeItem(STORAGE_KEY);
         setTicketId(null);
         return null;
@@ -84,36 +90,184 @@ const SupportChatWidget = () => {
     refetchInterval: 10000,
   });
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, aiMessages]);
 
-  // Submit form → create ticket
-  const handleSubmitForm = async () => {
-    if (!user) return;
-    if (!subject.trim() || !description.trim()) return;
-    setIsSubmitting(true);
+  // Initiate AI greeting when widget opens and no ticket exists
+  useEffect(() => {
+    if (isOpen && user && !ticketId && aiMessages.length === 0 && !hasInitiatedAi.current) {
+      hasInitiatedAi.current = true;
+      streamAiResponse([]);
+    }
+  }, [isOpen, user, ticketId]);
+
+  const handleToolCall = useCallback(async (toolData: ToolCallData) => {
+    setIsCreatingTicket(true);
     try {
       const ticket = await createUserTicket({
-        title: subject.trim(),
-        description: description.trim(),
-        category_group: "USER",
-        category_type: "GENERAL_INQUIRY",
+        title: toolData.subject,
+        description: toolData.description,
+        category_group: toolData.category_group,
+        category_type: toolData.category_type,
       });
+
+      // Save the AI conversation as the first message context
+      const aiSummary = aiMessages
+        .filter(m => m.role === "user")
+        .map(m => m.content)
+        .join("\n");
+      if (aiSummary) {
+        await addUserTicketMessage(ticket.id, aiSummary);
+      }
+
       setTicketId(ticket.id);
       setTicketPublicId(ticket.public_id);
       localStorage.setItem(STORAGE_KEY, ticket.id);
-      setSubject("");
-      setDescription("");
+      setAiMessages([]);
+      hasInitiatedAi.current = false;
+      queryClient.invalidateQueries({ queryKey: ["supportChatMessages", ticket.id] });
     } catch (err) {
       console.error("Failed to create ticket:", err);
+      toast.error(t("Eroare la crearea ticketului. Încearcă din nou.", "Failed to create ticket. Please try again."));
     } finally {
-      setIsSubmitting(false);
+      setIsCreatingTicket(false);
+    }
+  }, [aiMessages, t, queryClient]);
+
+  const streamAiResponse = async (conversationMessages: AiMessage[]) => {
+    setIsAiLoading(true);
+
+    // Add empty assistant message for streaming
+    setAiMessages(prev => [...prev, { role: "assistant", content: "" }]);
+
+    try {
+      const resp = await fetch(CHAT_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ messages: conversationMessages }),
+      });
+
+      if (!resp.ok) {
+        const errorData = await resp.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${resp.status}`);
+      }
+
+      if (!resp.body) throw new Error("No response body");
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let textBuffer = "";
+      let assistantSoFar = "";
+      let toolCallName = "";
+      let toolCallArgs = "";
+      let hasToolCall = false;
+
+      const updateAssistant = (content: string) => {
+        assistantSoFar = content;
+        setAiMessages(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: "assistant", content };
+          return updated;
+        });
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        textBuffer += decoder.decode(value, { stream: true });
+
+        let newlineIndex: number;
+        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+          let line = textBuffer.slice(0, newlineIndex);
+          textBuffer = textBuffer.slice(newlineIndex + 1);
+
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (line.startsWith(":") || line.trim() === "") continue;
+          if (!line.startsWith("data: ")) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === "[DONE]") break;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const delta = parsed.choices?.[0]?.delta;
+
+            // Handle text content
+            if (delta?.content) {
+              updateAssistant(assistantSoFar + delta.content);
+            }
+
+            // Handle tool calls
+            if (delta?.tool_calls) {
+              hasToolCall = true;
+              for (const tc of delta.tool_calls) {
+                if (tc.function?.name) toolCallName = tc.function.name;
+                if (tc.function?.arguments) toolCallArgs += tc.function.arguments;
+              }
+            }
+          } catch {
+            textBuffer = line + "\n" + textBuffer;
+            break;
+          }
+        }
+      }
+
+      // Process tool call if present
+      if (hasToolCall && toolCallName === "create_support_ticket") {
+        try {
+          const toolData = JSON.parse(toolCallArgs) as ToolCallData;
+          // Show a handoff message
+          const handoffMsg = t(
+            "Am înțeles problema ta. Creez acum un ticket și un administrator va prelua conversația. Mulțumesc pentru răbdare! 🙏",
+            "I understand your issue. Creating a ticket now and an admin will take over. Thank you for your patience! 🙏"
+          );
+          updateAssistant(handoffMsg);
+          // Create the ticket
+          await handleToolCall(toolData);
+        } catch (e) {
+          console.error("Failed to parse tool call:", e);
+        }
+      }
+    } catch (err) {
+      console.error("AI stream error:", err);
+      setAiMessages(prev => {
+        const updated = [...prev];
+        if (updated[updated.length - 1]?.role === "assistant" && !updated[updated.length - 1].content) {
+          updated[updated.length - 1] = {
+            role: "assistant",
+            content: t(
+              "Îmi pare rău, am întâmpinat o eroare. Te rog încearcă din nou.",
+              "Sorry, I encountered an error. Please try again."
+            ),
+          };
+        }
+        return updated;
+      });
+    } finally {
+      setIsAiLoading(false);
     }
   };
 
-  // Send message
+  const handleSendAiMessage = () => {
+    const text = aiInput.trim();
+    if (!text || isAiLoading) return;
+
+    const userMsg: AiMessage = { role: "user", content: text };
+    const newMessages = [...aiMessages, userMsg];
+    setAiMessages(newMessages);
+    setAiInput("");
+
+    // Filter only non-empty messages for the API
+    const apiMessages = newMessages.filter(m => m.content.trim());
+    streamAiResponse(apiMessages);
+  };
+
+  // Send ticket message
   const sendMutation = useMutation({
     mutationFn: (text: string) => addUserTicketMessage(ticketId!, text),
     onSuccess: () => {
@@ -132,12 +286,11 @@ const SupportChatWidget = () => {
     localStorage.removeItem(STORAGE_KEY);
     setTicketId(null);
     setTicketPublicId(null);
-    setSubject("");
-    setDescription("");
     setMessageText("");
+    setAiMessages([]);
+    hasInitiatedAi.current = false;
   };
 
-  // Hide on admin routes
   if (isAdminRoute) return null;
 
   const isClosed = ticketInfo?.status === "CLOSED" || ticketInfo?.status === "RESOLVED";
@@ -157,7 +310,10 @@ const SupportChatWidget = () => {
 
       {/* Chat Panel */}
       {isOpen && (
-        <div className="fixed bottom-20 lg:bottom-6 right-4 z-50 w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl border bg-background shadow-xl flex flex-col overflow-hidden" style={{ height: "min(500px, calc(100vh - 120px))" }}>
+        <div
+          className="fixed bottom-20 lg:bottom-6 right-4 z-50 w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl border bg-background shadow-xl flex flex-col overflow-hidden"
+          style={{ height: "min(500px, calc(100vh - 120px))" }}
+        >
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 border-b bg-primary text-primary-foreground rounded-t-2xl">
             <MessageSquare className="h-5 w-5 shrink-0" />
@@ -168,7 +324,7 @@ const SupportChatWidget = () => {
               )}
             </div>
             <div className="flex items-center gap-1">
-              {ticketId && (
+              {(ticketId || aiMessages.length > 0) && (
                 <button
                   onClick={handleNewConversation}
                   className="p-1.5 rounded-lg hover:bg-primary-foreground/20 transition-colors"
@@ -189,7 +345,6 @@ const SupportChatWidget = () => {
           {/* Body */}
           <div className="flex-1 overflow-hidden flex flex-col">
             {!user ? (
-              /* Not authenticated */
               <div className="flex-1 flex items-center justify-center p-6 text-center">
                 <div>
                   <Headphones className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
@@ -205,55 +360,80 @@ const SupportChatWidget = () => {
                 </div>
               </div>
             ) : !ticketId ? (
-              /* Ticket creation form */
-              <div className="flex-1 overflow-auto p-4 space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  {t(
-                    "Completează formularul de mai jos și un administrator te va contacta în cel mai scurt timp.",
-                    "Fill in the form below and an admin will get back to you shortly."
-                  )}
-                </p>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">{t("Nume", "Name")}</Label>
+              /* AI Chat Phase */
+              <>
+                <ScrollArea className="flex-1 px-4 py-3">
+                  <div className="space-y-3">
+                    {aiMessages.map((msg, idx) => {
+                      const isUser = msg.role === "user";
+                      return (
+                        <div
+                          key={idx}
+                          className={`flex ${isUser ? "justify-end" : "justify-start"}`}
+                        >
+                          {!isUser && (
+                            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center mr-2 shrink-0 mt-0.5">
+                              <Bot className="h-4 w-4 text-primary" />
+                            </div>
+                          )}
+                          <div
+                            className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
+                              isUser
+                                ? "bg-primary text-primary-foreground rounded-br-md"
+                                : "bg-muted text-foreground rounded-bl-md"
+                            }`}
+                          >
+                            <p className="whitespace-pre-wrap break-words">
+                              {msg.content || (isAiLoading && idx === aiMessages.length - 1 ? "" : "")}
+                            </p>
+                            {!msg.content && isAiLoading && idx === aiMessages.length - 1 && (
+                              <div className="flex items-center gap-1 py-1">
+                                <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "0ms" }} />
+                                <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "150ms" }} />
+                                <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "300ms" }} />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {isCreatingTicket && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center py-2">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        {t("Se creează ticketul...", "Creating ticket...")}
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </ScrollArea>
+
+                {/* AI input */}
+                <div className="flex items-center gap-2 px-3 py-2.5 border-t">
                   <Input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder={t("Numele tău", "Your name")}
-                    className="h-9 text-sm"
+                    value={aiInput}
+                    onChange={(e) => setAiInput(e.target.value)}
+                    placeholder={t("Scrie un mesaj...", "Type a message...")}
+                    className="h-9 text-sm flex-1"
+                    disabled={isAiLoading || isCreatingTicket}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendAiMessage();
+                      }
+                    }}
                   />
+                  <Button
+                    size="icon"
+                    className="h-9 w-9 shrink-0"
+                    onClick={handleSendAiMessage}
+                    disabled={!aiInput.trim() || isAiLoading || isCreatingTicket}
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">{t("Subiect", "Subject")} *</Label>
-                  <Input
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    placeholder={t("Despre ce este vorba?", "What is it about?")}
-                    className="h-9 text-sm"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">{t("Descriere", "Description")} *</Label>
-                  <Textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder={t("Descrie problema sau sugestia ta...", "Describe your issue or suggestion...")}
-                    className="text-sm min-h-[80px] resize-none"
-                    rows={3}
-                  />
-                </div>
-                <Button
-                  onClick={handleSubmitForm}
-                  disabled={!subject.trim() || !description.trim() || isSubmitting}
-                  className="w-full"
-                  size="sm"
-                >
-                  {isSubmitting
-                    ? t("Se trimite...", "Sending...")
-                    : t("Trimite", "Send")}
-                </Button>
-              </div>
+              </>
             ) : (
-              /* Chat view */
+              /* Ticket Chat View */
               <>
                 <ScrollArea className="flex-1 px-4 py-3">
                   {messages.length === 0 ? (
@@ -296,7 +476,6 @@ const SupportChatWidget = () => {
                   )}
                 </ScrollArea>
 
-                {/* Message input */}
                 {isClosed ? (
                   <div className="px-4 py-3 border-t text-center">
                     <p className="text-xs text-muted-foreground mb-2">
