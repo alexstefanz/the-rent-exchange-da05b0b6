@@ -22,9 +22,9 @@ const OwnerSection = ({
   ownerId,
   ownerName,
   ownerAvatar,
-  rating = 4.9,
-  reviewCount = 12,
-  memberSince = "2024",
+  rating = 0,
+  reviewCount = 0,
+  memberSince = "",
   responseTime = "< 1 oră",
   responseRate = "98%",
   isOwnProduct = false,
@@ -55,9 +55,15 @@ const OwnerSection = ({
               </Badge>
             </div>
             <div className="mt-1 flex items-center gap-1 text-sm">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="font-medium">{rating.toFixed(1)}</span>
-              <span className="text-muted-foreground">({reviewCount} {copy.owner.reviews})</span>
+              {reviewCount > 0 ? (
+                <>
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <span className="font-medium">{rating.toFixed(1)}</span>
+                  <span className="text-muted-foreground">({reviewCount} {copy.owner.reviews})</span>
+                </>
+              ) : (
+                <span className="text-muted-foreground">{copy.owner.reviews === "reviews" ? "No reviews yet" : "Fără recenzii"}</span>
+              )}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
               {copy.owner.memberSince} {memberSince}
@@ -87,9 +93,15 @@ const OwnerSection = ({
               </Badge>
             </div>
             <div className="mt-1 flex items-center gap-1 text-sm">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="font-medium">{rating.toFixed(1)}</span>
-              <span className="text-muted-foreground">({reviewCount} {copy.owner.reviews})</span>
+              {reviewCount > 0 ? (
+                <>
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  <span className="font-medium">{rating.toFixed(1)}</span>
+                  <span className="text-muted-foreground">({reviewCount} {copy.owner.reviews})</span>
+                </>
+              ) : (
+                <span className="text-muted-foreground">{copy.owner.reviews === "reviews" ? "No reviews yet" : "Fără recenzii"}</span>
+              )}
             </div>
             <p className="mt-1 text-xs text-muted-foreground">
               {copy.owner.memberSince} {memberSince}
