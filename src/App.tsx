@@ -36,6 +36,7 @@ const UserTickets = lazy(() => import("./pages/UserTickets"));
 const KycVerification = lazy(() => import("./pages/KycVerification"));
 const Contact = lazy(() => import("./pages/Contact"));
 const DeactivateAccount = lazy(() => import("./pages/DeactivateAccount"));
+const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
 const EarningsPage = lazy(() => import("./pages/EarningsPage"));
 const ReviewsPage = lazy(() => import("./pages/ReviewsPage"));
@@ -120,6 +121,7 @@ const App = () => (
                 <Route path="/intrebari-frecvente" element={<FAQ />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/dezactivare-cont" element={<DeactivateAccount />} />
+                <Route path="/unsubscribe" element={<Unsubscribe />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminDashboard />} />
