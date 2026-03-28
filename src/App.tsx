@@ -137,6 +137,7 @@ const App = () => (
                 <Route path="/admin/kyc/:id" element={<AdminKYCDetail />} />
                 <Route path="/admin/conversations" element={<AdminConversations />} />
                 <Route path="/admin/conversations/:id" element={<AdminConversationDetail />} />
+                <Route path="/admin/approvals" element={<AdminApprovals />} />
                 
                 {/* Integration tests */}
                 <Route path="/minicrm-test" element={<MiniCrmTest />} />

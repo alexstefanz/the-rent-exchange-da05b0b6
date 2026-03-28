@@ -31,6 +31,7 @@ const menuItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Rezervări", url: "/admin/reservations", icon: CalendarCheck },
   { title: "Produse", url: "/admin/products", icon: Package },
+  { title: "Confirmări", url: "/admin/approvals", icon: ClipboardCheck },
   { title: "Tickete", url: "/admin/tickets", icon: TicketCheck },
   { title: "Conversații", url: "/admin/conversations", icon: MessageCircle },
   { title: "Categorii", url: "/admin/categories", icon: FolderTree },
