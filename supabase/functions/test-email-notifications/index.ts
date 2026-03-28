@@ -49,7 +49,7 @@ function buildEmailTemplate(opts: {
 </body></html>`;
 }
 
-async function sendTestEmail(resendApiKey: string, subject: string, html: string, fromDomain = "noreply@rentli.ro") {
+async function sendTestEmail(resendApiKey: string, subject: string, html: string, fromDomain = "onboarding@resend.dev") {
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
