@@ -1,32 +1,14 @@
 import { useState, useMemo } from "react";
-import { CalendarCheck, Filter, MoreHorizontal, Loader2 } from "lucide-react";
+import { CalendarCheck, Filter, Loader2, ChevronDown, ChevronUp, User, MapPin, Tag, DollarSign, Calendar } from "lucide-react";
 import SortableTableHead, { SortDirection, sortData, useToggleSort } from "@/components/admin/SortableTableHead";
 import TableColumnFilterRow, { applyColumnFilters, ColumnFilterConfig } from "@/components/admin/TableColumnFilter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useAdminRentals } from "@/hooks/queries/useAdminStats";
 import { updateRentalStatus } from "@/features/admin/adminApi";
@@ -61,9 +43,87 @@ const paymentStatusLabels: Record<string, string> = {
   failed: "Eșuat",
 };
 
+const RentalExpandedPanel = ({
+  rental,
+  updatingId,
+  onStatusChange,
+  formatCurrency,
+}: {
+  rental: any;
+  updatingId: string | null;
+  onStatusChange: (id: string, status: string) => void;
+  formatCurrency: (v: number) => string;
+}) => {
+  const isUpdating = updatingId === rental.id;
+  return (
+    <div className="p-4 space-y-3 bg-muted/30 border-t">
+      <div className="grid grid-cols-2 gap-3 text-sm">
+        <div className="flex items-center gap-2">
+          <User className="h-4 w-4 text-muted-foreground" />
+          <span className="text-muted-foreground">Proprietar:</span>
+          <span className="font-medium">{rental.owner_name}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Tag className="h-4 w-4 text-muted-foreground" />
+          <span className="text-muted-foreground">Categorie:</span>
+          <span className="font-medium">{rental.category || '-'}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4 text-muted-foreground" />
+          <span className="text-muted-foreground">Oraș:</span>
+          <span className="font-medium">{rental.location_city || '-'}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <DollarSign className="h-4 w-4 text-muted-foreground" />
+          <span className="text-muted-foreground">Comision:</span>
+          <span className="font-medium">{formatCurrency(rental.platform_fee)}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <span className="text-muted-foreground">Perioadă:</span>
+          <span className="font-medium">
+            {format(new Date(rental.start_date), 'd MMM', { locale: ro })} - {format(new Date(rental.end_date), 'd MMM', { locale: ro })} ({rental.rental_days} zile)
+          </span>
+        </div>
+        <div>
+          <span className="text-muted-foreground">Plată:</span>{" "}
+          <Badge variant={rental.payment_status === 'paid' ? 'default' : 'outline'}>
+            {paymentStatusLabels[rental.payment_status] || rental.payment_status}
+          </Badge>
+        </div>
+      </div>
+      <Separator />
+      <div className="flex flex-wrap gap-2">
+        {isUpdating ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <>
+            {rental.status === 'pending' && (
+              <Button size="sm" onClick={() => onStatusChange(rental.id, 'confirmed')}>Confirmă rezervarea</Button>
+            )}
+            {rental.status === 'confirmed' && (
+              <Button size="sm" onClick={() => onStatusChange(rental.id, 'active')}>Marchează ca activă</Button>
+            )}
+            {rental.status === 'active' && (
+              <>
+                <Button size="sm" onClick={() => onStatusChange(rental.id, 'completed')}>Marchează finalizată</Button>
+                <Button size="sm" variant="outline" className="text-orange-600" onClick={() => onStatusChange(rental.id, 'overdue')}>Marchează întârziată</Button>
+              </>
+            )}
+            {!['completed', 'cancelled'].includes(rental.status) && (
+              <Button size="sm" variant="destructive" onClick={() => onStatusChange(rental.id, 'cancelled')}>Anulează</Button>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const AdminReservations = () => {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
   const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
@@ -90,7 +150,6 @@ const AdminReservations = () => {
 
   const { data: rentals, isLoading } = useAdminRentals(statusFilter || undefined);
 
-  // Extract unique cities from data
   const cityOptions = useMemo(() => {
     if (!rentals) return [];
     const cities = [...new Set(rentals.map(r => r.location_city).filter(c => c && c !== '-'))];
@@ -105,11 +164,7 @@ const AdminReservations = () => {
   const rentalColumnFilters: ColumnFilterConfig[] = [
     { key: "product_title", type: "text", placeholder: "Produs..." },
     { key: "renter_name", type: "text", placeholder: "Chiriaș..." },
-    { key: "owner_name", type: "text", placeholder: "Proprietar..." },
-    { key: "start_date", type: "daterange", placeholder: "Perioadă..." },
     { key: "subtotal", type: "amountrange", placeholder: "Sumă" },
-    { key: "category", type: "combobox", placeholder: "Categorie", options: categoryOptions },
-    { key: "location_city", type: "combobox", placeholder: "Oraș", options: cityOptions },
     { key: "status", type: "select", placeholder: "Status", options: [
       { value: "pending", label: "În așteptare" },
       { value: "confirmed", label: "Confirmată" },
@@ -118,21 +173,10 @@ const AdminReservations = () => {
       { value: "cancelled", label: "Anulată" },
       { value: "overdue", label: "Întârziată" },
     ]},
-    { key: "payment_status", type: "select", placeholder: "Plată", options: [
-      { value: "pending", label: "Neplătit" },
-      { value: "paid", label: "Plătit" },
-      { value: "refunded", label: "Rambursat" },
-      { value: "failed", label: "Eșuat" },
-    ]},
-    { key: "_actions", type: "text" },
   ];
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('ro-RO', {
-      style: 'currency',
-      currency: 'RON',
-      minimumFractionDigits: 0,
-    }).format(value);
+    return new Intl.NumberFormat('ro-RO', { style: 'currency', currency: 'RON', minimumFractionDigits: 0 }).format(value);
   };
 
   const handleStatusChange = async (rentalId: string, newStatus: string) => {
@@ -158,164 +202,134 @@ const AdminReservations = () => {
     );
   }, [rentals, columnFilters, dateRangeFilters, sortKey, sortDirection]);
 
+  const toggleExpand = (id: string) => setExpandedId(prev => prev === id ? null : id);
+
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <CalendarCheck className="h-8 w-8" />
-            Gestionare Rezervări
-          </h1>
-          <p className="text-muted-foreground">
-            Vezi și gestionează toate rezervările de pe platformă
-          </p>
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <CalendarCheck className="h-5 w-5" />
+          <h1 className="text-xl font-bold tracking-tight">Gestionare Rezervări</h1>
+          <span className="text-sm text-muted-foreground hidden sm:inline">— Vezi și gestionează rezervările</span>
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filtre
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-4">
-              <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Toate statusurile" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toate statusurile</SelectItem>
-                  <SelectItem value="pending">În așteptare</SelectItem>
-                  <SelectItem value="confirmed">Confirmate</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="completed">Finalizate</SelectItem>
-                  <SelectItem value="cancelled">Anulate</SelectItem>
-                  <SelectItem value="overdue">Întârziate</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <CardContent className="pt-4">
+            <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Toate statusurile" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toate statusurile</SelectItem>
+                <SelectItem value="pending">În așteptare</SelectItem>
+                <SelectItem value="confirmed">Confirmate</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="completed">Finalizate</SelectItem>
+                <SelectItem value="cancelled">Anulate</SelectItem>
+                <SelectItem value="overdue">Întârziate</SelectItem>
+              </SelectContent>
+            </Select>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Lista Rezervărilor</CardTitle>
-            <CardDescription>
-              {filteredData.length} rezervări găsite
-            </CardDescription>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Lista Rezervărilor</CardTitle>
+            <CardDescription>{filteredData.length} rezervări găsite</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="space-y-4">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <Skeleton key={i} className="h-16 w-full" />
-                ))}
-              </div>
+              <div className="space-y-4">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
             ) : rentals && rentals.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <SortableTableHead label="Produs" sortKey="product_title" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
-                      <SortableTableHead label="Chiriaș" sortKey="renter_name" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
-                      <SortableTableHead label="Proprietar" sortKey="owner_name" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
-                      <SortableTableHead label="Perioada" sortKey="start_date" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
-                      <SortableTableHead label="Suma" sortKey="subtotal" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
-                      <SortableTableHead label="Categorie" sortKey="category" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
-                      <SortableTableHead label="Oraș" sortKey="location_city" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
-                      <TableHead>Status</TableHead>
-                      <TableHead>Plată</TableHead>
-                      <TableHead className="text-right">Acțiuni</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableColumnFilterRow
-                      filters={rentalColumnFilters}
-                      values={columnFilters}
-                      onChange={handleColumnFilter}
-                      dateRangeValues={dateRangeFilters}
-                      onDateRangeChange={handleDateRangeChange}
-                    />
-                    {filteredData.map((rental) => (
-                      <TableRow key={rental.id}>
-                        <TableCell className="font-medium max-w-[200px]">
-                          <span className="line-clamp-1">{rental.product_title}</span>
-                        </TableCell>
-                        <TableCell>{rental.renter_name}</TableCell>
-                        <TableCell>{rental.owner_name}</TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          {format(new Date(rental.start_date), 'd MMM', { locale: ro })} - {format(new Date(rental.end_date), 'd MMM', { locale: ro })}
-                          <br />
-                          <span className="text-xs text-muted-foreground">
-                            {rental.rental_days} zile
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            <div className="font-medium">{formatCurrency(rental.subtotal)}</div>
-                            <div className="text-xs text-muted-foreground">
-                              Comision: {formatCurrency(rental.platform_fee)}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">{rental.category || '-'}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm">{rental.location_city || '-'}</TableCell>
-                        <TableCell>
-                          <Badge className={statusColors[rental.status] || "bg-gray-100"}>
+              <>
+                {/* Desktop table */}
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <SortableTableHead label="Produs" sortKey="product_title" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                        <SortableTableHead label="Chiriaș" sortKey="renter_name" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                        <SortableTableHead label="Perioada" sortKey="start_date" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                        <SortableTableHead label="Suma" sortKey="subtotal" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                        <TableHead>Status</TableHead>
+                        <TableHead>Plată</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableColumnFilterRow
+                        filters={rentalColumnFilters}
+                        values={columnFilters}
+                        onChange={handleColumnFilter}
+                        dateRangeValues={dateRangeFilters}
+                        onDateRangeChange={handleDateRangeChange}
+                      />
+                      {filteredData.map((rental) => (
+                        <>
+                          <TableRow key={rental.id} className="cursor-pointer hover:bg-muted/50" onClick={() => toggleExpand(rental.id)}>
+                            <TableCell className="font-medium max-w-[200px]">
+                              <div className="flex items-center gap-2">
+                                <span className="line-clamp-1">{rental.product_title}</span>
+                                {expandedId === rental.id ? <ChevronUp className="h-4 w-4 flex-shrink-0 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 flex-shrink-0 text-muted-foreground" />}
+                              </div>
+                            </TableCell>
+                            <TableCell>{rental.renter_name}</TableCell>
+                            <TableCell className="whitespace-nowrap">
+                              {format(new Date(rental.start_date), 'd MMM', { locale: ro })} - {format(new Date(rental.end_date), 'd MMM', { locale: ro })}
+                              <br /><span className="text-xs text-muted-foreground">{rental.rental_days} zile</span>
+                            </TableCell>
+                            <TableCell>
+                              <div className="text-sm">
+                                <div className="font-medium">{formatCurrency(rental.subtotal)}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={statusColors[rental.status] || "bg-gray-100"}>
+                                {statusLabels[rental.status] || rental.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={rental.payment_status === 'paid' ? 'default' : 'outline'}>
+                                {paymentStatusLabels[rental.payment_status] || rental.payment_status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                          {expandedId === rental.id && (
+                            <TableRow key={`${rental.id}-expand`}>
+                              <TableCell colSpan={6} className="p-0">
+                                <RentalExpandedPanel rental={rental} updatingId={updatingId} onStatusChange={handleStatusChange} formatCurrency={formatCurrency} />
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="md:hidden space-y-3">
+                  {filteredData.map((rental) => (
+                    <Card key={rental.id} className="overflow-hidden">
+                      <div className="p-3 cursor-pointer flex items-center justify-between" onClick={() => toggleExpand(rental.id)}>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">{rental.product_title}</p>
+                          <p className="text-xs text-muted-foreground">{rental.renter_name} • {format(new Date(rental.start_date), 'd MMM', { locale: ro })} - {format(new Date(rental.end_date), 'd MMM', { locale: ro })}</p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-sm font-medium">{formatCurrency(rental.subtotal)}</span>
+                          <Badge className={`${statusColors[rental.status] || "bg-gray-100"} text-[10px]`}>
                             {statusLabels[rental.status] || rental.status}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={rental.payment_status === 'paid' ? 'default' : 'outline'}>
-                            {paymentStatusLabels[rental.payment_status] || rental.payment_status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {updatingId === rental.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin ml-auto" />
-                          ) : (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                {rental.status === 'pending' && (
-                                  <DropdownMenuItem onClick={() => handleStatusChange(rental.id, 'confirmed')}>
-                                    Confirmă rezervarea
-                                  </DropdownMenuItem>
-                                )}
-                                {rental.status === 'confirmed' && (
-                                  <DropdownMenuItem onClick={() => handleStatusChange(rental.id, 'active')}>
-                                    Marchează ca activă
-                                  </DropdownMenuItem>
-                                )}
-                                {rental.status === 'active' && (
-                                  <>
-                                    <DropdownMenuItem onClick={() => handleStatusChange(rental.id, 'completed')}>
-                                      Marchează finalizată
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleStatusChange(rental.id, 'overdue')} className="text-orange-600">
-                                      Marchează întârziată
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                                {!['completed', 'cancelled'].includes(rental.status) && (
-                                  <DropdownMenuItem onClick={() => handleStatusChange(rental.id, 'cancelled')} className="text-destructive">
-                                    Anulează rezervarea
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                          {expandedId === rental.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                        </div>
+                      </div>
+                      {expandedId === rental.id && (
+                        <RentalExpandedPanel rental={rental} updatingId={updatingId} onStatusChange={handleStatusChange} formatCurrency={formatCurrency} />
+                      )}
+                    </Card>
+                  ))}
+                </div>
+              </>
             ) : (
               <div className="text-center py-12 text-muted-foreground">
                 <CalendarCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />

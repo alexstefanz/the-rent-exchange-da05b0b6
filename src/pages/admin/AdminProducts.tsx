@@ -403,10 +403,11 @@ const AdminProducts = () => {
     <AdminLayout>
       <div className="space-y-4 md:space-y-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Package className="h-6 w-6 md:h-8 md:w-8" /> Gestionare Produse
-          </h1>
-          <p className="text-sm md:text-base text-muted-foreground">Administrează toate anunțurile de pe platformă</p>
+          <div className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            <h1 className="text-xl font-bold tracking-tight">Gestionare Produse</h1>
+            <span className="text-sm text-muted-foreground hidden sm:inline">— Administrează anunțurile</span>
+          </div>
         </div>
 
         {/* Search & Filter */}

@@ -52,14 +52,10 @@ const AdminAnalytics = () => {
     <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <BarChart3 className="h-8 w-8" />
-            Analytics & Statistici
-          </h1>
-          <p className="text-muted-foreground">
-            Analizează performanța și tendințele platformei
-          </p>
+        <div className="flex items-center gap-2">
+          <BarChart3 className="h-5 w-5" />
+          <h1 className="text-xl font-bold tracking-tight">Analytics & Statistici</h1>
+          <span className="text-sm text-muted-foreground hidden sm:inline">— Performanța platformei</span>
         </div>
 
         {/* Key Metrics */}

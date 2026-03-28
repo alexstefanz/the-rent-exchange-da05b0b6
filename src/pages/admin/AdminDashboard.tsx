@@ -51,11 +51,9 @@ const AdminDashboard = () => {
     <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Bun venit în panoul de administrare. Aici poți vedea o privire de ansamblu asupra platformei.
-          </p>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-bold tracking-tight">Dashboard</h1>
+          <span className="text-sm text-muted-foreground hidden sm:inline">— Privire de ansamblu</span>
         </div>
 
         {/* Stats Grid */}

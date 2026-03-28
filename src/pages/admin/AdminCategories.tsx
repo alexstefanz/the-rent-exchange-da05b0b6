@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -133,22 +132,20 @@ const AdminCategories = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-              <FolderTree className="h-8 w-8" /> Gestionare Categorii
-            </h1>
-            <p className="text-muted-foreground">Administrează categoriile și subcategoriile platformei</p>
+          <div className="flex items-center gap-2">
+            <FolderTree className="h-5 w-5" />
+            <h1 className="text-xl font-bold tracking-tight">Gestionare Categorii</h1>
           </div>
-          <Button onClick={() => openCatDialog()}>
-            <Plus className="h-4 w-4 mr-2" /> Categorie Nouă
+          <Button size="sm" onClick={() => openCatDialog()}>
+            <Plus className="h-4 w-4 mr-1" /> Categorie Nouă
           </Button>
         </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Categorii Platformă</CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Categorii Platformă</CardTitle>
             <CardDescription>{categories?.length || 0} categorii</CardDescription>
           </CardHeader>
           <CardContent>
@@ -161,22 +158,22 @@ const AdminCategories = () => {
                   return (
                     <AccordionItem key={cat.id} value={cat.id}>
                       <AccordionTrigger className="hover:no-underline">
-                         <div className="flex items-center gap-3 flex-1">
-                           {(() => {
-                             const IconComp = cat.icon && icons[cat.icon as keyof typeof icons];
-                             return IconComp ? <IconComp className="h-5 w-5 text-primary" /> : <span className="text-xl">{cat.icon}</span>;
-                           })()}
-                           <span className="font-medium">{cat.name}</span>
-                          {cat.name_en && <span className="text-sm text-muted-foreground">({cat.name_en})</span>}
-                          <Badge variant={cat.is_active ? "default" : "secondary"} className="ml-2">
+                        <div className="flex items-center gap-3 flex-1">
+                          {(() => {
+                            const IconComp = cat.icon && icons[cat.icon as keyof typeof icons];
+                            return IconComp ? <IconComp className="h-5 w-5 text-primary" /> : <span className="text-xl">{cat.icon}</span>;
+                          })()}
+                          <span className="font-medium">{cat.name}</span>
+                          {cat.name_en && <span className="text-sm text-muted-foreground hidden sm:inline">({cat.name_en})</span>}
+                          <Badge variant={cat.is_active ? "default" : "secondary"} className="ml-2 text-[10px]">
                             {cat.is_active ? "Activă" : "Inactivă"}
                           </Badge>
-                          <Badge variant="outline" className="ml-1">{catSubs.length} sub</Badge>
+                          <Badge variant="outline" className="ml-1 text-[10px]">{catSubs.length} sub</Badge>
                         </div>
                       </AccordionTrigger>
                       <AccordionContent>
-                        <div className="space-y-4 pl-8">
-                          <div className="flex gap-2">
+                        <div className="space-y-4 pl-2 sm:pl-8">
+                          <div className="flex flex-wrap gap-2">
                             <Button size="sm" variant="outline" onClick={() => openCatDialog(cat)}>
                               <Pencil className="h-3 w-3 mr-1" /> Editează
                             </Button>
@@ -191,45 +188,29 @@ const AdminCategories = () => {
                             </Button>
                           </div>
                           {catSubs.length > 0 && (
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>Nume</TableHead>
-                                  <TableHead>Ordine</TableHead>
-                                  <TableHead>Status</TableHead>
-                                  <TableHead className="text-right">Acțiuni</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {catSubs.map((sub) => (
-                                  <TableRow key={sub.id}>
-                                    <TableCell>
-                                      <div>
-                                        <p className="font-medium">{sub.name}</p>
-                                        {sub.name_en && <p className="text-xs text-muted-foreground">{sub.name_en}</p>}
-                                      </div>
-                                    </TableCell>
-                                    <TableCell>{sub.sort_order}</TableCell>
-                                    <TableCell>
-                                      <Badge variant={sub.is_active ? "default" : "secondary"}>
-                                        {sub.is_active ? "Activă" : "Inactivă"}
-                                      </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                      <div className="flex gap-1 justify-end">
-                                        <Button size="icon" variant="ghost" onClick={() => openSubDialog(cat.id, sub)}><Pencil className="h-3 w-3" /></Button>
-                                        <Button size="icon" variant="ghost" onClick={() => handleToggleSub(sub.id, sub.is_active)}>
-                                          {sub.is_active ? <ToggleRight className="h-3 w-3" /> : <ToggleLeft className="h-3 w-3" />}
-                                        </Button>
-                                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => handleDeleteSub(sub.id)}>
-                                          <Trash2 className="h-3 w-3" />
-                                        </Button>
-                                      </div>
-                                    </TableCell>
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
+                            <div className="space-y-2">
+                              {catSubs.map((sub) => (
+                                <div key={sub.id} className="flex items-center justify-between p-3 rounded-lg border bg-background">
+                                  <div className="min-w-0">
+                                    <p className="font-medium text-sm">{sub.name}</p>
+                                    {sub.name_en && <p className="text-xs text-muted-foreground">{sub.name_en}</p>}
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    <Badge variant={sub.is_active ? "default" : "secondary"} className="text-[10px]">
+                                      {sub.is_active ? "Activă" : "Inactivă"}
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground">#{sub.sort_order}</span>
+                                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openSubDialog(cat.id, sub)}><Pencil className="h-3 w-3" /></Button>
+                                    <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleToggleSub(sub.id, sub.is_active)}>
+                                      {sub.is_active ? <ToggleRight className="h-3 w-3" /> : <ToggleLeft className="h-3 w-3" />}
+                                    </Button>
+                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDeleteSub(sub.id)}>
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
                           )}
                         </div>
                       </AccordionContent>
