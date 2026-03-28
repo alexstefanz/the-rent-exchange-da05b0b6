@@ -1,54 +1,63 @@
 
 
-## Plan: Expandable Product Rows with Full Details and Actions
+## Plan: Titluri mai mici + Acordeoane mobile-friendly pe toate paginile admin
 
-**Goal**: Replace the dropdown "Acțiuni" menu with an expandable accordion row. Clicking a product row expands it to show all product details + action buttons inline. Make the entire admin products page mobile-responsive.
+### 1. Titluri mai mici pe 1 rând (toate paginile admin)
 
-### Changes in `src/pages/admin/AdminProducts.tsx`
+Schimbare pe toate cele 6 pagini: `text-3xl` → `text-xl`, icon `h-8 w-8` → `h-5 w-5`, titlu + descriere pe un singur rând flexibil.
 
-**1. Add expandable row state**
-- Add `expandedProductId` state to track which row is expanded
-- Clicking a `TableRow` toggles expansion (sets or clears the ID)
+**Fișiere afectate**: AdminUsers, AdminReservations, AdminTickets, AdminKYC, AdminFinances, AdminCategories
 
-**2. Replace table layout on mobile with card-based list**
-- On desktop (`md+`): keep the current table but replace the "Acțiuni" dropdown column
-- On mobile (`< md`): render products as stacked cards with key info (image, title, price, status) and an expand/collapse toggle
-- Use responsive classes (`hidden md:table` / `md:hidden`) to switch layouts
+### 2. Acordeoane pe fiecare pagină (înlocuind tabelele cu horizontal scroll)
 
-**3. Expandable detail panel (both layouts)**
-When a product is expanded, show a detail section containing:
-- **Images**: horizontal scrollable gallery of all product images
-- **Details grid**: Title, Description, Category, Subcategory, Price/day, Owner name, City, Country, Created date, Approval status
-- **Action buttons**: All current dropdown actions rendered as visible buttons:
-  - "Vezi pe site" (link)
-  - "Aprobă" / "Respinge" (if pending)
-  - "Activează" / "Dezactivează"
-  - "Marchează suspect" / "Ridică flag"
-  - "Recenzii"
-  - "Șterge definitiv" (destructive)
+Același pattern ca AdminProducts — pe mobile se afișează carduri clickabile care se expandează cu detalii + acțiuni, iar pe desktop se păstrează tabelul dar cu rânduri expandabile.
 
-**4. Remove DropdownMenu column**
-- Remove the `<TableHead>Acțiuni</TableHead>` and the corresponding `<TableCell>` with `DropdownMenu`
-- Actions now live inside the expanded panel only
+#### AdminReservations
+- Card mobil: Produs, Chiriaș, Perioadă, Sumă, Status badge
+- Expand: Proprietar, Categorie, Oraș, Comision, Plată status, Acțiuni (Confirmă / Activă / Finalizată / Anulează)
+- Desktop: rânduri clickabile, expand inline cu acțiuni (eliminare DropdownMenu)
 
-**5. Fetch additional product details on expand**
-- The existing `get_admin_products` RPC already returns `description`, `images`, `subcategory`
-- For extra fields (included_items, pickup_address, location_country), add a `fetchProductFullDetails` function that queries the `products` table directly by ID when a row is expanded
+#### AdminTickets  
+- Card mobil: Public ID, Titlu, Prioritate badge, Status badge
+- Expand: Categorie, Data, SLA indicator, buton "Vezi detalii" (navigare la ticket detail)
 
-### New function in `src/features/admin/adminProductsApi.ts`
-```typescript
-export const fetchProductFullDetails = async (productId: string) => {
-  const { data, error } = await supabase
-    .from('products')
-    .select('description, included_items, location_country, pickup_address, usage_rules')
-    .eq('id', productId)
-    .single();
-  if (error) throw new Error(error.message);
-  return data;
-};
+#### AdminUsers
+- Card mobil: Avatar + Nume, Email, Rol badge, Status (Activ/Banat)
+- Expand: Produse count, Rezervări count, KYC status, Data înregistrare, buton "Vezi profil"
+
+#### AdminKYC
+- Card mobil: Public ID, Nume utilizator, Status badge, Risk score
+- Expand: Email, Rol, Nivel, Încercări, Data creare, buton "Vezi detalii"
+
+#### AdminFinances (tab "Verificare Plăți")
+- Card mobil: Tip, Sumă, Status badge
+- Expand: Descriere, Data, Acțiuni (Verificat/Suspect/Rambursează)
+
+#### AdminCategories
+- Deja folosește Accordion — rămâne la fel, dar subcategoriile din interior vor fi și ele card-uri pe mobil în loc de table cu scroll
+
+### Structura tehnică (pattern comun)
+
+Fiecare pagină va folosi:
+```text
+<div className="hidden md:block">
+  <Table>... (desktop, cu rânduri expandabile)</Table>
+</div>
+<div className="md:hidden space-y-3">
+  {items.map(item => (
+    <Card onClick={toggle} ...>
+      <summary info>
+      {expanded && <detail panel + actions>}
+    </Card>
+  ))}
+</div>
 ```
 
-### Files changed
-- `src/pages/admin/AdminProducts.tsx` — major refactor: expandable rows, mobile card layout, inline actions
-- `src/features/admin/adminProductsApi.ts` — add `fetchProductFullDetails`
+### Fișiere modificate
+- `src/pages/admin/AdminReservations.tsx` — acordeon + titlu mic
+- `src/pages/admin/AdminTickets.tsx` — acordeon + titlu mic  
+- `src/pages/admin/AdminUsers.tsx` — acordeon + titlu mic
+- `src/pages/admin/AdminKYC.tsx` — acordeon + titlu mic
+- `src/pages/admin/AdminFinances.tsx` — acordeon pentru tab plăți + titlu mic
+- `src/pages/admin/AdminCategories.tsx` — titlu mic + subcategorii mobile-friendly
 
