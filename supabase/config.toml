@@ -1,28 +1,23 @@
 project_id = "tsffyecastudajmgrckt"
 
-[functions.send-rental-notification]
-verify_jwt = false
-
-[functions.respond-rental-request]
-verify_jwt = false
-
-[functions.send-password-changed-notification]
-verify_jwt = false
-
-[functions.send-message-notification]
-verify_jwt = false
-
-[functions.send-cancellation-notification]
-verify_jwt = false
-
-[functions.odoo-proxy]
-verify_jwt = false
-
-[functions.request-account-deactivation]
-verify_jwt = false
-
-[functions.confirm-account-deactivation]
-verify_jwt = false
-
-[functions.process-email-queue]
-verify_jwt = false
+[functions]
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.confirm-account-deactivation]
+    verify_jwt = false
+  [functions.odoo-proxy]
+    verify_jwt = false
+  [functions.process-email-queue]
+    verify_jwt = false
+  [functions.request-account-deactivation]
+    verify_jwt = false
+  [functions.respond-rental-request]
+    verify_jwt = false
+  [functions.send-cancellation-notification]
+    verify_jwt = false
+  [functions.send-message-notification]
+    verify_jwt = false
+  [functions.send-password-changed-notification]
+    verify_jwt = false
+  [functions.send-rental-notification]
+    verify_jwt = false
