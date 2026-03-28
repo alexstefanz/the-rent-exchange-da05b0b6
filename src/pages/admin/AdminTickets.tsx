@@ -40,7 +40,7 @@ const priorityColors: Record<string, string> = {
 
 const TicketExpandedPanel = ({ ticket, onViewDetails }: { ticket: any; onViewDetails: () => void }) => (
   <div className="p-4 space-y-3 bg-muted/30 border-t">
-    <div className="grid grid-cols-2 gap-3 text-sm">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
       <div className="flex items-center gap-2">
         <Tag className="h-4 w-4 text-muted-foreground" />
         <span className="text-muted-foreground">Categorie:</span>
