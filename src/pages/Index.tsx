@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import bannerBg from "@/assets/banner_hero.png";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Shield, CheckCircle, ShieldCheck, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -67,6 +67,25 @@ const Index = () => {
             <div className="mt-6 animate-fade-up md:mx-0 md:mt-10" style={{ animationDelay: "0.2s" }}>
               <HeroSearchForm />
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* USP Bar */}
+      <section className="py-3" style={{ backgroundColor: '#F98715' }}>
+        <div className="container">
+          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
+            {[
+              { icon: Shield, label: "Plăți securizate" },
+              { icon: CheckCircle, label: "Utilizatori verificați" },
+              { icon: ShieldCheck, label: "Asigurare inclusă" },
+              { icon: Headphones, label: "Suport dedicat" },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center gap-2">
+                <item.icon className="h-4 w-4 text-white" />
+                <span className="text-sm font-medium text-white">{item.label}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
