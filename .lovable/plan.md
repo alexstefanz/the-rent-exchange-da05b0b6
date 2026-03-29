@@ -1,19 +1,28 @@
 
 
-## Plan: Auto-resize și compresie imagini la upload
+## Plan: Fix chat suport mobil + adăugare upload imagini
 
-### Problema
-Utilizatorii primesc eroare când încearcă să urce poze mai mari de 5MB. În loc să fie respinse, imaginile ar trebui comprimate automat.
+### Probleme identificate
+
+1. **Pe mobil**, input-ul și butonul de trimitere nu sunt vizibile — chatul ocupă tot ecranul dar zona de input este ascunsă sub bara de navigare de jos (`MobileBottomNav`)
+2. **Butonul X** de închidere există dar e posibil să fie acoperit sau greu de accesat
+3. **Lipsă funcționalitate**: nu se pot trimite imagini în chat
 
 ### Soluție
-Adaug o funcție `compressImage()` în `ImageUpload.tsx` care folosește Canvas API (browser-native, fără dependențe externe) pentru a redimensiona și comprima imaginile înainte de upload.
 
-### Specificații
-- **Rezoluție maximă**: 1920px (latura cea mai mare) — suficient pentru afișare web
-- **Format output**: JPEG la calitate 0.8 (compromis bun între calitate și dimensiune)
-- **Comportament**: Orice imagine mai mare de 1MB este comprimată automat; cele sub 1MB rămân neschimbate
-- **Eliminare limită 5MB**: Nu mai afișăm eroare, ci comprimăm în mod transparent
+#### 1. Fix layout mobil (SupportChatWidget.tsx)
+- Adaug `z-[60]` pe container (mai mare decât `MobileBottomNav` care e `z-50`) pentru a fi deasupra navigării
+- Setez explicit `height: 100dvh` pe mobil pentru a folosi viewport-ul dinamic (evită problemele cu bara de adrese pe mobil)
+- Mă asigur că input-ul are `pb-safe` sau padding suficient pentru a nu fi acoperit
+
+#### 2. Adăugare upload imagini
+- Adaug un buton cu icon `ImagePlus` lângă input-ul de text (atât în faza AI cât și în faza ticket)
+- La click, deschid un `<input type="file" accept="image/*">` ascuns
+- Imaginea selectată este comprimată (reutilizez logica de `compressImage` din `ImageUpload.tsx`) și uploadată în bucket-ul `product-images` (sau un bucket dedicat `support-attachments`)
+- URL-ul imaginii este trimis ca mesaj (în faza AI ca text descriptiv, în faza ticket ca mesaj cu URL)
+- Imagini primite sunt afișate inline în chat cu `<img>` tag
 
 ### Fișiere modificate
-- `src/components/products/ImageUpload.tsx` — adaug funcția `compressImage()` și o apelez înainte de upload, eliminând validarea de 5MB
+- **`src/components/support/SupportChatWidget.tsx`** — fix layout mobil, adăugare buton upload imagine, afișare imagini inline în mesaje
+- **Migrare SQL** — creez bucket `support-attachments` cu RLS policy pentru utilizatori autentificați
 
