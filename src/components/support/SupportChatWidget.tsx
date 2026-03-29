@@ -311,8 +311,8 @@ const SupportChatWidget = () => {
       {/* Chat Panel */}
       {isOpen && (
         <div
-          className="fixed bottom-20 lg:bottom-6 right-4 z-50 w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl border bg-background shadow-xl flex flex-col overflow-hidden"
-          style={{ height: "min(500px, calc(100vh - 120px))" }}
+          className="fixed z-50 bg-background shadow-xl flex flex-col overflow-hidden inset-0 lg:inset-auto lg:bottom-6 lg:right-4 lg:w-[360px] lg:max-w-[calc(100vw-2rem)] lg:rounded-2xl lg:border"
+          style={{ height: undefined }}
         >
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 border-b bg-primary text-primary-foreground rounded-t-2xl">
