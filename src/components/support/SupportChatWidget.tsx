@@ -311,10 +311,16 @@ const SupportChatWidget = () => {
       {/* Chat Panel */}
       {isOpen && (
         <div
-          className="fixed z-50 bg-background shadow-xl flex flex-col overflow-hidden inset-0 lg:inset-auto lg:bottom-6 lg:right-4 lg:w-[360px] lg:max-w-[calc(100vw-2rem)] lg:rounded-2xl lg:border lg:h-[min(500px,calc(100vh-120px))] h-full"
+          className="fixed z-50 bg-background shadow-xl flex flex-col overflow-hidden inset-0 h-full lg:inset-auto lg:bottom-6 lg:right-4 lg:w-[360px] lg:max-w-[calc(100vw-2rem)] lg:rounded-2xl lg:border"
+          style={{ height: undefined }}
+          ref={(el) => {
+            if (el && window.innerWidth >= 1024) {
+              el.style.height = "min(500px, calc(100vh - 120px))";
+            }
+          }}
         >
           {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b bg-primary text-primary-foreground rounded-t-2xl">
+          <div className="flex items-center gap-3 px-4 py-3 border-b bg-primary text-primary-foreground lg:rounded-t-2xl">
             <MessageSquare className="h-5 w-5 shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm">{t("Suport Rentli", "Rentli Support")}</p>
