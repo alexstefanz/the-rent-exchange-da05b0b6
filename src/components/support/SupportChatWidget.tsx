@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation } from "react-router-dom";
-import { Headphones, Send, X, MessageSquare, Plus, Bot, Loader2 } from "lucide-react";
+import { Headphones, Send, X, MessageSquare, Plus, Bot, Loader2, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -19,6 +19,81 @@ import { toast } from "sonner";
 
 const STORAGE_KEY = "support_chat_ticket_id";
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/support-ai-chat`;
+
+const MAX_DIMENSION = 1920;
+const JPEG_QUALITY = 0.8;
+const COMPRESS_THRESHOLD = 1 * 1024 * 1024;
+
+const compressImage = (file: File): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    if (file.size <= COMPRESS_THRESHOLD) {
+      resolve(file);
+      return;
+    }
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        if (width > height) {
+          height = Math.round((height * MAX_DIMENSION) / width);
+          width = MAX_DIMENSION;
+        } else {
+          width = Math.round((width * MAX_DIMENSION) / height);
+          height = MAX_DIMENSION;
+        }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { resolve(file); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) { resolve(file); return; }
+          resolve(new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" }));
+        },
+        "image/jpeg",
+        JPEG_QUALITY
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Nu am putut procesa imaginea"));
+    };
+    img.src = url;
+  });
+};
+
+const uploadSupportImage = async (file: File, userId: string): Promise<string> => {
+  const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
+  const { error } = await supabase.storage.from("support-attachments").upload(fileName, file);
+  if (error) throw error;
+  const { data } = supabase.storage.from("support-attachments").getPublicUrl(fileName);
+  return data.publicUrl;
+};
+
+const isImageUrl = (text: string) =>
+  /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(text) ||
+  text.includes("/support-attachments/");
+
+const renderMessageContent = (text: string) => {
+  if (isImageUrl(text.trim())) {
+    return (
+      <a href={text.trim()} target="_blank" rel="noopener noreferrer">
+        <img
+          src={text.trim()}
+          alt="Imagine atașată"
+          className="max-w-full rounded-lg max-h-48 object-cover"
+          loading="lazy"
+        />
+      </a>
+    );
+  }
+  return <p className="whitespace-pre-wrap break-words">{text}</p>;
+};
 
 interface AiMessage {
   role: "user" | "assistant";
@@ -45,19 +120,18 @@ const SupportChatWidget = () => {
   );
   const [ticketPublicId, setTicketPublicId] = useState<string | null>(null);
 
-  // AI chat phase state
   const [aiMessages, setAiMessages] = useState<AiMessage[]>([]);
   const [aiInput, setAiInput] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  // Ticket chat state
   const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isAdminRoute = pathname.startsWith("/admin");
   const hasInitiatedAi = useRef(false);
 
-  // Load ticket info if we have an ID
   const { data: ticketInfo } = useQuery({
     queryKey: ["supportTicketInfo", ticketId],
     queryFn: async () => {
@@ -82,7 +156,6 @@ const SupportChatWidget = () => {
     }
   }, [ticketInfo]);
 
-  // Messages polling
   const { data: messages = [] } = useQuery({
     queryKey: ["supportChatMessages", ticketId],
     queryFn: () => fetchUserTicketMessages(ticketId!),
@@ -90,12 +163,10 @@ const SupportChatWidget = () => {
     refetchInterval: 10000,
   });
 
-  // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, aiMessages]);
 
-  // Initiate AI greeting when widget opens and no ticket exists
   useEffect(() => {
     if (isOpen && user && !ticketId && aiMessages.length === 0 && !hasInitiatedAi.current) {
       hasInitiatedAi.current = true;
@@ -113,7 +184,6 @@ const SupportChatWidget = () => {
         category_type: toolData.category_type,
       });
 
-      // Save the AI conversation as the first message context
       const aiSummary = aiMessages
         .filter(m => m.role === "user")
         .map(m => m.content)
@@ -138,8 +208,6 @@ const SupportChatWidget = () => {
 
   const streamAiResponse = async (conversationMessages: AiMessage[]) => {
     setIsAiLoading(true);
-
-    // Add empty assistant message for streaming
     setAiMessages(prev => [...prev, { role: "assistant", content: "" }]);
 
     try {
@@ -165,7 +233,7 @@ const SupportChatWidget = () => {
       let assistantSoFar = "";
       let toolCallName = "";
       let toolCallArgs = "";
-      let hasToolCall = false;
+      let hasToolCallFlag = false;
 
       const updateAssistant = (content: string) => {
         assistantSoFar = content;
@@ -197,14 +265,12 @@ const SupportChatWidget = () => {
             const parsed = JSON.parse(jsonStr);
             const delta = parsed.choices?.[0]?.delta;
 
-            // Handle text content
             if (delta?.content) {
               updateAssistant(assistantSoFar + delta.content);
             }
 
-            // Handle tool calls
             if (delta?.tool_calls) {
-              hasToolCall = true;
+              hasToolCallFlag = true;
               for (const tc of delta.tool_calls) {
                 if (tc.function?.name) toolCallName = tc.function.name;
                 if (tc.function?.arguments) toolCallArgs += tc.function.arguments;
@@ -217,17 +283,14 @@ const SupportChatWidget = () => {
         }
       }
 
-      // Process tool call if present
-      if (hasToolCall && toolCallName === "create_support_ticket") {
+      if (hasToolCallFlag && toolCallName === "create_support_ticket") {
         try {
           const toolData = JSON.parse(toolCallArgs) as ToolCallData;
-          // Show a handoff message
           const handoffMsg = t(
             "Am înțeles problema ta. Creez acum un ticket și un administrator va prelua conversația. Mulțumesc pentru răbdare! 🙏",
             "I understand your issue. Creating a ticket now and an admin will take over. Thank you for your patience! 🙏"
           );
           updateAssistant(handoffMsg);
-          // Create the ticket
           await handleToolCall(toolData);
         } catch (e) {
           console.error("Failed to parse tool call:", e);
@@ -262,12 +325,10 @@ const SupportChatWidget = () => {
     setAiMessages(newMessages);
     setAiInput("");
 
-    // Filter only non-empty messages for the API
     const apiMessages = newMessages.filter(m => m.content.trim());
     streamAiResponse(apiMessages);
   };
 
-  // Send ticket message
   const sendMutation = useMutation({
     mutationFn: (text: string) => addUserTicketMessage(ticketId!, text),
     onSuccess: () => {
@@ -280,6 +341,37 @@ const SupportChatWidget = () => {
     const text = messageText.trim();
     if (!text || !ticketId) return;
     sendMutation.mutate(text);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error(t("Poți trimite doar imagini.", "You can only send images."));
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const compressed = await compressImage(file);
+      const url = await uploadSupportImage(compressed, user.id);
+
+      if (ticketId) {
+        sendMutation.mutate(url);
+      } else {
+        const userMsg: AiMessage = { role: "user", content: url };
+        const newMessages = [...aiMessages, userMsg];
+        setAiMessages(newMessages);
+        const apiMessages = newMessages.filter(m => m.content.trim());
+        streamAiResponse(apiMessages);
+      }
+    } catch (err) {
+      console.error("Image upload error:", err);
+      toast.error(t("Eroare la încărcarea imaginii.", "Failed to upload image."));
+    } finally {
+      setIsUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const handleNewConversation = () => {
@@ -297,6 +389,15 @@ const SupportChatWidget = () => {
 
   return (
     <>
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageUpload}
+      />
+
       {/* FAB Button */}
       {!isOpen && (
         <button
@@ -311,8 +412,8 @@ const SupportChatWidget = () => {
       {/* Chat Panel */}
       {isOpen && (
         <div
-          className="fixed z-50 bg-background shadow-xl flex flex-col overflow-hidden inset-0 h-full lg:inset-auto lg:bottom-6 lg:right-4 lg:w-[360px] lg:max-w-[calc(100vw-2rem)] lg:rounded-2xl lg:border"
-          style={{ height: undefined }}
+          className="fixed z-[60] bg-background shadow-xl flex flex-col overflow-hidden inset-0 lg:inset-auto lg:bottom-6 lg:right-4 lg:w-[360px] lg:max-w-[calc(100vw-2rem)] lg:rounded-2xl lg:border"
+          style={{ height: "100dvh" }}
           ref={(el) => {
             if (el && window.innerWidth >= 1024) {
               el.style.height = "min(500px, calc(100vh - 120px))";
@@ -320,7 +421,7 @@ const SupportChatWidget = () => {
           }}
         >
           {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b bg-primary text-primary-foreground lg:rounded-t-2xl">
+          <div className="flex items-center gap-3 px-4 py-3 border-b bg-primary text-primary-foreground shrink-0 lg:rounded-t-2xl">
             <MessageSquare className="h-5 w-5 shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm">{t("Suport Rentli", "Rentli Support")}</p>
@@ -348,7 +449,7 @@ const SupportChatWidget = () => {
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-hidden flex flex-col min-h-0">
             {!user ? (
               <div className="flex-1 flex items-center justify-center p-6 text-center">
                 <div>
@@ -388,9 +489,7 @@ const SupportChatWidget = () => {
                                 : "bg-muted text-foreground rounded-bl-md"
                             }`}
                           >
-                            <p className="whitespace-pre-wrap break-words">
-                              {msg.content || (isAiLoading && idx === aiMessages.length - 1 ? "" : "")}
-                            </p>
+                            {msg.content ? renderMessageContent(msg.content) : null}
                             {!msg.content && isAiLoading && idx === aiMessages.length - 1 && (
                               <div className="flex items-center gap-1 py-1">
                                 <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "0ms" }} />
@@ -413,7 +512,19 @@ const SupportChatWidget = () => {
                 </ScrollArea>
 
                 {/* AI input */}
-                <div className="flex items-center gap-2 px-3 py-2.5 border-t">
+                <div className="flex items-center gap-2 px-3 py-2.5 border-t shrink-0 pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:pb-2.5">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isAiLoading || isCreatingTicket || isUploadingImage}
+                    className="h-9 w-9 shrink-0 flex items-center justify-center rounded-lg border border-input bg-background hover:bg-secondary transition-colors disabled:opacity-50"
+                  >
+                    {isUploadingImage ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    ) : (
+                      <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </button>
                   <Input
                     value={aiInput}
                     onChange={(e) => setAiInput(e.target.value)}
@@ -464,7 +575,7 @@ const SupportChatWidget = () => {
                                   : "bg-muted text-foreground rounded-bl-md"
                               }`}
                             >
-                              <p className="whitespace-pre-wrap break-words">{msg.message_text}</p>
+                              {renderMessageContent(msg.message_text)}
                               <p
                                 className={`text-[10px] mt-1 ${
                                   isCustomer ? "text-primary-foreground/70" : "text-muted-foreground"
@@ -482,7 +593,7 @@ const SupportChatWidget = () => {
                 </ScrollArea>
 
                 {isClosed ? (
-                  <div className="px-4 py-3 border-t text-center">
+                  <div className="px-4 py-3 border-t text-center shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))] lg:pb-3">
                     <p className="text-xs text-muted-foreground mb-2">
                       {t("Acest ticket a fost închis.", "This ticket has been closed.")}
                     </p>
@@ -492,7 +603,19 @@ const SupportChatWidget = () => {
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 px-3 py-2.5 border-t">
+                  <div className="flex items-center gap-2 px-3 py-2.5 border-t shrink-0 pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:pb-2.5">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={sendMutation.isPending || isUploadingImage}
+                      className="h-9 w-9 shrink-0 flex items-center justify-center rounded-lg border border-input bg-background hover:bg-secondary transition-colors disabled:opacity-50"
+                    >
+                      {isUploadingImage ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      ) : (
+                        <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </button>
                     <Input
                       value={messageText}
                       onChange={(e) => setMessageText(e.target.value)}
