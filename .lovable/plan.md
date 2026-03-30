@@ -1,28 +1,35 @@
 
 
-## Plan: Fix chat suport mobil + adăugare upload imagini
+## Plan: Redesign desktop chat suport stil Cyberfolks
 
-### Probleme identificate
+### Obiectiv
+Pe desktop, chatul de suport să arate ca un chat messenger modern (similar Cyberfolks): header cu avatar și status online, bubble-uri de mesaj cu fundal galben pentru user, input curat jos cu iconițe attach/emoji, totul într-un card rotunjit.
 
-1. **Pe mobil**, input-ul și butonul de trimitere nu sunt vizibile — chatul ocupă tot ecranul dar zona de input este ascunsă sub bara de navigare de jos (`MobileBottomNav`)
-2. **Butonul X** de închidere există dar e posibil să fie acoperit sau greu de accesat
-3. **Lipsă funcționalitate**: nu se pot trimite imagini în chat
+### Modificări în `src/components/support/SupportChatWidget.tsx`
 
-### Soluție
+#### 1. Header redesign (desktop)
+- Înlocuiesc `MessageSquare` icon cu un avatar rotund (inițialele "R" pentru Rentli sau un logo mic)
+- Adaug un indicator verde de "online" (dot verde lângă avatar)
+- Numele: "Rentli Support" cu status "Online" dedesubt
+- Buton X mutat în dreapta-sus, mai vizibil
+- Background header: alb/light, nu primary color — mai curat, cu border-bottom subtil
 
-#### 1. Fix layout mobil (SupportChatWidget.tsx)
-- Adaug `z-[60]` pe container (mai mare decât `MobileBottomNav` care e `z-50`) pentru a fi deasupra navigării
-- Setez explicit `height: 100dvh` pe mobil pentru a folosi viewport-ul dinamic (evită problemele cu bara de adrese pe mobil)
-- Mă asigur că input-ul are `pb-safe` sau padding suficient pentru a nu fi acoperit
+#### 2. Zona de mesaje
+- Bubble-urile user: fundal galben/amber (`bg-amber-400 text-foreground`) cu colțuri rotunjite — similar screenshot-ului
+- Bubble-urile bot/admin: fundal alb/gri deschis, aliniate stânga
+- Separator "Astăzi" / dată — text centrat cu linie subtilă
 
-#### 2. Adăugare upload imagini
-- Adaug un buton cu icon `ImagePlus` lângă input-ul de text (atât în faza AI cât și în faza ticket)
-- La click, deschid un `<input type="file" accept="image/*">` ascuns
-- Imaginea selectată este comprimată (reutilizez logica de `compressImage` din `ImageUpload.tsx`) și uploadată în bucket-ul `product-images` (sau un bucket dedicat `support-attachments`)
-- URL-ul imaginii este trimis ca mesaj (în faza AI ca text descriptiv, în faza ticket ca mesaj cu URL)
-- Imagini primite sunt afișate inline în chat cu `<img>` tag
+#### 3. Input area redesign
+- Input cu border rotunjit, placeholder "Scrie mesajul tău"
+- Butonul de attach (clip/ImagePlus) și un emoji icon în dreapta input-ului (inside)
+- Butonul Send ascuns (se trimite cu Enter) sau ca icon discret
+- Text mic sub input: "Chat Rentli" ca branding subtil
+
+#### 4. Desktop container
+- Lățime mărită la `400px`, height `min(600px, calc(100vh-100px))`
+- Rounded corners `2xl`, shadow mai pronunțat
+- Pe mobil rămâne full-screen ca acum
 
 ### Fișiere modificate
-- **`src/components/support/SupportChatWidget.tsx`** — fix layout mobil, adăugare buton upload imagine, afișare imagini inline în mesaje
-- **Migrare SQL** — creez bucket `support-attachments` cu RLS policy pentru utilizatori autentificați
+- **`src/components/support/SupportChatWidget.tsx`** — redesign complet al UI-ului pe desktop
 
