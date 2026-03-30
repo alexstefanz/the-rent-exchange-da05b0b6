@@ -1,26 +1,27 @@
 
 
-## Plan: Add subcategories to Dashboard Categories Widget
+## Plan: Seed subcategoriile din datele hardcodate în baza de date
 
-The `DashboardCategoriesWidget` on the admin dashboard currently only shows main categories. Subcategories need to appear as expandable dropdowns under each category, with edit/delete actions.
+### Problema
+Tabelul `platform_subcategories` din baza de date este **gol**. Categoriile principale (`platform_categories`) există, dar subcategoriile nu au fost niciodată adăugate. De aceea, când expandezi o categorie, apare "Nicio subcategorie" / "0 sub".
 
-### Changes to `src/components/admin/DashboardCategoriesWidget.tsx`
+Aplicația are subcategorii hardcodate în `src/data/categories.ts` (zeci de subcategorii pentru fiecare categorie), dar acestea nu au fost migrate în tabelul din baza de date.
 
-1. **Fetch subcategories** -- add a `useQuery` call for `fetchSubcategories` (already exported from `categoriesApi`)
-2. **Expandable rows** -- wrap each category row in a collapsible/accordion so clicking it reveals its subcategories listed below, indented
-3. **Subcategory actions** -- each subcategory row gets Edit (pencil) and Delete (trash) buttons, same as categories
-4. **Edit subcategory dialog** -- add a dialog with fields: name (RO), name (EN), description, image URL, sort order (reusing the pattern from `AdminCategories.tsx`)
-5. **Delete subcategory confirmation** -- add an AlertDialog for subcategory deletion
-6. **Mutations** -- add `updateSubcategory`, `deleteSubcategory` mutations using existing API functions from `categoriesApi`
+### Soluție
 
-### UI Structure
-```text
-Category Row (clickable to expand)
-  ├── Subcategory 1  [Active] [Edit] [Delete]
-  ├── Subcategory 2  [Active] [Edit] [Delete]
-  └── Subcategory 3  [Active] [Edit] [Delete]
-```
+#### 1. Migrare SQL — seed subcategorii
+Creez o migrare care inserează toate subcategoriile din datele hardcodate, legându-le de categoriile existente din `platform_categories` prin potrivirea numelui categoriei.
 
-### Files modified
-- **`src/components/admin/DashboardCategoriesWidget.tsx`** -- add subcategory fetching, accordion display, edit/delete dialogs and mutations
+Aceasta va popula tabelul `platform_subcategories` cu toate subcategoriile (nume RO, nume EN, descriere, URL imagine, ordine sortare) pentru fiecare categorie existentă.
+
+#### 2. Nicio modificare de cod necesară
+Widget-ul de pe dashboard și pagina `/admin/categories` deja interoghează `platform_subcategories` și afișează rezultatele corect — lipsa datelor era singura problemă.
+
+### Fișiere modificate
+- **Migrare SQL nouă** — `INSERT INTO platform_subcategories` cu datele din `categories.ts`
+
+### Detalii tehnice
+- Migrarea va face `INSERT` cu `SELECT id FROM platform_categories WHERE name ILIKE ...` pentru a lega fiecare subcategorie de categoria corectă
+- Se vor insera ~50-60 subcategorii în total
+- Toate vor fi `is_active = true` implicit
 
