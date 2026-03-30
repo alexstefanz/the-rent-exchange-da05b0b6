@@ -218,7 +218,7 @@ const NearbyProductsSlider = ({ currentProductId, locationCity, category }: Near
                 key={product.id}
                 to={getProductUrl(product)}
                 onClick={onCardClick}
-                className="group block shrink-0 snap-start overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover w-[calc(50%-8px)] md:w-[calc(33.333%-11px)]"
+                className="group block shrink-0 snap-start overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover w-[calc(50%-8px)] lg:w-[calc(25%-12px)]"
               >
                 {/* Image container */}
                 <div className="relative aspect-[4/3] overflow-hidden">
