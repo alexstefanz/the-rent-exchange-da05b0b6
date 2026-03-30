@@ -491,7 +491,7 @@ const SupportChatWidget = () => {
                           <div
                             className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
                               isUser
-                                ? "bg-primary text-primary-foreground rounded-br-md"
+                                ? "bg-amber-400 text-foreground rounded-br-md"
                                 : "bg-muted text-foreground rounded-bl-md"
                             }`}
                           >
@@ -577,14 +577,14 @@ const SupportChatWidget = () => {
                             <div
                               className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
                                 isCustomer
-                                  ? "bg-primary text-primary-foreground rounded-br-md"
+                                  ? "bg-amber-400 text-foreground rounded-br-md"
                                   : "bg-muted text-foreground rounded-bl-md"
                               }`}
                             >
                               {renderMessageContent(msg.message_text)}
                               <p
                                 className={`text-[10px] mt-1 ${
-                                  isCustomer ? "text-primary-foreground/70" : "text-muted-foreground"
+                                  isCustomer ? "text-foreground/60" : "text-muted-foreground"
                                 }`}
                               >
                                 {format(new Date(msg.created_at), "HH:mm")}
