@@ -412,28 +412,34 @@ const SupportChatWidget = () => {
       {/* Chat Panel */}
       {isOpen && (
         <div
-          className="fixed z-[60] bg-background shadow-xl flex flex-col overflow-hidden inset-0 lg:inset-auto lg:bottom-6 lg:right-4 lg:w-[360px] lg:max-w-[calc(100vw-2rem)] lg:rounded-2xl lg:border"
+          className="fixed z-[60] bg-background flex flex-col overflow-hidden inset-0 lg:inset-auto lg:bottom-6 lg:right-4 lg:w-[400px] lg:max-w-[calc(100vw-2rem)] lg:rounded-2xl lg:border lg:shadow-2xl"
           style={{ height: "100dvh" }}
           ref={(el) => {
             if (el && window.innerWidth >= 1024) {
-              el.style.height = "min(500px, calc(100vh - 120px))";
+              el.style.height = "min(600px, calc(100vh - 100px))";
             }
           }}
         >
-          {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b bg-primary text-primary-foreground shrink-0 lg:rounded-t-2xl">
-            <MessageSquare className="h-5 w-5 shrink-0" />
+          {/* Header — desktop: white/clean, mobile: primary */}
+          <div className="flex items-center gap-3 px-4 py-3 border-b shrink-0 lg:rounded-t-2xl bg-primary text-primary-foreground lg:bg-background lg:text-foreground">
+            {/* Avatar with online dot */}
+            <div className="relative shrink-0">
+              <div className="h-9 w-9 rounded-full bg-primary/10 lg:bg-primary flex items-center justify-center">
+                <span className="text-sm font-bold text-primary-foreground lg:text-primary-foreground">R</span>
+              </div>
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background" />
+            </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm">{t("Suport Rentli", "Rentli Support")}</p>
-              {ticketPublicId && (
-                <p className="text-xs opacity-80">{ticketPublicId}</p>
-              )}
+              <p className="text-xs opacity-70 lg:text-muted-foreground">
+                {ticketPublicId || "Online"}
+              </p>
             </div>
             <div className="flex items-center gap-1">
               {(ticketId || aiMessages.length > 0) && (
                 <button
                   onClick={handleNewConversation}
-                  className="p-1.5 rounded-lg hover:bg-primary-foreground/20 transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors"
                   title={t("Conversație nouă", "New conversation")}
                 >
                   <Plus className="h-4 w-4" />
@@ -441,9 +447,9 @@ const SupportChatWidget = () => {
               )}
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-primary-foreground/20 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </button>
             </div>
           </div>
@@ -485,7 +491,7 @@ const SupportChatWidget = () => {
                           <div
                             className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
                               isUser
-                                ? "bg-primary text-primary-foreground rounded-br-md"
+                                ? "bg-amber-400 text-foreground rounded-br-md"
                                 : "bg-muted text-foreground rounded-bl-md"
                             }`}
                           >
@@ -512,40 +518,43 @@ const SupportChatWidget = () => {
                 </ScrollArea>
 
                 {/* AI input */}
-                <div className="flex items-center gap-2 px-3 py-2.5 border-t shrink-0 pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:pb-2.5">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isAiLoading || isCreatingTicket || isUploadingImage}
-                    className="h-9 w-9 shrink-0 flex items-center justify-center rounded-lg border border-input bg-background hover:bg-secondary transition-colors disabled:opacity-50"
-                  >
-                    {isUploadingImage ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                    ) : (
-                      <ImagePlus className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </button>
-                  <Input
-                    value={aiInput}
-                    onChange={(e) => setAiInput(e.target.value)}
-                    placeholder={t("Scrie un mesaj...", "Type a message...")}
-                    className="h-9 text-sm flex-1"
-                    disabled={isAiLoading || isCreatingTicket}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendAiMessage();
-                      }
-                    }}
-                  />
-                  <Button
-                    size="icon"
-                    className="h-9 w-9 shrink-0"
-                    onClick={handleSendAiMessage}
-                    disabled={!aiInput.trim() || isAiLoading || isCreatingTicket}
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
+                <div className="shrink-0 border-t pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:pb-0">
+                  <div className="flex items-center gap-2 px-3 py-2.5">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isAiLoading || isCreatingTicket || isUploadingImage}
+                      className="h-9 w-9 shrink-0 flex items-center justify-center rounded-full hover:bg-secondary transition-colors disabled:opacity-50"
+                    >
+                      {isUploadingImage ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      ) : (
+                        <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </button>
+                    <Input
+                      value={aiInput}
+                      onChange={(e) => setAiInput(e.target.value)}
+                      placeholder={t("Scrie mesajul tău...", "Write your message...")}
+                      className="h-9 text-sm flex-1 rounded-full"
+                      disabled={isAiLoading || isCreatingTicket}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendAiMessage();
+                        }
+                      }}
+                    />
+                    <Button
+                      size="icon"
+                      className="h-9 w-9 shrink-0 rounded-full"
+                      onClick={handleSendAiMessage}
+                      disabled={!aiInput.trim() || isAiLoading || isCreatingTicket}
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <p className="hidden lg:block text-[10px] text-muted-foreground text-center pb-2">Chat Rentli</p>
                 </div>
               </>
             ) : (
@@ -571,14 +580,14 @@ const SupportChatWidget = () => {
                             <div
                               className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
                                 isCustomer
-                                  ? "bg-primary text-primary-foreground rounded-br-md"
+                                  ? "bg-amber-400 text-foreground rounded-br-md"
                                   : "bg-muted text-foreground rounded-bl-md"
                               }`}
                             >
                               {renderMessageContent(msg.message_text)}
                               <p
                                 className={`text-[10px] mt-1 ${
-                                  isCustomer ? "text-primary-foreground/70" : "text-muted-foreground"
+                                  isCustomer ? "text-foreground/60" : "text-muted-foreground"
                                 }`}
                               >
                                 {format(new Date(msg.created_at), "HH:mm")}
@@ -603,39 +612,42 @@ const SupportChatWidget = () => {
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 px-3 py-2.5 border-t shrink-0 pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:pb-2.5">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={sendMutation.isPending || isUploadingImage}
-                      className="h-9 w-9 shrink-0 flex items-center justify-center rounded-lg border border-input bg-background hover:bg-secondary transition-colors disabled:opacity-50"
-                    >
-                      {isUploadingImage ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                      ) : (
-                        <ImagePlus className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </button>
-                    <Input
-                      value={messageText}
-                      onChange={(e) => setMessageText(e.target.value)}
-                      placeholder={t("Scrie un mesaj...", "Type a message...")}
-                      className="h-9 text-sm flex-1"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }
-                      }}
-                    />
-                    <Button
-                      size="icon"
-                      className="h-9 w-9 shrink-0"
-                      onClick={handleSendMessage}
-                      disabled={!messageText.trim() || sendMutation.isPending}
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
+                  <div className="shrink-0 border-t pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:pb-0">
+                    <div className="flex items-center gap-2 px-3 py-2.5">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={sendMutation.isPending || isUploadingImage}
+                        className="h-9 w-9 shrink-0 flex items-center justify-center rounded-full hover:bg-secondary transition-colors disabled:opacity-50"
+                      >
+                        {isUploadingImage ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </button>
+                      <Input
+                        value={messageText}
+                        onChange={(e) => setMessageText(e.target.value)}
+                        placeholder={t("Scrie mesajul tău...", "Write your message...")}
+                        className="h-9 text-sm flex-1 rounded-full"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage();
+                          }
+                        }}
+                      />
+                      <Button
+                        size="icon"
+                        className="h-9 w-9 shrink-0 rounded-full"
+                        onClick={handleSendMessage}
+                        disabled={!messageText.trim() || sendMutation.isPending}
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="hidden lg:block text-[10px] text-muted-foreground text-center pb-2">Chat Rentli</p>
                   </div>
                 )}
               </>
