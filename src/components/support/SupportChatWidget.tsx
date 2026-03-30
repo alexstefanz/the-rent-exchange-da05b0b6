@@ -412,28 +412,34 @@ const SupportChatWidget = () => {
       {/* Chat Panel */}
       {isOpen && (
         <div
-          className="fixed z-[60] bg-background shadow-xl flex flex-col overflow-hidden inset-0 lg:inset-auto lg:bottom-6 lg:right-4 lg:w-[360px] lg:max-w-[calc(100vw-2rem)] lg:rounded-2xl lg:border"
+          className="fixed z-[60] bg-background flex flex-col overflow-hidden inset-0 lg:inset-auto lg:bottom-6 lg:right-4 lg:w-[400px] lg:max-w-[calc(100vw-2rem)] lg:rounded-2xl lg:border lg:shadow-2xl"
           style={{ height: "100dvh" }}
           ref={(el) => {
             if (el && window.innerWidth >= 1024) {
-              el.style.height = "min(500px, calc(100vh - 120px))";
+              el.style.height = "min(600px, calc(100vh - 100px))";
             }
           }}
         >
-          {/* Header */}
-          <div className="flex items-center gap-3 px-4 py-3 border-b bg-primary text-primary-foreground shrink-0 lg:rounded-t-2xl">
-            <MessageSquare className="h-5 w-5 shrink-0" />
+          {/* Header — desktop: white/clean, mobile: primary */}
+          <div className="flex items-center gap-3 px-4 py-3 border-b shrink-0 lg:rounded-t-2xl bg-primary text-primary-foreground lg:bg-background lg:text-foreground">
+            {/* Avatar with online dot */}
+            <div className="relative shrink-0">
+              <div className="h-9 w-9 rounded-full bg-primary/10 lg:bg-primary flex items-center justify-center">
+                <span className="text-sm font-bold text-primary-foreground lg:text-primary-foreground">R</span>
+              </div>
+              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background" />
+            </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm">{t("Suport Rentli", "Rentli Support")}</p>
-              {ticketPublicId && (
-                <p className="text-xs opacity-80">{ticketPublicId}</p>
-              )}
+              <p className="text-xs opacity-70 lg:text-muted-foreground">
+                {ticketPublicId || "Online"}
+              </p>
             </div>
             <div className="flex items-center gap-1">
               {(ticketId || aiMessages.length > 0) && (
                 <button
                   onClick={handleNewConversation}
-                  className="p-1.5 rounded-lg hover:bg-primary-foreground/20 transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors"
                   title={t("Conversație nouă", "New conversation")}
                 >
                   <Plus className="h-4 w-4" />
@@ -441,9 +447,9 @@ const SupportChatWidget = () => {
               )}
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-primary-foreground/20 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </button>
             </div>
           </div>
