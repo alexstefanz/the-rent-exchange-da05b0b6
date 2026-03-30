@@ -612,39 +612,42 @@ const SupportChatWidget = () => {
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 px-3 py-2.5 border-t shrink-0 pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:pb-2.5">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={sendMutation.isPending || isUploadingImage}
-                      className="h-9 w-9 shrink-0 flex items-center justify-center rounded-lg border border-input bg-background hover:bg-secondary transition-colors disabled:opacity-50"
-                    >
-                      {isUploadingImage ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                      ) : (
-                        <ImagePlus className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </button>
-                    <Input
-                      value={messageText}
-                      onChange={(e) => setMessageText(e.target.value)}
-                      placeholder={t("Scrie un mesaj...", "Type a message...")}
-                      className="h-9 text-sm flex-1"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }
-                      }}
-                    />
-                    <Button
-                      size="icon"
-                      className="h-9 w-9 shrink-0"
-                      onClick={handleSendMessage}
-                      disabled={!messageText.trim() || sendMutation.isPending}
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
+                  <div className="shrink-0 border-t pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:pb-0">
+                    <div className="flex items-center gap-2 px-3 py-2.5">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={sendMutation.isPending || isUploadingImage}
+                        className="h-9 w-9 shrink-0 flex items-center justify-center rounded-full hover:bg-secondary transition-colors disabled:opacity-50"
+                      >
+                        {isUploadingImage ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </button>
+                      <Input
+                        value={messageText}
+                        onChange={(e) => setMessageText(e.target.value)}
+                        placeholder={t("Scrie mesajul tău...", "Write your message...")}
+                        className="h-9 text-sm flex-1 rounded-full"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSendMessage();
+                          }
+                        }}
+                      />
+                      <Button
+                        size="icon"
+                        className="h-9 w-9 shrink-0 rounded-full"
+                        onClick={handleSendMessage}
+                        disabled={!messageText.trim() || sendMutation.isPending}
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="hidden lg:block text-[10px] text-muted-foreground text-center pb-2">Chat Rentli</p>
                   </div>
                 )}
               </>
