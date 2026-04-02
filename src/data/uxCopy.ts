@@ -134,8 +134,8 @@ const createUxCopy = () => ({
     clear: { ro: "Șterge", en: "Clear" },
   },
   home: {
-    heroTitle: { ro: "Închiriază ce ai nevoie,", en: "Rent what you need," },
-    heroTitleHighlight: { ro: "când ai nevoie", en: "when you need it" },
+    heroTitle: { ro: "Închiriază orice,", en: "Rent anything," },
+    heroTitleHighlight: { ro: "oriunde în România", en: "anywhere in Romania" },
     heroSubtitle: { ro: "Platforma ta de încredere pentru închiriere. Găsește echipamente, vehicule și multe altele de la oameni din comunitatea ta.", en: "Your trusted rental platform. Find equipment, vehicles and more from people in your community." },
     popularCategories: { ro: "Categorii principale", en: "Main categories" },
     featuredListings: { ro: "Populare în zona ta", en: "Popular in your area" },
