@@ -1,46 +1,35 @@
 
-Am verificat integrarea existentă și blocajul pare să fie la configurarea domeniului de email, nu în aplicație.
 
-1. Ce am găsit
-- Domeniul de trimitere configurat este `notify.rentli.ro`, iar statusul lui este încă Pending / initiated.
-- Fluxul de signup chiar depinde de email: în `src/pages/Auth.tsx` și `src/components/checkout/LoginDialog.tsx` utilizatorul primește un cod OTP pe email și îl introduce manual.
-- Hook-ul pentru emailurile de autentificare există deja și este configurat.
-- Atât emailurile de autentificare, cât și cele din aplicație sunt setate să folosească `notify.rentli.ro`.
-- Nu apar trimiteri recente în jurnalul de emailuri, ceea ce indică faptul că blocajul este înainte de livrare, la activarea domeniului.
+## Plan: Configurare email noreply@rentli.ro
 
-2. Planul de rezolvare
-- Verific exact DNS-ul pentru hostul `notify`:
-  - `NS` → `ns3.lovable.cloud`
-  - `NS` → `ns4.lovable.cloud`
-- Verific să nu existe recorduri conflictuale pe același host `notify`:
-  - A
-  - AAAA
-  - CNAME
-  - MX
-  - TXT vechi
-- Verific formatul din panoul gazduire.net:
-  - dacă providerul completează automat zona, numele trebuie de regulă să fie doar `notify`
-  - dacă cere FQDN complet, atunci `notify.rentli.ro`
-- Dacă DNS-ul este deja corect, următorul pas este să refacem configurarea domeniului de email, pentru că acum pare blocată în starea de setup.
-- După ce domeniul devine activ, testez cap-coadă:
-  - signup din `/auth`
-  - retrimitere cod OTP
-  - confirm că emailul chiar ajunge
+### Situația actuală
+- Domeniul `notify.rentli.ro` este configurat dar a eșuat la verificare (provisioning timed out)
+- Emailurile nu se trimit deloc — nici OTP, nici notificări
 
-3. Ce am nevoie de la tine
-Trimite-mi, ideal ca screenshot sau listă text, toate recordurile DNS existente doar pentru hostul `notify`. Așa pot verifica imediat dacă problema este:
-- host greșit
-- valori NS greșite
-- recorduri conflictuale
+### Ce trebuie făcut
 
-4. Varianta rapidă dacă vrei să deblocăm înscrierile imediat
-Dacă vrei, pot pregăti și varianta temporară în care revenim la emailurile implicite pentru autentificare până se validează domeniul custom. Asta ar debloca OTP-urile mai repede, dar fără brandingul Rentli.
+**Pas 1 — Dezactivez emailurile custom și șterg domeniul eșuat**
+- Dezactivez Lovable Emails pentru proiect (emailurile de autentificare vor reveni la template-urile implicite, dar vor funcționa)
+- Domeniul `notify.rentli.ro` va fi eliminat din configurație
 
-5. Detalii tehnice
-- `src/pages/Auth.tsx` și `src/components/checkout/LoginDialog.tsx` folosesc OTP pe email pentru signup.
-- `supabase/functions/auth-email-hook/index.ts` este deja setat pe `notify.rentli.ro`.
-- `supabase/functions/send-transactional-email/index.ts` folosește același subdomeniu.
-- Configurația funcțiilor de email există deja.
-- Statusul actual al domeniului rămâne Pending, deci primul lucru de corectat este DNS-ul / activarea domeniului, nu frontend-ul.
+**Pas 2 — Reconfigurare cu domeniul root `rentli.ro`**
+- Configurez un nou domeniu de email, de data asta direct pe `rentli.ro` (fără subdomeniu `notify`)
+- Sistemul va crea automat un subdomeniu tehnic pentru trimitere (e.g. `mail.rentli.ro` sau similar), dar adresa afișată destinatarilor va fi `noreply@rentli.ro`
 
-Concluzie: cel mai probabil nu lipsește cod, ci există fie o problemă de DNS pe `notify`, fie setup-ul domeniului a rămas blocat și trebuie refăcut după ce confirmăm recordurile.
+**Important de înțeles:** Indiferent de configurare, trimiterea emailurilor necesită delegarea DNS a unui subdomeniu către serverele Lovable (NS records). Adresa `noreply@rentli.ro` este doar ce vede destinatarul în inbox — tehnic, emailul trece printr-un subdomeniu verificat. Aceasta e o cerință universală pentru orice serviciu de email (SPF, DKIM, autentificare).
+
+### Ce ai de făcut tu (DNS la gazduire.net)
+1. Șterge NS records-urile vechi pentru `notify` (cele care pointează la `ns3.lovable.cloud` și `ns4.lovable.cloud`)
+2. Când reconfigurez domeniul, vei primi instrucțiuni noi cu ce NS records trebuie adăugate — le adaugi la gazduire.net
+
+### Rezultat final
+- Emailurile (OTP, resetare parolă, notificări) vor ajunge la utilizatori
+- Adresa afișată va fi `noreply@rentli.ro`
+- Fluxul de signup va funcționa complet
+
+### Detalii tehnice
+- Dezactivare Lovable Emails → reactivare cu domeniu nou
+- Re-scaffold auth-email-hook și send-transactional-email cu noul domeniu
+- Redeploy toate Edge Functions afectate
+- Testare cap-coadă a fluxului de signup cu OTP
+
