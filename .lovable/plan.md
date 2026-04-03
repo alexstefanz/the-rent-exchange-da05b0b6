@@ -1,27 +1,46 @@
 
+Am verificat integrarea existentă și blocajul pare să fie la configurarea domeniului de email, nu în aplicație.
 
-## Plan: Seed subcategoriile din datele hardcodate în baza de date
+1. Ce am găsit
+- Domeniul de trimitere configurat este `notify.rentli.ro`, iar statusul lui este încă Pending / initiated.
+- Fluxul de signup chiar depinde de email: în `src/pages/Auth.tsx` și `src/components/checkout/LoginDialog.tsx` utilizatorul primește un cod OTP pe email și îl introduce manual.
+- Hook-ul pentru emailurile de autentificare există deja și este configurat.
+- Atât emailurile de autentificare, cât și cele din aplicație sunt setate să folosească `notify.rentli.ro`.
+- Nu apar trimiteri recente în jurnalul de emailuri, ceea ce indică faptul că blocajul este înainte de livrare, la activarea domeniului.
 
-### Problema
-Tabelul `platform_subcategories` din baza de date este **gol**. Categoriile principale (`platform_categories`) există, dar subcategoriile nu au fost niciodată adăugate. De aceea, când expandezi o categorie, apare "Nicio subcategorie" / "0 sub".
+2. Planul de rezolvare
+- Verific exact DNS-ul pentru hostul `notify`:
+  - `NS` → `ns3.lovable.cloud`
+  - `NS` → `ns4.lovable.cloud`
+- Verific să nu existe recorduri conflictuale pe același host `notify`:
+  - A
+  - AAAA
+  - CNAME
+  - MX
+  - TXT vechi
+- Verific formatul din panoul gazduire.net:
+  - dacă providerul completează automat zona, numele trebuie de regulă să fie doar `notify`
+  - dacă cere FQDN complet, atunci `notify.rentli.ro`
+- Dacă DNS-ul este deja corect, următorul pas este să refacem configurarea domeniului de email, pentru că acum pare blocată în starea de setup.
+- După ce domeniul devine activ, testez cap-coadă:
+  - signup din `/auth`
+  - retrimitere cod OTP
+  - confirm că emailul chiar ajunge
 
-Aplicația are subcategorii hardcodate în `src/data/categories.ts` (zeci de subcategorii pentru fiecare categorie), dar acestea nu au fost migrate în tabelul din baza de date.
+3. Ce am nevoie de la tine
+Trimite-mi, ideal ca screenshot sau listă text, toate recordurile DNS existente doar pentru hostul `notify`. Așa pot verifica imediat dacă problema este:
+- host greșit
+- valori NS greșite
+- recorduri conflictuale
 
-### Soluție
+4. Varianta rapidă dacă vrei să deblocăm înscrierile imediat
+Dacă vrei, pot pregăti și varianta temporară în care revenim la emailurile implicite pentru autentificare până se validează domeniul custom. Asta ar debloca OTP-urile mai repede, dar fără brandingul Rentli.
 
-#### 1. Migrare SQL — seed subcategorii
-Creez o migrare care inserează toate subcategoriile din datele hardcodate, legându-le de categoriile existente din `platform_categories` prin potrivirea numelui categoriei.
+5. Detalii tehnice
+- `src/pages/Auth.tsx` și `src/components/checkout/LoginDialog.tsx` folosesc OTP pe email pentru signup.
+- `supabase/functions/auth-email-hook/index.ts` este deja setat pe `notify.rentli.ro`.
+- `supabase/functions/send-transactional-email/index.ts` folosește același subdomeniu.
+- Configurația funcțiilor de email există deja.
+- Statusul actual al domeniului rămâne Pending, deci primul lucru de corectat este DNS-ul / activarea domeniului, nu frontend-ul.
 
-Aceasta va popula tabelul `platform_subcategories` cu toate subcategoriile (nume RO, nume EN, descriere, URL imagine, ordine sortare) pentru fiecare categorie existentă.
-
-#### 2. Nicio modificare de cod necesară
-Widget-ul de pe dashboard și pagina `/admin/categories` deja interoghează `platform_subcategories` și afișează rezultatele corect — lipsa datelor era singura problemă.
-
-### Fișiere modificate
-- **Migrare SQL nouă** — `INSERT INTO platform_subcategories` cu datele din `categories.ts`
-
-### Detalii tehnice
-- Migrarea va face `INSERT` cu `SELECT id FROM platform_categories WHERE name ILIKE ...` pentru a lega fiecare subcategorie de categoria corectă
-- Se vor insera ~50-60 subcategorii în total
-- Toate vor fi `is_active = true` implicit
-
+Concluzie: cel mai probabil nu lipsește cod, ci există fie o problemă de DNS pe `notify`, fie setup-ul domeniului a rămas blocat și trebuie refăcut după ce confirmăm recordurile.
