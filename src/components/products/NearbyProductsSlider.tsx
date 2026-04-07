@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, MapPin, Star, Heart, CheckCircle } from "lucide-react";
 import { getNearbyProducts, Product, calculateClientPrice } from "@/features/products/productsApi";

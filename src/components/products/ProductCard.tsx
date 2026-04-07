@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 import { MapPin, CheckCircle, Heart, Star } from "lucide-react";
 import { Product, calculateClientPrice } from "@/features/products/productsApi";
 import { useState, useEffect } from "react";
