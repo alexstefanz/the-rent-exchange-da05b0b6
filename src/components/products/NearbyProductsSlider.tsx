@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, MapPin, Star, Heart, CheckCircle } from "lucide-react";
 import { getNearbyProducts, Product, calculateClientPrice } from "@/features/products/productsApi";
@@ -207,7 +208,7 @@ const NearbyProductsSlider = ({ currentProductId, locationCity, category }: Near
         >
           {products.map((product) => {
             const clientPrice = calculateClientPrice(product.daily_price_owner, product.platform_fee_percent);
-            const imageUrl = product.images?.[0] || "/placeholder.svg";
+            const imageUrl = getOptimizedImageUrl(product.images?.[0] || "/placeholder.svg", "card");
             const location = product.location_city || "România";
             const isFav = favoriteIds.has(product.id);
             const rating = ratings[product.id];
