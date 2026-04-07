@@ -153,7 +153,7 @@ const FeaturedListings = () => {
       <div className="container">
         <h2 className="font-heading text-2xl font-semibold text-foreground md:text-2xl mb-6">{sectionTitle}</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {displayProducts.map((product) => {
+          {displayProducts.map((product, index) => {
             const clientPrice = calculateClientPrice(product.daily_price_owner, product.platform_fee_percent);
             const imageUrl = getOptimizedImageUrl(product.images?.[0] || "/placeholder.svg", "card");
             const location = [product.location_city, product.pickup_address].filter(Boolean).join(", ") || "România";
