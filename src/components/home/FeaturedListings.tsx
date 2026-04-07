@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 
 const SeeAllCard = ({ images, copy }: { images: string[]; copy: any }) => {
-  const thumbs = images.slice(0, 3);
+  const thumbs = images.slice(0, 3).map(img => getOptimizedImageUrl(img, "thumb"));
 
   return (
     <Link
@@ -155,7 +155,7 @@ const FeaturedListings = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {displayProducts.map((product) => {
             const clientPrice = calculateClientPrice(product.daily_price_owner, product.platform_fee_percent);
-            const imageUrl = product.images?.[0] || "/placeholder.svg";
+            const imageUrl = getOptimizedImageUrl(product.images?.[0] || "/placeholder.svg", "card");
             const location = [product.location_city, product.pickup_address].filter(Boolean).join(", ") || "România";
             const isFav = favoriteIds.has(product.id);
             const rating = ratings[product.id];
@@ -173,7 +173,7 @@ const FeaturedListings = () => {
                     alt={product.title}
                     width={480}
                     height={360}
-                    loading="lazy"
+                    loading={index < 4 ? "eager" : "lazy"}
                     decoding="async"
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />

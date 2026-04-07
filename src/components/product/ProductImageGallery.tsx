@@ -50,8 +50,8 @@ const ProductImageGallery = ({
           <div className="flex">
             {images.map((img, i) => (
               <div key={i} className="min-w-0 shrink-0 grow-0 basis-full">
-                <img
-                  src={img}
+                 <img
+                   src={getOptimizedImageUrl(img, "gallery")}
                   alt={`${title} ${i + 1}`}
                   className="w-full aspect-[4/3] object-cover bg-muted cursor-pointer"
                   onClick={() => onOpenLightbox(i)}
@@ -82,7 +82,7 @@ const ProductImageGallery = ({
         {images.length > 1 && (
           <div className="flex gap-2 px-[10px] mt-2 overflow-x-auto pb-2">
             {images.slice(1).map((image, index) => (
-              <img key={index + 1} src={image} alt={`${title} ${index + 2}`} className="h-20 w-20 rounded-lg object-cover flex-shrink-0 cursor-pointer" onClick={() => onOpenLightbox(index + 1)} />
+              <img key={index + 1} src={getOptimizedImageUrl(image, "thumb")} alt={`${title} ${index + 2}`} className="h-20 w-20 rounded-lg object-cover flex-shrink-0 cursor-pointer" onClick={() => onOpenLightbox(index + 1)} />
             ))}
           </div>
         )}
@@ -98,7 +98,7 @@ const ProductImageGallery = ({
           {images.map((img, i) => (
             <div key={i} className="min-w-0 shrink-0 grow-0 basis-full">
               <div className="aspect-[4/3] bg-muted cursor-pointer" onClick={() => onOpenLightbox(i)}>
-                <img src={img} alt={`${title} ${i + 1}`} className="h-full w-full object-cover" draggable={false} />
+                <img src={getOptimizedImageUrl(img, "gallery")} alt={`${title} ${i + 1}`} className="h-full w-full object-cover" draggable={false} />
               </div>
             </div>
           ))}

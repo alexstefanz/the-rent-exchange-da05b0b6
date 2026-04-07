@@ -25,7 +25,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
     product.platform_fee_percent
   );
 
-  const imageUrl = product.images?.[0] || "/placeholder.svg";
+  const imageUrl = getOptimizedImageUrl(product.images?.[0] || "/placeholder.svg", "card");
   const location = [product.location_city, product.pickup_address].filter(Boolean).join(", ") || "România";
 
   useEffect(() => {

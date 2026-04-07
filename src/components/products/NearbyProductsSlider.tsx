@@ -208,7 +208,7 @@ const NearbyProductsSlider = ({ currentProductId, locationCity, category }: Near
         >
           {products.map((product) => {
             const clientPrice = calculateClientPrice(product.daily_price_owner, product.platform_fee_percent);
-            const imageUrl = product.images?.[0] || "/placeholder.svg";
+            const imageUrl = getOptimizedImageUrl(product.images?.[0] || "/placeholder.svg", "card");
             const location = product.location_city || "România";
             const isFav = favoriteIds.has(product.id);
             const rating = ratings[product.id];
