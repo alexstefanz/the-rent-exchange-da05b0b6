@@ -1,35 +1,45 @@
 
 
-## Plan: Configurare email noreply@rentli.ro
+## Plan: Optimizare performanță încărcare imagini
 
-### Situația actuală
-- Domeniul `notify.rentli.ro` este configurat dar a eșuat la verificare (provisioning timed out)
-- Emailurile nu se trimit deloc — nici OTP, nici notificări
+### Problema identificată
+Imaginile produselor sunt servite direct din Supabase Storage la dimensiunea originală (pot fi și 3-5MB fiecare). Chiar dacă există compresie la upload (max 1920px, JPEG 0.8), cardurile de produse afișează imagini de ~480x360px dar descarcă fișiere mult mai mari. Nu există nicio transformare server-side sau optimizare la afișare.
 
-### Ce trebuie făcut
+**Impactul**: Pe pagina principală se încarcă 7+ imagini la dimensiune completă simultan, ceea ce duce la timpi de încărcare mari, mai ales pe conexiuni mobile.
 
-**Pas 1 — Dezactivez emailurile custom și șterg domeniul eșuat**
-- Dezactivez Lovable Emails pentru proiect (emailurile de autentificare vor reveni la template-urile implicite, dar vor funcționa)
-- Domeniul `notify.rentli.ro` va fi eliminat din configurație
+### Soluție propusă
 
-**Pas 2 — Reconfigurare cu domeniul root `rentli.ro`**
-- Configurez un nou domeniu de email, de data asta direct pe `rentli.ro` (fără subdomeniu `notify`)
-- Sistemul va crea automat un subdomeniu tehnic pentru trimitere (e.g. `mail.rentli.ro` sau similar), dar adresa afișată destinatarilor va fi `noreply@rentli.ro`
+**1. Supabase Image Transformations (server-side resize)**
+Supabase Storage suportă transformări on-the-fly prin parametri URL. Înlocuim `getPublicUrl` cu varianta care include `transform`:
+- Carduri produse (thumbnail): `width=480, quality=75`
+- Gallery mobile/desktop: `width=960, quality=80`  
+- Lightbox (fullscreen): URL original, fără transformare
 
-**Important de înțeles:** Indiferent de configurare, trimiterea emailurilor necesită delegarea DNS a unui subdomeniu către serverele Lovable (NS records). Adresa `noreply@rentli.ro` este doar ce vede destinatarul în inbox — tehnic, emailul trece printr-un subdomeniu verificat. Aceasta e o cerință universală pentru orice serviciu de email (SPF, DKIM, autentificare).
+Creez o funcție helper `getOptimizedImageUrl(url, width, quality)` care adaugă parametrii de transformare la URL-urile existente.
 
-### Ce ai de făcut tu (DNS la gazduire.net)
-1. Șterge NS records-urile vechi pentru `notify` (cele care pointează la `ns3.lovable.cloud` și `ns4.lovable.cloud`)
-2. Când reconfigurez domeniul, vei primi instrucțiuni noi cu ce NS records trebuie adăugate — le adaugi la gazduire.net
+**2. Componente actualizate**
+- `FeaturedListings.tsx` — thumbnail-uri 480px
+- `ProductCard.tsx` — thumbnail-uri 480px
+- `NearbyProductsSlider.tsx` — thumbnail-uri 480px
+- `ProductImageGallery.tsx` — carousel 960px, lightbox la dimensiune completă
+- `SeeAllCard` în FeaturedListings — thumbnail-uri mici 200px
 
-### Rezultat final
-- Emailurile (OTP, resetare parolă, notificări) vor ajunge la utilizatori
-- Adresa afișată va fi `noreply@rentli.ro`
-- Fluxul de signup va funcționa complet
+**3. Eager loading pentru above-the-fold**
+Primele 4 imagini din FeaturedListings vor avea `loading="eager"` în loc de `lazy`, pentru că sunt vizibile imediat (above-the-fold). Restul rămân `lazy`.
+
+**4. CSS `aspect-ratio` + placeholder**
+Adaug `background-color` pe containerele de imagini pentru a preveni layout shift în timpul încărcării.
 
 ### Detalii tehnice
-- Dezactivare Lovable Emails → reactivare cu domeniu nou
-- Re-scaffold auth-email-hook și send-transactional-email cu noul domeniu
-- Redeploy toate Edge Functions afectate
-- Testare cap-coadă a fluxului de signup cu OTP
+- Funcția helper va fi în `src/lib/imageUtils.ts`
+- Format: `{publicUrl}?width=480&quality=75` (Supabase transform syntax)
+- Fallback: dacă URL-ul nu e din Supabase Storage, returnează URL-ul original
+- Nu necesită migrare DB sau edge function nouă
+
+### Fișiere modificate
+1. `src/lib/imageUtils.ts` — nou, helper optimizare URL
+2. `src/components/home/FeaturedListings.tsx` — URL-uri optimizate + eager loading
+3. `src/components/products/ProductCard.tsx` — URL-uri optimizate
+4. `src/components/products/NearbyProductsSlider.tsx` — URL-uri optimizate
+5. `src/components/product/ProductImageGallery.tsx` — URL-uri pe dimensiuni diferite
 
