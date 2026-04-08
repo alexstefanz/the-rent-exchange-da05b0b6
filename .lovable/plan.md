@@ -1,45 +1,69 @@
 
 
-## Plan: Optimizare performanță încărcare imagini
+## Plan: Integrare Stripe pentru plăți la checkout
 
-### Problema identificată
-Imaginile produselor sunt servite direct din Supabase Storage la dimensiunea originală (pot fi și 3-5MB fiecare). Chiar dacă există compresie la upload (max 1920px, JPEG 0.8), cardurile de produse afișează imagini de ~480x360px dar descarcă fișiere mult mai mari. Nu există nicio transformare server-side sau optimizare la afișare.
+### Situația actuală
+- Fluxul de checkout există complet (4 pași: opțiune plată → mesaj → metodă plată → confirmare)
+- `PaymentMethodDialog` simulează introducerea datelor de card (are chiar un buton "Card de test auto-fill")
+- Plata nu se procesează real — se salvează doar rental-ul în DB cu `payment_status: "pending"`
+- Cheia secretă Stripe (`sk_live_...`) este deja stocată ca secret
+- Cheia publică: `pk_live_51THeaxRxH8Kscr9R0D1cgSS9CE2RWWV6bM2OwC5R75sb8y44CTmrrGT29IqP77ffcZy3tHLh5RyLYHpHQ8KN5GTm00JtXnHGqy`
 
-**Impactul**: Pe pagina principală se încarcă 7+ imagini la dimensiune completă simultan, ceea ce duce la timpi de încărcare mari, mai ales pe conexiuni mobile.
+### Ce se va implementa
 
-### Soluție propusă
+**1. Edge Function `create-checkout-session`**
+- Primește: `rental_id`, produs, sumă, zile
+- Creează un Stripe Checkout Session cu `mode: "payment"`
+- Folosește `price_data` inline (prețul e dinamic, depinde de numărul de zile) cu descriere clară (ex: "Închiriere Drujbă Stihl - 3 zile")
+- Moneda: RON
+- Returnează URL-ul Stripe Checkout
+- Success URL: `/checkout/success?session_id={CHECKOUT_SESSION_ID}`
+- Cancel URL: `/checkout/cancelled`
 
-**1. Supabase Image Transformations (server-side resize)**
-Supabase Storage suportă transformări on-the-fly prin parametri URL. Înlocuim `getPublicUrl` cu varianta care include `transform`:
-- Carduri produse (thumbnail): `width=480, quality=75`
-- Gallery mobile/desktop: `width=960, quality=80`  
-- Lightbox (fullscreen): URL original, fără transformare
+**2. Edge Function `verify-stripe-payment`**
+- Primește `session_id`
+- Verifică cu Stripe API că plata e completă
+- Actualizează rental-ul: `payment_status: "paid"`, `paid_at: now()`
+- Returnează confirmarea
 
-Creez o funcție helper `getOptimizedImageUrl(url, width, quality)` care adaugă parametrii de transformare la URL-urile existente.
+**3. Modificare flux Checkout (frontend)**
+- La Step 3, în loc de `PaymentMethodDialog` cu formular fake de card, se va apela `create-checkout-session`
+- Utilizatorul este redirectat la Stripe Checkout (pagina securizată Stripe)
+- După plată, revine pe `/checkout/success` unde se verifică și confirmă plata
 
-**2. Componente actualizate**
-- `FeaturedListings.tsx` — thumbnail-uri 480px
-- `ProductCard.tsx` — thumbnail-uri 480px
-- `NearbyProductsSlider.tsx` — thumbnail-uri 480px
-- `ProductImageGallery.tsx` — carousel 960px, lightbox la dimensiune completă
-- `SeeAllCard` în FeaturedListings — thumbnail-uri mici 200px
+**4. Pagini noi**
+- `CheckoutSuccess.tsx` — verifică plata și arată confirmarea (refolosește `BookingConfirmation`)
+- `CheckoutCancelled.tsx` — mesaj simplu + buton de revenire
 
-**3. Eager loading pentru above-the-fold**
-Primele 4 imagini din FeaturedListings vor avea `loading="eager"` în loc de `lazy`, pentru că sunt vizibile imediat (above-the-fold). Restul rămân `lazy`.
+**5. Fluxul complet modificat**
+```text
+Step 1: Alege când plătești (pay-now / pay-later)
+Step 2: Mesaj opțional pentru proprietar  
+Step 3: Click "Plătește cu Stripe" → se creează rental + checkout session
+        → redirect la Stripe Checkout (card, Google Pay, Apple Pay - toate gestionate de Stripe)
+        → după plată → /checkout/success → verificare → confirmare
+```
 
-**4. CSS `aspect-ratio` + placeholder**
-Adaug `background-color` pe containerele de imagini pentru a preveni layout shift în timpul încărcării.
+### Ce NU se schimbă
+- Structura tabelelor DB (rentals rămâne la fel)
+- Notificările (se trimit la fel)
+- Mesajul către proprietar (se creează la fel)
 
 ### Detalii tehnice
-- Funcția helper va fi în `src/lib/imageUtils.ts`
-- Format: `{publicUrl}?width=480&quality=75` (Supabase transform syntax)
-- Fallback: dacă URL-ul nu e din Supabase Storage, returnează URL-ul original
-- Nu necesită migrare DB sau edge function nouă
+- Se elimină `PaymentMethodDialog` (înlocuit de Stripe Checkout)
+- Stripe Checkout suportă nativ: Card, Google Pay, Apple Pay, SEPA — fără implementare separată
+- `price_data` inline e necesar deoarece fiecare rental are preț diferit (daily_price × rental_days)
+- Se adaugă ruta `/checkout/success` și `/checkout/cancelled` în `App.tsx`
+
+### Fișiere noi
+1. `supabase/functions/create-checkout-session/index.ts`
+2. `supabase/functions/verify-stripe-payment/index.ts`
+3. `src/pages/CheckoutSuccess.tsx`
+4. `src/pages/CheckoutCancelled.tsx`
 
 ### Fișiere modificate
-1. `src/lib/imageUtils.ts` — nou, helper optimizare URL
-2. `src/components/home/FeaturedListings.tsx` — URL-uri optimizate + eager loading
-3. `src/components/products/ProductCard.tsx` — URL-uri optimizate
-4. `src/components/products/NearbyProductsSlider.tsx` — URL-uri optimizate
-5. `src/components/product/ProductImageGallery.tsx` — URL-uri pe dimensiuni diferite
+1. `src/pages/Checkout.tsx` — Step 3 devine redirect la Stripe
+2. `src/features/rentals/rentalsApi.ts` — funcție nouă pentru creare rental + checkout session
+3. `src/App.tsx` — rute noi
+4. `supabase/config.toml` — config funcții noi
 
