@@ -45,6 +45,8 @@ const AccountDetailsPage = lazy(() => import("./pages/AccountDetailsPage"));
 const RequestsPage = lazy(() => import("./pages/RequestsPage"));
 const RentalsPage = lazy(() => import("./pages/RentalsPage"));
 const ListingsPage = lazy(() => import("./pages/ListingsPage"));
+const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
+const CheckoutCancelled = lazy(() => import("./pages/CheckoutCancelled"));
 
 // Legal pages
 const TermsAndConditions = lazy(() => import("./pages/legal/TermsAndConditions"));
@@ -92,6 +94,8 @@ const App = () => (
                 <Route path="/subcategorie/:id" element={<SubcategoryDetail />} />
                 <Route path="/produs/:slug" element={<ProductDetail />} />
                 <Route path="/checkout" element={<Checkout />} />
+                <Route path="/checkout/success" element={<CheckoutSuccess />} />
+                <Route path="/checkout/cancelled" element={<CheckoutCancelled />} />
                 <Route path="/cauta" element={<Search />} />
                 <Route path="/adauga-anunt" element={<Navigate to="/owner/new-product" replace />} />
                 <Route path="/utilizator/:id" element={<UserProfile />} />

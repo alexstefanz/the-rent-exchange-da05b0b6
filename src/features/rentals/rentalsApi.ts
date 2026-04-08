@@ -82,3 +82,23 @@ export async function createRental(params: CreateRentalParams) {
 
   return rental;
 }
+
+/**
+ * Creates a rental and then initiates a Stripe Checkout session.
+ * Returns the Stripe Checkout URL for redirect.
+ */
+export async function createRentalWithStripeCheckout(params: CreateRentalParams): Promise<string> {
+  // First create the rental in DB
+  const rental = await createRental(params);
+
+  // Then create a Stripe Checkout session
+  const { data, error } = await supabase.functions.invoke("create-checkout-session", {
+    body: { rental_id: rental.id },
+  });
+
+  if (error) throw error;
+  if (data?.error) throw new Error(data.error);
+  if (!data?.url) throw new Error("Nu s-a putut crea sesiunea de plată");
+
+  return data.url;
+}
