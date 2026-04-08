@@ -2,22 +2,20 @@ import { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { format } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
-import { ArrowLeft, ChevronDown, ChevronUp, Shield, Info } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronUp, Shield, Info, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import LoginDialog from "@/components/checkout/LoginDialog";
-import PaymentMethodDialog from "@/components/checkout/PaymentMethodDialog";
 import TermsDialog from "@/components/checkout/TermsDialog";
 import ProgressIndicator from "@/components/booking/ProgressIndicator";
-import BookingConfirmation from "@/components/booking/BookingConfirmation";
 import ReassuranceMessage from "@/components/trust/ReassuranceMessage";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { createRental } from "@/features/rentals/rentalsApi";
+import { createRentalWithStripeCheckout } from "@/features/rentals/rentalsApi";
 import { toast } from "sonner";
 
 interface CheckoutState {
@@ -49,12 +47,8 @@ const Checkout = () => {
   const [paymentOption, setPaymentOption] = useState("pay-now");
   const [currentStep, setCurrentStep] = useState(1);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [messageToOwner, setMessageToOwner] = useState("");
-  const [isConfirmed, setIsConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [createdRentalId, setCreatedRentalId] = useState<string | null>(null);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
 
   if (!state) {
@@ -75,14 +69,12 @@ const Checkout = () => {
   const handleNextStep1 = () => { if (!user) { setShowLoginDialog(true); } else { setCurrentStep(2); } };
   const handleLoginSuccess = () => { setShowLoginDialog(false); setCurrentStep(2); };
   const handleNextStep2 = () => { setCurrentStep(3); };
-  const handleNextStep3 = () => { setShowPaymentDialog(true); };
-  const handlePaymentMethodSelect = (method: string) => { setPaymentMethod(method); setShowPaymentDialog(false); setCurrentStep(4); };
 
-  const handleConfirmReservation = async () => {
+  const handleStripeCheckout = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const rental = await createRental({
+      const stripeUrl = await createRentalWithStripeCheckout({
         productId: product.id,
         ownerId: product.ownerId,
         startDate: format(new Date(startDate), "yyyy-MM-dd"),
@@ -90,52 +82,22 @@ const Checkout = () => {
         rentalDays,
         dailyPrice: product.price,
         platformFeePercent: product.platformFeePercent,
-        paymentMethod: paymentMethod || "card",
+        paymentMethod: "stripe",
         messageToOwner: messageToOwner || undefined,
       });
-      setCreatedRentalId(rental?.id || null);
-      setIsConfirmed(true);
-      toast.success("Rezervarea a fost creată cu succes!");
+      // Redirect to Stripe Checkout
+      window.location.href = stripeUrl;
     } catch (e: any) {
-      console.error("Reservation error:", e);
-      toast.error(e?.message || "Eroare la crearea rezervării. Încearcă din nou.");
-    } finally {
+      console.error("Stripe checkout error:", e);
+      toast.error(e?.message || "Eroare la inițierea plății. Încearcă din nou.");
       setIsSubmitting(false);
     }
   };
-
-  if (isConfirmed) {
-    return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b border-border bg-card">
-          <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
-            <Link to="/" className="w-10 h-10 rounded-full hover:bg-muted flex items-center justify-center transition-colors">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-            <h1 className="font-heading text-xl md:text-2xl font-semibold">{copy.checkout.complete}</h1>
-          </div>
-        </header>
-        <main className="max-w-2xl mx-auto px-4 py-6">
-          <BookingConfirmation
-            productTitle={product.title}
-            ownerName={copy.dashboard.owner}
-            startDate={format(new Date(startDate), "d MMM", { locale: dateLocale })}
-            endDate={format(new Date(endDate), "d MMM yyyy", { locale: dateLocale })}
-            totalPrice={totalPrice}
-            rentalDays={rentalDays}
-            productId={product.id}
-            ownerId={product.ownerId}
-          />
-        </main>
-      </div>
-    );
-  }
 
   const steps = [
     copy.booking.steps.period,
     copy.booking.steps.message,
     copy.checkout.payment,
-    copy.booking.steps.confirm,
   ];
 
   return (
@@ -151,7 +113,7 @@ const Checkout = () => {
 
       <div className="border-b border-border bg-card/50 py-4">
         <div className="max-w-4xl mx-auto px-4">
-          <ProgressIndicator currentStep={currentStep} steps={steps} totalSteps={4} />
+          <ProgressIndicator currentStep={currentStep} steps={steps} totalSteps={3} />
         </div>
       </div>
 
@@ -211,51 +173,46 @@ const Checkout = () => {
               )}
             </div>
 
-            {/* Step 3 */}
+            {/* Step 3 - Pay with Stripe */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
               <button onClick={() => currentStep >= 3 && setCurrentStep(3)} className={`w-full px-6 py-4 flex items-center justify-between text-left ${currentStep < 3 ? 'opacity-60' : ''}`} disabled={currentStep < 3}>
                 <div className="flex items-center gap-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep > 3 ? 'bg-primary text-primary-foreground' : currentStep === 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>{currentStep > 3 ? '✓' : '3'}</div>
-                  <h2 className="font-semibold text-lg">{copy.checkout.paymentMethod}</h2>
-                  {paymentMethod && <span className="text-sm text-muted-foreground">• {paymentMethod === 'card' ? copy.checkout.bankCard : paymentMethod === 'google-pay' ? 'Google Pay' : 'Apple Pay'}</span>}
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>3</div>
+                  <h2 className="font-semibold text-lg">{copy.checkout.payment}</h2>
                 </div>
                 {currentStep === 3 && <ChevronUp className="h-5 w-5 text-muted-foreground" />}
               </button>
               {currentStep === 3 && (
                 <div className="px-6 pb-6">
                   <ReassuranceMessage type="payment" className="mb-4" />
-                  <p className="text-muted-foreground text-sm mb-4">{copy.checkout.selectPaymentDesc}</p>
-                  <div className="flex justify-end">
-                    <Button onClick={handleNextStep3} className="px-8">{copy.checkout.selectMethod}</Button>
-                  </div>
-                </div>
-              )}
-            </div>
 
-            {/* Step 4 */}
-            <div className="bg-card rounded-xl border border-border overflow-hidden">
-              <button onClick={() => paymentMethod && setCurrentStep(4)} className={`w-full px-6 py-4 flex items-center justify-between text-left ${currentStep < 4 ? 'opacity-60' : ''}`} disabled={currentStep < 4}>
-                <div className="flex items-center gap-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 4 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>4</div>
-                  <h2 className="font-semibold text-lg">{copy.checkout.reviewReservation}</h2>
-                </div>
-                {currentStep === 4 && <ChevronUp className="h-5 w-5 text-muted-foreground" />}
-              </button>
-              {currentStep === 4 && paymentMethod && (
-                <div className="px-6 pb-6">
-                  <div className="space-y-3 text-sm">
+                  {/* Summary */}
+                  <div className="space-y-3 text-sm mb-6">
                     <div className="flex justify-between"><span className="text-muted-foreground">{copy.checkout.product}</span><span className="font-medium">{product.title}</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">{copy.checkout.period}</span><span className="font-medium">{format(new Date(startDate), "d MMM", { locale: dateLocale })} - {format(new Date(endDate), "d MMM yyyy", { locale: dateLocale })}</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">{copy.checkout.duration}</span><span className="font-medium">{rentalDays} {copy.checkout.days}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">{copy.checkout.paymentMethodLabel}</span><span className="font-medium">{paymentMethod === 'card' ? copy.checkout.bankCard : paymentMethod === 'google-pay' ? 'Google Pay' : 'Apple Pay'}</span></div>
                     <Separator className="my-3" />
                     <div className="flex justify-between text-base font-semibold"><span>{copy.checkout.totalToPay}</span><span className="text-primary">{totalPrice} RON</span></div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-4">
+
+                  <p className="text-xs text-muted-foreground mb-4">
                     {copy.checkout.termsNotice} <span className="text-primary hover:underline cursor-pointer" onClick={() => setShowTermsDialog(true)}>{copy.checkout.termsLink}</span> {copy.checkout.and} <span className="text-primary hover:underline cursor-pointer">{copy.checkout.privacyLink}</span>.
                   </p>
-                  <Button onClick={() => setShowTermsDialog(true)} className="w-full mt-4" size="lg" disabled={isSubmitting}>{isSubmitting ? "Se procesează..." : copy.booking.ctaPrimary}</Button>
-                  <p className="mt-3 text-xs text-center text-muted-foreground flex items-center justify-center gap-1"><Info className="h-3 w-3" />{copy.booking.reassurance}</p>
+
+                  <Button
+                    onClick={handleStripeCheckout}
+                    className="w-full h-12"
+                    size="lg"
+                    disabled={isSubmitting}
+                  >
+                    <CreditCard className="mr-2 h-5 w-5" />
+                    {isSubmitting ? "Se procesează..." : `Plătește ${totalPrice} RON`}
+                  </Button>
+
+                  <p className="mt-3 text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
+                    <Info className="h-3 w-3" />
+                    Vei fi redirecționat către pagina securizată Stripe
+                  </p>
                 </div>
               )}
             </div>
@@ -293,8 +250,7 @@ const Checkout = () => {
       </main>
 
       <LoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} onLoginSuccess={handleLoginSuccess} />
-      <PaymentMethodDialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog} onSelectMethod={handlePaymentMethodSelect} />
-      <TermsDialog open={showTermsDialog} onOpenChange={setShowTermsDialog} onAccept={handleConfirmReservation} isSubmitting={isSubmitting} />
+      <TermsDialog open={showTermsDialog} onOpenChange={setShowTermsDialog} onAccept={handleStripeCheckout} isSubmitting={isSubmitting} />
     </div>
   );
 };
