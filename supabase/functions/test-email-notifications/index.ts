@@ -1,3 +1,5 @@
+import { createClient } from 'npm:@supabase/supabase-js@2'
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -6,7 +8,6 @@ const corsHeaders = {
 
 const TEST_EMAIL = "z.alexstefan@gmail.com";
 
-// Map of test types to their transactional template names + preview data
 const TEST_TEMPLATES: Record<string, { templateName: string; templateData?: Record<string, any> }> = {
   welcome: { templateName: 'welcome', templateData: { name: 'Alexandru' } },
   review_received: { templateName: 'review-received', templateData: { reviewerName: 'Maria Popescu', rating: 5, comment: 'Foarte bun, exact ca în poze!' } },
@@ -39,7 +40,6 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 
     if (!supabaseUrl || !serviceRoleKey) {
       return new Response(
@@ -50,27 +50,26 @@ Deno.serve(async (req) => {
 
     const testConfig = TEST_TEMPLATES[type];
 
-    // Call send-transactional-email directly via fetch with service role key
-    const response = await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${serviceRoleKey}`,
-        'apikey': anonKey,
-      },
-      body: JSON.stringify({
+    // Use service role key as both apikey and auth token
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    const { data, error } = await supabase.functions.invoke('send-transactional-email', {
+      body: {
         templateName: testConfig.templateName,
         recipientEmail: TEST_EMAIL,
         idempotencyKey: `test-${type}-${Date.now()}`,
         templateData: testConfig.templateData || {},
-      }),
+      },
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('Error from send-transactional-email:', response.status, data);
-      throw new Error(data?.error || `send-transactional-email returned ${response.status}`);
+    if (error) {
+      console.error('Error invoking send-transactional-email:', error);
+      // Try to get more details from the error context
+      const errorBody = error?.context ? await error.context.text?.() : null;
+      console.error('Error details:', errorBody);
+      throw new Error(errorBody || error.message || 'Failed to invoke send-transactional-email');
     }
 
     if (data?.error) {
