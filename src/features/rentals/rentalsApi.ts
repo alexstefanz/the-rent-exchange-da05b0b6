@@ -18,7 +18,7 @@ export async function createRental(params: CreateRentalParams) {
 
   const {
     productId, ownerId, startDate, endDate,
-    rentalDays, dailyPrice, platformFeePercent = 20,
+    rentalDays, dailyPrice, platformFeePercent = 5,
     paymentMethod, messageToOwner,
   } = params;
 
