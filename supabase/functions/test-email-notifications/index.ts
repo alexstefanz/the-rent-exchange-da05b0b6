@@ -1,5 +1,3 @@
-import { createClient } from 'npm:@supabase/supabase-js@2'
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -39,37 +37,38 @@ Deno.serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
 
-    if (!supabaseUrl || !serviceRoleKey) {
+    if (!supabaseUrl || !anonKey) {
       return new Response(
-        JSON.stringify({ error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" }),
+        JSON.stringify({ error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const testConfig = TEST_TEMPLATES[type];
 
-    // Use service role key as both apikey and auth token
-    const supabase = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-
-    const { data, error } = await supabase.functions.invoke('send-transactional-email', {
-      body: {
+    // Call send-transactional-email via fetch with anon key (valid JWT for gateway)
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${anonKey}`,
+        'apikey': anonKey,
+      },
+      body: JSON.stringify({
         templateName: testConfig.templateName,
         recipientEmail: TEST_EMAIL,
         idempotencyKey: `test-${type}-${Date.now()}`,
         templateData: testConfig.templateData || {},
-      },
+      }),
     });
 
-    if (error) {
-      console.error('Error invoking send-transactional-email:', error);
-      // Try to get more details from the error context
-      const errorBody = error?.context ? await error.context.text?.() : null;
-      console.error('Error details:', errorBody);
-      throw new Error(errorBody || error.message || 'Failed to invoke send-transactional-email');
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Error from send-transactional-email:', response.status, data);
+      throw new Error(data?.error || `send-transactional-email returned ${response.status}`);
     }
 
     if (data?.error) {
