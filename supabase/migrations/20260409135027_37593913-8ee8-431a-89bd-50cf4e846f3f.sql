@@ -1,0 +1,5 @@
+
+ALTER TABLE public.rentals 
+  ADD COLUMN IF NOT EXISTS payment_intent_id TEXT,
+  ADD COLUMN IF NOT EXISTS authorized_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS captured_at TIMESTAMPTZ;

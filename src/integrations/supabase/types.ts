@@ -934,8 +934,10 @@ export type Database = {
       }
       rentals: {
         Row: {
+          authorized_at: string | null
           cancellation_reason: string | null
           cancelled_at: string | null
+          captured_at: string | null
           completed_at: string | null
           confirmed_at: string | null
           created_at: string | null
@@ -945,6 +947,7 @@ export type Database = {
           owner_id: string | null
           owner_payout: number
           paid_at: string | null
+          payment_intent_id: string | null
           payment_method: string | null
           payment_status: string
           platform_fee: number
@@ -958,8 +961,10 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          authorized_at?: string | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
+          captured_at?: string | null
           completed_at?: string | null
           confirmed_at?: string | null
           created_at?: string | null
@@ -969,6 +974,7 @@ export type Database = {
           owner_id?: string | null
           owner_payout: number
           paid_at?: string | null
+          payment_intent_id?: string | null
           payment_method?: string | null
           payment_status?: string
           platform_fee: number
@@ -982,8 +988,10 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          authorized_at?: string | null
           cancellation_reason?: string | null
           cancelled_at?: string | null
+          captured_at?: string | null
           completed_at?: string | null
           confirmed_at?: string | null
           created_at?: string | null
@@ -993,6 +1001,7 @@ export type Database = {
           owner_id?: string | null
           owner_payout?: number
           paid_at?: string | null
+          payment_intent_id?: string | null
           payment_method?: string | null
           payment_status?: string
           platform_fee?: number
