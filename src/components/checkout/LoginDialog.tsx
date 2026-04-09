@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 
 interface LoginDialogProps {
   open: boolean;
@@ -158,6 +159,8 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
             </>
           ) : (
             <>
+              <SocialLoginButtons onSuccess={onLoginSuccess} />
+
               {isSignUp && (
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Nume complet</Label>
