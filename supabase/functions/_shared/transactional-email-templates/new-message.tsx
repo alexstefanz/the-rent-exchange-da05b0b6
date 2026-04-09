@@ -1,9 +1,10 @@
 /// <reference types="npm:@types/react@18.3.1" />
 import * as React from 'npm:react@18.3.1'
-import { Body, Container, Head, Heading, Html, Preview, Text, Button, Hr } from 'npm:@react-email/components@0.0.22'
+import { Body, Container, Head, Heading, Html, Img, Preview, Text, Button, Hr } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
 
 const SITE_NAME = 'Rentli'
+const LOGO_URL = 'https://tsffyecastudajmgrckt.supabase.co/storage/v1/object/public/email-assets/rentli_logo.png'
 
 interface Props {
   senderName?: string
@@ -17,7 +18,7 @@ const NewMessageEmail = ({ senderName = 'Un utilizator', productTitle, messagePr
     <Preview>Ai primit un mesaj nou pe {SITE_NAME}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <div style={header}><Heading style={headerTitle}>{SITE_NAME}</Heading></div>
+        <div style={header}><Img src={LOGO_URL} alt="Rentli" width="120" height="40" style={logoStyle} /></div>
         <Heading style={h1}>Mesaj nou</Heading>
         <Text style={text}>
           <strong>{senderName}</strong> ți-a trimis un mesaj
@@ -42,7 +43,7 @@ export const template = {
 const main = { backgroundColor: '#ffffff', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
 const container = { padding: '0', maxWidth: '560px', margin: '0 auto' }
 const header = { backgroundColor: '#F59E0B', padding: '20px 25px', borderRadius: '8px 8px 0 0' }
-const headerTitle = { color: '#ffffff', fontSize: '20px', fontWeight: 'bold' as const, margin: '0' }
+const logoStyle = { display: 'block' as const }
 const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#302520', margin: '25px 25px 10px' }
 const text = { fontSize: '14px', color: '#7D7471', lineHeight: '1.5', margin: '0 25px 15px' }
 const quoteStyle = { fontSize: '14px', color: '#302520', lineHeight: '1.5', margin: '0 25px 15px', padding: '12px 16px', backgroundColor: '#FAF9F7', borderLeft: '3px solid #F59E0B', borderRadius: '4px' }
