@@ -17,12 +17,12 @@ const corsHeaders = {
 }
 
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Confirm your email',
-  invite: "You've been invited",
-  magiclink: 'Your login link',
-  recovery: 'Reset your password',
-  email_change: 'Confirm your new email',
-  reauthentication: 'Your verification code',
+  signup: 'Codul tău de verificare Rentli',
+  invite: 'Ai fost invitat pe Rentli',
+  magiclink: 'Link de autentificare Rentli',
+  recovery: 'Resetare parolă Rentli',
+  email_change: 'Confirmă schimbarea emailului',
+  reauthentication: 'Codul tău de verificare Rentli',
 }
 
 // Template mapping
@@ -49,6 +49,7 @@ const SAMPLE_DATA: Record<string, object> = {
     siteUrl: SAMPLE_PROJECT_URL,
     recipient: SAMPLE_EMAIL,
     confirmationUrl: SAMPLE_PROJECT_URL,
+    token: '123456',
   },
   magiclink: {
     siteName: SITE_NAME,
