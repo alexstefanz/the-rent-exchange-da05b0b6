@@ -47,8 +47,6 @@ const Index = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const popularCategoryIds = [1, 2, 6, 7, 22, 19, 4, 5, 9, 3, 10, 11];
-  const popularCategories = categories.filter((c) => popularCategoryIds.includes(c.id));
 
   return (
     <div className="min-h-screen bg-background">
@@ -96,7 +94,7 @@ const Index = () => {
             <h2 className="font-heading text-3xl font-semibold text-foreground">{copy.home.popularCategories}</h2>
           </div>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-            {popularCategories.map((category) => {
+            {categories.map((category) => {
               const Icon = getCategoryIcon(category.id);
               const name = language === "en" ? (category.nameEn || category.name) : category.name;
               const count = categoryCounts?.[category.name] || 0;
