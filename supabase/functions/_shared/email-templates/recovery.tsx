@@ -27,7 +27,7 @@ export const RecoveryEmail = ({
 }: RecoveryEmailProps) => (
   <Html lang="ro" dir="ltr">
     <Head />
-    <Preview>Resetează parola pentru Rentli</Preview>
+    <Preview>Resetează parola contului tău Rentli</Preview>
     <Body style={main}>
       <Container style={container}>
         <div style={header}>
@@ -35,15 +35,15 @@ export const RecoveryEmail = ({
         </div>
         <Heading style={h1}>Resetare parolă</Heading>
         <Text style={text}>
-          Am primit o cerere de resetare a parolei contului tău Rentli.
+          Am primit o cerere de resetare a parolei pentru contul tău Rentli.
           Apasă butonul de mai jos pentru a alege o parolă nouă.
         </Text>
         <Button style={button} href={confirmationUrl}>
           Resetează parola
         </Button>
-        <Text style={footer}>
+        <Text style={footerText}>
           Dacă nu ai solicitat resetarea parolei, poți ignora acest email.
-          Parola ta nu va fi modificată.
+          Parola ta nu va fi schimbată.
         </Text>
       </Container>
     </Body>
@@ -69,4 +69,4 @@ const button = {
   margin: '10px 25px 20px',
   display: 'inline-block' as const,
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 25px 25px' }
+const footerText = { fontSize: '12px', color: '#999999', margin: '30px 25px 25px' }

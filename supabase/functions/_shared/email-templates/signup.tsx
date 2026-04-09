@@ -22,6 +22,7 @@ interface SignupEmailProps {
   siteUrl: string
   recipient: string
   confirmationUrl: string
+  token?: string
 }
 
 export const SignupEmail = ({
@@ -29,10 +30,15 @@ export const SignupEmail = ({
   siteUrl,
   recipient,
   confirmationUrl,
+  token,
 }: SignupEmailProps) => (
   <Html lang="ro" dir="ltr">
     <Head />
-    <Preview>Confirmă adresa de email pentru Rentli</Preview>
+    <Preview>
+      {token
+        ? `Codul tău de verificare Rentli: ${token}`
+        : 'Confirmă adresa de email pentru Rentli'}
+    </Preview>
     <Body style={main}>
       <Container style={container}>
         <div style={header}>
@@ -46,19 +52,38 @@ export const SignupEmail = ({
           </Link>
           !
         </Text>
-        <Text style={text}>
-          Te rugăm să confirmi adresa ta de email (
-          <Link href={`mailto:${recipient}`} style={link}>
-            {recipient}
-          </Link>
-          ) apăsând butonul de mai jos:
-        </Text>
-        <Button style={button} href={confirmationUrl}>
-          Confirmă adresa de email
-        </Button>
-        <Text style={footer}>
-          Dacă nu ai creat un cont pe Rentli, poți ignora acest email.
-        </Text>
+
+        {token ? (
+          <>
+            <Text style={text}>
+              Folosește codul de mai jos pentru a-ți confirma adresa de email (
+              <Link href={`mailto:${recipient}`} style={link}>
+                {recipient}
+              </Link>
+              ):
+            </Text>
+            <Text style={codeStyle}>{token}</Text>
+            <Text style={footerNote}>
+              Acest cod va expira în curând. Dacă nu ai creat un cont pe Rentli, poți ignora acest email.
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text style={text}>
+              Te rugăm să confirmi adresa ta de email (
+              <Link href={`mailto:${recipient}`} style={link}>
+                {recipient}
+              </Link>
+              ) apăsând butonul de mai jos:
+            </Text>
+            <Button style={button} href={confirmationUrl}>
+              Confirmă adresa de email
+            </Button>
+            <Text style={footer}>
+              Dacă nu ai creat un cont pe Rentli, poți ignora acest email.
+            </Text>
+          </>
+        )}
       </Container>
     </Body>
   </Html>
@@ -83,6 +108,15 @@ const text = {
   margin: '0 25px 15px',
 }
 const link = { color: '#F59E0B', textDecoration: 'underline' }
+const codeStyle = {
+  fontFamily: 'Courier, monospace',
+  fontSize: '28px',
+  fontWeight: 'bold' as const,
+  color: '#F59E0B',
+  margin: '0 25px 30px',
+  letterSpacing: '4px',
+  textAlign: 'center' as const,
+}
 const button = {
   backgroundColor: '#F59E0B',
   color: '#ffffff',
@@ -95,3 +129,4 @@ const button = {
   display: 'inline-block' as const,
 }
 const footer = { fontSize: '12px', color: '#999999', margin: '30px 25px 25px' }
+const footerNote = { fontSize: '12px', color: '#999999', margin: '30px 25px 25px' }

@@ -38,7 +38,7 @@ export const EmailChangeEmail = ({
         <div style={header}>
           <Img src={LOGO_URL} alt="Rentli" width="120" height="40" style={logoStyle} />
         </div>
-        <Heading style={h1}>Schimbare adresă de email</Heading>
+        <Heading style={h1}>Confirmă schimbarea emailului</Heading>
         <Text style={text}>
           Ai solicitat schimbarea adresei de email pe Rentli de la{' '}
           <Link href={`mailto:${email}`} style={link}>
@@ -51,14 +51,13 @@ export const EmailChangeEmail = ({
           .
         </Text>
         <Text style={text}>
-          Apasă butonul de mai jos pentru a confirma schimbarea:
+          Apasă butonul de mai jos pentru a confirma această schimbare:
         </Text>
         <Button style={button} href={confirmationUrl}>
           Confirmă schimbarea
         </Button>
-        <Text style={footer}>
-          Dacă nu ai solicitat această schimbare, te rugăm să îți securizezi
-          contul imediat.
+        <Text style={footerText}>
+          Dacă nu ai solicitat această schimbare, te rugăm să îți securizezi contul imediat.
         </Text>
       </Container>
     </Body>
@@ -85,4 +84,4 @@ const button = {
   margin: '10px 25px 20px',
   display: 'inline-block' as const,
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 25px 25px' }
+const footerText = { fontSize: '12px', color: '#999999', margin: '30px 25px 25px' }

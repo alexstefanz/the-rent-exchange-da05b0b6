@@ -27,7 +27,7 @@ export const MagicLinkEmail = ({
 }: MagicLinkEmailProps) => (
   <Html lang="ro" dir="ltr">
     <Head />
-    <Preview>Link de autentificare Rentli</Preview>
+    <Preview>Link-ul tău de autentificare Rentli</Preview>
     <Body style={main}>
       <Container style={container}>
         <div style={header}>
@@ -41,7 +41,7 @@ export const MagicLinkEmail = ({
         <Button style={button} href={confirmationUrl}>
           Autentifică-te
         </Button>
-        <Text style={footer}>
+        <Text style={footerText}>
           Dacă nu ai solicitat acest link, poți ignora acest email.
         </Text>
       </Container>
@@ -68,4 +68,4 @@ const button = {
   margin: '10px 25px 20px',
   display: 'inline-block' as const,
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 25px 25px' }
+const footerText = { fontSize: '12px', color: '#999999', margin: '30px 25px 25px' }

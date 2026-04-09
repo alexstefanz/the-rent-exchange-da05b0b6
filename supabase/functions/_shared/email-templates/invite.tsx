@@ -38,7 +38,7 @@ export const InviteEmail = ({
         </div>
         <Heading style={h1}>Ai fost invitat!</Heading>
         <Text style={text}>
-          Ai primit o invitație să te alături platformei{' '}
+          Ai fost invitat să te alături{' '}
           <Link href={siteUrl} style={link}>
             <strong>Rentli</strong>
           </Link>
@@ -47,8 +47,8 @@ export const InviteEmail = ({
         <Button style={button} href={confirmationUrl}>
           Acceptă invitația
         </Button>
-        <Text style={footer}>
-          Dacă nu te așteptai la această invitație, poți ignora acest email.
+        <Text style={footerText}>
+          Dacă nu așteptai această invitație, poți ignora acest email.
         </Text>
       </Container>
     </Body>
@@ -75,4 +75,4 @@ const button = {
   margin: '10px 25px 20px',
   display: 'inline-block' as const,
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 25px 25px' }
+const footerText = { fontSize: '12px', color: '#999999', margin: '30px 25px 25px' }

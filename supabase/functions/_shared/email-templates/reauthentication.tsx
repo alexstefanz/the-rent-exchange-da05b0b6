@@ -31,7 +31,7 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
         <Heading style={h1}>Cod de verificare</Heading>
         <Text style={text}>Folosește codul de mai jos pentru a-ți confirma identitatea:</Text>
         <Text style={codeStyle}>{token}</Text>
-        <Text style={footer}>
+        <Text style={footerText}>
           Acest cod va expira în curând. Dacă nu ai solicitat acest cod,
           poți ignora acest email.
         </Text>
@@ -55,5 +55,6 @@ const codeStyle = {
   color: '#F59E0B',
   margin: '0 25px 30px',
   letterSpacing: '4px',
+  textAlign: 'center' as const,
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 25px 25px' }
+const footerText = { fontSize: '12px', color: '#999999', margin: '30px 25px 25px' }
