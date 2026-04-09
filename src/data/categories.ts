@@ -29,6 +29,7 @@ export const categories: Category[] = [
       { id: "1-3", name: "Construcții", nameEn: "Construction", description: "Betoniere, compactoare, buldoexcavatoare", descriptionEn: "Concrete mixers, compactors, excavators", image: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80" },
       { id: "1-4", name: "Măsurare și nivelare", nameEn: "Measuring & Leveling", description: "Lasere, niveluri, rulete profesionale", descriptionEn: "Lasers, levels, professional tape measures", image: "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=400&q=80" },
       { id: "1-5", name: "Curățenie industrială", nameEn: "Industrial Cleaning", description: "Aspiratoare industriale, mașini de curățat", descriptionEn: "Industrial vacuums, cleaning machines", image: "https://images.unsplash.com/photo-1558317374-067fb5f30001?w=400&q=80" },
+      { id: "1-99", name: "Altele", nameEn: "Others", description: "Alte unelte și echipamente", descriptionEn: "Other tools and equipment", image: "" },
     ],
   },
   {
@@ -44,6 +45,7 @@ export const categories: Category[] = [
       { id: "2-4", name: "Corturi și pavilioane", nameEn: "Tents & Pavilions", description: "Corturi mari, pavilioane pentru evenimente", descriptionEn: "Large tents, pavilions for events", image: "https://images.unsplash.com/photo-1478827536114-da961b7f86d2?w=400&q=80" },
       { id: "2-5", name: "Catering și servire", nameEn: "Catering & Serving", description: "Aparate popcorn, vată de zahăr, grătare", descriptionEn: "Popcorn machines, cotton candy, grills", image: "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=400&q=80" },
       { id: "2-6", name: "Echipamente speciale", nameEn: "Special Equipment", description: "Mașini de fum, bule, zăpadă artificială", descriptionEn: "Fog, bubble, artificial snow machines", image: "https://images.unsplash.com/photo-1527004013197-933c4bb611b3?w=400&q=80" },
+      { id: "2-99", name: "Altele", nameEn: "Others", description: "Alte echipamente pentru evenimente", descriptionEn: "Other event equipment", image: "" },
     ],
   },
   {
@@ -60,6 +62,7 @@ export const categories: Category[] = [
       { id: "3-5", name: "Gaming", nameEn: "Gaming", description: "Console, VR, controllere, jocuri", descriptionEn: "Consoles, VR, controllers, games", image: "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=400&q=80" },
       { id: "3-6", name: "Foto și video", nameEn: "Photo & Video", description: "Camere DSLR, drone, gimbaluri", descriptionEn: "DSLR cameras, drones, gimbals", image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400&q=80" },
       { id: "3-7", name: "Tablete", nameEn: "Tablets", description: "Tablete și accesorii", descriptionEn: "Tablets and accessories", image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&q=80" },
+      { id: "3-99", name: "Altele", nameEn: "Others", description: "Alte electronice", descriptionEn: "Other electronics", image: "" },
     ],
   },
   {
@@ -73,6 +76,7 @@ export const categories: Category[] = [
       { id: "4-2", name: "Mașini de tuns gazon", nameEn: "Lawn Mowers", description: "Mașini de tuns iarba manuale și electrice", descriptionEn: "Manual and electric lawn mowers", image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80" },
       { id: "4-3", name: "Sisteme de irigații", nameEn: "Irrigation Systems", description: "Aspersoare, furtunuri, sisteme automate", descriptionEn: "Sprinklers, hoses, automatic systems", image: "https://images.unsplash.com/photo-1558904541-efa843a96f01?w=400&q=80" },
       { id: "4-4", name: "Motounelte", nameEn: "Power Garden Tools", description: "Motosape, motocoase, motofierăstraie", descriptionEn: "Tillers, brush cutters, chainsaws", image: "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80" },
+      { id: "4-99", name: "Altele", nameEn: "Others", description: "Alte echipamente de grădinărit", descriptionEn: "Other gardening equipment", image: "" },
     ],
   },
   {
@@ -86,6 +90,7 @@ export const categories: Category[] = [
       { id: "5-2", name: "Echipament Drumeții", nameEn: "Hiking Equipment", description: "Rucsaci, bocanci, bastoane", descriptionEn: "Backpacks, boots, trekking poles", image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80" },
       { id: "5-3", name: "Grătare", nameEn: "Grills", description: "Grătare portabile și profesionale", descriptionEn: "Portable and professional grills", image: "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=400&q=80" },
       { id: "5-4", name: "Echipamente de aventură", nameEn: "Adventure Equipment", description: "Caiace, SUP-uri, escaladă", descriptionEn: "Kayaks, SUPs, climbing gear", image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&q=80" },
+      { id: "5-99", name: "Altele", nameEn: "Others", description: "Alte echipamente outdoor", descriptionEn: "Other outdoor equipment", image: "" },
     ],
   },
   {
@@ -99,6 +104,7 @@ export const categories: Category[] = [
       { id: "6-2", name: "Jocuri interactive", nameEn: "Interactive Games", description: "Jocuri interactive pentru petreceri", descriptionEn: "Interactive games for parties", image: "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=400&q=80" },
       { id: "6-3", name: "Costume copii", nameEn: "Kids Costumes", description: "Costume tematice pentru copii", descriptionEn: "Themed costumes for kids", image: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&q=80" },
       { id: "6-4", name: "Decor", nameEn: "Decorations", description: "Decoruri pentru petreceri copii", descriptionEn: "Decorations for kids' parties", image: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&q=80" },
+      { id: "6-99", name: "Altele", nameEn: "Others", description: "Alte jucării și articole petrecere", descriptionEn: "Other toys and party items", image: "" },
     ],
   },
   {
@@ -114,6 +120,7 @@ export const categories: Category[] = [
       { id: "7-4", name: "Sporturi de iarnă", nameEn: "Winter Sports", description: "Schiuri, snowboard, sănii, echipament", descriptionEn: "Skis, snowboards, sleds, equipment", image: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&q=80" },
       { id: "7-5", name: "Sporturi de apă", nameEn: "Water Sports", description: "SUP, caiace, echipament scufundări", descriptionEn: "SUP, kayaks, diving equipment", image: "https://images.unsplash.com/photo-1499260662818-9c4c01d7cf6f?w=400&q=80" },
       { id: "7-6", name: "Recuperare și wellness", nameEn: "Recovery & Wellness", description: "Masaj, presoterapie, yoga", descriptionEn: "Massage, pressotherapy, yoga", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80" },
+      { id: "7-99", name: "Altele", nameEn: "Others", description: "Alte echipamente sportive", descriptionEn: "Other sports equipment", image: "" },
     ],
   },
   {
@@ -127,6 +134,7 @@ export const categories: Category[] = [
       { id: "8-2", name: "Rucsaci travel", nameEn: "Travel Backpacks", description: "Rucsaci pentru călătorii", descriptionEn: "Backpacks for travel", image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80" },
       { id: "8-3", name: "Accesorii călătorie", nameEn: "Travel Accessories", description: "Adaptoare, perne, organizatoare", descriptionEn: "Adapters, pillows, organizers", image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80" },
       { id: "8-4", name: "Cuști și transport animale", nameEn: "Pet Carriers & Transport", description: "Cuști și genți transport animale", descriptionEn: "Pet carriers and transport bags", image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80" },
+      { id: "8-99", name: "Altele", nameEn: "Others", description: "Alte accesorii de călătorie", descriptionEn: "Other travel accessories", image: "" },
     ],
   },
   {
@@ -143,6 +151,7 @@ export const categories: Category[] = [
       { id: "9-5", name: "Transport marfă", nameEn: "Cargo Transport", description: "Vehicule și echipamente transport marfă", descriptionEn: "Cargo transport vehicles and equipment", image: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=400&q=80" },
       { id: "9-6", name: "Echipamente transport", nameEn: "Transport Equipment", description: "Portbagaje, boxe transfer, suporturi", descriptionEn: "Roof racks, cargo boxes, mounts", image: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=400&q=80" },
       { id: "9-7", name: "Trotinete", nameEn: "Scooters", description: "Trotinete electrice și clasice", descriptionEn: "Electric and classic scooters", image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80" },
+      { id: "9-99", name: "Altele", nameEn: "Others", description: "Alte echipamente de transport", descriptionEn: "Other transport equipment", image: "" },
     ],
   },
   {
@@ -155,6 +164,7 @@ export const categories: Category[] = [
       { id: "10-1", name: "Costume tematice", nameEn: "Themed Costumes", description: "Costume pentru diverse ocazii tematice", descriptionEn: "Costumes for various themed occasions", image: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&q=80" },
       { id: "10-2", name: "Ținute elegante", nameEn: "Elegant Outfits", description: "Rochii de seară, costume bărbătești", descriptionEn: "Evening dresses, men's suits", image: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&q=80" },
       { id: "10-3", name: "Costume Halloween", nameEn: "Halloween Costumes", description: "Costume și măști de Halloween", descriptionEn: "Halloween costumes and masks", image: "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&q=80" },
+      { id: "10-99", name: "Altele", nameEn: "Others", description: "Alte haine și recuzită", descriptionEn: "Other costumes and props", image: "" },
     ],
   },
   {
@@ -170,6 +180,7 @@ export const categories: Category[] = [
       { id: "11-4", name: "Irigare agricolă", nameEn: "Agricultural Irrigation", description: "Sisteme de irigație pentru agricultură", descriptionEn: "Irrigation systems for agriculture", image: "https://images.unsplash.com/photo-1558904541-efa843a96f01?w=400&q=80" },
       { id: "11-5", name: "Recoltare", nameEn: "Harvesting", description: "Combine, secerătoare, echipament recoltare", descriptionEn: "Combines, harvesters, harvesting equipment", image: "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=400&q=80" },
       { id: "11-6", name: "Atașamente și accesorii", nameEn: "Attachments & Accessories", description: "Atașamente pentru utilaje agricole", descriptionEn: "Attachments for agricultural machinery", image: "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=400&q=80" },
+      { id: "11-99", name: "Altele", nameEn: "Others", description: "Alte echipamente agricole", descriptionEn: "Other agricultural equipment", image: "" },
     ],
   },
   {
@@ -178,7 +189,9 @@ export const categories: Category[] = [
     name: "Diverse",
     nameEn: "Miscellaneous",
     icon: "📦",
-    subcategories: [],
+    subcategories: [
+      { id: "12-99", name: "Altele", nameEn: "Others", description: "Alte produse diverse", descriptionEn: "Other miscellaneous items", image: "" },
+    ],
   },
 ];
 
