@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, Calendar, CheckCircle2, AlertTriangle, Download, ChevronDown, ChevronUp, DollarSign } from "lucide-react";
+import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, Calendar, CheckCircle2, AlertTriangle, Download, ChevronDown, ChevronUp, DollarSign, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import AdminLayout from "@/components/admin/AdminLayout";
 import StatsCard from "@/components/admin/StatsCard";
@@ -76,6 +77,166 @@ const txStatusColors: Record<string, string> = {
   verified: "bg-blue-100 text-blue-800",
   suspicious: "bg-red-100 text-red-800",
   refunded: "bg-purple-100 text-purple-800",
+};
+
+interface WithdrawalRow {
+  id: string;
+  user_id: string;
+  amount: number;
+  iban: string;
+  account_holder: string | null;
+  status: string;
+  admin_note: string | null;
+  created_at: string;
+  processed_at: string | null;
+  user_name?: string;
+  user_email?: string;
+}
+
+const WithdrawalsAdminTab = ({ formatCurrency }: { formatCurrency: (v: number) => string }) => {
+  const [filter, setFilter] = useState<string>("pending");
+  const [processing, setProcessing] = useState<string | null>(null);
+  const [noteInput, setNoteInput] = useState<Record<string, string>>({});
+  const queryClient = useQueryClient();
+
+  const { data: withdrawals, isLoading } = useQuery({
+    queryKey: ['adminWithdrawals', filter],
+    queryFn: async () => {
+      let query = supabase.from('withdrawal_requests' as any).select('*').order('created_at', { ascending: false }).limit(100);
+      if (filter !== 'all') query = query.eq('status', filter);
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // Fetch user names
+      const userIds = [...new Set((data as any[]).map((w: any) => w.user_id))];
+      const { data: profiles } = await supabase.from('profiles').select('id, full_name, email').in('id', userIds);
+      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+
+      return (data as any[]).map((w: any) => ({
+        ...w,
+        amount: Number(w.amount),
+        user_name: profileMap.get(w.user_id)?.full_name || 'Utilizator',
+        user_email: profileMap.get(w.user_id)?.email || '',
+      })) as WithdrawalRow[];
+    },
+    staleTime: 15000,
+  });
+
+  const handleAction = async (id: string, action: 'approved' | 'rejected' | 'completed') => {
+    setProcessing(id);
+    try {
+      const updates: Record<string, unknown> = { status: action };
+      if (action !== 'rejected') updates.processed_at = new Date().toISOString();
+      if (noteInput[id]) updates.admin_note = noteInput[id];
+
+      const { error } = await supabase.from('withdrawal_requests' as any).update(updates).eq('id', id);
+      if (error) throw error;
+
+      // If completed, create a withdrawal transaction
+      if (action === 'completed') {
+        const wd = withdrawals?.find(w => w.id === id);
+        if (wd) {
+          await supabase.from('transactions').insert({
+            user_id: wd.user_id,
+            type: 'withdrawal',
+            amount: wd.amount,
+            status: 'completed',
+            description: `Retragere IBAN ${wd.iban}`,
+            processed_at: new Date().toISOString(),
+          });
+        }
+      }
+
+      toast.success(`Cerere ${action === 'approved' ? 'aprobată' : action === 'rejected' ? 'respinsă' : 'finalizată'}`);
+      queryClient.invalidateQueries({ queryKey: ['adminWithdrawals'] });
+    } catch {
+      toast.error("Eroare la procesare");
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const wdStatusColors: Record<string, string> = {
+    pending: "bg-yellow-100 text-yellow-800",
+    approved: "bg-blue-100 text-blue-800",
+    completed: "bg-green-100 text-green-800",
+    rejected: "bg-red-100 text-red-800",
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <CardTitle className="text-lg">Cereri de Retragere</CardTitle>
+          <Select value={filter} onValueChange={setFilter}>
+            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toate</SelectItem>
+              <SelectItem value="pending">În așteptare</SelectItem>
+              <SelectItem value="approved">Aprobate</SelectItem>
+              <SelectItem value="completed">Finalizate</SelectItem>
+              <SelectItem value="rejected">Respinse</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
+        ) : withdrawals && withdrawals.length > 0 ? (
+          <div className="space-y-3">
+            {withdrawals.map((wd) => (
+              <div key={wd.id} className="p-4 rounded-lg border space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-sm">{wd.user_name}</p>
+                    <p className="text-xs text-muted-foreground">{wd.user_email}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold">{formatCurrency(wd.amount)}</span>
+                    <Badge className={wdStatusColors[wd.status] || "bg-gray-100 text-gray-800"}>{wd.status}</Badge>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>IBAN: <span className="font-mono">{wd.iban}</span></p>
+                  {wd.account_holder && <p>Titular: {wd.account_holder}</p>}
+                  <p>Data: {format(new Date(wd.created_at), 'd MMM yyyy HH:mm', { locale: ro })}</p>
+                </div>
+                {wd.status === 'pending' && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Input
+                      placeholder="Notă admin (opțional)"
+                      className="flex-1 text-xs h-8"
+                      value={noteInput[wd.id] || ""}
+                      onChange={(e) => setNoteInput(prev => ({ ...prev, [wd.id]: e.target.value }))}
+                    />
+                    <Button size="sm" onClick={() => handleAction(wd.id, 'approved')} disabled={processing === wd.id}>
+                      {processing === wd.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3 mr-1" />} Aprobă
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={() => handleAction(wd.id, 'rejected')} disabled={processing === wd.id}>
+                      Respinge
+                    </Button>
+                  </div>
+                )}
+                {wd.status === 'approved' && (
+                  <Button size="sm" variant="outline" onClick={() => handleAction(wd.id, 'completed')} disabled={processing === wd.id}>
+                    {processing === wd.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                    Marchează ca transferat
+                  </Button>
+                )}
+                {wd.admin_note && <p className="text-xs text-muted-foreground italic">Notă: {wd.admin_note}</p>}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            <Wallet className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>Nu există cereri de retragere</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 };
 
 const AdminFinances = () => {
@@ -173,6 +334,7 @@ const AdminFinances = () => {
           <TabsList>
             <TabsTrigger value="overview">Prezentare generală</TabsTrigger>
             <TabsTrigger value="payments">Verificare Plăți</TabsTrigger>
+            <TabsTrigger value="withdrawals">Retrageri</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
@@ -333,6 +495,10 @@ const AdminFinances = () => {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="withdrawals" className="space-y-4">
+            <WithdrawalsAdminTab formatCurrency={formatCurrency} />
           </TabsContent>
         </Tabs>
       </div>

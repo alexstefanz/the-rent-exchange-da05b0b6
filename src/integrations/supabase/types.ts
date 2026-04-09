@@ -865,6 +865,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_holder_name: string | null
           account_type: string
           avatar_url: string | null
           ban_reason: string | null
@@ -878,6 +879,7 @@ export type Database = {
           deactivation_token_expires_at: string | null
           email: string | null
           full_name: string | null
+          iban: string | null
           id: string
           is_banned: boolean
           is_deactivated: boolean
@@ -889,6 +891,7 @@ export type Database = {
           whatsapp: string | null
         }
         Insert: {
+          account_holder_name?: string | null
           account_type?: string
           avatar_url?: string | null
           ban_reason?: string | null
@@ -902,6 +905,7 @@ export type Database = {
           deactivation_token_expires_at?: string | null
           email?: string | null
           full_name?: string | null
+          iban?: string | null
           id: string
           is_banned?: boolean
           is_deactivated?: boolean
@@ -913,6 +917,7 @@ export type Database = {
           whatsapp?: string | null
         }
         Update: {
+          account_holder_name?: string | null
           account_type?: string
           avatar_url?: string | null
           ban_reason?: string | null
@@ -926,6 +931,7 @@ export type Database = {
           deactivation_token_expires_at?: string | null
           email?: string | null
           full_name?: string | null
+          iban?: string | null
           id?: string
           is_banned?: boolean
           is_deactivated?: boolean
@@ -1244,6 +1250,45 @@ export type Database = {
           created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      withdrawal_requests: {
+        Row: {
+          account_holder: string | null
+          admin_note: string | null
+          amount: number
+          created_at: string
+          iban: string
+          id: string
+          processed_at: string | null
+          processed_by: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          account_holder?: string | null
+          admin_note?: string | null
+          amount: number
+          created_at?: string
+          iban: string
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          account_holder?: string | null
+          admin_note?: string | null
+          amount?: number
+          created_at?: string
+          iban?: string
+          id?: string
+          processed_at?: string | null
+          processed_by?: string | null
+          status?: string
           user_id?: string
         }
         Relationships: []

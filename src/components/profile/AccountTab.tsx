@@ -64,6 +64,43 @@ const profileSchema = z.object({
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
+const IbanForm = ({ userId, profile, onSaved }: { userId?: string; profile: any; onSaved: (iban: string, holder: string) => void }) => {
+  const { t } = useLanguage();
+  const { toast } = useToast();
+  const [iban, setIban] = useState((profile as any)?.iban || "");
+  const [holder, setHolder] = useState((profile as any)?.account_holder_name || "");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!userId) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("profiles").update({ iban: iban.toUpperCase(), account_holder_name: holder } as any).eq("id", userId);
+      if (error) throw error;
+      onSaved(iban.toUpperCase(), holder);
+      toast({ title: t("Salvat", "Saved"), description: t("IBAN actualizat cu succes", "IBAN updated successfully") });
+    } catch {
+      toast({ title: t("Eroare", "Error"), description: t("Nu s-a putut salva IBAN-ul", "Could not save IBAN"), variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <Label htmlFor="iban">IBAN</Label>
+        <Input id="iban" value={iban} onChange={(e) => setIban(e.target.value.toUpperCase().replace(/\s/g, ""))} placeholder="RO49AAAA1B31007593840000" maxLength={34} />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="account_holder">{t("Titular cont", "Account holder")}</Label>
+        <Input id="account_holder" value={holder} onChange={(e) => setHolder(e.target.value)} placeholder="Ion Popescu" maxLength={100} />
+      </div>
+      <Button variant="outline" size="sm" onClick={handleSave} disabled={saving || !iban}>
+        {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("Se salvează...", "Saving...")}</> : t("Salvează IBAN", "Save IBAN")}
+      </Button>
+    </div>
+  );
+};
+
 const AccountTab = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -487,21 +524,17 @@ const AccountTab = () => {
             </CardContent>
           </Card>
 
-          {/* Payout Settings */}
+          {/* Payout Settings (IBAN) */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Wallet className="h-5 w-5" />
                 {t("Cum primești banii?", "How do you receive payments?")}
               </CardTitle>
-              <CardDescription>{t("Configurează modul în care primești plățile pentru închirierile tale", "Configure how you receive payments for your rentals")}</CardDescription>
+              <CardDescription>{t("Configurează IBAN-ul pentru retrageri", "Configure your IBAN for withdrawals")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-lg border border-dashed border-border p-6 text-center">
-                <Wallet className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground mb-3">{t("IBAN neconfigurat", "IBAN not configured")}</p>
-                <Button variant="outline">{t("Configurează încasarea", "Configure payout")}</Button>
-              </div>
+              <IbanForm userId={user?.id} profile={profile} onSaved={(iban, holder) => setProfile(prev => prev ? { ...prev, iban, account_holder_name: holder } as any : prev)} />
             </CardContent>
           </Card>
 
