@@ -785,6 +785,8 @@ export type Database = {
       }
       products: {
         Row: {
+          admin_edited_at: string | null
+          admin_edited_by: string | null
           admin_flagged: boolean
           approval_status: string
           category: string | null
@@ -806,6 +808,8 @@ export type Database = {
           title: string
         }
         Insert: {
+          admin_edited_at?: string | null
+          admin_edited_by?: string | null
           admin_flagged?: boolean
           approval_status?: string
           category?: string | null
@@ -827,6 +831,8 @@ export type Database = {
           title: string
         }
         Update: {
+          admin_edited_at?: string | null
+          admin_edited_by?: string | null
           admin_flagged?: boolean
           approval_status?: string
           category?: string | null
