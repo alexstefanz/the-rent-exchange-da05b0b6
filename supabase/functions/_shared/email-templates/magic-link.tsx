@@ -9,12 +9,9 @@ import {
   Head,
   Heading,
   Html,
-  Img,
   Preview,
   Text,
 } from 'npm:@react-email/components@0.0.22'
-
-const LOGO_URL = 'https://tsffyecastudajmgrckt.supabase.co/storage/v1/object/public/email-assets/rentli_logo.png'
 
 interface MagicLinkEmailProps {
   siteName: string
@@ -25,24 +22,21 @@ export const MagicLinkEmail = ({
   siteName,
   confirmationUrl,
 }: MagicLinkEmailProps) => (
-  <Html lang="ro" dir="ltr">
+  <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Link de autentificare Rentli</Preview>
+    <Preview>Your login link for {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <div style={header}>
-          <Img src={LOGO_URL} alt="Rentli" width="120" height="40" style={logoStyle} />
-        </div>
-        <Heading style={h1}>Link de autentificare</Heading>
+        <Heading style={h1}>Your login link</Heading>
         <Text style={text}>
-          Apasă butonul de mai jos pentru a te autentifica pe Rentli.
-          Acest link va expira în curând.
+          Click the button below to log in to {siteName}. This link will expire
+          shortly.
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Autentifică-te
+          Log In
         </Button>
         <Text style={footer}>
-          Dacă nu ai solicitat acest link, poți ignora acest email.
+          If you didn't request this link, you can safely ignore this email.
         </Text>
       </Container>
     </Body>
@@ -51,21 +45,26 @@ export const MagicLinkEmail = ({
 
 export default MagicLinkEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
-const container = { padding: '0', maxWidth: '560px', margin: '0 auto' }
-const header = { backgroundColor: '#F59E0B', padding: '20px 25px', borderRadius: '8px 8px 0 0' }
-const logoStyle = { display: 'block' as const }
-const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#302520', margin: '25px 25px 10px' }
-const text = { fontSize: '14px', color: '#7D7471', lineHeight: '1.5', margin: '0 25px 15px' }
+const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
+const container = { padding: '20px 25px' }
+const h1 = {
+  fontSize: '22px',
+  fontWeight: 'bold' as const,
+  color: '#000000',
+  margin: '0 0 20px',
+}
+const text = {
+  fontSize: '14px',
+  color: '#55575d',
+  lineHeight: '1.5',
+  margin: '0 0 25px',
+}
 const button = {
-  backgroundColor: '#F59E0B',
+  backgroundColor: '#000000',
   color: '#ffffff',
   fontSize: '14px',
-  borderRadius: '12px',
-  padding: '12px 24px',
+  borderRadius: '8px',
+  padding: '12px 20px',
   textDecoration: 'none',
-  fontWeight: 'bold' as const,
-  margin: '10px 25px 20px',
-  display: 'inline-block' as const,
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 25px 25px' }
+const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }

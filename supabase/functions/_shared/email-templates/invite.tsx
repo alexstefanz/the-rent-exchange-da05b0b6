@@ -9,13 +9,10 @@ import {
   Head,
   Heading,
   Html,
-  Img,
   Link,
   Preview,
   Text,
 } from 'npm:@react-email/components@0.0.22'
-
-const LOGO_URL = 'https://tsffyecastudajmgrckt.supabase.co/storage/v1/object/public/email-assets/rentli_logo.png'
 
 interface InviteEmailProps {
   siteName: string
@@ -28,27 +25,26 @@ export const InviteEmail = ({
   siteUrl,
   confirmationUrl,
 }: InviteEmailProps) => (
-  <Html lang="ro" dir="ltr">
+  <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Ai fost invitat pe Rentli</Preview>
+    <Preview>You've been invited to join {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <div style={header}>
-          <Img src={LOGO_URL} alt="Rentli" width="120" height="40" style={logoStyle} />
-        </div>
-        <Heading style={h1}>Ai fost invitat!</Heading>
+        <Heading style={h1}>You've been invited</Heading>
         <Text style={text}>
-          Ai primit o invitație să te alături platformei{' '}
+          You've been invited to join{' '}
           <Link href={siteUrl} style={link}>
-            <strong>Rentli</strong>
+            <strong>{siteName}</strong>
           </Link>
-          . Apasă butonul de mai jos pentru a accepta invitația și a-ți crea contul.
+          . Click the button below to accept the invitation and create your
+          account.
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Acceptă invitația
+          Accept Invitation
         </Button>
         <Text style={footer}>
-          Dacă nu te așteptai la această invitație, poți ignora acest email.
+          If you weren't expecting this invitation, you can safely ignore this
+          email.
         </Text>
       </Container>
     </Body>
@@ -57,22 +53,27 @@ export const InviteEmail = ({
 
 export default InviteEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
-const container = { padding: '0', maxWidth: '560px', margin: '0 auto' }
-const header = { backgroundColor: '#F59E0B', padding: '20px 25px', borderRadius: '8px 8px 0 0' }
-const logoStyle = { display: 'block' as const }
-const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#302520', margin: '25px 25px 10px' }
-const text = { fontSize: '14px', color: '#7D7471', lineHeight: '1.5', margin: '0 25px 15px' }
-const link = { color: '#F59E0B', textDecoration: 'underline' }
+const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
+const container = { padding: '20px 25px' }
+const h1 = {
+  fontSize: '22px',
+  fontWeight: 'bold' as const,
+  color: '#000000',
+  margin: '0 0 20px',
+}
+const text = {
+  fontSize: '14px',
+  color: '#55575d',
+  lineHeight: '1.5',
+  margin: '0 0 25px',
+}
+const link = { color: 'inherit', textDecoration: 'underline' }
 const button = {
-  backgroundColor: '#F59E0B',
+  backgroundColor: '#000000',
   color: '#ffffff',
   fontSize: '14px',
-  borderRadius: '12px',
-  padding: '12px 24px',
+  borderRadius: '8px',
+  padding: '12px 20px',
   textDecoration: 'none',
-  fontWeight: 'bold' as const,
-  margin: '10px 25px 20px',
-  display: 'inline-block' as const,
 }
-const footer = { fontSize: '12px', color: '#999999', margin: '30px 25px 25px' }
+const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
