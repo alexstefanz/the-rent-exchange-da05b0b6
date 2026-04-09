@@ -130,6 +130,20 @@ export const getPublicUserProducts = async (ownerId: string): Promise<Product[]>
   return data || [];
 };
 
+export const getOwnerProductCount = async (ownerId: string): Promise<number> => {
+  const { count, error } = await supabase
+    .from("products")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_id", ownerId);
+
+  if (error) {
+    console.error("Error counting products", error);
+    return 0;
+  }
+
+  return count || 0;
+};
+
 export const createProduct = async (
   data: {
     title: string;
@@ -145,12 +159,16 @@ export const createProduct = async (
   },
   ownerId: string
 ): Promise<Product> => {
+  // Count existing products to determine fee
+  const existingCount = await getOwnerProductCount(ownerId);
+  const platformFeePercent = existingCount < 3 ? 0 : 5;
+
   const insertData: Record<string, unknown> = {
     owner_id: ownerId,
     title: data.title,
     description: data.description || null,
     daily_price_owner: data.daily_price_owner,
-    platform_fee_percent: 20.0,
+    platform_fee_percent: platformFeePercent,
     category: data.category || null,
     subcategory: data.subcategory || null,
     location_city: data.location_city || null,
