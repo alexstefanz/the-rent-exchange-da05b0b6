@@ -1,69 +1,78 @@
 
 
-## Plan: Integrare Stripe pentru plăți la checkout
+## Plan: Configurare sistem de email Lovable pentru Rentli
 
 ### Situația actuală
-- Fluxul de checkout există complet (4 pași: opțiune plată → mesaj → metodă plată → confirmare)
-- `PaymentMethodDialog` simulează introducerea datelor de card (are chiar un buton "Card de test auto-fill")
-- Plata nu se procesează real — se salvează doar rental-ul în DB cu `payment_status: "pending"`
-- Cheia secretă Stripe (`sk_live_...`) este deja stocată ca secret
-- Cheia publică: `pk_live_51THeaxRxH8Kscr9R0D1cgSS9CE2RWWV6bM2OwC5R75sb8y44CTmrrGT29IqP77ffcZy3tHLh5RyLYHpHQ8KN5GTm00JtXnHGqy`
 
-### Ce se va implementa
+Proiectul are deja **9 Edge Functions** care trimit emailuri prin Resend API direct:
+- `send-rental-notification` — notificare cerere nouă de închiriere
+- `respond-rental-request` — răspuns la cerere (acceptare/refuzare)
+- `send-cancellation-notification` — anulare rezervare
+- `send-message-notification` — mesaj nou în conversație
+- `send-general-notification` — notificări generale
+- `send-password-changed-notification` — schimbare parolă
+- `request-account-deactivation` — cerere dezactivare cont
+- `auth-email-hook` — emailuri de autentificare (2FA, confirmare, resetare parolă)
+- `send-transactional-email` — sistem transacțional cu template-uri React Email
 
-**1. Edge Function `create-checkout-session`**
-- Primește: `rental_id`, produs, sumă, zile
-- Creează un Stripe Checkout Session cu `mode: "payment"`
-- Folosește `price_data` inline (prețul e dinamic, depinde de numărul de zile) cu descriere clară (ex: "Închiriere Drujbă Stihl - 3 zile")
-- Moneda: RON
-- Returnează URL-ul Stripe Checkout
-- Success URL: `/checkout/success?session_id={CHECKOUT_SESSION_ID}`
-- Cancel URL: `/checkout/cancelled`
+Template-ul de email folosit este cel cu branding Rentli (header portocaliu #F59E0B, font Plus Jakarta Sans, background #FAF9F7).
 
-**2. Edge Function `verify-stripe-payment`**
-- Primește `session_id`
-- Verifică cu Stripe API că plata e completă
-- Actualizează rental-ul: `payment_status: "paid"`, `paid_at: now()`
-- Returnează confirmarea
+### Ce trebuie configurat
 
-**3. Modificare flux Checkout (frontend)**
-- La Step 3, în loc de `PaymentMethodDialog` cu formular fake de card, se va apela `create-checkout-session`
-- Utilizatorul este redirectat la Stripe Checkout (pagina securizată Stripe)
-- După plată, revine pe `/checkout/success` unde se verifică și confirmă plata
+**Important:** Lovable Cloud are un sistem integrat de email cu cozi de retry, suport unsubscribe, tracking și deliverability — nu ai nevoie de Cloudflare pentru email. Cloudflare e excelent pentru DNS/CDN, dar pentru emailuri Lovable folosește propria infrastructură care funcționează nativ.
 
-**4. Pagini noi**
-- `CheckoutSuccess.tsx` — verifică plata și arată confirmarea (refolosește `BookingConfirmation`)
-- `CheckoutCancelled.tsx` — mesaj simplu + buton de revenire
+### Pași de implementare
 
-**5. Fluxul complet modificat**
-```text
-Step 1: Alege când plătești (pay-now / pay-later)
-Step 2: Mesaj opțional pentru proprietar  
-Step 3: Click "Plătește cu Stripe" → se creează rental + checkout session
-        → redirect la Stripe Checkout (card, Google Pay, Apple Pay - toate gestionate de Stripe)
-        → după plată → /checkout/success → verificare → confirmare
-```
+**Pasul 1: Configurare domeniu de email**
+- Trebuie configurat domeniul `rentli.ro` prin dialogul de setup din Lovable
+- Se va crea un subdomeniu `notify.rentli.ro` delegat la nameserverele Lovable
+- Vei primi DNS records (NS records) pe care trebuie să le adaugi în Cloudflare (unde gestionezi DNS-ul pentru rentli.ro)
+- Verificarea DNS durează până la 72h
 
-### Ce NU se schimbă
-- Structura tabelelor DB (rentals rămâne la fel)
-- Notificările (se trimit la fel)
-- Mesajul către proprietar (se creează la fel)
+**Pasul 2: Setup infrastructură email**
+- Creare cozi pgmq pentru retry automat (auth_emails + transactional_emails)
+- Tabele: `email_send_log`, `email_send_state`, `suppressed_emails`, `email_unsubscribe_tokens`
+- Cron job `process-email-queue` care procesează coada la fiecare 5 secunde
+- Retry automat, dead-letter queue, rate limiting
 
-### Detalii tehnice
-- Se elimină `PaymentMethodDialog` (înlocuit de Stripe Checkout)
-- Stripe Checkout suportă nativ: Card, Google Pay, Apple Pay, SEPA — fără implementare separată
-- `price_data` inline e necesar deoarece fiecare rental are preț diferit (daily_price × rental_days)
-- Se adaugă ruta `/checkout/success` și `/checkout/cancelled` în `App.tsx`
+**Pasul 3: Migrare emailuri existente de la Resend la sistemul Lovable**
+- Migrare cele 6 Edge Functions de notificări (rental, cancellation, message, general, password, deactivation) la template-uri React Email în registry
+- Fiecare funcție va folosi `send-transactional-email` în loc de apeluri directe Resend
+- Template-uri noi necesare:
+  1. `rental-request` — cerere nouă de închiriere (pentru owner)
+  2. `rental-accepted` — cerere acceptată (pentru renter)
+  3. `rental-rejected` — cerere refuzată (pentru renter)
+  4. `rental-cancelled-owner` — anulare (notificare owner)
+  5. `rental-cancelled-renter` — confirmare anulare (pentru renter)
+  6. `new-message` — mesaj nou în conversație
+  7. `password-changed` — confirmare schimbare parolă
+  8. `account-deactivation` — cerere dezactivare cont
+  9. `payment-confirmation` — confirmare plată Stripe
 
-### Fișiere noi
-1. `supabase/functions/create-checkout-session/index.ts`
-2. `supabase/functions/verify-stripe-payment/index.ts`
-3. `src/pages/CheckoutSuccess.tsx`
-4. `src/pages/CheckoutCancelled.tsx`
+**Pasul 4: Actualizare trigger-uri din frontend/backend**
+- Înlocuire apeluri directe `fetch("https://api.resend.com/emails")` cu `supabase.functions.invoke('send-transactional-email')`
+- Păstrare logica existentă de rate limiting și validare
+- Adăugare `idempotencyKey` pentru fiecare email
 
-### Fișiere modificate
-1. `src/pages/Checkout.tsx` — Step 3 devine redirect la Stripe
-2. `src/features/rentals/rentalsApi.ts` — funcție nouă pentru creare rental + checkout session
-3. `src/App.tsx` — rute noi
-4. `supabase/config.toml` — config funcții noi
+**Pasul 5: Cleanup**
+- Ștergere Edge Functions individuale devenite inutile (send-rental-notification, send-cancellation-notification, etc.)
+- Eliminare referințe RESEND_API_KEY din cod
+
+### Ce se obține
+- Email deliverability mai bună (SPF/DKIM/DMARC configurate automat)
+- Retry automat pentru emailuri eșuate
+- Tracking și logging complet în `email_send_log`
+- Suport unsubscribe GDPR-compliant
+- Toate emailurile trec printr-un singur punct (`send-transactional-email`)
+- Template-uri React Email ușor de modificat
+- Auth emails (2FA, confirmare signup, resetare parolă) prin `auth-email-hook` deja existent
+
+### Acțiune necesară de la tine
+Primul pas este să configurezi domeniul de email. Apasă butonul de mai jos pentru a începe:
+
+<lov-actions>
+<lov-open-email-setup>Configurează domeniu email</lov-open-email-setup>
+</lov-actions>
+
+După ce adaugi NS records în Cloudflare DNS pentru `notify.rentli.ro`, voi implementa toți pașii automat.
 
