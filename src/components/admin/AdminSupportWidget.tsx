@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useLocation } from "react-router-dom";
+
 import {
   fetchOpsTickets,
   fetchTicketMessages,
@@ -41,7 +41,7 @@ export default function AdminSupportWidget() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const isAdminRoute = location.pathname.startsWith("/admin");
+  
   const [isAdmin, setIsAdmin] = useState(false);
 
   // Check admin role
@@ -190,7 +190,7 @@ export default function AdminSupportWidget() {
     }
   };
 
-  if (!isAdmin || !isAdminRoute) return null;
+  if (!isAdmin) return null;
 
   return (
     <>
