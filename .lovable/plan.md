@@ -1,20 +1,27 @@
 
 
-## Plan: Adăugare coloană "Proprietar" în lista de rezervări
+## Plan: Culori distincte pentru statusuri în pie chart
 
-### Ce se schimbă
+### Problema
+Culorile din pie chart sunt atribuite secvențial din array-ul `COLORS`, fără legătură cu statusul. Astfel "Confirmate" și "Anulate" pot primi culori similare (ambele închise/negre).
 
-**Fișier: `src/pages/admin/AdminReservations.tsx`**
+### Soluție
+Înlocuiesc sistemul de culori bazat pe index cu un map explicit status → culoare:
 
-1. **Header tabel desktop** (linia 251-252): Adăugare `SortableTableHead` cu label "Proprietar" și sortKey "owner_name" după coloana "Chiriaș"
+**Fișier: `src/pages/admin/AdminAnalytics.tsx`**
 
-2. **Filtre coloane** (linia 166): Adăugare filtru text `{ key: "owner_name", type: "text", placeholder: "Proprietar..." }` după filtrul pentru chiriaș
+1. Adaug un map de culori per status tradus:
+```ts
+const STATUS_COLORS: Record<string, string> = {
+  'În așteptare': '#F97316',   // portocaliu
+  'Confirmate': '#22C55E',     // verde
+  'Active': '#3B82F6',         // albastru
+  'Finalizate': '#6B7280',     // gri
+  'Anulate': '#1a1a1a',        // negru
+};
+```
 
-3. **Celulă tabel desktop** (linia 275): Adăugare `<TableCell>{rental.owner_name}</TableCell>` după celula cu renter_name
+2. Actualizez `<Cell>` din PieChart să folosească `STATUS_COLORS[entry.name]` în loc de `COLORS[index]`
 
-4. **ColSpan** (linia 298): Actualizare `colSpan={6}` la `colSpan={7}` pentru rândul expandat
-
-5. **Card-uri mobile** (linia 316): Adăugare owner_name în textul descriptiv: `{rental.renter_name} → {rental.owner_name}`
-
-Nu sunt necesare modificări la baza de date — `owner_name` este deja returnat de funcția RPC `get_admin_rentals`.
+Un singur fișier modificat, fără alte dependențe.
 
