@@ -64,6 +64,43 @@ const profileSchema = z.object({
 
 type ProfileFormData = z.infer<typeof profileSchema>;
 
+const IbanForm = ({ userId, profile, onSaved }: { userId?: string; profile: any; onSaved: (iban: string, holder: string) => void }) => {
+  const { t } = useLanguage();
+  const { toast } = useToast();
+  const [iban, setIban] = useState((profile as any)?.iban || "");
+  const [holder, setHolder] = useState((profile as any)?.account_holder_name || "");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!userId) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("profiles").update({ iban: iban.toUpperCase(), account_holder_name: holder } as any).eq("id", userId);
+      if (error) throw error;
+      onSaved(iban.toUpperCase(), holder);
+      toast({ title: t("Salvat", "Saved"), description: t("IBAN actualizat cu succes", "IBAN updated successfully") });
+    } catch {
+      toast({ title: t("Eroare", "Error"), description: t("Nu s-a putut salva IBAN-ul", "Could not save IBAN"), variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <Label htmlFor="iban">IBAN</Label>
+        <Input id="iban" value={iban} onChange={(e) => setIban(e.target.value.toUpperCase().replace(/\s/g, ""))} placeholder="RO49AAAA1B31007593840000" maxLength={34} />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="account_holder">{t("Titular cont", "Account holder")}</Label>
+        <Input id="account_holder" value={holder} onChange={(e) => setHolder(e.target.value)} placeholder="Ion Popescu" maxLength={100} />
+      </div>
+      <Button variant="outline" size="sm" onClick={handleSave} disabled={saving || !iban}>
+        {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("Se salvează...", "Saving...")}</> : t("Salvează IBAN", "Save IBAN")}
+      </Button>
+    </div>
+  );
+};
+
 const AccountTab = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
