@@ -71,6 +71,16 @@ const NewProduct = () => {
     }
   }, [user, authLoading, navigate]);
 
+  useEffect(() => {
+    if (user) {
+      getOwnerProductCount(user.id).then(count => {
+        const free = Math.max(0, 3 - count);
+        setFreeListingsLeft(free);
+        setFeePercent(count < 3 ? 0 : 5);
+      });
+    }
+  }, [user]);
+
   const selectedCategoryData = categories.find(c => c.name === selectedCategory);
 
   const handleSubmit = async (data: ProductFormData) => {
