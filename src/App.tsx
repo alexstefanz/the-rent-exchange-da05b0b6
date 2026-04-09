@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import ScrollToTop from "./components/ScrollToTop";
 import SupportChatWidget from "./components/support/SupportChatWidget";
 import CookieConsent from "./components/CookieConsent";
+import AdminSupportWidget from "./components/admin/AdminSupportWidget";
 
 // Lazy-loaded routes
 const Categories = lazy(() => import("./pages/Categories"));
