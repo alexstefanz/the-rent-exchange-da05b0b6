@@ -8,7 +8,6 @@ const corsHeaders = {
 
 const TEST_EMAIL = "z.alexstefan@gmail.com";
 
-// Map of test types to their transactional template names + preview data
 const TEST_TEMPLATES: Record<string, { templateName: string; templateData?: Record<string, any> }> = {
   welcome: { templateName: 'welcome', templateData: { name: 'Alexandru' } },
   review_received: { templateName: 'review-received', templateData: { reviewerName: 'Maria Popescu', rating: 5, comment: 'Foarte bun, exact ca în poze!' } },
@@ -51,7 +50,6 @@ Deno.serve(async (req) => {
 
     const testConfig = TEST_TEMPLATES[type];
 
-    // Call send-transactional-email internally using service role key
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const { data, error } = await supabase.functions.invoke('send-transactional-email', {
