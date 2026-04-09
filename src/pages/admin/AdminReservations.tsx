@@ -164,6 +164,7 @@ const AdminReservations = () => {
   const rentalColumnFilters: ColumnFilterConfig[] = [
     { key: "product_title", type: "text", placeholder: "Produs..." },
     { key: "renter_name", type: "text", placeholder: "Chiriaș..." },
+    { key: "owner_name", type: "text", placeholder: "Proprietar..." },
     { key: "subtotal", type: "amountrange", placeholder: "Sumă" },
     { key: "status", type: "select", placeholder: "Status", options: [
       { value: "pending", label: "În așteptare" },
@@ -249,6 +250,7 @@ const AdminReservations = () => {
                       <TableRow>
                         <SortableTableHead label="Produs" sortKey="product_title" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
                         <SortableTableHead label="Chiriaș" sortKey="renter_name" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
+                        <SortableTableHead label="Proprietar" sortKey="owner_name" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
                         <SortableTableHead label="Perioada" sortKey="start_date" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
                         <SortableTableHead label="Suma" sortKey="subtotal" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
                         <TableHead>Status</TableHead>
@@ -273,6 +275,7 @@ const AdminReservations = () => {
                               </div>
                             </TableCell>
                             <TableCell>{rental.renter_name}</TableCell>
+                            <TableCell>{rental.owner_name}</TableCell>
                             <TableCell className="whitespace-nowrap">
                               {format(new Date(rental.start_date), 'd MMM', { locale: ro })} - {format(new Date(rental.end_date), 'd MMM', { locale: ro })}
                               <br /><span className="text-xs text-muted-foreground">{rental.rental_days} zile</span>
@@ -295,7 +298,7 @@ const AdminReservations = () => {
                           </TableRow>
                           {expandedId === rental.id && (
                             <TableRow key={`${rental.id}-expand`}>
-                              <TableCell colSpan={6} className="p-0">
+                              <TableCell colSpan={7} className="p-0">
                                 <RentalExpandedPanel rental={rental} updatingId={updatingId} onStatusChange={handleStatusChange} formatCurrency={formatCurrency} />
                               </TableCell>
                             </TableRow>
@@ -313,7 +316,7 @@ const AdminReservations = () => {
                       <div className="p-3 cursor-pointer flex items-center justify-between" onClick={() => toggleExpand(rental.id)}>
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium truncate">{rental.product_title}</p>
-                          <p className="text-xs text-muted-foreground">{rental.renter_name} • {format(new Date(rental.start_date), 'd MMM', { locale: ro })} - {format(new Date(rental.end_date), 'd MMM', { locale: ro })}</p>
+                          <p className="text-xs text-muted-foreground">{rental.renter_name} → {rental.owner_name} • {format(new Date(rental.start_date), 'd MMM', { locale: ro })} - {format(new Date(rental.end_date), 'd MMM', { locale: ro })}</p>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <span className="text-sm font-medium">{formatCurrency(rental.subtotal)}</span>
