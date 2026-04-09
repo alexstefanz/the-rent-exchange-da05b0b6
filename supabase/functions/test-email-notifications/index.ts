@@ -1,3 +1,5 @@
+import { createClient } from 'npm:@supabase/supabase-js@2'
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -37,38 +39,31 @@ Deno.serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const anonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    if (!supabaseUrl || !anonKey) {
+    if (!supabaseUrl || !serviceRoleKey) {
       return new Response(
-        JSON.stringify({ error: "Missing SUPABASE_URL or SUPABASE_ANON_KEY" }),
+        JSON.stringify({ error: "Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const testConfig = TEST_TEMPLATES[type];
 
-    // Call send-transactional-email via fetch with anon key (valid JWT for gateway)
-    const response = await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${anonKey}`,
-        'apikey': anonKey,
-      },
-      body: JSON.stringify({
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    const { data, error } = await supabase.functions.invoke('send-transactional-email', {
+      body: {
         templateName: testConfig.templateName,
         recipientEmail: TEST_EMAIL,
         idempotencyKey: `test-${type}-${Date.now()}`,
         templateData: testConfig.templateData || {},
-      }),
+      },
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('Error from send-transactional-email:', response.status, data);
-      throw new Error(data?.error || `send-transactional-email returned ${response.status}`);
+    if (error) {
+      console.error('Error invoking send-transactional-email:', error);
+      throw new Error(error.message || 'Failed to invoke send-transactional-email');
     }
 
     if (data?.error) {
