@@ -116,11 +116,6 @@ const Index = () => {
               );
             })}
           </div>
-          <div className="mt-8 text-center">
-            <Button variant="outline" asChild>
-              <Link to="/categorii">{copy.common.viewAll}<ArrowRight className="ml-2 h-4 w-4" /></Link>
-            </Button>
-          </div>
         </div>
       </section>
 
