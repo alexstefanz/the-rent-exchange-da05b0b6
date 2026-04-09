@@ -1,5 +1,3 @@
-import { createClient } from 'npm:@supabase/supabase-js@2'
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -51,21 +49,27 @@ Deno.serve(async (req) => {
 
     const testConfig = TEST_TEMPLATES[type];
 
-    // Call send-transactional-email internally using service role key
-    const supabase = createClient(supabaseUrl, serviceRoleKey);
-
-    const { data, error } = await supabase.functions.invoke('send-transactional-email', {
-      body: {
+    // Call send-transactional-email directly via fetch with service role key
+    const response = await fetch(`${supabaseUrl}/functions/v1/send-transactional-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceRoleKey}`,
+        'apikey': serviceRoleKey,
+      },
+      body: JSON.stringify({
         templateName: testConfig.templateName,
         recipientEmail: TEST_EMAIL,
         idempotencyKey: `test-${type}-${Date.now()}`,
         templateData: testConfig.templateData || {},
-      },
+      }),
     });
 
-    if (error) {
-      console.error('Error invoking send-transactional-email:', error);
-      throw new Error(error.message || 'Failed to invoke send-transactional-email');
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('Error from send-transactional-email:', response.status, data);
+      throw new Error(data?.error || `send-transactional-email returned ${response.status}`);
     }
 
     if (data?.error) {
