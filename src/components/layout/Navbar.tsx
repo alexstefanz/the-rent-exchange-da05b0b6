@@ -214,7 +214,7 @@ const Navbar = () => {
                         {showBalance ? `${(balance ?? 0).toFixed(2)} RON` : "••••••"}
                       </span>
                       <button
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleBalance(); }}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleBalance(e); }}
                         className="ml-auto p-1 rounded hover:bg-muted transition-colors"
                         aria-label={showBalance ? t("Ascunde balanța", "Hide balance") : t("Arată balanța", "Show balance")}
                       >
