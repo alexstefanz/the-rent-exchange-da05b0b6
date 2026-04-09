@@ -48,6 +48,8 @@ const NewProduct = () => {
   const [images, setImages] = useState<string[]>([]);
   const [includedItems, setIncludedItems] = useState<string[]>([]);
   const [newIncludedItem, setNewIncludedItem] = useState("");
+  const [feePercent, setFeePercent] = useState<number>(5);
+  const [freeListingsLeft, setFreeListingsLeft] = useState<number>(0);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
