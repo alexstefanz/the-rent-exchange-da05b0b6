@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${serviceRoleKey}`,
-        'apikey': serviceRoleKey,
+        'apikey': anonKey,
       },
       body: JSON.stringify({
         templateName: testConfig.templateName,
