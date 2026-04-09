@@ -112,7 +112,7 @@ const createUxCopy = () => ({
     inactive: { ro: "Inactiv", en: "Inactive" },
   },
   reassurance: {
-    paymentProtected: { ro: "Plata ta este protejată. Nu se debitează până la confirmare.", en: "Your payment is protected. No charge until confirmation." },
+    paymentProtected: { ro: "Plata ta este protejată. Suma se blochează temporar și se debitează doar după finalizarea închirierii.", en: "Your payment is protected. The amount is temporarily held and charged only after the rental period ends." },
     freeCancellation: { ro: "Poți anula gratuit până la confirmare.", en: "Free cancellation until confirmation." },
     keepOnPlatform: { ro: "Ține conversația pe platformă pentru protecție.", en: "Keep conversations on the platform for protection." },
     secureTransaction: { ro: "Tranzacție securizată", en: "Secure transaction" },
