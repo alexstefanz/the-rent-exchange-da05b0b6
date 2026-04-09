@@ -1,52 +1,34 @@
 import {
-  Mountain,
-  Tent,
-  Snowflake,
   Wrench,
-  Castle,
-  Gamepad2,
-  Camera,
-  Zap,
   PartyPopper,
-  Music,
+  Monitor,
+  Flower2,
+  TreePine,
+  Castle,
   Dumbbell,
-  Heart,
-  PawPrint,
+  Luggage,
   Truck,
-  Baby,
-  Printer,
-  Telescope,
-  Gem,
-  Drama,
-  SprayCan,
-  Caravan,
+  Shirt,
+  Tractor,
+  Package,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export const categoryIcons: Record<number, LucideIcon> = {
-  1: Mountain,      // OUTDOOR & AVENTURĂ
-  2: Tent,          // CAMPING & DRUMEȚII
-  3: Snowflake,     // SPORTURI DE IARNĂ
-  4: Wrench,        // SCULE, UNELTE & CONSTRUCȚII
-  5: Castle,        // JUCĂRII GONFLABILE & COPII
-  6: Gamepad2,      // GAMING & ELECTRONICE
-  7: Camera,        // FOTO & VIDEO
-  8: Zap,           // MOBILITATE URBANĂ
-  9: PartyPopper,   // EVENIMENTE & HOBBY
-  10: Music,        // INSTRUMENTE MUZICALE & DJ
-  11: Dumbbell,     // FITNESS & WELLNESS
-  12: Heart,        // ECHIPAMENTE MEDICALE & RECUPERARE
-  13: PawPrint,     // ANIMALE DE COMPANIE & ACCESORII
-  14: Truck,        // REMORCI & TRANSPORT
-  15: Baby,         // BEBE & FAMILY RENTALS
-  16: Printer,      // IMPRIMANTE 3D & CNC
-  17: Telescope,    // TELESCOP & OBSERVAȚIE
-  19: Gem,          // NUNȚI & EVENIMENTE PREMIUM
-  20: Drama,        // COSTUME & RECIZITĂ
-  21: SprayCan,     // INDUSTRIAL CLEANING
-  22: Caravan,      // RULOTE & CAMPERVAN-URI
+  1: Wrench,        // Unelte
+  2: PartyPopper,   // Evenimente
+  3: Monitor,       // Electronice
+  4: Flower2,       // Grădinărit
+  5: TreePine,      // Outdoor
+  6: Castle,        // Jucării și Petrecere Copii
+  7: Dumbbell,      // Sport
+  8: Luggage,       // Travel
+  9: Truck,         // Transport și Utilitare
+  10: Shirt,        // Haine și Recuzită
+  11: Tractor,      // Echipamente Agricole
+  12: Package,      // Diverse
 };
 
 export const getCategoryIcon = (categoryId: number): LucideIcon => {
-  return categoryIcons[categoryId] || Mountain;
+  return categoryIcons[categoryId] || Package;
 };
