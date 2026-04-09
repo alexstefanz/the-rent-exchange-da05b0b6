@@ -1351,6 +1351,8 @@ export type Database = {
           status_filter?: string
         }
         Returns: {
+          admin_edited_at: string
+          admin_edited_by: string
           admin_flagged: boolean
           approval_status: string
           category: string
