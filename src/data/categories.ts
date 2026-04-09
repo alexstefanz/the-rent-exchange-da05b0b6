@@ -190,6 +190,16 @@ export const getCategoryById = (id: number): Category | undefined => {
   return categories.find((cat) => cat.id === id);
 };
 
+export const getAllSubcategories = (): (Subcategory & { categoryId: number; categoryName: string })[] => {
+  return categories.flatMap((cat) =>
+    cat.subcategories.map((sub) => ({
+      ...sub,
+      categoryId: cat.id,
+      categoryName: cat.name,
+    }))
+  );
+};
+
 export const getSubcategoryById = (subcategoryId: string): { category: Category; subcategory: Subcategory } | undefined => {
   for (const category of categories) {
     const subcategory = category.subcategories.find((sub) => sub.id === subcategoryId);
