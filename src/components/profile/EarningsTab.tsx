@@ -1,31 +1,120 @@
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Wallet, 
   TrendingUp, 
   Calendar,
   DollarSign,
-  BarChart3
+  BarChart3,
+  Loader2
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+
+interface EarningsData {
+  totalThisMonth: number;
+  totalAllTime: number;
+  pendingPayout: number;
+  totalRentals: number;
+}
+
+interface Transaction {
+  id: string;
+  productTitle: string;
+  amount: number;
+  date: string;
+  status: "completed" | "pending" | "processing";
+}
 
 const EarningsTab = () => {
   const { t } = useLanguage();
-
-  // Mock data - to be replaced with real data when booking system is implemented
-  const mockEarnings = {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [earnings, setEarnings] = useState<EarningsData>({
     totalThisMonth: 0,
     totalAllTime: 0,
     pendingPayout: 0,
     totalRentals: 0,
-  };
+  });
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  const mockTransactions: Array<{
-    id: string;
-    productTitle: string;
-    amount: number;
-    date: string;
-    status: "completed" | "pending" | "processing";
-  }> = [];
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchEarnings = async () => {
+      setLoading(true);
+      try {
+        // Fetch rentals where user is owner
+        const { data: rentals } = await supabase
+          .from("rentals")
+          .select("id, owner_payout, payment_status, created_at, product_id, products:product_id(title)")
+          .eq("owner_id", user.id)
+          .in("payment_status", ["authorized", "paid", "captured"])
+          .order("created_at", { ascending: false });
+
+        if (rentals) {
+          const now = new Date();
+          const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+          let totalAllTime = 0;
+          let totalThisMonth = 0;
+          let pendingPayout = 0;
+          const txns: Transaction[] = [];
+
+          for (const r of rentals) {
+            const payout = Number(r.owner_payout) || 0;
+            totalAllTime += payout;
+
+            if (new Date(r.created_at) >= monthStart) {
+              totalThisMonth += payout;
+            }
+
+            if (r.payment_status === "authorized") {
+              pendingPayout += payout;
+            }
+
+            let status: "completed" | "pending" | "processing" = "pending";
+            if (r.payment_status === "captured" || r.payment_status === "paid") {
+              status = "completed";
+            } else if (r.payment_status === "authorized") {
+              status = "processing";
+            }
+
+            txns.push({
+              id: r.id,
+              productTitle: (r.products as any)?.title || "Produs",
+              amount: payout,
+              date: r.created_at,
+              status,
+            });
+          }
+
+          setEarnings({
+            totalThisMonth: Math.round(totalThisMonth * 100) / 100,
+            totalAllTime: Math.round(totalAllTime * 100) / 100,
+            pendingPayout: Math.round(pendingPayout * 100) / 100,
+            totalRentals: rentals.length,
+          });
+          setTransactions(txns);
+        }
+      } catch (e) {
+        console.error("Error fetching earnings:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEarnings();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -40,7 +129,7 @@ const EarningsTab = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockEarnings.totalThisMonth.toFixed(2)} RON
+              {earnings.totalThisMonth.toFixed(2)} RON
             </div>
           </CardContent>
         </Card>
@@ -54,7 +143,7 @@ const EarningsTab = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {mockEarnings.totalAllTime.toFixed(2)} RON
+              {earnings.totalAllTime.toFixed(2)} RON
             </div>
           </CardContent>
         </Card>
@@ -67,9 +156,12 @@ const EarningsTab = () => {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {mockEarnings.pendingPayout.toFixed(2)} RON
+            <div className="text-2xl font-bold text-amber-600">
+              {earnings.pendingPayout.toFixed(2)} RON
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t("Blocat până la finalizarea închirierii", "Held until rental ends")}
+            </p>
           </CardContent>
         </Card>
 
@@ -81,7 +173,7 @@ const EarningsTab = () => {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockEarnings.totalRentals}</div>
+            <div className="text-2xl font-bold">{earnings.totalRentals}</div>
           </CardContent>
         </Card>
       </div>
@@ -101,7 +193,7 @@ const EarningsTab = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {mockTransactions.length === 0 ? (
+          {transactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <BarChart3 className="h-16 w-16 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">
@@ -134,7 +226,7 @@ const EarningsTab = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {mockTransactions.map((transaction) => (
+                  {transactions.map((transaction) => (
                     <tr key={transaction.id} className="border-b">
                       <td className="px-4 py-4 font-medium">
                         {transaction.productTitle}
@@ -156,10 +248,10 @@ const EarningsTab = () => {
                           }`}
                         >
                           {transaction.status === "completed"
-                            ? t("Finalizat", "Completed")
+                            ? t("Disponibil", "Available")
                             : transaction.status === "pending"
                             ? t("În așteptare", "Pending")
-                            : t("Procesare", "Processing")}
+                            : t("Blocat", "Held")}
                         </span>
                       </td>
                     </tr>

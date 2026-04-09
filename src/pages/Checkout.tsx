@@ -199,6 +199,15 @@ const Checkout = () => {
                     {copy.checkout.termsNotice} <span className="text-primary hover:underline cursor-pointer" onClick={() => setShowTermsDialog(true)}>{copy.checkout.termsLink}</span> {copy.checkout.and} <span className="text-primary hover:underline cursor-pointer">{copy.checkout.privacyLink}</span>.
                   </p>
 
+                  <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-sm text-muted-foreground mb-4 flex items-start gap-2">
+                    <Shield className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                    <span>
+                      {language === "ro"
+                        ? "Suma va fi blocată temporar pe cardul tău și debitată doar după finalizarea perioadei de închiriere."
+                        : "The amount will be temporarily held on your card and charged only after the rental period ends."}
+                    </span>
+                  </div>
+
                   <Button
                     onClick={handleStripeCheckout}
                     className="w-full h-12"
@@ -206,12 +215,18 @@ const Checkout = () => {
                     disabled={isSubmitting}
                   >
                     <CreditCard className="mr-2 h-5 w-5" />
-                    {isSubmitting ? "Se procesează..." : `Plătește ${totalPrice} RON`}
+                    {isSubmitting
+                      ? "Se procesează..."
+                      : language === "ro"
+                        ? `Rezervă — ${totalPrice} RON`
+                        : `Reserve — ${totalPrice} RON`}
                   </Button>
 
                   <p className="mt-3 text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
                     <Info className="h-3 w-3" />
-                    Vei fi redirecționat către pagina securizată Stripe
+                    {language === "ro"
+                      ? "Vei fi redirecționat către pagina securizată Stripe"
+                      : "You will be redirected to the secure Stripe page"}
                   </p>
                 </div>
               )}
