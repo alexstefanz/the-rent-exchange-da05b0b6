@@ -66,7 +66,7 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
   };
 
   const handleVerifyOtp = async () => {
-    if (otpCode.length !== 6) return;
+    if (otpCode.length !== 8) return;
     setIsVerifyingOtp(true);
     const { error } = await supabase.auth.verifyOtp({
       email: otpEmail,
@@ -123,7 +123,7 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
               </div>
 
               <div className="flex justify-center">
-                <InputOTP maxLength={6} value={otpCode} onChange={setOtpCode}>
+                <InputOTP maxLength={8} value={otpCode} onChange={setOtpCode}>
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />
                     <InputOTPSlot index={1} />
@@ -131,6 +131,8 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
                     <InputOTPSlot index={3} />
                     <InputOTPSlot index={4} />
                     <InputOTPSlot index={5} />
+                    <InputOTPSlot index={6} />
+                    <InputOTPSlot index={7} />
                   </InputOTPGroup>
                 </InputOTP>
               </div>
@@ -138,7 +140,7 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
               <Button
                 onClick={handleVerifyOtp}
                 className="w-full h-12 bg-[#E51D53] hover:bg-[#d41a4c] text-white font-medium"
-                disabled={otpCode.length !== 6 || isVerifyingOtp}
+                disabled={otpCode.length !== 8 || isVerifyingOtp}
               >
                 {isVerifyingOtp ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Se verifică...</> : "Verifică codul"}
               </Button>
