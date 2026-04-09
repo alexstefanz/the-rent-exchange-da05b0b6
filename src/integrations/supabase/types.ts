@@ -578,6 +578,7 @@ export type Database = {
           created_by: string | null
           description: string
           id: string
+          last_admin_read_at: string | null
           owner_user_id: string | null
           priority: string
           product_id: string | null
@@ -599,6 +600,7 @@ export type Database = {
           created_by?: string | null
           description: string
           id?: string
+          last_admin_read_at?: string | null
           owner_user_id?: string | null
           priority?: string
           product_id?: string | null
@@ -620,6 +622,7 @@ export type Database = {
           created_by?: string | null
           description?: string
           id?: string
+          last_admin_read_at?: string | null
           owner_user_id?: string | null
           priority?: string
           product_id?: string | null
