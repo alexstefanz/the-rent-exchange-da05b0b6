@@ -3,7 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, User, Mail, Phone, Calendar, Eye, Loader2,
-  Shield, ShieldCheck, Ban, UserCheck, Package, ShoppingCart
+  Shield, ShieldCheck, Ban, UserCheck, Package, ShoppingCart,
+  MessageCircle, Building2, AlertTriangle
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminLayout from "@/components/admin/AdminLayout";
+import UserProductsTab from "@/components/admin/user-detail/UserProductsTab";
+import UserRentalsTab from "@/components/admin/user-detail/UserRentalsTab";
+import UserReviewsTab from "@/components/admin/user-detail/UserReviewsTab";
+import UserConversationsTab from "@/components/admin/user-detail/UserConversationsTab";
+import UserActivityTab from "@/components/admin/user-detail/UserActivityTab";
 import { updateUserRole } from "@/features/admin/adminApi";
 import { banUser, unbanUser } from "@/features/admin/banApi";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,7 +47,6 @@ const useAdminUserDetail = (userId: string | undefined) => {
   return useQuery({
     queryKey: ['adminUserDetail', userId],
     queryFn: async () => {
-      // Fetch profile
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('*')
@@ -48,14 +54,12 @@ const useAdminUserDetail = (userId: string | undefined) => {
         .single();
       if (profileError) throw new Error(profileError.message);
 
-      // Fetch role
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId!)
         .maybeSingle();
 
-      // Fetch counts
       const { count: productsCount } = await supabase
         .from('products')
         .select('id', { count: 'exact', head: true })
@@ -64,13 +68,19 @@ const useAdminUserDetail = (userId: string | undefined) => {
       const { count: rentalsCount } = await supabase
         .from('rentals')
         .select('id', { count: 'exact', head: true })
-        .eq('renter_id', userId!);
+        .or(`renter_id.eq.${userId!},owner_id.eq.${userId!}`);
+
+      const { count: conversationsCount } = await supabase
+        .from('conversations')
+        .select('id', { count: 'exact', head: true })
+        .or(`buyer_id.eq.${userId!},owner_id.eq.${userId!}`);
 
       return {
         ...profile,
         user_role: roleData?.role || 'user',
         products_count: productsCount || 0,
         rentals_count: rentalsCount || 0,
+        conversations_count: conversationsCount || 0,
       };
     },
     enabled: !!userId,
@@ -174,6 +184,11 @@ const AdminUserDetail = () => {
                   <Ban className="h-3 w-3" /> BANAT
                 </Badge>
               )}
+              {userDetail.is_deactivated && (
+                <Badge variant="secondary" className="gap-1">
+                  <AlertTriangle className="h-3 w-3" /> DEZACTIVAT
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground mt-1">
               Înregistrat {userDetail.created_at ? format(new Date(userDetail.created_at), "d MMMM yyyy", { locale: ro }) : '-'}
@@ -182,7 +197,7 @@ const AdminUserDetail = () => {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
-          {/* User Info Card */}
+          {/* User Info Card - Left Column */}
           <div className="lg:col-span-1 space-y-4">
             <Card>
               <CardHeader>
@@ -207,6 +222,12 @@ const AdminUserDetail = () => {
                     <Phone className="h-4 w-4 text-muted-foreground" />
                     <span>{userDetail.phone || '-'}</span>
                   </div>
+                  {userDetail.whatsapp && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <MessageCircle className="h-4 w-4 text-muted-foreground" />
+                      <span>WhatsApp: {userDetail.whatsapp}</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span>{userDetail.created_at ? format(new Date(userDetail.created_at), "d MMM yyyy", { locale: ro }) : '-'}</span>
@@ -215,6 +236,55 @@ const AdminUserDetail = () => {
 
                 <Separator />
 
+                {/* Account Type */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Tip cont:</span>
+                    <Badge variant="outline">
+                      {userDetail.account_type === 'business' ? '🏢 Business' : '👤 Individual'}
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Company Info */}
+                {userDetail.account_type === 'business' && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1 text-sm font-medium">
+                        <Building2 className="h-4 w-4" /> Detalii companie
+                      </div>
+                      {userDetail.company_name && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Nume:</span>
+                          <span className="font-medium text-right">{userDetail.company_name}</span>
+                        </div>
+                      )}
+                      {userDetail.cui && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">CUI:</span>
+                          <span className="font-medium">{userDetail.cui}</span>
+                        </div>
+                      )}
+                      {userDetail.reg_com && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Reg. com.:</span>
+                          <span className="font-medium">{userDetail.reg_com}</span>
+                        </div>
+                      )}
+                      {userDetail.company_address && (
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Adresă:</span>
+                          <p className="text-xs mt-0.5">{userDetail.company_address}</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                <Separator />
+
+                {/* Stats */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground flex items-center gap-1"><Package className="h-3 w-3" /> Produse:</span>
@@ -223,6 +293,10 @@ const AdminUserDetail = () => {
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground flex items-center gap-1"><ShoppingCart className="h-3 w-3" /> Rezervări:</span>
                     <span className="font-medium">{userDetail.rentals_count}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground flex items-center gap-1"><MessageCircle className="h-3 w-3" /> Conversații:</span>
+                    <span className="font-medium">{userDetail.conversations_count}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">KYC:</span>
@@ -254,55 +328,109 @@ const AdminUserDetail = () => {
                 </CardContent>
               </Card>
             )}
-          </div>
 
-          {/* Actions */}
-          <div className="lg:col-span-2 space-y-4">
-            {/* Role Management */}
+            {/* Quick Actions */}
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Shield className="h-5 w-5" /> Gestionare rol
-                </CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-medium">Acțiuni rapide</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-3">
-                  {(['user', 'moderator', 'admin'] as const).map((role) => (
-                    <Button
-                      key={role}
-                      variant={userDetail.user_role === role ? 'default' : 'outline'}
-                      onClick={() => handleRoleChange(role)}
-                      disabled={updatingRole || userDetail.user_role === role}
-                      className="gap-2"
-                    >
-                      {updatingRole ? <Loader2 className="h-4 w-4 animate-spin" /> : roleLabels[role]?.icon}
-                      {roleLabels[role].label}
-                    </Button>
-                  ))}
+              <CardContent className="space-y-3">
+                {/* Role */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Schimbă rolul:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(['user', 'moderator', 'admin'] as const).map((role) => (
+                      <Button
+                        key={role}
+                        variant={userDetail.user_role === role ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => handleRoleChange(role)}
+                        disabled={updatingRole || userDetail.user_role === role}
+                        className="gap-1 text-xs"
+                      >
+                        {updatingRole ? <Loader2 className="h-3 w-3 animate-spin" /> : roleLabels[role]?.icon}
+                        {roleLabels[role].label}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Ban Management */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Ban className="h-5 w-5" /> Gestionare acces
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+                <Separator />
+                {/* Ban */}
                 {isBanned ? (
-                  <Button onClick={handleUnban} disabled={banLoading} variant="outline" className="gap-2">
+                  <Button onClick={handleUnban} disabled={banLoading} variant="outline" size="sm" className="w-full gap-2">
                     {banLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserCheck className="h-4 w-4" />}
-                    Debanează utilizatorul
+                    Debanează
                   </Button>
                 ) : (
-                  <Button onClick={() => setBanDialog(true)} variant="destructive" className="gap-2">
-                    <Ban className="h-4 w-4" /> Banează utilizatorul
+                  <Button onClick={() => setBanDialog(true)} variant="destructive" size="sm" className="w-full gap-2">
+                    <Ban className="h-4 w-4" /> Banează
                   </Button>
                 )}
               </CardContent>
             </Card>
+          </div>
+
+          {/* Tabs - Right Column */}
+          <div className="lg:col-span-2">
+            <Tabs defaultValue="products">
+              <TabsList className="w-full justify-start flex-wrap h-auto gap-1">
+                <TabsTrigger value="products" className="gap-1 text-xs">
+                  <Package className="h-3.5 w-3.5" /> Produse ({userDetail.products_count})
+                </TabsTrigger>
+                <TabsTrigger value="rentals" className="gap-1 text-xs">
+                  <ShoppingCart className="h-3.5 w-3.5" /> Rezervări ({userDetail.rentals_count})
+                </TabsTrigger>
+                <TabsTrigger value="reviews" className="gap-1 text-xs">
+                  ⭐ Recenzii
+                </TabsTrigger>
+                <TabsTrigger value="conversations" className="gap-1 text-xs">
+                  <MessageCircle className="h-3.5 w-3.5" /> Chat ({userDetail.conversations_count})
+                </TabsTrigger>
+                <TabsTrigger value="activity" className="gap-1 text-xs">
+                  📋 Activitate
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="products">
+                <Card>
+                  <CardContent className="pt-6">
+                    {id && <UserProductsTab userId={id} />}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="rentals">
+                <Card>
+                  <CardContent className="pt-6">
+                    {id && <UserRentalsTab userId={id} />}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="reviews">
+                <Card>
+                  <CardContent className="pt-6">
+                    {id && <UserReviewsTab userId={id} />}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="conversations">
+                <Card>
+                  <CardContent className="pt-6">
+                    {id && <UserConversationsTab userId={id} />}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="activity">
+                <Card>
+                  <CardContent className="pt-6">
+                    {id && <UserActivityTab userId={id} />}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>
