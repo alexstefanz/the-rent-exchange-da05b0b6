@@ -17,6 +17,8 @@ export interface AdminProduct {
   slug: string | null;
   created_at: string;
   approval_status: string;
+  admin_edited_at: string | null;
+  admin_edited_by: string | null;
 }
 
 export const approveProduct = async (productId: string): Promise<void> => {
@@ -98,12 +100,16 @@ export const fetchProductFullDetails = async (productId: string) => {
 
 export const updateProductAdmin = async (
   productId: string,
-  updates: { title?: string; description?: string; daily_price_owner?: number; category?: string; is_active?: boolean }
+  updates: { title?: string; description?: string; daily_price_owner?: number; category?: string; subcategory?: string; is_active?: boolean }
 ): Promise<void> => {
+  const { data: { user } } = await supabase.auth.getUser();
   const { error } = await supabase
     .from('products')
-    .update(updates as Record<string, unknown>)
+    .update({
+      ...updates,
+      admin_edited_at: new Date().toISOString(),
+      admin_edited_by: user?.id ?? null,
+    } as Record<string, unknown>)
     .eq('id', productId);
-  if (error) throw new Error(error.message);
   if (error) throw new Error(error.message);
 };
