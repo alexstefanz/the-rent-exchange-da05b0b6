@@ -7,28 +7,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Mail, CheckCircle, XCircle, Loader2 } from "lucide-react";
 
-const TEST_EMAIL = "aleczanderr20@gmail.com";
+const TEST_EMAIL = "z.alexstefan@gmail.com";
 
 interface EmailTest {
   type: string;
   label: string;
   description: string;
-  edgeFunction: string;
+  templateName: string;
 }
 
 const emailTests: EmailTest[] = [
-  { type: "welcome", label: "Welcome (Bun venit)", description: "Email de bun venit la înregistrare", edgeFunction: "send-general-notification" },
-  { type: "review_received", label: "Recenzie primită", description: "Notificare recenzie nouă primită", edgeFunction: "send-general-notification" },
-  { type: "product_published", label: "Produs publicat", description: "Confirmare publicare produs", edgeFunction: "send-general-notification" },
-  { type: "rental_new_owner", label: "Cerere nouă (Owner)", description: "Notificare proprietar - cerere nouă de închiriere", edgeFunction: "send-rental-notification" },
-  { type: "rental_new_renter", label: "Cerere trimisă (Renter)", description: "Confirmare chiriaș - cerere trimisă", edgeFunction: "send-rental-notification" },
-  { type: "message_new", label: "Mesaj nou", description: "Notificare mesaj nou primit", edgeFunction: "send-message-notification" },
-  { type: "cancellation_owner", label: "Anulare (Owner)", description: "Notificare proprietar - cerere anulată", edgeFunction: "send-cancellation-notification" },
-  { type: "cancellation_renter", label: "Anulare (Renter)", description: "Confirmare chiriaș - anulare cerere", edgeFunction: "send-cancellation-notification" },
-  { type: "password_changed", label: "Parolă schimbată", description: "Notificare schimbare parolă", edgeFunction: "send-password-changed-notification" },
-  { type: "rental_accepted", label: "Cerere acceptată", description: "Notificare chiriaș - cerere acceptată", edgeFunction: "respond-rental-request" },
-  { type: "rental_rejected", label: "Cerere refuzată", description: "Notificare chiriaș - cerere refuzată", edgeFunction: "respond-rental-request" },
-  { type: "deactivation", label: "Dezactivare cont", description: "Email confirmare dezactivare cont", edgeFunction: "request-account-deactivation" },
+  { type: "welcome", label: "Welcome (Bun venit)", description: "Email de bun venit la înregistrare", templateName: "welcome" },
+  { type: "review_received", label: "Recenzie primită", description: "Notificare recenzie nouă primită", templateName: "review-received" },
+  { type: "product_published", label: "Produs publicat", description: "Confirmare publicare produs", templateName: "product-published" },
+  { type: "rental_new_owner", label: "Cerere nouă (Owner)", description: "Notificare proprietar - cerere nouă de închiriere", templateName: "rental-request-owner" },
+  { type: "rental_new_renter", label: "Cerere trimisă (Renter)", description: "Confirmare chiriaș - cerere trimisă", templateName: "rental-request-renter" },
+  { type: "message_new", label: "Mesaj nou", description: "Notificare mesaj nou primit", templateName: "new-message" },
+  { type: "cancellation_owner", label: "Anulare (Owner)", description: "Notificare proprietar - cerere anulată", templateName: "cancellation-owner" },
+  { type: "cancellation_renter", label: "Anulare (Renter)", description: "Confirmare chiriaș - anulare cerere", templateName: "cancellation-renter" },
+  { type: "password_changed", label: "Parolă schimbată", description: "Notificare schimbare parolă", templateName: "password-changed" },
+  { type: "rental_accepted", label: "Cerere acceptată", description: "Notificare chiriaș - cerere acceptată", templateName: "rental-accepted" },
+  { type: "rental_rejected", label: "Cerere refuzată", description: "Notificare chiriaș - cerere refuzată", templateName: "rental-rejected" },
+  { type: "deactivation", label: "Dezactivare cont", description: "Email confirmare dezactivare cont", templateName: "account-deactivation" },
 ];
 
 type TestStatus = "idle" | "loading" | "success" | "error";
@@ -62,7 +62,6 @@ const AdminTestEmails = () => {
   const sendAll = async () => {
     for (const test of emailTests) {
       await sendTest(test.type);
-      // Small delay between sends
       await new Promise((r) => setTimeout(r, 1500));
     }
   };
@@ -74,7 +73,7 @@ const AdminTestEmails = () => {
           <div>
             <h1 className="text-2xl font-bold">Test Emailuri</h1>
             <p className="text-muted-foreground mt-1">
-              Trimite notificări de test către <strong>{TEST_EMAIL}</strong>
+              Trimite notificări de test către <strong>{TEST_EMAIL}</strong> via <strong>noreply@rentli.ro</strong>
             </p>
           </div>
           <Button onClick={sendAll} size="lg">
@@ -92,7 +91,7 @@ const AdminTestEmails = () => {
                   <div className="flex items-start justify-between">
                     <CardTitle className="text-sm font-semibold">{test.label}</CardTitle>
                     <Badge variant="outline" className="text-[10px]">
-                      {test.edgeFunction}
+                      {test.templateName}
                     </Badge>
                   </div>
                   <CardDescription className="text-xs">{test.description}</CardDescription>
