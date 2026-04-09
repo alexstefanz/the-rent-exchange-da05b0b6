@@ -733,6 +733,60 @@ const AdminProducts = () => {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+      {/* Edit Dialog */}
+      <Dialog open={editDialog.open} onOpenChange={(open) => { if (!open) setEditDialog({ open: false, product: null }); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5" /> Editează produs
+            </DialogTitle>
+            <DialogDescription>Modificările vor fi marcate cu „Editat de admin".</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Titlu</label>
+              <Input value={editForm.title} onChange={(e) => setEditForm(f => ({ ...f, title: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Descriere</label>
+              <Textarea value={editForm.description} onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value }))} rows={4} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Preț/zi (RON)</label>
+                <Input type="number" min={0} value={editForm.daily_price_owner} onChange={(e) => setEditForm(f => ({ ...f, daily_price_owner: Number(e.target.value) }))} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Status</label>
+                <Select value={editForm.is_active ? "active" : "inactive"} onValueChange={(v) => setEditForm(f => ({ ...f, is_active: v === "active" }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Activ</SelectItem>
+                    <SelectItem value="inactive">Inactiv</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Categorie</label>
+                <Input value={editForm.category} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Subcategorie</label>
+                <Input value={editForm.subcategory} onChange={(e) => setEditForm(f => ({ ...f, subcategory: e.target.value }))} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialog({ open: false, product: null })}>Anulează</Button>
+            <Button onClick={handleSaveEdit} disabled={editSaving || !editForm.title.trim()}>
+              {editSaving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Salvează
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AdminLayout>
   );
 };
