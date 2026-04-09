@@ -1,21 +1,20 @@
 
 
-## Plan: Fix — Adăugare coloane lipsă pe `products`
+## Plan: Adăugare coloană "Proprietar" în lista de rezervări
 
-### Problema
-Migrarea anterioară a actualizat funcția RPC `get_admin_products` să returneze `p.admin_edited_at` și `p.admin_edited_by`, dar **coloanele nu au fost create pe tabela `products`**. Rezultat: eroare 400 și lista goală.
+### Ce se schimbă
 
-### Soluție
-O singură migrare SQL care adaugă cele 2 coloane:
+**Fișier: `src/pages/admin/AdminReservations.tsx`**
 
-```sql
-ALTER TABLE public.products
-  ADD COLUMN IF NOT EXISTS admin_edited_at timestamptz,
-  ADD COLUMN IF NOT EXISTS admin_edited_by uuid;
-```
+1. **Header tabel desktop** (linia 251-252): Adăugare `SortableTableHead` cu label "Proprietar" și sortKey "owner_name" după coloana "Chiriaș"
 
-### Fișiere afectate
-- Doar migrare DB (un singur statement ALTER TABLE)
+2. **Filtre coloane** (linia 166): Adăugare filtru text `{ key: "owner_name", type: "text", placeholder: "Proprietar..." }` după filtrul pentru chiriaș
 
-Nu e nevoie de modificări în cod — API-ul și UI-ul sunt deja pregătite pentru aceste coloane.
+3. **Celulă tabel desktop** (linia 275): Adăugare `<TableCell>{rental.owner_name}</TableCell>` după celula cu renter_name
+
+4. **ColSpan** (linia 298): Actualizare `colSpan={6}` la `colSpan={7}` pentru rândul expandat
+
+5. **Card-uri mobile** (linia 316): Adăugare owner_name în textul descriptiv: `{rental.renter_name} → {rental.owner_name}`
+
+Nu sunt necesare modificări la baza de date — `owner_name` este deja returnat de funcția RPC `get_admin_rentals`.
 
