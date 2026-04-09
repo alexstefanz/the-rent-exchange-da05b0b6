@@ -1,45 +1,43 @@
 
 
-## Plan: Migrare funcția de test la sistemul Lovable Email
+## Plan: Adăugare logo Rentli în toate template-urile de email
 
-### Problema actuală
-- `test-email-notifications` trimite prin Resend API direct (vechi)
-- `send-transactional-email` funcționează doar cu JWT (necesită login)
-- Singurul template React Email înregistrat este `welcome` — celelalte 11 tipuri de notificări nu există încă
+### Abordare
 
-### Pași de implementare
+Logo-ul `rentli_logo.png` din `src/assets/` trebuie servit de la o adresă publică accesibilă din email. Vom folosi Supabase Storage (un bucket public) pentru a hosta logo-ul, apoi vom actualiza toate template-urile de email (transacționale + auth) să folosească `<Img>` din React Email în loc de textul "Rentli" din header.
 
-**Pasul 1: Creare template-uri React Email pentru toate notificările**
+### Pași
 
-Creare 8 template-uri noi în `supabase/functions/_shared/transactional-email-templates/`:
-- `rental-request-owner.tsx` — cerere nouă (pentru owner)
-- `rental-request-renter.tsx` — confirmare cerere trimisă (pentru renter)
-- `rental-accepted.tsx` — cerere acceptată
-- `rental-rejected.tsx` — cerere refuzată
-- `cancellation-owner.tsx` — anulare (owner)
-- `cancellation-renter.tsx` — anulare (renter)
-- `new-message.tsx` — mesaj nou
-- `review-received.tsx` — recenzie primită
-- `product-published.tsx` — produs publicat
-- `password-changed.tsx` — parolă schimbată
-- `account-deactivation.tsx` — dezactivare cont
+**1. Upload logo în Storage (bucket public)**
+- Creare bucket public `email-assets` (dacă nu există)
+- Upload `rentli_logo.png` în bucket
+- Obținere URL public permanent
 
-Toate cu branding Rentli (header portocaliu #F59E0B, font Plus Jakarta Sans, background #FAF9F7, conținut în română).
+**2. Actualizare template-uri transacționale (12 fișiere)**
 
-**Pasul 2: Actualizare registry.ts**
+Fișiere din `supabase/functions/_shared/transactional-email-templates/`:
+- `welcome.tsx`, `rental-request-owner.tsx`, `rental-request-renter.tsx`, `rental-accepted.tsx`, `rental-rejected.tsx`, `cancellation-owner.tsx`, `cancellation-renter.tsx`, `new-message.tsx`, `review-received.tsx`, `product-published.tsx`, `password-changed.tsx`, `account-deactivation.tsx`
 
-Înregistrare toate template-urile noi în `TEMPLATES` map.
+Modificări per template:
+- Import `Img` din `@react-email/components`
+- Înlocuire `<Heading style={headerTitle}>{SITE_NAME}</Heading>` cu `<Img src={LOGO_URL} alt="Rentli" width="120" height="40" style={logoStyle} />`
+- Header-ul portocaliu (#F59E0B) rămâne, logo-ul alb va fi vizibil pe fundal portocaliu
 
-**Pasul 3: Rescriere `test-email-notifications`**
+**3. Actualizare template-uri auth (6 fișiere)**
 
-Modificare funcția de test să invoce `send-transactional-email` intern (cu service role key, ocolind JWT) în loc de Resend API direct. Astfel testul va valida întregul pipeline: template → enqueue → process-email-queue → trimitere de pe `noreply@rentli.ro`.
+Fișiere din `supabase/functions/_shared/email-templates/`:
+- `signup.tsx`, `recovery.tsx`, `magic-link.tsx`, `invite.tsx`, `email-change.tsx`, `reauthentication.tsx`
 
-**Pasul 4: Deploy și test**
+Adăugare logo în header (aceleași modificări).
 
-Deploy toate funcțiile modificate și trimitere email de test pentru validare.
+**4. Deploy Edge Functions**
 
-### Rezultat
-- Toate emailurile de test se trimit prin noul sistem Lovable (de pe `noreply@rentli.ro`)
-- Pipeline-ul complet este validat: render template → enqueue pgmq → cron dispatch → delivery
-- Pagina `/admin/test-emails` funcționează cu noul sistem
+Deploy `send-transactional-email` și `auth-email-hook` pentru ca modificările să fie active.
+
+### Detalii tehnice
+
+- URL-ul logo-ului va fi stocat ca o constantă `LOGO_URL` în fiecare template (URL-ul public din Storage)
+- Logo-ul va avea `width="120"` și `height="40"` pentru consistență cu Navbar-ul
+- Se va folosi componenta `<Img>` din React Email (optimizată pentru clienți de email)
+- Template-ul `welcome.tsx` nu are header portocaliu — va primi și el un header consistent cu celelalte
 
