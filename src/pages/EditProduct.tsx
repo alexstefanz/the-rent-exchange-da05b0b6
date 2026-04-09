@@ -246,7 +246,7 @@ const EditProduct = () => {
                   {...form.register("daily_price_owner", { valueAsNumber: true })}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Acesta este prețul pe care îl primești. Clientul va plăti cu 20% mai mult (comision platformă).
+                  Acesta este prețul pe care îl primești. Comisionul platformei ({product?.platform_fee_percent ?? 5}%) este adăugat automat la prețul clientului.
                 </p>
                 {form.formState.errors.daily_price_owner && (
                   <p className="text-sm text-destructive">{form.formState.errors.daily_price_owner.message}</p>

@@ -231,20 +231,29 @@ const NewProduct = () => {
                 {(() => {
                   const ownerPrice = form.watch("daily_price_owner");
                   if (ownerPrice && ownerPrice > 0) {
-                    const commission = Math.round(ownerPrice * 0.2 * 100) / 100;
+                    const commission = Math.round(ownerPrice * (feePercent / 100) * 100) / 100;
                     const clientPrice = Math.round((ownerPrice + commission) * 100) / 100;
                     return (
                       <div className="rounded-md bg-muted p-3 text-sm">
                         <p>Clientul va plăti: <span className="font-semibold">{clientPrice} RON</span></p>
                         <p className="text-muted-foreground text-xs mt-1">
-                          Include {commission} RON comision platformă (20%)
+                          {feePercent === 0
+                            ? "Fără comision — anunț gratuit! 🎉"
+                            : `Include ${commission} RON comision platformă (${feePercent}%)`}
                         </p>
+                        {freeListingsLeft > 0 && (
+                          <p className="text-xs text-green-600 mt-1 font-medium">
+                            Mai ai {freeListingsLeft} anunț{freeListingsLeft > 1 ? 'uri' : ''} cu 0% comision
+                          </p>
+                        )}
                       </div>
                     );
                   }
                   return (
                     <p className="text-xs text-muted-foreground">
-                      Acesta este prețul pe care îl primești. Clientul va plăti cu 20% mai mult (comision platformă).
+                      Acesta este prețul pe care îl primești. {feePercent === 0
+                        ? "Acest anunț este fără comision! 🎉"
+                        : `Clientul va plăti cu ${feePercent}% mai mult (comision platformă).`}
                     </p>
                   );
                 })()}
