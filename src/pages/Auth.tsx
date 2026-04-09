@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Mail, Building2, User } from "lucide-react";
 import logoImage from "@/assets/rentli_logo.png";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -359,7 +360,11 @@ const Auth = () => {
               <CardTitle className="text-xl">{copy.auth.welcomeBack}</CardTitle>
               <CardDescription>{copy.auth.loginSubtitle}</CardDescription>
               
-              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4 mt-4">
+              <div className="mt-4">
+                <SocialLoginButtons onSuccess={() => navigate("/", { replace: true })} />
+              </div>
+
+              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="login-email">{copy.auth.email}</Label>
                   <Input id="login-email" type="email" placeholder="email@exemplu.ro" {...loginForm.register("email")} />
@@ -385,7 +390,11 @@ const Auth = () => {
               <CardTitle className="text-xl">{copy.auth.createAccount}</CardTitle>
               <CardDescription>{copy.auth.registerSubtitle}</CardDescription>
               
-              <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4 mt-4">
+              <div className="mt-4">
+                <SocialLoginButtons onSuccess={() => navigate("/", { replace: true })} />
+              </div>
+
+              <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
                 {/* Account type toggle */}
                 <div className="grid grid-cols-2 gap-2">
                   <Button
