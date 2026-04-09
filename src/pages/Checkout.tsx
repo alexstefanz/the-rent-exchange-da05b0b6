@@ -4,8 +4,6 @@ import { format } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
 import { ArrowLeft, ChevronDown, ChevronUp, Shield, Info, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import LoginDialog from "@/components/checkout/LoginDialog";
@@ -44,7 +42,6 @@ const Checkout = () => {
   const { user } = useAuth();
   const dateLocale = language === "ro" ? ro : enUS;
 
-  const [paymentOption, setPaymentOption] = useState("pay-now");
   const [currentStep, setCurrentStep] = useState(1);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [messageToOwner, setMessageToOwner] = useState("");
@@ -63,12 +60,9 @@ const Checkout = () => {
   }
 
   const { product, startDate, endDate, rentalDays, totalPrice } = state;
-  const payLaterDate = new Date(startDate);
-  payLaterDate.setDate(payLaterDate.getDate() - 2);
 
   const handleNextStep1 = () => { if (!user) { setShowLoginDialog(true); } else { setCurrentStep(2); } };
   const handleLoginSuccess = () => { setShowLoginDialog(false); setCurrentStep(2); };
-  const handleNextStep2 = () => { setCurrentStep(3); };
 
   const handleStripeCheckout = async () => {
     if (isSubmitting) return;
@@ -85,7 +79,6 @@ const Checkout = () => {
         paymentMethod: "stripe",
         messageToOwner: messageToOwner || undefined,
       });
-      // Redirect to Stripe Checkout
       window.location.href = stripeUrl;
     } catch (e: any) {
       console.error("Stripe checkout error:", e);
@@ -95,7 +88,6 @@ const Checkout = () => {
   };
 
   const steps = [
-    copy.booking.steps.period,
     copy.booking.steps.message,
     copy.checkout.payment,
   ];
@@ -113,76 +105,43 @@ const Checkout = () => {
 
       <div className="border-b border-border bg-card/50 py-4">
         <div className="max-w-4xl mx-auto px-4">
-          <ProgressIndicator currentStep={currentStep} steps={steps} totalSteps={3} />
+          <ProgressIndicator currentStep={currentStep} steps={steps} totalSteps={2} />
         </div>
       </div>
 
       <main className="max-w-4xl mx-auto px-4 py-6 md:py-8">
         <div className="grid lg:grid-cols-2 gap-8">
           <div className="space-y-4">
-            {/* Step 1 */}
+            {/* Step 1 - Message to owner */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
               <button onClick={() => setCurrentStep(1)} className={`w-full px-6 py-4 flex items-center justify-between text-left ${currentStep !== 1 && currentStep > 1 ? 'opacity-60' : ''}`}>
                 <div className="flex items-center gap-3">
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>{currentStep > 1 ? '✓' : '1'}</div>
-                  <h2 className="font-semibold text-lg">{copy.checkout.choosePaymentTime}</h2>
+                  <h2 className="font-semibold text-lg">{copy.checkout.messageToOwner}</h2>
                 </div>
                 {currentStep === 1 ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
               </button>
               {currentStep === 1 && (
                 <div className="px-6 pb-6">
-                  <RadioGroup value={paymentOption} onValueChange={setPaymentOption} className="space-y-4">
-                    <div className="flex items-start space-x-3 p-4 rounded-lg border border-border hover:border-primary/50 transition-colors cursor-pointer" onClick={() => setPaymentOption("pay-now")}>
-                      <RadioGroupItem value="pay-now" id="pay-now" className="mt-1" />
-                      <Label htmlFor="pay-now" className="flex-1 cursor-pointer">
-                        <div className="font-medium">{copy.checkout.payNow(totalPrice)}</div>
-                      </Label>
-                    </div>
-                    <div className="flex items-start space-x-3 p-4 rounded-lg border border-border hover:border-primary/50 transition-colors cursor-pointer" onClick={() => setPaymentOption("pay-later")}>
-                      <RadioGroupItem value="pay-later" id="pay-later" className="mt-1" />
-                      <Label htmlFor="pay-later" className="flex-1 cursor-pointer">
-                        <div className="font-medium">{copy.checkout.payLater}</div>
-                        <div className="text-sm text-muted-foreground mt-1">{copy.checkout.payLaterDesc(totalPrice, format(payLaterDate, "d MMMM yyyy", { locale: dateLocale }))}</div>
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                  <div className="flex justify-end mt-6">
+                  <p className="text-muted-foreground text-sm mb-4">{copy.checkout.messageDesc}</p>
+                  <Textarea placeholder={copy.booking.messagePlaceholder} value={messageToOwner} onChange={(e) => setMessageToOwner(e.target.value)} className="min-h-[100px]" />
+                  <div className="flex justify-end mt-4">
                     <Button onClick={handleNextStep1} className="px-8">{copy.common.continue}</Button>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Step 2 */}
+            {/* Step 2 - Pay with Stripe */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
-              <button onClick={() => !!user && currentStep >= 2 && setCurrentStep(2)} className={`w-full px-6 py-4 flex items-center justify-between text-left ${currentStep < 2 ? 'opacity-60' : ''}`} disabled={currentStep < 2}>
+              <button onClick={() => currentStep >= 2 && setCurrentStep(2)} className={`w-full px-6 py-4 flex items-center justify-between text-left ${currentStep < 2 ? 'opacity-60' : ''}`} disabled={currentStep < 2}>
                 <div className="flex items-center gap-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep > 2 ? 'bg-primary text-primary-foreground' : currentStep === 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>{currentStep > 2 ? '✓' : '2'}</div>
-                  <h2 className="font-semibold text-lg">{copy.checkout.messageToOwner}</h2>
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>2</div>
+                  <h2 className="font-semibold text-lg">{copy.checkout.payment}</h2>
                 </div>
                 {currentStep === 2 && <ChevronUp className="h-5 w-5 text-muted-foreground" />}
               </button>
               {currentStep === 2 && (
-                <div className="px-6 pb-6">
-                  <p className="text-muted-foreground text-sm mb-4">{copy.checkout.messageDesc}</p>
-                  <Textarea placeholder={copy.booking.messagePlaceholder} value={messageToOwner} onChange={(e) => setMessageToOwner(e.target.value)} className="min-h-[100px]" />
-                  <div className="flex justify-end mt-4">
-                    <Button onClick={handleNextStep2} className="px-8">{copy.common.continue}</Button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Step 3 - Pay with Stripe */}
-            <div className="bg-card rounded-xl border border-border overflow-hidden">
-              <button onClick={() => currentStep >= 3 && setCurrentStep(3)} className={`w-full px-6 py-4 flex items-center justify-between text-left ${currentStep < 3 ? 'opacity-60' : ''}`} disabled={currentStep < 3}>
-                <div className="flex items-center gap-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>3</div>
-                  <h2 className="font-semibold text-lg">{copy.checkout.payment}</h2>
-                </div>
-                {currentStep === 3 && <ChevronUp className="h-5 w-5 text-muted-foreground" />}
-              </button>
-              {currentStep === 3 && (
                 <div className="px-6 pb-6">
                   <ReassuranceMessage type="payment" className="mb-4" />
 
