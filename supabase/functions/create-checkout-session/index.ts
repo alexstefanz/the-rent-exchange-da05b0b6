@@ -8,6 +8,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const MAX_HOLD_DAYS = 7;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -66,8 +68,8 @@ serve(async (req) => {
       });
     }
 
-    if (rental.payment_status === "paid") {
-      return new Response(JSON.stringify({ error: "Already paid" }), {
+    if (rental.payment_status === "paid" || rental.payment_status === "authorized") {
+      return new Response(JSON.stringify({ error: "Already paid or authorized" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -84,6 +86,11 @@ serve(async (req) => {
     // Check for existing Stripe customer
     const customers = await stripe.customers.list({ email: user.email!, limit: 1 });
     const customerId = customers.data.length > 0 ? customers.data[0].id : undefined;
+
+    // Determine capture method based on rental duration
+    // Stripe allows holds for max 7 days (standard). For longer rentals, capture immediately
+    // and hold funds in platform account until rental ends.
+    const useManualCapture = rental.rental_days <= MAX_HOLD_DAYS;
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -103,11 +110,16 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
+      ...(useManualCapture
+        ? { payment_intent_data: { capture_method: "manual", metadata: { rental_id: rental.id, renter_id: user.id } } }
+        : { payment_intent_data: { metadata: { rental_id: rental.id, renter_id: user.id } } }
+      ),
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/checkout/cancelled`,
       metadata: {
         rental_id: rental.id,
         renter_id: user.id,
+        capture_method: useManualCapture ? "manual" : "automatic",
       },
     });
 

@@ -48,14 +48,9 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    const session = await stripe.checkout.sessions.retrieve(session_id);
-
-    if (session.payment_status !== "paid") {
-      return new Response(
-        JSON.stringify({ error: "Payment not completed", status: session.payment_status }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
+    const session = await stripe.checkout.sessions.retrieve(session_id, {
+      expand: ["payment_intent"],
+    });
 
     const rentalId = session.metadata?.rental_id;
     if (!rentalId) {
@@ -65,19 +60,53 @@ serve(async (req) => {
       });
     }
 
+    const paymentIntent = session.payment_intent as Stripe.PaymentIntent;
+    if (!paymentIntent) {
+      return new Response(
+        JSON.stringify({ error: "No payment intent found" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Determine status based on payment intent state
+    let paymentStatus: string;
+    let paidAt: string | null = null;
+    let authorizedAt: string | null = null;
+    const now = new Date().toISOString();
+
+    if (paymentIntent.status === "requires_capture") {
+      // Manual capture — funds are held but not yet debited
+      paymentStatus = "authorized";
+      authorizedAt = now;
+    } else if (paymentIntent.status === "succeeded") {
+      // Automatic capture — funds already captured (for rentals > 7 days)
+      paymentStatus = "paid";
+      paidAt = now;
+      authorizedAt = now;
+    } else {
+      return new Response(
+        JSON.stringify({ error: "Payment not completed", status: paymentIntent.status }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     // Update rental payment status using service role
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    const updateData: Record<string, unknown> = {
+      payment_status: paymentStatus,
+      payment_method: "stripe",
+      payment_intent_id: paymentIntent.id,
+    };
+    if (paidAt) updateData.paid_at = paidAt;
+    if (authorizedAt) updateData.authorized_at = authorizedAt;
+
     const { data: rental, error: updateError } = await supabaseAdmin
       .from("rentals")
-      .update({
-        payment_status: "paid",
-        paid_at: new Date().toISOString(),
-        payment_method: "stripe",
-      })
+      .update(updateData)
       .eq("id", rentalId)
       .select("*, products:product_id(title, images, owner_id)")
       .single();
@@ -93,6 +122,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
+        payment_status: paymentStatus,
         rental: {
           id: rental.id,
           product_title: rental.products?.title,
