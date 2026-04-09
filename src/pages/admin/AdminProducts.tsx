@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { Package, Search, Loader2, Flag, Eye, EyeOff, Trash2, AlertTriangle, Star, MessageSquare, CheckCircle, XCircle, ChevronDown, ChevronUp, MapPin, Calendar, Tag, User, DollarSign, FileText, List } from "lucide-react";
+import { Package, Search, Loader2, Flag, Eye, EyeOff, Trash2, AlertTriangle, Star, MessageSquare, CheckCircle, XCircle, ChevronDown, ChevronUp, MapPin, Calendar, Tag, User, DollarSign, FileText, List, Pencil, ShieldAlert } from "lucide-react";
 import SortableTableHead, { SortDirection, sortData, useToggleSort } from "@/components/admin/SortableTableHead";
 import TableColumnFilterRow, { applyColumnFilters, ColumnFilterConfig } from "@/components/admin/TableColumnFilter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchAdminProducts, toggleProductActive, flagProduct, unflagProduct, deleteProduct, approveProduct, rejectProduct, fetchProductFullDetails, AdminProduct } from "@/features/admin/adminProductsApi";
+import { fetchAdminProducts, toggleProductActive, flagProduct, unflagProduct, deleteProduct, approveProduct, rejectProduct, fetchProductFullDetails, updateProductAdmin, AdminProduct } from "@/features/admin/adminProductsApi";
 import { fetchProductReviews, deleteProductReview, AdminProductReview } from "@/features/admin/adminReviewsApi";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -36,6 +36,7 @@ const ProductExpandedPanel = ({
   onUnflag,
   onDelete,
   onOpenReviews,
+  onEdit,
   formatCurrency,
 }: {
   product: AdminProduct;
@@ -49,6 +50,7 @@ const ProductExpandedPanel = ({
   onUnflag: (id: string) => void;
   onDelete: (id: string, title: string) => void;
   onOpenReviews: (id: string, title: string) => void;
+  onEdit: (p: AdminProduct) => void;
   formatCurrency: (v: number) => string;
 }) => {
   const isLoading = actionLoading === product.id;
@@ -130,10 +132,21 @@ const ProductExpandedPanel = ({
         </div>
       )}
 
+      {/* Admin edited note */}
+      {product.admin_edited_at && (
+        <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 rounded-md px-3 py-2 border border-amber-200 dark:border-amber-800">
+          <ShieldAlert className="h-4 w-4 flex-shrink-0" />
+          Editat de admin la {format(new Date(product.admin_edited_at), "d MMM yyyy, HH:mm", { locale: ro })}
+        </div>
+      )}
+
       <Separator />
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" onClick={() => onEdit(product)} disabled={isLoading}>
+          <Pencil className="h-4 w-4 mr-1" /> Editează
+        </Button>
         <Button variant="outline" size="sm" onClick={() => window.open(`/produs/${product.slug}`, '_blank')} disabled={isLoading}>
           <Eye className="h-4 w-4 mr-1" /> Vezi pe site
         </Button>
@@ -209,6 +222,9 @@ const AdminProducts = () => {
   const [reviewsDialog, setReviewsDialog] = useState<{ open: boolean; productId: string; title: string }>({ open: false, productId: "", title: "" });
   const [reviewsData, setReviewsData] = useState<AdminProductReview[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [editDialog, setEditDialog] = useState<{ open: boolean; product: AdminProduct | null }>({ open: false, product: null });
+  const [editForm, setEditForm] = useState({ title: "", description: "", daily_price_owner: 0, category: "", subcategory: "", is_active: true });
+  const [editSaving, setEditSaving] = useState(false);
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
@@ -387,6 +403,37 @@ const AdminProducts = () => {
     );
   }, [products, columnFilters, dateRangeFilters, sortKey, sortDirection]);
 
+  const handleOpenEdit = (product: AdminProduct) => {
+    setEditForm({
+      title: product.title,
+      description: product.description || "",
+      daily_price_owner: product.daily_price_owner,
+      category: product.category || "",
+      subcategory: product.subcategory || "",
+      is_active: product.is_active,
+    });
+    setEditDialog({ open: true, product });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editDialog.product) return;
+    setEditSaving(true);
+    try {
+      await updateProductAdmin(editDialog.product.id, {
+        title: editForm.title,
+        description: editForm.description,
+        daily_price_owner: editForm.daily_price_owner,
+        category: editForm.category || undefined,
+        subcategory: editForm.subcategory || undefined,
+        is_active: editForm.is_active,
+      });
+      toast.success("Produs actualizat de admin");
+      queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+      setEditDialog({ open: false, product: null });
+    } catch { toast.error("Eroare la salvare"); }
+    finally { setEditSaving(false); }
+  };
+
   const expandedPanelProps = {
     actionLoading,
     onApprove: handleApprove,
@@ -396,6 +443,7 @@ const AdminProducts = () => {
     onUnflag: handleUnflag,
     onDelete: (id: string, title: string) => setDeleteDialog({ open: true, productId: id, title }),
     onOpenReviews: handleOpenReviews,
+    onEdit: handleOpenEdit,
     formatCurrency,
   };
 
@@ -683,6 +731,60 @@ const AdminProducts = () => {
               </div>
             )}
           </ScrollArea>
+        </DialogContent>
+      </Dialog>
+      {/* Edit Dialog */}
+      <Dialog open={editDialog.open} onOpenChange={(open) => { if (!open) setEditDialog({ open: false, product: null }); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5" /> Editează produs
+            </DialogTitle>
+            <DialogDescription>Modificările vor fi marcate cu „Editat de admin".</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Titlu</label>
+              <Input value={editForm.title} onChange={(e) => setEditForm(f => ({ ...f, title: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Descriere</label>
+              <Textarea value={editForm.description} onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value }))} rows={4} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Preț/zi (RON)</label>
+                <Input type="number" min={0} value={editForm.daily_price_owner} onChange={(e) => setEditForm(f => ({ ...f, daily_price_owner: Number(e.target.value) }))} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Status</label>
+                <Select value={editForm.is_active ? "active" : "inactive"} onValueChange={(v) => setEditForm(f => ({ ...f, is_active: v === "active" }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Activ</SelectItem>
+                    <SelectItem value="inactive">Inactiv</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Categorie</label>
+                <Input value={editForm.category} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Subcategorie</label>
+                <Input value={editForm.subcategory} onChange={(e) => setEditForm(f => ({ ...f, subcategory: e.target.value }))} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialog({ open: false, product: null })}>Anulează</Button>
+            <Button onClick={handleSaveEdit} disabled={editSaving || !editForm.title.trim()}>
+              {editSaving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Salvează
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </AdminLayout>
