@@ -17,7 +17,13 @@ import {
   Legend
 } from "recharts";
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+const STATUS_COLORS: Record<string, string> = {
+  'În așteptare': '#F97316',
+  'Confirmate': '#22C55E',
+  'Active': '#3B82F6',
+  'Finalizate': '#6B7280',
+  'Anulate': '#1a1a1a',
+};
 
 const AdminAnalytics = () => {
   const { data: stats, isLoading: statsLoading } = useAdminStats();
@@ -187,8 +193,8 @@ const AdminAnalytics = () => {
                         paddingAngle={5}
                         dataKey="value"
                       >
-                        {pieData.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        {pieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={STATUS_COLORS[entry.name] || '#8884d8'} />
                         ))}
                       </Pie>
                       <Tooltip 
