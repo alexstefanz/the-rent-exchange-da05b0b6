@@ -222,6 +222,9 @@ const AdminProducts = () => {
   const [reviewsDialog, setReviewsDialog] = useState<{ open: boolean; productId: string; title: string }>({ open: false, productId: "", title: "" });
   const [reviewsData, setReviewsData] = useState<AdminProductReview[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [editDialog, setEditDialog] = useState<{ open: boolean; product: AdminProduct | null }>({ open: false, product: null });
+  const [editForm, setEditForm] = useState({ title: "", description: "", daily_price_owner: 0, category: "", subcategory: "", is_active: true });
+  const [editSaving, setEditSaving] = useState(false);
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
@@ -400,6 +403,37 @@ const AdminProducts = () => {
     );
   }, [products, columnFilters, dateRangeFilters, sortKey, sortDirection]);
 
+  const handleOpenEdit = (product: AdminProduct) => {
+    setEditForm({
+      title: product.title,
+      description: product.description || "",
+      daily_price_owner: product.daily_price_owner,
+      category: product.category || "",
+      subcategory: product.subcategory || "",
+      is_active: product.is_active,
+    });
+    setEditDialog({ open: true, product });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editDialog.product) return;
+    setEditSaving(true);
+    try {
+      await updateProductAdmin(editDialog.product.id, {
+        title: editForm.title,
+        description: editForm.description,
+        daily_price_owner: editForm.daily_price_owner,
+        category: editForm.category || undefined,
+        subcategory: editForm.subcategory || undefined,
+        is_active: editForm.is_active,
+      });
+      toast.success("Produs actualizat de admin");
+      queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+      setEditDialog({ open: false, product: null });
+    } catch { toast.error("Eroare la salvare"); }
+    finally { setEditSaving(false); }
+  };
+
   const expandedPanelProps = {
     actionLoading,
     onApprove: handleApprove,
@@ -409,6 +443,7 @@ const AdminProducts = () => {
     onUnflag: handleUnflag,
     onDelete: (id: string, title: string) => setDeleteDialog({ open: true, productId: id, title }),
     onOpenReviews: handleOpenReviews,
+    onEdit: handleOpenEdit,
     formatCurrency,
   };
 
