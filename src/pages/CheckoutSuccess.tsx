@@ -88,7 +88,7 @@ const CheckoutSuccess = () => {
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <h1 className="font-heading text-xl md:text-2xl font-semibold">
-            Plată confirmată
+            {language === "ro" ? "Rezervare confirmată" : "Reservation confirmed"}
           </h1>
         </div>
       </header>
