@@ -335,6 +335,10 @@ const AdminFinances = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="withdrawals" className="space-y-4">
+            <WithdrawalsAdminTab formatCurrency={formatCurrency} />
+          </TabsContent>
         </Tabs>
       </div>
     </AdminLayout>
