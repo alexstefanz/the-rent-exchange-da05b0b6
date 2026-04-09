@@ -29,7 +29,7 @@ interface TicketWithUnread extends OpsTicket {
 
 export default function AdminSupportWidget() {
   const { user } = useAuth();
-  const location = useLocation();
+  
   const [isOpen, setIsOpen] = useState(false);
   const [tickets, setTickets] = useState<TicketWithUnread[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
