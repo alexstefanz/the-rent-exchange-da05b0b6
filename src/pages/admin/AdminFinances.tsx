@@ -173,6 +173,7 @@ const AdminFinances = () => {
           <TabsList>
             <TabsTrigger value="overview">Prezentare generală</TabsTrigger>
             <TabsTrigger value="payments">Verificare Plăți</TabsTrigger>
+            <TabsTrigger value="withdrawals">Retrageri</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
