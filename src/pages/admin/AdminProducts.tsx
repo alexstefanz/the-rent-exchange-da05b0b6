@@ -36,6 +36,7 @@ const ProductExpandedPanel = ({
   onUnflag,
   onDelete,
   onOpenReviews,
+  onEdit,
   formatCurrency,
 }: {
   product: AdminProduct;
@@ -49,6 +50,7 @@ const ProductExpandedPanel = ({
   onUnflag: (id: string) => void;
   onDelete: (id: string, title: string) => void;
   onOpenReviews: (id: string, title: string) => void;
+  onEdit: (p: AdminProduct) => void;
   formatCurrency: (v: number) => string;
 }) => {
   const isLoading = actionLoading === product.id;
