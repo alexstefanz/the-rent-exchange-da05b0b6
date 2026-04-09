@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import ScrollToTop from "./components/ScrollToTop";
 import SupportChatWidget from "./components/support/SupportChatWidget";
 import CookieConsent from "./components/CookieConsent";
+import AdminSupportWidget from "./components/admin/AdminSupportWidget";
 
 // Lazy-loaded routes
 const Categories = lazy(() => import("./pages/Categories"));
@@ -85,6 +86,7 @@ const App = () => (
           <BrowserRouter>
             <ScrollToTop />
             <SupportChatWidget />
+            <AdminSupportWidget />
             <CookieConsent />
             <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>}>
               <Routes>
