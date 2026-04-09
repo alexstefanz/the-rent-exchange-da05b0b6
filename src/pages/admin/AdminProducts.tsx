@@ -132,10 +132,21 @@ const ProductExpandedPanel = ({
         </div>
       )}
 
+      {/* Admin edited note */}
+      {product.admin_edited_at && (
+        <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 dark:text-amber-400 rounded-md px-3 py-2 border border-amber-200 dark:border-amber-800">
+          <ShieldAlert className="h-4 w-4 flex-shrink-0" />
+          Editat de admin la {format(new Date(product.admin_edited_at), "d MMM yyyy, HH:mm", { locale: ro })}
+        </div>
+      )}
+
       <Separator />
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" onClick={() => onEdit(product)} disabled={isLoading}>
+          <Pencil className="h-4 w-4 mr-1" /> Editează
+        </Button>
         <Button variant="outline" size="sm" onClick={() => window.open(`/produs/${product.slug}`, '_blank')} disabled={isLoading}>
           <Eye className="h-4 w-4 mr-1" /> Vezi pe site
         </Button>
