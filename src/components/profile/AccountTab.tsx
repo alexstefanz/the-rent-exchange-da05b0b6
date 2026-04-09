@@ -487,21 +487,17 @@ const AccountTab = () => {
             </CardContent>
           </Card>
 
-          {/* Payout Settings */}
+          {/* Payout Settings (IBAN) */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Wallet className="h-5 w-5" />
                 {t("Cum primești banii?", "How do you receive payments?")}
               </CardTitle>
-              <CardDescription>{t("Configurează modul în care primești plățile pentru închirierile tale", "Configure how you receive payments for your rentals")}</CardDescription>
+              <CardDescription>{t("Configurează IBAN-ul pentru retrageri", "Configure your IBAN for withdrawals")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="rounded-lg border border-dashed border-border p-6 text-center">
-                <Wallet className="mx-auto h-10 w-10 text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground mb-3">{t("IBAN neconfigurat", "IBAN not configured")}</p>
-                <Button variant="outline">{t("Configurează încasarea", "Configure payout")}</Button>
-              </div>
+              <IbanForm userId={user?.id} profile={profile} onSaved={(iban, holder) => setProfile(prev => prev ? { ...prev, iban, account_holder_name: holder } as any : prev)} />
             </CardContent>
           </Card>
 
