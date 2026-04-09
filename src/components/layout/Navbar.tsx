@@ -208,19 +208,19 @@ const Navbar = () => {
                     </div>
 
                     {/* Balance Display */}
-                    <div className="px-3 py-2 border-b border-border flex items-center gap-2">
+                    <Link to="/castiguri" className="px-3 py-2 border-b border-border flex items-center gap-2 hover:bg-muted transition-colors cursor-pointer">
                       <Wallet className="h-4 w-4 text-primary" />
                       <span className="text-sm font-medium">
                         {showBalance ? `${(balance ?? 0).toFixed(2)} RON` : "••••••"}
                       </span>
                       <button
-                        onClick={toggleBalance}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleBalance(e); }}
                         className="ml-auto p-1 rounded hover:bg-muted transition-colors"
                         aria-label={showBalance ? t("Ascunde balanța", "Hide balance") : t("Arată balanța", "Show balance")}
                       >
                         {showBalance ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5 text-muted-foreground" />}
                       </button>
-                    </div>
+                    </Link>
 
                     {/* Chat Button */}
                     <DropdownMenuItem asChild>
