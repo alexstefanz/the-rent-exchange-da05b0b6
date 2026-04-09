@@ -315,6 +315,15 @@ const AdminTicketDetail = () => {
             <Card>
               <CardHeader><CardTitle className="text-base">Context</CardTitle></CardHeader>
               <CardContent className="space-y-3 text-sm">
+                {ticket.requester_user_id && (
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Creat de:</span>
+                    <Link to={`/admin/users/${ticket.requester_user_id}`} className="text-primary hover:underline font-medium">
+                      {ticket.requester_name || 'Utilizator'}
+                    </Link>
+                  </div>
+                )}
                 {ticket.reservation_id && (
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -355,7 +364,7 @@ const AdminTicketDetail = () => {
                     </Link>
                   </div>
                 )}
-                {!ticket.reservation_id && !ticket.product_id && !ticket.rental_user_id && !ticket.owner_user_id && (
+                {!ticket.reservation_id && !ticket.product_id && !ticket.rental_user_id && !ticket.owner_user_id && !ticket.requester_user_id && (
                   <p className="text-muted-foreground">Niciun context atașat</p>
                 )}
 

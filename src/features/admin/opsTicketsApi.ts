@@ -16,6 +16,8 @@ export interface OpsTicket {
   created_by: string | null;
   assigned_to: string | null;
   requester_user_id: string | null;
+  requester_name: string | null;
+  requester_email: string | null;
   rental_user_id: string | null;
   owner_user_id: string | null;
   reservation_id: string | null;
@@ -175,7 +177,22 @@ export const fetchOpsTickets = async (filters?: FetchTicketsFilters): Promise<Op
 export const fetchOpsTicket = async (id: string): Promise<OpsTicket> => {
   const { data, error } = await opsTickets().select('*').eq('id', id).single();
   if (error) throw new Error(error.message);
-  return data as unknown as OpsTicket;
+  const ticket = data as unknown as OpsTicket;
+
+  // Fetch requester profile if available
+  if (ticket.requester_user_id) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', ticket.requester_user_id)
+      .single();
+    if (profile) {
+      ticket.requester_name = profile.full_name;
+      ticket.requester_email = profile.email;
+    }
+  }
+
+  return ticket;
 };
 
 export const createOpsTicket = async (input: CreateOpsTicketInput): Promise<OpsTicket> => {
