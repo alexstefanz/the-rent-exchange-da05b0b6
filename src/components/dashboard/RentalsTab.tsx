@@ -120,11 +120,26 @@ const RentalsTab = () => {
                     <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{rental.start_date} - {rental.end_date}</span>
                     {rental.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{rental.location}</span>}
                   </div>
-                  <div className="mt-3 flex items-center justify-between">
+                  <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
                     <span className="font-semibold text-primary">{rental.subtotal} RON</span>
-                    <Button variant="outline" size="sm" onClick={() => handleContactOwner(rental)}>
-                      {copy.dashboard.contactOwner}
-                    </Button>
+                    <div className="flex gap-2">
+                      {(rental.status === "confirmed" || rental.status === "active") && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setInspectionRental({
+                            rental,
+                            phase: rental.status === "confirmed" ? "checkout" : "checkin",
+                          })}
+                        >
+                          <Camera className="h-4 w-4 mr-1" />
+                          📷 {rental.status === "confirmed" ? "Predare" : "Returnare"}
+                        </Button>
+                      )}
+                      <Button variant="outline" size="sm" onClick={() => handleContactOwner(rental)}>
+                        {copy.dashboard.contactOwner}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -156,6 +171,18 @@ const RentalsTab = () => {
             ))}
           </div>
         </section>
+      )}
+
+      {/* Inspection Dialog */}
+      {inspectionRental && (
+        <InspectionDialog
+          open={!!inspectionRental}
+          onOpenChange={(open) => !open && setInspectionRental(null)}
+          rentalId={inspectionRental.rental.id}
+          phase={inspectionRental.phase}
+          role="renter"
+          productTitle={inspectionRental.rental.product_title}
+        />
       )}
     </div>
   );
