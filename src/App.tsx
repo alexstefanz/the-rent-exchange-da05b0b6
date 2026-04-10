@@ -8,9 +8,10 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { Suspense, lazy } from "react";
 import Index from "./pages/Index";
 import ScrollToTop from "./components/ScrollToTop";
-import SupportChatWidget from "./components/support/SupportChatWidget";
-import CookieConsent from "./components/CookieConsent";
-import AdminSupportWidget from "./components/admin/AdminSupportWidget";
+
+const SupportChatWidget = lazy(() => import("./components/support/SupportChatWidget"));
+const CookieConsent = lazy(() => import("./components/CookieConsent"));
+const AdminSupportWidget = lazy(() => import("./components/admin/AdminSupportWidget"));
 
 // Lazy-loaded routes
 const Categories = lazy(() => import("./pages/Categories"));
@@ -85,9 +86,11 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <ScrollToTop />
-            <SupportChatWidget />
-            <AdminSupportWidget />
-            <CookieConsent />
+            <Suspense fallback={null}>
+              <SupportChatWidget />
+              <AdminSupportWidget />
+              <CookieConsent />
+            </Suspense>
             <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>}>
               <Routes>
                 <Route path="/" element={<Index />} />

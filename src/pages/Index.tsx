@@ -1,7 +1,7 @@
 import { useEffect, useRef, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import bannerBg from "@/assets/banner_hero.webp";
+const bannerBg = "/images/banner_hero.webp";
 import { ArrowRight, Shield, CheckCircle, ShieldCheck, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
