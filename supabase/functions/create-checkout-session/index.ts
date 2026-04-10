@@ -56,7 +56,7 @@ serve(async (req) => {
 
     const { data: rental, error: rentalError } = await supabaseAdmin
       .from("rentals")
-      .select("*, products:product_id(title, images)")
+      .select("*, products:product_id(title, images, slug)")
       .eq("id", rental_id)
       .eq("renter_id", user.id)
       .single();
