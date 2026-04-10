@@ -1,54 +1,68 @@
 
 
-## Plan: Performanță mobil 83% → 90%+ (FCP & LCP verde)
+## Plan: Performanță mobil 77% → 90%+ (FCP & LCP verde)
 
-### Analiza curentă
-- **FCP 3.3s** (verde = sub 1.8s) — principala cauză: Google Fonts render-blocking + CSS render-blocking
-- **LCP 3.7s** (verde = sub 2.5s) — banner hero 134 KiB, JS bundle 225 KiB, font delay
-- **TBT 40ms** și **CLS 0.002** — deja excelente
-- Cache-ul pe assets lipsește (raportul arată "None" pe toate fișierele din `/assets/`)
+### Analiza problemei principale
 
-### Probleme identificate și soluții
+Din raportul PageSpeed, LCP breakdown-ul arată clar bottleneck-ul:
 
-**1. Google Fonts blochează renderul (cel mai mare impact pe FCP)**
-Fontul „Plus Jakarta Sans" e încărcat ca `<link rel="stylesheet">` — blochează FCP complet. 
-- Soluție: schimb la `font-display: swap` prin adăugarea `&display=swap` (deja e acolo) dar MUTĂM la încărcare asincronă folosind pattern-ul `media="print" onload="this.media='all'"`.
-- Alternativ, self-host fontul cu `@font-face` și `font-display: swap` inline în CSS — elimină complet dependența de Google Fonts ca render-blocking.
+```text
+LCP = 4.3s
+├── TTFB:                 0 ms    ✓ 
+├── Resource load delay:  90 ms   ✓ (preload funcționează)
+├── Resource load duration: 230 ms ✓
+└── Element render delay: 1,970 ms ← PROBLEMA PRINCIPALĂ
+```
 
-**2. Preload-ul bannerului nu funcționează în producție**
-`/src/assets/banner_hero.webp` e un path Vite dev — în build devine `/assets/banner_hero-BC3jyQK-.webp`. Preload-ul din `index.html` nu matchează.
-- Soluție: Mut `banner_hero.webp` în `/public/images/` și referențiez direct ca `/images/banner_hero.webp`. Preload-ul va funcționa.
+Imaginea hero se încarcă rapid (320ms) dar **nu poate fi afișată** până când React nu parsează și execută 208 KiB de JS. Acest "element render delay" de aproape 2 secunde este cauza principală atât pentru FCP cât și LCP.
 
-**3. Cache headers lipsesc pe assets**
-Raportul arată "Cache TTL: None" pe toate JS/CSS/WebP-urile. Fișierul `_headers` există dar probabil nu se aplică.
-- Soluție: Extind `_headers` cu reguli mai specifice și verific formatul.
+### Modificări
 
-**4. Bundle JS principal prea mare (225 KiB)**
-Index page e importat direct (nu lazy) în App.tsx, ceea ce e corect (e homepage). Dar Navbar, Footer, HeroSearchForm sunt importuri directe.
-- Soluție: Lazy load `Footer` (e sub fold). Lazy load `CookieConsent`, `SupportChatWidget`, `AdminSupportWidget` din `App.tsx` — nu sunt critice la FCP.
+**1. Self-host fontul Plus Jakarta Sans (impact mare pe FCP)**
+Google Fonts adaugă un request render-blocking pentru CSS (310ms). Descărcăm fișierele WOFF2 local și le declarăm cu `@font-face` + `font-display: swap` direct în `index.css`. Eliminăm complet referințele Google Fonts din `index.html`.
 
-**5. Unused JS (110 KiB)**
-- `SupportChatWidget` și `AdminSupportWidget` sunt importate eager în App.tsx dar rareori vizibile la load.
-- Soluție: lazy import cu `requestIdleCallback` delay.
+**2. Vite manual chunks — reduce main bundle parse time**
+Adăugăm `build.rollupOptions.output.manualChunks` în `vite.config.ts` pentru a separa:
+- `react` + `react-dom` → `vendor-react` (~40 KiB)
+- `@supabase` → `vendor-supabase` (~50 KiB)
+- `@tanstack/react-query` → `vendor-query`
+- `lucide-react` → `vendor-icons`
 
-### Modificări concrete
+Rezultat: bundle-ul principal scade de la 208 KiB la ~60-80 KiB, reducând parse time pe mobil cu ~500-800ms.
 
-| Fișier | Ce se schimbă |
+**3. Elimină parallax pe mobil (fix forced reflow)**
+Scroll handler-ul cu `translateY` cauzează 62ms forced reflow. Pe mobil, dezactivăm complet parallax-ul (verificăm `window.innerWidth < 768` sau folosim `matchMedia`).
+
+**4. Comprimă banner_hero.webp mai agresiv**
+Bannerul e 134 KiB. Îl recomprimăm la quality 60 (vs curent ~75-80), țintind ~70-80 KiB. Pe mobil servim o versiune mai mică (max-width 768px).
+
+**5. Lazy load Footer din Index.tsx**
+Footer-ul e importat direct dar e complet sub fold. Îl wrappăm cu `lazy` + `Suspense`.
+
+**6. Adaugă responsive hero cu `<picture>` + srcset**
+Creăm o versiune mobilă a banner-ului (768px lățime, ~40 KiB) și folosim `<picture>` cu `<source media="(max-width: 768px)">`.
+
+### Fișiere afectate
+
+| Fișier | Modificare |
 |---|---|
-| `index.html` | Font async loading, fix preload path, inline critical font-face |
-| `public/images/banner_hero.webp` | Mut din `src/assets/` în `public/images/` |
-| `src/pages/Index.tsx` | Referință banner din `/images/banner_hero.webp` în loc de import |
-| `src/App.tsx` | Lazy load `SupportChatWidget`, `AdminSupportWidget`, `CookieConsent` |
-| `public/_headers` | Verificare / completare cache rules |
-| `src/components/layout/Navbar.tsx` | Lazy load `Footer` dacă nu e deja |
+| `src/index.css` | Adaug `@font-face` pentru Plus Jakarta Sans |
+| `index.html` | Elimin Google Fonts links, adaug preload font WOFF2 |
+| `vite.config.ts` | Adaug `manualChunks` |
+| `src/pages/Index.tsx` | Dezactivez parallax pe mobil, lazy Footer, `<picture>` hero |
+| `public/images/banner_hero.webp` | Recomprimat mai agresiv |
+| `public/images/banner_hero_mobile.webp` | NOU - versiune 768px |
+| `public/fonts/*.woff2` | NOU - fonturile self-hosted |
 
 ### Impact estimat
-| Optimizare | Reducere |
+
+| Optimizare | Reducere estimată |
 |---|---|
-| Font async (nu mai blochează) | -500ms FCP |
-| Preload banner funcțional | -300ms LCP |
-| Lazy widgets din App.tsx | -30-50 KiB din bundle inițial |
-| Cache headers | Repeat visits mai rapide |
+| Self-host font (elimină render-block) | -300-500ms FCP |
+| Manual chunks (reduce parse time) | -500-800ms render delay |
+| Banner mobil mai mic | -50-60 KiB, -200ms LCP |
+| Elimină parallax pe mobil | -62ms reflow |
+| Lazy Footer | -10-20 KiB din bundle inițial |
 
 Target: FCP ~1.5-2.0s, LCP ~2.0-2.5s → scor 90+
 
