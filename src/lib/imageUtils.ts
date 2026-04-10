@@ -13,9 +13,13 @@ const RENDER_PATH = "/storage/v1/render/image/public/";
 
 export type ImageSize = "thumb" | "card" | "gallery" | "full";
 
+export type ImageSize = "thumb" | "cardMobile" | "card" | "gallery" | "full";
+
 const SIZE_PRESETS: Record<ImageSize, { width: number; quality: number } | null> = {
   /** Tiny previews (SeeAllCard, avatars in lists) */
   thumb: { width: 200, quality: 60 },
+  /** Product cards on mobile screens */
+  cardMobile: { width: 320, quality: 70 },
   /** Product cards, featured listings */
   card: { width: 480, quality: 75 },
   /** Gallery carousel (mobile + desktop) */

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useUxCopy } from "@/hooks/useUxCopy";
-import logoImage from "@/assets/rentli_logo.png";
+import logoImage from "@/assets/rentli_logo.webp";
 
 const FacebookIcon = ({ size = 20 }: { size?: number }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="#1877F2">
@@ -37,7 +37,7 @@ const Footer = () => {
         <div className="grid gap-8 md:grid-cols-4">
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">
-              <img src={logoImage} alt="Rentli" className="h-8 w-auto" />
+              <img src={logoImage} alt="Rentli" width={96} height={36} className="h-8 w-auto" />
             </Link>
             <p className="text-sm text-muted-foreground">
               {copy.footer.description}
