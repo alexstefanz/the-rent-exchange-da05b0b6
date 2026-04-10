@@ -1,14 +1,17 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, MapPin, Search } from "lucide-react";
+import { Calendar, MapPin, Search, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getOrCreateConversation } from "@/features/messaging/messagingApi";
 import StatusBadge from "./StatusBadge";
+import { InspectionDialog } from "./InspectionDialog";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import type { InspectionPhase } from "@/features/rentals/inspectionApi";
 
 interface Rental {
   id: string;

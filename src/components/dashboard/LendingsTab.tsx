@@ -296,6 +296,18 @@ const LendingsTab = () => {
           queryClient.invalidateQueries({ queryKey: ["ownerRentals"] });
         }}
       />
+
+      {/* Inspection Dialog */}
+      {inspectionRental && (
+        <InspectionDialog
+          open={!!inspectionRental}
+          onOpenChange={(open) => !open && setInspectionRental(null)}
+          rentalId={inspectionRental.rental.id}
+          phase={inspectionRental.phase}
+          role="owner"
+          productTitle={inspectionRental.rental.product_title}
+        />
+      )}
     </div>
   );
 };
