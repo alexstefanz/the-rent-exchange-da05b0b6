@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, Plus, Eye, Edit, Check, X, Loader2, Calendar, MessageCircle } from "lucide-react";
+import { Package, Plus, Eye, Edit, Check, X, Loader2, Calendar, MessageCircle, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { AcceptedRentalDialog } from "./AcceptedRentalDialog";
+import { InspectionDialog } from "./InspectionDialog";
+import type { InspectionPhase } from "@/features/rentals/inspectionApi";
 
 const statusLabels: Record<string, { ro: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { ro: "În așteptare", variant: "secondary" },
@@ -51,6 +53,7 @@ const LendingsTab = () => {
   const [rejectDialogRental, setRejectDialogRental] = useState<OwnerRental | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [acceptedRental, setAcceptedRental] = useState<OwnerRental | null>(null);
+  const [inspectionRental, setInspectionRental] = useState<{ rental: OwnerRental; phase: InspectionPhase } | null>(null);
 
   const activeProducts = products.filter(p => p.is_active);
   const pendingRentals = rentals.filter(r => r.status === "pending");
