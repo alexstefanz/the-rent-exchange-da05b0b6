@@ -81,6 +81,7 @@ serve(async (req) => {
 
     const productTitle = rental.products?.title || "Închiriere";
     const productImage = rental.products?.images?.[0] || undefined;
+    const productSlug = rental.products?.slug || "";
     const origin = req.headers.get("origin") || "https://the-rent-exchange.lovable.app";
 
     // Check for existing Stripe customer
