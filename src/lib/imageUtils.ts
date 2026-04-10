@@ -11,8 +11,6 @@
 const STORAGE_PATH = "/storage/v1/object/public/";
 const RENDER_PATH = "/storage/v1/render/image/public/";
 
-export type ImageSize = "thumb" | "card" | "gallery" | "full";
-
 export type ImageSize = "thumb" | "cardMobile" | "card" | "gallery" | "full";
 
 const SIZE_PRESETS: Record<ImageSize, { width: number; quality: number } | null> = {
