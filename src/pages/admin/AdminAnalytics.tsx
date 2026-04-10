@@ -137,36 +137,6 @@ const AdminAnalytics = () => {
 
         {/* Charts Grid */}
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* Monthly Trends */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Tendințe Lunare</CardTitle>
-              <CardDescription>
-                Rezervări și utilizatori noi pe lună
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="name" className="text-xs" />
-                    <YAxis className="text-xs" />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'hsl(var(--card))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px'
-                      }}
-                    />
-                    <Bar dataKey="rezervari" fill="hsl(var(--primary))" name="Rezervări" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="utilizatori" fill="hsl(var(--chart-2))" name="Utilizatori" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Status Distribution */}
           <Card>
             <CardHeader>
@@ -212,6 +182,36 @@ const AdminAnalytics = () => {
                     Nu există date pentru afișare
                   </div>
                 )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Monthly Trends */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Tendințe Lunare</CardTitle>
+              <CardDescription>
+                Rezervări și utilizatori noi pe lună
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="name" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Bar dataKey="rezervari" fill="hsl(var(--primary))" name="Rezervări" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="utilizatori" fill="hsl(var(--chart-2))" name="Utilizatori" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
