@@ -1,13 +1,12 @@
 import { useEffect, useRef, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-const bannerBg = "/images/banner_hero.webp";
 import { ArrowRight, Shield, CheckCircle, ShieldCheck, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
 import HeroSearchForm from "@/components/HeroSearchForm";
 const FeaturedListings = lazy(() => import("@/components/home/FeaturedListings"));
+const Footer = lazy(() => import("@/components/layout/Footer"));
 import { categories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
 import { useUxCopy } from "@/hooks/useUxCopy";
@@ -20,6 +19,10 @@ const Index = () => {
   const heroRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
+    // Disable parallax on mobile to avoid forced reflow
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
+    if (isMobile) return;
+
     const handleScroll = () => {
       const img = document.getElementById("hero-parallax-img") as HTMLImageElement | null;
       if (!img) return;
@@ -53,7 +56,18 @@ const Index = () => {
       <Navbar />
 
       <section className="relative overflow-hidden h-[500px]">
-        <img src={bannerBg} alt="" fetchPriority="high" decoding="async" className="absolute inset-0 w-full h-[130%] object-cover" style={{ transform: 'translateZ(0)' }} id="hero-parallax-img" />
+        <picture>
+          <source media="(max-width: 768px)" srcSet="/images/banner_hero_mobile.webp" type="image/webp" />
+          <img
+            src="/images/banner_hero.webp"
+            alt=""
+            fetchPriority="high"
+            decoding="async"
+            className="absolute inset-0 w-full h-[130%] object-cover"
+            style={{ transform: 'translateZ(0)' }}
+            id="hero-parallax-img"
+          />
+        </picture>
         <div className="absolute inset-0 bg-black/50" />
         <div className="container relative h-full flex flex-col items-center justify-center">
           <div className="mx-auto w-full max-w-4xl text-center">
@@ -150,7 +164,9 @@ const Index = () => {
         </div>
       </section>
 
-      <Footer />
+      <Suspense fallback={<div className="py-8" />}>
+        <Footer />
+      </Suspense>
     </div>);
 
 };
