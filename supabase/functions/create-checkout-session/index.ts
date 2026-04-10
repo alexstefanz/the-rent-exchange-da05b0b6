@@ -56,7 +56,7 @@ serve(async (req) => {
 
     const { data: rental, error: rentalError } = await supabaseAdmin
       .from("rentals")
-      .select("*, products:product_id(title, images)")
+      .select("*, products:product_id(title, images, slug)")
       .eq("id", rental_id)
       .eq("renter_id", user.id)
       .single();
@@ -81,6 +81,7 @@ serve(async (req) => {
 
     const productTitle = rental.products?.title || "Închiriere";
     const productImage = rental.products?.images?.[0] || undefined;
+    const productSlug = rental.products?.slug || "";
     const origin = req.headers.get("origin") || "https://the-rent-exchange.lovable.app";
 
     // Check for existing Stripe customer
@@ -115,7 +116,7 @@ serve(async (req) => {
         : { payment_intent_data: { metadata: { rental_id: rental.id, renter_id: user.id } } }
       ),
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/checkout/cancelled`,
+      cancel_url: productSlug ? `${origin}/produs/${productSlug}` : `${origin}/`,
       metadata: {
         rental_id: rental.id,
         renter_id: user.id,
