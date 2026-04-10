@@ -188,7 +188,20 @@ const LendingsTab = () => {
                       <p className="text-sm text-muted-foreground mt-1">
                         {rental.renter_name || "Chiriaș"} · {format(new Date(rental.start_date), "d MMM", { locale: ro })} - {format(new Date(rental.end_date), "d MMM", { locale: ro })} · {rental.owner_payout} RON
                       </p>
-                    </div>
+                      {(rental.status === "confirmed" || rental.status === "active") && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => setInspectionRental({
+                            rental,
+                            phase: rental.status === "confirmed" ? "checkout" : "checkin",
+                          })}
+                        >
+                          <Camera className="h-4 w-4 mr-1" />
+                          📷 {rental.status === "confirmed" ? "Predare" : "Returnare"}
+                        </Button>
+                      )}
                   </div>
                 </CardContent>
               </Card>
