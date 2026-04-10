@@ -56,6 +56,7 @@ const RentalsTab = () => {
   const copy = useUxCopy();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [inspectionRental, setInspectionRental] = useState<{ rental: Rental; phase: InspectionPhase } | null>(null);
 
   const handleContactOwner = async (rental: Rental) => {
     if (!rental.product_id || !rental.owner_id) return;
