@@ -6,7 +6,8 @@ import { calculateClientPrice } from "@/features/products/productsApi";
 import { getProductUrl } from "@/lib/slugUtils";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
 import { addFavoriteProduct, removeFavoriteProduct, getFavoriteProducts } from "@/features/profile/favoriteProductsApi";
 import { toast } from "@/hooks/use-toast";
@@ -49,6 +50,7 @@ const FeaturedListings = () => {
   const copy = useUxCopy();
   const { language } = useLanguage();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   const allProducts = products || [];
   const displayProducts = allProducts.slice(0, 7);
@@ -155,7 +157,7 @@ const FeaturedListings = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {displayProducts.map((product, index) => {
             const clientPrice = calculateClientPrice(product.daily_price_owner, product.platform_fee_percent);
-            const imageUrl = getOptimizedImageUrl(product.images?.[0] || "/placeholder.svg", "card");
+            const imageUrl = getOptimizedImageUrl(product.images?.[0] || "/placeholder.svg", isMobile ? "cardMobile" : "card");
             const location = [product.location_city, product.pickup_address].filter(Boolean).join(", ") || "România";
             const isFav = favoriteIds.has(product.id);
             const rating = ratings[product.id];

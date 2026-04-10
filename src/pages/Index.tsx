@@ -1,13 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import bannerBg from "@/assets/banner_hero.png";
+import bannerBg from "@/assets/banner_hero.webp";
 import { ArrowRight, Shield, CheckCircle, ShieldCheck, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import HeroSearchForm from "@/components/HeroSearchForm";
-import FeaturedListings from "@/components/home/FeaturedListings";
+const FeaturedListings = lazy(() => import("@/components/home/FeaturedListings"));
 import { categories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
 import { useUxCopy } from "@/hooks/useUxCopy";
@@ -119,7 +119,9 @@ const Index = () => {
         </div>
       </section>
 
-      <FeaturedListings />
+      <Suspense fallback={<div className="py-12" />}>
+        <FeaturedListings />
+      </Suspense>
 
       {/* CTA Banner */}
       <section className="py-16" style={{ background: 'linear-gradient(to right, #F97B1D, #FAA738)' }}>
