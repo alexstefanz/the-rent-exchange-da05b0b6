@@ -46,12 +46,12 @@ const AdminAnalytics = () => {
 
   // Mock monthly data
   const monthlyData = [
-    { name: 'Ian', rezervari: 12, utilizatori: 45 },
-    { name: 'Feb', rezervari: 19, utilizatori: 52 },
-    { name: 'Mar', rezervari: 25, utilizatori: 68 },
-    { name: 'Apr', rezervari: 32, utilizatori: 85 },
-    { name: 'Mai', rezervari: 28, utilizatori: 92 },
-    { name: 'Iun', rezervari: 45, utilizatori: 110 },
+    { name: 'Ian', rezervari: 12, utilizatori: 45, confirmate: 8 },
+    { name: 'Feb', rezervari: 19, utilizatori: 52, confirmate: 14 },
+    { name: 'Mar', rezervari: 25, utilizatori: 68, confirmate: 20 },
+    { name: 'Apr', rezervari: 32, utilizatori: 85, confirmate: 26 },
+    { name: 'Mai', rezervari: 28, utilizatori: 92, confirmate: 22 },
+    { name: 'Iun', rezervari: 45, utilizatori: 110, confirmate: 38 },
   ];
 
   return (
@@ -208,7 +208,9 @@ const AdminAnalytics = () => {
                         borderRadius: '8px'
                       }}
                     />
+                    <Legend />
                     <Bar dataKey="rezervari" fill="hsl(var(--primary))" name="Rezervări" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="confirmate" fill="#22C55E" name="Confirmate" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="utilizatori" fill="hsl(var(--chart-2))" name="Utilizatori" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
