@@ -202,7 +202,7 @@ const LendingsTab = () => {
                           📷 {rental.status === "confirmed" ? "Predare" : "Returnare"}
                         </Button>
                       )}
-                  </div>
+                    </div>
                 </CardContent>
               </Card>
             ))}
