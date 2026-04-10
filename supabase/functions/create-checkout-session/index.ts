@@ -116,7 +116,7 @@ serve(async (req) => {
         : { payment_intent_data: { metadata: { rental_id: rental.id, renter_id: user.id } } }
       ),
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/checkout/cancelled`,
+      cancel_url: productSlug ? `${origin}/produs/${productSlug}` : `${origin}/`,
       metadata: {
         rental_id: rental.id,
         renter_id: user.id,
