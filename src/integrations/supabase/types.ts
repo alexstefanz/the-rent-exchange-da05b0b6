@@ -947,6 +947,47 @@ export type Database = {
         }
         Relationships: []
       }
+      rental_inspections: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          phase: string
+          photos: string[]
+          rental_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          phase: string
+          photos?: string[]
+          rental_id: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          phase?: string
+          photos?: string[]
+          rental_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rental_inspections_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rentals: {
         Row: {
           authorized_at: string | null

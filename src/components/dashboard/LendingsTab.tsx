@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, Plus, Eye, Edit, Check, X, Loader2, Calendar, MessageCircle } from "lucide-react";
+import { Package, Plus, Eye, Edit, Check, X, Loader2, Calendar, MessageCircle, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { AcceptedRentalDialog } from "./AcceptedRentalDialog";
+import { InspectionDialog } from "./InspectionDialog";
+import type { InspectionPhase } from "@/features/rentals/inspectionApi";
 
 const statusLabels: Record<string, { ro: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { ro: "În așteptare", variant: "secondary" },
@@ -51,6 +53,7 @@ const LendingsTab = () => {
   const [rejectDialogRental, setRejectDialogRental] = useState<OwnerRental | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [acceptedRental, setAcceptedRental] = useState<OwnerRental | null>(null);
+  const [inspectionRental, setInspectionRental] = useState<{ rental: OwnerRental; phase: InspectionPhase } | null>(null);
 
   const activeProducts = products.filter(p => p.is_active);
   const pendingRentals = rentals.filter(r => r.status === "pending");
@@ -185,6 +188,20 @@ const LendingsTab = () => {
                       <p className="text-sm text-muted-foreground mt-1">
                         {rental.renter_name || "Chiriaș"} · {format(new Date(rental.start_date), "d MMM", { locale: ro })} - {format(new Date(rental.end_date), "d MMM", { locale: ro })} · {rental.owner_payout} RON
                       </p>
+                      {(rental.status === "confirmed" || rental.status === "active") && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => setInspectionRental({
+                            rental,
+                            phase: rental.status === "confirmed" ? "checkout" : "checkin",
+                          })}
+                        >
+                          <Camera className="h-4 w-4 mr-1" />
+                          📷 {rental.status === "confirmed" ? "Predare" : "Returnare"}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -279,6 +296,18 @@ const LendingsTab = () => {
           queryClient.invalidateQueries({ queryKey: ["ownerRentals"] });
         }}
       />
+
+      {/* Inspection Dialog */}
+      {inspectionRental && (
+        <InspectionDialog
+          open={!!inspectionRental}
+          onOpenChange={(open) => !open && setInspectionRental(null)}
+          rentalId={inspectionRental.rental.id}
+          phase={inspectionRental.phase}
+          role="owner"
+          productTitle={inspectionRental.rental.product_title}
+        />
+      )}
     </div>
   );
 };
