@@ -203,6 +203,7 @@ const LendingsTab = () => {
                         </Button>
                       )}
                     </div>
+                  </div>
                 </CardContent>
               </Card>
             ))}
