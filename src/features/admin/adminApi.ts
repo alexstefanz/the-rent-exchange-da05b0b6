@@ -7,6 +7,7 @@ export interface AdminStats {
   active_rentals: number;
   revenue_this_month: number;
   pending_kyc: number;
+  total_withdrawn: number;
 }
 
 export interface AdminRental {
@@ -80,7 +81,8 @@ export const fetchAdminStats = async (): Promise<AdminStats> => {
       total_rentals: 0,
       active_rentals: 0,
       revenue_this_month: 0,
-      pending_kyc: 0
+      pending_kyc: 0,
+      total_withdrawn: 0
     };
   }
   
