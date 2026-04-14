@@ -1503,6 +1503,7 @@ export type Database = {
           total_products: number
           total_rentals: number
           total_users: number
+          total_withdrawn: number
         }[]
       }
       get_admin_users: {
