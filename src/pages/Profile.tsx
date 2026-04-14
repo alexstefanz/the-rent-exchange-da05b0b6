@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Loader2, UserCog, ClipboardList, ShoppingBag, Package } from "lucide-react";
+import { Loader2, UserCog, ClipboardList, ShoppingBag, Package, ScrollText } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { id: "cereri", labelRo: "Cereri", labelEn: "Requests", icon: ClipboardList, href: "/cereri" },
   { id: "inchirieri", labelRo: "Rezervări", labelEn: "Reservations", icon: ShoppingBag, href: "/rezervari" },
   { id: "anunturi", labelRo: "Anunțuri", labelEn: "Listings", icon: Package, href: "/anunturi" },
+  { id: "activitate", labelRo: "Istoric activitate", labelEn: "Activity Log", icon: ScrollText, href: "/activitate" },
 ];
 
 const ProfilePage = () => {
@@ -70,7 +71,7 @@ const ProfilePage = () => {
         <BalanceCard />
 
         {/* Navigation buttons */}
-        <div className="w-full grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <div className="w-full grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const badgeCount = item.id === "cereri" ? pendingCount : 0;
