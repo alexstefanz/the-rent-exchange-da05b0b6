@@ -5,6 +5,7 @@ import {
   Wallet, 
   Clock,
   ShieldCheck,
+  Banknote,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -100,6 +101,11 @@ const AdminDashboard = () => {
                 title="KYC În Așteptare"
                 value={stats?.pending_kyc || 0}
                 icon={<ShieldCheck className="h-4 w-4" />}
+              />
+              <StatsCard
+                title="Bani Retrași"
+                value={formatCurrency(stats?.total_withdrawn || 0)}
+                icon={<Banknote className="h-4 w-4" />}
               />
             </>
           )}
