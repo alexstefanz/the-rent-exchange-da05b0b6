@@ -1,50 +1,30 @@
 
 
-## Plan: Jurnal de activitate pentru utilizatori
-
-### Ce există deja
-Tabela `user_activity_logs` colectează automat acțiuni prin triggere DB:
-- Produse: creare, dezactivare, reactivare, ștergere, schimbare preț
-- Rezervări: creare, confirmare, anulare, finalizare, respingere
-- Profil: actualizare telefon, schimbare status KYC
-- KYC: creare cerere, schimbare status
-
-Acum e accesibilă doar admin-ilor (RLS). Trebuie deschisă și pentru utilizatorul propriu.
+## Plan: Adaugă stat "Bani Retrași" în Admin Dashboard
 
 ### Modificări
 
-#### 1. Migrare SQL — politică RLS nouă
+**1. Migrare SQL — actualizare funcția `get_admin_stats`**
+
+Adaug un câmp nou `total_withdrawn` care calculează suma tuturor retragerilor completate din `withdrawal_requests`:
+
 ```sql
-CREATE POLICY "Users can view own activity logs"
-ON public.user_activity_logs
-FOR SELECT TO authenticated
-USING (user_id = auth.uid());
+CREATE OR REPLACE FUNCTION public.get_admin_stats()
+RETURNS TABLE(total_users bigint, total_products bigint, total_rentals bigint, 
+              active_rentals bigint, revenue_this_month numeric, pending_kyc bigint,
+              total_withdrawn numeric)
+-- adaug: (SELECT COALESCE(SUM(amount), 0) FROM withdrawal_requests WHERE status = 'completed')
 ```
 
-#### 2. Pagină nouă `src/pages/ActivityLogPage.tsx`
-- Layout consistent cu celelalte pagini de profil (Navbar + Footer)
-- Lista cronologică de activități cu iconițe, badge-uri colorate per tip de acțiune
-- Filtrare opțională per tip (produse, rezervări, profil)
-- Paginare/infinite scroll (limitat la 100 inițial)
-- Suport RO/EN
+**2. `src/features/admin/adminApi.ts`** — adaug `total_withdrawn: number` în interfața `AdminStats`
 
-#### 3. API client `src/features/profile/activityLogApi.ts`
-- `fetchMyActivityLogs(limit, offset)` — query direct pe `user_activity_logs` cu `user_id = auth.uid()` (gestionat de RLS)
+**3. `src/pages/admin/AdminDashboard.tsx`** — adaug un nou `StatsCard` cu iconița `Banknote` (din lucide-react), titlul "Bani Retrași" și valoarea formatată ca monedă. Grid-ul devine 7 carduri (se adaptează automat cu layout-ul existent).
 
-#### 4. Hook `src/hooks/queries/useMyActivityLogs.ts`
+### Fișiere afectate
 
-#### 5. Integrare în navigație
-- Adaug buton "📋 Istoric activitate" / "Activity Log" în `Profile.tsx` (NAV_ITEMS)
-- Rută nouă `/activitate` în `App.tsx`
-
-### Fișiere
-
-| Fișier | Acțiune |
+| Fișier | Modificare |
 |---|---|
-| Migrare SQL | RLS policy nouă |
-| `src/features/profile/activityLogApi.ts` | NOU |
-| `src/hooks/queries/useMyActivityLogs.ts` | NOU |
-| `src/pages/ActivityLogPage.tsx` | NOU |
-| `src/pages/Profile.tsx` | Adaug buton navigare |
-| `src/App.tsx` | Adaug rută `/activitate` |
+| Migrare SQL | Recreare `get_admin_stats` cu `total_withdrawn` |
+| `src/features/admin/adminApi.ts` | Adaug câmpul în interfață + default |
+| `src/pages/admin/AdminDashboard.tsx` | Nou StatsCard + import Banknote |
 
