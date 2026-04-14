@@ -1,110 +1,50 @@
 
 
-## Plan: Documentație fotografică la predare și returnare
+## Plan: Jurnal de activitate pentru utilizatori
 
-### Concept
+### Ce există deja
+Tabela `user_activity_logs` colectează automat acțiuni prin triggere DB:
+- Produse: creare, dezactivare, reactivare, ștergere, schimbare preț
+- Rezervări: creare, confirmare, anulare, finalizare, respingere
+- Profil: actualizare telefon, schimbare status KYC
+- KYC: creare cerere, schimbare status
 
-Adăugăm un sistem de **check-in / check-out fotografic** în fluxul de închiriere. Ambele părți (proprietar și chiriaș) vor urca poze cu starea produsului în două momente cheie:
+Acum e accesibilă doar admin-ilor (RLS). Trebuie deschisă și pentru utilizatorul propriu.
 
-1. **La predare (check-out)** — proprietarul și chiriașul fotografiază produsul când se predă
-2. **La returnare (check-in)** — ambii fotografiază produsul când se returnează
+### Modificări
 
-Acest lucru oferă dovezi clare în caz de dispute privind deteriorarea.
-
-### Fluxul utilizatorului
-
-```text
-Rental confirmed → PREDARE (check-out):
-  ├─ Proprietar: urcă poze "stare la predare"
-  └─ Chiriaș: urcă poze "stare la primire"
-  → Status trece la "active"
-
-Rental active → RETURNARE (check-in):
-  ├─ Chiriaș: urcă poze "stare la returnare"  
-  └─ Proprietar: urcă poze "stare la primire înapoi"
-  → Status trece la "completed"
-```
-
-### Modificări tehnice
-
-#### 1. Baza de date — migrare nouă
-
-Creăm tabela `rental_inspections`:
-
+#### 1. Migrare SQL — politică RLS nouă
 ```sql
-CREATE TABLE rental_inspections (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  rental_id UUID NOT NULL REFERENCES rentals(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL,
-  phase TEXT NOT NULL CHECK (phase IN ('checkout', 'checkin')),
-  role TEXT NOT NULL CHECK (role IN ('owner', 'renter')),
-  photos TEXT[] NOT NULL DEFAULT '{}',
-  notes TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- RLS: participanții la rental pot vedea și crea inspecții
-ALTER TABLE rental_inspections ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can create own inspections" ON rental_inspections
-  FOR INSERT TO authenticated
-  WITH CHECK (user_id = auth.uid() AND EXISTS (
-    SELECT 1 FROM rentals r WHERE r.id = rental_id
-    AND (r.renter_id = auth.uid() OR r.owner_id = auth.uid())
-  ));
-
-CREATE POLICY "Participants can view inspections" ON rental_inspections
-  FOR SELECT TO authenticated
-  USING (EXISTS (
-    SELECT 1 FROM rentals r WHERE r.id = rental_id
-    AND (r.renter_id = auth.uid() OR r.owner_id = auth.uid())
-  ) OR has_role(auth.uid(), 'admin'));
+CREATE POLICY "Users can view own activity logs"
+ON public.user_activity_logs
+FOR SELECT TO authenticated
+USING (user_id = auth.uid());
 ```
 
-Creăm un bucket de storage `rental-inspections` (public read).
+#### 2. Pagină nouă `src/pages/ActivityLogPage.tsx`
+- Layout consistent cu celelalte pagini de profil (Navbar + Footer)
+- Lista cronologică de activități cu iconițe, badge-uri colorate per tip de acțiune
+- Filtrare opțională per tip (produse, rezervări, profil)
+- Paginare/infinite scroll (limitat la 100 inițial)
+- Suport RO/EN
 
-#### 2. Componenta `InspectionUpload`
+#### 3. API client `src/features/profile/activityLogApi.ts`
+- `fetchMyActivityLogs(limit, offset)` — query direct pe `user_activity_logs` cu `user_id = auth.uid()` (gestionat de RLS)
 
-Componentă reutilizabilă cu:
-- Upload de poze (refolosim logica de compresie din `ImageUpload.tsx`)
-- Câmp opțional de note/observații
-- Indicator vizual al statusului (cine a urcat, cine nu)
-- Maxim 10 poze per inspecție
+#### 4. Hook `src/hooks/queries/useMyActivityLogs.ts`
 
-#### 3. Pagină/Dialog `RentalInspection`
+#### 5. Integrare în navigație
+- Adaug buton "📋 Istoric activitate" / "Activity Log" în `Profile.tsx` (NAV_ITEMS)
+- Rută nouă `/activitate` în `App.tsx`
 
-- Accesibil din dashboard-ul proprietarului și chiriașului
-- Afișează pozele ambelor părți side-by-side
-- Buton de confirmare după ce ambii au urcat poze
+### Fișiere
 
-#### 4. Integrare în fluxul existent
-
-- **LendingsTab**: buton "📷 Predare" pe rentalurile confirmate, "📷 Returnare" pe cele active
-- **RentalsTab**: aceleași butoane din perspectiva chiriașului
-- **Admin**: vizualizare poze inspecție în detaliul rezervării
-
-#### 5. API (`src/features/rentals/inspectionApi.ts`)
-
-- `uploadInspectionPhoto(file, rentalId, userId)` — upload în bucket
-- `createInspection(rentalId, phase, role, photos, notes)` — insert în tabel
-- `getInspections(rentalId)` — fetch inspecții pentru un rental
-
-### Fișiere noi
-| Fișier | Descriere |
+| Fișier | Acțiune |
 |---|---|
-| `src/features/rentals/inspectionApi.ts` | API pentru inspecții |
-| `src/components/dashboard/InspectionDialog.tsx` | Dialog pentru upload poze + vizualizare |
-
-### Fișiere modificate
-| Fișier | Modificare |
-|---|---|
-| `src/components/dashboard/LendingsTab.tsx` | Buton inspecție pe rentaluri confirmate/active |
-| `src/components/dashboard/RentalsTab.tsx` | Buton inspecție din perspectiva chiriașului |
-| `src/components/admin/user-detail/UserRentalsTab.tsx` | Link vizualizare inspecții |
-| Migrare SQL | Tabelă + bucket + RLS |
-
-### Securitate
-- RLS pe `rental_inspections`: doar participanții + admin
-- Storage RLS pe bucket: upload doar de participanți la rental
-- Pozele nu pot fi șterse după upload (protecție anti-manipulare)
+| Migrare SQL | RLS policy nouă |
+| `src/features/profile/activityLogApi.ts` | NOU |
+| `src/hooks/queries/useMyActivityLogs.ts` | NOU |
+| `src/pages/ActivityLogPage.tsx` | NOU |
+| `src/pages/Profile.tsx` | Adaug buton navigare |
+| `src/App.tsx` | Adaug rută `/activitate` |
 
