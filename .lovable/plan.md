@@ -1,25 +1,24 @@
 
 
-## Plan: Dropdown locații full-width pe mobil cu font mai mare
+## Plan: Corectare link-uri meniu offcanvas
 
 ### Problema
-Pe mobil, dropdown-ul de selecție județ/localitate din hero banner este prea mic — apare ca un popover îngust, greu de folosit. Fontul locațiilor e mic și scroll-ul nu e intuitiv.
-
-### Soluție
-Pe mobil, înlocuiesc Radix Select cu un **Drawer** (bottom sheet) care se deschide full-width de jos, cu items mari și scroll nativ touch-friendly. Pe desktop, rămâne Select-ul standard.
+Link-urile din meniul offcanvas folosesc rute vechi cu hash (`/profile#contul-meu`, `/profile#inchirieri`, `/profile#mesaje`, `/profile#favorite`) care toate duc practic la pagina `/profile` (Contul meu). Secțiunile au fost deja mutate în pagini dedicate.
 
 ### Modificări
 
-**`src/components/HeroSearchForm.tsx`**
-- Import `useIsMobile` hook și `Drawer`/`DrawerContent`/`DrawerTrigger` din UI
-- Pe mobil: trigger-ul deschide un `Drawer` cu lista de județe ca butoane full-width, `text-base` (16px), padding `py-3` pe fiecare item, scroll nativ cu `-webkit-overflow-scrolling: touch`
-- Pe desktop: rămâne `Select` + `SelectContent` neschimbat
-- Același tratament pentru dropdown-ul de localități
-- Max height drawer content: `max-h-[60vh]` cu `overflow-y-auto` pentru swipe natural
+**`src/components/layout/Navbar.tsx`** — actualizez rutele din meniul mobil:
+
+| Link | Rută veche | Rută corectă |
+|---|---|---|
+| Contul meu | `/profile#contul-meu` | `/contul-meu` |
+| Rezervări | `/profile#inchirieri` | `/rezervari` |
+| Mesaje | `/profile#mesaje` | `/mesaje` |
+| Favorite | `/profile#favorite` | `/favorite` |
 
 ### Fișiere afectate
 
 | Fișier | Modificare |
 |---|---|
-| `src/components/HeroSearchForm.tsx` | Condiționare mobil/desktop: Drawer vs Select, font mai mare, items full-width |
+| `src/components/layout/Navbar.tsx` | 4 link-uri actualizate (liniile 437, 453, 461, 474) |
 
