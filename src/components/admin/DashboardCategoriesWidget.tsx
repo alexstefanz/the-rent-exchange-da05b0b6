@@ -197,7 +197,7 @@ const DashboardCategoriesWidget = () => {
                               key={sub.id}
                               className="flex items-center justify-between p-2.5 pl-4 rounded-md border border-dashed bg-muted/30 hover:bg-muted/60 transition-colors"
                             >
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
                                 <Layers className="h-3.5 w-3.5 text-muted-foreground" />
                                 <div>
                                   <p className="text-sm">{sub.name}</p>
