@@ -13,7 +13,7 @@ const MobileBottomNav = () => {
 
   const tabs = [
     { to: "/cauta", icon: Search, label: t("Explorează", "Explore") },
-    { to: "/profile#favorite", icon: Heart, label: t("Favorite", "Favorites") },
+    { to: "/favorite", icon: Heart, label: t("Favorite", "Favorites") },
     { to: "/owner/new-product", icon: Plus, label: t("Adaugă", "Add"), highlight: true },
     { to: "/mesaje", icon: MessageCircle, label: "Chat", badge: unreadCount },
     { to: "/profile#contul-meu", icon: User, label: t("Cont", "Account") },
