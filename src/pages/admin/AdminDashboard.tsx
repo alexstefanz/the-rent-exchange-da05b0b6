@@ -37,6 +37,7 @@ const statusLabels: Record<string, string> = {
 };
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const { data: stats, isLoading: statsLoading } = useAdminStats();
   const { data: recentRentals, isLoading: rentalsLoading } = useAdminRentals(undefined, 5);
 
@@ -77,36 +78,43 @@ const AdminDashboard = () => {
                 title="Total Utilizatori"
                 value={stats?.total_users || 0}
                 icon={<Users className="h-4 w-4" />}
+                onClick={() => navigate('/admin/users')}
               />
               <StatsCard
                 title="Produse Active"
                 value={stats?.total_products || 0}
                 icon={<Package className="h-4 w-4" />}
+                onClick={() => navigate('/admin/products')}
               />
               <StatsCard
                 title="Total Rezervări"
                 value={stats?.total_rentals || 0}
                 icon={<CalendarCheck className="h-4 w-4" />}
+                onClick={() => navigate('/admin/reservations')}
               />
               <StatsCard
                 title="Rezervări Active"
                 value={stats?.active_rentals || 0}
                 icon={<Clock className="h-4 w-4" />}
+                onClick={() => navigate('/admin/reservations')}
               />
               <StatsCard
                 title="Venituri Luna Asta"
                 value={formatCurrency(stats?.revenue_this_month || 0)}
                 icon={<Wallet className="h-4 w-4" />}
+                onClick={() => navigate('/admin/finances')}
               />
               <StatsCard
                 title="KYC În Așteptare"
                 value={stats?.pending_kyc || 0}
                 icon={<ShieldCheck className="h-4 w-4" />}
+                onClick={() => navigate('/admin/kyc')}
               />
               <StatsCard
                 title="Bani Retrași"
                 value={formatCurrency(stats?.total_withdrawn || 0)}
                 icon={<Banknote className="h-4 w-4" />}
+                onClick={() => navigate('/admin/finances')}
               />
             </>
           )}
