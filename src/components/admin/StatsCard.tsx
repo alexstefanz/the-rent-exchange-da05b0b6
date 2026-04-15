@@ -12,6 +12,7 @@ interface StatsCardProps {
     isPositive: boolean;
   };
   className?: string;
+  onClick?: () => void;
 }
 
 const StatsCard = ({ 
@@ -20,10 +21,18 @@ const StatsCard = ({
   icon, 
   description, 
   trend,
-  className 
+  className,
+  onClick 
 }: StatsCardProps) => {
   return (
-    <Card className={cn("", className)}>
+    <Card 
+      className={cn(
+        "transition-all duration-200",
+        onClick && "cursor-pointer hover:border-primary/50 hover:shadow-md",
+        className
+      )}
+      onClick={onClick}
+    >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
