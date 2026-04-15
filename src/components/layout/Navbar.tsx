@@ -434,7 +434,7 @@ const Navbar = () => {
                       </Link>
                     )}
                     <Link 
-                      to="/profile#contul-meu" 
+                      to="/contul-meu" 
                       className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
                       onClick={closeMobileMenu}
                     >
@@ -450,7 +450,7 @@ const Navbar = () => {
                       {t("Anunțurile mele", "My Listings")}
                     </Link>
                     <Link 
-                      to="/profile#inchirieri" 
+                      to="/rezervari" 
                       className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
                       onClick={closeMobileMenu}
                     >
@@ -458,7 +458,7 @@ const Navbar = () => {
                       {t("Rezervări", "Reservations")}
                     </Link>
                     <Link 
-                      to="/profile#mesaje" 
+                      to="/mesaje" 
                       className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
                       onClick={closeMobileMenu}
                     >
@@ -471,7 +471,7 @@ const Navbar = () => {
                       )}
                     </Link>
                     <Link 
-                      to="/profile#favorite" 
+                      to="/favorite" 
                       className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
                       onClick={closeMobileMenu}
                     >
