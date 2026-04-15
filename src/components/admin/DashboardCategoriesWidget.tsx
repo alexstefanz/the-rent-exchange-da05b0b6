@@ -124,26 +124,26 @@ const DashboardCategoriesWidget = () => {
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
+      <Card className="overflow-hidden">
+        <CardHeader className="p-4 md:p-6">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
               <CardTitle className="flex items-center gap-2">
-                <FolderTree className="h-5 w-5" />
-                Categorii Platformă
+                <FolderTree className="h-5 w-5 shrink-0" />
+                <span className="truncate">Categorii Platformă</span>
               </CardTitle>
               <CardDescription>
                 {categories?.length || 0} categorii, {subcategories?.length || 0} subcategorii
               </CardDescription>
             </div>
-            <a href="/admin/categories">
+            <a href="/admin/categories" className="shrink-0">
               <Badge variant="outline" className="cursor-pointer hover:bg-muted">
                 Vezi toate →
               </Badge>
             </a>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
           {isLoading ? (
             <div className="space-y-3">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -157,19 +157,19 @@ const DashboardCategoriesWidget = () => {
                 const subs = getSubsForCategory(cat.id);
                 return (
                   <Collapsible key={cat.id}>
-                    <div className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors min-w-0">
+                    <div className="flex items-center justify-between gap-1 p-2 md:p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors min-w-0">
                       <CollapsibleTrigger asChild>
-                        <button className="flex items-center gap-3 flex-1 text-left min-w-0">
+                        <button className="flex items-center gap-2 md:gap-3 flex-1 text-left min-w-0 overflow-hidden">
                           <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [&[data-state=open]]:rotate-180" />
                           {IconComp ? (
                             <IconComp className="h-5 w-5 text-primary" />
                           ) : (
                             <FolderTree className="h-5 w-5 text-muted-foreground" />
                           )}
-                          <div>
-                            <p className="font-medium text-sm">{cat.name}</p>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{cat.name}</p>
                             {cat.name_en && (
-                              <p className="text-xs text-muted-foreground">{cat.name_en}</p>
+                              <p className="text-xs text-muted-foreground truncate">{cat.name_en}</p>
                             )}
                           </div>
                           {subs.length > 0 && (
@@ -191,7 +191,7 @@ const DashboardCategoriesWidget = () => {
                     </div>
                     <CollapsibleContent>
                       {subs.length > 0 ? (
-                        <div className="ml-8 mt-1 space-y-1 mb-2">
+                        <div className="ml-4 md:ml-8 mt-1 space-y-1 mb-2">
                           {subs.map((sub) => (
                             <div
                               key={sub.id}

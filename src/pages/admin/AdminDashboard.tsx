@@ -121,10 +121,10 @@ const AdminDashboard = () => {
         </div>
 
         {/* Recent Rentals & Quick Stats */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2 [&>*]:min-w-0">
           {/* Recent Rentals */}
-          <Card>
-            <CardHeader>
+          <Card className="overflow-hidden">
+            <CardHeader className="p-4 md:p-6">
               <CardTitle className="flex items-center gap-2">
                 <CalendarCheck className="h-5 w-5" />
                 Ultimele Rezervări
@@ -133,7 +133,7 @@ const AdminDashboard = () => {
                 Cele mai recente rezervări pe platformă
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
               {rentalsLoading ? (
                 <div className="space-y-4">
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -145,20 +145,20 @@ const AdminDashboard = () => {
                   {recentRentals.map((rental) => (
                     <div 
                       key={rental.id} 
-                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors min-w-0"
+                      className="flex items-center justify-between gap-2 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors min-w-0"
                     >
-                      <div className="space-y-1">
-                        <p className="font-medium text-sm line-clamp-1">
+                      <div className="space-y-1 min-w-0">
+                        <p className="font-medium text-sm truncate">
                           {rental.product_title}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground truncate">
                           {rental.renter_name} → {rental.owner_name}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {format(new Date(rental.start_date), 'd MMM', { locale: ro })} - {format(new Date(rental.end_date), 'd MMM yyyy', { locale: ro })}
                         </p>
                       </div>
-                      <div className="text-right space-y-1">
+                      <div className="text-right space-y-1 shrink-0">
                         <Badge className={statusColors[rental.status] || "bg-gray-100"}>
                           {statusLabels[rental.status] || rental.status}
                         </Badge>
