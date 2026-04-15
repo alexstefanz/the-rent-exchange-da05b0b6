@@ -157,9 +157,9 @@ const DashboardCategoriesWidget = () => {
                 const subs = getSubsForCategory(cat.id);
                 return (
                   <Collapsible key={cat.id}>
-                    <div className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors min-w-0">
                       <CollapsibleTrigger asChild>
-                        <button className="flex items-center gap-3 flex-1 text-left">
+                        <button className="flex items-center gap-3 flex-1 text-left min-w-0">
                           <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform [&[data-state=open]]:rotate-180" />
                           {IconComp ? (
                             <IconComp className="h-5 w-5 text-primary" />
@@ -177,7 +177,7 @@ const DashboardCategoriesWidget = () => {
                           )}
                         </button>
                       </CollapsibleTrigger>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 shrink-0">
                         <Badge variant={cat.is_active ? "default" : "secondary"} className="text-xs mr-2">
                           {cat.is_active ? "Activă" : "Inactivă"}
                         </Badge>
@@ -197,7 +197,7 @@ const DashboardCategoriesWidget = () => {
                               key={sub.id}
                               className="flex items-center justify-between p-2.5 pl-4 rounded-md border border-dashed bg-muted/30 hover:bg-muted/60 transition-colors"
                             >
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
                                 <Layers className="h-3.5 w-3.5 text-muted-foreground" />
                                 <div>
                                   <p className="text-sm">{sub.name}</p>
@@ -206,7 +206,7 @@ const DashboardCategoriesWidget = () => {
                                   )}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-1">
+                              <div className="flex items-center gap-1 shrink-0">
                                 <Badge variant={sub.is_active ? "default" : "secondary"} className="text-[10px] mr-1">
                                   {sub.is_active ? "Activă" : "Inactivă"}
                                 </Badge>

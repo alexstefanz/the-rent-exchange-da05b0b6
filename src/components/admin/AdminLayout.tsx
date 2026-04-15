@@ -23,7 +23,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             <AdminSidebar />
           </div>
 
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 overflow-y-auto overflow-x-hidden">
             {/* Mobile header with hamburger */}
             <div className="md:hidden sticky top-0 z-40 flex items-center gap-3 border-b bg-background px-4 py-3">
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -39,7 +39,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               <span className="font-bold text-primary">Admin Panel</span>
             </div>
 
-            <div className="p-6">
+            <div className="p-4 md:p-6">
               {children}
             </div>
           </main>

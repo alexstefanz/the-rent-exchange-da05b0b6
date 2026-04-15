@@ -52,7 +52,7 @@ const AdminDashboard = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 overflow-hidden">
         {/* Header */}
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-bold tracking-tight">Dashboard</h1>
@@ -145,7 +145,7 @@ const AdminDashboard = () => {
                   {recentRentals.map((rental) => (
                     <div 
                       key={rental.id} 
-                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors min-w-0"
                     >
                       <div className="space-y-1">
                         <p className="font-medium text-sm line-clamp-1">
