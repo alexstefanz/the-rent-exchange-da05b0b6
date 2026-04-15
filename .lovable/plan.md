@@ -1,29 +1,25 @@
 
 
-## Plan: Fix mobile overflow pe cardurile Rezervări și Categorii
+## Plan: Dropdown locații full-width pe mobil cu font mai mare
 
 ### Problema
-Pe mobil (390px), conținutul din cardurile "Ultimele Rezervări" și "Categorii" depășește lățimea cardului. Badge-urile ("În aștept...") și prețurile ("600 R...") sunt tăiate pe dreapta. Cauza: `CardHeader` și `CardContent` au `p-6` (24px padding) care pe un ecran de 390px cu `p-4` exterior lasă foarte puțin spațiu util, iar elementele flex din interior nu au `min-w-0` / `overflow-hidden` corect.
+Pe mobil, dropdown-ul de selecție județ/localitate din hero banner este prea mic — apare ca un popover îngust, greu de folosit. Fontul locațiilor e mic și scroll-ul nu e intuitiv.
+
+### Soluție
+Pe mobil, înlocuiesc Radix Select cu un **Drawer** (bottom sheet) care se deschide full-width de jos, cu items mari și scroll nativ touch-friendly. Pe desktop, rămâne Select-ul standard.
 
 ### Modificări
 
-**1. `src/pages/admin/AdminDashboard.tsx`**
-- Pe `Card` (Ultimele Rezervări): adaug `overflow-hidden`
-- Pe `CardHeader` și `CardContent`: padding responsive `p-4 md:p-6` / `p-4 pt-0 md:p-6 md:pt-0`
-- Pe fiecare rental item (linia 148-168): adaug `min-w-0` pe ambele div-uri copil (stânga și dreapta), `shrink-0` pe div-ul dreapta, `truncate` pe text
-
-**2. `src/components/admin/DashboardCategoriesWidget.tsx`**
-- Pe `Card`: adaug `overflow-hidden`  
-- Pe `CardHeader` și `CardContent`: padding responsive `p-4 md:p-6` / `p-4 pt-0 md:p-6 md:pt-0`
-- Pe rândurile de categorii: `overflow-hidden` pe container
-
-**3. `src/pages/admin/AdminDashboard.tsx` — grid wrapper**
-- Pe `grid gap-6 lg:grid-cols-2` (linia 124): adaug `min-w-0` pe copii cu `[&>*]:min-w-0`
+**`src/components/HeroSearchForm.tsx`**
+- Import `useIsMobile` hook și `Drawer`/`DrawerContent`/`DrawerTrigger` din UI
+- Pe mobil: trigger-ul deschide un `Drawer` cu lista de județe ca butoane full-width, `text-base` (16px), padding `py-3` pe fiecare item, scroll nativ cu `-webkit-overflow-scrolling: touch`
+- Pe desktop: rămâne `Select` + `SelectContent` neschimbat
+- Același tratament pentru dropdown-ul de localități
+- Max height drawer content: `max-h-[60vh]` cu `overflow-y-auto` pentru swipe natural
 
 ### Fișiere afectate
 
 | Fișier | Modificare |
 |---|---|
-| `src/pages/admin/AdminDashboard.tsx` | Padding responsive pe Card, min-w-0, overflow-hidden, truncate pe rental items |
-| `src/components/admin/DashboardCategoriesWidget.tsx` | Padding responsive, overflow-hidden pe Card |
+| `src/components/HeroSearchForm.tsx` | Condiționare mobil/desktop: Drawer vs Select, font mai mare, items full-width |
 
