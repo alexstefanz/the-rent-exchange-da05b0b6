@@ -229,6 +229,9 @@ export const approveKycCase = async (caseId: string): Promise<void> => {
   }).eq('id', kycCase.user_id);
 
   await auditLog(caseId, 'APPROVED', kycCase.status, 'APPROVED');
+
+  // Send email notification (non-blocking)
+  sendKycEmail(kycCase.user_id, 'kyc-approved', `kyc-approved-${caseId}`);
 };
 
 export const rejectKycCase = async (caseId: string, reason: string): Promise<void> => {
@@ -248,6 +251,8 @@ export const rejectKycCase = async (caseId: string, reason: string): Promise<voi
   }).eq('id', kycCase.user_id);
 
   await auditLog(caseId, 'REJECTED', kycCase.status, 'REJECTED: ' + reason);
+
+  sendKycEmail(kycCase.user_id, 'kyc-rejected', `kyc-rejected-${caseId}`, { reason });
 };
 
 export const requestReupload = async (caseId: string): Promise<void> => {
@@ -263,7 +268,36 @@ export const requestReupload = async (caseId: string): Promise<void> => {
   }).eq('id', kycCase.user_id);
 
   await auditLog(caseId, 'REUPLOAD_REQUESTED', kycCase.status, 'IN_PROGRESS');
+
+  sendKycEmail(kycCase.user_id, 'kyc-reupload-requested', `kyc-reupload-${caseId}-${Date.now()}`);
 };
+
+// Helper: send KYC email to user (non-blocking)
+async function sendKycEmail(
+  userId: string,
+  templateName: string,
+  idempotencyKey: string,
+  extraData: Record<string, unknown> = {}
+): Promise<void> {
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', userId)
+      .single();
+    if (!profile?.email) return;
+    await supabase.functions.invoke('send-transactional-email', {
+      body: {
+        templateName,
+        recipientEmail: profile.email,
+        idempotencyKey,
+        templateData: { name: profile.full_name || undefined, ...extraData },
+      },
+    });
+  } catch (e) {
+    console.error(`[kycApi] Failed to send ${templateName} email:`, e);
+  }
+}
 
 export const setNeedsManualReview = async (caseId: string): Promise<void> => {
   const kycCase = await fetchKycCase(caseId);

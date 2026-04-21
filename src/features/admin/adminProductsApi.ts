@@ -35,6 +35,39 @@ export const rejectProduct = async (productId: string, reason: string): Promise<
     .update({ approval_status: 'rejected', is_active: false, flag_reason: reason } as Record<string, unknown>)
     .eq('id', productId);
   if (error) throw new Error(error.message);
+
+  // Send notification email to owner (non-blocking)
+  try {
+    const { data: prod } = await supabase
+      .from('products')
+      .select('title, owner_id')
+      .eq('id', productId)
+      .single();
+    if (prod?.owner_id) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email, full_name')
+        .eq('id', prod.owner_id)
+        .single();
+      if (profile?.email) {
+        await supabase.functions.invoke('send-transactional-email', {
+          body: {
+            templateName: 'product-rejected',
+            recipientEmail: profile.email,
+            idempotencyKey: `product-rejected-${productId}-${Date.now()}`,
+            templateData: {
+              name: profile.full_name || undefined,
+              productTitle: prod.title,
+              productId,
+              reason,
+            },
+          },
+        });
+      }
+    }
+  } catch (e) {
+    console.error('[adminProductsApi] Failed to send product-rejected email:', e);
+  }
 };
 
 export const fetchAdminProducts = async (
