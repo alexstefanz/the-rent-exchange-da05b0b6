@@ -1,93 +1,62 @@
 
 
-## Plan: Tickete necitite — bold în listă + badge corect în sidebar
+## Plan: Banner global "Refă KYC-ul" pentru utilizatorii cu KYC respins
 
-### Diagnostic
+### Scop
+Utilizatorii al căror KYC a fost **respins** (`profiles.kyc_status = 'REJECTED'`) văd, sub header pe toate paginile publice, un row roșu cu mesaj scurt + buton CTA care duce direct la `/verificare` pentru reîncărcare documente.
 
-1. **Coloana `last_admin_read_at`** există deja în `ops_tickets`, dar **nu e folosită nicăieri** — niciun cod nu o setează la deschiderea ticketului și niciun query nu o citește.
-2. RPC-ul `get_admin_notification_summary` returnează `open_tickets` numărând **toate** ticketele cu status ≠ CLOSED/RESOLVED → badge-ul `9+` din sidebar nu scade niciodată după ce adminul citește un ticket.
-3. În `AdminTickets.tsx` titlul ticketului e afișat cu `font-medium` constant — nu există distincție vizuală între citit/necitit.
+### Comportament
 
-### Definiție "necitit de admin"
+- **Vizibil**: doar dacă `useKycGate().isRejected === true` (utilizator autentificat, status `REJECTED`)
+- **Invizibil**: pentru toți ceilalți (neautentificați, `VERIFIED`, `PENDING`, `NOT_VERIFIED`, `IN_PROGRESS`)
+- **Nu afișat** pe rutele admin (`/admin/*`) și pe pagina `/verificare` însăși (evităm redundanța — utilizatorul e deja acolo)
+- **Dismiss session-only**: buton X care ascunde row-ul în `sessionStorage` (`kyc_rejected_dismissed`); reapare la următoarea sesiune dacă statusul e tot `REJECTED`
 
-Un ticket este **necitit** dacă:
-- `last_admin_read_at IS NULL`, **SAU**
-- `last_admin_read_at < updated_at` (a apărut mesaj nou / schimbare de status după ultima vizualizare)
+### Design vizual
 
-Și e **deschis** (status NU în `CLOSED`, `RESOLVED`).
-
-### Modificări
-
-#### 1. Migrație DB
-
-**Funcție nouă `mark_ops_ticket_read(p_ticket_id uuid)`** — `SECURITY DEFINER`, doar pentru admini, setează `last_admin_read_at = now()`.
-
-**Update RPC `get_admin_notification_summary`**:
-```sql
--- Înainte:
-(SELECT COUNT(*) FROM ops_tickets WHERE status NOT IN ('CLOSED','RESOLVED'))
--- După:
-(SELECT COUNT(*) FROM ops_tickets 
- WHERE status NOT IN ('CLOSED','RESOLVED')
-   AND (last_admin_read_at IS NULL OR last_admin_read_at < updated_at))
+```text
+┌──────────────────────────────────────────────────────────────────────┐
+│ ⚠  Verificarea identității a fost respinsă.   [Refă KYC-ul →]   [X] │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
-**Trigger pe `ops_ticket_messages` INSERT** (când vine mesaj nou public, fie de la user, fie de la admin altul) → forțează `ops_tickets.updated_at = now()` astfel încât badge-ul revine la "necitit" pentru noi evenimente. (Verific dacă există deja un trigger similar; dacă da, sar peste.)
+- Background: `bg-destructive/10`
+- Bordură jos: `border-b border-destructive/30`
+- Iconiță: `ShieldAlert` în roșu (`text-destructive`)
+- Buton CTA: `variant="default"` (gradient portocaliu existent), `size="sm"`, link `/verificare`
+- Text bilingv RO/EN prin `useLanguage()`
+- Sticky sub header sau în flux normal — în flux normal (mai puțin agresiv); apare deasupra conținutului paginii, sub `<Navbar>`
 
-#### 2. API TypeScript (`opsTicketsApi.ts`)
+### Implementare
 
-Adaug:
-```ts
-export const markTicketRead = async (ticketId: string): Promise<void> => {
-  await supabase.rpc('mark_ops_ticket_read', { p_ticket_id: ticketId });
-};
-```
+**Fișier nou**: `src/components/kyc/KycRejectedBanner.tsx`
+- Folosește `useKycGate()` + `useLocation()` pentru a decide vizibilitatea
+- Returnează `null` dacă: `!isRejected`, ruta începe cu `/admin` sau `/verificare`, sau e dismissed în session
+- Card row simplu, full-width, responsive (CTA + X grupate la dreapta pe desktop, stivuite pe mobil)
 
-#### 3. UI — `AdminTickets.tsx` (listă)
+**Modificare**: `src/App.tsx`
+- Adaug `<KycRejectedBanner />` imediat după `<ScrollToTop />`, în interiorul `<Suspense>` (lazy import)
+- Astfel apare pe toate rutele care includ `<Navbar>` (banner-ul stă în flux deasupra rutei, iar Navbar-ul fiecărei pagini rămâne sus — ordinea în DOM va fi: Navbar (din pagină) → banner (din App.tsx, dar randat înainte de `<Routes>`)
 
-- Adaug `last_admin_read_at` în interfața `OpsTicket` (deja există coloana).
-- Helper `isUnread(ticket)` → `!ticket.last_admin_read_at || ticket.last_admin_read_at < ticket.updated_at`.
-- În rândul tabelului desktop:
-  - `<p className={`line-clamp-1 ${isUnread(t) ? 'font-bold text-foreground' : 'font-medium text-muted-foreground'}`}>{t.title}</p>`
-  - Opțional: punct portocaliu (#F98715) lângă `public_id` pentru ticketele necitite.
-- Identic pe mobile cards.
+**Atenție la ordinea DOM**: `<Navbar>` este intern paginilor (nu în `App.tsx`). Pentru a apărea **sub** header, banner-ul trebuie să fie randat fie:
+- (A) în interiorul fiecărui layout — prea invaziv
+- (B) **fixat în top via CSS** cu `position: sticky; top: <navbar-height>` — fragil
+- (C) **integrat în `<Navbar>`** — soluția cea mai curată
 
-#### 4. UI — `AdminTicketDetail.tsx` (deschidere ticket)
-
-La mount-ul paginii, după ce ticketul e încărcat cu succes:
-```ts
-useEffect(() => {
-  if (ticket?.id) {
-    markTicketRead(ticket.id).then(() => {
-      qc.invalidateQueries({ queryKey: ['ops-tickets'] });
-      qc.invalidateQueries({ queryKey: ['admin-notification-summary'] });
-    });
-  }
-}, [ticket?.id]);
-```
-
-#### 5. Cache invalidare
-
-În `useOpsTickets` păstrez setup-ul actual; după `markTicketRead` invalidăm cele două chei React Query → sidebar și listă se refac.
-
-### Rezultat
-
-- **Lista de tickete**: titlurile necitite apar **bold + culoare normală**, cele citite apar **medium + muted** → admin distinge instant ce trebuie tratat.
-- **Sidebar "Tickete"**: badge-ul roșu numără doar ticketele necitite/cu update nou. Click pe ticket → `last_admin_read_at` actualizat → la următorul refresh (real-time + 60s polling) numărul scade.
-- Dacă userul răspunde ulterior la un ticket deja citit, `updated_at` > `last_admin_read_at` → ticketul redevine necitit și apare iar bold + badge++.
+Aleg **opțiunea C**: adaug `<KycRejectedBanner />` în interiorul `Navbar.tsx`, randat imediat sub elementul `<header>` (în același return JSX). Avantaje: apare automat pe toate paginile care folosesc `Navbar`, nu apare în admin (care folosește `AdminLayout`), și e poziționat exact unde trebuie.
 
 ### Fișiere afectate
 
 | Fișier | Modificare |
 |---|---|
-| `supabase/migrations/<ts>.sql` | NOU — `mark_ops_ticket_read()` + update `get_admin_notification_summary` (filtrare unread) |
-| `src/features/admin/opsTicketsApi.ts` | Adaug `markTicketRead()` + câmp `last_admin_read_at` în interfața `OpsTicket` |
-| `src/pages/admin/AdminTickets.tsx` | Bold pe titluri necitite + helper `isUnread()` (desktop + mobile) |
-| `src/pages/admin/AdminTicketDetail.tsx` | Apelez `markTicketRead()` la deschidere + invalidare cache |
+| `src/components/kyc/KycRejectedBanner.tsx` | **NOU** — componentă banner cu hook KYC + dismiss session |
+| `src/components/layout/Navbar.tsx` | Import + render `<KycRejectedBanner />` imediat sub `</header>` |
 
 ### Limitări recunoscute
 
-- Marcarea "citit" e per-status global (oricare admin marchează → dispare pentru toți) — consistent cu shared inbox-ul existent pentru `admin_notifications`.
-- Badge-ul se actualizează imediat doar la utilizatorul curent (prin `invalidateQueries`); ceilalți admini văd update prin polling 60s sau realtime push când următorul mesaj/update se întâmplă.
-- Ticketele `RESOLVED`/`CLOSED` nu intră în badge nici dacă au mesaj nou (comportament dorit — sunt închise).
+- **Doar utilizatori autentificați** — un user neautentificat nu poate fi `REJECTED`, deci nu apare
+- **Nu apare în admin panel** (folosește `AdminLayout`, nu `Navbar`) — corect, adminii nu trebuie să vadă propriul banner
+- **Nu apare pe `/verificare`** (utilizatorul e deja acolo, ar fi redundant)
+- **Dismiss e per-sesiune browser** — nu salvăm în DB; la deschidere nouă reapare dacă statusul e tot `REJECTED`
+- Mesajul de respingere detaliat (`rejection_reason`) NU e inclus în banner pentru a păstra row-ul scurt; utilizatorul îl vede pe pagina `/verificare`
 
