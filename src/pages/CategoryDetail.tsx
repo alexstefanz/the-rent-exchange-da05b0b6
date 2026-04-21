@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, Navigate } from "react-router-dom";
 import { ChevronLeft, Loader2, Grid3X3, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,6 +16,10 @@ import { useLanguage } from "@/contexts/LanguageContext";
 const CategoryDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
+  // Redirect legacy slug to new one
+  if (slug === "echipamente-agricole") {
+    return <Navigate to="/categorie/utilaje" replace />;
+  }
   const category = getCategoryBySlug(slug || "");
   const copy = useUxCopy();
   const { language } = useLanguage();
