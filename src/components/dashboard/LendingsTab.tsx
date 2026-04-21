@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, Plus, Eye, Edit, Check, X, Loader2, Calendar, MessageCircle, Camera } from "lucide-react";
+import { Package, Plus, Eye, Edit, Check, X, Loader2, Calendar, MessageCircle, Camera, Receipt, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,8 @@ import { AcceptedRentalDialog } from "./AcceptedRentalDialog";
 import { InspectionDialog } from "./InspectionDialog";
 import RentalTimeline from "./RentalTimeline";
 import type { InspectionPhase } from "@/features/rentals/inspectionApi";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
 
 const statusLabels: Record<string, { ro: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { ro: "În așteptare", variant: "secondary" },
@@ -228,6 +230,18 @@ const LendingsTab = () => {
                           refunded_at: rental.refunded_at,
                         }} />
                       </div>
+                      <Collapsible>
+                        <CollapsibleTrigger asChild>
+                          <Button variant="ghost" size="sm" className="mt-2 h-7 px-2 text-xs">
+                            <Receipt className="h-3.5 w-3.5 mr-1" />
+                            Status plată
+                            <ChevronDown className="h-3.5 w-3.5 ml-1" />
+                          </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="mt-2">
+                          <RentalPaymentStatus rentalId={rental.id} mode="user" />
+                        </CollapsibleContent>
+                      </Collapsible>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {(rental.status === "confirmed" || rental.status === "active") && (
                           <Button
