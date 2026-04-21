@@ -11,6 +11,8 @@ import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { useKycGate } from "@/hooks/queries/useKycGate";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface BookingCardProps {
   productId: string;
@@ -32,6 +34,8 @@ const BookingCard = ({
   const navigate = useNavigate();
   const copy = useUxCopy();
   const { language } = useLanguage();
+  const { user } = useAuth();
+  const kyc = useKycGate();
   const dateLocale = language === "ro" ? ro : enUS;
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
@@ -75,11 +79,29 @@ const BookingCard = ({
 
   const handleBooking = () => {
     if (startDate && endDate) {
+      // If logged in but not KYC-verified, route to verification first
+      if (user && !kyc.loading && !kyc.isVerified) {
+        toast({
+          title: language === "ro" ? "Verificare identitate necesară" : "Identity verification required",
+          description: language === "ro"
+            ? "Pentru a face o rezervare, te rugăm să-ți verifici identitatea."
+            : "To make a booking, please verify your identity first.",
+        });
+        navigate("/kyc");
+        return;
+      }
       navigate('/checkout', {
         state: { product: { id: productId, title, images, price: clientPrice, priceUnit: "zi", location }, startDate, endDate, rentalDays, totalPrice }
       });
     }
   };
+
+  const needsKyc = !!user && !kyc.loading && !kyc.isVerified;
+  const ctaLabel = !startDate || !endDate
+    ? copy.booking.steps.period
+    : needsKyc
+      ? (language === "ro" ? "Verifică identitatea pentru a rezerva" : "Verify identity to book")
+      : copy.booking.ctaPrimary;
 
   return (
     <div className="sticky top-24 rounded-xl border border-border bg-card p-4 sm:p-6 shadow-card">
@@ -155,7 +177,7 @@ const BookingCard = ({
       )}
 
       <Button className="w-full" size="lg" disabled={!startDate || !endDate} onClick={handleBooking}>
-        {startDate && endDate ? copy.booking.ctaPrimary : copy.booking.steps.period}
+        {ctaLabel}
       </Button>
 
       <p className="mt-3 text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
