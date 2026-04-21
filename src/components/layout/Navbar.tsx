@@ -339,6 +339,8 @@ const Navbar = () => {
 
       </header>
 
+      <KycRejectedBanner />
+
       {/* Mobile Menu Overlay */}
       <div 
         className={`fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 lg:hidden ${
