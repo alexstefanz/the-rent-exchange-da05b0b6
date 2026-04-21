@@ -17,6 +17,7 @@ import { Loader2, Mail, Building2, User } from "lucide-react";
 import logoImage from "@/assets/rentli_logo.webp";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
+import { strongPasswordSchema, isWeakPasswordError } from "@/lib/passwordValidation";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -39,13 +40,13 @@ const Auth = () => {
 
   const loginSchema = z.object({
     email: z.string().email(copy.auth.invalidEmail),
-    password: z.string().min(6, copy.auth.passwordMin),
+    password: z.string().min(1, copy.auth.passwordMin),
   });
 
   const registerSchema = z.object({
     fullName: z.string().min(2, copy.auth.nameMin),
     email: z.string().email(copy.auth.invalidEmail),
-    password: z.string().min(6, copy.auth.passwordMin),
+    password: strongPasswordSchema,
     confirmPassword: z.string(),
     companyName: z.string().max(100).optional().or(z.literal("")),
     cui: z.string().max(20).optional().or(z.literal("")),
@@ -72,7 +73,7 @@ const Auth = () => {
   });
 
   const resetPasswordSchema = z.object({
-    newPassword: z.string().min(6, copy.auth.passwordMin),
+    newPassword: strongPasswordSchema,
     confirmNewPassword: z.string(),
   }).refine((data) => data.newPassword === data.confirmNewPassword, {
     message: copy.auth.passwordMismatch,
@@ -125,7 +126,7 @@ const Auth = () => {
     if (error) {
       toast({
         title: copy.auth.loginError,
-        description: error.message === "Invalid login credentials" ? copy.auth.invalidCredentials : error.message,
+        description: copy.auth.invalidCredentials,
         variant: "destructive",
       });
     } else {
@@ -148,6 +149,7 @@ const Auth = () => {
     if (error) {
       let message = error.message;
       if (error.message.includes("already registered")) message = copy.auth.accountExists;
+      else if (isWeakPasswordError(error.message)) message = copy.auth.passwordTooWeak;
       toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
     } else {
       // Update profile with business data after signup
