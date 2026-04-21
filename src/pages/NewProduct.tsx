@@ -20,6 +20,8 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ImageUpload from "@/components/products/ImageUpload";
 import { containsContactInfo } from "@/lib/inputValidation";
+import { useKycGate } from "@/hooks/queries/useKycGate";
+import KycGateBanner from "@/components/kyc/KycGateBanner";
 
 const CONTACT_INFO_ERROR = "Descrierea nu poate conține date de contact (telefon, email sau link-uri). Comunicarea se face prin platforma Rentli.";
 
