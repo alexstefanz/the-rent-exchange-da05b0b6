@@ -11,7 +11,7 @@ import { useMyProducts } from "@/hooks/queries/useProducts";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateClientPrice } from "@/features/products/productsApi";
 import { getProductUrl } from "@/lib/slugUtils";
-import { getOwnerRentals, respondToRental, type OwnerRental } from "@/features/rentals/ownerRentalsApi";
+import { getOwnerRentals, respondToRental, confirmHandover, confirmReturn, type OwnerRental } from "@/features/rentals/ownerRentalsApi";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { AcceptedRentalDialog } from "./AcceptedRentalDialog";
 import { InspectionDialog } from "./InspectionDialog";
+import RentalTimeline from "./RentalTimeline";
 import type { InspectionPhase } from "@/features/rentals/inspectionApi";
 
 const statusLabels: Record<string, { ro: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -54,6 +55,7 @@ const LendingsTab = () => {
   const [rejectReason, setRejectReason] = useState("");
   const [acceptedRental, setAcceptedRental] = useState<OwnerRental | null>(null);
   const [inspectionRental, setInspectionRental] = useState<{ rental: OwnerRental; phase: InspectionPhase } | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const activeProducts = products.filter(p => p.is_active);
   const pendingRentals = rentals.filter(r => r.status === "pending");
@@ -87,6 +89,34 @@ const LendingsTab = () => {
       console.error(e);
     } finally {
       setRespondingId(null);
+    }
+  };
+
+  const handleConfirmHandover = async (rental: OwnerRental) => {
+    setConfirmingId(rental.id);
+    try {
+      await confirmHandover(rental.id);
+      toast.success("Predarea a fost confirmată");
+      queryClient.invalidateQueries({ queryKey: ["ownerRentals"] });
+    } catch (e) {
+      toast.error("Eroare la confirmarea predării");
+      console.error(e);
+    } finally {
+      setConfirmingId(null);
+    }
+  };
+
+  const handleConfirmReturn = async (rental: OwnerRental) => {
+    setConfirmingId(rental.id);
+    try {
+      await confirmReturn(rental.id);
+      toast.success("Returnare confirmată. Suma va apărea în balanță.");
+      queryClient.invalidateQueries({ queryKey: ["ownerRentals"] });
+    } catch (e) {
+      toast.error("Eroare la confirmarea returnării");
+      console.error(e);
+    } finally {
+      setConfirmingId(null);
     }
   };
 
@@ -188,20 +218,59 @@ const LendingsTab = () => {
                       <p className="text-sm text-muted-foreground mt-1">
                         {rental.renter_name || "Chiriaș"} · {format(new Date(rental.start_date), "d MMM", { locale: ro })} - {format(new Date(rental.end_date), "d MMM", { locale: ro })} · {rental.owner_payout} RON
                       </p>
-                      {(rental.status === "confirmed" || rental.status === "active") && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-2"
-                          onClick={() => setInspectionRental({
-                            rental,
-                            phase: rental.status === "confirmed" ? "checkout" : "checkin",
-                          })}
-                        >
-                          <Camera className="h-4 w-4 mr-1" />
-                          📷 {rental.status === "confirmed" ? "Predare" : "Returnare"}
-                        </Button>
-                      )}
+                      <div className="mt-3 pt-3 border-t border-border/50">
+                        <RentalTimeline rental={{
+                          status: rental.status,
+                          payment_status: rental.payment_status,
+                          end_date: rental.end_date,
+                          handover_confirmed_at: rental.handover_confirmed_at,
+                          return_confirmed_at: rental.return_confirmed_at,
+                          refunded_at: rental.refunded_at,
+                        }} />
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {(rental.status === "confirmed" || rental.status === "active") && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setInspectionRental({
+                              rental,
+                              phase: rental.status === "confirmed" ? "checkout" : "checkin",
+                            })}
+                          >
+                            <Camera className="h-4 w-4 mr-1" />
+                            📷 {rental.status === "confirmed" ? "Predare" : "Returnare"}
+                          </Button>
+                        )}
+                        {rental.status === "confirmed" && rental.handover_confirmed_at == null && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleConfirmHandover(rental)}
+                            disabled={confirmingId === rental.id}
+                          >
+                            {confirmingId === rental.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                            ) : (
+                              <Check className="h-4 w-4 mr-1" />
+                            )}
+                            {copy.timeline.confirmHandover}
+                          </Button>
+                        )}
+                        {rental.status === "active" && rental.return_confirmed_at == null && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleConfirmReturn(rental)}
+                            disabled={confirmingId === rental.id}
+                          >
+                            {confirmingId === rental.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                            ) : (
+                              <Check className="h-4 w-4 mr-1" />
+                            )}
+                            {copy.timeline.confirmReturn}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
