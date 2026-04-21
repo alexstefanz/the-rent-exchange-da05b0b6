@@ -66,7 +66,8 @@ const AdminTicketDetail = () => {
       markTicketRead(ticket.id)
         .then(() => {
           queryClient.invalidateQueries({ queryKey: ['opsTickets'] });
-          queryClient.invalidateQueries({ queryKey: ['adminNotificationSummary'] });
+          queryClient.invalidateQueries({ queryKey: ['admin-notification-summary'] });
+          queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
         })
         .catch(() => {/* silent */});
     }
