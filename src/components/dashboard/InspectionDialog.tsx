@@ -16,11 +16,30 @@ import {
   uploadInspectionPhoto,
   createInspection,
   getInspections,
+  getInspectionSignedUrl,
+  extractInspectionPath,
   type InspectionPhase,
   type InspectionRole,
   type Inspection,
 } from "@/features/rentals/inspectionApi";
 import { useAuth } from "@/contexts/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function InspectionImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  // If it's already a blob: URL (newly uploaded preview), use it directly.
+  const isBlob = src.startsWith("blob:");
+  const path = extractInspectionPath(src);
+  const { data: signedUrl, isLoading } = useQuery({
+    queryKey: ["inspection-signed-url", path],
+    queryFn: () => getInspectionSignedUrl(src),
+    enabled: !isBlob && !!path,
+    staleTime: 50 * 60 * 1000,
+  });
+
+  if (isBlob) return <img src={src} alt={alt} className={className} />;
+  if (isLoading || !signedUrl) return <Skeleton className={className} />;
+  return <img src={signedUrl} alt={alt} className={className} />;
+}
 
 interface InspectionDialogProps {
   open: boolean;
@@ -150,7 +169,7 @@ export function InspectionDialog({
             </div>
             <div className="grid grid-cols-3 gap-2">
               {myExisting.photos.map((url, i) => (
-                <img key={i} src={url} alt={`Inspecție ${i + 1}`} className="rounded-lg aspect-square object-cover border" />
+                <InspectionImage key={i} src={url} alt={`Inspecție ${i + 1}`} className="rounded-lg aspect-square object-cover border w-full" />
               ))}
             </div>
             {myExisting.notes && (
@@ -165,7 +184,7 @@ export function InspectionDialog({
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {otherParty.photos.map((url, i) => (
-                    <img key={i} src={url} alt={`Inspecție ${i + 1}`} className="rounded-lg aspect-square object-cover border" />
+                    <InspectionImage key={i} src={url} alt={`Inspecție ${i + 1}`} className="rounded-lg aspect-square object-cover border w-full" />
                   ))}
                 </div>
                 {otherParty.notes && (
@@ -189,7 +208,7 @@ export function InspectionDialog({
                 </div>
                 <div className="grid grid-cols-4 gap-1">
                   {otherParty.photos.slice(0, 4).map((url, i) => (
-                    <img key={i} src={url} alt="" className="rounded aspect-square object-cover" />
+                    <InspectionImage key={i} src={url} alt="" className="rounded aspect-square object-cover w-full" />
                   ))}
                 </div>
               </div>
@@ -207,7 +226,7 @@ export function InspectionDialog({
             {photos.length > 0 && (
               <div className="grid grid-cols-3 gap-2">
                 {photos.map((url, i) => (
-                  <img key={i} src={url} alt={`Poză ${i + 1}`} className="rounded-lg aspect-square object-cover border" />
+                  <InspectionImage key={i} src={url} alt={`Poză ${i + 1}`} className="rounded-lg aspect-square object-cover border w-full" />
                 ))}
               </div>
             )}
