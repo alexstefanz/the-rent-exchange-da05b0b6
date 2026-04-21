@@ -16,6 +16,7 @@ import {
   Bell
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import { useAdminNotificationSummary } from "@/hooks/queries/useAdminNotifications";
 import {
   Sidebar,
   SidebarContent,
@@ -29,19 +30,31 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const menuItems = [
+type BadgeKey =
+  | "unread_total"
+  | "pending_products"
+  | "open_tickets"
+  | "pending_withdrawals"
+  | "pending_kyc";
+
+const menuItems: Array<{
+  title: string;
+  url: string;
+  icon: typeof LayoutDashboard;
+  badgeKey?: BadgeKey;
+}> = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Notificări", url: "/admin/notifications", icon: Bell },
+  { title: "Notificări", url: "/admin/notifications", icon: Bell, badgeKey: "unread_total" },
   { title: "Rezervări", url: "/admin/reservations", icon: CalendarCheck },
   { title: "Produse", url: "/admin/products", icon: Package },
-  { title: "Confirmări", url: "/admin/approvals", icon: ClipboardCheck },
-  { title: "Tickete", url: "/admin/tickets", icon: TicketCheck },
+  { title: "Confirmări", url: "/admin/approvals", icon: ClipboardCheck, badgeKey: "pending_products" },
+  { title: "Tickete", url: "/admin/tickets", icon: TicketCheck, badgeKey: "open_tickets" },
   { title: "Conversații", url: "/admin/conversations", icon: MessageCircle },
   { title: "Categorii", url: "/admin/categories", icon: FolderTree },
-  { title: "Financiar", url: "/admin/finances", icon: Wallet },
+  { title: "Financiar", url: "/admin/finances", icon: Wallet, badgeKey: "pending_withdrawals" },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Utilizatori", url: "/admin/users", icon: Users },
-  { title: "Verificări KYC", url: "/admin/kyc", icon: ShieldCheck },
+  { title: "Verificări KYC", url: "/admin/kyc", icon: ShieldCheck, badgeKey: "pending_kyc" },
   { title: "Test Emailuri", url: "/admin/test-emails", icon: Mail },
 ];
 
@@ -50,6 +63,7 @@ const AdminSidebar = () => {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const currentPath = location.pathname;
+  const { data: summary } = useAdminNotificationSummary();
 
   const isActive = (path: string) => {
     if (path === "/admin") {
@@ -76,21 +90,35 @@ const AdminSidebar = () => {
 
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <NavLink 
-                      to={item.url} 
-                      end={item.url === "/admin"}
-                      className="hover:bg-muted/50" 
-                      activeClassName="bg-muted text-primary font-medium"
-                    >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {menuItems.map((item) => {
+                const count = item.badgeKey ? Number(summary?.[item.badgeKey] || 0) : 0;
+                const showBadge = count > 0;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                      <NavLink
+                        to={item.url}
+                        end={item.url === "/admin"}
+                        className="hover:bg-muted/50 relative"
+                        activeClassName="bg-muted text-primary font-medium"
+                      >
+                        <span className="relative mr-2 flex items-center">
+                          <item.icon className="h-4 w-4" />
+                          {showBadge && collapsed && (
+                            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive ring-2 ring-background" />
+                          )}
+                        </span>
+                        {!collapsed && <span>{item.title}</span>}
+                        {showBadge && !collapsed && (
+                          <span className="ml-auto inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-semibold text-destructive-foreground">
+                            {count > 9 ? "9+" : count}
+                          </span>
+                        )}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
