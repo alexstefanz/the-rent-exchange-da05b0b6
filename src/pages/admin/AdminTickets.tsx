@@ -86,6 +86,9 @@ const AdminTickets = () => {
   const getPriorityLabel = (p: string) => PRIORITY_OPTIONS.find(o => o.value === p)?.label || p;
   const isSlaBreached = (ticket: { priority: string; status: string; created_at: string }) =>
     ticket.priority === 'URGENT' && ticket.status === 'NEW' && differenceInHours(new Date(), new Date(ticket.created_at)) >= 2;
+  const isUnread = (ticket: { status: string; updated_at: string; last_admin_read_at: string | null }) =>
+    !['CLOSED', 'RESOLVED'].includes(ticket.status) &&
+    (!ticket.last_admin_read_at || new Date(ticket.last_admin_read_at) < new Date(ticket.updated_at));
   const toggleExpand = (id: string) => setExpandedId(prev => prev === id ? null : id);
 
   return (
