@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft, Send, Paperclip, Lock, User, Package, Calendar, FileText, History,
@@ -20,6 +20,7 @@ import {
   updateOpsTicketField,
   createTicketMessage,
   uploadTicketAttachment,
+  markTicketRead,
   CATEGORY_GROUP_LABELS,
   CATEGORY_TYPES,
   STATUS_OPTIONS,
@@ -58,6 +59,20 @@ const AdminTicketDetail = () => {
 
   const [messageText, setMessageText] = useState("");
   const [isInternal, setIsInternal] = useState(false);
+
+  // Mark ticket as read when admin opens it
+  useEffect(() => {
+    if (ticket?.id) {
+      markTicketRead(ticket.id)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['opsTickets'] });
+          queryClient.invalidateQueries({ queryKey: ['admin-notification-summary'] });
+          queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
+        })
+        .catch(() => {/* silent */});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticket?.id]);
   const [sending, setSending] = useState(false);
   const [updating, setUpdating] = useState(false);
 

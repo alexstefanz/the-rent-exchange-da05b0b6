@@ -1758,6 +1758,10 @@ export type Database = {
         Returns: boolean
       }
       is_user_favorite: { Args: { target_user_id: string }; Returns: boolean }
+      mark_ops_ticket_read: {
+        Args: { p_ticket_id: string }
+        Returns: undefined
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string

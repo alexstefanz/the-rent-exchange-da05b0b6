@@ -26,6 +26,7 @@ export interface OpsTicket {
   created_at: string;
   updated_at: string;
   closed_at: string | null;
+  last_admin_read_at: string | null;
 }
 
 export interface OpsTicketMessage {
@@ -78,6 +79,12 @@ export interface CreateOpsTicketInput {
 
 // Helper to bypass type checking for new tables not in generated types
 const opsTickets = () => supabase.from('ops_tickets' as any);
+
+// Mark a ticket as read by the current admin
+export const markTicketRead = async (ticketId: string): Promise<void> => {
+  const { error } = await supabase.rpc('mark_ops_ticket_read' as any, { p_ticket_id: ticketId });
+  if (error) throw error;
+};
 const opsMessages = () => supabase.from('ops_ticket_messages' as any);
 const opsAttachments = () => supabase.from('ops_ticket_attachments' as any);
 const opsAuditLog = () => supabase.from('ops_ticket_audit_log' as any);
