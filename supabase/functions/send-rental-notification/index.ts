@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
       tasks.push(sendBranded(
         "rental-request-owner",
         ownerEmail,
-        { renterName, productTitle, startDate: startStr, endDate: endStr },
+        { renterName, productTitle, startDate: startStr, endDate: endStr, rentalId: rental.id },
         `rental-req-owner-${rental.id}`
       ));
     }
@@ -193,7 +193,7 @@ Deno.serve(async (req) => {
       tasks.push(sendBranded(
         "rental-request-renter",
         renterEmail,
-        { productTitle, startDate: startStr, endDate: endStr },
+        { productTitle, startDate: startStr, endDate: endStr, rentalId: rental.id },
         `rental-req-renter-${rental.id}`
       ));
     }
