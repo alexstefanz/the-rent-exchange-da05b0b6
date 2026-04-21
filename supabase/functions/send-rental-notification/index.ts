@@ -115,6 +115,24 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Idempotency guard: if we already notified the owner about this rental,
+    // skip everything (verify-stripe-payment may run again on success-page refresh).
+    const { data: existingNotification } = await supabaseAdmin
+      .from("notifications")
+      .select("id")
+      .eq("user_id", rental.owner_id)
+      .eq("type", "rental_request")
+      .ilike("link", `%rental_id=${rental.id}%`)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingNotification) {
+      console.log(`[send-rental-notification] Already notified for rental ${rental.id} — skipping.`);
+      return new Response(JSON.stringify({ success: true, skipped: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const [productRes, renterRes, ownerRes] = await Promise.all([
       supabaseAdmin.from("products").select("title, images").eq("id", rental.product_id).single(),
       supabaseAdmin.from("profiles").select("full_name, email").eq("id", rental.renter_id).single(),
@@ -144,16 +162,28 @@ Deno.serve(async (req) => {
       getEmail(rental.renter_id, renter?.email || null),
     ]);
 
-    // Insert transaction
-    await supabaseAdmin.from("transactions").insert({
-      rental_id: rental.id,
-      user_id: rental.renter_id,
-      amount: rental.subtotal,
-      type: "rental_payment",
-      status: "pending",
-      description: `Plată închiriere: ${product?.title || "Produs"}`,
-      currency: "RON",
-    });
+    // Insert transaction (status reflects the Stripe authorization hold).
+    {
+      const { data: existingTx } = await supabaseAdmin
+        .from("transactions")
+        .select("id")
+        .eq("rental_id", rental.id)
+        .eq("type", "rental_payment")
+        .limit(1)
+        .maybeSingle();
+
+      if (!existingTx) {
+        await supabaseAdmin.from("transactions").insert({
+          rental_id: rental.id,
+          user_id: rental.renter_id,
+          amount: rental.subtotal,
+          type: "rental_payment",
+          status: "authorized",
+          description: `Plată închiriere: ${product?.title || "Produs"}`,
+          currency: "RON",
+        });
+      }
+    }
 
     // Insert notifications
     await supabaseAdmin.from("notifications").insert([
@@ -162,8 +192,8 @@ Deno.serve(async (req) => {
         type: "rental_request",
         title_ro: `Cerere nouă de închiriere`,
         title_en: `New rental request`,
-        description_ro: `${renter?.full_name || "Un utilizator"} dorește să închirieze "${product?.title}" pentru ${rental.rental_days} zile.`,
-        description_en: `${renter?.full_name || "A user"} wants to rent "${product?.title}" for ${rental.rental_days} days.`,
+        description_ro: `${renter?.full_name || "Un utilizator"} a plătit și dorește să închirieze "${product?.title}" pentru ${rental.rental_days} zile.`,
+        description_en: `${renter?.full_name || "A user"} paid and wants to rent "${product?.title}" for ${rental.rental_days} days.`,
         link: `/anunturi?rental_id=${rental.id}`,
       },
       {
@@ -171,8 +201,8 @@ Deno.serve(async (req) => {
         type: "rental_confirmation",
         title_ro: `Cerere trimisă cu succes`,
         title_en: `Request sent successfully`,
-        description_ro: `Cererea ta pentru "${product?.title}" a fost trimisă proprietarului. Vei fi notificat când va răspunde.`,
-        description_en: `Your request for "${product?.title}" has been sent to the owner. You'll be notified when they respond.`,
+        description_ro: `Plata ta a fost autorizată. Cererea pentru "${product?.title}" a fost trimisă proprietarului.`,
+        description_en: `Your payment has been authorized. The request for "${product?.title}" has been sent to the owner.`,
         link: `/cereri?rental_id=${rental.id}`,
       },
     ]);

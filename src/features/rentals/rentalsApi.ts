@@ -19,7 +19,7 @@ export async function createRental(params: CreateRentalParams) {
   const {
     productId, ownerId, startDate, endDate,
     rentalDays, dailyPrice, platformFeePercent = 5,
-    paymentMethod, messageToOwner,
+    paymentMethod,
   } = params;
 
   const subtotal = dailyPrice * rentalDays;
@@ -57,36 +57,9 @@ export async function createRental(params: CreateRentalParams) {
     throw error;
   }
 
-  // Create conversation + message if provided
-  if (messageToOwner?.trim()) {
-    const { data: conversation } = await supabase
-      .from("conversations")
-      .insert({
-        product_id: productId,
-        buyer_id: user.id,
-        owner_id: ownerId,
-      })
-      .select()
-      .single();
-
-    if (conversation) {
-      await supabase.from("messages").insert({
-        conversation_id: conversation.id,
-        sender_id: user.id,
-        content: messageToOwner.trim(),
-      });
-    }
-  }
-
-  // Call edge function for notifications + emails
-  try {
-    await supabase.functions.invoke("send-rental-notification", {
-      body: { rental_id: rental.id },
-    });
-  } catch (e) {
-    console.error("Notification error (non-blocking):", e);
-  }
-
+  // NOTE: Notifications, emails and the owner conversation/message are now
+  // created ONLY after Stripe confirms the payment hold (see verify-stripe-payment).
+  // This ensures the owner is never notified about a request that was never paid.
   return rental;
 }
 
@@ -113,7 +86,7 @@ export async function createRentalWithStripeCheckout(params: CreateRentalParams)
 
   // Then create a Stripe Checkout session
   const { data, error } = await supabase.functions.invoke("create-checkout-session", {
-    body: { rental_id: rental.id },
+    body: { rental_id: rental.id, message_to_owner: params.messageToOwner ?? null },
   });
 
   if (error) {
