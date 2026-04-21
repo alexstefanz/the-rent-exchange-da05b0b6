@@ -224,7 +224,11 @@ const Auth = () => {
     
     if (error) {
       setIsLoading(false);
-      toast({ title: copy.auth.resetError, description: error.message, variant: "destructive" });
+      toast({
+        title: copy.auth.resetError,
+        description: isWeakPasswordError(error.message) ? copy.auth.passwordTooWeak : error.message,
+        variant: "destructive",
+      });
       return;
     }
 
