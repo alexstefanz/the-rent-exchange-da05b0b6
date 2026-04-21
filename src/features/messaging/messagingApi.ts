@@ -194,3 +194,40 @@ export async function getOwnerContactInfo(ownerId: string) {
   // Function returns an array, get first result or null
   return data && data.length > 0 ? data[0] : null;
 }
+
+export interface RentalContext {
+  productTitle: string;
+  startDate: string;
+  endDate: string;
+  rentalDays: number;
+  totalPrice: number;
+}
+
+/**
+ * Inserts a context message into the conversation describing the rental,
+ * but only if the conversation has no messages yet (idempotent).
+ * Triggers the standard message notification pipeline (email + push) for the owner.
+ */
+export async function ensureRentalContextMessage(
+  conversationId: string,
+  ctx: RentalContext,
+): Promise<void> {
+  const { data: existing, error: checkError } = await supabase
+    .from('messages')
+    .select('id')
+    .eq('conversation_id', conversationId)
+    .limit(1);
+
+  if (checkError) {
+    console.error('Error checking existing messages:', checkError);
+    return;
+  }
+  if (existing && existing.length > 0) return; // already has messages, do nothing
+
+  const content =
+    `Bună! Tocmai am rezervat „${ctx.productTitle}" pentru perioada ` +
+    `${ctx.startDate} – ${ctx.endDate} (${ctx.rentalDays} ${ctx.rentalDays === 1 ? 'zi' : 'zile'}, ` +
+    `total ${ctx.totalPrice} RON). Aștept confirmarea ta. Mulțumesc!`;
+
+  await sendMessage(conversationId, content);
+}
