@@ -1,53 +1,52 @@
 
 
-## Plan: Reparare buton "Discută cu proprietarul" + context rezervare în chat
+## Plan: Fix link "Vezi cererea" din emailul ownerului
 
 ### Problemă confirmată
 
-Când userul plătește și apasă "Discută cu proprietarul", ajunge într-un chat **complet gol**, fără context despre rezervare. Cauze:
+În `supabase/functions/_shared/transactional-email-templates/rental-request-owner.tsx`, butonul "Vezi cererea" trimite către:
+```
+https://rentli.ro/rentals
+```
+Această rută **nu există** în aplicație — de aceea ownerul ajunge pe pagina 404.
 
-1. **`BookingConfirmation.tsx`** trimite `state: { conversationId }` către `/mesaje`, dar `Messages.tsx` citește `searchParams.get("conv")`. Astfel conversația **nu se preselectează niciodată** din ecranul de succes — userul cade pe lista goală sau pe o conversație random.
+Rutele reale (din `src/App.tsx`):
+- `/anunturi` → `ListingsPage` (unde proprietarul vede cererile primite — `LendingsTab`)
+- `/rezervari` → `RentalsPage` (rezervările făcute de tine ca renter)
+- `/cereri` → `RequestsPage` (cereri trimise de tine ca renter)
 
-2. **Dacă userul nu scrie un mesaj la checkout** (câmpul opțional gol), `verify-stripe-payment` nu creează nici conversație, nici mesaj. La click pe buton, `getOrCreateConversation` creează atunci o conversație **fără niciun mesaj** — owner-ul nu vede nimic relevant.
-
-3. **Lipsește un mesaj automat de sistem** care să arate clar despre ce produs e vorba și ce perioadă a fost rezervată.
+Pentru owner, link-ul corect este **`/anunturi`**, opțional cu `?rental_id=<id>` ca să poată evidenția cererea respectivă (link-ul intern din notificarea push folosește deja acest format).
 
 ### Modificări
 
-#### 1. `src/components/booking/BookingConfirmation.tsx`
-- Schimb navigarea din `state: { conversationId }` → `?conv=<id>` ca să se potrivească cu logica din `Messages.tsx`.
-- Înainte de a deschide chatul, dacă conversația a fost creată acum (sau există deja dar e goală), trimit automat un **mesaj inițial branded** de la renter către owner cu contextul rezervării:
-  > "Bună! Tocmai am rezervat **Playstation 5** pentru perioada **22 apr – 23 apr 2026** (2 zile, total 2 RON). Aștept confirmarea ta. Mulțumesc!"
-- Mesajul e trimis o singură dată (verific dacă există deja mesaje în conversație înainte de inserție).
+#### 1. `supabase/functions/_shared/transactional-email-templates/rental-request-owner.tsx`
+- Schimb URL-ul butonului din `https://rentli.ro/rentals` → `https://rentli.ro/anunturi?rental_id={rentalId}`.
+- Adaug `rentalId` în interface-ul `Props` (opțional, cu fallback la `/anunturi` simplu dacă lipsește).
+- Actualizez `previewData` cu un `rentalId` mock pentru previzualizare.
 
-#### 2. `src/features/messaging/messagingApi.ts`
-- Adaug funcție helper `ensureRentalContextMessage(conversationId, rentalContext)` care:
-  - verifică dacă există deja mesaje în conversație
-  - dacă nu, inserează mesajul de context cu detaliile rezervării (titlu produs, perioadă, total)
-- Reutilizează `sendMessage` existent (deci trimite și notificare email/push către owner via `send-message-notification`).
+#### 2. `supabase/functions/_shared/transactional-email-templates/rental-request-renter.tsx`
+- Adaug și aici un buton `Vezi statusul` → `https://rentli.ro/cereri?rental_id={rentalId}` (în prezent template-ul nu are buton — userul nu are unde da click). Asigur consistența cu emailul ownerului.
+- Adaug `rentalId` în props.
 
-#### 3. `supabase/functions/verify-stripe-payment/index.ts`
-- În blocul post-plată unde se creează conversația, dacă **nu există `message_to_owner`** în metadata Stripe (userul a sărit câmpul opțional), inserez **automat** mesajul de context al rezervării (același template ca la pasul 1 — sursa unică de adevăr serverside).
-- Astfel, owner-ul primește notificarea "mesaj nou" prin sistemul existent de notificări mesaje, indiferent dacă renter-ul ajunge sau nu pe pagina de succes.
-- Idempotent: nu duplic mesajul dacă există deja vreun mesaj în conversație.
+#### 3. `supabase/functions/send-rental-notification/index.ts`
+- Pasez `rentalId: rental.id` în `templateData` pentru ambele invocări `send-transactional-email` (owner + renter).
 
 ### Fișiere afectate
 
 | Fișier | Modificare |
 |---|---|
-| `src/components/booking/BookingConfirmation.tsx` | Navigare cu `?conv=<id>`; helper de inserție mesaj inițial |
-| `src/features/messaging/messagingApi.ts` | Funcție `ensureRentalContextMessage` |
-| `supabase/functions/verify-stripe-payment/index.ts` | Auto-mesaj de context la creare conversație post-plată dacă lipsește `message_to_owner` |
+| `supabase/functions/_shared/transactional-email-templates/rental-request-owner.tsx` | URL buton → `/anunturi?rental_id={rentalId}` |
+| `supabase/functions/_shared/transactional-email-templates/rental-request-renter.tsx` | Adaug buton CTA → `/cereri?rental_id={rentalId}` |
+| `supabase/functions/send-rental-notification/index.ts` | Pasez `rentalId` în `templateData` |
 
 ### Rezultat așteptat
 
-- Click pe "Discută cu proprietarul" → ajungi direct pe conversația corectă cu Playstation 5 deja selectată.
-- Owner-ul vede în chat un mesaj clar: produs + perioadă + total, nu un chat gol.
-- Owner-ul primește notificarea de mesaj nou (email + push) prin pipeline-ul existent.
-- Funcționează și dacă userul nu apasă butonul (mesajul e inserat serverside la confirmarea plății).
+- Click pe "Vezi cererea" în emailul ownerului → ajunge corect pe `/anunturi` cu cererea evidențiată, **nu mai dă 404**.
+- Renterul primește un buton clar "Vezi statusul" care duce pe `/cereri` cu rezervarea lui.
+- Ambele template-uri rămân branded (portocaliu Rentli), păstrând stilul existent.
 
 ### Limitări recunoscute
 
-- Nu modific business logic-ul rezervării — doar adaug context conversațional.
-- Pentru rezervările vechi deja confirmate fără mesaj, primul click pe "Discută" va insera retroactiv mesajul de context (tot prin guard idempotent).
+- Email-urile vechi deja trimise rămân cu link-ul greșit (nu pot fi modificate retroactiv). După deploy, toate email-urile noi vor avea link-ul corect.
+- Evidențierea automată a cererii pe `/anunturi` în baza `rental_id` din query string există deja prin notificarea push — comportamentul va fi identic și din email.
 
