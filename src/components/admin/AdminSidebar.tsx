@@ -12,7 +12,8 @@ import {
   TicketCheck,
   FolderTree,
   MessageCircle,
-  Mail
+  Mail,
+  Bell
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -30,6 +31,7 @@ import {
 
 const menuItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Notificări", url: "/admin/notifications", icon: Bell },
   { title: "Rezervări", url: "/admin/reservations", icon: CalendarCheck },
   { title: "Produse", url: "/admin/products", icon: Package },
   { title: "Confirmări", url: "/admin/approvals", icon: ClipboardCheck },

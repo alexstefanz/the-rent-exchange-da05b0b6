@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import AdminLayout from "@/components/admin/AdminLayout";
 import StatsCard from "@/components/admin/StatsCard";
 import DashboardCategoriesWidget from "@/components/admin/DashboardCategoriesWidget";
+import AdminActionRequiredWidget from "@/components/admin/AdminActionRequiredWidget";
 import { useAdminStats, useAdminRentals } from "@/hooks/queries/useAdminStats";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
@@ -58,6 +59,9 @@ const AdminDashboard = () => {
           <h1 className="text-xl font-bold tracking-tight">Dashboard</h1>
           <span className="text-sm text-muted-foreground hidden sm:inline">— Privire de ansamblu</span>
         </div>
+
+        {/* Action Required Widget */}
+        <AdminActionRequiredWidget />
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
