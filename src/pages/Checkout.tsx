@@ -15,6 +15,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { createRentalWithStripeCheckout } from "@/features/rentals/rentalsApi";
 import { toast } from "sonner";
+import { useKycGate } from "@/hooks/queries/useKycGate";
+import KycGateBanner from "@/components/kyc/KycGateBanner";
 
 interface CheckoutState {
   product: {
@@ -40,6 +42,7 @@ const Checkout = () => {
   const copy = useUxCopy();
   const { language } = useLanguage();
   const { user } = useAuth();
+  const kyc = useKycGate();
   const dateLocale = language === "ro" ? ro : enUS;
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -66,6 +69,11 @@ const Checkout = () => {
 
   const handleStripeCheckout = async () => {
     if (isSubmitting) return;
+    if (user && !kyc.isVerified) {
+      toast.error("Trebuie să-ți verifici identitatea înainte de a plăti.");
+      navigate("/kyc");
+      return;
+    }
     setIsSubmitting(true);
     try {
       const stripeUrl = await createRentalWithStripeCheckout({
@@ -82,6 +90,12 @@ const Checkout = () => {
       window.location.href = stripeUrl;
     } catch (e: any) {
       console.error("Stripe checkout error:", e);
+      if (e?.code === "KYC_REQUIRED" || (typeof e?.message === "string" && e.message.includes("KYC_REQUIRED"))) {
+        toast.error("Verificare identitate necesară. Te redirecționăm.");
+        setIsSubmitting(false);
+        setTimeout(() => navigate("/kyc"), 600);
+        return;
+      }
       toast.error(e?.message || "Eroare la inițierea plății. Încearcă din nou.");
       setIsSubmitting(false);
     }
@@ -110,6 +124,11 @@ const Checkout = () => {
       </div>
 
       <main className="max-w-4xl mx-auto px-4 py-6 md:py-8">
+        {user && !kyc.isVerified && !kyc.loading && (
+          <div className="mb-6">
+            <KycGateBanner reason="book" />
+          </div>
+        )}
         <div className="grid lg:grid-cols-2 gap-8">
           <div className="space-y-4">
             {/* Step 1 - Message to owner */}
