@@ -11,7 +11,7 @@ type Reason = "publish" | "book";
 interface KycGateBannerProps {
   reason: Reason;
   className?: string;
-  /** Optional preserved query string appended to /kyc redirect (e.g. ?next=/checkout) */
+  /** Optional preserved query string appended to /verificare redirect (e.g. ?next=/checkout) */
   nextHref?: string;
 }
 
@@ -80,7 +80,7 @@ const KycGateBanner = ({ reason, className, nextHref }: KycGateBannerProps) => {
     ? copy.pending
     : copy.notStarted;
   const { Icon, ring, iconBg } = getVariant(status);
-  const kycHref = nextHref ? `/kyc?next=${encodeURIComponent(nextHref)}` : "/kyc";
+  const kycHref = nextHref ? `/verificare?next=${encodeURIComponent(nextHref)}` : "/verificare";
 
   return (
     <Card className={cn("border-2 p-6 shadow-card", ring, className)}>
