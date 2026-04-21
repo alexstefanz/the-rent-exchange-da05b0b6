@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { format, differenceInDays, isBefore } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
-import { Calendar as CalendarIcon, Heart, Info, ThumbsUp, ChevronRight } from "lucide-react";
+import { Calendar as CalendarIcon, Heart, ThumbsUp, ChevronRight } from "lucide-react";
 import { useBookedDates, isDateBooked, hasBookedDateInRange } from "@/hooks/queries/useBookedDates";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -184,11 +184,6 @@ const BookingCard = ({
       >
         {ctaLabel}
       </Button>
-
-      <p className="mt-3 text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
-        <Info className="h-3 w-3" />
-        {copy.booking.reassurance}
-      </p>
 
       {startDate && endDate && (
         <div className="mt-4 flex items-center gap-2 rounded-full border border-border bg-muted/50 px-4 py-2.5">
