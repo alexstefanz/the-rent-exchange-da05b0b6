@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Search as SearchIcon, Loader2, User, LayoutGrid, List } from "lucide-react";
+// cache-bust: re-emit module after stale HMR timestamp
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
