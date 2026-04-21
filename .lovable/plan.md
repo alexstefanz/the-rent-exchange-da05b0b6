@@ -1,70 +1,135 @@
 
 
-## Plan: Fix bugs descoperite în testarea E2E (Critical + Medium + Low)
+## Plan: Tab "Status plăți" pentru depanare tranzacții rental
 
-### Bug #1 — CRITICAL: Owner payouts nu apar în balanță
+### Context
+Vrei un panou de diagnostic în timp real care arată întregul ciclu de viață al plății pentru un rental: de la autorizare până la capture/refund/payout. Util pentru admin (și opțional pentru proprietar/chiriaș) să identifice rapid blocaje sau discrepanțe între ce e în Stripe și ce e în baza de date.
 
-**Cauză**: În `supabase/functions/capture-rental-payment/index.ts`, tranzacțiile `owner_payout` sunt create cu `status='pending'`, dar `BalanceCard.tsx` și logica de balanță (`useUserStatistics`, `EarningsTab`) numără doar `status='completed'`.
+### Acces
+- **Admin**: vede tab-ul pentru orice rental (în `/admin/rezervari` la detaliu)
+- **Proprietar/Chiriaș**: vede o versiune simplificată read-only pe rentalul propriu (în `RentalsTab` / `LendingsTab` — colaps/dialog "Status plată")
 
-**Fix**:
-- Modific `capture-rental-payment/index.ts` → la inserarea tranzacției `owner_payout`, setez `status='completed'` și `processed_at=now()`
-- Astfel, în momentul în care proprietarul confirmă returnarea (pasul 6 — Finalizat) și fondurile sunt capturate de la Stripe, suma intră imediat în balanța proprietarului
-- Restul logicii rămâne: proprietarul cere retragere via `withdrawal_requests`, admin aprobă manual
+### Date afișate
 
-### Bug #2 — MEDIUM: `get_booked_dates` ignoră rezervările `pending`
+#### 1. Sumar status (badge-uri colorate)
+| Câmp | Sursă | Culori |
+|---|---|---|
+| Status rental | `rentals.status` | pending=galben, confirmed=albastru, active=verde, completed=gri, cancelled=roșu |
+| Status plată | `rentals.payment_status` | pending/authorized/captured/refunded |
+| Stripe sync | calcul live din Stripe API | ✅ sincronizat / ⚠️ discrepanță |
 
-**Cauză**: RPC-ul `get_booked_dates` include doar `status IN ('confirmed', 'active')`. O rezervare `pending` (cu plată autorizată dar neacceptată încă de proprietar) NU blochează datele → doi chiriași pot trimite cereri suprapuse pe aceleași date.
+#### 2. Timeline cronologic (vertical) cu evenimente
+Pentru fiecare moment cheie afișez timestamp + descriere + sursă:
+- `created_at` → "Cerere creată" (sursă: rental insert)
+- `authorized_at` → "Plată autorizată ($X RON pe card)" (sursă: Stripe Checkout completat)
+- `confirmed_at` → "Cerere acceptată de proprietar"
+- `handover_confirmed_at` → "Predare confirmată"
+- `captured_at` → "Fonduri capturate de la Stripe"
+- `return_confirmed_at` → "Returnare confirmată"
+- `completed_at` → "Tranzacție finalizată"
+- `refunded_at` → "Refund executat"
+- `cancelled_at` → "Cerere anulată"
 
-**Fix** (migrare SQL):
-- Actualizez funcția `get_booked_dates` să includă și `pending` cu condiția `payment_status='authorized'` (plata e ținută în escrow):
-```sql
-WHERE r.product_id = p_product_id
-  AND (
-    r.status IN ('confirmed', 'active')
-    OR (r.status = 'pending' AND r.payment_status = 'authorized')
-  )
+#### 3. Detalii Stripe (live fetch via edge function)
+Pentru rentalurile cu `payment_intent_id`:
+- Payment Intent ID (clickabil → Stripe Dashboard)
+- Status PI (requires_capture, succeeded, canceled, etc.)
+- Amount autorizat vs capturat vs refunded
+- Charge ID + receipt URL
+- Last error (dacă există)
+- Card brand + last4 (din `payment_method_details`)
+
+#### 4. Tranzacții asociate (din tabela `transactions`)
+Tabel cu coloanele: tip (platform_fee/owner_payout/refund), amount, status, created_at, processed_at, description.
+
+#### 5. Detector de discrepanțe
+Comparație automată DB vs Stripe cu warning-uri:
+- ⚠️ DB zice `authorized` dar Stripe zice `succeeded` (capturat necontrolat)
+- ⚠️ DB zice `captured` dar nu există tranzacție `owner_payout`
+- ⚠️ Există `refunded_at` dar Stripe nu are refund
+- ✅ Totul sincronizat
+
+### Edge function nouă: `get-rental-payment-status`
+
+**Path**: `supabase/functions/get-rental-payment-status/index.ts`
+
+**Input**: `{ rental_id: string }`
+
+**Logică**:
+1. Verifică auth (user e renter/owner sau admin)
+2. Citește `rentals` row + `transactions` asociate
+3. Dacă există `payment_intent_id`, apelează Stripe API: `stripe.paymentIntents.retrieve(pi_xxx, { expand: ['latest_charge', 'latest_charge.refunds'] })`
+4. Calculează discrepanțe (compară amounts și statuses)
+5. Returnează obiect structurat:
+```json
+{
+  "rental": { ...db fields },
+  "transactions": [...],
+  "stripe": {
+    "payment_intent": { id, status, amount, amount_received, amount_capturable },
+    "charge": { id, amount_refunded, receipt_url, payment_method_details },
+    "refunds": [...]
+  },
+  "discrepancies": [
+    { "severity": "warning", "message": "..." }
+  ],
+  "events": [
+    { timestamp, label, source, details }
+  ]
+}
 ```
-- Astfel, datele sunt blocate vizual din momentul în care un chiriaș a făcut plata, nu doar după acceptare
-- Excludem `cancelled`, `completed`, `refunded` care nu mai țin datele ocupate
 
-### Bug #3 — LOW: Rentals lungi capturează imediat (lipsă escrow)
+### Componenta UI: `RentalPaymentStatus`
 
-**Cauză**: În `create-checkout-session/index.ts`, condiția folosește `capture_method: 'manual'` doar pentru rentaluri ≤7 zile (limita Stripe Auth). Pentru rentaluri >7 zile, plata e capturată imediat → pierdere control escrow.
+**Path**: `src/components/admin/RentalPaymentStatus.tsx` (folosit și de tab-urile non-admin în versiune simplificată via prop `mode="user" | "admin"`)
 
-**Fix**:
-- Verific implementarea curentă în `create-checkout-session`
-- Pentru rentaluri >7 zile, aplic strategia recomandată Stripe: capture_method='manual' + reautorizare automată via webhook înainte de expirarea celor 7 zile
-- **Implementare simplificată (recomandată acum)**: setez explicit `capture_method='manual'` indiferent de durată; pentru rentaluri >7 zile adaug o **notificare proprietar + log** ca să fie monitorizat cazul. Reautorizarea automată o lăsăm ca task viitor (necesită Stripe webhook + flow complex)
-- Alternativ, dacă logica curentă deja are fallback la capture imediat pentru >7 zile: documentez explicit și adaug warning în UI checkout pentru rentaluri lungi
+**Layout**:
+- Header: badge-uri sumar + buton "Reîmprospătează" (refetch)
+- Tab-uri interne (cu shadcn `Tabs`):
+  1. **Cronologie** — vertical timeline cu evenimente
+  2. **Stripe** — card cu detalii Payment Intent + Charge (doar admin)
+  3. **Tranzacții** — tabel `transactions` (doar admin)
+  4. **Discrepanțe** — listă warnings (doar admin) cu CTA "Acționează" pentru fix-uri viitoare
 
-### Acțiuni adiacente (consecințe ale fix-urilor)
+**Real-time**:
+- Subscribe la canalul Supabase Realtime pe tabela `rentals` filtrat pe `id=rental_id` și `transactions` filtrat pe `rental_id`
+- La orice modificare → invalidare query → refetch automat
+- Indicator vizual "🔴 Live" în colțul header-ului
 
-- **Invalidare query**: după fix #1, balanța se actualizează automat prin invalidarea queries existente la `confirmReturn` (`my-rentals`, `ownerRentals`, `user-balance`)
-- **Backfill istoric** (Bug #1): tranzacțiile `owner_payout` deja create cu `status='pending'` rămân blocate. Fac UPDATE manual prin migrare:
-```sql
-UPDATE transactions 
-SET status = 'completed', processed_at = COALESCE(processed_at, now())
-WHERE type = 'owner_payout' 
-  AND status = 'pending'
-  AND rental_id IN (SELECT id FROM rentals WHERE status = 'completed');
-```
+### Unde apare tab-ul
 
-### Verificare după fix
+#### Admin (`src/pages/admin/AdminReservations.tsx`)
+- Adaug coloană "Acțiuni" cu buton 👁️ "Detalii" → deschide dialog full-screen cu rental details
+- În dialog: tab-uri "Sumar | Status plăți | Inspecții | Audit log"
+- Tab "Status plăți" → `<RentalPaymentStatus rentalId={...} mode="admin" />`
 
-Pentru fiecare bug:
-1. Rulez query SQL să confirm starea așteptată în DB
-2. Verific log-urile edge functions pentru `capture-rental-payment`
-3. Test rapid manual: încarc balanța proprietarului în UI după un rental completat
+#### Proprietar (`src/components/dashboard/LendingsTab.tsx`)
+- Pe fiecare card de rental: collapsible/popover "Status plată" → versiune `mode="user"` (fără Stripe raw + fără discrepanțe)
+
+#### Chiriaș (`src/components/dashboard/RentalsTab.tsx`)
+- Similar — collapsible "Status plată" cu cronologie + sumar
 
 ### Fișiere afectate
 
 | Fișier | Modificare |
 |---|---|
-| `supabase/functions/capture-rental-payment/index.ts` | `status='completed'` + `processed_at=now()` la insert `owner_payout` |
-| Migrație SQL nouă | Update funcție `get_booked_dates` să includă `pending` + `authorized` |
-| Migrație SQL — backfill | Update tranzacțiilor istorice `owner_payout` blocate în `pending` |
-| `supabase/functions/create-checkout-session/index.ts` | Verific + ajustez logica `capture_method` pentru rentaluri lungi |
+| `supabase/functions/get-rental-payment-status/index.ts` | **NOU** — fetch + diff DB vs Stripe |
+| `src/features/rentals/paymentStatusApi.ts` | **NOU** — wrapper client + tipuri TS |
+| `src/hooks/queries/useRentalPaymentStatus.ts` | **NOU** — useQuery + realtime subscribe |
+| `src/components/admin/RentalPaymentStatus.tsx` | **NOU** — componentă reutilizabilă admin/user |
+| `src/components/admin/AdminRentalDetailDialog.tsx` | **NOU** — dialog cu tab-uri pe rental |
+| `src/pages/admin/AdminReservations.tsx` | Adaug buton "Detalii" + dialog |
+| `src/components/dashboard/LendingsTab.tsx` | Adaug collapsible "Status plată" pe card |
+| `src/components/dashboard/RentalsTab.tsx` | Adaug collapsible "Status plată" pe card |
+| `src/data/uxCopy.ts` | Texte RO/EN: labels timeline, statusuri, warnings |
 
-### Limitări recunoscute
-- Fix #3 nu rezolvă complet limita Stripe de 7 zile pentru capture_method='manual'. Soluția completă (reautorizare via webhook) e un task de sine stătător. Aplicăm acum doar îmbunătățirea minimă (notificare/log) — vrei să planific și soluția completă separat?
+### Securitate
+- Edge function verifică explicit că user e participant la rental sau admin → 403 altfel
+- Detaliile sensibile Stripe (raw PaymentIntent, refunds) returnate **doar** pentru admin
+- Nu expun `client_secret` sau date complete de card (doar brand + last4)
+
+### Note
+- Realtime subscription e ieftin (un canal per rental deschis)
+- Stripe API call cached 30s în client (evităm rate limit la refresh repetat)
+- Tab-ul nu necesită modificări în webhook-uri existente — citește live din Stripe la cerere
 
