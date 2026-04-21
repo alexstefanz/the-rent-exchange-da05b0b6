@@ -10,6 +10,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { format, differenceInHours } from "date-fns";
 import { toast } from "sonner";
+import RentalTimeline from "./RentalTimeline";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -24,8 +25,13 @@ interface Request {
   owner_name: string;
   start_date: string;
   end_date: string;
+  end_date_raw: string;
   subtotal: number;
   status: string;
+  payment_status?: string;
+  handover_confirmed_at?: string | null;
+  return_confirmed_at?: string | null;
+  refunded_at?: string | null;
   location: string;
   created_at: string;
 }
@@ -33,7 +39,7 @@ interface Request {
 const fetchMyRequests = async (userId: string): Promise<Request[]> => {
   const { data, error } = await supabase
     .from("rentals")
-    .select("id, product_id, start_date, end_date, subtotal, status, created_at, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
+    .select("id, product_id, start_date, end_date, subtotal, status, payment_status, handover_confirmed_at, return_confirmed_at, refunded_at, created_at, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
     .eq("renter_id", userId)
     .in("status", ["pending", "cancelled"])
     .order("created_at", { ascending: false });
@@ -49,8 +55,13 @@ const fetchMyRequests = async (userId: string): Promise<Request[]> => {
     owner_name: r.products?.profiles?.full_name || "Utilizator",
     start_date: format(new Date(r.start_date), "dd MMM yyyy"),
     end_date: format(new Date(r.end_date), "dd MMM yyyy"),
+    end_date_raw: r.end_date,
     subtotal: r.subtotal,
     status: r.status,
+    payment_status: r.payment_status,
+    handover_confirmed_at: r.handover_confirmed_at,
+    return_confirmed_at: r.return_confirmed_at,
+    refunded_at: r.refunded_at,
     location: r.products?.location_city || "",
     created_at: r.created_at,
   }));
@@ -158,6 +169,16 @@ const RequestsTab = () => {
                   <div className="mt-3">
                     <span className="text-lg font-bold text-primary">{request.subtotal} RON</span>
                   </div>
+                  <div className="mt-4 pt-3 border-t border-border/50">
+                    <RentalTimeline rental={{
+                      status: request.status,
+                      payment_status: request.payment_status,
+                      end_date: request.end_date_raw,
+                      handover_confirmed_at: request.handover_confirmed_at,
+                      return_confirmed_at: request.return_confirmed_at,
+                      refunded_at: request.refunded_at,
+                    }} />
+                  </div>
                   <div className="mt-2 flex items-center gap-1.5">
                     {canCancel(request) && (
                       <AlertDialog>
@@ -211,6 +232,19 @@ const RequestsTab = () => {
                   </div>
                   <div className="mt-3 text-center">
                     <span className="text-lg font-bold text-muted-foreground">{request.subtotal} RON</span>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-border/50">
+                    <RentalTimeline rental={{
+                      status: request.status,
+                      payment_status: request.payment_status,
+                      end_date: request.end_date_raw,
+                      refunded_at: request.refunded_at,
+                    }} />
+                    {request.refunded_at && (
+                      <p className="mt-2 text-xs text-destructive font-medium text-center">
+                        💸 Banii au fost returnați
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
