@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,6 +50,7 @@ const KycVerification = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [kycCase, setKycCase] = useState<KycCase | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -82,6 +84,15 @@ const KycVerification = () => {
     };
     load();
   }, [user]);
+
+  // Proactively invalidate KYC gate cache when case is approved/verified
+  // so booking components (BookingCard, Checkout) pick up the latest status
+  useEffect(() => {
+    if (!user?.id) return;
+    if (kycCase?.status === "APPROVED" || kycCase?.status === "VERIFIED") {
+      queryClient.invalidateQueries({ queryKey: ["kycGate", user.id] });
+    }
+  }, [kycCase?.status, user?.id, queryClient]);
 
   const handleFileSelect = (docType: "id_front" | "id_back" | "selfie") => {
     setActiveDocType(docType);
