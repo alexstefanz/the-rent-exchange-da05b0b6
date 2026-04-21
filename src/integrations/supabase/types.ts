@@ -1571,6 +1571,7 @@ export type Database = {
           created_at: string
           daily_price: number
           end_date: string
+          handover_confirmed_at: string
           id: string
           owner_payout: number
           payment_method: string
@@ -1579,10 +1580,12 @@ export type Database = {
           product_id: string
           product_image: string
           product_title: string
+          refunded_at: string
           rental_days: number
           renter_avatar: string
           renter_id: string
           renter_name: string
+          return_confirmed_at: string
           start_date: string
           status: string
           subtotal: number
