@@ -180,7 +180,8 @@ async function captureRental(
     user_id: rental.owner_id as string,
     type: "owner_payout",
     amount: rental.owner_payout as number,
-    status: "pending",
+    status: "completed",
+    processed_at: now,
     description: `Câștig din închiriere - rental ${rentalId}`,
   });
 

@@ -88,10 +88,18 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: user.email!, limit: 1 });
     const customerId = customers.data.length > 0 ? customers.data[0].id : undefined;
 
-    // Determine capture method based on rental duration
-    // Stripe allows holds for max 7 days (standard). For longer rentals, capture immediately
-    // and hold funds in platform account until rental ends.
-    const useManualCapture = rental.rental_days <= MAX_HOLD_DAYS;
+    // Determine capture method based on rental duration.
+    // Stripe allows manual-capture holds for max 7 days (standard accounts).
+    // For longer rentals, we still use manual capture but log a warning so the
+    // platform can monitor / re-authorize before expiry. A future webhook-based
+    // reauthorization flow will handle this automatically.
+    const useManualCapture = true;
+    if (rental.rental_days > MAX_HOLD_DAYS) {
+      console.warn(
+        `[create-checkout-session] Long rental detected (${rental.rental_days} days) for rental ${rental.id}. ` +
+        `Stripe authorization holds expire after ${MAX_HOLD_DAYS} days — monitor and reauthorize before expiry.`
+      );
+    }
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
