@@ -16,11 +16,30 @@ import {
   uploadInspectionPhoto,
   createInspection,
   getInspections,
+  getInspectionSignedUrl,
+  extractInspectionPath,
   type InspectionPhase,
   type InspectionRole,
   type Inspection,
 } from "@/features/rentals/inspectionApi";
 import { useAuth } from "@/contexts/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
+
+function InspectionImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  // If it's already a blob: URL (newly uploaded preview), use it directly.
+  const isBlob = src.startsWith("blob:");
+  const path = extractInspectionPath(src);
+  const { data: signedUrl, isLoading } = useQuery({
+    queryKey: ["inspection-signed-url", path],
+    queryFn: () => getInspectionSignedUrl(src),
+    enabled: !isBlob && !!path,
+    staleTime: 50 * 60 * 1000,
+  });
+
+  if (isBlob) return <img src={src} alt={alt} className={className} />;
+  if (isLoading || !signedUrl) return <Skeleton className={className} />;
+  return <img src={signedUrl} alt={alt} className={className} />;
+}
 
 interface InspectionDialogProps {
   open: boolean;
