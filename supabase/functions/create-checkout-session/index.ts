@@ -46,9 +46,22 @@ serve(async (req) => {
         .select("kyc_status")
         .eq("id", user.id)
         .maybeSingle();
+      console.log("[create-checkout-session] KYC check", {
+        user_id: user.id,
+        user_email: user.email,
+        profile_found: !!profile,
+        kyc_status: profile?.kyc_status,
+      });
       if (!profile || profile.kyc_status !== "VERIFIED") {
         return new Response(
-          JSON.stringify({ error: "KYC_REQUIRED" }),
+          JSON.stringify({
+            error: "KYC_REQUIRED",
+            debug: {
+              user_id: user.id,
+              kyc_status: profile?.kyc_status ?? null,
+              profile_found: !!profile,
+            },
+          }),
           {
             status: 403,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
