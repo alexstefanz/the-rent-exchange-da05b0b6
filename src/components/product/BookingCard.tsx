@@ -170,7 +170,18 @@ const BookingCard = ({
         </div>
       )}
 
-      <Button className="w-full" size="lg" disabled={!startDate || !endDate} onClick={handleBooking}>
+      {needsKyc && (
+        <div className="mb-4">
+          <KycGateBanner reason="book" nextHref={routerLocation.pathname} />
+        </div>
+      )}
+
+      <Button
+        className="w-full"
+        size="lg"
+        disabled={!startDate || !endDate || needsKyc}
+        onClick={handleBooking}
+      >
         {ctaLabel}
       </Button>
 
