@@ -1,79 +1,49 @@
 
 
-## Plan: Validare parolă custom + mesaj generic la eșec login
+## Plan: KYC gating pe pagina produsului + fix rută 404
 
-### Cerințe
-- **Parolă**: minim 8 caractere, cel puțin o literă mare, o literă mică, și (o cifră SAU un simbol)
-- **Mesaj eroare unitar**: "Email sau parolă incorecte" — afișat identic pentru:
-  - Login eșuat (credențiale greșite)
-  - Login eșuat din alte motive (cont neconfirmat, dezactivat etc. — generic, fără să dezvăluim detalii)
-  - Signup eșuat din motive ce țin de parolă (HIBP, weak)
-- **HIBP rămâne activ** în backend (Supabase blochează parolele compromise public)
+### Cauza erorii din screenshot (404)
+Codul redirectează către `/kyc` în 4 locuri, dar **ruta reală este `/verificare`** (configurată în `App.tsx:126` ca `KycVerification`). Orice utilizator nereverificat care încerca să plătească ajungea pe pagina 404 — exact ce arată captura ta.
 
-### Arhitectură schimbări
+### Modificări
 
-#### 1. `src/lib/passwordValidation.ts` (nou)
-Funcție Zod refinată reutilizabilă:
-```ts
-export const strongPasswordSchema = z.string()
-  .min(8, "Parola trebuie să aibă minim 8 caractere")
-  .refine(v => /[a-z]/.test(v), "Trebuie să conțină o literă mică")
-  .refine(v => /[A-Z]/.test(v), "Trebuie să conțină o literă mare")
-  .refine(v => /[0-9]/.test(v) || /[^A-Za-z0-9]/.test(v), "Trebuie să conțină o cifră sau un simbol");
-```
-Helper bonus: `getPasswordStrengthHints()` — returnează array de cerințe nerespectate, pentru afișare live sub câmp.
+#### 1. Fix rute sparte (`/kyc` → `/verificare`)
+- `src/components/product/BookingCard.tsx` (linia 90)
+- `src/pages/Checkout.tsx` (liniile 74 și 96)
+- `src/pages/NewProduct.tsx` (linia 122)
+- `src/components/kyc/KycGateBanner.tsx` (linia 83 — `kycHref`)
 
-#### 2. `src/data/uxCopy.ts`
-Adaug chei noi (RO/EN):
-- `passwordRequirements`: "Min. 8 caractere, o literă mare, o literă mică și o cifră sau simbol"
-- `passwordTooWeak`: "Parola este prea slabă. Folosește minim 8 caractere, o literă mare, o literă mică și o cifră sau simbol."
-- Modific `invalidCredentials` → "Email sau parolă incorecte" (este deja aproape — ajustez plural)
+#### 2. UX nou pe `BookingCard` (componenta de rezervare din pagina produsului)
 
-#### 3. `src/pages/Auth.tsx`
-- Înlocuiesc `z.string().min(6, copy.auth.passwordMin)` cu `strongPasswordSchema` în:
-  - `loginSchema.password` → **doar** `.min(1)` (nu validăm lungimea la login, doar non-empty — altfel divulgăm regulile)
-  - `registerSchema.password` → schema completă
-  - `resetPasswordSchema.newPassword` → schema completă
-- **Helper text** sub câmpul parolă la register + reset: afișez `copy.auth.passwordRequirements`
-- **handleLogin**: indiferent de tipul erorii Supabase, afișez **întotdeauna** `copy.auth.invalidCredentials` ("Email sau parolă incorecte"). Excepție: erori de rețea (status 0/500) — afișăm "Eroare de conexiune".
-- **handleRegister**: dacă Supabase returnează eroare cu mesaj "weak", "pwned", "compromised", "easy to guess" → afișez `copy.auth.passwordTooWeak`. Restul rămân cu mesajele existente (`accountExists` etc.).
+Comportament dorit pentru utilizatorii **autentificați și fără KYC verificat**:
 
-#### 4. `src/components/checkout/LoginDialog.tsx`
-- Aceleași modificări ca Auth.tsx pentru consistență:
-  - Validare strong password la signup
-  - Mesaj generic "Email sau parolă incorecte" la eșec signin (înlocuiește detection-ul curent pe "Invalid login")
-  - Detect mesaje weak password la signup → afișez "Parolă prea slabă"
-- Adaug helper text sub câmpul parolă la modul signup
+| Stare utilizator | Buton "Rezervă" | Mesaj afișat |
+|---|---|---|
+| Neautentificat | Activ (la click → trimite la login din checkout, ca acum) | — |
+| Autentificat + KYC verificat | Activ | — |
+| Autentificat + KYC neînceput / respins | **Dezactivat** (gri, neclickabil) | Card portocaliu deasupra butonului: "Pentru a rezerva acest produs trebuie să-ți verifici identitatea." + buton secundar "Verifică-mi identitatea" → `/verificare?next=/produs/<slug>` |
+| Autentificat + KYC în așteptare (SUBMITTED / NEEDS_MANUAL_REVIEW) | **Dezactivat** | Card neutru: "Identitatea ta este în curs de verificare. Vei putea rezerva imediat ce este aprobată (de obicei 24h)." (fără buton CTA) |
 
-### Diagrama fluxului mesajelor de eroare
+**Implementare**:
+- Reutilizez componenta existentă `<KycGateBanner reason="book" nextHref={current_path} />` care **deja** acoperă toate cele 3 stări (notStarted / pending / rejected) cu copy bilingv RO/EN și design corect (orange ring + ShieldAlert icon, sau Clock pentru pending, sau XCircle pentru rejected).
+- Inserez bannerul în `BookingCard.tsx` deasupra butonului "Rezervă" (între breakdown-ul de preț și buton).
+- Setez `disabled` pe buton când: `needsKyc` este true (orice stare ≠ verified pentru user autentificat).
+- Elimin `toast` + `navigate("/kyc")` din `handleBooking` (devine cod mort — butonul e dezactivat).
+- Schimb label-ul butonului dezactivat: dacă există KYC pending → "În așteptare verificare"; dacă necesită KYC → label rămâne "Verifică identitatea pentru a rezerva" (deja e implementat) dar acum doar ca text pe buton dezactivat, nu mai e clickabil.
 
-```text
-Login fail (orice motiv auth)  ─→ "Email sau parolă incorecte"
-Network error                  ─→ "Eroare de conexiune"
+#### 3. Curățare în `Checkout.tsx`
+Păstrăm ca **al doilea strat de protecție** verificările KYC din checkout (în caz că user-ul navighează direct la /checkout cu state) — doar fixăm ruta `/kyc` → `/verificare`.
 
-Signup: validare client (zod)  ─→ inline sub field (regula specifică)
-Signup: HIBP / weak password   ─→ "Parolă prea slabă..."
-Signup: email duplicat         ─→ "Un cont cu acest email există deja"
-Signup: alt error              ─→ mesaj original
-```
-
-### Securitate / UX
-- **Nu divulgăm** dacă emailul există (login) — mesaj identic indiferent de cauza eșecului
-- **Validare client-side** previne 90% din încercările cu parole slabe înainte de a atinge backend-ul
-- **HIBP server-side** rămâne ca al doilea strat — pentru parolele care trec validarea custom dar sunt în breach-uri publice
-- Helper text vizibil → utilizatorul știe regula înainte de a tasta, nu primește erori surpriză
-
-### Fișiere afectate
+### Fișiere modificate
 
 | Fișier | Modificare |
 |---|---|
-| `src/lib/passwordValidation.ts` | NOU — schema Zod + helper |
-| `src/data/uxCopy.ts` | adaug `passwordRequirements`, `passwordTooWeak`, ajustez `invalidCredentials` |
-| `src/pages/Auth.tsx` | folosesc strong schema la register/reset, mesaj generic la login, helper text |
-| `src/components/checkout/LoginDialog.tsx` | aceleași schimbări (consistență) |
+| `src/components/product/BookingCard.tsx` | Adaug `<KycGateBanner reason="book" nextHref={...}/>` deasupra butonului; dezactivez butonul când utilizatorul are nevoie de KYC; elimin toast+navigate redundante; fix `/kyc` → `/verificare` |
+| `src/components/kyc/KycGateBanner.tsx` | Fix `kycHref` să folosească `/verificare` |
+| `src/pages/Checkout.tsx` | Fix 2× `navigate("/kyc")` → `navigate("/verificare")` |
+| `src/pages/NewProduct.tsx` | Fix `navigate("/kyc")` → `navigate("/verificare")` |
 
 ### Limitări recunoscute
-- HIBP rămâne activ → unele parole care respectă regula custom vor fi totuși respinse de backend (cu mesajul nostru "Parolă prea slabă")
-- Nu modificăm config Supabase Auth (păstrăm min 6 default-ul backendului — validarea noastră este mai strictă pe client/UX, deci backend-ul nu va respinge niciodată o parolă care a trecut de noi pe motiv de lungime)
-- Mesajul generic la login NU va distinge contul dezactivat de parola greșită — pentru conturile dezactivate avem deja flow separat (alert după login reușit care invalidează sesiunea)
+- Vizitatorii **neautentificați** nu pot ști în avans că au nevoie de KYC — își vor face cont, apoi vor vedea bannerul. (Acesta e flow-ul corect: nu cerem KYC pentru browsing, doar pentru acțiune efectivă.)
+- Bannerul KYC ocupă spațiu vertical în coloana sticky pe desktop, dar este acceptabil pentru că este temporar (doar pentru utilizatorii nereverificați).
 
