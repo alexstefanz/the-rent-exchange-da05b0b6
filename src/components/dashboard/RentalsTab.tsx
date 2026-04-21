@@ -119,8 +119,8 @@ const RentalsTab = () => {
     <div className="space-y-8">
       {awaitingOwnerRentals.length > 0 && (
         <section>
-          <div className="mb-4 flex items-start gap-3 rounded-xl border border-green-500/30 bg-green-500/5 p-4">
-            <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+          <div className="mb-4 flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+            <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
             <div>
               <p className="font-medium text-foreground">Plata a fost autorizată</p>
               <p className="text-sm text-muted-foreground mt-0.5">
