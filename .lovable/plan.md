@@ -1,59 +1,79 @@
 
 
-## Plan: Eliminare logo Lovable din ecranul de consent Apple/Google
+## Plan: Validare parolă custom + mesaj generic la eșec login
 
-### Problemă
-Când utilizatorul apasă "Continuă cu Apple" (sau Google), apare un ecran de permisiuni cu **logo-ul Lovable** și textul "Grant permission to Rentli". Acesta este ecranul de consent al **OAuth broker-ului managed** al Lovable Cloud (`oauth.lovable.app`), care folosește credențialele OAuth ale Lovable.
+### Cerințe
+- **Parolă**: minim 8 caractere, cel puțin o literă mare, o literă mică, și (o cifră SAU un simbol)
+- **Mesaj eroare unitar**: "Email sau parolă incorecte" — afișat identic pentru:
+  - Login eșuat (credențiale greșite)
+  - Login eșuat din alte motive (cont neconfirmat, dezactivat etc. — generic, fără să dezvăluim detalii)
+  - Signup eșuat din motive ce țin de parolă (HIBP, weak)
+- **HIBP rămâne activ** în backend (Supabase blochează parolele compromise public)
 
-### De ce apare logo-ul Lovable
-Folosim acum **Managed OAuth** (din `src/integrations/lovable/index.ts` cu `createLovableAuth()`). În acest mod, fluxul trece prin infrastructura Lovable care afișează propria pagină de consent înainte de a redirecta la Apple/Google. Brandingul acelei pagini (logo + nume aplicație) este controlat de Lovable, **nu poate fi customizat din cod**.
+### Arhitectură schimbări
 
-### Soluție: trecerea la BYOC (Bring Your Own Credentials)
+#### 1. `src/lib/passwordValidation.ts` (nou)
+Funcție Zod refinată reutilizabilă:
+```ts
+export const strongPasswordSchema = z.string()
+  .min(8, "Parola trebuie să aibă minim 8 caractere")
+  .refine(v => /[a-z]/.test(v), "Trebuie să conțină o literă mică")
+  .refine(v => /[A-Z]/.test(v), "Trebuie să conțină o literă mare")
+  .refine(v => /[0-9]/.test(v) || /[^A-Za-z0-9]/.test(v), "Trebuie să conțină o cifră sau un simbol");
+```
+Helper bonus: `getPasswordStrengthHints()` — returnează array de cerințe nerespectate, pentru afișare live sub câmp.
 
-Singurul mod de a elimina ecranul Lovable și de a afișa direct ecranul Apple cu brandingul Rentli este să **înregistrăm propriile credențiale Apple Sign In** și să le configurăm în Lovable Cloud. Astfel:
-- Nu mai apare ecranul intermediar Lovable
-- Utilizatorul vede direct prompt-ul Apple cu numele "Rentli" și icoana aplicației tale Apple Developer
+#### 2. `src/data/uxCopy.ts`
+Adaug chei noi (RO/EN):
+- `passwordRequirements`: "Min. 8 caractere, o literă mare, o literă mică și o cifră sau simbol"
+- `passwordTooWeak`: "Parola este prea slabă. Folosește minim 8 caractere, o literă mare, o literă mică și o cifră sau simbol."
+- Modific `invalidCredentials` → "Email sau parolă incorecte" (este deja aproape — ajustez plural)
 
-#### Pași necesari (în Apple Developer Console — îi facem împreună)
+#### 3. `src/pages/Auth.tsx`
+- Înlocuiesc `z.string().min(6, copy.auth.passwordMin)` cu `strongPasswordSchema` în:
+  - `loginSchema.password` → **doar** `.min(1)` (nu validăm lungimea la login, doar non-empty — altfel divulgăm regulile)
+  - `registerSchema.password` → schema completă
+  - `resetPasswordSchema.newPassword` → schema completă
+- **Helper text** sub câmpul parolă la register + reset: afișez `copy.auth.passwordRequirements`
+- **handleLogin**: indiferent de tipul erorii Supabase, afișez **întotdeauna** `copy.auth.invalidCredentials` ("Email sau parolă incorecte"). Excepție: erori de rețea (status 0/500) — afișăm "Eroare de conexiune".
+- **handleRegister**: dacă Supabase returnează eroare cu mesaj "weak", "pwned", "compromised", "easy to guess" → afișez `copy.auth.passwordTooWeak`. Restul rămân cu mesajele existente (`accountExists` etc.).
 
-1. **Creează un Services ID** la https://developer.apple.com/account/resources/identifiers/list
-   - Activează "Sign In with Apple"
-   - Numește-l ex. `ro.rentli.web`
-2. **Creează o cheie privată (.p8)** la https://developer.apple.com/account/resources/authkeys/list
-   - Activează "Sign In with Apple" pentru cheie
-   - Descarcă fișierul `.p8` (disponibil o singură dată!)
-   - Notează **Key ID** (10 caractere)
-3. **Notează Team ID** (colțul dreapta sus în Apple Developer Console — 10 caractere)
-4. **Configurează domeniile** în Services ID → Sign In with Apple → Configure:
-   - Adaugă: `rentli.ro`, `www.rentli.ro`, `the-rent-exchange.lovable.app`
-   - Adaugă URL-ul callback Supabase: `https://tsffyecastudajmgrckt.supabase.co/auth/v1/callback`
+#### 4. `src/components/checkout/LoginDialog.tsx`
+- Aceleași modificări ca Auth.tsx pentru consistență:
+  - Validare strong password la signup
+  - Mesaj generic "Email sau parolă incorecte" la eșec signin (înlocuiește detection-ul curent pe "Invalid login")
+  - Detect mesaje weak password la signup → afișez "Parolă prea slabă"
+- Adaug helper text sub câmpul parolă la modul signup
 
-#### Configurare în Lovable Cloud (după ce ai datele de mai sus)
+### Diagrama fluxului mesajelor de eroare
 
-1. Deschizi backend-ul → Users → Authentication Settings → Sign In Methods → Apple
-2. Selectezi "Use your own credentials"
-3. Click "Generate Secret" și completezi: Team ID, Key ID, Services ID, conținutul fișierului `.p8`
-4. Salvezi — gata, fluxul Apple va afișa direct brandingul Rentli
+```text
+Login fail (orice motiv auth)  ─→ "Email sau parolă incorecte"
+Network error                  ─→ "Eroare de conexiune"
 
-**Important**: JWT-ul Apple expiră după **6 luni** — trebuie regenerat periodic (îți pot pune un memo).
+Signup: validare client (zod)  ─→ inline sub field (regula specifică)
+Signup: HIBP / weak password   ─→ "Parolă prea slabă..."
+Signup: email duplicat         ─→ "Un cont cu acest email există deja"
+Signup: alt error              ─→ mesaj original
+```
 
-### Pentru Google (opțional, similar)
-Dacă vrei să elimini ecranul Lovable și pentru Google, procedeul este identic — creezi propriul OAuth Client ID în Google Cloud Console și îl configurezi în Lovable Cloud → Authentication Settings → Google.
+### Securitate / UX
+- **Nu divulgăm** dacă emailul există (login) — mesaj identic indiferent de cauza eșecului
+- **Validare client-side** previne 90% din încercările cu parole slabe înainte de a atinge backend-ul
+- **HIBP server-side** rămâne ca al doilea strat — pentru parolele care trec validarea custom dar sunt în breach-uri publice
+- Helper text vizibil → utilizatorul știe regula înainte de a tasta, nu primește erori surpriză
 
-### Ce NU pot face din cod
-- Nu pot edita logo-ul ecranului de consent Lovable (nu e în codul tău, e în infrastructura `oauth.lovable.app`)
-- Nu pot înregistra automat credențiale Apple în numele tău (necesită cont Apple Developer plătit — $99/an)
+### Fișiere afectate
 
-### Următorii pași
-1. Confirmi dacă ai cont **Apple Developer** activ
-2. Dacă da, parcurgi pașii 1–4 din Apple Developer Console și îmi dai înapoi: Services ID, Team ID, Key ID, conținutul `.p8`
-3. Te ghidez prin configurarea în Lovable Cloud cu acțiunea `<lov-open-backend>`
+| Fișier | Modificare |
+|---|---|
+| `src/lib/passwordValidation.ts` | NOU — schema Zod + helper |
+| `src/data/uxCopy.ts` | adaug `passwordRequirements`, `passwordTooWeak`, ajustez `invalidCredentials` |
+| `src/pages/Auth.tsx` | folosesc strong schema la register/reset, mesaj generic la login, helper text |
+| `src/components/checkout/LoginDialog.tsx` | aceleași schimbări (consistență) |
 
-### Acțiune disponibilă acum
-
-Pentru a deschide backend-ul și a vedea unde se configurează:
-
-<lov-actions>
-  <lov-open-backend>Deschide Backend</lov-open-backend>
-</lov-actions>
+### Limitări recunoscute
+- HIBP rămâne activ → unele parole care respectă regula custom vor fi totuși respinse de backend (cu mesajul nostru "Parolă prea slabă")
+- Nu modificăm config Supabase Auth (păstrăm min 6 default-ul backendului — validarea noastră este mai strictă pe client/UX, deci backend-ul nu va respinge niciodată o parolă care a trecut de noi pe motiv de lungime)
+- Mesajul generic la login NU va distinge contul dezactivat de parola greșită — pentru conturile dezactivate avem deja flow separat (alert după login reușit care invalidează sesiunea)
 
