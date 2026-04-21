@@ -36,6 +36,7 @@ export interface OpsTicketMessage {
   message_text: string;
   is_internal: boolean;
   created_at: string;
+  author_name?: string | null;
 }
 
 export interface OpsTicketAttachment {
@@ -268,7 +269,23 @@ export const fetchTicketMessages = async (ticketId: string): Promise<OpsTicketMe
     .eq('ticket_id', ticketId)
     .order('created_at', { ascending: true });
   if (error) throw new Error(error.message);
-  return (data || []) as unknown as OpsTicketMessage[];
+  const messages = (data || []) as unknown as OpsTicketMessage[];
+
+  // Enrich with author names from profiles
+  const authorIds = Array.from(
+    new Set(messages.map(m => m.author_id).filter((id): id is string => !!id))
+  );
+  if (authorIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', authorIds);
+    const nameMap = new Map((profiles || []).map(p => [p.id, p.full_name]));
+    messages.forEach(m => {
+      m.author_name = m.author_id ? nameMap.get(m.author_id) ?? null : null;
+    });
+  }
+  return messages;
 };
 
 export const createTicketMessage = async (
