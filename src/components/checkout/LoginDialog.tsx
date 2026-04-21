@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
+import { strongPasswordSchema, isWeakPasswordError } from "@/lib/passwordValidation";
 
 interface LoginDialogProps {
   open: boolean;
@@ -30,6 +31,7 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [showOtp, setShowOtp] = useState(false);
   const [otpEmail, setOtpEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
@@ -38,14 +40,27 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
 
   const handleSubmit = async () => {
     if (!email || !password) return;
+    setPasswordError(null);
     setLoading(true);
     try {
       if (isSignUp) {
+        // Client-side strong password check before hitting backend
+        const parsed = strongPasswordSchema.safeParse(password);
+        if (!parsed.success) {
+          setPasswordError(parsed.error.issues[0]?.message ?? "Parolă invalidă");
+          toast.error("Parolă prea slabă. Verifică cerințele.");
+          setLoading(false);
+          return;
+        }
         const { error } = await signUp(email, password, fullName || undefined);
         if (error) {
-          toast.error(error.message.includes("already registered")
-            ? "Un cont cu acest email există deja"
-            : error.message);
+          if (error.message.includes("already registered")) {
+            toast.error("Un cont cu acest email există deja");
+          } else if (isWeakPasswordError(error.message)) {
+            toast.error("Parolă prea slabă. Folosește minim 8 caractere, o literă mare, o literă mică și o cifră sau simbol.");
+          } else {
+            toast.error(error.message);
+          }
         } else {
           setOtpEmail(email);
           setShowOtp(true);
@@ -53,9 +68,8 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
       } else {
         const { error } = await signIn(email, password);
         if (error) {
-          toast.error(error.message.includes("Invalid login")
-            ? "Email sau parolă greșită"
-            : error.message);
+          // Generic message — never disclose whether email exists or why it failed
+          toast.error("Email sau parolă incorecte");
         } else {
           toast.success("Autentificare reușită!");
           onLoginSuccess();
