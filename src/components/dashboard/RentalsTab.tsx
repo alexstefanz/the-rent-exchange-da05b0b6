@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, MapPin, Search, Camera } from "lucide-react";
+import { Calendar, MapPin, Search, Camera, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getOrCreateConversation } from "@/features/messaging/messagingApi";
 import StatusBadge from "./StatusBadge";
@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import RentalTimeline, { getTimelineStep } from "./RentalTimeline";
 import type { InspectionPhase } from "@/features/rentals/inspectionApi";
 
 interface Rental {
@@ -22,15 +23,19 @@ interface Rental {
   owner_name: string;
   start_date: string;
   end_date: string;
+  end_date_raw: string;
   subtotal: number;
   status: string;
+  payment_status?: string;
+  handover_confirmed_at?: string | null;
+  return_confirmed_at?: string | null;
   location: string;
 }
 
 const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
   const { data, error } = await supabase
     .from("rentals")
-    .select("id, product_id, start_date, end_date, subtotal, status, created_at, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
+    .select("id, product_id, start_date, end_date, subtotal, status, payment_status, handover_confirmed_at, return_confirmed_at, created_at, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
     .eq("renter_id", userId)
     .in("status", ["confirmed", "active", "completed"])
     .order("created_at", { ascending: false });
@@ -46,8 +51,12 @@ const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
     owner_name: r.products?.profiles?.full_name || "Utilizator",
     start_date: format(new Date(r.start_date), "dd MMM yyyy"),
     end_date: format(new Date(r.end_date), "dd MMM yyyy"),
+    end_date_raw: r.end_date,
     subtotal: r.subtotal,
     status: r.status,
+    payment_status: r.payment_status,
+    handover_confirmed_at: r.handover_confirmed_at,
+    return_confirmed_at: r.return_confirmed_at,
     location: r.products?.location_city || "",
   }));
 };
