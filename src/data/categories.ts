@@ -144,7 +144,7 @@ export const categories: Category[] = [
     nameEn: "Transport & Utility",
     icon: "🚛",
     subcategories: [
-      { id: "9-1", name: "Remorci", nameEn: "Trailers", description: "Remorci auto de diverse dimensiuni", descriptionEn: "Car trailers of various sizes", image: "/src/assets/category-transport.jpg" },
+      { id: "9-1", name: "Remorci", nameEn: "Trailers", description: "Remorci auto de diverse dimensiuni", descriptionEn: "Car trailers of various sizes", image: "/images/categories/transport-utilitare.jpg" },
       { id: "9-2", name: "Platforme auto", nameEn: "Car Platforms", description: "Platforme pentru transport auto", descriptionEn: "Platforms for car transport", image: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=400&q=80" },
       { id: "9-3", name: "ATV și off-road", nameEn: "ATV & Off-Road", description: "ATV-uri și vehicule off-road", descriptionEn: "ATVs and off-road vehicles", image: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=400&q=80" },
       { id: "9-4", name: "Motociclete și scutere", nameEn: "Motorcycles & Scooters", description: "Motociclete și scutere de închiriat", descriptionEn: "Motorcycles and scooters for rent", image: "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=400&q=80" },
