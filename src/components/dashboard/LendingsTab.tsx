@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, Plus, Eye, Edit, Check, X, Loader2, Calendar, MessageCircle, Camera } from "lucide-react";
+import { Package, Plus, Eye, Edit, Check, X, Loader2, Calendar, MessageCircle, Camera, Receipt, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +28,8 @@ import { AcceptedRentalDialog } from "./AcceptedRentalDialog";
 import { InspectionDialog } from "./InspectionDialog";
 import RentalTimeline from "./RentalTimeline";
 import type { InspectionPhase } from "@/features/rentals/inspectionApi";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
 
 const statusLabels: Record<string, { ro: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { ro: "În așteptare", variant: "secondary" },
