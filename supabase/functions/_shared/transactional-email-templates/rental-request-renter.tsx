@@ -1,6 +1,6 @@
 /// <reference types="npm:@types/react@18.3.1" />
 import * as React from 'npm:react@18.3.1'
-import { Body, Container, Head, Heading, Html, Img, Preview, Text, Hr } from 'npm:@react-email/components@0.0.22'
+import { Body, Container, Head, Heading, Html, Img, Preview, Text, Hr, Button } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
 
 const SITE_NAME = 'Rentli'
@@ -10,9 +10,14 @@ interface Props {
   productTitle?: string
   startDate?: string
   endDate?: string
+  rentalId?: string
 }
 
-const RentalRequestRenterEmail = ({ productTitle = 'un produs', startDate, endDate }: Props) => (
+const RentalRequestRenterEmail = ({ productTitle = 'un produs', startDate, endDate, rentalId }: Props) => {
+  const ctaHref = rentalId
+    ? `https://rentli.ro/cereri?rental_id=${rentalId}`
+    : 'https://rentli.ro/cereri'
+  return (
   <Html lang="ro" dir="ltr">
     <Head />
     <Preview>Cererea ta de închiriere a fost trimisă</Preview>
@@ -25,18 +30,22 @@ const RentalRequestRenterEmail = ({ productTitle = 'un produs', startDate, endDa
           {startDate && endDate ? ` (${startDate} – ${endDate})` : ''} a fost trimisă proprietarului.
         </Text>
         <Text style={text}>Vei fi notificat imediat ce proprietarul va răspunde.</Text>
+        <Button style={button} href={ctaHref}>
+          Vezi statusul
+        </Button>
         <Hr style={hr} />
         <Text style={footer}>Cu drag, Echipa {SITE_NAME}</Text>
       </Container>
     </Body>
   </Html>
-)
+  )
+}
 
 export const template = {
   component: RentalRequestRenterEmail,
   subject: 'Cererea ta de închiriere a fost trimisă',
   displayName: 'Cerere trimisă (Renter)',
-  previewData: { productTitle: 'Bicicletă Mountain Bike', startDate: '15 ian 2025', endDate: '18 ian 2025' },
+  previewData: { productTitle: 'Bicicletă Mountain Bike', startDate: '15 ian 2025', endDate: '18 ian 2025', rentalId: '326efd56-9af7-4af2-a57c-b0cdea56e5dd' },
 } satisfies TemplateEntry
 
 const main = { backgroundColor: '#ffffff', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
@@ -45,5 +54,6 @@ const header = { backgroundColor: '#F59E0B', padding: '20px 25px', borderRadius:
 const logoStyle = { display: 'block' as const }
 const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#302520', margin: '25px 25px 10px' }
 const text = { fontSize: '14px', color: '#7D7471', lineHeight: '1.5', margin: '0 25px 15px' }
+const button = { backgroundColor: '#F59E0B', color: '#ffffff', padding: '12px 24px', borderRadius: '6px', fontWeight: 'bold' as const, textDecoration: 'none', display: 'inline-block', margin: '10px 25px 20px' }
 const hr = { borderColor: '#eee', margin: '20px 25px' }
 const footer = { fontSize: '12px', color: '#999999', margin: '0 25px 25px' }

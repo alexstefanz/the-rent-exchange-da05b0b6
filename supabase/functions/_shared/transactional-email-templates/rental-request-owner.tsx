@@ -11,9 +11,14 @@ interface Props {
   productTitle?: string
   startDate?: string
   endDate?: string
+  rentalId?: string
 }
 
-const RentalRequestOwnerEmail = ({ renterName = 'Un utilizator', productTitle = 'produsul tău', startDate, endDate }: Props) => (
+const RentalRequestOwnerEmail = ({ renterName = 'Un utilizator', productTitle = 'produsul tău', startDate, endDate, rentalId }: Props) => {
+  const ctaHref = rentalId
+    ? `https://rentli.ro/anunturi?rental_id=${rentalId}`
+    : 'https://rentli.ro/anunturi'
+  return (
   <Html lang="ro" dir="ltr">
     <Head />
     <Preview>Ai primit o cerere nouă de închiriere pe {SITE_NAME}</Preview>
@@ -30,7 +35,7 @@ const RentalRequestOwnerEmail = ({ renterName = 'Un utilizator', productTitle = 
         <Text style={text}>
           Accesează contul tău pentru a accepta sau refuza cererea.
         </Text>
-        <Button style={button} href="https://rentli.ro/rentals">
+        <Button style={button} href={ctaHref}>
           Vezi cererea
         </Button>
         <Hr style={hr} />
@@ -38,13 +43,14 @@ const RentalRequestOwnerEmail = ({ renterName = 'Un utilizator', productTitle = 
       </Container>
     </Body>
   </Html>
-)
+  )
+}
 
 export const template = {
   component: RentalRequestOwnerEmail,
   subject: 'Ai primit o cerere nouă de închiriere',
   displayName: 'Cerere nouă (Owner)',
-  previewData: { renterName: 'Ion Popescu', productTitle: 'Bicicletă Mountain Bike', startDate: '15 ian 2025', endDate: '18 ian 2025' },
+  previewData: { renterName: 'Ion Popescu', productTitle: 'Bicicletă Mountain Bike', startDate: '15 ian 2025', endDate: '18 ian 2025', rentalId: '326efd56-9af7-4af2-a57c-b0cdea56e5dd' },
 } satisfies TemplateEntry
 
 const main = { backgroundColor: '#ffffff', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
