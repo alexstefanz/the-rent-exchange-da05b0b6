@@ -16,11 +16,6 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-    );
-
     // Authenticate
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
@@ -29,8 +24,16 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // User-scoped client: carries the JWT so RLS allows reading own profile
+    const supabaseUser = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+
     const token = authHeader.replace("Bearer ", "");
-    const { data: authData, error: authError } = await supabase.auth.getUser(token);
+    const { data: authData, error: authError } = await supabaseUser.auth.getUser(token);
     if (authError || !authData.user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -41,7 +44,7 @@ serve(async (req) => {
 
     // KYC gate: only VERIFIED users can initiate payment
     {
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabaseUser
         .from("profiles")
         .select("kyc_status")
         .eq("id", user.id)
@@ -51,6 +54,7 @@ serve(async (req) => {
         user_email: user.email,
         profile_found: !!profile,
         kyc_status: profile?.kyc_status,
+        profile_error: profileError?.message,
       });
       if (!profile || profile.kyc_status !== "VERIFIED") {
         return new Response(
