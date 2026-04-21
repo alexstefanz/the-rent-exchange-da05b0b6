@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, MapPin, Search, Camera, AlertCircle, Receipt, ChevronDown } from "lucide-react";
+import { Calendar, MapPin, Search, Camera, AlertCircle, Receipt, ChevronDown, CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getOrCreateConversation } from "@/features/messaging/messagingApi";
 import StatusBadge from "./StatusBadge";
@@ -39,7 +39,7 @@ const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
     .from("rentals")
     .select("id, product_id, start_date, end_date, subtotal, status, payment_status, handover_confirmed_at, return_confirmed_at, created_at, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
     .eq("renter_id", userId)
-    .in("status", ["confirmed", "active", "completed"])
+    .or("status.in.(confirmed,active,completed),and(status.eq.pending,payment_status.in.(authorized,paid))")
     .order("created_at", { ascending: false });
 
   if (error) throw error;
