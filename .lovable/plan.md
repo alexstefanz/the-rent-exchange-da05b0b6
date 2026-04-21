@@ -1,102 +1,70 @@
 
-## Plan: Reparare checkout pentru userii KYC verificați
+
+## Plan: Notificările "Cerere trimisă/primită" doar după plata reușită
 
 ### Problemă confirmată
-Contul `alexadvanceonline@gmail.com` este corect aprobat:
-- `profiles.kyc_status = 'VERIFIED'`
-- edge logs arată același `user_id` autenticat corect
 
-Dar în `create-checkout-session` apare:
-```ts
-profile_found: false
-```
+În `src/features/rentals/rentalsApi.ts → createRental()` se apelează `send-rental-notification` imediat după inserarea rentalului în DB, **înainte** ca userul să ajungă la Stripe Checkout. Edge function-ul creează:
 
-Asta se întâmplă fiindcă funcția:
-1. autentifică userul cu `auth.getUser(token)`,
-2. apoi face query pe `profiles` cu un client anon care **nu este legat de JWT-ul userului**,
-3. iar RLS pe `profiles` permite SELECT doar pentru profilul propriu când cererea poartă tokenul userului.
+- notificare în feed pentru renter: "Cerere trimisă cu succes"
+- notificare în feed pentru owner: "Cerere nouă de închiriere"
+- email către owner: "Cerere nouă de închiriere"
+- email către renter: "Cererea ta a fost trimisă"
+- transaction `pending`
 
-Rezultat: funcția “vede” userul, dar **nu vede profilul lui**, deci cade fals în `KYC_REQUIRED`.
+Astfel, dacă userul abandonează checkout-ul (sau plata eșuează), proprietarul deja a primit email + notificare pentru o cerere care nu există efectiv, iar renterul vede în feed o confirmare pentru o cerere neplătită.
 
----
+### Soluție
 
-### Ce voi modifica
+Mut apelul de notificare din momentul creării rentalului → în momentul confirmării plății (în `verify-stripe-payment`), care se rulează doar când Stripe confirmă `requires_capture` sau `succeeded`.
 
-#### 1. Repar `create-checkout-session`
-În `supabase/functions/create-checkout-session/index.ts` voi separa clar cei 2 clienți:
+### Modificări
 
-- **user-scoped client** cu header-ul `Authorization` din request:
-  - folosit pentru `auth.getUser()`
-  - folosit pentru citirea `profiles.kyc_status`
-- **admin client** cu service role:
-  - folosit doar pentru `rentals` și update-ul `payment_method`
+#### 1. `src/features/rentals/rentalsApi.ts`
+- **Elimin** apelul `supabase.functions.invoke("send-rental-notification", …)` din `createRental()`.
+- Conversația + mesajul către owner rămân la creare (sunt utile chiar dacă plata eșuează — dacă renter trimite mesaj, owner îl vede în mesagerie; dar **nu** se mai trimite notificare/email automat).
+- Opțional: și crearea conversației o pot muta tot în post-plată, ca să nu se acumuleze conversații goale. Recomand: mut și conversația după plată (pentru că dacă userul abandonează plata, owner ar primi mesaj despre o cerere fantomă).
 
-Pattern-ul va deveni similar cu funcțiile deja corecte din proiect (`respond-rental-request`, `request-account-deactivation`).
+#### 2. `supabase/functions/verify-stripe-payment/index.ts`
+- După `update rentals` cu succes (când `payment_status` devine `authorized` sau `paid`), **invoc** `send-rental-notification` cu `rental_id`.
+- Apelul e fire-and-forget cu try/catch — dacă notificarea eșuează, nu blochează răspunsul către frontend (rentalul e deja plătit corect).
 
-Practic:
-```ts
-const supabaseUser = createClient(url, anonKey, {
-  global: { headers: { Authorization: authHeader } },
-});
-const { data: { user } } = await supabaseUser.auth.getUser();
+#### 3. `supabase/functions/send-rental-notification/index.ts`
+- Modific textele notificărilor pentru a reflecta că plata a fost autorizată:
+  - renter: "Cerere trimisă cu succes" → rămâne, dar descrierea devine "Plata ta a fost autorizată. Cererea pentru "X" a fost trimisă proprietarului."
+  - owner: "Cerere nouă de închiriere" → rămâne (acum e o cerere reală, plătită).
+- Schimb status-ul `transactions.status` din `pending` în `authorized` (reflectă că banii sunt blocați la Stripe, nu doar "în așteptare nedefinit").
+- Adaug guard idempotent: dacă există deja o notificare `rental_request` pentru `rental_id` curent, nu o duplic (în caz că `verify-stripe-payment` se apelează de mai multe ori — ex. user dă refresh pe `/checkout/success`).
 
-const { data: profile } = await supabaseUser
-  .from("profiles")
-  .select("kyc_status")
-  .eq("id", user.id)
-  .maybeSingle();
-```
-
-Asta face ca RLS să permită accesul la propriul profil și KYC gate-ul server-side să citească `VERIFIED` corect.
-
----
-
-#### 2. Păstrez validarea KYC și debug-ul util
-Nu scot protecția KYC din checkout.
-Păstrez log-urile utile introduse deja, dar după fix ele trebuie să arate:
-- `profile_found: true`
-- `kyc_status: "VERIFIED"`
-
-Astfel putem confirma rapid că bug-ul e rezolvat fără să slăbim securitatea.
-
----
-
-#### 3. Curăț efectul secundar actual: rezervări “pending” create înainte de eșecul checkout
-Am confirmat că există deja mai multe rânduri în `rentals` pentru acest user, toate `pending`, create de tentativele eșuate înainte ca Stripe session să pornească.
-
-Voi corecta fluxul din `src/features/rentals/rentalsApi.ts` astfel încât:
-- dacă `create-checkout-session` răspunde cu `KYC_REQUIRED` sau alt eșec,
-- să nu rămână rezervări orfane `pending` create inutil.
-
-Abordare:
-- fie șterg/anulez rental-ul abia creat când checkout-ul nu pornește,
-- fie mut crearea finală a rental-ului după confirmarea că Stripe session a fost creată.
-
-Voi alege varianta cu impact minim asupra codului existent și compatibilă cu RLS-ul actual.
-
----
+#### 4. Cleanup vechi (opțional, doar la cerere) 
+- Notificările "Cerere trimisă cu succes" deja existente în feed pentru rentaluri cancelled/pending fără plată rămân până când userul le marchează ca citite. Nu le șterg automat — ar putea șterge din greșeală notificări legitime.
 
 ### Fișiere afectate
 
 | Fișier | Modificare |
 |---|---|
-| `supabase/functions/create-checkout-session/index.ts` | Folosesc client user-scoped cu `Authorization` pentru `auth.getUser()` și query-ul pe `profiles` |
-| `src/features/rentals/rentalsApi.ts` | Previn lăsarea rezervărilor `pending` dacă pornirea checkout-ului eșuează |
-| posibil `supabase/migrations/<ts>.sql` | Doar dacă e nevoie de o politică minimă pentru cleanup-ul rental-ului creat de același renter; altfel evit migrarea |
+| `src/features/rentals/rentalsApi.ts` | Elimin invocarea `send-rental-notification` din `createRental`. Mut crearea conversației + mesajului opțional în flow-ul post-plată (sau o las și invoc din `verify-stripe-payment`) |
+| `supabase/functions/verify-stripe-payment/index.ts` | După succes update rental, invoc `send-rental-notification` (+ creare conversație/mesaj dacă a fost transmis prin metadata) |
+| `supabase/functions/send-rental-notification/index.ts` | Update copy: descrierile reflectă plata autorizată; transaction status → `authorized`; guard idempotent pe notificări existente |
+| `supabase/functions/create-checkout-session/index.ts` | Dacă mut conversația în post-plată: adaug `message_to_owner` în `metadata` Stripe (sau în coloană pe `rentals`) |
 
----
+### Decizie despre mesajul către owner
+
+Două opțiuni — am nevoie de input:
+- **A.** Conversația + mesajul opțional rămân create la pasul actual (înainte de plată). Owner-ul vede mesajul în chat dar **nu** primește email/notificare push până la plată.
+- **B.** Și conversația + mesajul se creează doar după plată (mesajul e stocat temporar în coloana `rentals.message_to_owner` sau `Stripe metadata` și inserat în `messages` doar când plata reușește).
+
+Recomand **B** — coerent cu principiul "nimic nu pleacă spre owner până nu s-a plătit". Necesită o coloană nouă `message_to_owner TEXT` pe `rentals` (migrație simplă) sau pasarea prin metadata Stripe.
 
 ### Rezultat așteptat
-- Userul verificat și aprobat poate intra în checkout fără redirecționare falsă la `/verificare`
-- `create-checkout-session` citește corect `profiles.kyc_status = VERIFIED`
-- butonul „Rezervă” deschide Stripe normal
-- tentativele eșuate nu mai lasă în urmă rezervări `pending` inutile
 
----
+- Renter NU mai vede "Cerere trimisă cu succes" până când Stripe confirmă plata.
+- Owner NU mai primește email/notificare/mesaj pentru cereri neplătite.
+- Tranzacția în DB apare ca `authorized` doar după hold confirmat — nu mai există tranzacții `pending` orfane.
+- `cleanupOrphanRental` din `rentalsApi.ts` rămâne ca safety net dacă crearea sesiunii Stripe eșuează.
 
-### Verificare după implementare
-Voi valida explicit:
-1. retry booking cu contul `alexadvanceonline@gmail.com`
-2. logs din `create-checkout-session` să arate `profile_found: true`
-3. lipsa erorii `KYC_REQUIRED`
-4. să nu se mai acumuleze rentals `pending` orfane la eșecuri de checkout
+### Limitări recunoscute
+
+- Dacă `verify-stripe-payment` eșuează la apelul `send-rental-notification`, plata rămâne corect marcată dar notificarea nu pleacă. Userul primește totuși ecranul de confirmare pe `/checkout/success`. Owner-ul vede cererea când deschide dashboard-ul (e în DB cu `payment_status = authorized`). Pot adăuga un job/cron care să reîncerce notificările lipsă, dar nu e în scop-ul acestui fix.
+- Notificările vechi (de la cereri abandonate până acum) rămân în feed.
+
