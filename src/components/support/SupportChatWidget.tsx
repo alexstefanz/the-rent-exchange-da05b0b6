@@ -67,30 +67,78 @@ const compressImage = (file: File): Promise<File> => {
   });
 };
 
+const SUPPORT_BUCKET = "support-attachments";
+const SUPPORT_PATH_PREFIX = "support-attachments://";
+
 const uploadSupportImage = async (file: File, userId: string): Promise<string> => {
   const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
-  const { error } = await supabase.storage.from("support-attachments").upload(fileName, file);
+  const { error } = await supabase.storage.from(SUPPORT_BUCKET).upload(fileName, file);
   if (error) throw error;
-  const { data } = supabase.storage.from("support-attachments").getPublicUrl(fileName);
-  return data.publicUrl;
+  // Return scoped reference (not a public URL) so private bucket policies apply
+  return `${SUPPORT_PATH_PREFIX}${fileName}`;
 };
 
-const isImageUrl = (text: string) =>
-  /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(text) ||
-  text.includes("/support-attachments/");
+/**
+ * Extracts a storage path inside `support-attachments` from any of:
+ *  - new format: `support-attachments://<userId>/<file>`
+ *  - legacy public URL: `https://.../storage/v1/object/public/support-attachments/<userId>/<file>`
+ *  - legacy signed URL: `https://.../storage/v1/object/sign/support-attachments/<userId>/<file>?token=...`
+ * Returns null if the text is not an attachment reference.
+ */
+const extractSupportPath = (raw: string): string | null => {
+  const text = raw.trim();
+  if (text.startsWith(SUPPORT_PATH_PREFIX)) {
+    return text.slice(SUPPORT_PATH_PREFIX.length);
+  }
+  const publicMatch = text.match(/\/storage\/v1\/object\/(?:public|sign)\/support-attachments\/([^?#]+)/);
+  if (publicMatch) {
+    return decodeURIComponent(publicMatch[1]);
+  }
+  return null;
+};
+
+const isImageUrl = (text: string) => extractSupportPath(text) !== null;
+
+const SupportImage = ({ path }: { path: string }) => {
+  const { data: signedUrl, isLoading } = useQuery({
+    queryKey: ["supportSignedUrl", path],
+    queryFn: async () => {
+      const { data, error } = await supabase.storage
+        .from(SUPPORT_BUCKET)
+        .createSignedUrl(path, 3600);
+      if (error) throw error;
+      return data.signedUrl;
+    },
+    staleTime: 50 * 60 * 1000, // 50 minutes (URL expires after 60)
+    retry: 1,
+  });
+
+  if (isLoading) {
+    return <div className="h-32 w-48 rounded-lg bg-muted animate-pulse" />;
+  }
+  if (!signedUrl) {
+    return (
+      <p className="text-xs text-muted-foreground italic">
+        [imagine indisponibilă]
+      </p>
+    );
+  }
+  return (
+    <a href={signedUrl} target="_blank" rel="noopener noreferrer">
+      <img
+        src={signedUrl}
+        alt="Imagine atașată"
+        className="max-w-full rounded-lg max-h-48 object-cover"
+        loading="lazy"
+      />
+    </a>
+  );
+};
 
 const renderMessageContent = (text: string) => {
-  if (isImageUrl(text.trim())) {
-    return (
-      <a href={text.trim()} target="_blank" rel="noopener noreferrer">
-        <img
-          src={text.trim()}
-          alt="Imagine atașată"
-          className="max-w-full rounded-lg max-h-48 object-cover"
-          loading="lazy"
-        />
-      </a>
-    );
+  const path = extractSupportPath(text);
+  if (path) {
+    return <SupportImage path={path} />;
   }
   return <p className="whitespace-pre-wrap break-words">{text}</p>;
 };
