@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, MapPin, Search, Camera, AlertCircle } from "lucide-react";
+import { Calendar, MapPin, Search, Camera, AlertCircle, Receipt, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getOrCreateConversation } from "@/features/messaging/messagingApi";
 import StatusBadge from "./StatusBadge";
@@ -13,6 +13,8 @@ import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import RentalTimeline, { getTimelineStep } from "./RentalTimeline";
 import type { InspectionPhase } from "@/features/rentals/inspectionApi";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
 
 interface Rental {
   id: string;
@@ -141,6 +143,18 @@ const RentalsTab = () => {
                   <div className="mt-4 pt-3 border-t border-border/50">
                     <RentalTimeline rental={tlRental} />
                   </div>
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="mt-2 h-7 px-2 text-xs">
+                        <Receipt className="h-3.5 w-3.5 mr-1" />
+                        Status plată
+                        <ChevronDown className="h-3.5 w-3.5 ml-1" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <RentalPaymentStatus rentalId={rental.id} mode="user" />
+                    </CollapsibleContent>
+                  </Collapsible>
                   {step === 5 && (
                     <div className="mt-3 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
                       <AlertCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
