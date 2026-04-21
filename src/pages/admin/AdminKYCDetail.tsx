@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useKycCase, useKycDocuments, useKycAuditLog, useKycUserContext } from "@/hooks/queries/useKyc";
+import { useKycDuplicates } from "@/hooks/queries/useKyc";
 import { useUserActivityLogs } from "@/hooks/queries/useUserActivityLogs";
 import {
   approveKycCase, rejectKycCase, requestReupload, setNeedsManualReview,
@@ -56,6 +57,7 @@ const AdminKYCDetail = () => {
   const { data: auditLog } = useKycAuditLog(id);
   const { data: userContext } = useKycUserContext(kycCase?.user_id);
   const { data: activityLogs } = useUserActivityLogs(kycCase?.user_id);
+  const { data: duplicates } = useKycDuplicates(id);
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ['kycCase', id] });
