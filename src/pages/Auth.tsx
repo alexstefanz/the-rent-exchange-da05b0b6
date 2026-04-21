@@ -325,6 +325,7 @@ const Auth = () => {
               <div className="space-y-2">
                 <Label htmlFor="new-password">{copy.auth.newPassword}</Label>
                 <Input id="new-password" type="password" placeholder="••••••••" {...resetForm.register("newPassword")} />
+                <p className="text-xs text-muted-foreground">{copy.auth.passwordRequirements}</p>
                 {resetForm.formState.errors.newPassword && <p className="text-sm text-destructive">{resetForm.formState.errors.newPassword.message}</p>}
               </div>
               <div className="space-y-2">
@@ -454,6 +455,7 @@ const Auth = () => {
                 <div className="space-y-2">
                   <Label htmlFor="register-password">{copy.auth.password}</Label>
                   <Input id="register-password" type="password" placeholder="••••••••" {...registerForm.register("password")} />
+                  <p className="text-xs text-muted-foreground">{copy.auth.passwordRequirements}</p>
                   {registerForm.formState.errors.password && <p className="text-sm text-destructive">{registerForm.formState.errors.password.message}</p>}
                 </div>
                 <div className="space-y-2">
