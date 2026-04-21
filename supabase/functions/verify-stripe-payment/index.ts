@@ -119,6 +119,54 @@ serve(async (req) => {
       });
     }
 
+    // Post-payment side effects (fire-and-forget; never block the success response).
+    // 1) Create conversation + first message if the renter sent a message at checkout.
+    // 2) Trigger owner/renter notifications + emails.
+    try {
+      const messageToOwner = (session.metadata?.message_to_owner || "").trim();
+      if (messageToOwner) {
+        const { data: existingConv } = await supabaseAdmin
+          .from("conversations")
+          .select("id")
+          .eq("product_id", rental.product_id)
+          .eq("buyer_id", rental.renter_id)
+          .eq("owner_id", rental.owner_id)
+          .maybeSingle();
+
+        let conversationId = existingConv?.id as string | undefined;
+        if (!conversationId) {
+          const { data: newConv } = await supabaseAdmin
+            .from("conversations")
+            .insert({
+              product_id: rental.product_id,
+              buyer_id: rental.renter_id,
+              owner_id: rental.owner_id,
+            })
+            .select("id")
+            .single();
+          conversationId = newConv?.id;
+        }
+
+        if (conversationId) {
+          await supabaseAdmin.from("messages").insert({
+            conversation_id: conversationId,
+            sender_id: rental.renter_id,
+            content: messageToOwner,
+          });
+        }
+      }
+    } catch (convErr) {
+      console.error("Post-payment conversation/message error (non-blocking):", convErr);
+    }
+
+    try {
+      await supabaseAdmin.functions.invoke("send-rental-notification", {
+        body: { rental_id: rentalId },
+      });
+    } catch (notifyErr) {
+      console.error("Post-payment notification error (non-blocking):", notifyErr);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
