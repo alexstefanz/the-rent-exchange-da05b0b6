@@ -203,5 +203,40 @@ async function captureRental(
 
   console.log(`[capture-rental-payment] Successfully captured rental ${rentalId}`);
 
+  // Send branded "payout received" email (best-effort, non-blocking)
+  try {
+    const { data: ownerProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("email, full_name")
+      .eq("id", rental.owner_id as string)
+      .maybeSingle();
+
+    let productTitle: string | undefined;
+    if (rental.product_id) {
+      const { data: prod } = await supabaseAdmin
+        .from("products")
+        .select("title")
+        .eq("id", rental.product_id as string)
+        .maybeSingle();
+      productTitle = prod?.title;
+    }
+
+    if (ownerProfile?.email) {
+      await supabaseAdmin.functions.invoke("send-transactional-email", {
+        body: {
+          template: "payout-received",
+          to: ownerProfile.email,
+          data: {
+            name: ownerProfile.full_name || undefined,
+            amount: Number(rental.owner_payout) || 0,
+            productTitle,
+          },
+        },
+      });
+    }
+  } catch (e) {
+    console.error("[capture-rental-payment] Email send failed (non-blocking):", e);
+  }
+
   return { rental_id: rentalId, success: true, captured_at: now };
 }
