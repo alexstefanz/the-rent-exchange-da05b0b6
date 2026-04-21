@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_notifications: {
+        Row: {
+          created_at: string
+          description_en: string | null
+          description_ro: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          is_read: boolean
+          link: string | null
+          priority: string
+          title_en: string | null
+          title_ro: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          description_en?: string | null
+          description_ro?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          priority?: string
+          title_en?: string | null
+          title_ro: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          description_en?: string | null
+          description_ro?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          priority?: string
+          title_en?: string | null
+          title_ro?: string
+          type?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           buyer_id: string
@@ -1417,6 +1462,17 @@ export type Database = {
           user_id: string
           user_name: string
           user_role: string
+        }[]
+      }
+      get_admin_notification_summary: {
+        Args: never
+        Returns: {
+          open_tickets: number
+          pending_kyc: number
+          pending_products: number
+          pending_withdrawals: number
+          unread_high_priority: number
+          unread_total: number
         }[]
       }
       get_admin_pending_products: {
