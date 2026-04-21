@@ -53,6 +53,11 @@ import {
   CloudRain,
   Wheat,
   Settings,
+  Construction,
+  ArrowUpFromLine,
+  MoveUp,
+  ChevronsUp,
+  Forklift,
   type LucideIcon,
 } from "lucide-react";
 
@@ -134,6 +139,13 @@ export const subcategoryIcons: Record<string, LucideIcon> = {
   "11-4": CloudRain,     // Irigare agricolă
   "11-5": Wheat,         // Recoltare
   "11-6": Settings,      // Atașamente și accesorii
+  "11-7": Construction,       // Buldoexcavator
+  "11-8": Shovel,             // Excavator
+  "11-9": CircleDot,          // Cilindru Compactor
+  "11-10": ArrowUpFromLine,   // Macara
+  "11-11": MoveUp,            // Nacelă Articulată
+  "11-12": ChevronsUp,        // Nacelă Foarfecă
+  "11-13": Forklift,          // Încărcător Frontal
 };
 
 export const getSubcategoryIcon = (subcategoryId: string): LucideIcon => {
