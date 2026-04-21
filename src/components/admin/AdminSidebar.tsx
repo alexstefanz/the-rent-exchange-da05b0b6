@@ -90,21 +90,35 @@ const AdminSidebar = () => {
 
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <NavLink 
-                      to={item.url} 
-                      end={item.url === "/admin"}
-                      className="hover:bg-muted/50" 
-                      activeClassName="bg-muted text-primary font-medium"
-                    >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {menuItems.map((item) => {
+                const count = item.badgeKey ? Number(summary?.[item.badgeKey] || 0) : 0;
+                const showBadge = count > 0;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                      <NavLink
+                        to={item.url}
+                        end={item.url === "/admin"}
+                        className="hover:bg-muted/50 relative"
+                        activeClassName="bg-muted text-primary font-medium"
+                      >
+                        <span className="relative mr-2 flex items-center">
+                          <item.icon className="h-4 w-4" />
+                          {showBadge && collapsed && (
+                            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive ring-2 ring-background" />
+                          )}
+                        </span>
+                        {!collapsed && <span>{item.title}</span>}
+                        {showBadge && !collapsed && (
+                          <span className="ml-auto inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-semibold text-destructive-foreground">
+                            {count > 9 ? "9+" : count}
+                          </span>
+                        )}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
