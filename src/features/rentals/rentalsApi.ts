@@ -98,12 +98,26 @@ export async function createRentalWithStripeCheckout(params: CreateRentalParams)
   // First create the rental in DB
   const rental = await createRental(params);
 
+  // Helper to clean up an orphan pending rental if checkout init fails
+  const cleanupOrphanRental = async () => {
+    try {
+      await supabase
+        .from("rentals")
+        .update({ status: "cancelled", cancellation_reason: "checkout_init_failed" })
+        .eq("id", rental.id)
+        .eq("status", "pending");
+    } catch (cleanupErr) {
+      console.error("Cleanup of orphan rental failed (non-blocking):", cleanupErr);
+    }
+  };
+
   // Then create a Stripe Checkout session
   const { data, error } = await supabase.functions.invoke("create-checkout-session", {
     body: { rental_id: rental.id },
   });
 
   if (error) {
+    await cleanupOrphanRental();
     const msg = (error as any)?.message || "";
     if (msg.includes("KYC_REQUIRED") || (error as any)?.context?.error === "KYC_REQUIRED") {
       const e = new Error("KYC_REQUIRED");
@@ -113,6 +127,7 @@ export async function createRentalWithStripeCheckout(params: CreateRentalParams)
     throw error;
   }
   if (data?.error) {
+    await cleanupOrphanRental();
     if (data.error === "KYC_REQUIRED") {
       const e = new Error("KYC_REQUIRED");
       (e as any).code = "KYC_REQUIRED";
@@ -120,7 +135,10 @@ export async function createRentalWithStripeCheckout(params: CreateRentalParams)
     }
     throw new Error(data.error);
   }
-  if (!data?.url) throw new Error("Nu s-a putut crea sesiunea de plată");
+  if (!data?.url) {
+    await cleanupOrphanRental();
+    throw new Error("Nu s-a putut crea sesiunea de plată");
+  }
 
   return data.url;
 }
