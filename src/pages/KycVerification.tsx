@@ -157,11 +157,17 @@ const KycVerification = () => {
         caseId = newCase.id;
         setKycCase(newCase);
       } else {
-        // Update existing NOT_STARTED case to IN_PROGRESS
-        await supabase
-          .from("kyc_cases")
-          .update({ status: "IN_PROGRESS" })
-          .eq("id", caseId);
+        // Force existing case to IN_PROGRESS so RLS allows document upload
+        // (covers NOT_STARTED, IN_PROGRESS, SUBMITTED re-uploads)
+        if (kycCase?.status !== "IN_PROGRESS") {
+          await supabase
+            .from("kyc_cases")
+            .update({ status: "IN_PROGRESS" })
+            .eq("id", caseId);
+        }
+
+        // Clean up any previous documents on this case to avoid duplicates
+        await supabase.from("kyc_documents").delete().eq("kyc_case_id", caseId);
       }
 
       // 2. Upload files to storage
