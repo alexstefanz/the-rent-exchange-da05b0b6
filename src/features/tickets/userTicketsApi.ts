@@ -79,7 +79,23 @@ export const fetchUserTicketMessages = async (ticketId: string): Promise<OpsTick
     .order('created_at', { ascending: true });
 
   if (error) throw new Error(error.message);
-  return (data || []) as unknown as OpsTicketMessage[];
+  const messages = (data || []) as unknown as OpsTicketMessage[];
+
+  // Enrich with author names so the user sees who from support replied
+  const authorIds = Array.from(
+    new Set(messages.map(m => m.author_id).filter((id): id is string => !!id))
+  );
+  if (authorIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', authorIds);
+    const nameMap = new Map((profiles || []).map(p => [p.id, p.full_name]));
+    messages.forEach(m => {
+      m.author_name = m.author_id ? nameMap.get(m.author_id) ?? null : null;
+    });
+  }
+  return messages;
 };
 
 /**

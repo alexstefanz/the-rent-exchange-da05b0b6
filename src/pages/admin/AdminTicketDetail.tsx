@@ -179,7 +179,19 @@ const AdminTicketDetail = () => {
                     <div key={msg.id} className={`p-3 rounded-lg border ${msg.is_internal ? 'bg-yellow-50 border-yellow-200' : 'bg-muted/30'}`}>
                       <div className="flex items-center gap-2 mb-1">
                         {msg.is_internal && <Lock className="h-3 w-3 text-yellow-600" />}
-                        <span className="text-xs font-medium">{msg.author_type}</span>
+                        <span className="text-xs font-medium">
+                          {(() => {
+                            const roleLabel =
+                              msg.author_type === 'ADMIN' ? 'Admin' :
+                              msg.author_type === 'CUSTOMER' ? 'Client' :
+                              msg.author_type === 'OWNER' ? 'Proprietar' :
+                              msg.author_type === 'SYSTEM' ? 'Sistem' :
+                              msg.author_type;
+                            return msg.author_name && msg.author_type !== 'SYSTEM'
+                              ? `${roleLabel} · ${msg.author_name}`
+                              : roleLabel;
+                          })()}
+                        </span>
                         <span className="text-xs text-muted-foreground">
                           {format(new Date(msg.created_at), 'd MMM yyyy HH:mm', { locale: ro })}
                         </span>

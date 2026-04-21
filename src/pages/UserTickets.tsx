@@ -229,7 +229,13 @@ const TicketMessages = ({ ticketId, ticketStatus }: { ticketId: string; ticketSt
               }`}>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-[10px] font-medium opacity-70">
-                    {msg.author_type === 'CUSTOMER' ? t("Tu", "You") : msg.author_type === 'SYSTEM' ? 'System' : t("Suport", "Support")}
+                    {msg.author_type === 'CUSTOMER'
+                      ? t("Tu", "You")
+                      : msg.author_type === 'SYSTEM'
+                        ? t("Sistem", "System")
+                        : msg.author_name
+                          ? `${t("Suport", "Support")} · ${msg.author_name}`
+                          : t("Suport", "Support")}
                   </span>
                   <span className="text-[10px] opacity-50">
                     {format(new Date(msg.created_at), "d MMM, HH:mm", { locale: ro })}
