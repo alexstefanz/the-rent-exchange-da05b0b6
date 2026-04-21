@@ -45,6 +45,7 @@ const NewProduct = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
+  const kyc = useKycGate();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [images, setImages] = useState<string[]>([]);
@@ -111,6 +112,16 @@ const NewProduct = () => {
       navigate("/owner");
     } catch (error) {
       console.error("Error creating product:", error);
+      const err: any = error;
+      if (err?.code === "KYC_REQUIRED" || (typeof err?.message === "string" && err.message.includes("KYC_REQUIRED"))) {
+        toast({
+          title: "Verificare identitate necesară",
+          description: "Te redirecționăm către pagina de verificare KYC.",
+          variant: "destructive",
+        });
+        setTimeout(() => navigate("/kyc"), 600);
+        return;
+      }
       toast({
         title: "Eroare",
         description: "Nu s-a putut crea produsul",
@@ -121,10 +132,26 @@ const NewProduct = () => {
     }
   };
 
-  if (authLoading) {
+  if (authLoading || kyc.loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (user && !kyc.isVerified) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background">
+        <Navbar />
+        <main className="flex-1 container max-w-2xl py-8 pt-24 lg:pt-8">
+          <Button variant="ghost" className="mb-4" onClick={() => navigate("/owner")}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Înapoi la produse
+          </Button>
+          <KycGateBanner reason="publish" />
+        </main>
+        <Footer />
       </div>
     );
   }
