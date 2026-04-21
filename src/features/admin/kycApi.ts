@@ -26,6 +26,7 @@ export interface KycCase {
 export interface KycCaseWithUser extends KycCase {
   user_name: string;
   user_email: string;
+  duplicate_count: number;
 }
 
 export interface KycDocument {
@@ -292,6 +293,29 @@ export interface KycUserContext {
   rentals_count: number;
   products_count: number;
 }
+
+// ============================================
+// Duplicate name detection
+// ============================================
+
+export interface KycDuplicateUser {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  created_at: string | null;
+  kyc_status: string | null;
+  products_count: number;
+  rentals_count: number;
+}
+
+export const fetchKycDuplicates = async (caseId: string): Promise<KycDuplicateUser[]> => {
+  const { data, error } = await supabase.rpc('get_kyc_duplicate_users' as any, {
+    case_id: caseId,
+  });
+  if (error) throw new Error(error.message);
+  return (data || []) as unknown as KycDuplicateUser[];
+};
 
 export const fetchKycUserContext = async (userId: string): Promise<KycUserContext> => {
   const { data: profile } = await supabase

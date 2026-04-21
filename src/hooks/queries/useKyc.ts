@@ -5,6 +5,7 @@ import {
   fetchKycDocuments,
   fetchKycAuditLog,
   fetchKycUserContext,
+  fetchKycDuplicates,
   type FetchKycFilters,
 } from "@/features/admin/kycApi";
 
@@ -45,5 +46,13 @@ export const useKycUserContext = (userId: string | undefined) => {
     queryKey: ['kycUserContext', userId],
     queryFn: () => fetchKycUserContext(userId!),
     enabled: !!userId,
+  });
+};
+
+export const useKycDuplicates = (caseId: string | undefined) => {
+  return useQuery({
+    queryKey: ['kycDuplicates', caseId],
+    queryFn: () => fetchKycDuplicates(caseId!),
+    enabled: !!caseId,
   });
 };
