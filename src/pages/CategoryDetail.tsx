@@ -27,12 +27,6 @@ const CategoryDetail = () => {
   const { data: products = [], isLoading } = useProducts(
     category ? { category: category.name } : undefined
   );
-
-  // Redirect legacy slug to new one (after hooks)
-  if (slug === "echipamente-agricole") {
-    return <Navigate to="/categorie/utilaje" replace />;
-  }
-
   const catName = category ? (language === "en" ? category.nameEn : category.name) : "";
 
   // Count products per subcategory
@@ -63,6 +57,11 @@ const CategoryDetail = () => {
 
     return result;
   }, [products, priceRange, sortBy, selectedSubcategory]);
+
+  // Redirect legacy slug to new one (after all hooks)
+  if (slug === "echipamente-agricole") {
+    return <Navigate to="/categorie/utilaje" replace />;
+  }
 
   if (!category) {
     return (
