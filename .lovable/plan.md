@@ -1,72 +1,59 @@
 
 
-## Plan: Afișare nume autori în chat-ul de suport
+## Plan: Redenumire categorie "Echipamente Agricole" → "Utilaje" + subcategorii noi
 
 ### Context
-În prezent, mesajele din chat-ul de suport (atât panoul admin `/admin/tickets/:id`, cât și panoul utilizator `/suport`) afișează doar tipul autorului ("ADMIN", "CUSTOMER", "Tu", "Suport") fără numele real al persoanei. Imaginea atașată confirmă acest lucru — vezi notele cu doar "Notă internă" fără identificare.
+Categoria curentă `id: "11"` "Echipamente Agricole" conține 6 subcategorii agricole (tractoare, prelucrare sol, semănat, irigare, recoltare, atașamente). Vrei să o redenumești în "Utilaje" și să adaugi 7 subcategorii noi de utilaje de construcții/ridicare.
 
-### Soluție
-Rezolv `author_id` din tabela `ops_ticket_messages` la numele real din `profiles.full_name` și afișez numele lângă rolul autorului în ambele interfețe.
+### Decizie de structură
+Păstrez subcategoriile agricole existente (sunt deja folosite de produse) și **adaug cele 7 noi**, astfel încât categoria "Utilaje" să acopere atât utilaje agricole, cât și de construcții. Dacă preferi să elimin complet subcategoriile agricole, spune-mi.
 
 ### Modificări
 
-**1. `src/features/admin/opsTicketsApi.ts`** — îmbogățire mesaje cu nume autor
-- Modific `fetchTicketMessages` să facă un join lateral: pentru fiecare `author_id` distinct, fetch `full_name` din `profiles`
-- Adaug câmpul opțional `author_name?: string | null` în interfața `OpsTicketMessage`
-- Aplic aceeași logică în `src/features/tickets/userTicketsApi.ts` pentru `fetchUserTicketMessages`
+**1. `src/data/categories.ts`** — categoria `id: "11"`
+- `name`: "Echipamente Agricole" → **"Utilaje"**
+- `nameEn`: "Agricultural Equipment" → **"Heavy Equipment"**
+- `slug`: "echipamente-agricole" → **"utilaje"**
+- Adaug 7 subcategorii noi cu ID-uri `11-7` … `11-13`:
 
-**2. `src/pages/admin/AdminTicketDetail.tsx`** — afișare nume în timeline (admin)
-- Linia 182: lângă badge-ul `author_type` (ex. "ADMIN", "CUSTOMER", "SYSTEM"), afișez numele:
-  - Format: `Admin · Maria Ionescu` sau `Client · Andrei Popa`
-  - Pentru `SYSTEM` rămâne doar "Sistem"
-- Etichete localizate: `ADMIN → Admin`, `CUSTOMER → Client`, `OWNER → Proprietar`, `SYSTEM → Sistem`
+| ID | Nume RO | Nume EN |
+|---|---|---|
+| 11-7 | Buldoexcavator | Backhoe Loader |
+| 11-8 | Excavator | Excavator |
+| 11-9 | Cilindru Compactor | Road Roller |
+| 11-10 | Macara | Crane |
+| 11-11 | Nacelă Articulată | Articulated Boom Lift |
+| 11-12 | Nacelă Foarfecă | Scissor Lift |
+| 11-13 | Încărcător Frontal | Front Loader |
 
-**3. `src/pages/UserTickets.tsx`** — afișare nume în timeline (user)
-- Linia 230-233: înlocuiesc "Tu / Suport" cu:
-  - Pentru mesajele proprii: rămâne "Tu" (e clar că e utilizatorul curent)
-  - Pentru mesajele admin: afișez `Suport · [Nume admin]` (ex. "Suport · Maria Ionescu")
-  - Pentru SYSTEM: rămâne "Sistem"
-- Versiune EN: "You", "Support · Maria Ionescu", "System"
+Fiecare subcategorie primește: `slug`, `description` RO/EN, `image` (placeholder Unsplash realist cu utilajul respectiv).
 
-### Layout vizual
+**2. `src/data/subcategoryIcons.ts`** — iconițe pentru noile subcategorii
+- `11-7` Buldoexcavator → `Construction` (Lucide)
+- `11-8` Excavator → `Shovel`
+- `11-9` Cilindru Compactor → `CircleDot`
+- `11-10` Macara → `ArrowUpFromLine` sau `ConstructionIcon`
+- `11-11` Nacelă Articulată → `MoveUp`
+- `11-12` Nacelă Foarfecă → `ChevronsUp`
+- `11-13` Încărcător Frontal → `Truck` / `Forklift`
 
-```text
-┌─────────────────────────────────────────┐
-│ 🔒 Notă internă · Admin: Maria Ionescu  │
-│ 18:34                                   │
-│ Am contactat ownerul telefonic...       │
-└─────────────────────────────────────────┘
+(Voi alege icoane Lucide existente potrivite vizual.)
 
-┌─────────────────────────────────────────┐
-│ Client: Andrei Popa                     │
-│ 18:03                                   │
-│ vuyfuyguyvguy                           │
-└─────────────────────────────────────────┘
-```
+**3. Redirect pentru URL vechi** (opțional, dar recomandat pentru SEO)
+- În `src/pages/CategoryDetail.tsx`: dacă slug-ul accesat este `echipamente-agricole`, redirectez automat la `/categorie/utilaje` (`<Navigate replace>`)
+- Astfel link-urile externe / bookmarks vechi rămân funcționale
 
-În panoul user (`/suport`):
-```text
-┌─────────────────────────────────────────┐
-│ Suport · Maria Ionescu      18:34       │
-│ Mulțumim pentru sesizare...             │
-└─────────────────────────────────────────┘
-                    ┌────────────────────┐
-                    │ Tu          18:03  │
-                    │ Salut, am o ...    │
-                    └────────────────────┘
-```
+### Migrare date existente
+Categoria nu este referențiată în DB după ID numeric — produsele folosesc string-ul `category` din `products.category`. **Nu este necesară migrare SQL** dacă nu există produse publicate cu `category = "Echipamente Agricole"`.
 
-### Securitate
-- Numele admin sunt deja expuse în interfața admin (RLS permite adminilor să vadă profile)
-- Pentru utilizatori (`/suport`), expun doar `full_name` al admin-ului care răspunde — informație publică acceptabilă în context de suport (la fel cum un agent de call-center se prezintă)
-- Folosesc `profiles.full_name` (deja accesibil prin RLS existent), fără a expune `email` sau alte date sensibile
+Dacă există astfel de produse, voi adăuga o migrare SQL: `UPDATE products SET category = 'Utilaje' WHERE category = 'Echipamente Agricole';` — voi verifica și rula doar dacă găsesc rânduri.
 
 ### Fișiere afectate
 
 | Fișier | Modificare |
 |---|---|
-| `src/features/admin/opsTicketsApi.ts` | `fetchTicketMessages` îmbogățit cu `author_name`, tip `OpsTicketMessage` updated |
-| `src/features/tickets/userTicketsApi.ts` | `fetchUserTicketMessages` îmbogățit cu `author_name` |
-| `src/pages/admin/AdminTicketDetail.tsx` | Afișare `Rol · Nume` în header mesaj |
-| `src/pages/UserTickets.tsx` | Afișare `Suport · Nume admin` pentru răspunsuri admin |
+| `src/data/categories.ts` | Redenumire categorie `11` + 7 subcategorii noi |
+| `src/data/subcategoryIcons.ts` | 7 mapări noi de iconițe |
+| `src/pages/CategoryDetail.tsx` | Redirect `echipamente-agricole` → `utilaje` |
+| Migrare SQL (condițional) | Update `products.category` dacă există date vechi |
 
