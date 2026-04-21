@@ -16,6 +16,7 @@ import {
   Bell
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import { useAdminNotificationSummary } from "@/hooks/queries/useAdminNotifications";
 import {
   Sidebar,
   SidebarContent,
@@ -29,19 +30,31 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const menuItems = [
+type BadgeKey =
+  | "unread_total"
+  | "pending_products"
+  | "open_tickets"
+  | "pending_withdrawals"
+  | "pending_kyc";
+
+const menuItems: Array<{
+  title: string;
+  url: string;
+  icon: typeof LayoutDashboard;
+  badgeKey?: BadgeKey;
+}> = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-  { title: "Notificări", url: "/admin/notifications", icon: Bell },
+  { title: "Notificări", url: "/admin/notifications", icon: Bell, badgeKey: "unread_total" },
   { title: "Rezervări", url: "/admin/reservations", icon: CalendarCheck },
   { title: "Produse", url: "/admin/products", icon: Package },
-  { title: "Confirmări", url: "/admin/approvals", icon: ClipboardCheck },
-  { title: "Tickete", url: "/admin/tickets", icon: TicketCheck },
+  { title: "Confirmări", url: "/admin/approvals", icon: ClipboardCheck, badgeKey: "pending_products" },
+  { title: "Tickete", url: "/admin/tickets", icon: TicketCheck, badgeKey: "open_tickets" },
   { title: "Conversații", url: "/admin/conversations", icon: MessageCircle },
   { title: "Categorii", url: "/admin/categories", icon: FolderTree },
-  { title: "Financiar", url: "/admin/finances", icon: Wallet },
+  { title: "Financiar", url: "/admin/finances", icon: Wallet, badgeKey: "pending_withdrawals" },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Utilizatori", url: "/admin/users", icon: Users },
-  { title: "Verificări KYC", url: "/admin/kyc", icon: ShieldCheck },
+  { title: "Verificări KYC", url: "/admin/kyc", icon: ShieldCheck, badgeKey: "pending_kyc" },
   { title: "Test Emailuri", url: "/admin/test-emails", icon: Mail },
 ];
 
@@ -50,6 +63,7 @@ const AdminSidebar = () => {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const currentPath = location.pathname;
+  const { data: summary } = useAdminNotificationSummary();
 
   const isActive = (path: string) => {
     if (path === "/admin") {
