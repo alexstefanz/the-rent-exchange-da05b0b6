@@ -124,6 +124,8 @@ const App = () => (
                 <Route path="/centru-asistenta" element={<HelpCenter />} />
                 <Route path="/suport" element={<UserTickets />} />
                 <Route path="/verificare" element={<KycVerification />} />
+                <Route path="/kyc" element={<Navigate to="/verificare" replace />} />
+                <Route path="/kyc/*" element={<Navigate to="/verificare" replace />} />
                 <Route path="/cum-functioneaza" element={<HowItWorks />} />
                 <Route path="/despre-noi" element={<AboutUs />} />
                 <Route path="/termeni-si-conditii" element={<TermsAndConditions />} />
