@@ -6,7 +6,6 @@ import { Menu } from "lucide-react";
 import AdminSidebar from "./AdminSidebar";
 import AdminGuard from "./AdminGuard";
 import MobileAdminMenu from "./MobileAdminMenu";
-import AdminNotificationBell from "./AdminNotificationBell";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -38,12 +37,6 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
                 </SheetContent>
               </Sheet>
               <span className="font-bold text-primary flex-1">Admin Panel</span>
-              <AdminNotificationBell />
-            </div>
-
-            {/* Desktop header with notification bell */}
-            <div className="hidden md:flex sticky top-0 z-40 items-center justify-end gap-3 border-b bg-background px-6 py-2">
-              <AdminNotificationBell />
             </div>
 
             <div className="p-4 md:p-6">
