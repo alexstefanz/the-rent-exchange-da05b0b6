@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import Stripe from "https://esm.sh/stripe@18.5.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -150,6 +151,31 @@ Deno.serve(async (req) => {
     } else {
       updateData.cancelled_at = new Date().toISOString();
       updateData.cancellation_reason = reason || "Refuzat de proprietar";
+
+      // If renter already paid (authorized or captured), refund/cancel via Stripe
+      if (rental.payment_intent_id) {
+        const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+        if (stripeKey) {
+          try {
+            const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+            if (rental.payment_status === "captured") {
+              await stripe.refunds.create({ payment_intent: rental.payment_intent_id });
+            } else {
+              // authorized / requires_capture / requires_payment_method etc.
+              await stripe.paymentIntents.cancel(rental.payment_intent_id).catch(async (e) => {
+                // Fallback to refund if cancel not allowed
+                if (String(e?.message || "").includes("cannot be canceled")) {
+                  await stripe.refunds.create({ payment_intent: rental.payment_intent_id });
+                } else { throw e; }
+              });
+            }
+            updateData.refunded_at = new Date().toISOString();
+            updateData.payment_status = "refunded";
+          } catch (e) {
+            console.error("Stripe refund/cancel error:", e);
+          }
+        }
+      }
     }
 
     await supabaseAdmin.from("rentals").update(updateData).eq("id", rental_id);
