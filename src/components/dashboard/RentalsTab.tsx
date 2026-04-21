@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, MapPin, Search, Camera } from "lucide-react";
+import { Calendar, MapPin, Search, Camera, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getOrCreateConversation } from "@/features/messaging/messagingApi";
 import StatusBadge from "./StatusBadge";
@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
+import RentalTimeline, { getTimelineStep } from "./RentalTimeline";
 import type { InspectionPhase } from "@/features/rentals/inspectionApi";
 
 interface Rental {
@@ -22,15 +23,19 @@ interface Rental {
   owner_name: string;
   start_date: string;
   end_date: string;
+  end_date_raw: string;
   subtotal: number;
   status: string;
+  payment_status?: string;
+  handover_confirmed_at?: string | null;
+  return_confirmed_at?: string | null;
   location: string;
 }
 
 const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
   const { data, error } = await supabase
     .from("rentals")
-    .select("id, product_id, start_date, end_date, subtotal, status, created_at, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
+    .select("id, product_id, start_date, end_date, subtotal, status, payment_status, handover_confirmed_at, return_confirmed_at, created_at, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
     .eq("renter_id", userId)
     .in("status", ["confirmed", "active", "completed"])
     .order("created_at", { ascending: false });
@@ -46,8 +51,12 @@ const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
     owner_name: r.products?.profiles?.full_name || "Utilizator",
     start_date: format(new Date(r.start_date), "dd MMM yyyy"),
     end_date: format(new Date(r.end_date), "dd MMM yyyy"),
+    end_date_raw: r.end_date,
     subtotal: r.subtotal,
     status: r.status,
+    payment_status: r.payment_status,
+    handover_confirmed_at: r.handover_confirmed_at,
+    return_confirmed_at: r.return_confirmed_at,
     location: r.products?.location_city || "",
   }));
 };
@@ -107,7 +116,16 @@ const RentalsTab = () => {
         <section>
           <h3 className="mb-4 font-heading text-lg font-semibold text-foreground">{copy.dashboard.upcomingRentals}</h3>
           <div className="space-y-4">
-            {activeRentals.map((rental) => (
+            {activeRentals.map((rental) => {
+              const tlRental = {
+                status: rental.status,
+                payment_status: rental.payment_status,
+                end_date: rental.end_date_raw,
+                handover_confirmed_at: rental.handover_confirmed_at,
+                return_confirmed_at: rental.return_confirmed_at,
+              };
+              const step = getTimelineStep(tlRental).current;
+              return (
               <div key={rental.id} className="flex flex-col sm:flex-row gap-4 rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-md">
                 <img src={rental.product_image} alt={rental.product_title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover" />
                 <div className="flex-1">
@@ -120,6 +138,15 @@ const RentalsTab = () => {
                     <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{rental.start_date} - {rental.end_date}</span>
                     {rental.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{rental.location}</span>}
                   </div>
+                  <div className="mt-4 pt-3 border-t border-border/50">
+                    <RentalTimeline rental={tlRental} />
+                  </div>
+                  {step === 5 && (
+                    <div className="mt-3 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
+                      <AlertCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <p className="text-xs text-foreground">{copy.timeline.returnReminder}</p>
+                    </div>
+                  )}
                   <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
                     <span className="font-semibold text-primary">{rental.subtotal} RON</span>
                     <div className="flex gap-2">
@@ -143,7 +170,8 @@ const RentalsTab = () => {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
@@ -162,6 +190,15 @@ const RentalsTab = () => {
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{rental.start_date} - {rental.end_date}</span>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-border/50">
+                    <RentalTimeline rental={{
+                      status: rental.status,
+                      payment_status: rental.payment_status,
+                      end_date: rental.end_date_raw,
+                      handover_confirmed_at: rental.handover_confirmed_at,
+                      return_confirmed_at: rental.return_confirmed_at,
+                    }} />
                   </div>
                   <div className="mt-3">
                     <span className="font-semibold text-muted-foreground">{rental.subtotal} RON</span>

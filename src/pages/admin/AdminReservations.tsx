@@ -17,6 +17,7 @@ import { ro } from "date-fns/locale";
 import { toast } from "sonner";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import RentalTimeline from "@/components/dashboard/RentalTimeline";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -57,6 +58,17 @@ const RentalExpandedPanel = ({
   const isUpdating = updatingId === rental.id;
   return (
     <div className="p-4 space-y-3 bg-muted/30 border-t">
+      <div className="rounded-lg bg-card p-3 border">
+        <p className="text-xs font-semibold text-muted-foreground uppercase mb-3">Timeline rezervare</p>
+        <RentalTimeline rental={{
+          status: rental.status,
+          payment_status: rental.payment_status,
+          end_date: rental.end_date,
+          handover_confirmed_at: rental.handover_confirmed_at,
+          return_confirmed_at: rental.return_confirmed_at,
+          refunded_at: rental.refunded_at,
+        }} />
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-muted-foreground" />

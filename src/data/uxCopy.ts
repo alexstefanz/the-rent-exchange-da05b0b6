@@ -111,6 +111,18 @@ const createUxCopy = () => ({
     active: { ro: "Activ", en: "Active" },
     inactive: { ro: "Inactiv", en: "Inactive" },
   },
+  timeline: {
+    requestSent: { ro: "Cerere trimisă", en: "Request sent" },
+    requestApproved: { ro: "Cerere aprobată", en: "Request approved" },
+    inTransit: { ro: "În tranzit spre beneficiar", en: "In transit to renter" },
+    inUse: { ro: "Produs în folosire", en: "Item in use" },
+    returning: { ro: "Produs în curs de returnare", en: "Item being returned" },
+    completed: { ro: "Finalizat", en: "Completed" },
+    cancelledRefunded: { ro: "Anulată / Bani returnați", en: "Cancelled / Refunded" },
+    confirmHandover: { ro: "Confirmă predarea", en: "Confirm handover" },
+    confirmReturn: { ro: "Confirm returnarea (totul OK)", en: "Confirm return (all OK)" },
+    returnReminder: { ro: "Astăzi este ultima zi! Contactează proprietarul pentru a returna produsul.", en: "Today is the last day! Contact the owner to return the item." },
+  },
   reassurance: {
     paymentProtected: { ro: "Plata ta este protejată. Suma se blochează temporar și se debitează doar după finalizarea închirierii.", en: "Your payment is protected. The amount is temporarily held and charged only after the rental period ends." },
     freeCancellation: { ro: "Poți anula gratuit până la confirmare.", en: "Free cancellation until confirmation." },
