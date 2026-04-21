@@ -1,4 +1,4 @@
-import { Search, CalendarCheck, PackageCheck, Star, ListPlus, Bell, Handshake, Wallet, Shield, UserCheck, ShieldCheck, Headphones, XCircle, BadgePercent } from "lucide-react";
+import { Search, Bell, PackageCheck, Star, ListPlus, Handshake, Wallet, Truck, Shield, UserCheck, ShieldCheck, Headphones, XCircle, BadgePercent, Send, CheckCircle2, Undo2, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -7,6 +7,7 @@ import { useUxCopy } from "@/hooks/useUxCopy";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { cn } from "@/lib/utils";
 
 const HowItWorks = () => {
   const copy = useUxCopy();
@@ -14,17 +15,28 @@ const HowItWorks = () => {
 
   const tenantSteps = [
     { icon: Search, title: p.tenantStep1Title, desc: p.tenantStep1Desc },
-    { icon: CalendarCheck, title: p.tenantStep2Title, desc: p.tenantStep2Desc },
+    { icon: Bell, title: p.tenantStep2Title, desc: p.tenantStep2Desc },
     { icon: PackageCheck, title: p.tenantStep3Title, desc: p.tenantStep3Desc },
     { icon: Star, title: p.tenantStep4Title, desc: p.tenantStep4Desc },
   ];
 
   const ownerSteps = [
     { icon: ListPlus, title: p.ownerStep1Title, desc: p.ownerStep1Desc },
-    { icon: Bell, title: p.ownerStep2Title, desc: p.ownerStep2Desc },
-    { icon: Handshake, title: p.ownerStep3Title, desc: p.ownerStep3Desc },
+    { icon: Handshake, title: p.ownerStep2Title, desc: p.ownerStep2Desc },
+    { icon: Truck, title: p.ownerStep3Title, desc: p.ownerStep3Desc },
     { icon: Wallet, title: p.ownerStep4Title, desc: p.ownerStep4Desc },
   ];
+
+  const cycleSteps = [
+    { icon: Send, title: p.cycleStep1Title, desc: p.cycleStep1Desc },
+    { icon: CheckCircle2, title: p.cycleStep2Title, desc: p.cycleStep2Desc },
+    { icon: Truck, title: p.cycleStep3Title, desc: p.cycleStep3Desc },
+    { icon: PackageCheck, title: p.cycleStep4Title, desc: p.cycleStep4Desc },
+    { icon: Undo2, title: p.cycleStep5Title, desc: p.cycleStep5Desc },
+    { icon: Star, title: p.cycleStep6Title, desc: p.cycleStep6Desc },
+  ];
+
+  const escrowPoints = [p.escrowPoint1, p.escrowPoint2, p.escrowPoint3];
 
   const benefits = [
     { icon: Shield, title: p.benefit1Title, desc: p.benefit1Desc },
@@ -42,6 +54,8 @@ const HowItWorks = () => {
     { q: p.faq4Q, a: p.faq4A },
     { q: p.faq5Q, a: p.faq5A },
     { q: p.faq6Q, a: p.faq6A },
+    { q: p.faq7Q, a: p.faq7A },
+    { q: p.faq8Q, a: p.faq8A },
   ];
 
   const StepCard = ({ step, index }: { step: typeof tenantSteps[0]; index: number }) => (
