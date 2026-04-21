@@ -1,119 +1,70 @@
 
 
-## Plan: Testare end-to-end a întregului proces Rentli
+## Plan: Fix bugs descoperite în testarea E2E (Critical + Medium + Low)
 
-### Context
-Vrei o validare completă a fluxului platformei: înregistrare → confirmare email → adăugare anunț → toate scenariile de rezervare → finalizare. Acest tip de testare necesită rularea browserului automatizat pe preview și interacțiune secvențială cu UI-ul, plus verificări în DB și edge function logs pentru a confirma că fiecare pas declanșează corect logica backend.
+### Bug #1 — CRITICAL: Owner payouts nu apar în balanță
 
-### Scope și abordare
+**Cauză**: În `supabase/functions/capture-rental-payment/index.ts`, tranzacțiile `owner_payout` sunt create cu `status='pending'`, dar `BalanceCard.tsx` și logica de balanță (`useUserStatistics`, `EarningsTab`) numără doar `status='completed'`.
 
-Test end-to-end automat pe **preview-ul live**, cu 2 conturi de test:
-- **Conturile de test**: voi folosi 2 emailuri unice (ex: `test-renter-{timestamp}@rentli.test` și `test-owner-{timestamp}@rentli.test`)
-- **Atenție OTP**: înregistrarea folosește OTP de 8 cifre pe email. Pentru a putea finaliza signup-ul automat, voi confirma conturile de test direct prin SQL (`UPDATE auth.users SET email_confirmed_at = now()`) — bypass OTP doar pentru testare
-- **Atenție Stripe**: voi folosi cardul de test Stripe `4242 4242 4242 4242` care declanșează autorizare reușită fără 3DS
+**Fix**:
+- Modific `capture-rental-payment/index.ts` → la inserarea tranzacției `owner_payout`, setez `status='completed'` și `processed_at=now()`
+- Astfel, în momentul în care proprietarul confirmă returnarea (pasul 6 — Finalizat) și fondurile sunt capturate de la Stripe, suma intră imediat în balanța proprietarului
+- Restul logicii rămâne: proprietarul cere retragere via `withdrawal_requests`, admin aprobă manual
 
-### Plan de execuție — 7 faze
+### Bug #2 — MEDIUM: `get_booked_dates` ignoră rezervările `pending`
 
-#### Faza 1: Înregistrare + confirmare cont
-- Deschid `/auth`, signup pentru proprietar (email + parolă + nume)
-- Verific în DB că `auth.users` și `profiles` au înregistrarea (trigger `handle_new_user`)
-- Bypass OTP via SQL pentru cont test
-- Login → verific sesiune activă
-- Repet pentru chiriaș
+**Cauză**: RPC-ul `get_booked_dates` include doar `status IN ('confirmed', 'active')`. O rezervare `pending` (cu plată autorizată dar neacceptată încă de proprietar) NU blochează datele → doi chiriași pot trimite cereri suprapuse pe aceleași date.
 
-#### Faza 2: Adăugare anunț (proprietar)
-- Login proprietar → `/anunt-nou`
-- Completez fluxul de 6 pași: Titlu → Imagini (upload poze test din `/tmp`) → Categorie/Subcategorie → Preț → Descriere → Locație/Pickup
-- Submit → verific în DB:
-  - `products` row creat cu `approval_status='pending'`
-  - `user_activity_logs` are `PRODUCT_CREATED`
-- **Aprobare admin**: prin SQL setez `approval_status='approved'` (simulez aprobarea)
-- Verific produsul vizibil pe `/cautare`
+**Fix** (migrare SQL):
+- Actualizez funcția `get_booked_dates` să includă și `pending` cu condiția `payment_status='authorized'` (plata e ținută în escrow):
+```sql
+WHERE r.product_id = p_product_id
+  AND (
+    r.status IN ('confirmed', 'active')
+    OR (r.status = 'pending' AND r.payment_status = 'authorized')
+  )
+```
+- Astfel, datele sunt blocate vizual din momentul în care un chiriaș a făcut plata, nu doar după acceptare
+- Excludem `cancelled`, `completed`, `refunded` care nu mai țin datele ocupate
 
-#### Faza 3: Rezervare reușită (chiriaș)
-- Login chiriaș → caut produsul → deschid pagina de produs
-- Selectez date din calendar → click "Rezervă"
-- Parcurg checkout-ul (4 pași) → accept termeni
-- Plată cu card test Stripe → redirect la `/checkout/success`
-- Verific:
-  - `rentals` row cu `status=pending`, `payment_status=authorized`
-  - `payment_intent_id` setat
-  - Notificare creată pentru proprietar
-- Validez **Pasul 1** "Cerere trimisă" în timeline
+### Bug #3 — LOW: Rentals lungi capturează imediat (lipsă escrow)
 
-#### Faza 4: Acceptare cerere (proprietar)
-- Login proprietar → `/profile` → tab "Închirieri"
-- Click "Acceptă cererea"
-- Verific:
-  - `status=confirmed`, `confirmed_at` setat
-  - Edge function `respond-rental-request` apelat cu succes (logs)
-  - Email/notificare trimis chiriașului
-- Validez **Pașii 2 și 3** activi în timeline
+**Cauză**: În `create-checkout-session/index.ts`, condiția folosește `capture_method: 'manual'` doar pentru rentaluri ≤7 zile (limita Stripe Auth). Pentru rentaluri >7 zile, plata e capturată imediat → pierdere control escrow.
 
-#### Faza 5: Confirmare predare (proprietar)
-- Click "Confirmă predarea" → completez inspecția checkout (10 poze test)
-- Verific:
-  - `handover_confirmed_at` setat
-  - `status=active`
-  - `rental_inspections` row cu `phase=checkout`
-- Validez **Pasul 4** "Produs în folosire" activ
+**Fix**:
+- Verific implementarea curentă în `create-checkout-session`
+- Pentru rentaluri >7 zile, aplic strategia recomandată Stripe: capture_method='manual' + reautorizare automată via webhook înainte de expirarea celor 7 zile
+- **Implementare simplificată (recomandată acum)**: setez explicit `capture_method='manual'` indiferent de durată; pentru rentaluri >7 zile adaug o **notificare proprietar + log** ca să fie monitorizat cazul. Reautorizarea automată o lăsăm ca task viitor (necesită Stripe webhook + flow complex)
+- Alternativ, dacă logica curentă deja are fallback la capture imediat pentru >7 zile: documentez explicit și adaug warning în UI checkout pentru rentaluri lungi
 
-#### Faza 6: Notificare ultima zi + Finalizare
-- Apelez direct edge function `notify-return-day` (curl) pentru rentalul de test (simulez ultima zi)
-- Verific notificare creată în `notifications` pentru chiriaș
-- Validez **Pasul 5** activ
-- Login proprietar → click "Confirm returnarea (totul OK)"
-- Completez inspecție checkin (10 poze)
-- Verific:
-  - `return_confirmed_at` setat
-  - `status=completed`
-  - Edge function `capture-rental-payment` apelat → Stripe capture confirmat în logs
-  - `transactions` row de tip `owner_payout` creat
-  - Balanța proprietarului reflectă suma
-- Validez **Pasul 6** "Finalizat"
+### Acțiuni adiacente (consecințe ale fix-urilor)
 
-#### Faza 7: Scenariu negativ — Respingere cu refund
-- Creez o a doua rezervare (chiriaș → produs)
-- Plată Stripe → autorizat
-- Login proprietar → click "Respinge" cu motiv
-- Verific:
-  - `status=cancelled`, `refunded_at` setat, `payment_status=refunded`
-  - Stripe Payment Intent cancelled (verific via stripe API)
-  - Notificare refund către chiriaș
-- Validez timeline cu badge "Anulată / Bani returnați"
+- **Invalidare query**: după fix #1, balanța se actualizează automat prin invalidarea queries existente la `confirmReturn` (`my-rentals`, `ownerRentals`, `user-balance`)
+- **Backfill istoric** (Bug #1): tranzacțiile `owner_payout` deja create cu `status='pending'` rămân blocate. Fac UPDATE manual prin migrare:
+```sql
+UPDATE transactions 
+SET status = 'completed', processed_at = COALESCE(processed_at, now())
+WHERE type = 'owner_payout' 
+  AND status = 'pending'
+  AND rental_id IN (SELECT id FROM rentals WHERE status = 'completed');
+```
 
-### Verificări încrucișate per fază
+### Verificare după fix
 
-Pentru fiecare fază voi captura:
-1. **Screenshot** din UI (dovada vizuală)
-2. **Query SQL** pentru starea DB
-3. **Edge function logs** pentru funcțiile triggerate
-4. **Console logs** din browser pentru erori
-
-### Curățare după test
-
-La final, șterg datele de test:
-- `DELETE FROM rentals WHERE renter_id IN (test_ids)`
-- `DELETE FROM products WHERE owner_id IN (test_ids)`
-- `DELETE FROM auth.users WHERE email LIKE '%@rentli.test'`
-
-### Output livrat
-
-Raport structurat cu:
-- ✅ / ❌ per fază + sub-pas
-- Screenshot-uri cheie (UI după fiecare confirmare majoră)
-- Bug-uri descoperite (cu fișier + linie + cauză)
-- Recomandări de fix-uri (fără a le aplica — doar raport)
-
-### Limitări cunoscute
-- **3DS / SCA**: nu pot completa flow-uri 3DS interactive. Folosesc cardul `4242` care le evită
-- **OTP real pe email**: nu pot citi inbox-uri reale → folosesc bypass SQL pentru conturile de test
-- **Webhooks Stripe live**: dacă există webhook-uri, ele vor rula normal în background
-- **Browser flaky**: dacă browser-ul refuză să pornească, raportez ce am putut testa pe parte de DB/edge functions și cer permisiunea să continui manual
-
-### Durată estimată
-15–25 minute de execuție automatizată (depinde de viteza preview-ului și a Stripe).
+Pentru fiecare bug:
+1. Rulez query SQL să confirm starea așteptată în DB
+2. Verific log-urile edge functions pentru `capture-rental-payment`
+3. Test rapid manual: încarc balanța proprietarului în UI după un rental completat
 
 ### Fișiere afectate
-**Niciunul** — testarea este non-destructivă pentru cod. Doar inserări/ștergeri în DB pentru date de test, marcate clar cu sufix `@rentli.test`.
+
+| Fișier | Modificare |
+|---|---|
+| `supabase/functions/capture-rental-payment/index.ts` | `status='completed'` + `processed_at=now()` la insert `owner_payout` |
+| Migrație SQL nouă | Update funcție `get_booked_dates` să includă `pending` + `authorized` |
+| Migrație SQL — backfill | Update tranzacțiilor istorice `owner_payout` blocate în `pending` |
+| `supabase/functions/create-checkout-session/index.ts` | Verific + ajustez logica `capture_method` pentru rentaluri lungi |
+
+### Limitări recunoscute
+- Fix #3 nu rezolvă complet limita Stripe de 7 zile pentru capture_method='manual'. Soluția completă (reautorizare via webhook) e un task de sine stătător. Aplicăm acum doar îmbunătățirea minimă (notificare/log) — vrei să planific și soluția completă separat?
 
