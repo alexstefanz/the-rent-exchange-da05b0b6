@@ -323,7 +323,6 @@ const ProductDetail = () => {
                 {startDate && endDate ? copy.booking.ctaPrimary : copy.booking.steps.period}
               </Button>
 
-              <p className="mt-3 text-xs text-center text-muted-foreground flex items-center justify-center gap-1"><Info className="h-3 w-3" />{copy.booking.reassurance}</p>
               <Separator className="my-4" />
               <div className="flex items-start gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
