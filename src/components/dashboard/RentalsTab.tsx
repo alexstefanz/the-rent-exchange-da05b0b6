@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, MapPin, Search, Camera, AlertCircle, Receipt, ChevronDown } from "lucide-react";
+import { Calendar, MapPin, Search, Camera, AlertCircle, Receipt, ChevronDown, CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getOrCreateConversation } from "@/features/messaging/messagingApi";
 import StatusBadge from "./StatusBadge";
@@ -39,7 +39,7 @@ const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
     .from("rentals")
     .select("id, product_id, start_date, end_date, subtotal, status, payment_status, handover_confirmed_at, return_confirmed_at, created_at, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
     .eq("renter_id", userId)
-    .in("status", ["confirmed", "active", "completed"])
+    .or("status.in.(confirmed,active,completed),and(status.eq.pending,payment_status.in.(authorized,paid))")
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -85,6 +85,9 @@ const RentalsTab = () => {
 
   const activeRentals = rentals.filter(r => r.status === "confirmed" || r.status === "active");
   const completedRentals = rentals.filter(r => r.status === "completed");
+  const awaitingOwnerRentals = rentals.filter(
+    r => r.status === "pending" && (r.payment_status === "authorized" || r.payment_status === "paid")
+  );
 
   if (isLoading) {
     return (
@@ -114,6 +117,48 @@ const RentalsTab = () => {
 
   return (
     <div className="space-y-8">
+      {awaitingOwnerRentals.length > 0 && (
+        <section>
+          <div className="mb-4 flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+            <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium text-foreground">Plata a fost autorizată</p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Suma este blocată în siguranță. Așteptăm răspunsul proprietarului în maxim 24h.
+              </p>
+            </div>
+          </div>
+          <h3 className="mb-4 font-heading text-lg font-semibold text-foreground flex items-center gap-2">
+            <Clock className="h-5 w-5 text-primary" />
+            În așteptarea proprietarului
+          </h3>
+          <div className="space-y-4">
+            {awaitingOwnerRentals.map((rental) => (
+              <div key={rental.id} className="flex flex-col sm:flex-row gap-4 rounded-xl border border-primary/30 bg-primary/5 p-4">
+                <img src={rental.product_image} alt={rental.product_title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover" />
+                <div className="flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <Link to={`/produs/${rental.product_id}`} className="font-medium text-foreground hover:text-primary transition-colors">{rental.product_title}</Link>
+                    <StatusBadge status="pending" />
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">Proprietar: {rental.owner_name}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{rental.start_date} - {rental.end_date}</span>
+                    {rental.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{rental.location}</span>}
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
+                    <span className="font-semibold text-primary">{rental.subtotal} RON</span>
+                    <Button variant="outline" size="sm" onClick={() => handleContactOwner(rental)}>
+                      Contactează proprietarul
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {activeRentals.length > 0 && (
         <section>
           <h3 className="mb-4 font-heading text-lg font-semibold text-foreground">{copy.dashboard.upcomingRentals}</h3>
