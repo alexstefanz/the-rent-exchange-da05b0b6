@@ -59,6 +59,29 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
+    // Third authorization path: owner of the specific rental
+    if (!isAuthorized && token && rental_id) {
+      const supabase = createClient(Deno.env.get("SUPABASE_URL")!, anonKey);
+      const { data: authData } = await supabase.auth.getUser(token);
+      if (authData?.user) {
+        const { data: rentalRow } = await supabaseAdmin
+          .from("rentals")
+          .select("owner_id")
+          .eq("id", rental_id)
+          .maybeSingle();
+        if (rentalRow && rentalRow.owner_id === authData.user.id) {
+          isAuthorized = true;
+        }
+      }
+    }
+
+    if (!isAuthorized) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // If a specific rental_id is provided, capture just that one
     if (rental_id) {
       const result = await captureRental(supabaseAdmin, stripe, rental_id);
