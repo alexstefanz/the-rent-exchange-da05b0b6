@@ -1,139 +1,71 @@
 
 
-## Plan: Gating KYC pentru publicare anunțuri și rezervări
+## Plan: Actualizare pagină "Cum funcționează" cu noul timeline al rezervărilor
 
-### Context — ce găsesc acum
-- Există infrastructura KYC completă (`kyc_cases`, `kyc_documents`, `profiles.kyc_status`, pagina `/kyc` și flux admin de aprobare)
-- **Lipsă critică**: niciun guard nu blochează acțiunile sensibile. Orice utilizator cu `kyc_status='NOT_VERIFIED'` poate:
-  - Publica anunțuri din `/anunt-nou` (NewProduct) ✗
-  - Iniția rezervări din checkout + plată Stripe ✗
-- Pagina `/kyc` permite upload, dar nimic nu o face obligatorie
+### Context
+Pagina `/cum-functioneaza` prezintă acum 4 pași generici per rol (chiriaș/proprietar). Vreau să o aliniez cu noul ciclu de viață real al rezervării — același 6 pași folosiți în `RentalTimeline.tsx`:
 
-### Politica propusă (2 niveluri)
+1. Cerere trimisă
+2. Cerere aprobată
+3. În tranzit (predare)
+4. În utilizare
+5. În returnare
+6. Finalizat
 
-| Acțiune | Status KYC necesar |
-|---|---|
-| Navigare, browse, favorite, mesaje | oricare |
-| **Publicare anunț** (proprietar) | `VERIFIED` |
-| **Inițiere rezervare** (chiriaș) | `VERIFIED` |
-| Continuare flux în curs (`SUBMITTED`/`NEEDS_MANUAL_REVIEW`) | blocat cu mesaj "În curs de verificare" |
-| `REJECTED` | blocat cu CTA "Reîncarcă documente" |
+### Ce schimb
 
-Statusurile existente: `NOT_VERIFIED`, `IN_PROGRESS`, `SUBMITTED`, `NEEDS_MANUAL_REVIEW`, `VERIFIED`, `REJECTED`.
+#### 1. Hero — adaug subtitlu cu mențiunea timeline
+Actualizez `heroSubtitle` să menționeze cele 6 etape transparente ale rezervării.
 
-### Componente noi
+#### 2. Secțiune nouă: "Ciclul rezervării" (înainte de "Pentru chiriași")
+Componentă vizuală orizontală pe desktop / verticală pe mobil (replică simplificată a `RentalTimeline`):
+- 6 cercuri numerotate conectate cu linii
+- Fiecare pas: iconiță Lucide + titlu + descriere scurtă (1 frază)
+- Iconițe: `Send` (cerere) → `CheckCircle2` (aprobat) → `Truck` (tranzit) → `PackageCheck` (utilizare) → `Undo2` (returnare) → `Star` (finalizat)
+- Background subtil bg `secondary/30` pentru a separa de restul
 
-#### 1. Hook `useKycGate`
-`src/hooks/queries/useKycGate.ts`
-- Returnează `{ status, isVerified, isPending, isRejected, loading, requireKyc(action) }`
-- Bazat pe `profiles.kyc_status` din `useCurrentUserProfile`
+#### 3. Restructurare "Pentru chiriași" și "Pentru proprietari"
+Aliniez cei 4 pași existenți cu timeline-ul real:
 
-#### 2. Componenta `KycGateBanner`
-`src/components/kyc/KycGateBanner.tsx`
-- Card alert cu 3 variante vizuale (warning, info, error) în funcție de status
-- Texte bilingve RO/EN + CTA primary "Verifică-mi identitatea" → `/kyc`
-- Context-aware: titlu diferit pentru "publicare" vs "rezervare"
+**Chiriaș (4 pași simplificați, mappati pe timeline):**
+1. Caută & rezervă (pas 1 timeline) — Search icon
+2. Așteaptă confirmarea (pas 2) — Bell icon
+3. Ridică & folosește (pași 3–4) — PackageCheck icon
+4. Returnează & evaluează (pași 5–6) — Star icon
 
-### Modificări frontend (gating client-side — UX)
+**Proprietar (4 pași simplificați):**
+1. Publică anunțul — ListPlus icon
+2. Acceptă cererea (pas 2) — Handshake icon
+3. Predă & monitorizează (pași 3–4) — Truck icon
+4. Primește plata (pași 5–6) — Wallet icon
 
-#### `src/pages/NewProduct.tsx`
-- La mount, dacă `kyc_status !== 'VERIFIED'`:
-  - Afișez `<KycGateBanner reason="publish" />` în loc de formular
-  - Buton mare "Mergi la verificare KYC"
-- Dacă status e `SUBMITTED`/`NEEDS_MANUAL_REVIEW` → mesaj "Identitatea ta e în curs de verificare. Vei putea publica imediat ce e aprobată."
+#### 4. Adaug secțiune "Plata în siguranță" (nouă)
+Card explicativ scurt despre modelul escrow:
+- "Banii sunt rezervați pe card la cerere"
+- "Capturăm plata doar când proprietarul confirmă predarea"
+- "Anularea înainte de predare = refund automat 100%"
 
-#### `src/components/product/BookingCard.tsx`
-- Înainte de redirect spre `/checkout`, verific `kyc_status`
-- Dacă nu e `VERIFIED`:
-  - Buton "Rezervă acum" devine "Verifică identitatea pentru a rezerva"
-  - Click → `KycGateBanner` în dialog sau redirect direct la `/kyc`
+Plasez între "Pentru proprietari" și "Why Rentli".
 
-#### `src/pages/Checkout.tsx`
-- Guard la mount: dacă user logat și `kyc_status !== 'VERIFIED'` → redirect `/kyc?next=checkout` cu state-ul preservat
-- Sau afișez `KycGateBanner` direct pe pagină în loc de pașii 1–4
-
-#### `src/components/dashboard/RequestsTab.tsx` și butonul "Acceptă"
-- Înainte de a accepta o cerere primită: verific kyc_status proprietar (deja e proprietar deci ar trebui verificat — dar pun guard defensiv)
-
-### Modificări backend (gating server-side — securitate reală)
-
-UI guard nu e suficient — un atacator poate apela API direct. Trebuie blocat și pe server.
-
-#### Migrație SQL: trigger pe `products` și `rentals`
-
-```sql
-CREATE OR REPLACE FUNCTION public.enforce_kyc_for_actions()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_status text;
-BEGIN
-  SELECT kyc_status INTO v_status 
-  FROM profiles 
-  WHERE id = COALESCE(NEW.owner_id, NEW.renter_id);
-  
-  IF v_status IS DISTINCT FROM 'VERIFIED' THEN
-    RAISE EXCEPTION 'KYC_REQUIRED: Trebuie să-ți verifici identitatea înainte de a continua.'
-      USING ERRCODE = 'check_violation';
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
--- Trigger pe products INSERT (blochează publicare)
-CREATE TRIGGER products_kyc_check
-  BEFORE INSERT ON public.products
-  FOR EACH ROW
-  EXECUTE FUNCTION public.enforce_kyc_for_actions();
-
--- Trigger pe rentals INSERT (blochează rezervare)
-CREATE TRIGGER rentals_kyc_check
-  BEFORE INSERT ON public.rentals
-  FOR EACH ROW
-  EXECUTE FUNCTION public.enforce_kyc_for_actions();
-```
-
-**Notă importantă**: trigger-ul nu rulează pentru admin (admin poate crea oricând). Adaug excepție:
-```sql
-IF has_role(auth.uid(), 'admin') THEN RETURN NEW; END IF;
-```
-
-#### Edge function `create-checkout-session`
-- Adaug check: înainte de a crea Stripe session, fetch `profiles.kyc_status` pentru `user.id`
-- Dacă ≠ `VERIFIED` → return 403 cu `{ error: "KYC_REQUIRED" }`
-- Frontend captează acest error și redirectează către `/kyc`
-
-### Capturare erori în UI
-- În `createProduct` și `createRental` (și `createRentalWithStripeCheckout`):
-  - Detect `KYC_REQUIRED` în mesajul de eroare
-  - Toast: "Identitate neverificată. Te redirecționăm către verificare..."
-  - `navigate("/kyc")`
+#### 5. Actualizare FAQ
+Adaug 2 întrebări noi:
+- "Cum știu în ce etapă e rezervarea mea?" → răspuns despre timeline-ul vizibil în Dashboard
+- "Ce se întâmplă dacă anulez după aprobare dar înainte de predare?" → răspuns despre refund automat
 
 ### Fișiere afectate
 
 | Fișier | Modificare |
 |---|---|
-| `src/hooks/queries/useKycGate.ts` | **NOU** — hook central pentru status KYC |
-| `src/components/kyc/KycGateBanner.tsx` | **NOU** — banner reutilizabil cu CTA |
-| `src/pages/NewProduct.tsx` | Guard la mount + banner |
-| `src/pages/Checkout.tsx` | Guard la mount + redirect cu state preserved |
-| `src/components/product/BookingCard.tsx` | CTA condițional pe status KYC |
-| `src/features/products/productsApi.ts` | Capturare eroare `KYC_REQUIRED` în `createProduct` |
-| `src/features/rentals/rentalsApi.ts` | Capturare eroare `KYC_REQUIRED` în `createRental` |
-| `supabase/functions/create-checkout-session/index.ts` | Server-side guard 403 |
-| Migrație SQL nouă | Trigger `enforce_kyc_for_actions` pe `products` + `rentals` |
-| `src/data/uxCopy.ts` | Texte RO/EN: banner, CTA, statusuri |
+| `src/pages/HowItWorks.tsx` | Adaug secțiunea timeline + secțiunea escrow + actualizez stepCards |
+| `src/data/uxCopy.ts` | Adaug chei noi RO/EN: `rentalCycle*` (6 pași titluri+descrieri), `escrow*` (titlu + 3 puncte), 2 FAQ noi; rescriu `tenantStep*Title/Desc` și `ownerStep*Title/Desc` aliniat |
 
 ### Aspecte UX
-- **Mesaj clar**: nu blocăm fără explicație — fiecare blocaj are CTA către `/kyc`
-- **Rezervare în curs**: dacă utilizator e mid-checkout și nu are KYC, păstrăm datele rezervării în query string (`?productId=...&start=...&end=...`) ca să poată continua după aprobare
-- **Status `SUBMITTED`**: mesaj "în lucru, ETA 24h" în loc de eroare
-- **Anunțuri existente** create înainte de migrație: NU le afectăm (trigger e pe INSERT, nu UPDATE), rămân vizibile
+- Timeline-ul vizual e identic conceptual cu cel din `RentalTimeline.tsx` → consistență cross-platformă (utilizatorul vede aceleași etape în pagina explicativă și în dashboard-ul lui)
+- Iconițele Lucide păstrează stilul `rounded-2xl` `primary/10` definit în `mem://design/icon-container-style`
+- Bilingv complet RO/EN
+- Nu modific layout-ul Hero, CTA sau Trust Badges
 
-### Limitări recunoscute
-- Aprobarea KYC e manuală (admin) — utilizatorul așteaptă fizic. Acceptabil pentru MVP, dar pe termen lung merită integrare cu Stripe Identity / Onfido (task separat)
-- Nu blocăm acceptarea rezervării de către proprietar dacă proprietarul nu mai e verificat (status schimbat după publicare). Caz extrem de rar — putem adăuga ulterior
+### Limitări
+- Nu refolosesc direct `RentalTimeline` ca să evit dependența de date dummy de rental — creez o variantă vizuală statică inline în pagină
+- Restul secțiunilor (benefits, breadcrumb) rămân neschimbate
 
