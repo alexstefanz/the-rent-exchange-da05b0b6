@@ -259,19 +259,19 @@ const Navbar = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/profile#inchirieri" className="flex items-center gap-3 py-2">
+                      <Link to="/rezervari" className="flex items-center gap-3 py-2">
                         <CalendarCheck className="h-4 w-4" />
                         {t("Rezervări", "Reservations")}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/profile#mesaje" className="flex items-center gap-3 py-2">
+                      <Link to="/mesaje" className="flex items-center gap-3 py-2">
                         <MessageCircle className="h-4 w-4" />
                         {t("Mesaje", "Messages")}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <Link to="/profile#favorite" className="flex items-center gap-3 py-2">
+                      <Link to="/favorite" className="flex items-center gap-3 py-2">
                         <Heart className="h-4 w-4" />
                         {t("Favorite", "Favorites")}
                       </Link>
