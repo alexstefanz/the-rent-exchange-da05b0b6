@@ -207,10 +207,18 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
                   type="password"
                   placeholder="Introdu parola"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => { setPassword(e.target.value); setPasswordError(null); }}
                   className="h-12"
                   onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
                 />
+                {isSignUp && (
+                  <p className="text-xs text-muted-foreground">
+                    Min. 8 caractere, o literă mare, o literă mică și o cifră sau simbol
+                  </p>
+                )}
+                {passwordError && (
+                  <p className="text-xs text-destructive">{passwordError}</p>
+                )}
               </div>
 
               <Button
