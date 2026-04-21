@@ -214,6 +214,18 @@ const RentalsTab = () => {
                       return_confirmed_at: rental.return_confirmed_at,
                     }} />
                   </div>
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="mt-2 h-7 px-2 text-xs">
+                        <Receipt className="h-3.5 w-3.5 mr-1" />
+                        Status plată
+                        <ChevronDown className="h-3.5 w-3.5 ml-1" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-2">
+                      <RentalPaymentStatus rentalId={rental.id} mode="user" />
+                    </CollapsibleContent>
+                  </Collapsible>
                   <div className="mt-3">
                     <span className="font-semibold text-muted-foreground">{rental.subtotal} RON</span>
                   </div>
