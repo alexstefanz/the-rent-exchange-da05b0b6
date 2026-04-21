@@ -1,112 +1,93 @@
 
 
-## Plan: Reparare upload KYC pentru utilizatori (eroare RLS)
+## Plan: Reparare cache stale KYC — userul nou aprobat nu poate rezerva
 
-### Diagnostic
+### Diagnostic confirmat
 
-Eroarea `new row violates row-level security policy` apare când utilizatorul încarcă documente KYC. Cauze, în ordinea probabilității:
+Am verificat în DB pentru `alexadvanceonline@gmail.com`:
+- `profiles.kyc_status = 'VERIFIED'` ✅
+- `kyc_cases.status = 'APPROVED'` ✅ (KYC-000007, decis acum câteva minute)
 
-#### Cauza 1 — **`uploaded_by_user_id` nu se setează în Postgres**
+Deci **backend-ul e corect**, adminul a aprobat și totul s-a actualizat.
 
-Politica RLS pe `kyc_documents` cere:
-```sql
-WITH CHECK (
-  uploaded_by_user_id = auth.uid()
-  AND EXISTS (SELECT 1 FROM kyc_cases kc WHERE kc.id = kyc_case_id AND kc.user_id = auth.uid()
-              AND kc.status IN ('NOT_STARTED', 'IN_PROGRESS'))
-)
+**Cauza reală**: `useKycGate()` (hook-ul folosit de `BookingCard` și `Checkout` pentru a decide dacă userul poate rezerva) are:
+```ts
+staleTime: 60 * 1000  // 60 secunde
 ```
+și **nu se invalidează niciodată** când statusul KYC se schimbă în DB. Userul a fost aprobat în alt context (admin), iar tab-ul lui încă ține în cache vechiul `kyc_status` (`SUBMITTED` sau `NOT_VERIFIED`).
 
-În `KycVerification.tsx` linia 183-191, codul trimite `uploaded_by_user_id: user.id` — corect. Dar dacă există vreun trigger / hook care alterează rândul, sau dacă vreo politică se evaluează strict înainte de set, INSERT-ul cade. **Probabil OK, deci trecem la cauza 2.**
-
-#### Cauza 2 — **Cazurile `REJECTED` recreate au atempts_count greșit + status nu intră în condiția RLS** (cea mai probabilă)
-
-La linia 143-158, când userul are KYC `REJECTED` și apasă "Refă KYC-ul", codul **creează un caz NOU** cu `status: 'IN_PROGRESS'`. **Asta funcționează.**
-
-DAR: linia 161-164 (path-ul "else") face un `UPDATE` la `kyc_cases` setând `status = 'IN_PROGRESS'`. Politica de UPDATE pe `kyc_cases` permite update doar când statusul **vechi** e `'NOT_STARTED'` sau `'IN_PROGRESS'`:
-```sql
-USING (user_id = auth.uid() AND status IN ('NOT_STARTED', 'IN_PROGRESS'))
-```
-
-Dar coloana `kyc_status` din `profiles` e setată separat de status-ul din `kyc_cases`. Dacă kyc_case e în `SUBMITTED` (nu `REJECTED`) și userul reintră în pagina `/verificare` și încarcă din nou (fără caz nou), policy-ul UPDATE refuză → eroarea apare aici.
-
-#### Cauza 3 — **Storage bucket — INSERT pe storage.objects când se face `upsert: true`**
-
-`upload(filePath, doc.file, { upsert: true })` la fișiere existente face de fapt UPDATE pe `storage.objects`, nu INSERT. Dar **nu există policy UPDATE pentru users pe `storage.objects`** (doar INSERT și SELECT — vezi liniile 177-189 din migrație). Când userul reia upload-ul cu același path (REJECTED → reupload pe același caz), `upsert: true` triggerează UPDATE → RLS denied → **`new row violates row-level security policy`**.
-
-**Aceasta e cauza principală cu cea mai mare probabilitate** dată fiind imaginea (eroarea apare la upload), și se potrivește scenariului recent: am implementat banner-ul "Refă KYC-ul" → userul revine să încarce documente noi peste cele vechi.
+Pagina `/verificare` afișează "Identitate verificată!" pentru că face fetch direct din `kyc_cases` la montare, **nu** prin React Query. Dar `BookingCard` folosește `useKycGate` cu cache stale → blochează rezervarea.
 
 ### Soluție
 
-#### 1. Migrație DB — adaug policy UPDATE și DELETE pentru users pe `storage.objects` în bucket-ul `kyc-documents`
+#### 1. `useKycGate.ts` — refresh agresiv
 
-```sql
-CREATE POLICY "Users can update own kyc documents storage"
-  ON storage.objects FOR UPDATE TO authenticated
-  USING (bucket_id = 'kyc-documents' AND (storage.foldername(name))[1] = auth.uid()::text)
-  WITH CHECK (bucket_id = 'kyc-documents' AND (storage.foldername(name))[1] = auth.uid()::text);
-
-CREATE POLICY "Users can delete own kyc documents storage"
-  ON storage.objects FOR DELETE TO authenticated
-  USING (bucket_id = 'kyc-documents' AND (storage.foldername(name))[1] = auth.uid()::text);
-```
-
-Asta permite `upsert` pe propriile fișiere KYC.
-
-#### 2. Migrație DB — extind policy UPDATE pe `kyc_cases` pentru a include `REJECTED` și `SUBMITTED`
-
-```sql
-DROP POLICY "Users can update own kyc cases" ON public.kyc_cases;
-CREATE POLICY "Users can update own kyc cases"
-  ON public.kyc_cases FOR UPDATE TO authenticated
-  USING (user_id = auth.uid() AND status IN ('NOT_STARTED', 'IN_PROGRESS', 'REJECTED', 'SUBMITTED'))
-  WITH CHECK (user_id = auth.uid());
-```
-
-Permite tranziții IN_PROGRESS → SUBMITTED și REJECTED → IN_PROGRESS la reupload.
-
-#### 3. Migrație DB — relaxez policy INSERT pe `kyc_documents` pentru cazurile `SUBMITTED` și `REJECTED` (reupload pe caz existent)
-
-```sql
-DROP POLICY "Users can upload own kyc documents" ON public.kyc_documents;
-CREATE POLICY "Users can upload own kyc documents"
-  ON public.kyc_documents FOR INSERT TO authenticated
-  WITH CHECK (
-    uploaded_by_user_id = auth.uid()
-    AND EXISTS (
-      SELECT 1 FROM public.kyc_cases kc
-      WHERE kc.id = kyc_case_id 
-        AND kc.user_id = auth.uid()
-        AND kc.status IN ('NOT_STARTED', 'IN_PROGRESS', 'REJECTED', 'SUBMITTED')
-    )
-  );
-```
-
-#### 4. Cod — `KycVerification.tsx` 
-
-În `handleSubmit`, asigur ca pentru cazuri `REJECTED` să se creeze ÎNTOTDEAUNA un caz nou (ce face deja). În plus, **înainte de upload**, dacă statusul curent e diferit de `IN_PROGRESS`, forțez UPDATE la `IN_PROGRESS` (acum permis). Apoi, după UPDATE, fac upload-urile.
-
-De asemenea, șterg vechile rânduri din `kyc_documents` pentru cazul curent înainte de a insera noile (curățenie):
 ```ts
-await supabase.from("kyc_documents").delete().eq("kyc_case_id", caseId);
+useQuery({
+  queryKey: ["kycGate", user?.id],
+  queryFn: async () => { /* ... */ },
+  enabled: !!user?.id,
+  staleTime: 10 * 1000,        // 10s în loc de 60s
+  refetchOnWindowFocus: true,  // refresh la revenirea pe tab
+  refetchOnMount: "always",    // refresh când orice componentă montează hook-ul
+});
 ```
+
+Plus subscriere Realtime la `profiles` pentru user-ul curent — când `kyc_status` se schimbă în DB, invalidate-uiesc query-ul:
+
+```ts
+useEffect(() => {
+  if (!user?.id) return;
+  const channel = supabase
+    .channel(`profile-kyc-${user.id}`)
+    .on('postgres_changes', {
+      event: 'UPDATE', schema: 'public', table: 'profiles',
+      filter: `id=eq.${user.id}`,
+    }, () => {
+      queryClient.invalidateQueries({ queryKey: ['kycGate', user.id] });
+    })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}, [user?.id, queryClient]);
+```
+
+Astfel, în secunda în care adminul aprobă (UPDATE pe profiles), tab-ul userului primește push prin Realtime → invalidate → refetch → `isVerified=true` → poate rezerva.
+
+#### 2. Asigur că Realtime e activat pe `profiles`
+
+Verific dacă tabela `profiles` e în `supabase_realtime` publication. Dacă nu, migrație simplă:
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
+```
+
+#### 3. Fallback explicit pe pagina `/verificare`
+
+Când userul deschide `/verificare` și vede "Identitate verificată!", invalidate-uiesc proactiv `kycGate` (în caz că tab-ul a fost deschis demult):
+```ts
+useEffect(() => {
+  if (kycCase?.status === 'APPROVED' || kycCase?.status === 'VERIFIED') {
+    queryClient.invalidateQueries({ queryKey: ['kycGate', user?.id] });
+  }
+}, [kycCase?.status]);
+```
+
+### Rezultat
+
+- Userul aprobat de admin → tab-ul lui primește notificare Realtime în <1s → cache invalidat → `BookingCard` și `Checkout` recunosc imediat statusul `VERIFIED` → poate rezerva fără refresh manual.
+- Chiar și fără Realtime (offline scurt), refetch la `windowFocus` și `staleTime: 10s` reduc ferestre de stale data la minimum.
+- Fără modificări de DB (RLS/triggers) — doar comportament client-side mai reactiv.
 
 ### Fișiere afectate
 
 | Fișier | Modificare |
 |---|---|
-| `supabase/migrations/<ts>.sql` | NOU — policies UPDATE/DELETE pe `storage.objects` pentru bucket `kyc-documents` + extindere policy UPDATE pe `kyc_cases` și INSERT pe `kyc_documents` |
-| `src/pages/KycVerification.tsx` | Forțez `status='IN_PROGRESS'` înainte de upload + șterg documente vechi din tabel pentru cazul curent |
-
-### Rezultat
-
-- Userul `REJECTED` apasă "Refă KYC-ul" din banner → ajunge pe `/verificare` → încarcă noi documente → upload reușește (atât în storage, cât și în tabel).
-- Userul în status `IN_PROGRESS` care vrea să schimbe un fișier deja încărcat → `upsert` pe storage funcționează (acum permis).
-- Userul `SUBMITTED` care vrea să adauge documente extra (ex: după ce adminul cere reupload prin `requestReupload`) → INSERT funcționează.
+| `src/hooks/queries/useKycGate.ts` | `staleTime` redus la 10s, `refetchOnWindowFocus: true`, `refetchOnMount: "always"` + subscriere Realtime pe `profiles` cu `invalidateQueries` |
+| `supabase/migrations/<ts>.sql` | (Doar dacă e nevoie) `ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles` |
+| `src/pages/KycVerification.tsx` | Invalidate `kycGate` când vede status `APPROVED`/`VERIFIED` la load |
 
 ### Limitări recunoscute
 
-- Nu schimb logica de status în cazurile NEEDS_MANUAL_REVIEW (rămâne ca acum — admin trebuie să apese "Refă KYC" sau să respingă cazul).
-- Policies de storage rămân scopate strict pe folder-ul `auth.uid()::text` — userul tot nu poate atinge fișierele altui user.
-- Logica de "cleanup vechi documente" se rulează doar pentru cazul curent — nu afectează istoricul.
+- Realtime push depinde de WebSocket activ (dacă userul are throttling agresiv pe browser, pot exista delay-uri de 1-2s, dar refetch-ul la focus compensează).
+- Nu schimb logica de approval în `kycApi.ts` — fluxul DB rămâne identic.
+- Dacă userul are mai multe tab-uri deschise, fiecare primește push independent (corect).
 
