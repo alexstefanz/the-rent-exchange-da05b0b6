@@ -48,7 +48,14 @@ export async function createRental(params: CreateRentalParams) {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    if (typeof error.message === "string" && error.message.includes("KYC_REQUIRED")) {
+      const e = new Error("KYC_REQUIRED");
+      (e as any).code = "KYC_REQUIRED";
+      throw e;
+    }
+    throw error;
+  }
 
   // Create conversation + message if provided
   if (messageToOwner?.trim()) {
@@ -96,8 +103,23 @@ export async function createRentalWithStripeCheckout(params: CreateRentalParams)
     body: { rental_id: rental.id },
   });
 
-  if (error) throw error;
-  if (data?.error) throw new Error(data.error);
+  if (error) {
+    const msg = (error as any)?.message || "";
+    if (msg.includes("KYC_REQUIRED") || (error as any)?.context?.error === "KYC_REQUIRED") {
+      const e = new Error("KYC_REQUIRED");
+      (e as any).code = "KYC_REQUIRED";
+      throw e;
+    }
+    throw error;
+  }
+  if (data?.error) {
+    if (data.error === "KYC_REQUIRED") {
+      const e = new Error("KYC_REQUIRED");
+      (e as any).code = "KYC_REQUIRED";
+      throw e;
+    }
+    throw new Error(data.error);
+  }
   if (!data?.url) throw new Error("Nu s-a putut crea sesiunea de plată");
 
   return data.url;
