@@ -124,35 +124,89 @@ serve(async (req) => {
     // 2) Trigger owner/renter notifications + emails.
     try {
       const messageToOwner = (session.metadata?.message_to_owner || "").trim();
-      if (messageToOwner) {
-        const { data: existingConv } = await supabaseAdmin
+
+      // Always create/find the conversation for this rental, regardless of whether
+      // the renter typed a custom message. We want a chat available for the owner.
+      const { data: existingConv } = await supabaseAdmin
+        .from("conversations")
+        .select("id")
+        .eq("product_id", rental.product_id)
+        .eq("buyer_id", rental.renter_id)
+        .eq("owner_id", rental.owner_id)
+        .maybeSingle();
+
+      let conversationId = existingConv?.id as string | undefined;
+      if (!conversationId) {
+        const { data: newConv } = await supabaseAdmin
           .from("conversations")
+          .insert({
+            product_id: rental.product_id,
+            buyer_id: rental.renter_id,
+            owner_id: rental.owner_id,
+          })
           .select("id")
-          .eq("product_id", rental.product_id)
-          .eq("buyer_id", rental.renter_id)
-          .eq("owner_id", rental.owner_id)
-          .maybeSingle();
+          .single();
+        conversationId = newConv?.id;
+      }
 
-        let conversationId = existingConv?.id as string | undefined;
-        if (!conversationId) {
-          const { data: newConv } = await supabaseAdmin
-            .from("conversations")
-            .insert({
-              product_id: rental.product_id,
-              buyer_id: rental.renter_id,
-              owner_id: rental.owner_id,
-            })
-            .select("id")
-            .single();
-          conversationId = newConv?.id;
-        }
+      if (conversationId) {
+        // Idempotent: only insert a message if the conversation has none yet.
+        const { data: existingMsgs } = await supabaseAdmin
+          .from("messages")
+          .select("id")
+          .eq("conversation_id", conversationId)
+          .limit(1);
 
-        if (conversationId) {
+        if (!existingMsgs || existingMsgs.length === 0) {
+          let content: string;
+          if (messageToOwner) {
+            content = messageToOwner;
+          } else {
+            // Auto-generate a rental context message so the owner sees what was booked.
+            const productTitle = rental.products?.title || "produsul tău";
+            const days = rental.rental_days as number;
+            const dayLabel = days === 1 ? "zi" : "zile";
+            const fmt = (d: string) => {
+              try {
+                return new Date(d).toLocaleDateString("ro-RO", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+                });
+              } catch {
+                return d;
+              }
+            };
+            content =
+              `Bună! Tocmai am rezervat „${productTitle}" pentru perioada ` +
+              `${fmt(rental.start_date)} – ${fmt(rental.end_date)} (${days} ${dayLabel}, ` +
+              `total ${rental.subtotal} RON). Aștept confirmarea ta. Mulțumesc!`;
+          }
+
           await supabaseAdmin.from("messages").insert({
             conversation_id: conversationId,
             sender_id: rental.renter_id,
-            content: messageToOwner,
+            content,
           });
+
+          // Bump conversation timestamp so it sorts to the top for the owner.
+          await supabaseAdmin
+            .from("conversations")
+            .update({ updated_at: new Date().toISOString() })
+            .eq("id", conversationId);
+
+          // Fire-and-forget message notification (email + push) to the owner.
+          try {
+            await supabaseAdmin.functions.invoke("send-message-notification", {
+              body: {
+                conversation_id: conversationId,
+                sender_id: rental.renter_id,
+                message_content: content,
+              },
+            });
+          } catch (msgNotifyErr) {
+            console.error("Message notification error (non-blocking):", msgNotifyErr);
+          }
         }
       }
     } catch (convErr) {
