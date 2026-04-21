@@ -196,7 +196,10 @@ const AdminTickets = () => {
                           <TableRow key={ticket.id} className="cursor-pointer hover:bg-muted/50" onClick={() => toggleExpand(ticket.id)}>
                             <TableCell className="font-mono text-xs">{ticket.public_id}</TableCell>
                             <TableCell>
-                              <p className="font-medium line-clamp-1">{ticket.title}</p>
+                              <div className="flex items-center gap-2">
+                                {isUnread(ticket) && <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" aria-label="necitit" />}
+                                <p className={`line-clamp-1 ${isUnread(ticket) ? 'font-bold text-foreground' : 'font-medium text-muted-foreground'}`}>{ticket.title}</p>
+                              </div>
                             </TableCell>
                             <TableCell className="text-sm">{CATEGORY_GROUP_LABELS[ticket.category_group] || ticket.category_group}</TableCell>
                             <TableCell>
@@ -232,10 +235,11 @@ const AdminTickets = () => {
                       <div className="p-3 cursor-pointer flex items-center justify-between" onClick={() => toggleExpand(ticket.id)}>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1">
+                            {isUnread(ticket) && <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" aria-label="necitit" />}
                             <span className="font-mono text-xs text-muted-foreground">{ticket.public_id}</span>
                             {isSlaBreached(ticket) && <AlertTriangle className="h-3 w-3 text-red-500" />}
                           </div>
-                          <p className="text-sm font-medium truncate">{ticket.title}</p>
+                          <p className={`text-sm truncate ${isUnread(ticket) ? 'font-bold text-foreground' : 'font-medium text-muted-foreground'}`}>{ticket.title}</p>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <Badge className={`${priorityColors[ticket.priority] || ''} text-[10px]`}>{getPriorityLabel(ticket.priority)}</Badge>
