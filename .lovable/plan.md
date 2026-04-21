@@ -1,28 +1,72 @@
 
 
-## Plan: Schimbare imagine categorie "Transport și Utilitare"
+## Plan: Afișare nume autori în chat-ul de suport
 
 ### Context
-Pagina `/categorie/transport-utilitare` afișează în hero un banner cu o imagine de fundal preluată din `categories.ts` (sau din prima subcategorie). Imaginea curentă nu reprezintă vizual o mașină de transport.
+În prezent, mesajele din chat-ul de suport (atât panoul admin `/admin/tickets/:id`, cât și panoul utilizator `/suport`) afișează doar tipul autorului ("ADMIN", "CUSTOMER", "Tu", "Suport") fără numele real al persoanei. Imaginea atașată confirmă acest lucru — vezi notele cu doar "Notă internă" fără identificare.
 
 ### Soluție
-Înlocuiesc imaginea de fundal a categoriei "Transport și Utilitare" cu o fotografie realistă a unei dube/mașini de transport (van comercial, gen Ford Transit / Mercedes Sprinter), conform regulii de fotografie realistă (fără AI/animat).
+Rezolv `author_id` din tabela `ops_ticket_messages` la numele real din `profiles.full_name` și afișez numele lângă rolul autorului în ambele interfețe.
 
-### Pași tehnici
+### Modificări
 
-1. **Generez/aleg o imagine realistă** de mașină de transport utilitar (dubă albă comercială pe fundal neutru) și o salvez la `public/images/categories/transport-utilitare.webp` (format WebP pentru performanță)
+**1. `src/features/admin/opsTicketsApi.ts`** — îmbogățire mesaje cu nume autor
+- Modific `fetchTicketMessages` să facă un join lateral: pentru fiecare `author_id` distinct, fetch `full_name` din `profiles`
+- Adaug câmpul opțional `author_name?: string | null` în interfața `OpsTicketMessage`
+- Aplic aceeași logică în `src/features/tickets/userTicketsApi.ts` pentru `fetchUserTicketMessages`
 
-2. **Actualizez `src/data/categories.ts`** — câmpul `image` al categoriei `transport-utilitare` (sau al primei subcategorii afișate ca background, în funcție de logica curentă din `CategoryDetail.tsx`) va trimite la noua imagine
+**2. `src/pages/admin/AdminTicketDetail.tsx`** — afișare nume în timeline (admin)
+- Linia 182: lângă badge-ul `author_type` (ex. "ADMIN", "CUSTOMER", "SYSTEM"), afișez numele:
+  - Format: `Admin · Maria Ionescu` sau `Client · Andrei Popa`
+  - Pentru `SYSTEM` rămâne doar "Sistem"
+- Etichete localizate: `ADMIN → Admin`, `CUSTOMER → Client`, `OWNER → Proprietar`, `SYSTEM → Sistem`
 
-3. **Verific `src/pages/CategoryDetail.tsx`** pentru a confirma de unde citește imaginea hero (din `category.image` direct sau din `subcategories[0].image`) și ajustez sursa corectă
+**3. `src/pages/UserTickets.tsx`** — afișare nume în timeline (user)
+- Linia 230-233: înlocuiesc "Tu / Suport" cu:
+  - Pentru mesajele proprii: rămâne "Tu" (e clar că e utilizatorul curent)
+  - Pentru mesajele admin: afișez `Suport · [Nume admin]` (ex. "Suport · Maria Ionescu")
+  - Pentru SYSTEM: rămâne "Sistem"
+- Versiune EN: "You", "Support · Maria Ionescu", "System"
+
+### Layout vizual
+
+```text
+┌─────────────────────────────────────────┐
+│ 🔒 Notă internă · Admin: Maria Ionescu  │
+│ 18:34                                   │
+│ Am contactat ownerul telefonic...       │
+└─────────────────────────────────────────┘
+
+┌─────────────────────────────────────────┐
+│ Client: Andrei Popa                     │
+│ 18:03                                   │
+│ vuyfuyguyvguy                           │
+└─────────────────────────────────────────┘
+```
+
+În panoul user (`/suport`):
+```text
+┌─────────────────────────────────────────┐
+│ Suport · Maria Ionescu      18:34       │
+│ Mulțumim pentru sesizare...             │
+└─────────────────────────────────────────┘
+                    ┌────────────────────┐
+                    │ Tu          18:03  │
+                    │ Salut, am o ...    │
+                    └────────────────────┘
+```
+
+### Securitate
+- Numele admin sunt deja expuse în interfața admin (RLS permite adminilor să vadă profile)
+- Pentru utilizatori (`/suport`), expun doar `full_name` al admin-ului care răspunde — informație publică acceptabilă în context de suport (la fel cum un agent de call-center se prezintă)
+- Folosesc `profiles.full_name` (deja accesibil prin RLS existent), fără a expune `email` sau alte date sensibile
 
 ### Fișiere afectate
 
 | Fișier | Modificare |
 |---|---|
-| `public/images/categories/transport-utilitare.webp` (nou) | Imagine realistă cu dubă/utilitară |
-| `src/data/categories.ts` | Update path imagine pentru categoria `transport-utilitare` |
-
-### Notă
-Folosesc o imagine de stoc realistă (nu generată AI), respectând regula de brand pentru fotografie autentică profesională.
+| `src/features/admin/opsTicketsApi.ts` | `fetchTicketMessages` îmbogățit cu `author_name`, tip `OpsTicketMessage` updated |
+| `src/features/tickets/userTicketsApi.ts` | `fetchUserTicketMessages` îmbogățit cu `author_name` |
+| `src/pages/admin/AdminTicketDetail.tsx` | Afișare `Rol · Nume` în header mesaj |
+| `src/pages/UserTickets.tsx` | Afișare `Suport · Nume admin` pentru răspunsuri admin |
 
