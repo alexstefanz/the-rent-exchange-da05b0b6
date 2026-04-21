@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, Navigate } from "react-router-dom";
 import { ChevronLeft, Loader2, Grid3X3, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,7 +27,6 @@ const CategoryDetail = () => {
   const { data: products = [], isLoading } = useProducts(
     category ? { category: category.name } : undefined
   );
-
   const catName = category ? (language === "en" ? category.nameEn : category.name) : "";
 
   // Count products per subcategory
@@ -58,6 +57,11 @@ const CategoryDetail = () => {
 
     return result;
   }, [products, priceRange, sortBy, selectedSubcategory]);
+
+  // Redirect legacy slug to new one (after all hooks)
+  if (slug === "echipamente-agricole") {
+    return <Navigate to="/categorie/utilaje" replace />;
+  }
 
   if (!category) {
     return (
