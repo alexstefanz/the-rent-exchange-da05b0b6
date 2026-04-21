@@ -71,7 +71,7 @@ const Checkout = () => {
     if (isSubmitting) return;
     if (user && !kyc.isVerified) {
       toast.error("Trebuie să-ți verifici identitatea înainte de a plăti.");
-      navigate("/kyc");
+      navigate("/verificare");
       return;
     }
     setIsSubmitting(true);
@@ -93,7 +93,7 @@ const Checkout = () => {
       if (e?.code === "KYC_REQUIRED" || (typeof e?.message === "string" && e.message.includes("KYC_REQUIRED"))) {
         toast.error("Verificare identitate necesară. Te redirecționăm.");
         setIsSubmitting(false);
-        setTimeout(() => navigate("/kyc"), 600);
+        setTimeout(() => navigate("/verificare"), 600);
         return;
       }
       toast.error(e?.message || "Eroare la inițierea plății. Încearcă din nou.");

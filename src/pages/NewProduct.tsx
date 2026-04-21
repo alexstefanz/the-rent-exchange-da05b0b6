@@ -119,7 +119,7 @@ const NewProduct = () => {
           description: "Te redirecționăm către pagina de verificare KYC.",
           variant: "destructive",
         });
-        setTimeout(() => navigate("/kyc"), 600);
+        setTimeout(() => navigate("/verificare"), 600);
         return;
       }
       toast({
