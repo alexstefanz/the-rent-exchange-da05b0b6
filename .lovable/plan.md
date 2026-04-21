@@ -1,71 +1,88 @@
 
 
-## Plan: Actualizare pagină "Cum funcționează" cu noul timeline al rezervărilor
+## Plan: Securizare bucket `support-attachments`
 
-### Context
-Pagina `/cum-functioneaza` prezintă acum 4 pași generici per rol (chiriaș/proprietar). Vreau să o aliniez cu noul ciclu de viață real al rezervării — același 6 pași folosiți în `RentalTimeline.tsx`:
+### Problemă
+Bucket-ul `support-attachments` este **public** și politicile permit:
+- Oricine (chiar neautentificat) poate citi orice fișier
+- Orice user autentificat poate încărca în orice folder
+- URL-urile publice ale imaginilor de suport sunt embedded în mesajele tichetelor → expunere de date sensibile (ID-uri, facturi, screenshoturi)
 
-1. Cerere trimisă
-2. Cerere aprobată
-3. În tranzit (predare)
-4. În utilizare
-5. În returnare
-6. Finalizat
+### Soluție
 
-### Ce schimb
+#### 1. Migrare SQL — fac bucket-ul privat și restrâng politicile
 
-#### 1. Hero — adaug subtitlu cu mențiunea timeline
-Actualizez `heroSubtitle` să menționeze cele 6 etape transparente ale rezervării.
+```sql
+-- Trec bucket-ul pe privat
+UPDATE storage.buckets SET public = false WHERE id = 'support-attachments';
 
-#### 2. Secțiune nouă: "Ciclul rezervării" (înainte de "Pentru chiriași")
-Componentă vizuală orizontală pe desktop / verticală pe mobil (replică simplificată a `RentalTimeline`):
-- 6 cercuri numerotate conectate cu linii
-- Fiecare pas: iconiță Lucide + titlu + descriere scurtă (1 frază)
-- Iconițe: `Send` (cerere) → `CheckCircle2` (aprobat) → `Truck` (tranzit) → `PackageCheck` (utilizare) → `Undo2` (returnare) → `Star` (finalizat)
-- Background subtil bg `secondary/30` pentru a separa de restul
+-- Șterg politicile permisive existente
+DROP POLICY "Anyone can view support attachments" ON storage.objects;
+DROP POLICY "Authenticated users can upload support attachments" ON storage.objects;
 
-#### 3. Restructurare "Pentru chiriași" și "Pentru proprietari"
-Aliniez cei 4 pași existenți cu timeline-ul real:
+-- SELECT: doar owner-ul folder-ului (path-ul începe cu user_id) sau admin
+CREATE POLICY "Users view own support attachments"
+ON storage.objects FOR SELECT TO authenticated
+USING (
+  bucket_id = 'support-attachments'
+  AND (
+    auth.uid()::text = (storage.foldername(name))[1]
+    OR has_role(auth.uid(), 'admin'::app_role)
+  )
+);
 
-**Chiriaș (4 pași simplificați, mappati pe timeline):**
-1. Caută & rezervă (pas 1 timeline) — Search icon
-2. Așteaptă confirmarea (pas 2) — Bell icon
-3. Ridică & folosește (pași 3–4) — PackageCheck icon
-4. Returnează & evaluează (pași 5–6) — Star icon
+-- INSERT: doar în propriul folder
+CREATE POLICY "Users upload to own folder support attachments"
+ON storage.objects FOR INSERT TO authenticated
+WITH CHECK (
+  bucket_id = 'support-attachments'
+  AND auth.uid()::text = (storage.foldername(name))[1]
+);
 
-**Proprietar (4 pași simplificați):**
-1. Publică anunțul — ListPlus icon
-2. Acceptă cererea (pas 2) — Handshake icon
-3. Predă & monitorizează (pași 3–4) — Truck icon
-4. Primește plata (pași 5–6) — Wallet icon
+-- DELETE: owner sau admin
+CREATE POLICY "Users delete own support attachments"
+ON storage.objects FOR DELETE TO authenticated
+USING (
+  bucket_id = 'support-attachments'
+  AND (
+    auth.uid()::text = (storage.foldername(name))[1]
+    OR has_role(auth.uid(), 'admin'::app_role)
+  )
+);
+```
 
-#### 4. Adaug secțiune "Plata în siguranță" (nouă)
-Card explicativ scurt despre modelul escrow:
-- "Banii sunt rezervați pe card la cerere"
-- "Capturăm plata doar când proprietarul confirmă predarea"
-- "Anularea înainte de predare = refund automat 100%"
+Path-ul actual de upload (`${userId}/${timestamp}-${rand}.jpg`) deja corespunde cu această schemă → nu e nevoie de migrare de fișiere existente.
 
-Plasez între "Pentru proprietari" și "Why Rentli".
+#### 2. Frontend — `SupportChatWidget.tsx`
 
-#### 5. Actualizare FAQ
-Adaug 2 întrebări noi:
-- "Cum știu în ce etapă e rezervarea mea?" → răspuns despre timeline-ul vizibil în Dashboard
-- "Ce se întâmplă dacă anulez după aprobare dar înainte de predare?" → răspuns despre refund automat
+- **Upload**: înlocuiesc `getPublicUrl()` cu păstrarea **căii** fișierului (ex. `support-attachments://userId/file.jpg` sau doar path-ul) în loc de URL public
+- **Render**: pentru mesajele care conțin path de imagine, generez la afișare `createSignedUrl(path, 3600)` și afișez imaginea cu URL-ul semnat (cache 1h)
+- **Detecție**: ajustez `isImageUrl` să recunoască noul format de path
+- Adaug componentă mică `<SupportImage path={...} />` care:
+  - Apelează `supabase.storage.from('support-attachments').createSignedUrl(path, 3600)` o singură dată
+  - Cache-uiește URL-ul în `useQuery` cu `staleTime: 50min`
+  - Afișează skeleton cât se încarcă
+
+#### 3. Backwards compatibility
+
+Mesajele existente conțin URL-uri publice cu format `https://.../storage/v1/object/public/support-attachments/...`. După ce bucket-ul devine privat, aceste URL-uri vor returna 400. Soluție:
+- Componenta `SupportImage` detectează URL-uri vechi (`/object/public/support-attachments/`) și extrage path-ul, apoi generează signed URL pe baza lui
+- Astfel istoricul rămâne accesibil pentru owner + admin
 
 ### Fișiere afectate
 
 | Fișier | Modificare |
 |---|---|
-| `src/pages/HowItWorks.tsx` | Adaug secțiunea timeline + secțiunea escrow + actualizez stepCards |
-| `src/data/uxCopy.ts` | Adaug chei noi RO/EN: `rentalCycle*` (6 pași titluri+descrieri), `escrow*` (titlu + 3 puncte), 2 FAQ noi; rescriu `tenantStep*Title/Desc` și `ownerStep*Title/Desc` aliniat |
+| Migrație SQL nouă | Bucket privat + 3 politici noi (SELECT/INSERT/DELETE scoped pe folder + admin) |
+| `src/components/support/SupportChatWidget.tsx` | `uploadSupportImage` returnează path în loc de public URL; nouă componentă `SupportImage` care generează signed URLs; `isImageUrl` și `renderMessageContent` actualizate să accepte ambele formate (legacy public URL + path) |
 
 ### Aspecte UX
-- Timeline-ul vizual e identic conceptual cu cel din `RentalTimeline.tsx` → consistență cross-platformă (utilizatorul vede aceleași etape în pagina explicativă și în dashboard-ul lui)
-- Iconițele Lucide păstrează stilul `rounded-2xl` `primary/10` definit în `mem://design/icon-container-style`
-- Bilingv complet RO/EN
-- Nu modific layout-ul Hero, CTA sau Trust Badges
+- Imaginile încărcate anterior rămân vizibile pentru owner + admin (signed URL pe baza path-ului extras)
+- Niciun utilizator nu poate vedea atașamentele altui utilizator
+- Adminii păstrează vizibilitate completă pentru investigații
+- Signed URL-urile au expirare 1h — re-generate automat la următoarea afișare
 
-### Limitări
-- Nu refolosesc direct `RentalTimeline` ca să evit dependența de date dummy de rental — creez o variantă vizuală statică inline în pagină
-- Restul secțiunilor (benefits, breadcrumb) rămân neschimbate
+### Limitări recunoscute
+- Mesajele vechi care au URL-uri direct embedded vor încerca signed URL pe path-ul extras; dacă cineva a partajat vreun link public în afara aplicației, acesta nu va mai funcționa (ceea ce e exact comportamentul dorit)
+- Nu adaug verificare suplimentară că `userId` din path e participant la un anume tichet — pentru că fișierele sunt scoped per-user (toate atașamentele lui sunt ale lui), iar mesajele unde apar sunt deja protejate de RLS pe `ops_ticket_messages`
 
