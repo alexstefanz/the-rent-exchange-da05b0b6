@@ -75,7 +75,7 @@ serve(async (req) => {
     }
 
     // Parse body
-    const { rental_id } = await req.json();
+    const { rental_id, message_to_owner } = await req.json();
     if (!rental_id) {
       return new Response(JSON.stringify({ error: "rental_id is required" }), {
         status: 400,
@@ -136,6 +136,12 @@ serve(async (req) => {
       );
     }
 
+    // Sanitize optional message-to-owner: Stripe metadata values must be <= 500 chars
+    const safeMessageToOwner =
+      typeof message_to_owner === "string" && message_to_owner.trim().length > 0
+        ? message_to_owner.trim().slice(0, 480)
+        : "";
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email!,
@@ -164,6 +170,7 @@ serve(async (req) => {
         rental_id: rental.id,
         renter_id: user.id,
         capture_method: useManualCapture ? "manual" : "automatic",
+        ...(safeMessageToOwner ? { message_to_owner: safeMessageToOwner } : {}),
       },
     });
 
