@@ -45,19 +45,35 @@ serve(async (req) => {
       }
     }
 
-    if (!isAuthorized) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const body = await req.json().catch(() => ({}));
     const { rental_id } = body;
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
       apiVersion: "2025-08-27.basil",
     });
+
+    // Third authorization path: owner of the specific rental
+    if (!isAuthorized && token && rental_id) {
+      const supabase = createClient(Deno.env.get("SUPABASE_URL")!, anonKey);
+      const { data: authData } = await supabase.auth.getUser(token);
+      if (authData?.user) {
+        const { data: rentalRow } = await supabaseAdmin
+          .from("rentals")
+          .select("owner_id")
+          .eq("id", rental_id)
+          .maybeSingle();
+        if (rentalRow && rentalRow.owner_id === authData.user.id) {
+          isAuthorized = true;
+        }
+      }
+    }
+
+    if (!isAuthorized) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // If a specific rental_id is provided, capture just that one
     if (rental_id) {
@@ -186,6 +202,41 @@ async function captureRental(
   });
 
   console.log(`[capture-rental-payment] Successfully captured rental ${rentalId}`);
+
+  // Send branded "payout received" email (best-effort, non-blocking)
+  try {
+    const { data: ownerProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("email, full_name")
+      .eq("id", rental.owner_id as string)
+      .maybeSingle();
+
+    let productTitle: string | undefined;
+    if (rental.product_id) {
+      const { data: prod } = await supabaseAdmin
+        .from("products")
+        .select("title")
+        .eq("id", rental.product_id as string)
+        .maybeSingle();
+      productTitle = prod?.title;
+    }
+
+    if (ownerProfile?.email) {
+      await supabaseAdmin.functions.invoke("send-transactional-email", {
+        body: {
+          template: "payout-received",
+          to: ownerProfile.email,
+          data: {
+            name: ownerProfile.full_name || undefined,
+            amount: Number(rental.owner_payout) || 0,
+            productTitle,
+          },
+        },
+      });
+    }
+  } catch (e) {
+    console.error("[capture-rental-payment] Email send failed (non-blocking):", e);
+  }
 
   return { rental_id: rentalId, success: true, captured_at: now };
 }

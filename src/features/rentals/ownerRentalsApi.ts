@@ -51,6 +51,21 @@ export async function confirmHandover(rentalId: string) {
 }
 
 export async function confirmReturn(rentalId: string) {
+  // 1) Capture Stripe payment FIRST — if this fails, do not mark as completed
+  const { data: captureData, error: captureErr } = await supabase.functions.invoke(
+    "capture-rental-payment",
+    { body: { rental_id: rentalId } },
+  );
+  if (captureErr) {
+    throw new Error(
+      captureErr.message || "Captura plății a eșuat. Contactează suportul."
+    );
+  }
+  if (captureData && (captureData as any).error) {
+    throw new Error((captureData as any).error);
+  }
+
+  // 2) Mark rental as completed only after successful capture
   const now = new Date().toISOString();
   const { error } = await supabase
     .from("rentals")
@@ -61,13 +76,4 @@ export async function confirmReturn(rentalId: string) {
     })
     .eq("id", rentalId);
   if (error) throw error;
-
-  // Trigger Stripe capture + payout transactions (non-blocking failure logging)
-  try {
-    await supabase.functions.invoke("capture-rental-payment", {
-      body: { rental_id: rentalId },
-    });
-  } catch (e) {
-    console.error("Capture invocation failed (non-blocking):", e);
-  }
 }
