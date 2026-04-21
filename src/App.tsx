@@ -75,6 +75,7 @@ const AdminConversations = lazy(() => import("./pages/admin/AdminConversations")
 const AdminConversationDetail = lazy(() => import("./pages/admin/AdminConversationDetail"));
 const AdminApprovals = lazy(() => import("./pages/admin/AdminApprovals"));
 const AdminTestEmails = lazy(() => import("./pages/admin/AdminTestEmails"));
+const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 
 const queryClient = new QueryClient();
 
@@ -139,6 +140,7 @@ const App = () => (
                 
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/notifications" element={<AdminNotifications />} />
                 <Route path="/admin/reservations" element={<AdminReservations />} />
                 <Route path="/admin/products" element={<AdminProducts />} />
                 <Route path="/admin/tickets" element={<AdminTickets />} />
