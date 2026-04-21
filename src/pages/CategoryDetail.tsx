@@ -16,10 +16,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 const CategoryDetail = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
-  // Redirect legacy slug to new one
-  if (slug === "echipamente-agricole") {
-    return <Navigate to="/categorie/utilaje" replace />;
-  }
   const category = getCategoryBySlug(slug || "");
   const copy = useUxCopy();
   const { language } = useLanguage();
@@ -31,6 +27,11 @@ const CategoryDetail = () => {
   const { data: products = [], isLoading } = useProducts(
     category ? { category: category.name } : undefined
   );
+
+  // Redirect legacy slug to new one (after hooks)
+  if (slug === "echipamente-agricole") {
+    return <Navigate to="/categorie/utilaje" replace />;
+  }
 
   const catName = category ? (language === "en" ? category.nameEn : category.name) : "";
 
