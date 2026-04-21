@@ -219,12 +219,20 @@ const createUxCopy = () => ({
     sending: { ro: "Se trimite...", en: "Sending..." },
     // Validation messages
     invalidEmail: { ro: "Email invalid", en: "Invalid email" },
-    passwordMin: { ro: "Parola trebuie să aibă minim 6 caractere", en: "Password must be at least 6 characters" },
+    passwordMin: { ro: "Parola trebuie să aibă minim 8 caractere", en: "Password must be at least 8 characters" },
+    passwordRequirements: {
+      ro: "Min. 8 caractere, o literă mare, o literă mică și o cifră sau simbol",
+      en: "Min. 8 chars, one uppercase, one lowercase and a digit or symbol",
+    },
+    passwordTooWeak: {
+      ro: "Parolă prea slabă. Folosește minim 8 caractere, o literă mare, o literă mică și o cifră sau simbol.",
+      en: "Password too weak. Use at least 8 characters, an uppercase, a lowercase and a digit or symbol.",
+    },
     nameMin: { ro: "Numele trebuie să aibă minim 2 caractere", en: "Name must be at least 2 characters" },
     passwordMismatch: { ro: "Parolele nu se potrivesc", en: "Passwords don't match" },
     // Toast messages
     loginError: { ro: "Eroare la autentificare", en: "Login error" },
-    invalidCredentials: { ro: "Email sau parolă incorectă", en: "Invalid email or password" },
+    invalidCredentials: { ro: "Email sau parolă incorecte", en: "Invalid email or password" },
     loginSuccess: { ro: "Autentificare reușită", en: "Login successful" },
     welcomeBackToast: { ro: "Bine ai venit înapoi!", en: "Welcome back!" },
     registerError: { ro: "Eroare la înregistrare", en: "Registration error" },
