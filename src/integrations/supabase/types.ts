@@ -1396,6 +1396,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_user_notification: {
+        Args: {
+          p_description_en?: string
+          p_description_ro?: string
+          p_link?: string
+          p_title_en: string
+          p_title_ro: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean

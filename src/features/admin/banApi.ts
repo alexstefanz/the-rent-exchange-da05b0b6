@@ -11,6 +11,26 @@ export const banUser = async (userId: string, reason: string, bannedBy: string):
     } as Record<string, unknown>)
     .eq('id', userId);
   if (error) throw new Error(error.message);
+
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', userId)
+      .single();
+    if (profile?.email) {
+      await supabase.functions.invoke('send-transactional-email', {
+        body: {
+          templateName: 'account-banned',
+          recipientEmail: profile.email,
+          idempotencyKey: `account-banned-${userId}-${Date.now()}`,
+          templateData: { name: profile.full_name || undefined, reason },
+        },
+      });
+    }
+  } catch (e) {
+    console.error('[banApi] Failed to send account-banned email:', e);
+  }
 };
 
 export const unbanUser = async (userId: string): Promise<void> => {

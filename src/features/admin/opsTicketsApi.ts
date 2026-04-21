@@ -231,6 +231,17 @@ export const createOpsTicket = async (input: CreateOpsTicketInput): Promise<OpsT
     actor_id: userId,
   });
 
+  // Notify requester via email (non-blocking)
+  const ticketAny = data as any;
+  if (ticketAny.requester_user_id) {
+    sendTicketEmail(
+      ticketAny.requester_user_id,
+      'ticket-created',
+      `ticket-created-${ticketAny.id}`,
+      { ticketId: ticketAny.public_id, ticketTitle: ticketAny.title }
+    );
+  }
+
   return data as unknown as OpsTicket;
 };
 
@@ -257,6 +268,17 @@ export const updateOpsTicketField = async (
     new_value: newValue,
     actor_id: userData.user?.id,
   });
+
+  // If admin closed/resolved the ticket, send email
+  if (field === 'status' && (newValue === 'CLOSED' || newValue === 'RESOLVED')) {
+    try {
+      const { data: t } = await opsTickets().select('requester_user_id, public_id').eq('id', ticketId).single();
+      const tAny = t as any;
+      if (tAny?.requester_user_id) {
+        sendTicketEmail(tAny.requester_user_id, 'ticket-resolved', `ticket-resolved-${ticketId}-${newValue}`, { ticketId: tAny.public_id });
+      }
+    } catch (e) { console.error('[opsTicketsApi] resolved email failed:', e); }
+  }
 };
 
 // ============================================
@@ -315,8 +337,51 @@ export const createTicketMessage = async (
     actor_id: userData.user?.id,
   });
 
+  // If admin replied publicly, email the requester
+  if (!isInternal && authorType === 'ADMIN') {
+    try {
+      const { data: t } = await opsTickets().select('requester_user_id, public_id').eq('id', ticketId).single();
+      const tAny = t as any;
+      if (tAny?.requester_user_id) {
+        sendTicketEmail(
+          tAny.requester_user_id,
+          'ticket-replied',
+          `ticket-replied-${(data as any).id}`,
+          { ticketId: tAny.public_id, messagePreview: messageText.substring(0, 200) }
+        );
+      }
+    } catch (e) { console.error('[opsTicketsApi] replied email failed:', e); }
+  }
+
   return data as unknown as OpsTicketMessage;
 };
+
+// Helper: send ticket-related email to user (non-blocking)
+async function sendTicketEmail(
+  userId: string,
+  templateName: string,
+  idempotencyKey: string,
+  extraData: Record<string, unknown> = {}
+): Promise<void> {
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('email, full_name')
+      .eq('id', userId)
+      .single();
+    if (!profile?.email) return;
+    await supabase.functions.invoke('send-transactional-email', {
+      body: {
+        templateName,
+        recipientEmail: profile.email,
+        idempotencyKey,
+        templateData: { name: profile.full_name || undefined, ...extraData },
+      },
+    });
+  } catch (e) {
+    console.error(`[opsTicketsApi] Failed to send ${templateName} email:`, e);
+  }
+}
 
 // ============================================
 // Attachments
