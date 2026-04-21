@@ -169,7 +169,15 @@ const AdminKYC = () => {
                             <TableCell className="font-mono text-xs">{kycCase.public_id}</TableCell>
                             <TableCell>
                               <div>
-                                <p className="text-sm font-medium">{kycCase.user_name}</p>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="text-sm font-medium">{kycCase.user_name}</p>
+                                  {kycCase.duplicate_count > 0 && (
+                                    <Badge variant="outline" className="text-[10px] border-orange-500 text-orange-700 bg-orange-50">
+                                      <AlertTriangle className="h-3 w-3 mr-1" />
+                                      Duplicat ({kycCase.duplicate_count})
+                                    </Badge>
+                                  )}
+                                </div>
                                 <p className="text-xs text-muted-foreground">{kycCase.user_email}</p>
                               </div>
                             </TableCell>
@@ -218,6 +226,12 @@ const AdminKYC = () => {
                             <Badge className={`${KYC_STATUS_COLORS[kycCase.status] || 'bg-muted'} text-[10px]`}>
                               {getStatusLabel(kycCase.status)}
                             </Badge>
+                            {kycCase.duplicate_count > 0 && (
+                              <Badge variant="outline" className="text-[10px] border-orange-500 text-orange-700 bg-orange-50">
+                                <AlertTriangle className="h-3 w-3 mr-0.5" />
+                                {kycCase.duplicate_count}
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-sm font-medium truncate">{kycCase.user_name}</p>
                         </div>

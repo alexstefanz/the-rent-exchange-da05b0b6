@@ -1394,6 +1394,7 @@ export type Database = {
           attempts_count: number
           created_at: string
           decided_at: string
+          duplicate_count: number
           id: string
           level_required: string
           provider_name: string
@@ -1542,6 +1543,19 @@ export type Database = {
           whatsapp: string
         }[]
       }
+      get_kyc_duplicate_users: {
+        Args: { case_id: string }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          kyc_status: string
+          products_count: number
+          rentals_count: number
+        }[]
+      }
       get_owner_rentals: {
         Args: { owner_uuid: string }
         Returns: {
@@ -1673,6 +1687,7 @@ export type Database = {
         }
         Returns: number
       }
+      normalize_full_name: { Args: { input_name: string }; Returns: string }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
@@ -1692,6 +1707,7 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

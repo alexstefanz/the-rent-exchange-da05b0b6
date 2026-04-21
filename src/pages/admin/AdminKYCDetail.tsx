@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Skeleton } from "@/components/ui/skeleton";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useKycCase, useKycDocuments, useKycAuditLog, useKycUserContext } from "@/hooks/queries/useKyc";
+import { useKycDuplicates } from "@/hooks/queries/useKyc";
 import { useUserActivityLogs } from "@/hooks/queries/useUserActivityLogs";
 import {
   approveKycCase, rejectKycCase, requestReupload, setNeedsManualReview,
@@ -56,6 +57,7 @@ const AdminKYCDetail = () => {
   const { data: auditLog } = useKycAuditLog(id);
   const { data: userContext } = useKycUserContext(kycCase?.user_id);
   const { data: activityLogs } = useUserActivityLogs(kycCase?.user_id);
+  const { data: duplicates } = useKycDuplicates(id);
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ['kycCase', id] });
@@ -183,6 +185,54 @@ const AdminKYCDetail = () => {
               <p className="text-sm mt-1">
                 {REJECTION_REASONS.find(r => r.value === kycCase.rejection_reason)?.label || kycCase.rejection_reason}
               </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Duplicate name warning */}
+        {duplicates && duplicates.length > 0 && (
+          <Card className="border-orange-300 bg-orange-50/60">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2 text-orange-800">
+                <AlertTriangle className="h-5 w-5" />
+                Posibile conturi duplicate ({duplicates.length})
+              </CardTitle>
+              <CardDescription className="text-orange-700/80">
+                Următoarele conturi au exact același nume normalizat. Verifică dacă este aceeași persoană.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {duplicates.map((dup) => (
+                  <div key={dup.id} className="flex items-center gap-3 p-3 bg-background rounded-lg border border-orange-200">
+                    <div className="flex-1 min-w-0 grid grid-cols-1 sm:grid-cols-4 gap-2 text-sm">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{dup.full_name || '—'}</p>
+                        <p className="text-xs text-muted-foreground truncate">{dup.email || '—'}</p>
+                      </div>
+                      <div className="text-xs">
+                        <p className="text-muted-foreground">Înregistrat</p>
+                        <p className="font-medium">
+                          {dup.created_at ? format(new Date(dup.created_at), "d MMM yyyy", { locale: ro }) : '—'}
+                        </p>
+                      </div>
+                      <div className="text-xs">
+                        <p className="text-muted-foreground">KYC</p>
+                        <p className="font-medium">{dup.kyc_status || '—'}</p>
+                      </div>
+                      <div className="text-xs">
+                        <p className="text-muted-foreground">Produse / Rezervări</p>
+                        <p className="font-medium">{dup.products_count} / {dup.rentals_count}</p>
+                      </div>
+                    </div>
+                    <Button size="sm" variant="outline" asChild>
+                      <Link to={`/admin/users/${dup.id}`}>
+                        <Eye className="h-4 w-4 mr-1" /> Profil
+                      </Link>
+                    </Button>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         )}
