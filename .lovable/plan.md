@@ -1,70 +1,69 @@
 
 
-## Plan: Notificările "Cerere trimisă/primită" doar după plata reușită
+## Plan: Reparare flux post-plată — vizibilitate rezervări + email-uri
 
-### Problemă confirmată
+### Diagnostic (verificat în DB)
 
-În `src/features/rentals/rentalsApi.ts → createRental()` se apelează `send-rental-notification` imediat după inserarea rentalului în DB, **înainte** ca userul să ajungă la Stripe Checkout. Edge function-ul creează:
+Rezervarea ta de 2 RON pentru Playstation 5 **există corect** (`326efd56-9af7-4af2-a57c-b0cdea56e5dd`):
+- `payment_status = authorized` ✅ (plata Stripe a reușit)
+- `status = pending` (corect — așteaptă acceptul ownerului)
+- Notificarea pentru renter ✅ creată în DB
+- Notificarea pentru owner ✅ creată în DB
+- Email-uri ❌ **nu au plecat**
 
-- notificare în feed pentru renter: "Cerere trimisă cu succes"
-- notificare în feed pentru owner: "Cerere nouă de închiriere"
-- email către owner: "Cerere nouă de închiriere"
-- email către renter: "Cererea ta a fost trimisă"
-- transaction `pending`
+### Cauzele reale
 
-Astfel, dacă userul abandonează checkout-ul (sau plata eșuează), proprietarul deja a primit email + notificare pentru o cerere care nu există efectiv, iar renterul vede în feed o confirmare pentru o cerere neplătită.
+1. **Renterul vede gol pe `/rezervari`** — pagina afișează doar rezervările cu status `confirmed/active/completed`. Cererile `pending` (neacceptate încă) sunt la `/cereri`. Userul s-a uitat în pagina greșită — rezervarea LUI este vizibilă pe `/cereri`. Acum este UX confuz: când plătești, te aștepți să vezi imediat rezervarea undeva clar, nu să ghicești între `/cereri` și `/rezervari`.
 
-### Soluție
+2. **Owner-ul nu vede cererea în notificări vizibile** — notificarea există în DB cu link `/anunturi?rental_id=...`, dar din imagine e clar că nici el nu o observă (probabil pentru că nu deschide pagina `/anunturi` și nu primește email).
 
-Mut apelul de notificare din momentul creării rentalului → în momentul confirmării plății (în `verify-stripe-payment`), care se rulează doar când Stripe confirmă `requires_capture` sau `succeeded`.
+3. **Email-urile nu pleacă** — `send-rental-notification` folosește Resend API direct cu `RESEND_API_KEY` (cod vechi), în loc de sistemul branded Lovable Cloud (`send-transactional-email` cu templates React Email din pgmq queue). Toate email-urile KYC merg corect prin sistemul nou (vezi log), dar email-urile de rental sunt blocate pe codul vechi care probabil nu mai are cheia configurată sau s-a depreciat.
 
-### Modificări
+### Ce voi modifica
 
-#### 1. `src/features/rentals/rentalsApi.ts`
-- **Elimin** apelul `supabase.functions.invoke("send-rental-notification", …)` din `createRental()`.
-- Conversația + mesajul către owner rămân la creare (sunt utile chiar dacă plata eșuează — dacă renter trimite mesaj, owner îl vede în mesagerie; dar **nu** se mai trimite notificare/email automat).
-- Opțional: și crearea conversației o pot muta tot în post-plată, ca să nu se acumuleze conversații goale. Recomand: mut și conversația după plată (pentru că dacă userul abandonează plata, owner ar primi mesaj despre o cerere fantomă).
+#### A. Vizibilitate rezervări pentru renter (UX)
+- **`src/components/dashboard/RentalsTab.tsx`** — extind query-ul să includă și status `pending` cu `payment_status = authorized/paid`. Astfel, imediat după plată, rezervarea apare pe `/rezervari` într-o secțiune dedicată "În așteptarea acceptului proprietarului" cu copy clar (ex: "Plata ta este blocată. Aștepți confirmarea proprietarului").
+- Las și pagina `/cereri` să le afișeze (ele sunt cereri în așteptare). Astfel userul găsește rezervarea în ambele locuri logice.
+- Adaug un mesaj clar de tip alert deasupra: "✅ Plata a fost autorizată — așteptăm răspunsul proprietarului în 24h".
 
-#### 2. `supabase/functions/verify-stripe-payment/index.ts`
-- După `update rentals` cu succes (când `payment_status` devine `authorized` sau `paid`), **invoc** `send-rental-notification` cu `rental_id`.
-- Apelul e fire-and-forget cu try/catch — dacă notificarea eșuează, nu blochează răspunsul către frontend (rentalul e deja plătit corect).
+#### B. Vizibilitate cereri primite pentru owner
+- Verific `LendingsTab` — afișează corect `pendingRentals` cu butoanele Accept/Reject. Dacă nu sunt evidențiate, le pun în partea de sus a paginii cu un highlight portocaliu și badge "Nouă cerere".
+- Schimb link-ul notificării ownerului din `/anunturi?rental_id=...` → ceva mai precis sau adaug un scroll/highlight automat la cererea respectivă când se accesează.
 
-#### 3. `supabase/functions/send-rental-notification/index.ts`
-- Modific textele notificărilor pentru a reflecta că plata a fost autorizată:
-  - renter: "Cerere trimisă cu succes" → rămâne, dar descrierea devine "Plata ta a fost autorizată. Cererea pentru "X" a fost trimisă proprietarului."
-  - owner: "Cerere nouă de închiriere" → rămâne (acum e o cerere reală, plătită).
-- Schimb status-ul `transactions.status` din `pending` în `authorized` (reflectă că banii sunt blocați la Stripe, nu doar "în așteptare nedefinit").
-- Adaug guard idempotent: dacă există deja o notificare `rental_request` pentru `rental_id` curent, nu o duplic (în caz că `verify-stripe-payment` se apelează de mai multe ori — ex. user dă refresh pe `/checkout/success`).
+#### C. Email-uri post-plată — migrare la sistemul branded
+Migrez `send-rental-notification` să folosească sistemul oficial de email-uri Lovable Cloud:
+- **NU** mai folosesc Resend API direct + HTML inline.
+- Folosesc 2 template-uri React Email **deja existente** în proiect:
+  - `rental-request-owner.tsx` (există deja în `_shared/transactional-email-templates/`)
+  - `rental-request-renter.tsx` (verific dacă există; dacă nu, îl creez în același stil ca `rental-accepted.tsx`)
+- Apelez `supabase.functions.invoke("send-transactional-email", { body: { templateName, recipientEmail, idempotencyKey, templateData } })` pentru fiecare destinatar.
+- `idempotencyKey` derivat din `rental.id + template_name` → safe la retry.
+- Păstrez guard-ul de duplicate notificări push existent.
 
-#### 4. Cleanup vechi (opțional, doar la cerere) 
-- Notificările "Cerere trimisă cu succes" deja existente în feed pentru rentaluri cancelled/pending fără plată rămân până când userul le marchează ca citite. Nu le șterg automat — ar putea șterge din greșeală notificări legitime.
+#### D. Notificare push în UI (clopoțel pentru useri normali)
+- Verific că `NotificationBell` din `Navbar` (pentru useri obișnuiți, NU adminul) funcționează în realtime. Dacă nu, mă asigur că `notifications` are realtime activat (`ALTER PUBLICATION supabase_realtime ADD TABLE notifications`) și componenta ascultă.
 
 ### Fișiere afectate
 
 | Fișier | Modificare |
 |---|---|
-| `src/features/rentals/rentalsApi.ts` | Elimin invocarea `send-rental-notification` din `createRental`. Mut crearea conversației + mesajului opțional în flow-ul post-plată (sau o las și invoc din `verify-stripe-payment`) |
-| `supabase/functions/verify-stripe-payment/index.ts` | După succes update rental, invoc `send-rental-notification` (+ creare conversație/mesaj dacă a fost transmis prin metadata) |
-| `supabase/functions/send-rental-notification/index.ts` | Update copy: descrierile reflectă plata autorizată; transaction status → `authorized`; guard idempotent pe notificări existente |
-| `supabase/functions/create-checkout-session/index.ts` | Dacă mut conversația în post-plată: adaug `message_to_owner` în `metadata` Stripe (sau în coloană pe `rentals`) |
-
-### Decizie despre mesajul către owner
-
-Două opțiuni — am nevoie de input:
-- **A.** Conversația + mesajul opțional rămân create la pasul actual (înainte de plată). Owner-ul vede mesajul în chat dar **nu** primește email/notificare push până la plată.
-- **B.** Și conversația + mesajul se creează doar după plată (mesajul e stocat temporar în coloana `rentals.message_to_owner` sau `Stripe metadata` și inserat în `messages` doar când plata reușește).
-
-Recomand **B** — coerent cu principiul "nimic nu pleacă spre owner până nu s-a plătit". Necesită o coloană nouă `message_to_owner TEXT` pe `rentals` (migrație simplă) sau pasarea prin metadata Stripe.
+| `src/components/dashboard/RentalsTab.tsx` | Includ și `pending+authorized/paid` cu secțiune "În așteptare acceptare" |
+| `src/components/dashboard/LendingsTab.tsx` | Highlight vizual mai clar pentru cererile noi `pending` (dacă lipsește) |
+| `supabase/functions/send-rental-notification/index.ts` | Înlocuiesc Resend direct cu `send-transactional-email` (template-uri branded) |
+| `supabase/functions/_shared/transactional-email-templates/rental-request-renter.tsx` | Creez dacă lipsește, în stilul template-urilor existente |
+| `supabase/functions/_shared/transactional-email-templates/registry.ts` | Înregistrez template-urile noi |
+| `supabase/migrations/<ts>.sql` | Doar dacă `notifications` nu e în `supabase_realtime` — îl adaug |
 
 ### Rezultat așteptat
 
-- Renter NU mai vede "Cerere trimisă cu succes" până când Stripe confirmă plata.
-- Owner NU mai primește email/notificare/mesaj pentru cereri neplătite.
-- Tranzacția în DB apare ca `authorized` doar după hold confirmat — nu mai există tranzacții `pending` orfane.
-- `cleanupOrphanRental` din `rentalsApi.ts` rămâne ca safety net dacă crearea sesiunii Stripe eșuează.
+- Imediat după plată, **renterul vede rezervarea pe `/rezervari`** cu status clar "În așteptarea proprietarului" + alert verde "Plata autorizată".
+- **Ownerul primește email branded** (Rentli, portocaliu) cu CTA "Vezi cererea" → `/anunturi`.
+- **Renterul primește email branded** de confirmare cu CTA "Vezi statusul" → `/rezervari`.
+- Notificarea push (clopoțel) apare în realtime la ambii useri.
+- Niciun email duplicat la refresh `/checkout/success`.
 
 ### Limitări recunoscute
 
-- Dacă `verify-stripe-payment` eșuează la apelul `send-rental-notification`, plata rămâne corect marcată dar notificarea nu pleacă. Userul primește totuși ecranul de confirmare pe `/checkout/success`. Owner-ul vede cererea când deschide dashboard-ul (e în DB cu `payment_status = authorized`). Pot adăuga un job/cron care să reîncerce notificările lipsă, dar nu e în scop-ul acestui fix.
-- Notificările vechi (de la cereri abandonate până acum) rămân în feed.
+- Email-urile vechi care n-au plecat pentru rezervarea de 2 RON nu pot fi recuperate retroactiv (codul vechi cu Resend a eșuat silent). După deploy, orice rezervare nouă va trimite email-uri corect.
+- Nu modific business logic-ul: status-ul `pending` rămâne corect până când owner-ul acceptă.
 
