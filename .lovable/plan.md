@@ -1,93 +1,45 @@
 
 
-## Plan: Reparare cache stale KYC — userul nou aprobat nu poate rezerva
+## Plan: Eliminare panou notificări și clopoțel din Admin Dashboard
 
-### Diagnostic confirmat
+### Scop
+Elimin complet sistemul de notificări vizuale din admin panel (clopoțelul din header + widget-ul "Acțiuni necesare" din dashboard), deoarece badge-urile cu numere pe item-urile din sidebar (KYC, Confirmări, Tickete, Financiar, Notificări) oferă deja aceeași informație într-un mod mai concis.
 
-Am verificat în DB pentru `alexadvanceonline@gmail.com`:
-- `profiles.kyc_status = 'VERIFIED'` ✅
-- `kyc_cases.status = 'APPROVED'` ✅ (KYC-000007, decis acum câteva minute)
+### Componente eliminate
 
-Deci **backend-ul e corect**, adminul a aprobat și totul s-a actualizat.
+1. **Clopoțelul din header admin** (`AdminNotificationBell`)
+   - Folosit în `AdminLayout.tsx` (header desktop) și `MobileAdminMenu.tsx` (mobil)
+   - Afișează badge roșu cu numărul de notificări necitite + dropdown cu listă
 
-**Cauza reală**: `useKycGate()` (hook-ul folosit de `BookingCard` și `Checkout` pentru a decide dacă userul poate rezerva) are:
-```ts
-staleTime: 60 * 1000  // 60 secunde
-```
-și **nu se invalidează niciodată** când statusul KYC se schimbă în DB. Userul a fost aprobat în alt context (admin), iar tab-ul lui încă ține în cache vechiul `kyc_status` (`SUBMITTED` sau `NOT_VERIFIED`).
+2. **Widget "Acțiuni necesare"** (`AdminActionRequiredWidget`)
+   - Folosit în `AdminDashboard.tsx` în partea de sus a paginii
+   - Listează ticketele deschise, KYC-uri în așteptare, produse pending etc.
 
-Pagina `/verificare` afișează "Identitate verificată!" pentru că face fetch direct din `kyc_cases` la montare, **nu** prin React Query. Dar `BookingCard` folosește `useKycGate` cu cache stale → blochează rezervarea.
+### Modificări
 
-### Soluție
+| Fișier | Acțiune |
+|---|---|
+| `src/components/admin/AdminLayout.tsx` | Elimin import + render `<AdminNotificationBell />` din header desktop |
+| `src/components/admin/MobileAdminMenu.tsx` | Elimin import + render `<AdminNotificationBell />` din header mobil |
+| `src/pages/admin/AdminDashboard.tsx` | Elimin import + render `<AdminActionRequiredWidget />` |
+| `src/components/admin/AdminNotificationBell.tsx` | **ȘTERG** fișierul complet |
+| `src/components/admin/AdminActionRequiredWidget.tsx` | **ȘTERG** fișierul complet |
 
-#### 1. `useKycGate.ts` — refresh agresiv
+### Păstrate (intacte)
 
-```ts
-useQuery({
-  queryKey: ["kycGate", user?.id],
-  queryFn: async () => { /* ... */ },
-  enabled: !!user?.id,
-  staleTime: 10 * 1000,        // 10s în loc de 60s
-  refetchOnWindowFocus: true,  // refresh la revenirea pe tab
-  refetchOnMount: "always",    // refresh când orice componentă montează hook-ul
-});
-```
-
-Plus subscriere Realtime la `profiles` pentru user-ul curent — când `kyc_status` se schimbă în DB, invalidate-uiesc query-ul:
-
-```ts
-useEffect(() => {
-  if (!user?.id) return;
-  const channel = supabase
-    .channel(`profile-kyc-${user.id}`)
-    .on('postgres_changes', {
-      event: 'UPDATE', schema: 'public', table: 'profiles',
-      filter: `id=eq.${user.id}`,
-    }, () => {
-      queryClient.invalidateQueries({ queryKey: ['kycGate', user.id] });
-    })
-    .subscribe();
-  return () => { supabase.removeChannel(channel); };
-}, [user?.id, queryClient]);
-```
-
-Astfel, în secunda în care adminul aprobă (UPDATE pe profiles), tab-ul userului primește push prin Realtime → invalidate → refetch → `isVerified=true` → poate rezerva.
-
-#### 2. Asigur că Realtime e activat pe `profiles`
-
-Verific dacă tabela `profiles` e în `supabase_realtime` publication. Dacă nu, migrație simplă:
-```sql
-ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
-```
-
-#### 3. Fallback explicit pe pagina `/verificare`
-
-Când userul deschide `/verificare` și vede "Identitate verificată!", invalidate-uiesc proactiv `kycGate` (în caz că tab-ul a fost deschis demult):
-```ts
-useEffect(() => {
-  if (kycCase?.status === 'APPROVED' || kycCase?.status === 'VERIFIED') {
-    queryClient.invalidateQueries({ queryKey: ['kycGate', user?.id] });
-  }
-}, [kycCase?.status]);
-```
+- `src/pages/admin/AdminNotifications.tsx` — pagina dedicată `/admin/notifications` rămâne accesibilă din sidebar (item "Notificări" cu badge roșu deja existent)
+- `src/features/admin/adminNotificationsApi.ts` — API folosit de pagina de notificări și de hook-ul de summary
+- `src/hooks/queries/useAdminNotifications.ts` — hook folosit în continuare de `AdminSidebar` pentru badge-uri și de `AdminNotifications.tsx`
+- `src/components/admin/AdminSidebar.tsx` — neatins, badge-urile cu numere rămân pe item-urile relevante
 
 ### Rezultat
 
-- Userul aprobat de admin → tab-ul lui primește notificare Realtime în <1s → cache invalidat → `BookingCard` și `Checkout` recunosc imediat statusul `VERIFIED` → poate rezerva fără refresh manual.
-- Chiar și fără Realtime (offline scurt), refetch la `windowFocus` și `staleTime: 10s` reduc ferestre de stale data la minimum.
-- Fără modificări de DB (RLS/triggers) — doar comportament client-side mai reactiv.
-
-### Fișiere afectate
-
-| Fișier | Modificare |
-|---|---|
-| `src/hooks/queries/useKycGate.ts` | `staleTime` redus la 10s, `refetchOnWindowFocus: true`, `refetchOnMount: "always"` + subscriere Realtime pe `profiles` cu `invalidateQueries` |
-| `supabase/migrations/<ts>.sql` | (Doar dacă e nevoie) `ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles` |
-| `src/pages/KycVerification.tsx` | Invalidate `kycGate` când vede status `APPROVED`/`VERIFIED` la load |
+- Header admin curat — fără clopoțel
+- Dashboard admin curat — fără widget de "Acțiuni necesare" în partea de sus (rămâne stats grid + restul widget-urilor existente: `AdminSupportWidget`, `DashboardCategoriesWidget` etc.)
+- Sursa unică de notificări vizuale = badge-urile pe sidebar items + pagina `/admin/notifications`
 
 ### Limitări recunoscute
 
-- Realtime push depinde de WebSocket activ (dacă userul are throttling agresiv pe browser, pot exista delay-uri de 1-2s, dar refetch-ul la focus compensează).
-- Nu schimb logica de approval în `kycApi.ts` — fluxul DB rămâne identic.
-- Dacă userul are mai multe tab-uri deschise, fiecare primește push independent (corect).
+- Pagina `/admin/notifications` rămâne accesibilă doar prin click pe item-ul "Notificări" din sidebar (nu mai există shortcut din header)
+- Realtime push pe `admin_notifications` continuă să funcționeze (folosit de hook-ul comun `useAdminNotifications` pentru actualizarea badge-urilor)
 
