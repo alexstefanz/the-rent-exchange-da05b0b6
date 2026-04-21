@@ -55,8 +55,32 @@ export async function uploadInspectionPhoto(file: File, rentalId: string, userId
 
   if (error) throw error;
 
-  const { data } = supabase.storage.from("rental-inspections").getPublicUrl(path);
-  return data.publicUrl;
+  // Return scoped reference instead of public URL (bucket is private)
+  return `rental-inspections://${path}`;
+}
+
+const PUBLIC_URL_PREFIX = "/storage/v1/object/public/rental-inspections/";
+
+export function extractInspectionPath(value: string): string | null {
+  if (!value) return null;
+  if (value.startsWith("rental-inspections://")) {
+    return value.slice("rental-inspections://".length);
+  }
+  const idx = value.indexOf(PUBLIC_URL_PREFIX);
+  if (idx >= 0) {
+    return value.slice(idx + PUBLIC_URL_PREFIX.length);
+  }
+  return null;
+}
+
+export async function getInspectionSignedUrl(reference: string): Promise<string | null> {
+  const path = extractInspectionPath(reference);
+  if (!path) return null;
+  const { data, error } = await supabase.storage
+    .from("rental-inspections")
+    .createSignedUrl(path, 3600);
+  if (error || !data) return null;
+  return data.signedUrl;
 }
 
 export type InspectionPhase = "checkout" | "checkin";
