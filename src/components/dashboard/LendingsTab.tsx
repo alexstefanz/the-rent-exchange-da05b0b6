@@ -30,6 +30,7 @@ import RentalTimeline from "./RentalTimeline";
 import type { InspectionPhase } from "@/features/rentals/inspectionApi";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
+import PayoutStatusBadge from "./PayoutStatusBadge";
 
 const statusLabels: Record<string, { ro: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { ro: "În așteptare", variant: "secondary" },
