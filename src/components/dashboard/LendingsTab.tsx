@@ -221,6 +221,13 @@ const LendingsTab = () => {
                       <p className="text-sm text-muted-foreground mt-1">
                         {rental.renter_name || "Chiriaș"} · {format(new Date(rental.start_date), "d MMM", { locale: ro })} - {format(new Date(rental.end_date), "d MMM", { locale: ro })} · {rental.owner_payout} RON
                       </p>
+                      <div className="mt-2">
+                        <PayoutStatusBadge
+                          paymentStatus={rental.payment_status}
+                          rentalStatus={rental.status}
+                          amount={rental.owner_payout}
+                        />
+                      </div>
                       <div className="mt-3 pt-3 border-t border-border/50">
                         <RentalTimeline rental={{
                           status: rental.status,
