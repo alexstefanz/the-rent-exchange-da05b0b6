@@ -46,6 +46,7 @@ const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const AccountDetailsPage = lazy(() => import("./pages/AccountDetailsPage"));
 const RequestsPage = lazy(() => import("./pages/RequestsPage"));
 const RentalsPage = lazy(() => import("./pages/RentalsPage"));
+const RentalsOutPage = lazy(() => import("./pages/RentalsOutPage"));
 const ListingsPage = lazy(() => import("./pages/ListingsPage"));
 const ActivityLogPage = lazy(() => import("./pages/ActivityLogPage"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
@@ -119,6 +120,7 @@ const App = () => (
                 <Route path="/notificari" element={<NotificationsPage />} />
                 <Route path="/cereri" element={<RequestsPage />} />
                 <Route path="/rezervari" element={<RentalsPage />} />
+                <Route path="/inchirieri" element={<RentalsOutPage />} />
                 <Route path="/anunturi" element={<ListingsPage />} />
                 <Route path="/activitate" element={<ActivityLogPage />} />
                 <Route path="/rezervari-old" element={<Navigate to="/rezervari" replace />} />

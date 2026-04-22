@@ -22,6 +22,7 @@ import {
   FileText, 
   MessageCircle,
   CalendarCheck,
+  Package,
   Heart,
   PlusCircle,
   HelpCircle,
