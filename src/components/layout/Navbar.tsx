@@ -22,6 +22,7 @@ import {
   FileText, 
   MessageCircle,
   CalendarCheck,
+  Package,
   Heart,
   PlusCircle,
   HelpCircle,
@@ -260,6 +261,12 @@ const Navbar = () => {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
+                      <Link to="/inchirieri" className="flex items-center gap-3 py-2">
+                        <Package className="h-4 w-4" />
+                        {t("Închirieri", "Lendings")}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <Link to="/rezervari" className="flex items-center gap-3 py-2">
                         <CalendarCheck className="h-4 w-4" />
                         {t("Rezervări", "Reservations")}
@@ -445,6 +452,14 @@ const Navbar = () => {
                     >
                       <FileText className="h-5 w-5" />
                       {t("Anunțurile mele", "My Listings")}
+                    </Link>
+                    <Link 
+                      to="/inchirieri" 
+                      className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
+                      onClick={closeMobileMenu}
+                    >
+                      <Package className="h-5 w-5" />
+                      {t("Închirieri", "Lendings")}
                     </Link>
                     <Link 
                       to="/rezervari" 

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Loader2, UserCog, ClipboardList, ShoppingBag, Package, ScrollText } from "lucide-react";
+import { Loader2, UserCog, ClipboardList, ShoppingBag, Package, ScrollText, PackageCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuery } from "@tanstack/react-query";
@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { id: "contul-meu", labelRo: "Detalii cont", labelEn: "Account Details", icon: UserCog, href: "/contul-meu" },
   { id: "cereri", labelRo: "Cereri", labelEn: "Requests", icon: ClipboardList, href: "/cereri" },
   { id: "inchirieri", labelRo: "Rezervări", labelEn: "Reservations", icon: ShoppingBag, href: "/rezervari" },
+  { id: "inchirieri-out", labelRo: "Închirieri", labelEn: "Lendings", icon: PackageCheck, href: "/inchirieri" },
   { id: "anunturi", labelRo: "Anunțuri", labelEn: "Listings", icon: Package, href: "/anunturi" },
   { id: "activitate", labelRo: "Istoric activitate", labelEn: "Activity Log", icon: ScrollText, href: "/activitate" },
 ];
@@ -31,6 +32,20 @@ const ProfilePage = () => {
         .select("id", { count: "exact", head: true })
         .eq("renter_id", user!.id)
         .eq("status", "pending");
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!user?.id,
+  });
+
+  const { data: activeLendingsCount = 0 } = useQuery({
+    queryKey: ["active-lendings-count", user?.id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("rentals")
+        .select("id", { count: "exact", head: true })
+        .eq("owner_id", user!.id)
+        .in("status", ["pending", "confirmed", "active"]);
       if (error) throw error;
       return count || 0;
     },
@@ -71,10 +86,15 @@ const ProfilePage = () => {
         <BalanceCard />
 
         {/* Navigation buttons */}
-        <div className="w-full grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+        <div className="w-full grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6">
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const badgeCount = item.id === "cereri" ? pendingCount : 0;
+            const badgeCount =
+              item.id === "cereri"
+                ? pendingCount
+                : item.id === "inchirieri-out"
+                  ? activeLendingsCount
+                  : 0;
             const showBadge = badgeCount > 0;
 
             return (
