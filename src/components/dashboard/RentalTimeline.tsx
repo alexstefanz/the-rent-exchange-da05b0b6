@@ -39,14 +39,17 @@ const RentalTimeline = ({ rental, compact = false, className }: RentalTimelinePr
   const copy = useUxCopy();
   const { current, cancelled } = getTimelineStep(rental);
 
-  const steps = [
+  const allSteps = [
     copy.timeline.requestSent,
-    copy.timeline.requestApproved,
+    cancelled ? copy.timeline.requestRejected : copy.timeline.requestApproved,
     copy.timeline.inTransit,
     copy.timeline.inUse,
     copy.timeline.returning,
     copy.timeline.completed,
   ];
+
+  // When cancelled, only show steps 1 (sent) + 2 (rejected). Hide subsequent steps.
+  const steps = cancelled ? allSteps.slice(0, 2) : allSteps;
 
   return (
     <div className={cn("w-full", className)}>

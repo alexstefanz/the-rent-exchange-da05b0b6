@@ -15,6 +15,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 interface Request {
   id: string;
@@ -217,39 +218,39 @@ const RequestsTab = () => {
 
       {cancelledRequests.length > 0 && (
         <section>
-          <h3 className="mb-4 font-heading text-lg font-semibold text-foreground">Cereri anulate</h3>
-          <div className="space-y-4">
-            {cancelledRequests.map((request) => (
-              <div key={request.id} className="flex flex-col sm:flex-row gap-4 rounded-xl border border-border bg-card p-4 opacity-75">
-                <img src={request.product_image} alt={request.product_title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-contain bg-white" />
-                <div className="flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="font-medium text-foreground">{request.product_title}</span>
-                    <StatusBadge status={request.status as any} />
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{request.start_date} - {request.end_date}</span>
-                  </div>
-                  <div className="mt-3 text-center">
-                    <span className="text-lg font-bold text-muted-foreground">{request.subtotal} RON</span>
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-border/50">
-                    <RentalTimeline rental={{
-                      status: request.status,
-                      payment_status: request.payment_status,
-                      end_date: request.end_date_raw,
-                      refunded_at: request.refunded_at,
-                    }} />
-                    {request.refunded_at && (
-                      <p className="mt-2 text-xs text-destructive font-medium text-center">
-                        💸 Banii au fost returnați
-                      </p>
-                    )}
-                  </div>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="cancelled" className="border border-border rounded-xl bg-card px-4">
+              <AccordionTrigger className="font-heading text-lg font-semibold text-foreground hover:no-underline">
+                Cereri anulate ({cancelledRequests.length})
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="space-y-4 pt-2">
+                  {cancelledRequests.map((request) => (
+                    <div key={request.id} className="flex flex-col sm:flex-row gap-4 rounded-xl border border-border bg-background p-4 opacity-75">
+                      <img src={request.product_image} alt={request.product_title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-contain bg-white" />
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-medium text-foreground">{request.product_title}</span>
+                          <StatusBadge status={request.status as any} />
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{request.start_date} - {request.end_date}</span>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between gap-2">
+                          <span className="text-base font-semibold text-muted-foreground">{request.subtotal} RON</span>
+                          {request.refunded_at && (
+                            <span className="text-xs text-destructive font-medium">
+                              💸 Banii au fost returnați
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            ))}
-          </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </section>
       )}
     </div>
