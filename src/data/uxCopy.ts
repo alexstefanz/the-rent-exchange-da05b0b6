@@ -114,6 +114,7 @@ const createUxCopy = () => ({
   timeline: {
     requestSent: { ro: "Cerere trimisă", en: "Request sent" },
     requestApproved: { ro: "Cerere aprobată", en: "Request approved" },
+    requestRejected: { ro: "Cerere respinsă", en: "Request rejected" },
     inTransit: { ro: "În tranzit spre beneficiar", en: "In transit to renter" },
     inUse: { ro: "Produs în folosire", en: "Item in use" },
     returning: { ro: "Produs în curs de returnare", en: "Item being returned" },
