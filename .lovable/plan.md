@@ -1,100 +1,49 @@
 
 
-## Plan: Tab dedicat „Închirieri" pentru proprietar
+## Plan: Cereri anulate — fix etichetă + acordeon
 
-### Context
+### Problemă
 
-În prezent:
-- `/rezervari` → ce am închiriat ca renter (Rezervări)
-- `/anunturi` → produsele mele + cererile/închirierile primite ca proprietar (totul amestecat în `LendingsTab`)
-- Dropdown user: lipsește o intrare clară pentru „ce am dat eu spre închiriere ca proprietar"
+În secțiunea „Cereri anulate" (`/cereri`):
+1. Iconul roșu cu X afișează textul **„Cerere aprobată"** — greșit. Trebuie **„Cerere respinsă"**.
+2. Sub timeline mai apar pașii ulteriori (În tranzit, În uz, etc.) — nu au sens pentru o cerere respinsă.
+3. Lista de cereri anulate ocupă mult spațiu — trebuie ascunsă într-un acordeon.
 
-Vreau o secțiune separată „Închirieri" — produsele tale care sunt active la chiriași — distinctă vizual de Rezervări.
+### Cauză
+
+În `src/components/dashboard/RentalTimeline.tsx`, când `status === "cancelled"`, componenta marchează step 2 (= „Cerere aprobată" din `copy.timeline.requestApproved`) ca step „cancelled" cu X roșu — dar păstrează eticheta originală.
 
 ### Modificări
 
-#### 1. Componentă nouă `src/components/dashboard/RentalsOutTab.tsx` (owner view)
-Extrag din `LendingsTab` doar partea cu cereri primite + istoric închirieri (codul existent din secțiunile „Cereri de închiriere" și „Istoric închirieri"). Păstrez:
-- Cereri pending cu Accept/Refuză
-- Card timeline pentru fiecare închiriere
-- Buton Predare/Returnare (Inspection dialog)
-- Confirm handover / confirm return
-- `PayoutStatusBadge`
-- Status plată collapsible
+#### 1. `src/components/dashboard/RequestsTab.tsx`
+- Înlocuiesc cardurile din secțiunea „Cereri anulate" cu un **acordeon colapsat** (`<Accordion>` din `@/components/ui/accordion`) — titlu „Cereri anulate ({count})", inițial închis.
+- În interiorul acordeonului, păstrez aceeași listă de carduri, dar **elimin complet `<RentalTimeline>` și `divider-ul** asociat. Cardul anulat va arăta:
+  - imagine produs
+  - titlu + StatusBadge „Anulată"
+  - perioadă (Calendar + date)
+  - sumă (text muted)
+  - opțional: mesaj „💸 Banii au fost returnați" dacă `refunded_at` există
+- Fără timeline → fără confuzie cu „Cerere aprobată".
 
-Diferențiere vizuală față de Rezervări (renter side):
-- Header secțiune cu **iconiță `Package` portocalie** + titlu „Închirieri active" (vs. „Rezervări viitoare" la renter)
-- Carduri cu **bordură stânga groasă (4px) accent primary** (`border-l-4 border-l-primary`) — accent vizual care lipsește la Rezervări
-- Badge suplimentar „Câștig: X RON" lângă numele renterului (perspectiva owner-ului — câștig, nu cost)
-- Stats bar sus cu 3 carduri: Cereri noi · Active · Total câștigat luna asta
-- Empty state diferit: iconiță `Package`, copy „Niciun produs închiriat momentan" + CTA către „Adaugă anunț"
+#### 2. `src/components/dashboard/RentalTimeline.tsx`
+Pentru consistență (timeline-ul mai e folosit pe `RentalsPage`, `RentalsOutTab`, etc., unde un rental respins/anulat poate apărea):
+- Schimb logica: când `cancelled === true`, label-ul step-ului curent devine **„Cerere respinsă"** (RO) / **„Request rejected"** (EN), nu se mai afișează pașii ulteriori (`isUpcoming` rămâne stilizat ca muted, dar e ok să rămână vizibili pentru context — sau îi pot **ascunde complet** dacă cancelled).
+- Decizie: când `cancelled`, **afișez doar pașii 1 + 2** (Cerere trimisă → Cerere respinsă cu X roșu), restul nu mai sunt randate. Mai curat vizual.
 
-#### 2. Pagina nouă `src/pages/RentalsOutPage.tsx`
-Clonă a `RentalsPage.tsx` dar:
-- Titlu: „Închirieri" (RO) / „Lendings" (EN)
-- Subtitlu sub titlu: „Produsele tale închiriate și cererile primite"
-- Renderizează `<RentalsOutTab />`
-- Buton „Înapoi la Contul Meu"
-
-#### 3. Refactor `src/components/dashboard/LendingsTab.tsx`
-Elimin secțiunile „Cereri de închiriere" și „Istoric închirieri" (mutate în RentalsOutTab). Păstrez DOAR:
-- Stats: produse active
-- Lista „Anunțurile mele" cu Edit/View
-- CTA „Adaugă anunț"
-
-Pagina `/anunturi` rămâne dedicată exclusiv produselor (listings), nu mai amestecă rentals.
-
-#### 4. Rută nouă în `src/App.tsx`
-```
-<Route path="/inchirieri" element={<RentalsOutPage />} />
-```
-
-#### 5. Dropdown navbar `src/components/layout/Navbar.tsx`
-În meniul user, ordinea nouă (deasupra Rezervări):
-```
-- Contul meu
-- Anunțurile mele
-- Închirieri              ← NOU (icon: Package)
-- Rezervări               ← deja existent (icon: CalendarCheck)
-- Favorite
-```
-Same ordine în meniul mobile.
-
-#### 6. Hub navigation `src/pages/Profile.tsx`
-Adaug card nou „Închirieri" în grid-ul de butoane portocalii, între „Rezervări" și „Anunțuri":
-```
-Detalii cont · Cereri · Rezervări · Închirieri · Anunțuri · Activitate
-```
-Grid devine 2 col mobil, 6 col desktop (sau 3 col / 6 col).
-
-#### 7. Badge cont închirieri active (opțional, recomandat)
-Query nouă în Profile: număr de rentals cu `status in (confirmed, active)` unde `owner_id = user.id`. Afișez badge mic pe cardul „Închirieri" similar cu cel de la „Cereri".
-
-### Diferențe vizuale Rezervări vs. Închirieri (recap)
-
-| Aspect | Rezervări (`/rezervari`) | Închirieri (`/inchirieri`) |
-|---|---|---|
-| Perspectivă | Renter — ce am închiriat | Owner — ce am dat la închiriat |
-| Iconiță hero | `CalendarCheck` | `Package` |
-| Bordură carduri | Standard `border-border` | `border-l-4 border-l-primary` |
-| Sumă afișată | „X RON" (cost) | „Câștig: X RON" + `PayoutStatusBadge` |
-| Acțiuni primare | Contactează proprietarul · Predare | Accept/Refuză · Confirmă predare/returnare |
-| Stats sus | — | Cereri noi · Active · Câștig lună |
+#### 3. `src/data/uxCopy.ts`
+- Adaug intrarea `timeline.requestRejected` cu RO „Cerere respinsă" / EN „Request rejected".
 
 ### Fișiere afectate
 
 | Fișier | Modificare |
 |---|---|
-| `src/components/dashboard/RentalsOutTab.tsx` | NOU — owner-side rentals + cereri |
-| `src/pages/RentalsOutPage.tsx` | NOU — wrapper pagină pentru tab |
-| `src/components/dashboard/LendingsTab.tsx` | Refactor — păstrează doar listings |
-| `src/App.tsx` | Adaug rută `/inchirieri` |
-| `src/components/layout/Navbar.tsx` | Adaug item „Închirieri" deasupra „Rezervări" în dropdown desktop + mobile |
-| `src/pages/Profile.tsx` | Adaug card „Închirieri" în grid + query badge |
+| `src/components/dashboard/RequestsTab.tsx` | Wrap „Cereri anulate" în Accordion; elimin `<RentalTimeline>` din carduri |
+| `src/components/dashboard/RentalTimeline.tsx` | La `cancelled`, afișez doar pașii 1+2; label step 2 devine „Cerere respinsă" |
+| `src/data/uxCopy.ts` | Adaug cheia `timeline.requestRejected` (RO/EN) |
 
-### Limitări recunoscute
+### Rezultat
 
-- Funcționalitatea de pe `/inchirieri` reutilizează exact aceleași API-uri (`getOwnerRentals`, `respondToRental`, `confirmHandover`, `confirmReturn`) — niciun cost backend suplimentar.
-- Pagina `/anunturi` rămâne funcțională, doar curățată — nu sparge nimic existent.
-- Linkurile vechi din notificări/email-uri către `/anunturi?rental_id=...` continuă să meargă, dar voi adăuga și varianta nouă `/inchirieri?rental_id=...` pentru evidențierea cardului. Email-urile noi pot fi actualizate într-un task separat dacă dorești.
+- Cardurile anulate sunt grupate sub acordeon „Cereri anulate ({n})" colapsat by default.
+- Cardurile din interior nu mai au timeline — doar info esențială (poză, titlu, perioadă, sumă, refund).
+- În alte locuri din app unde timeline-ul apare pentru un rental anulat, X roșu va fi etichetat corect „Cerere respinsă" și pașii 3-6 nu mai apar.
 
