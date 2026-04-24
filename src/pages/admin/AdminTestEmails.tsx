@@ -3,11 +3,15 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Mail, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Mail, CheckCircle, XCircle, Loader2, RotateCcw } from "lucide-react";
 
-const TEST_EMAIL = "z.alexstefan@gmail.com";
+const DEFAULT_TEST_EMAIL = "z.alexstefan@gmail.com";
+const STORAGE_KEY = "admin_test_email_recipient";
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 interface EmailTest {
   type: string;
@@ -36,21 +40,47 @@ type TestStatus = "idle" | "loading" | "success" | "error";
 const AdminTestEmails = () => {
   const [statuses, setStatuses] = useState<Record<string, TestStatus>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [recipientEmail, setRecipientEmail] = useState<string>(() => {
+    if (typeof window === "undefined") return DEFAULT_TEST_EMAIL;
+    return localStorage.getItem(STORAGE_KEY) || DEFAULT_TEST_EMAIL;
+  });
+
+  const trimmedEmail = recipientEmail.trim();
+  const isEmailValid = EMAIL_REGEX.test(trimmedEmail);
+
+  const handleEmailChange = (value: string) => {
+    setRecipientEmail(value);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEY, value);
+    }
+  };
+
+  const resetEmail = () => {
+    setRecipientEmail(DEFAULT_TEST_EMAIL);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEY, DEFAULT_TEST_EMAIL);
+    }
+  };
 
   const sendTest = async (type: string) => {
+    if (!isEmailValid) {
+      toast.error("Email destinatar invalid");
+      return;
+    }
+
     setStatuses((prev) => ({ ...prev, [type]: "loading" }));
     setErrors((prev) => ({ ...prev, [type]: "" }));
 
     try {
       const { data, error } = await supabase.functions.invoke("test-email-notifications", {
-        body: { type },
+        body: { type, recipientEmail: trimmedEmail },
       });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
       setStatuses((prev) => ({ ...prev, [type]: "success" }));
-      toast.success(`Email "${type}" trimis cu succes!`);
+      toast.success(`Email "${type}" trimis către ${trimmedEmail}!`);
     } catch (err: any) {
       const msg = err?.message || "Eroare necunoscută";
       setStatuses((prev) => ({ ...prev, [type]: "error" }));
@@ -60,6 +90,10 @@ const AdminTestEmails = () => {
   };
 
   const sendAll = async () => {
+    if (!isEmailValid) {
+      toast.error("Email destinatar invalid");
+      return;
+    }
     for (const test of emailTests) {
       await sendTest(test.type);
       await new Promise((r) => setTimeout(r, 1500));
@@ -69,18 +103,64 @@ const AdminTestEmails = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <h1 className="text-2xl font-bold">Test Emailuri</h1>
             <p className="text-muted-foreground mt-1">
-              Trimite notificări de test către <strong>{TEST_EMAIL}</strong> via <strong>noreply@rentli.ro</strong>
+              Trimite notificări de test către{" "}
+              <strong>{isEmailValid ? trimmedEmail : "(email invalid)"}</strong>{" "}
+              via <strong>noreply@rentli.ro</strong>
             </p>
           </div>
-          <Button onClick={sendAll} size="lg">
+          <Button onClick={sendAll} size="lg" disabled={!isEmailValid}>
             <Mail className="mr-2 h-4 w-4" />
             Trimite toate
           </Button>
         </div>
+
+        <Card className="bg-muted/30">
+          <CardContent className="pt-6">
+            <div className="space-y-2">
+              <Label htmlFor="recipient_email" className="text-sm font-medium">
+                Email destinatar pentru teste
+              </Label>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Input
+                  id="recipient_email"
+                  type="email"
+                  placeholder="exemplu@email.com"
+                  value={recipientEmail}
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  className={
+                    isEmailValid || !trimmedEmail
+                      ? "max-w-md"
+                      : "max-w-md border-destructive focus-visible:ring-destructive"
+                  }
+                  maxLength={254}
+                />
+                {recipientEmail !== DEFAULT_TEST_EMAIL && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={resetEmail}
+                    className="sm:flex-shrink-0"
+                  >
+                    <RotateCcw className="mr-2 h-3 w-3" />
+                    Reset
+                  </Button>
+                )}
+              </div>
+              {!isEmailValid && trimmedEmail.length > 0 && (
+                <p className="text-xs text-destructive">Format email invalid</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Adresa e salvată local pentru sesiunile viitoare. Toate testele
+                de mai jos folosesc acest destinatar.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {emailTests.map((test) => {
