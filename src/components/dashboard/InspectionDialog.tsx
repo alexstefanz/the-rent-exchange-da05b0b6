@@ -59,7 +59,7 @@ const roleLabels: Record<InspectionRole, string> = {
 
 function getPhaseLabel(phase: InspectionPhase, role: InspectionRole): string {
   if (phase === "checkout") return role === "owner" ? "Predare" : "Primire";
-  return role === "renter" ? "Returnare" : "Confirmare primire";
+  return role === "renter" ? "Confirmă predarea" : "Confirmare primire";
 }
 
 function getPhaseDescription(phase: InspectionPhase, role: InspectionRole): string {
@@ -69,7 +69,7 @@ function getPhaseDescription(phase: InspectionPhase, role: InspectionRole): stri
       : "Fotografiază produsul în momentul în care îl primești de la proprietar. Pozele servesc drept dovadă în caz de dispută.";
   }
   return role === "renter"
-    ? "Fotografiază produsul înainte să îl returnezi proprietarului. Pozele servesc drept dovadă în caz de dispută."
+    ? "Fotografiază produsul în momentul în care îl predai înapoi proprietarului. Pozele sunt dovada ta că l-ai returnat în starea convenită."
     : "Fotografiază produsul în momentul în care îl primești înapoi. Pozele servesc drept dovadă în caz de dispută.";
 }
 

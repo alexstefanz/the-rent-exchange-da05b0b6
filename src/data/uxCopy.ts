@@ -129,6 +129,7 @@ const createUxCopy = () => ({
     pickup: { ro: "Primire", en: "Pick-up" },
     return: { ro: "Returnare", en: "Return" },
     receivedBack: { ro: "Confirmare primire", en: "Confirm received back" },
+    confirmHandedBack: { ro: "Confirmă predarea", en: "Confirm hand-back" },
   },
   reassurance: {
     paymentProtected: { ro: "Plata ta este protejată. Suma se blochează temporar și se debitează doar după finalizarea închirierii.", en: "Your payment is protected. The amount is temporarily held and charged only after the rental period ends." },
