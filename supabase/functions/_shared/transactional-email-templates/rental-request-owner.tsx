@@ -16,8 +16,8 @@ interface Props {
 
 const RentalRequestOwnerEmail = ({ renterName = 'Un utilizator', productTitle = 'produsul tău', startDate, endDate, rentalId }: Props) => {
   const ctaHref = rentalId
-    ? `https://rentli.ro/anunturi?rental_id=${rentalId}`
-    : 'https://rentli.ro/anunturi'
+    ? `https://rentli.ro/inchirieri?rental_id=${rentalId}`
+    : 'https://rentli.ro/inchirieri'
   return (
   <Html lang="ro" dir="ltr">
     <Head />
