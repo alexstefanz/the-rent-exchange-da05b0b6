@@ -283,19 +283,27 @@ const RentalsOutTab = () => {
                         </CollapsibleContent>
                       </Collapsible>
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {(rental.status === "confirmed" || rental.status === "active") && (
+                        {rental.status === "confirmed" && (
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setInspectionRental({
-                              rental,
-                              phase: rental.status === "confirmed" ? "checkout" : "checkin",
-                            })}
+                            onClick={() => setInspectionRental({ rental, phase: "checkout" })}
                           >
                             <Camera className="h-4 w-4 mr-1" />
-                            📷 {rental.status === "confirmed" ? "Predare" : "Returnare"}
+                            📷 {copy.inspection.handover}
                           </Button>
                         )}
+                        {(rental.status === "active" || rental.status === "completed") &&
+                          renterCheckinIds.has(rental.id) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setInspectionRental({ rental, phase: "checkin" })}
+                            >
+                              <Camera className="h-4 w-4 mr-1" />
+                              📷 {copy.inspection.receivedBack}
+                            </Button>
+                          )}
                         {rental.status === "confirmed" && rental.handover_confirmed_at == null && (
                           <Button
                             size="sm"
