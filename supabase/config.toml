@@ -39,3 +39,5 @@ project_id = "tsffyecastudajmgrckt"
     verify_jwt = false
   [functions.process-rental-captures]
     verify_jwt = false
+  [functions.send-sms-notification]
+    verify_jwt = false

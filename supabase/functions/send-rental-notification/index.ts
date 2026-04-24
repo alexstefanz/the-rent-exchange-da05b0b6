@@ -199,6 +199,21 @@ Deno.serve(async (req) => {
     }
     await Promise.all(tasks);
 
+    // SMS to owner (best-effort, never blocks main flow)
+    try {
+      await supabaseAdmin.functions.invoke("send-sms-notification", {
+        body: {
+          templateKey: "rental_request_owner",
+          userId: rental.owner_id,
+          rentalId: rental.id,
+          variables: { productTitle, renterName },
+          idempotencyKey: `rental_request_owner:${rental.id}`,
+        },
+      });
+    } catch (e) {
+      console.error("[send-rental-notification] SMS invoke failed:", e);
+    }
+
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

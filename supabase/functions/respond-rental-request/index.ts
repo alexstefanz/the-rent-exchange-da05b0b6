@@ -338,6 +338,24 @@ Deno.serve(async (req) => {
       await Promise.all(emailPromises);
     }
 
+    // SMS to renter (best-effort)
+    try {
+      await supabaseAdmin.functions.invoke("send-sms-notification", {
+        body: {
+          templateKey: action === "accept" ? "rental_accepted" : "rental_rejected",
+          userId: rental.renter_id,
+          rentalId: rental.id,
+          variables: {
+            productTitle: product?.title || "produsul",
+            ownerName: owner?.full_name || "proprietarul",
+          },
+          idempotencyKey: `${action === "accept" ? "rental_accepted" : "rental_rejected"}:${rental.id}`,
+        },
+      });
+    } catch (e) {
+      console.error("[respond-rental-request] SMS invoke failed:", e);
+    }
+
     return new Response(JSON.stringify({ success: true, status: newStatus }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

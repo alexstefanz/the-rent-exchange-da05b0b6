@@ -1,0 +1,264 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const SMS_API_URL = "https://www.smsalert.mobi/api/v2/message/send";
+const SMS_SENDER = "Rentli";
+const PLATFORM_URL = "rentli.ro";
+
+type TemplateKey =
+  | "rental_request_owner"
+  | "rental_accepted"
+  | "rental_rejected"
+  | "rental_cancelled"
+  | "return_reminder";
+
+type TemplateVars = {
+  productTitle?: string;
+  renterName?: string;
+  ownerName?: string;
+};
+
+/**
+ * Render an SMS body for a given template key.
+ * Uses ASCII / no diacritics so messages stay under 160 chars (GSM-7, 1 SMS credit).
+ */
+function renderTemplate(key: TemplateKey, v: TemplateVars): string {
+  const title = stripDiacritics(v.productTitle || "produsul").slice(0, 40);
+  const renter = stripDiacritics(v.renterName || "Un utilizator").slice(0, 30);
+  const owner = stripDiacritics(v.ownerName || "proprietarul").slice(0, 30);
+
+  switch (key) {
+    case "rental_request_owner":
+      return `Rentli: cerere noua pt "${title}" de la ${renter}. Detalii: ${PLATFORM_URL}/inchirieri`;
+    case "rental_accepted":
+      return `Rentli: cererea ta pt "${title}" a fost ACCEPTATA. Detalii: ${PLATFORM_URL}/rezervari`;
+    case "rental_rejected":
+      return `Rentli: cererea pt "${title}" a fost refuzata. Cauta alte produse pe ${PLATFORM_URL}`;
+    case "rental_cancelled":
+      return `Rentli: rezervarea pt "${title}" a fost anulata. Detalii: ${PLATFORM_URL}/rezervari`;
+    case "return_reminder":
+      return `Rentli: returneaza azi "${title}". Contacteaza ${owner} pt predare.`;
+  }
+}
+
+function stripDiacritics(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[ăâ]/gi, "a")
+    .replace(/[î]/gi, "i")
+    .replace(/[șş]/gi, "s")
+    .replace(/[țţ]/gi, "t");
+}
+
+/**
+ * Normalize Romanian phone numbers to +40XXXXXXXXX (E.164 minus spaces).
+ * Returns null if invalid.
+ */
+function normalizePhoneRO(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  let p = raw.trim().replace(/[\s()-]/g, "");
+  if (!p) return null;
+
+  // Already +40XXXXXXXXX
+  if (/^\+40[0-9]{9}$/.test(p)) return p;
+  // 0040XXXXXXXXX -> +40...
+  if (/^0040[0-9]{9}$/.test(p)) return "+" + p.slice(2);
+  // 40XXXXXXXXX -> +40...
+  if (/^40[0-9]{9}$/.test(p)) return "+" + p;
+  // 0XXXXXXXXX (national) -> +40XXXXXXXXX
+  if (/^0[0-9]{9}$/.test(p)) return "+40" + p.slice(1);
+  return null;
+}
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+      return jsonResponse({ error: "Invalid JSON body" }, 400);
+    }
+
+    const {
+      templateKey,
+      userId,
+      rentalId,
+      variables,
+      idempotencyKey,
+    } = body as {
+      templateKey?: TemplateKey;
+      userId?: string;
+      rentalId?: string | null;
+      variables?: TemplateVars;
+      idempotencyKey?: string;
+    };
+
+    // Validation
+    const allowedTemplates: TemplateKey[] = [
+      "rental_request_owner",
+      "rental_accepted",
+      "rental_rejected",
+      "rental_cancelled",
+      "return_reminder",
+    ];
+    if (!templateKey || !allowedTemplates.includes(templateKey)) {
+      return jsonResponse({ error: "Invalid templateKey" }, 400);
+    }
+    if (!userId || typeof userId !== "string") {
+      return jsonResponse({ error: "userId required" }, 400);
+    }
+    if (!idempotencyKey || typeof idempotencyKey !== "string") {
+      return jsonResponse({ error: "idempotencyKey required" }, 400);
+    }
+
+    const username = Deno.env.get("SMS_ALERT_USERNAME");
+    const apiKey = Deno.env.get("SMS_ALERT_API_KEY");
+    if (!username || !apiKey) {
+      console.error("[send-sms-notification] Missing SMS_ALERT credentials");
+      return jsonResponse({ error: "SMS provider not configured" }, 500);
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    // Idempotency check
+    const { data: existing } = await supabase
+      .from("sms_logs")
+      .select("id, status, provider_message_id")
+      .eq("idempotency_key", idempotencyKey)
+      .maybeSingle();
+
+    if (existing) {
+      console.log(`[send-sms-notification] Cache hit for ${idempotencyKey} (status=${existing.status})`);
+      return jsonResponse({ success: true, cached: true, status: existing.status });
+    }
+
+    // Load profile
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("phone, sms_notifications_enabled, is_banned, full_name")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error("[send-sms-notification] Profile load error:", profileError);
+      return jsonResponse({ error: "Profile lookup failed" }, 500);
+    }
+
+    const message = renderTemplate(templateKey, variables || {});
+
+    // Skip conditions: log skipped reason and exit OK
+    const logSkip = async (phone: string, reason: string) => {
+      await supabase.from("sms_logs").insert({
+        user_id: userId,
+        rental_id: rentalId || null,
+        recipient_phone: phone,
+        template_key: templateKey,
+        message_body: message,
+        status: "skipped",
+        error_message: reason,
+        idempotency_key: idempotencyKey,
+      });
+    };
+
+    if (!profile) {
+      await logSkip("", "profile_not_found");
+      return jsonResponse({ success: true, skipped: "profile_not_found" });
+    }
+    if (profile.is_banned) {
+      await logSkip(profile.phone || "", "user_banned");
+      return jsonResponse({ success: true, skipped: "user_banned" });
+    }
+    if (profile.sms_notifications_enabled === false) {
+      await logSkip(profile.phone || "", "sms_opt_out");
+      return jsonResponse({ success: true, skipped: "sms_opt_out" });
+    }
+
+    const normalized = normalizePhoneRO(profile.phone);
+    if (!normalized) {
+      await logSkip(profile.phone || "", "invalid_phone");
+      return jsonResponse({ success: true, skipped: "invalid_phone" });
+    }
+
+    // Send via SMS Alert API (Basic Auth)
+    const auth = btoa(`${username}:${apiKey}`);
+    const payload = {
+      to: normalized,
+      message,
+      sender: SMS_SENDER,
+    };
+
+    let providerStatus = 0;
+    let providerJson: unknown = null;
+    let providerText = "";
+    let networkError: string | null = null;
+
+    try {
+      const res = await fetch(SMS_API_URL, {
+        method: "POST",
+        headers: {
+          "Authorization": `Basic ${auth}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      providerStatus = res.status;
+      providerText = await res.text();
+      try {
+        providerJson = JSON.parse(providerText);
+      } catch {
+        providerJson = { raw: providerText };
+      }
+    } catch (e) {
+      networkError = String((e as Error).message);
+      console.error("[send-sms-notification] Network error:", networkError);
+    }
+
+    const ok = !networkError && providerStatus >= 200 && providerStatus < 300;
+    const providerMessageId =
+      (providerJson && typeof providerJson === "object" &&
+        ((providerJson as Record<string, unknown>).message_id as string | undefined ||
+          (providerJson as Record<string, unknown>).id as string | undefined)) || null;
+
+    await supabase.from("sms_logs").insert({
+      user_id: userId,
+      rental_id: rentalId || null,
+      recipient_phone: normalized,
+      template_key: templateKey,
+      message_body: message,
+      status: ok ? "sent" : "failed",
+      provider_message_id: providerMessageId,
+      provider_response: providerJson as Record<string, unknown>,
+      error_message: ok ? null : (networkError || `HTTP ${providerStatus}: ${providerText.slice(0, 200)}`),
+      idempotency_key: idempotencyKey,
+    });
+
+    if (!ok) {
+      console.error(`[send-sms-notification] FAILED status=${providerStatus} body=${providerText.slice(0, 200)}`);
+      return jsonResponse({ success: false, status: providerStatus, error: networkError || providerText }, 200);
+    }
+
+    console.log(`[send-sms-notification] sent template=${templateKey} to=${normalized}`);
+    return jsonResponse({ success: true, status: providerStatus, messageId: providerMessageId });
+  } catch (error) {
+    console.error("[send-sms-notification] Unhandled error:", error);
+    return jsonResponse({ error: "Internal server error" }, 500);
+  }
+});

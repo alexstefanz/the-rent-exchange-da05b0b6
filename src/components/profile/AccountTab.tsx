@@ -23,7 +23,8 @@ import {
   MessageCircle,
   Camera,
   Loader2,
-  LifeBuoy
+  LifeBuoy,
+  Bell
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -31,6 +32,8 @@ import { useToast } from "@/hooks/use-toast";
 import { getProfile, updateProfile, createProfile, Profile } from "@/features/profile/profileApi";
 import { uploadAvatar } from "@/features/profile/avatarApi";
 import { supabase } from "@/integrations/supabase/client";
+import { Switch } from "@/components/ui/switch";
+import { useUxCopy } from "@/hooks/useUxCopy";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -104,6 +107,7 @@ const IbanForm = ({ userId, profile, onSaved }: { userId?: string; profile: any;
 const AccountTab = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const ux = useUxCopy();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isResettingPassword, setIsResettingPassword] = useState(false);
@@ -111,6 +115,7 @@ const AccountTab = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isSavingSms, setIsSavingSms] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ProfileFormData>({
@@ -206,6 +211,32 @@ const AccountTab = () => {
   };
 
   const [isDeactivating, setIsDeactivating] = useState(false);
+
+  const phoneFieldValue = form.watch("phone");
+  const hasValidPhone = !!(phoneFieldValue || profile?.phone);
+  const smsEnabled = profile?.sms_notifications_enabled !== false;
+
+  const handleSmsToggle = async (next: boolean) => {
+    if (!user) return;
+    setIsSavingSms(true);
+    try {
+      const updated = await updateProfile(user.id, { sms_notifications_enabled: next });
+      setProfile(updated);
+      toast({
+        title: t("Salvat", "Saved"),
+        description: ux.smsNotifications.saved,
+      });
+    } catch (error) {
+      console.error("Error updating SMS preference:", error);
+      toast({
+        title: t("Eroare", "Error"),
+        description: ux.smsNotifications.saveError,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingSms(false);
+    }
+  };
 
   const handleDeactivateAccount = async () => {
     setIsDeactivating(true);
@@ -464,6 +495,38 @@ const AccountTab = () => {
               <Button variant="outline" onClick={handlePasswordReset} disabled={isResettingPassword}>
                 {isResettingPassword ? t("Se trimite...", "Sending...") : t("Schimbă parola", "Change password")}
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* SMS Notifications */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Bell className="h-5 w-5" />
+                {ux.smsNotifications.title}
+              </CardTitle>
+              <CardDescription>{ux.smsNotifications.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">
+                    {smsEnabled ? ux.smsNotifications.enabled : ux.smsNotifications.disabled}
+                  </span>
+                </div>
+                <Switch
+                  checked={smsEnabled && hasValidPhone}
+                  disabled={!hasValidPhone || isSavingSms}
+                  onCheckedChange={handleSmsToggle}
+                  aria-label={ux.smsNotifications.title}
+                />
+              </div>
+              {!hasValidPhone && (
+                <div className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 p-3 text-sm text-amber-800 dark:text-amber-300">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  <span>{ux.smsNotifications.missingPhone}</span>
+                </div>
+              )}
             </CardContent>
           </Card>
 

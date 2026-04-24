@@ -50,6 +50,30 @@ Deno.serve(async (req) => {
         link: `/rezervari?rental_id=${r.id}`,
       });
       notified++;
+
+      // SMS to renter (best-effort)
+      try {
+        const { data: ownerProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", r.owner_id)
+          .maybeSingle();
+
+        await supabase.functions.invoke("send-sms-notification", {
+          body: {
+            templateKey: "return_reminder",
+            userId: r.renter_id,
+            rentalId: r.id,
+            variables: {
+              productTitle,
+              ownerName: ownerProfile?.full_name || "proprietarul",
+            },
+            idempotencyKey: `return_reminder:${r.id}:${today}`,
+          },
+        });
+      } catch (e) {
+        console.error("[notify-return-day] SMS invoke failed:", e);
+      }
     }
 
     return new Response(JSON.stringify({ processed: rentals?.length || 0, notified }), {
