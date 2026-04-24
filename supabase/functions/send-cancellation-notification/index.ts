@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
         title_en: `Request cancelled: ${productTitle}`,
         description_ro: `Chiriașul a anulat cererea de închiriere pentru "${productTitle}" (${startDateStr} - ${endDateStr}).`,
         description_en: `The renter cancelled the rental request for "${productTitle}" (${startDateStr} - ${endDateStr}).`,
-        link: "/anunturi",
+        link: "/inchirieri",
       }).catch((e: unknown) => console.error("Notification insert error:", e));
     }
 
