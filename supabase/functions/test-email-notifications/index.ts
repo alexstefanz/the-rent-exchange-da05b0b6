@@ -6,7 +6,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const TEST_EMAIL = "z.alexstefan@gmail.com";
+const DEFAULT_TEST_EMAIL = "z.alexstefan@gmail.com";
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const TEST_TEMPLATES: Record<string, { templateName: string; templateData?: Record<string, any> }> = {
   welcome: { templateName: 'welcome', templateData: { name: 'Alexandru' } },
@@ -29,13 +30,26 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { type } = await req.json();
+    const { type, recipientEmail } = await req.json();
 
     if (!type || !TEST_TEMPLATES[type]) {
       return new Response(
         JSON.stringify({ error: `Invalid type. Available: ${Object.keys(TEST_TEMPLATES).join(", ")}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // Validate recipient email or fallback to default
+    let finalRecipient = DEFAULT_TEST_EMAIL;
+    if (typeof recipientEmail === "string" && recipientEmail.trim()) {
+      const candidate = recipientEmail.trim().toLowerCase();
+      if (!EMAIL_REGEX.test(candidate) || candidate.length > 254) {
+        return new Response(
+          JSON.stringify({ error: "Invalid recipientEmail format" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      finalRecipient = candidate;
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -55,8 +69,8 @@ Deno.serve(async (req) => {
     const { data, error } = await supabase.functions.invoke('send-transactional-email', {
       body: {
         templateName: testConfig.templateName,
-        recipientEmail: TEST_EMAIL,
-        idempotencyKey: `test-${type}-${Date.now()}`,
+        recipientEmail: finalRecipient,
+        idempotencyKey: `test-${type}-${finalRecipient.replace(/[^a-z0-9]/gi, "_")}-${Date.now()}`,
         templateData: testConfig.templateData || {},
       },
     });
