@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { TicketCheck, Search, Clock, AlertTriangle, Plus, ChevronDown, ChevronUp, ExternalLink, Tag, Calendar } from "lucide-react";
+import { TicketCheck, Search, Clock, AlertTriangle, Plus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useOpsTickets } from "@/hooks/queries/useOpsTickets";
 import {
@@ -38,38 +37,10 @@ const priorityColors: Record<string, string> = {
   URGENT: "bg-red-100 text-red-800",
 };
 
-const TicketExpandedPanel = ({ ticket, onViewDetails }: { ticket: any; onViewDetails: () => void }) => (
-  <div className="p-4 space-y-3 bg-muted/30 border-t">
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-      <div className="flex items-center gap-2">
-        <Tag className="h-4 w-4 text-muted-foreground" />
-        <span className="text-muted-foreground">Categorie:</span>
-        <span className="font-medium">{CATEGORY_GROUP_LABELS[ticket.category_group] || ticket.category_group}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
-        <span className="text-muted-foreground">Data:</span>
-        <span className="font-medium">{format(new Date(ticket.created_at), 'd MMM yyyy HH:mm', { locale: ro })}</span>
-      </div>
-      {ticket.priority === 'URGENT' && ticket.status === 'NEW' && differenceInHours(new Date(), new Date(ticket.created_at)) >= 2 && (
-        <div className="col-span-2 flex items-center gap-2 text-destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <span className="font-medium">SLA depășit!</span>
-        </div>
-      )}
-    </div>
-    <Separator />
-    <Button size="sm" variant="outline" onClick={onViewDetails}>
-      <ExternalLink className="h-4 w-4 mr-1" /> Vezi detalii ticket
-    </Button>
-  </div>
-);
-
 const AdminTickets = () => {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<FetchTicketsFilters>({});
   const [searchInput, setSearchInput] = useState("");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const { data: tickets, isLoading } = useOpsTickets(filters);
 
   const handleSearch = () => {
@@ -89,7 +60,7 @@ const AdminTickets = () => {
   const isUnread = (ticket: { status: string; updated_at: string; last_admin_read_at: string | null }) =>
     !['CLOSED', 'RESOLVED'].includes(ticket.status) &&
     (!ticket.last_admin_read_at || new Date(ticket.last_admin_read_at) < new Date(ticket.updated_at));
-  const toggleExpand = (id: string) => setExpandedId(prev => prev === id ? null : id);
+  const goToTicket = (id: string) => navigate(`/admin/tickets/${id}`);
 
   return (
     <AdminLayout>
@@ -192,37 +163,28 @@ const AdminTickets = () => {
                     </TableHeader>
                     <TableBody>
                       {tickets.map(ticket => (
-                        <>
-                          <TableRow key={ticket.id} className="cursor-pointer hover:bg-muted/50" onClick={() => toggleExpand(ticket.id)}>
-                            <TableCell className="font-mono text-xs">{ticket.public_id}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                {isUnread(ticket) && <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" aria-label="necitit" />}
-                                <p className={`line-clamp-1 ${isUnread(ticket) ? 'font-bold text-foreground' : 'font-medium text-muted-foreground'}`}>{ticket.title}</p>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-sm">{CATEGORY_GROUP_LABELS[ticket.category_group] || ticket.category_group}</TableCell>
-                            <TableCell>
-                              <Badge className={priorityColors[ticket.priority] || ''}>{getPriorityLabel(ticket.priority)}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              <Badge className={statusColors[ticket.status] || ''}>{getStatusLabel(ticket.status)}</Badge>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
-                              {format(new Date(ticket.created_at), 'd MMM yyyy', { locale: ro })}
-                            </TableCell>
-                            <TableCell>
-                              {isSlaBreached(ticket) && <AlertTriangle className="h-4 w-4 text-red-500" />}
-                            </TableCell>
-                          </TableRow>
-                          {expandedId === ticket.id && (
-                            <TableRow key={`${ticket.id}-expand`}>
-                              <TableCell colSpan={7} className="p-0">
-                                <TicketExpandedPanel ticket={ticket} onViewDetails={() => navigate(`/admin/tickets/${ticket.id}`)} />
-                              </TableCell>
-                            </TableRow>
-                          )}
-                        </>
+                        <TableRow key={ticket.id} className="cursor-pointer hover:bg-muted/50" onClick={() => goToTicket(ticket.id)}>
+                          <TableCell className="font-mono text-xs">{ticket.public_id}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {isUnread(ticket) && <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" aria-label="necitit" />}
+                              <p className={`line-clamp-1 ${isUnread(ticket) ? 'font-bold text-foreground' : 'font-medium text-muted-foreground'}`}>{ticket.title}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm">{CATEGORY_GROUP_LABELS[ticket.category_group] || ticket.category_group}</TableCell>
+                          <TableCell>
+                            <Badge className={priorityColors[ticket.priority] || ''}>{getPriorityLabel(ticket.priority)}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={statusColors[ticket.status] || ''}>{getStatusLabel(ticket.status)}</Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+                            {format(new Date(ticket.created_at), 'd MMM yyyy', { locale: ro })}
+                          </TableCell>
+                          <TableCell>
+                            {isSlaBreached(ticket) && <AlertTriangle className="h-4 w-4 text-red-500" />}
+                          </TableCell>
+                        </TableRow>
                       ))}
                     </TableBody>
                   </Table>
@@ -231,8 +193,8 @@ const AdminTickets = () => {
                 {/* Mobile cards */}
                 <div className="md:hidden space-y-3">
                   {tickets.map(ticket => (
-                    <Card key={ticket.id} className="overflow-hidden">
-                      <div className="p-3 cursor-pointer flex items-center justify-between" onClick={() => toggleExpand(ticket.id)}>
+                    <Card key={ticket.id} className="overflow-hidden cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => goToTicket(ticket.id)}>
+                      <div className="p-3 flex items-center justify-between">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             {isUnread(ticket) && <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" aria-label="necitit" />}
@@ -244,12 +206,8 @@ const AdminTickets = () => {
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <Badge className={`${priorityColors[ticket.priority] || ''} text-[10px]`}>{getPriorityLabel(ticket.priority)}</Badge>
                           <Badge className={`${statusColors[ticket.status] || ''} text-[10px]`}>{getStatusLabel(ticket.status)}</Badge>
-                          {expandedId === ticket.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                         </div>
                       </div>
-                      {expandedId === ticket.id && (
-                        <TicketExpandedPanel ticket={ticket} onViewDetails={() => navigate(`/admin/tickets/${ticket.id}`)} />
-                      )}
                     </Card>
                   ))}
                 </div>
