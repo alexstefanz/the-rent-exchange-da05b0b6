@@ -6,8 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SMS_API_URL = "https://www.smsalert.mobi/api/v2/message/send";
-const SMS_SENDER = "Rentli";
+const SMS_API_URL = "https://smsalert.mobi/api/v2/message/send";
 const PLATFORM_URL = "rentli.ro";
 
 type TemplateKey =
