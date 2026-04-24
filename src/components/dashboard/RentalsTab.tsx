@@ -83,8 +83,33 @@ const RentalsTab = () => {
     enabled: !!user?.id,
   });
 
+  // Find rentals with renter checkin inspection already uploaded
+  const rentalIds = rentals.map(r => r.id);
+  const { data: renterCheckinIds = new Set<string>() } = useQuery({
+    queryKey: ["my-renter-checkin-inspections", user?.id, rentalIds],
+    queryFn: async () => {
+      if (!user?.id || rentalIds.length === 0) return new Set<string>();
+      const { data, error } = await supabase
+        .from("rental_inspections")
+        .select("rental_id")
+        .in("rental_id", rentalIds)
+        .eq("phase", "checkin")
+        .eq("role", "renter")
+        .eq("user_id", user.id);
+      if (error) return new Set<string>();
+      return new Set((data || []).map((r: any) => r.rental_id as string));
+    },
+    enabled: !!user?.id && rentalIds.length > 0,
+  });
+
   const activeRentals = rentals.filter(r => r.status === "confirmed" || r.status === "active");
-  const completedRentals = rentals.filter(r => r.status === "completed");
+  // completed rentals where renter hasn't yet documented hand-back stay actionable
+  const completedAwaitingCheckin = rentals.filter(
+    r => r.status === "completed" && !renterCheckinIds.has(r.id)
+  );
+  const completedRentals = rentals.filter(
+    r => r.status === "completed" && renterCheckinIds.has(r.id)
+  );
   const awaitingOwnerRentals = rentals.filter(
     r => r.status === "pending" && (r.payment_status === "authorized" || r.payment_status === "paid")
   );
