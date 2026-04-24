@@ -57,10 +57,16 @@ const Index = () => {
 
       <section className="relative overflow-hidden h-[78svh] md:h-[500px]">
         <picture>
-          <source media="(max-width: 768px)" srcSet="/images/banner_hero_mobile.webp" type="image/webp" />
+          <source
+            media="(max-width: 768px)"
+            type="image/webp"
+            srcSet="/images/banner_hero_mobile.webp 1x, /images/banner_hero_mobile@2x.webp 2x, /images/banner_hero_mobile@3x.webp 3x"
+          />
           <img
             src="/images/banner_hero.webp"
             alt=""
+            width={1920}
+            height={1088}
             fetchPriority="high"
             decoding="async"
             className="absolute inset-0 w-full h-[130%] object-cover"
