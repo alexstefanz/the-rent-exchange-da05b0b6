@@ -200,7 +200,7 @@ Deno.serve(async (req) => {
             "Authorization": `Basic ${auth}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ to: normalizedOverride, message, sender: SMS_SENDER }),
+          body: JSON.stringify({ phoneNumber: normalizedOverride, message, cleanupUtf8: true }),
         });
         providerStatus = res.status;
         providerText = await res.text();
@@ -289,12 +289,12 @@ Deno.serve(async (req) => {
       return jsonResponse({ success: true, skipped: "invalid_phone" });
     }
 
-    // Send via SMS Alert API (Basic Auth)
+    // Send via SMS Alert API (Basic Auth, JSON body with phoneNumber field)
     const auth = btoa(`${username}:${apiKey}`);
     const payload = {
-      to: normalized,
+      phoneNumber: normalized,
       message,
-      sender: SMS_SENDER,
+      cleanupUtf8: true,
     };
 
     let providerStatus = 0;
