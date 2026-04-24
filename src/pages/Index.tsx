@@ -55,7 +55,7 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <section className="relative overflow-hidden h-[500px]">
+      <section className="relative overflow-hidden h-[100svh] md:h-[500px]">
         <picture>
           <source media="(max-width: 768px)" srcSet="/images/banner_hero_mobile.webp" type="image/webp" />
           <img
