@@ -107,6 +107,7 @@ const IbanForm = ({ userId, profile, onSaved }: { userId?: string; profile: any;
 const AccountTab = () => {
   const { user } = useAuth();
   const { t } = useLanguage();
+  const ux = useUxCopy();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isResettingPassword, setIsResettingPassword] = useState(false);
@@ -114,6 +115,7 @@ const AccountTab = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isSavingSms, setIsSavingSms] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ProfileFormData>({
