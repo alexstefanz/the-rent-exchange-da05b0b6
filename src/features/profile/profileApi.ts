@@ -16,6 +16,7 @@ export interface Profile {
   cui: string | null;
   reg_com: string | null;
   company_address: string | null;
+  sms_notifications_enabled?: boolean;
 }
 
 export const getProfile = async (userId: string): Promise<Profile | null> => {
@@ -60,7 +61,7 @@ export const createProfile = async (
 
 export const updateProfile = async (
   userId: string,
-  data: { full_name?: string; phone?: string; email?: string; whatsapp?: string; avatar_url?: string; account_type?: string; company_name?: string; cui?: string; reg_com?: string; company_address?: string }
+  data: { full_name?: string; phone?: string; email?: string; whatsapp?: string; avatar_url?: string; account_type?: string; company_name?: string; cui?: string; reg_com?: string; company_address?: string; sms_notifications_enabled?: boolean }
 ): Promise<Profile> => {
   const { data: profile, error } = await supabase
     .from("profiles")
