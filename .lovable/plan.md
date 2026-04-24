@@ -1,43 +1,39 @@
 
 
-## Plan: Adaugă numele produsului în notificarea „Câștig adăugat în balanță"
+## Plan: Hero full-screen pe mobil + formular cu 25% mai înalt
 
-### Problemă
+### Context
 
-Notificarea de payout pentru proprietar afișează doar suma:
-> „Ai primit 2 RON din închiriere."
-
-Proprietarul nu știe **de la ce produs** provin banii. Util mai ales când are mai multe anunțuri active.
-
-### Soluție
-
-Modific trigger-ul `notify_user_payout()` din baza de date să facă lookup pe `rentals` → `products` plecând de la `NEW.rental_id` și să includă titlul produsului în descriere.
-
-**Format nou:**
-- RO: „Ai primit 2 RON pentru închirierea „Laptop gaming"."
-- EN: „You received 2 RON for the rental of „Laptop gaming"."
-
-Dacă produsul a fost între timp șters sau `rental_id` lipsește (caz rar), revin la textul generic actual ca fallback.
+Pe mobil, secțiunea hero are înălțime fixă `h-[500px]` (vezi `Index.tsx`). Vizibil sub fold apare deja USP-ul portocaliu, deci hero-ul nu acoperă tot ecranul la prima încărcare. În plus, containerul formularului (`HeroSearchForm.tsx`) folosește `p-4` și inputurile au `py-2` — utilizatorul vrea 25% mai mult spațiu vertical doar pe mobil.
 
 ### Modificări
 
-**Migrație SQL nouă:** `CREATE OR REPLACE FUNCTION public.notify_user_payout()` cu:
-- `SELECT p.title INTO v_product_title FROM rentals r JOIN products p ON p.id = r.product_id WHERE r.id = NEW.rental_id`
-- Construiesc descrierea cu `v_product_title` dacă există, altfel fallback la formularea veche.
-- Linkul rămâne `/castiguri`.
+#### 1. `src/pages/Index.tsx` — secțiunea hero full-screen pe mobil
 
-Linkul ar putea opțional să ducă direct la rezervarea respectivă (`/inchirieri-emise?rental={id}`), dar păstrez `/castiguri` pentru a fi consistent cu fluxul existent unde proprietarul vede balanța și sursele câștigurilor.
+- Înlocuiesc `h-[500px]` cu `h-[100svh] md:h-[500px]` pe `<section>`-ul hero, astfel încât:
+  - Pe mobil ocupă întreaga înălțime vizibilă a ecranului la prima încărcare (`100svh` = small viewport height, evită saltul cauzat de bara de adrese a browserului).
+  - Pe desktop păstrează exact 500px ca acum.
+- Imaginea de parallax rămâne `h-[130%]` (relativ la container), deci nu trebuie atinsă.
+
+#### 2. `src/components/HeroSearchForm.tsx` — formular cu 25% înălțime suplimentară pe mobil
+
+Aplic creșteri doar pe breakpoint-ul mobil, păstrând layout-ul actual `md:` neatins:
+
+- **Container form**: `p-4` → `p-5` pe mobil (păstrez `md:p-2`); cresc gap-ul vertical: `gap-2` → `gap-3`.
+- **Câmpurile (search, județ, localitate)**: `py-2` → `py-3` pe fiecare wrapper de input/selector (păstrez `md:py-0`).
+- **Butonul „Caută"**: `py-3` → `py-4` pe mobil (păstrez aspectul desktop neschimbat).
+
+Aceste creșteri cumulate (~25% padding vertical adițional pe container și pe fiecare câmp) extind înălțimea totală a formularului cu aproximativ 25% pe mobil, fără să afecteze versiunea desktop.
 
 ### Fișiere afectate
 
 | Fișier | Modificare |
 |---|---|
-| `supabase/migrations/<new>.sql` | Rescriu `notify_user_payout()` să includă titlul produsului din `rentals` → `products` |
+| `src/pages/Index.tsx` | Hero `h-[500px]` → `h-[100svh] md:h-[500px]` |
+| `src/components/HeroSearchForm.tsx` | Pe mobil: container `p-4`→`p-5`, `gap-2`→`gap-3`; câmpuri `py-2`→`py-3`; buton `py-3`→`py-4` |
 
 ### Rezultat
 
-Notificările viitoare de tip „Câștig adăugat în balanță" vor afișa explicit numele produsului care a generat câștigul, ex.:
-> „Ai primit 2 RON pentru închirierea „Laptop gaming"."
-
-Notificările vechi rămân neschimbate (textul e stocat la momentul creării).
+- La prima încărcare pe mobil, secțiunea hero (imagine + titlu + formular) ocupă tot ecranul — USP-ul portocaliu apare doar după ce utilizatorul derulează.
+- Containerul cu formularul de căutare și toate câmpurile/butonul sunt cu ~25% mai înalte pe mobil, oferind o atingere mai confortabilă; pe desktop nimic nu se schimbă.
 
