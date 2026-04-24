@@ -13,7 +13,8 @@ import {
   FolderTree,
   MessageCircle,
   Mail,
-  Bell
+  Bell,
+  MessageSquare
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAdminNotificationSummary } from "@/hooks/queries/useAdminNotifications";
@@ -56,6 +57,7 @@ const menuItems: Array<{
   { title: "Utilizatori", url: "/admin/users", icon: Users },
   { title: "Verificări KYC", url: "/admin/kyc", icon: ShieldCheck, badgeKey: "pending_kyc" },
   { title: "Test Emailuri", url: "/admin/test-emails", icon: Mail },
+  { title: "SMS Logs", url: "/admin/sms-logs", icon: MessageSquare },
 ];
 
 const AdminSidebar = () => {

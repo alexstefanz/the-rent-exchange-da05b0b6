@@ -77,6 +77,7 @@ const AdminConversationDetail = lazy(() => import("./pages/admin/AdminConversati
 const AdminApprovals = lazy(() => import("./pages/admin/AdminApprovals"));
 const AdminTestEmails = lazy(() => import("./pages/admin/AdminTestEmails"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
+const AdminSmsLogs = lazy(() => import("./pages/admin/AdminSmsLogs"));
 
 const queryClient = new QueryClient();
 
@@ -159,6 +160,7 @@ const App = () => (
                 <Route path="/admin/conversations/:id" element={<AdminConversationDetail />} />
                 <Route path="/admin/approvals" element={<AdminApprovals />} />
                 <Route path="/admin/test-emails" element={<AdminTestEmails />} />
+                <Route path="/admin/sms-logs" element={<AdminSmsLogs />} />
                 
                 {/* Integration tests */}
                 <Route path="/minicrm-test" element={<MiniCrmTest />} />
