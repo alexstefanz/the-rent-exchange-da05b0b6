@@ -10,6 +10,7 @@ import {
   Package,
   TicketCheck,
   FolderTree,
+  MessageSquare,
 } from "lucide-react";
 
 const menuItems = [
@@ -22,6 +23,7 @@ const menuItems = [
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Utilizatori", url: "/admin/users", icon: Users },
   { title: "Verificări KYC", url: "/admin/kyc", icon: ShieldCheck },
+  { title: "SMS Logs", url: "/admin/sms-logs", icon: MessageSquare },
 ];
 
 interface MobileAdminMenuProps {
