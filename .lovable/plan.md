@@ -1,39 +1,39 @@
 
 
-## Plan: Hero full-screen pe mobil + formular cu 25% mai înalt
+## Plan: Hero mai mic pe mobil + formular cu încă 25% mai înalt
 
 ### Context
 
-Pe mobil, secțiunea hero are înălțime fixă `h-[500px]` (vezi `Index.tsx`). Vizibil sub fold apare deja USP-ul portocaliu, deci hero-ul nu acoperă tot ecranul la prima încărcare. În plus, containerul formularului (`HeroSearchForm.tsx`) folosește `p-4` și inputurile au `py-2` — utilizatorul vrea 25% mai mult spațiu vertical doar pe mobil.
+În prezent, hero-ul ocupă tot ecranul pe mobil (`h-[100svh]`) — bara cu USP-uri (Plăți securizate, Utilizatori verificați, Asigurare inclusă, Suport dedicat) nu se vede la prima încărcare. Utilizatorul vrea ca bara USP să fie vizibilă din start, deci hero-ul trebuie redus în înălțime. În același timp, formularul de căutare trebuie mărit cu încă ~25% pentru a rămâne proeminent.
 
 ### Modificări
 
-#### 1. `src/pages/Index.tsx` — secțiunea hero full-screen pe mobil
+#### 1. `src/pages/Index.tsx` — hero mai scurt pe mobil
 
-- Înlocuiesc `h-[500px]` cu `h-[100svh] md:h-[500px]` pe `<section>`-ul hero, astfel încât:
-  - Pe mobil ocupă întreaga înălțime vizibilă a ecranului la prima încărcare (`100svh` = small viewport height, evită saltul cauzat de bara de adrese a browserului).
-  - Pe desktop păstrează exact 500px ca acum.
-- Imaginea de parallax rămâne `h-[130%]` (relativ la container), deci nu trebuie atinsă.
+- Schimb `h-[100svh] md:h-[500px]` → `h-[78svh] md:h-[500px]` pe `<section>`-ul hero.
+  - 78svh lasă ~22% din viewport vizibil sub fold, suficient pentru a arăta complet bara USP portocalie (~50–60px) plus o sugestie din secțiunea „Categorii populare" care invită la scroll.
+  - Desktop rămâne neschimbat (500px).
 
-#### 2. `src/components/HeroSearchForm.tsx` — formular cu 25% înălțime suplimentară pe mobil
+#### 2. `src/components/HeroSearchForm.tsx` — formular cu încă 25% înălțime pe mobil
 
-Aplic creșteri doar pe breakpoint-ul mobil, păstrând layout-ul actual `md:` neatins:
+Aplic creșteri suplimentare doar pe mobil, păstrând layout-ul desktop intact:
 
-- **Container form**: `p-4` → `p-5` pe mobil (păstrez `md:p-2`); cresc gap-ul vertical: `gap-2` → `gap-3`.
-- **Câmpurile (search, județ, localitate)**: `py-2` → `py-3` pe fiecare wrapper de input/selector (păstrez `md:py-0`).
-- **Butonul „Caută"**: `py-3` → `py-4` pe mobil (păstrez aspectul desktop neschimbat).
+- **Container form**: `p-5` → `p-6` (mobil), păstrez `md:p-2`. Cresc `gap-3` → `gap-4`.
+- **Wrappere câmpuri** (search, județ, localitate): `py-3` → `py-4` (mobil), păstrez `md:py-0`.
+- **Buton „Caută"**: `py-4` → `py-5` (mobil), păstrez `md:py-3`.
+- **Inputurile/textele**: cresc puțin tipografia mobilă pentru consistență vizuală cu containerul mai înalt: butonul „Caută" devine `text-base` pe mobil (rămâne implicit pe desktop).
 
-Aceste creșteri cumulate (~25% padding vertical adițional pe container și pe fiecare câmp) extind înălțimea totală a formularului cu aproximativ 25% pe mobil, fără să afecteze versiunea desktop.
+Cumulat, padding-ul vertical și gap-urile cresc cu ~25% față de versiunea curentă pe mobil.
 
 ### Fișiere afectate
 
 | Fișier | Modificare |
 |---|---|
-| `src/pages/Index.tsx` | Hero `h-[500px]` → `h-[100svh] md:h-[500px]` |
-| `src/components/HeroSearchForm.tsx` | Pe mobil: container `p-4`→`p-5`, `gap-2`→`gap-3`; câmpuri `py-2`→`py-3`; buton `py-3`→`py-4` |
+| `src/pages/Index.tsx` | Hero `h-[100svh] md:h-[500px]` → `h-[78svh] md:h-[500px]` |
+| `src/components/HeroSearchForm.tsx` | Pe mobil: container `p-5`→`p-6`, `gap-3`→`gap-4`; câmpuri `py-3`→`py-4`; buton `py-4`→`py-5` cu `text-base` |
 
 ### Rezultat
 
-- La prima încărcare pe mobil, secțiunea hero (imagine + titlu + formular) ocupă tot ecranul — USP-ul portocaliu apare doar după ce utilizatorul derulează.
-- Containerul cu formularul de căutare și toate câmpurile/butonul sunt cu ~25% mai înalte pe mobil, oferind o atingere mai confortabilă; pe desktop nimic nu se schimbă.
+- La prima încărcare pe mobil, sub hero apare deja vizibilă bara USP completă (Plăți securizate, Utilizatori verificați, Asigurare inclusă, Suport dedicat).
+- Formularul de căutare devine cu încă ~25% mai înalt și mai confortabil de atins, fără modificări pe desktop.
 
