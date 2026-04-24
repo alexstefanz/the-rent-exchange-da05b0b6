@@ -1,49 +1,35 @@
 
 
-## Plan: Cereri anulate — fix etichetă + acordeon
+## Plan: „Discută cu chiriașul" → deschide pagina de mesaje
 
 ### Problemă
 
-În secțiunea „Cereri anulate" (`/cereri`):
-1. Iconul roșu cu X afișează textul **„Cerere aprobată"** — greșit. Trebuie **„Cerere respinsă"**.
-2. Sub timeline mai apar pașii ulteriori (În tranzit, În uz, etc.) — nu au sens pentru o cerere respinsă.
-3. Lista de cereri anulate ocupă mult spațiu — trebuie ascunsă într-un acordeon.
+În dialogul „Cerere acceptată!" (`AcceptedRentalDialog`), butonul **„Discută cu chiriașul"** deschide un al doilea pop-up (`ChatDialog`) suprapus peste dialog. Utilizatorul vrea să fie dus în pagina dedicată `/mesaje` cu conversația selectată — experiență consistentă cu restul platformei (mesageria split-view desktop / fullscreen mobile).
 
-### Cauză
+### Modificare
 
-În `src/components/dashboard/RentalTimeline.tsx`, când `status === "cancelled"`, componenta marchează step 2 (= „Cerere aprobată" din `copy.timeline.requestApproved`) ca step „cancelled" cu X roșu — dar păstrează eticheta originală.
+**`src/components/dashboard/AcceptedRentalDialog.tsx`**
 
-### Modificări
+În `handleStartChat`:
+- Caut conversația existentă între owner (user curent) și renter pentru produsul respectiv (filtrare corectă: `product_id` + `buyer_id = renter_id` + `owner_id = current user`).
+- Dacă există → închid dialogul curent și navighez la `/mesaje?conv={id}` (pagina Messages auto-selectează conversația din query param — logica deja există în `src/pages/Messages.tsx`).
+- Dacă nu există → navighez la `/mesaje` simplu (owner-ul nu poate crea conversații conform RLS — comportamentul actual).
 
-#### 1. `src/components/dashboard/RequestsTab.tsx`
-- Înlocuiesc cardurile din secțiunea „Cereri anulate" cu un **acordeon colapsat** (`<Accordion>` din `@/components/ui/accordion`) — titlu „Cereri anulate ({count})", inițial închis.
-- În interiorul acordeonului, păstrez aceeași listă de carduri, dar **elimin complet `<RentalTimeline>` și `divider-ul** asociat. Cardul anulat va arăta:
-  - imagine produs
-  - titlu + StatusBadge „Anulată"
-  - perioadă (Calendar + date)
-  - sumă (text muted)
-  - opțional: mesaj „💸 Banii au fost returnați" dacă `refunded_at` există
-- Fără timeline → fără confuzie cu „Cerere aprobată".
+Înlocuiesc `window.location.href` cu `useNavigate` pentru tranziție SPA fluidă (fără full reload).
 
-#### 2. `src/components/dashboard/RentalTimeline.tsx`
-Pentru consistență (timeline-ul mai e folosit pe `RentalsPage`, `RentalsOutTab`, etc., unde un rental respins/anulat poate apărea):
-- Schimb logica: când `cancelled === true`, label-ul step-ului curent devine **„Cerere respinsă"** (RO) / **„Request rejected"** (EN), nu se mai afișează pașii ulteriori (`isUpcoming` rămâne stilizat ca muted, dar e ok să rămână vizibili pentru context — sau îi pot **ascunde complet** dacă cancelled).
-- Decizie: când `cancelled`, **afișez doar pașii 1 + 2** (Cerere trimisă → Cerere respinsă cu X roșu), restul nu mai sunt randate. Mai curat vizual.
+### Curățare cod nefolosit
 
-#### 3. `src/data/uxCopy.ts`
-- Adaug intrarea `timeline.requestRejected` cu RO „Cerere respinsă" / EN „Request rejected".
+- Elimin importul `ChatDialog` și state-urile `chatOpen` / `chatConversationId` (nu mai sunt folosite).
+- Elimin blocul `<ChatDialog>` din JSX-ul de la final.
+- Păstrez `startingChat` pentru loading state pe buton.
 
 ### Fișiere afectate
 
 | Fișier | Modificare |
 |---|---|
-| `src/components/dashboard/RequestsTab.tsx` | Wrap „Cereri anulate" în Accordion; elimin `<RentalTimeline>` din carduri |
-| `src/components/dashboard/RentalTimeline.tsx` | La `cancelled`, afișez doar pașii 1+2; label step 2 devine „Cerere respinsă" |
-| `src/data/uxCopy.ts` | Adaug cheia `timeline.requestRejected` (RO/EN) |
+| `src/components/dashboard/AcceptedRentalDialog.tsx` | Înlocuiesc deschiderea `ChatDialog` cu navigare la `/mesaje?conv={id}`; curăț cod nefolosit |
 
 ### Rezultat
 
-- Cardurile anulate sunt grupate sub acordeon „Cereri anulate ({n})" colapsat by default.
-- Cardurile din interior nu mai au timeline — doar info esențială (poză, titlu, perioadă, sumă, refund).
-- În alte locuri din app unde timeline-ul apare pentru un rental anulat, X roșu va fi etichetat corect „Cerere respinsă" și pașii 3-6 nu mai apar.
+Click pe „Discută cu chiriașul" închide dialogul „Cerere acceptată" și deschide pagina de mesaje cu conversația respectivă deja selectată — fără pop-up suprapus.
 
