@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,6 @@ import { ro } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ChatDialog } from "@/components/messaging/ChatDialog";
 import type { OwnerRental } from "@/features/rentals/ownerRentalsApi";
 
 interface AcceptedRentalDialogProps {
@@ -26,8 +25,7 @@ interface AcceptedRentalDialogProps {
 }
 
 export function AcceptedRentalDialog({ rental, open, onOpenChange, onCancelled }: AcceptedRentalDialogProps) {
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatConversationId, setChatConversationId] = useState<string | null>(null);
+  const navigate = useNavigate();
   const [startingChat, setStartingChat] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
@@ -58,20 +56,19 @@ export function AcceptedRentalDialog({ rental, open, onOpenChange, onCancelled }
     if (!rental.renter_id || !rental.product_id) return;
     setStartingChat(true);
     try {
-      // Check if conversation already exists (owner or buyer perspective)
+      // Find existing conversation for this product where the renter is the buyer
       const { data: existing } = await supabase
         .from("conversations")
         .select("id")
         .eq("product_id", rental.product_id)
-        .or(`buyer_id.eq.${rental.renter_id},owner_id.eq.${rental.renter_id}`)
+        .eq("buyer_id", rental.renter_id)
         .maybeSingle();
 
+      onOpenChange(false);
       if (existing) {
-        setChatConversationId(existing.id);
-        setChatOpen(true);
+        navigate(`/mesaje?conv=${existing.id}`);
       } else {
-        // Navigate to messages page since owner can't create conversation (RLS: buyer_id must match auth.uid)
-        window.location.href = "/mesaje";
+        navigate("/mesaje");
       }
     } catch (e) {
       console.error(e);
