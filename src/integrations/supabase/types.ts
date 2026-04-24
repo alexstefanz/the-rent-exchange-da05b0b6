@@ -936,6 +936,7 @@ export type Database = {
           kyc_status: string
           phone: string | null
           reg_com: string | null
+          sms_notifications_enabled: boolean
           whatsapp: string | null
         }
         Insert: {
@@ -962,6 +963,7 @@ export type Database = {
           kyc_status?: string
           phone?: string | null
           reg_com?: string | null
+          sms_notifications_enabled?: boolean
           whatsapp?: string | null
         }
         Update: {
@@ -988,6 +990,7 @@ export type Database = {
           kyc_status?: string
           phone?: string | null
           reg_com?: string | null
+          sms_notifications_enabled?: boolean
           whatsapp?: string | null
         }
         Relationships: []
@@ -1133,6 +1136,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      sms_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          idempotency_key: string
+          message_body: string
+          provider_message_id: string | null
+          provider_response: Json | null
+          recipient_phone: string
+          rental_id: string | null
+          status: string
+          template_key: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          idempotency_key: string
+          message_body: string
+          provider_message_id?: string | null
+          provider_response?: Json | null
+          recipient_phone: string
+          rental_id?: string | null
+          status: string
+          template_key: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          idempotency_key?: string
+          message_body?: string
+          provider_message_id?: string | null
+          provider_response?: Json | null
+          recipient_phone?: string
+          rental_id?: string | null
+          status?: string
+          template_key?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       support_tickets: {
         Row: {
