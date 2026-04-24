@@ -220,6 +220,25 @@ Deno.serve(async (req) => {
       await Promise.all(emailPromises);
     }
 
+    // SMS to owner (cancellation by renter) — best-effort
+    if (rental.owner_id) {
+      try {
+        await supabase.functions.invoke("send-sms-notification", {
+          body: {
+            templateKey: "rental_cancelled",
+            userId: rental.owner_id,
+            rentalId: rental.id,
+            variables: {
+              productTitle: productRes.data?.title || "produsul",
+            },
+            idempotencyKey: `rental_cancelled:${rental.id}:${rental.owner_id}`,
+          },
+        });
+      } catch (e) {
+        console.error("[send-cancellation-notification] SMS invoke failed:", e);
+      }
+    }
+
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
