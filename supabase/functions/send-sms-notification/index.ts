@@ -6,8 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SMS_API_URL = "https://www.smsalert.mobi/api/v2/message/send";
-const SMS_SENDER = "Rentli";
+const SMS_API_URL = "https://smsalert.mobi/api/v2/message/send";
 const PLATFORM_URL = "rentli.ro";
 
 type TemplateKey =
@@ -100,12 +99,14 @@ Deno.serve(async (req) => {
       rentalId,
       variables,
       idempotencyKey,
+      phoneOverride,
     } = body as {
       templateKey?: TemplateKey;
       userId?: string;
       rentalId?: string | null;
       variables?: TemplateVars;
       idempotencyKey?: string;
+      phoneOverride?: string;
     };
 
     // Validation
@@ -138,6 +139,29 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // Admin-only override: allows sending to a custom phone number for testing.
+    // Bypasses profile checks (banned, opt-out) but requires verified admin JWT.
+    let overrideAdminId: string | null = null;
+    if (phoneOverride && typeof phoneOverride === "string") {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader?.startsWith("Bearer ")) {
+        return jsonResponse({ error: "phoneOverride requires admin authentication" }, 401);
+      }
+      const token = authHeader.replace("Bearer ", "");
+      const { data: userData, error: userErr } = await supabase.auth.getUser(token);
+      if (userErr || !userData?.user?.id) {
+        return jsonResponse({ error: "Invalid admin token" }, 401);
+      }
+      const { data: isAdmin, error: roleErr } = await supabase.rpc("has_role", {
+        _user_id: userData.user.id,
+        _role: "admin",
+      });
+      if (roleErr || isAdmin !== true) {
+        return jsonResponse({ error: "phoneOverride requires admin role" }, 403);
+      }
+      overrideAdminId = userData.user.id;
+    }
+
     // Idempotency check
     const { data: existing } = await supabase
       .from("sms_logs")
@@ -148,6 +172,75 @@ Deno.serve(async (req) => {
     if (existing) {
       console.log(`[send-sms-notification] Cache hit for ${idempotencyKey} (status=${existing.status})`);
       return jsonResponse({ success: true, cached: true, status: existing.status });
+    }
+
+    const message = renderTemplate(templateKey, variables || {});
+
+    // === ADMIN OVERRIDE PATH ===
+    if (phoneOverride && overrideAdminId) {
+      const normalizedOverride = normalizePhoneRO(phoneOverride);
+      if (!normalizedOverride) {
+        return jsonResponse({ error: "Invalid phoneOverride format" }, 400);
+      }
+
+      const username = Deno.env.get("SMS_ALERT_USERNAME")!;
+      const apiKey = Deno.env.get("SMS_ALERT_API_KEY")!;
+      const auth = btoa(`${username}:${apiKey}`);
+
+      let providerStatus = 0;
+      let providerJson: unknown = null;
+      let providerText = "";
+      let networkError: string | null = null;
+
+      try {
+        const res = await fetch(SMS_API_URL, {
+          method: "POST",
+          headers: {
+            "Authorization": `Basic ${auth}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ phoneNumber: normalizedOverride, message, cleanupUtf8: true }),
+        });
+        providerStatus = res.status;
+        providerText = await res.text();
+        try { providerJson = JSON.parse(providerText); } catch { providerJson = { raw: providerText }; }
+      } catch (e) {
+        networkError = String((e as Error).message);
+        console.error("[send-sms-notification] OVERRIDE network error:", networkError);
+      }
+
+      const okOv = !networkError && providerStatus >= 200 && providerStatus < 300;
+      const providerMessageIdOv =
+        (providerJson && typeof providerJson === "object" &&
+          ((providerJson as Record<string, unknown>).message_id as string | undefined ||
+            (providerJson as Record<string, unknown>).id as string | undefined)) || null;
+
+      const provResp = {
+        provider: providerJson,
+        test: true,
+        override: true,
+        requested_by_admin: overrideAdminId,
+      };
+
+      await supabase.from("sms_logs").insert({
+        user_id: userId,
+        rental_id: rentalId || null,
+        recipient_phone: normalizedOverride,
+        template_key: templateKey,
+        message_body: message,
+        status: okOv ? "sent" : "failed",
+        provider_message_id: providerMessageIdOv,
+        provider_response: provResp,
+        error_message: okOv ? null : (networkError || `HTTP ${providerStatus}: ${providerText.slice(0, 200)}`),
+        idempotency_key: idempotencyKey,
+      });
+
+      if (!okOv) {
+        console.error(`[send-sms-notification] OVERRIDE FAILED status=${providerStatus} body=${providerText.slice(0, 200)}`);
+        return jsonResponse({ success: false, override: true, status: providerStatus, error: networkError || providerText }, 200);
+      }
+      console.log(`[send-sms-notification] OVERRIDE sent to=${normalizedOverride} by admin=${overrideAdminId}`);
+      return jsonResponse({ success: true, override: true, status: providerStatus, messageId: providerMessageIdOv, to: normalizedOverride });
     }
 
     // Load profile
@@ -161,8 +254,6 @@ Deno.serve(async (req) => {
       console.error("[send-sms-notification] Profile load error:", profileError);
       return jsonResponse({ error: "Profile lookup failed" }, 500);
     }
-
-    const message = renderTemplate(templateKey, variables || {});
 
     // Skip conditions: log skipped reason and exit OK
     const logSkip = async (phone: string, reason: string) => {
@@ -197,12 +288,12 @@ Deno.serve(async (req) => {
       return jsonResponse({ success: true, skipped: "invalid_phone" });
     }
 
-    // Send via SMS Alert API (Basic Auth)
+    // Send via SMS Alert API (Basic Auth, JSON body with phoneNumber field)
     const auth = btoa(`${username}:${apiKey}`);
     const payload = {
-      to: normalized,
+      phoneNumber: normalized,
       message,
-      sender: SMS_SENDER,
+      cleanupUtf8: true,
     };
 
     let providerStatus = 0;
