@@ -44,7 +44,8 @@ const Owner = () => {
     setIsDeleting(true);
     try {
       await deleteProduct(productToDelete, user.id);
-      queryClient.invalidateQueries({ queryKey: ["myProducts", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["my-products", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       toast({
         title: "Produs șters",
         description: "Produsul a fost șters cu succes.",

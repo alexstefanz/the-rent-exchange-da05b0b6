@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,6 +45,7 @@ const EditProduct = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
+  const queryClient = useQueryClient();
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -152,6 +154,11 @@ const EditProduct = () => {
         images: images,
         included_items: includedItems,
       }, user.id);
+
+      // Invalidate caches so the updated product shows everywhere
+      await queryClient.invalidateQueries({ queryKey: ["my-products", user.id] });
+      await queryClient.invalidateQueries({ queryKey: ["product", id] });
+      await queryClient.invalidateQueries({ queryKey: ["products"] });
 
       toast({
         title: "Succes",
