@@ -124,22 +124,22 @@ const AdminSmsLogs = () => {
           <StatsCard
             title="Trimise"
             value={stats.sent.toString()}
-            icon={CheckCircle2}
+            icon={<CheckCircle2 className="h-4 w-4" />}
           />
           <StatsCard
             title="Eșuate"
             value={stats.failed.toString()}
-            icon={XCircle}
+            icon={<XCircle className="h-4 w-4" />}
           />
           <StatsCard
             title="Ignorate"
             value={stats.skipped.toString()}
-            icon={MinusCircle}
+            icon={<MinusCircle className="h-4 w-4" />}
           />
           <StatsCard
             title="Destinatari unici"
             value={stats.uniqueRecipients.toString()}
-            icon={Users}
+            icon={<Users className="h-4 w-4" />}
           />
         </div>
 
