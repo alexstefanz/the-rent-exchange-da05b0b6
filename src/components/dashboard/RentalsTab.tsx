@@ -251,7 +251,7 @@ const RentalsTab = () => {
                           onClick={() => setInspectionRental({ rental, phase: "checkin" })}
                         >
                           <Camera className="h-4 w-4 mr-1" />
-                          📷 {copy.inspection.return}
+                          📷 {copy.inspection.confirmHandedBack}
                         </Button>
                       )}
                       <Button variant="outline" size="sm" onClick={() => handleContactOwner(rental)}>
