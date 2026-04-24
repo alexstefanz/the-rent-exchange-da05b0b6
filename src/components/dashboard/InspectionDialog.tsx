@@ -160,11 +160,10 @@ export function InspectionDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Camera className="h-5 w-5 text-primary" />
-            📷 {phaseLabels[phase]} — {productTitle}
+            📷 {getPhaseLabel(phase, role)} — {productTitle}
           </DialogTitle>
           <DialogDescription>
-            Fotografiază starea produsului la {phase === "checkout" ? "predare" : "returnare"}.
-            Pozele servesc drept dovadă în caz de dispută.
+            {getPhaseDescription(phase, role)}
           </DialogDescription>
         </DialogHeader>
 
