@@ -267,6 +267,57 @@ const RentalsTab = () => {
         </section>
       )}
 
+      {completedAwaitingCheckin.length > 0 && (
+        <section>
+          <div className="mb-4 flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+            <Camera className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium text-foreground">Confirmă cu poză starea în care ai predat produsul</p>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Închirierea s-a încheiat. Adaugă poze ca dovadă vizuală că l-ai returnat în starea convenită.
+              </p>
+            </div>
+          </div>
+          <h3 className="mb-4 font-heading text-lg font-semibold text-foreground flex items-center gap-2">
+            <Camera className="h-5 w-5 text-primary" />
+            De confirmat predarea
+          </h3>
+          <div className="space-y-4">
+            {completedAwaitingCheckin.map((rental) => (
+              <div key={rental.id} className="flex flex-col sm:flex-row gap-4 rounded-xl border border-primary/30 bg-card p-4 transition-shadow hover:shadow-md">
+                <img src={rental.product_image} alt={rental.product_title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover" />
+                <div className="flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <Link to={`/produs/${rental.product_id}`} className="font-medium text-foreground hover:text-primary transition-colors">{rental.product_title}</Link>
+                    <StatusBadge status={rental.status as any} />
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">{copy.dashboard.owner}: {rental.owner_name}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{rental.start_date} - {rental.end_date}</span>
+                    {rental.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{rental.location}</span>}
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
+                    <span className="font-semibold text-primary">{rental.subtotal} RON</span>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => setInspectionRental({ rental, phase: "checkin" })}
+                      >
+                        <Camera className="h-4 w-4 mr-1" />
+                        📷 {copy.inspection.confirmHandedBack}
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => handleContactOwner(rental)}>
+                        {copy.dashboard.contactOwner}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {completedRentals.length > 0 && (
         <section>
           <h3 className="mb-4 font-heading text-lg font-semibold text-foreground">{copy.dashboard.rentalHistory}</h3>
