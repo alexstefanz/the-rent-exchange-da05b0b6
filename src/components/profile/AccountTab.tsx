@@ -212,6 +212,32 @@ const AccountTab = () => {
 
   const [isDeactivating, setIsDeactivating] = useState(false);
 
+  const phoneFieldValue = form.watch("phone");
+  const hasValidPhone = !!(phoneFieldValue || profile?.phone);
+  const smsEnabled = profile?.sms_notifications_enabled !== false;
+
+  const handleSmsToggle = async (next: boolean) => {
+    if (!user) return;
+    setIsSavingSms(true);
+    try {
+      const updated = await updateProfile(user.id, { sms_notifications_enabled: next });
+      setProfile(updated);
+      toast({
+        title: t("Salvat", "Saved"),
+        description: ux.smsNotifications.saved,
+      });
+    } catch (error) {
+      console.error("Error updating SMS preference:", error);
+      toast({
+        title: t("Eroare", "Error"),
+        description: ux.smsNotifications.saveError,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingSms(false);
+    }
+  };
+
   const handleDeactivateAccount = async () => {
     setIsDeactivating(true);
     try {
