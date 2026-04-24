@@ -48,9 +48,9 @@ const HeroSearchForm = () => {
   return (
     <form
       onSubmit={handleSearch}
-      className="flex flex-col gap-2 rounded-xl bg-card p-4 shadow-lg md:flex-row md:items-center md:gap-0 md:rounded-full md:p-2"
+      className="flex flex-col gap-3 rounded-xl bg-card p-5 shadow-lg md:flex-row md:items-center md:gap-0 md:rounded-full md:p-2"
     >
-      <div className="flex flex-1 items-center gap-3 px-4 py-2 md:py-0">
+      <div className="flex flex-1 items-center gap-3 px-4 py-3 md:py-0">
         <Search className="h-5 w-5 text-muted-foreground" />
         <Input
           type="text"
@@ -64,7 +64,7 @@ const HeroSearchForm = () => {
       <div className="hidden h-8 w-px bg-border md:block" />
 
       {/* Județ selector */}
-      <div className="flex flex-1 items-center gap-3 px-4 py-2 md:py-0">
+      <div className="flex flex-1 items-center gap-3 px-4 py-3 md:py-0">
         <MapPin className="h-5 w-5 text-muted-foreground" />
         {isMobile ? (
           <Drawer open={judetDrawerOpen} onOpenChange={setJudetDrawerOpen}>
@@ -121,7 +121,7 @@ const HeroSearchForm = () => {
       {selectedJudet && selectedJudet !== "all" && (
         <>
           <div className="hidden h-8 w-px bg-border md:block" />
-          <div className="flex flex-1 items-center gap-2 px-4">
+          <div className="flex flex-1 items-center gap-2 px-4 py-3 md:py-0">
             {isMobile ? (
               <Drawer open={localitateDrawerOpen} onOpenChange={setLocalitateDrawerOpen}>
                 <DrawerTrigger className="flex w-full items-center justify-between text-left">
@@ -175,7 +175,7 @@ const HeroSearchForm = () => {
         </>
       )}
 
-      <Button type="submit" className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-primary-foreground hover:bg-primary/90 md:w-auto">
+      <Button type="submit" className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-4 text-primary-foreground hover:bg-primary/90 md:w-auto md:py-3">
         {t("Caută", "Search")}
       </Button>
     </form>
