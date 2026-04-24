@@ -498,6 +498,38 @@ const AccountTab = () => {
             </CardContent>
           </Card>
 
+          {/* SMS Notifications */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Bell className="h-5 w-5" />
+                {ux.smsNotifications.title}
+              </CardTitle>
+              <CardDescription>{ux.smsNotifications.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">
+                    {smsEnabled ? ux.smsNotifications.enabled : ux.smsNotifications.disabled}
+                  </span>
+                </div>
+                <Switch
+                  checked={smsEnabled && hasValidPhone}
+                  disabled={!hasValidPhone || isSavingSms}
+                  onCheckedChange={handleSmsToggle}
+                  aria-label={ux.smsNotifications.title}
+                />
+              </div>
+              {!hasValidPhone && (
+                <div className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 p-3 text-sm text-amber-800 dark:text-amber-300">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  <span>{ux.smsNotifications.missingPhone}</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Deactivate Account */}
           <Card className="border-destructive/30">
             <CardHeader>
