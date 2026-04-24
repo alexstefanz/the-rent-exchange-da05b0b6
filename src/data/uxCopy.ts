@@ -153,6 +153,15 @@ const createUxCopy = () => ({
     ron: { ro: "RON", en: "RON" },
     clear: { ro: "Șterge", en: "Clear" },
   },
+  smsNotifications: {
+    title: { ro: "Notificări SMS", en: "SMS notifications" },
+    description: { ro: "Primește alerte SMS pentru cereri noi, acceptări, refuzuri, anulări și remindere de returnare.", en: "Receive SMS alerts for new requests, acceptances, rejections, cancellations and return reminders." },
+    enabled: { ro: "Activat", en: "Enabled" },
+    disabled: { ro: "Dezactivat", en: "Disabled" },
+    missingPhone: { ro: "Adaugă mai întâi un număr de telefon valid (format românesc: 07XX XXX XXX) pentru a activa SMS-urile.", en: "Add a valid Romanian phone number (07XX XXX XXX) first to enable SMS." },
+    saved: { ro: "Preferință SMS actualizată", en: "SMS preference updated" },
+    saveError: { ro: "Nu s-a putut actualiza preferința SMS", en: "Could not update SMS preference" },
+  },
   home: {
     heroTitle: { ro: "Închiriază orice,", en: "Rent anything," },
     heroTitleHighlight: { ro: "oriunde în România", en: "anywhere in Romania" },
