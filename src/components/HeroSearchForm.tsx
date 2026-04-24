@@ -48,7 +48,7 @@ const HeroSearchForm = () => {
   return (
     <form
       onSubmit={handleSearch}
-      className="flex flex-col gap-4 rounded-xl bg-card p-6 shadow-lg md:flex-row md:items-center md:gap-0 md:rounded-full md:p-2"
+      className="flex flex-col gap-4 rounded-xl bg-card p-6 shadow-lg md:flex-row md:items-center md:gap-0 md:rounded-full md:p-2 px-[10px]"
     >
       <div className="flex flex-1 items-center gap-3 px-4 py-4 md:py-0">
         <Search className="h-5 w-5 text-muted-foreground" />
