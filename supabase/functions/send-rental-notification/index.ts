@@ -149,7 +149,7 @@ Deno.serve(async (req) => {
         title_en: `New rental request`,
         description_ro: `${renter?.full_name || "Un utilizator"} a plătit și dorește să închirieze "${product?.title}" pentru ${rental.rental_days} zile.`,
         description_en: `${renter?.full_name || "A user"} paid and wants to rent "${product?.title}" for ${rental.rental_days} days.`,
-        link: `/anunturi?rental_id=${rental.id}`,
+        link: `/inchirieri?rental_id=${rental.id}`,
       },
       {
         user_id: rental.renter_id,
