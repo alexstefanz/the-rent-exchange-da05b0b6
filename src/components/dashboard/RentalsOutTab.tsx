@@ -27,6 +27,7 @@ import type { InspectionPhase } from "@/features/rentals/inspectionApi";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
 import PayoutStatusBadge from "./PayoutStatusBadge";
+import { supabase } from "@/integrations/supabase/client";
 
 const statusLabels: Record<string, { ro: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { ro: "În așteptare", variant: "secondary" },
@@ -46,6 +47,26 @@ const RentalsOutTab = () => {
     queryKey: ["ownerRentals", user?.id],
     queryFn: () => getOwnerRentals(user!.id),
     enabled: !!user?.id,
+  });
+
+  // Fetch which active rentals have a renter checkin inspection (so owner can confirm receipt)
+  const activeRentalIds = rentals
+    .filter(r => r.status === "active" || r.status === "completed")
+    .map(r => r.id);
+
+  const { data: renterCheckinIds = new Set<string>() } = useQuery({
+    queryKey: ["renter-checkin-inspections", activeRentalIds.sort().join(",")],
+    queryFn: async () => {
+      if (activeRentalIds.length === 0) return new Set<string>();
+      const { data } = await supabase
+        .from("rental_inspections")
+        .select("rental_id")
+        .in("rental_id", activeRentalIds)
+        .eq("phase", "checkin")
+        .eq("role", "renter");
+      return new Set((data || []).map((d: any) => d.rental_id));
+    },
+    enabled: activeRentalIds.length > 0,
   });
 
   const [respondingId, setRespondingId] = useState<string | null>(null);
