@@ -209,17 +209,24 @@ const RentalsTab = () => {
                   <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
                     <span className="font-semibold text-primary">{rental.subtotal} RON</span>
                     <div className="flex gap-2">
-                      {(rental.status === "confirmed" || rental.status === "active") && (
+                      {rental.status === "confirmed" && (
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setInspectionRental({
-                            rental,
-                            phase: rental.status === "confirmed" ? "checkout" : "checkin",
-                          })}
+                          onClick={() => setInspectionRental({ rental, phase: "checkout" })}
                         >
                           <Camera className="h-4 w-4 mr-1" />
-                          📷 {rental.status === "confirmed" ? "Predare" : "Returnare"}
+                          📷 {copy.inspection.pickup}
+                        </Button>
+                      )}
+                      {rental.status === "active" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setInspectionRental({ rental, phase: "checkin" })}
+                        >
+                          <Camera className="h-4 w-4 mr-1" />
+                          📷 {copy.inspection.return}
                         </Button>
                       )}
                       <Button variant="outline" size="sm" onClick={() => handleContactOwner(rental)}>

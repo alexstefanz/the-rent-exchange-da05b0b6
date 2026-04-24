@@ -27,6 +27,7 @@ import type { InspectionPhase } from "@/features/rentals/inspectionApi";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
 import PayoutStatusBadge from "./PayoutStatusBadge";
+import { supabase } from "@/integrations/supabase/client";
 
 const statusLabels: Record<string, { ro: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { ro: "În așteptare", variant: "secondary" },
@@ -46,6 +47,26 @@ const RentalsOutTab = () => {
     queryKey: ["ownerRentals", user?.id],
     queryFn: () => getOwnerRentals(user!.id),
     enabled: !!user?.id,
+  });
+
+  // Fetch which active rentals have a renter checkin inspection (so owner can confirm receipt)
+  const activeRentalIds = rentals
+    .filter(r => r.status === "active" || r.status === "completed")
+    .map(r => r.id);
+
+  const { data: renterCheckinIds = new Set<string>() } = useQuery({
+    queryKey: ["renter-checkin-inspections", activeRentalIds.sort().join(",")],
+    queryFn: async () => {
+      if (activeRentalIds.length === 0) return new Set<string>();
+      const { data } = await supabase
+        .from("rental_inspections")
+        .select("rental_id")
+        .in("rental_id", activeRentalIds)
+        .eq("phase", "checkin")
+        .eq("role", "renter");
+      return new Set((data || []).map((d: any) => d.rental_id));
+    },
+    enabled: activeRentalIds.length > 0,
   });
 
   const [respondingId, setRespondingId] = useState<string | null>(null);
@@ -262,19 +283,27 @@ const RentalsOutTab = () => {
                         </CollapsibleContent>
                       </Collapsible>
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {(rental.status === "confirmed" || rental.status === "active") && (
+                        {rental.status === "confirmed" && (
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setInspectionRental({
-                              rental,
-                              phase: rental.status === "confirmed" ? "checkout" : "checkin",
-                            })}
+                            onClick={() => setInspectionRental({ rental, phase: "checkout" })}
                           >
                             <Camera className="h-4 w-4 mr-1" />
-                            📷 {rental.status === "confirmed" ? "Predare" : "Returnare"}
+                            📷 {copy.inspection.handover}
                           </Button>
                         )}
+                        {(rental.status === "active" || rental.status === "completed") &&
+                          renterCheckinIds.has(rental.id) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setInspectionRental({ rental, phase: "checkin" })}
+                            >
+                              <Camera className="h-4 w-4 mr-1" />
+                              📷 {copy.inspection.receivedBack}
+                            </Button>
+                          )}
                         {rental.status === "confirmed" && rental.handover_confirmed_at == null && (
                           <Button
                             size="sm"

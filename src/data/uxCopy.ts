@@ -124,6 +124,12 @@ const createUxCopy = () => ({
     confirmReturn: { ro: "Confirm returnarea (totul OK)", en: "Confirm return (all OK)" },
     returnReminder: { ro: "Astăzi este ultima zi! Contactează proprietarul pentru a returna produsul.", en: "Today is the last day! Contact the owner to return the item." },
   },
+  inspection: {
+    handover: { ro: "Predare", en: "Hand-over" },
+    pickup: { ro: "Primire", en: "Pick-up" },
+    return: { ro: "Returnare", en: "Return" },
+    receivedBack: { ro: "Confirmare primire", en: "Confirm received back" },
+  },
   reassurance: {
     paymentProtected: { ro: "Plata ta este protejată. Suma se blochează temporar și se debitează doar după finalizarea închirierii.", en: "Your payment is protected. The amount is temporarily held and charged only after the rental period ends." },
     freeCancellation: { ro: "Poți anula gratuit până la confirmare.", en: "Free cancellation until confirmation." },

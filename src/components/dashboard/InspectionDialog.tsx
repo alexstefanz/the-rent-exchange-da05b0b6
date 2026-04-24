@@ -52,15 +52,26 @@ interface InspectionDialogProps {
 
 const MAX_PHOTOS = 10;
 
-const phaseLabels: Record<InspectionPhase, string> = {
-  checkout: "Predare",
-  checkin: "Returnare",
-};
-
 const roleLabels: Record<InspectionRole, string> = {
   owner: "Proprietar",
   renter: "Chiriaș",
 };
+
+function getPhaseLabel(phase: InspectionPhase, role: InspectionRole): string {
+  if (phase === "checkout") return role === "owner" ? "Predare" : "Primire";
+  return role === "renter" ? "Returnare" : "Confirmare primire";
+}
+
+function getPhaseDescription(phase: InspectionPhase, role: InspectionRole): string {
+  if (phase === "checkout") {
+    return role === "owner"
+      ? "Fotografiază produsul în momentul în care îl predai chiriașului. Pozele servesc drept dovadă în caz de dispută."
+      : "Fotografiază produsul în momentul în care îl primești de la proprietar. Pozele servesc drept dovadă în caz de dispută.";
+  }
+  return role === "renter"
+    ? "Fotografiază produsul înainte să îl returnezi proprietarului. Pozele servesc drept dovadă în caz de dispută."
+    : "Fotografiază produsul în momentul în care îl primești înapoi. Pozele servesc drept dovadă în caz de dispută.";
+}
 
 export function InspectionDialog({
   open,
@@ -149,11 +160,10 @@ export function InspectionDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Camera className="h-5 w-5 text-primary" />
-            📷 {phaseLabels[phase]} — {productTitle}
+            📷 {getPhaseLabel(phase, role)} — {productTitle}
           </DialogTitle>
           <DialogDescription>
-            Fotografiază starea produsului la {phase === "checkout" ? "predare" : "returnare"}.
-            Pozele servesc drept dovadă în caz de dispută.
+            {getPhaseDescription(phase, role)}
           </DialogDescription>
         </DialogHeader>
 
