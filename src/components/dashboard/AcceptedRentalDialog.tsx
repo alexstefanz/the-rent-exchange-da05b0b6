@@ -189,18 +189,6 @@ export function AcceptedRentalDialog({ rental, open, onOpenChange, onCancelled }
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Chat Dialog */}
-      {chatConversationId && (
-        <ChatDialog
-          open={chatOpen}
-          onOpenChange={setChatOpen}
-          conversationId={chatConversationId}
-          otherUserName={rental.renter_name}
-          otherUserAvatar={rental.renter_avatar}
-          productTitle={rental.product_title}
-        />
-      )}
     </>
   );
 }
