@@ -23,7 +23,8 @@ import {
   MessageCircle,
   Camera,
   Loader2,
-  LifeBuoy
+  LifeBuoy,
+  Bell
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -31,6 +32,8 @@ import { useToast } from "@/hooks/use-toast";
 import { getProfile, updateProfile, createProfile, Profile } from "@/features/profile/profileApi";
 import { uploadAvatar } from "@/features/profile/avatarApi";
 import { supabase } from "@/integrations/supabase/client";
+import { Switch } from "@/components/ui/switch";
+import { useUxCopy } from "@/hooks/useUxCopy";
 import {
   AlertDialog,
   AlertDialogAction,
