@@ -1,71 +1,64 @@
 
 
-## Plan: Separare clară Predare (Owner) vs Primire (Renter)
+## Plan: Chiriașul confirmă predarea înapoi cu poză și după finalizare
 
-### Problema actuală
+### Problemă
 
-Ambele părți (owner + renter) văd ambele butoane „Predare" și „Returnare" în funcție de statusul rezervării — duplicat și confuz. În plus, semantica e greșită din perspectiva fluxului fizic:
-- La început, **owner-ul predă** produsul → renter-ul **primește**.
-- La final, **renter-ul returnează** → owner-ul **primește înapoi**.
+În prezent, chiriașul vede butonul „📷 Returnare" **doar când `status === "active"`**. În momentul în care proprietarul apasă „Confirmă returnarea", statusul devine `completed` și butonul dispare — chiriașul nu mai poate documenta cu poză starea în care a returnat produsul. Dacă apare o dispută ulterioară („mi l-a returnat zgâriat"), chiriașul nu are dovada lui vizuală.
 
-### Decizie funcțională
-
-Fiecare parte fotografiază **doar** momentul în care produsul iese / intră în posesia ei — nu ambele faze.
-
-| Status rezervare | Owner (RentalsOutTab) | Renter (RentalsTab) |
-|---|---|---|
-| `confirmed` (înainte de start) | 📷 **Predare** (checkout) | 📷 **Primire** (checkout) |
-| `active` (în desfășurare) | — (fără buton) | 📷 **Returnare** (checkin) |
-| după ce renter-ul a returnat | 📷 **Confirmare primire** (checkin) | — (fără buton) |
-
-Astfel:
-- **Faza checkout** (predare/primire la început): owner = `role: "owner"`, renter = `role: "renter"`. Ambii pot încărca poze, dar din perspective diferite (ce predau / ce primesc).
-- **Faza checkin** (returnare la final): renter face poze înainte să restituie; owner face poze când reia produsul.
+Soluție: butonul de confirmare cu poză (faza `checkin`, rol `renter`) trebuie să rămână accesibil chiriașului și după ce rezervarea a trecut în `completed`, simetric cu owner-ul care poate face „Confirmare primire" inclusiv pe rezervări `completed`.
 
 ### Modificări
 
-#### 1. `src/components/dashboard/RentalsTab.tsx` (renter)
-- Înlocuiesc logica butonului unic care comuta între „Predare/Returnare" cu:
-  - Dacă `status === "confirmed"` și NU există încă inspecție checkout pentru renter → buton **„📷 Primire"** (phase=`checkout`, role=`renter`).
-  - Dacă `status === "active"` → buton **„📷 Returnare"** (phase=`checkin`, role=`renter`).
-  - După ce renter-ul a apăsat „Returnare" și a salvat inspecția, butonul rămâne vizibil ca „Vezi pozele" (deja gestionat de `InspectionDialog` care arată ce a încărcat).
-- Eticheta pentru `confirmed` se schimbă din „Predare" în **„Primire"**.
+#### `src/components/dashboard/RentalsTab.tsx`
 
-#### 2. `src/components/dashboard/RentalsOutTab.tsx` (owner)
-- La `status === "confirmed"` → buton **„📷 Predare"** (phase=`checkout`, role=`owner`) — NU se mai schimbă în „Returnare" la `active`.
-- La `status === "active"` → **fără** buton de poze (owner-ul așteaptă ca renter-ul să returneze fizic).
-- După ce renter-ul a făcut inspecția `checkin` (sau owner-ul a apăsat „Confirmă returnarea"), apare buton **„📷 Confirmare primire"** (phase=`checkin`, role=`owner`) — opțional, ca dovadă vizuală că produsul a revenit în stare bună.
+1. **Mut și rezervările `completed` recente într-o secțiune unde butoanele de inspecție rămân active**, NU în zona „Istoric închirieri" cu `opacity-75` fără acțiuni.
+   - Definesc o categorie nouă: `completedRentalsAwaitingRenterCheckin` = rezervările `completed` pentru care chiriașul **NU a încărcat încă** o inspecție `checkin`.
+   - Le afișez tot în secțiunea „Închirieri active" (sau direct deasupra istoricului) împreună cu butonul „📷 Confirmare predare" → deschide `InspectionDialog` cu `phase="checkin"`, `role="renter"`.
 
-  Detaliu tehnic: detectez prezența unei inspecții renter `checkin` printr-o query rapidă pe `rental_inspections` sau pur și simplu afișez butonul pentru orice rental `active`/`completed` recent — versiunea simplă: îl arăt dacă `status === "active"` ȘI există cel puțin o inspecție de phase `checkin` făcută de renter.
+2. **Adaug query** pentru a ști care rezervări au deja inspecție `checkin` făcută de chiriaș (similar cu pattern-ul deja existent în `RentalsOutTab.tsx` pentru owner):
+   ```ts
+   const { data: renterCheckinIds } = useQuery({
+     queryKey: ["my-renter-checkin-inspections", ...],
+     queryFn: async () => supabase.from("rental_inspections")
+       .select("rental_id").in("rental_id", ids)
+       .eq("phase", "checkin").eq("role", "renter").eq("user_id", user.id)
+   });
+   ```
 
-#### 3. `src/components/dashboard/InspectionDialog.tsx`
-- Mic update la `phaseLabels` pentru a fi context-aware după rol:
-  - Owner + checkout → „Predare"
-  - Renter + checkout → „Primire"
-  - Renter + checkin → „Returnare"
-  - Owner + checkin → „Confirmare primire"
-- Adaug un mic mapper `getPhaseLabel(phase, role)` pentru titlu și descriere coerente.
-- Descrierea dialogului se ajustează: ex. pentru renter+checkout → „Fotografiază produsul în momentul în care îl primești de la proprietar."
+3. **Actualizez condițiile pe butoane**:
+   - `status === "confirmed"` → buton „📷 Primire" (neschimbat).
+   - `status === "active"` → buton „📷 Returnare" (neschimbat).
+   - `status === "active" || status === "completed"` ȘI chiriașul nu a încărcat încă inspecție `checkin` → buton „📷 {copy.inspection.confirmHandedBack}" (nou).
+     - Pentru `active`, înlocuiește butonul „Returnare" simplu (sunt funcțional același lucru — un singur buton, nu două).
+   - În secțiunea „Istoric închirieri" (`completed` cu inspecție deja făcută) — fără buton, doar afișarea timeline-ului.
 
-#### 4. `src/data/uxCopy.ts`
-- Adaug 4 chei noi în secțiunea `inspection` (RO/EN):
-  - `handover` = „Predare" / „Hand-over"
-  - `pickup` = „Primire" / „Pick-up"
-  - `return` = „Returnare" / „Return"
-  - `receivedBack` = „Confirmare primire" / „Confirm received back"
+#### `src/data/uxCopy.ts`
+
+Adaug o cheie nouă în secțiunea `inspection`:
+- `confirmHandedBack`: `{ ro: "Confirmă predarea", en: "Confirm hand-back" }` — folosit de chiriaș pentru a documenta cu poză momentul în care a dat produsul înapoi proprietarului.
+
+(Eticheta existentă `return` rămâne, dar nu o mai folosim pe buton — o înlocuim cu `confirmHandedBack` care e mai clară pentru fluxul „eu am dat produsul înapoi").
+
+#### `src/components/dashboard/InspectionDialog.tsx`
+
+Actualizez textele pentru renter+checkin pentru a reflecta acțiunea „de confirmare a predării înapoi" (în loc de „returnare în avans"):
+- Titlu: „Confirmă predarea — {productTitle}"
+- Descriere: „Fotografiază produsul în momentul în care îl predai înapoi proprietarului. Pozele sunt dovada ta că l-ai returnat în starea convenită."
 
 ### Fișiere afectate
 
 | Fișier | Modificare |
 |---|---|
-| `src/components/dashboard/RentalsTab.tsx` | Buton „Primire" la `confirmed`, „Returnare" la `active` (renter) |
-| `src/components/dashboard/RentalsOutTab.tsx` | Buton „Predare" doar la `confirmed`; opțional „Confirmare primire" după ce renter-ul a returnat |
-| `src/components/dashboard/InspectionDialog.tsx` | Etichete și descrieri context-aware după (phase, role) |
-| `src/data/uxCopy.ts` | 4 chei noi pentru etichete |
+| `src/components/dashboard/RentalsTab.tsx` | Query pentru inspecțiile renter checkin; afișează butonul „Confirmă predarea" și pe `completed` dacă încă nu a fost încărcat; rezervările `completed` fără inspecție rămân vizibile cu CTA până e completată |
+| `src/data/uxCopy.ts` | Cheie nouă `inspection.confirmHandedBack` (RO/EN) |
+| `src/components/dashboard/InspectionDialog.tsx` | Text context-aware pentru renter+checkin → „Confirmă predarea înapoi" |
 
 ### Rezultat
 
-- **Owner** vede „📷 Predare" doar înainte ca rezervarea să înceapă, exact când îi dă fizic produsul chiriașului. Opțional poate documenta primirea înapoi la final.
-- **Chiriașul** vede „📷 Primire" la început (când ridică produsul) și „📷 Returnare" la final (când îl restituie).
-- Niciuna dintre părți nu mai vede butoane care nu țin de rolul ei → flux mai clar și fără duplicare conceptuală.
+Chiriașul are acum exact simetria proprietarului:
+- **Owner** poate documenta „📷 Confirmare primire" (checkin) și după ce rezervarea e `completed`.
+- **Chiriaș** poate documenta „📷 Confirmă predarea" (checkin) și după ce rezervarea e `completed`.
+
+Ambele părți au dovadă vizuală a stării produsului în momentul predării înapoi, indiferent cine a apăsat primul butonul de confirmare a returnării.
 
