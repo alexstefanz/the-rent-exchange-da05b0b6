@@ -1620,6 +1620,33 @@ export type Database = {
           subtotal: number
         }[]
       }
+      get_admin_sms_logs: {
+        Args: {
+          date_from?: string
+          date_to?: string
+          limit_count?: number
+          offset_count?: number
+          search_query?: string
+          status_filter?: string
+        }
+        Returns: {
+          created_at: string
+          error_message: string
+          id: string
+          idempotency_key: string
+          message_body: string
+          product_title: string
+          provider_message_id: string
+          provider_response: Json
+          recipient_phone: string
+          rental_id: string
+          status: string
+          template_key: string
+          user_email: string
+          user_id: string
+          user_name: string
+        }[]
+      }
       get_admin_stats: {
         Args: never
         Returns: {
