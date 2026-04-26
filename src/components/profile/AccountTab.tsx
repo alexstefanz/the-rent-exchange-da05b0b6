@@ -165,6 +165,15 @@ const AccountTab = () => {
 
   const handleSubmit = async (data: ProfileFormData) => {
     if (!user) return;
+    // Validare strictă RO pentru telefon (dacă a fost completat)
+    if (data.phone && data.phone.trim() && !isValidRomanianPhone(data.phone)) {
+      toast({
+        title: t("Telefon invalid", "Invalid phone"),
+        description: ux.smsNotifications.invalidFormat,
+        variant: "destructive",
+      });
+      return;
+    }
     setIsSaving(true);
     try {
       const updatedProfile = await updateProfile(user.id, {
