@@ -81,3 +81,23 @@ export const normalizeDiacritics = (text: string): string => {
     .replace(/[șş]/gi, (match) => match.toLowerCase() === match ? 's' : 'S')
     .replace(/[țţ]/gi, (match) => match.toLowerCase() === match ? 't' : 'T');
 };
+
+/**
+ * Validates a Romanian phone number. Accepted formats (after stripping spaces, dashes, parens):
+ *  - +40XXXXXXXXX
+ *  - 0040XXXXXXXXX
+ *  - 40XXXXXXXXX
+ *  - 0XXXXXXXXX
+ * Returns true only when the number can be normalized to a valid mobile/landline RO number.
+ */
+export const isValidRomanianPhone = (raw: string | null | undefined): boolean => {
+  if (!raw || typeof raw !== 'string') return false;
+  const p = raw.trim().replace(/[\s()\-]/g, '');
+  if (!p) return false;
+  return (
+    /^\+40[0-9]{9}$/.test(p) ||
+    /^0040[0-9]{9}$/.test(p) ||
+    /^40[0-9]{9}$/.test(p) ||
+    /^0[0-9]{9}$/.test(p)
+  );
+};
