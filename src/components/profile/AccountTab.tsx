@@ -34,6 +34,7 @@ import { uploadAvatar } from "@/features/profile/avatarApi";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import { isValidRomanianPhone } from "@/lib/inputValidation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -213,7 +214,7 @@ const AccountTab = () => {
   const [isDeactivating, setIsDeactivating] = useState(false);
 
   const phoneFieldValue = form.watch("phone");
-  const hasValidPhone = !!(phoneFieldValue || profile?.phone);
+  const hasValidPhone = isValidRomanianPhone(phoneFieldValue || profile?.phone || "");
   const smsEnabled = profile?.sms_notifications_enabled !== false;
 
   const handleSmsToggle = async (next: boolean) => {
