@@ -40,7 +40,7 @@ const SmsPhonePromptBanner = ({ className = "" }: { className?: string }) => {
         </p>
       </div>
       <Link
-        to="/cont"
+        to="/contul-meu"
         className="flex items-center gap-1 text-sm font-medium text-amber-900 dark:text-amber-200 hover:underline whitespace-nowrap self-center"
       >
         {ux.smsNotifications.promptCta}
