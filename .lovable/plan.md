@@ -1,52 +1,49 @@
+## Context — sistemul SMS este deja conectat
 
+Toate cele **5 evenimente** apelează deja `send-sms-notification`:
+1. `rental_request_owner` — cerere nouă (proprietar)
+2. `rental_accepted` — acceptată (chiriaș)
+3. `rental_rejected` — refuzată (chiriaș)
+4. `rental_cancelled` — anulată (proprietar)
+5. `return_reminder` — reminder ziua returnării (chiriaș)
 
-## Plan: Banner hero de calitate înaltă pe mobil (HiDPI)
+## Problema reală (diagnostic din DB)
 
-### Problemă
+Din 17 useri:
+- **doar 2 au telefon completat** în profil (`profiles.phone`)
+- **15 useri primesc `skipped: invalid_phone`** și nu vor primi niciodată SMS
 
-Imaginea curentă pentru mobil (`/images/banner_hero_mobile.webp`) are doar **768×435 px**. Pe un telefon modern de 390 CSS px lățime cu `devicePixelRatio` 2 sau 3 (iPhone, majoritatea Android-urilor flagship), browser-ul are nevoie de o imagine fizică de **780–1170 px lățime**, plus încă ~30% în plus pentru înălțimea de `130%` folosită de efectul parallax. Rezultatul: imaginea e upscalată semnificativ → aspect blurry, mai ales pe ecranele Retina.
+Logurile confirmă: ultima cerere a fost marcată `skipped/invalid_phone` (telefon gol).
 
-În plus, `<source>` curent nu folosește `srcSet` cu density descriptors (`1x`, `2x`, `3x`), deci browser-ul nu poate alege o variantă HiDPI nici dacă ar exista.
+Cauza: telefonul este opțional la signup și mulți useri nu îl completează în profil. Edge function-ul îl normalizează corect la `+40XXXXXXXXX` și sare peste useri fără telefon valid (comportament corect — nu putem trimite SMS fără număr).
 
-### Soluție
+## Plan — 3 pași pentru activare reală
 
-#### 1. Generez 2 noi variante mobil HiDPI
+### 1. Telefon obligatoriu la KYC + acțiuni critice
+- La submit KYC, validare frontend că `profiles.phone` e completat și valid RO (`+40XXXXXXXXX` sau `0XXXXXXXXX`).
+- La crearea unei rezervări (renter) și la publicarea unui produs (owner), banner non-blocking dacă lipsește telefonul: "Adaugă numărul de telefon ca să primești notificări SMS despre rezervări". Link spre `/cont` (AccountTab).
 
-Pornind de la asset-ul desktop existent (1920×1088), creez:
-- `banner_hero_mobile@2x.webp` — **1536×870 px**, quality 78 (~ 90–110 KB)
-- `banner_hero_mobile@3x.webp` — **2304×1305 px**, quality 72 (~ 160–200 KB)
+### 2. UI explicit în setări cont
+- În `AccountTab.tsx`: badge clar lângă câmpul Telefon — verde "SMS activ" dacă e completat și `sms_notifications_enabled=true`, gri "SMS inactiv" altfel, cu mesaj explicativ ("Vei primi SMS la cereri noi, acceptare, anulare, reminder returnare").
+- Validare format la salvare: doar formate RO acceptate, mesaj de eroare clar.
 
-Păstrez și `banner_hero_mobile.webp` existent (768×435) ca fallback `1x` pentru telefoane low-end / conexiuni slabe.
+### 3. Email de tip "completează profilul"
+- Edge function nouă (one-shot, manuală din Admin) `prompt-missing-phone`: trimite email branded către userii fără telefon, cu link spre `/cont`, explicând beneficiul SMS-urilor pentru rezervări.
+- Buton în AdminDashboard: "Trimite reminder telefon utilizatorilor fără SMS" (cu confirmare + counter).
 
-Cropping: păstrez același aspect ratio vertical-friendly ca asset-ul mobil curent (16:9 ușor). Quality un pic mai joasă pentru `@3x` ca să nu exagerez payload-ul, dar la densitate 3x diferența nu se observă vizual.
+## Aspecte tehnice
 
-#### 2. Actualizez `<picture>` în `src/pages/Index.tsx` cu density descriptors
+- Edge function-ul `send-sms-notification` și template-urile rămân neschimbate — funcționează corect, dovedit de SMS-ul de test primit.
+- `sms_notifications_enabled` rămâne default `true` (deja așa în DB) — userii pot opta out din `NotificationsTab`.
+- Validare telefon RO reutilizată din helper deja existent (`normalizePhoneRO` — îl portez pe frontend ca util în `src/lib/inputValidation.ts`).
+- Niciun cost suplimentar SMS până când userii nu adaugă telefon real.
 
-```tsx
-<source
-  media="(max-width: 768px)"
-  type="image/webp"
-  srcSet="/images/banner_hero_mobile.webp 1x, /images/banner_hero_mobile@2x.webp 2x, /images/banner_hero_mobile@3x.webp 3x"
-/>
-```
+## Ce NU schimb
+- Logica din cele 4 edge functions care invocă SMS — deja corectă.
+- Template-urile SMS — rămân ASCII fără diacritice, sub 160 caractere.
+- Tabela `sms_logs` și RLS — deja corecte.
 
-Browser-ul va alege automat varianta potrivită în funcție de `devicePixelRatio`. Pe iPhone (DPR 2 sau 3) va descărca direct varianta HD.
+## Rezultat așteptat
+După aplicare: orice user nou care completează telefonul primește automat toate cele 5 tipuri de SMS-uri tranzacționale, fără configurări suplimentare. Userii existenți primesc un prompt vizual + email opțional pentru a-și completa numărul.
 
-#### 3. (Opțional, dacă rămâne timp) Adaug `width`/`height` pe `<img>`
-
-Pentru a evita CLS și a ajuta browser-ul cu layout-ul: `width={1920} height={1088}`. Nu schimbă vizualul (e tot `object-cover`), dar îmbunătățește scorul Core Web Vitals.
-
-### Fișiere afectate
-
-| Fișier | Modificare |
-|---|---|
-| `public/images/banner_hero_mobile@2x.webp` | **Creat** — 1536×870, quality 78 |
-| `public/images/banner_hero_mobile@3x.webp` | **Creat** — 2304×1305, quality 72 |
-| `src/pages/Index.tsx` | `<source srcSet>` cu density descriptors `1x`/`2x`/`3x`; opțional `width`/`height` pe `<img>` |
-
-### Rezultat
-
-- Pe telefoane HiDPI (DPR 2/3) imaginea hero apare clară, fără blur, chiar și cu efectul parallax care o întinde la 130%.
-- Pe telefoane low-end (DPR 1) sau conexiuni slabe, browser-ul descarcă în continuare varianta mică de 35 KB.
-- Desktop nu e afectat (folosește în continuare `banner_hero.webp` 1920×1088).
-
+**Aprobă planul ca să trec în Build mode și să implementez.**

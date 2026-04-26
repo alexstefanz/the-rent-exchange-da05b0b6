@@ -22,6 +22,7 @@ import ImageUpload from "@/components/products/ImageUpload";
 import { containsContactInfo } from "@/lib/inputValidation";
 import { useKycGate } from "@/hooks/queries/useKycGate";
 import KycGateBanner from "@/components/kyc/KycGateBanner";
+import SmsPhonePromptBanner from "@/components/profile/SmsPhonePromptBanner";
 
 const CONTACT_INFO_ERROR = "Descrierea nu poate conține date de contact (telefon, email sau link-uri). Comunicarea se face prin platforma Rentli.";
 
@@ -165,7 +166,9 @@ const NewProduct = () => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Înapoi la produse
         </Button>
-        
+
+        <SmsPhonePromptBanner className="mb-4" />
+
         <Card>
           <CardHeader>
             <CardTitle>Adaugă produs nou</CardTitle>

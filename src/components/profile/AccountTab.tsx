@@ -34,6 +34,7 @@ import { uploadAvatar } from "@/features/profile/avatarApi";
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import { isValidRomanianPhone } from "@/lib/inputValidation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -164,6 +165,15 @@ const AccountTab = () => {
 
   const handleSubmit = async (data: ProfileFormData) => {
     if (!user) return;
+    // Validare strictă RO pentru telefon (dacă a fost completat)
+    if (data.phone && data.phone.trim() && !isValidRomanianPhone(data.phone)) {
+      toast({
+        title: t("Telefon invalid", "Invalid phone"),
+        description: ux.smsNotifications.invalidFormat,
+        variant: "destructive",
+      });
+      return;
+    }
     setIsSaving(true);
     try {
       const updatedProfile = await updateProfile(user.id, {
@@ -213,7 +223,7 @@ const AccountTab = () => {
   const [isDeactivating, setIsDeactivating] = useState(false);
 
   const phoneFieldValue = form.watch("phone");
-  const hasValidPhone = !!(phoneFieldValue || profile?.phone);
+  const hasValidPhone = isValidRomanianPhone(phoneFieldValue || profile?.phone || "");
   const smsEnabled = profile?.sms_notifications_enabled !== false;
 
   const handleSmsToggle = async (next: boolean) => {

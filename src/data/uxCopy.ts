@@ -161,6 +161,10 @@ const createUxCopy = () => ({
     missingPhone: { ro: "Adaugă mai întâi un număr de telefon valid (format românesc: 07XX XXX XXX) pentru a activa SMS-urile.", en: "Add a valid Romanian phone number (07XX XXX XXX) first to enable SMS." },
     saved: { ro: "Preferință SMS actualizată", en: "SMS preference updated" },
     saveError: { ro: "Nu s-a putut actualiza preferința SMS", en: "Could not update SMS preference" },
+    promptTitle: { ro: "Activează notificările SMS", en: "Enable SMS notifications" },
+    promptDesc: { ro: "Adaugă numărul de telefon ca să primești SMS instant la cereri noi, acceptări, anulări și reminder-ul de returnare.", en: "Add your phone number to get instant SMS for new requests, approvals, cancellations and return reminders." },
+    promptCta: { ro: "Adaugă număr telefon", en: "Add phone number" },
+    invalidFormat: { ro: "Format invalid. Folosește 07XX XXX XXX sau +40 7XX XXX XXX.", en: "Invalid format. Use 07XX XXX XXX or +40 7XX XXX XXX." },
   },
   home: {
     heroTitle: { ro: "Închiriază orice,", en: "Rent anything," },

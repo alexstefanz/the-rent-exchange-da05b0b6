@@ -17,6 +17,7 @@ import { createRentalWithStripeCheckout } from "@/features/rentals/rentalsApi";
 import { toast } from "sonner";
 import { useKycGate } from "@/hooks/queries/useKycGate";
 import KycGateBanner from "@/components/kyc/KycGateBanner";
+import SmsPhonePromptBanner from "@/components/profile/SmsPhonePromptBanner";
 
 interface CheckoutState {
   product: {
@@ -129,6 +130,7 @@ const Checkout = () => {
             <KycGateBanner reason="book" />
           </div>
         )}
+        <SmsPhonePromptBanner className="mb-6" />
         <div className="grid lg:grid-cols-2 gap-8">
           <div className="space-y-4">
             {/* Step 1 - Message to owner */}
