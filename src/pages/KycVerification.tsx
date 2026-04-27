@@ -258,6 +258,7 @@ const KycVerification = () => {
   const isVerified = kycCase?.status === "VERIFIED" || kycCase?.status === "APPROVED";
   const isRejected = kycCase?.status === "REJECTED";
   const canUpload = !isAlreadySubmitted && !isVerified;
+  const showPhoneGate = canUpload && !phoneGate.isProfileLoading && !phoneGate.hasValidPhone;
 
   const progress = isVerified ? 100 : isAlreadySubmitted ? 66 : docs.length > 0 ? 33 : 0;
 
