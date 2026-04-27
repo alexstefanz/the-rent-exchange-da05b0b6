@@ -55,6 +55,7 @@ const KycVerification = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const ux = useUxCopy();
 
   const [kycCase, setKycCase] = useState<KycCase | null>(null);
   const [isLoading, setIsLoading] = useState(true);
