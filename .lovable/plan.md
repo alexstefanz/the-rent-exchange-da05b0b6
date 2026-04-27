@@ -1,49 +1,79 @@
-## Context — sistemul SMS este deja conectat
+## Obiectiv
 
-Toate cele **5 evenimente** apelează deja `send-sms-notification`:
-1. `rental_request_owner` — cerere nouă (proprietar)
-2. `rental_accepted` — acceptată (chiriaș)
-3. `rental_rejected` — refuzată (chiriaș)
-4. `rental_cancelled` — anulată (proprietar)
-5. `return_reminder` — reminder ziua returnării (chiriaș)
+Transform banner-ul actual de avertizare într-o **blocare reală**: niciun user nu poate face acțiuni critice fără un număr de telefon RO valid în profil. Telefonul e necesar pentru SMS-urile tranzacționale (cerere, acceptare, refuz, anulare, reminder returnare).
 
-## Problema reală (diagnostic din DB)
+## Acțiuni blocate
 
-Din 17 useri:
-- **doar 2 au telefon completat** în profil (`profiles.phone`)
-- **15 useri primesc `skipped: invalid_phone`** și nu vor primi niciodată SMS
+1. **Postarea unui produs** (`/produs-nou`)
+2. **Editarea unui produs** (`/editeaza-produs/:id`)
+3. **Crearea unei rezervări** (`/checkout` — la pasul plății)
+4. **Trimiterea dosarului KYC** (`/verificare`)
 
-Logurile confirmă: ultima cerere a fost marcată `skipped/invalid_phone` (telefon gol).
+## Comportamentul de blocare (uniform pe toate cele 4)
 
-Cauza: telefonul este opțional la signup și mulți useri nu îl completează în profil. Edge function-ul îl normalizează corect la `+40XXXXXXXXX` și sare peste useri fără telefon valid (comportament corect — nu putem trimite SMS fără număr).
+- Banner roșu permanent în partea de sus a paginii: „Ai nevoie de un număr de telefon valid pentru a continua. Vom folosi acest număr pentru notificări SMS despre rezervări."
+- Butonul principal de submit (Plătește / Publică / Salvează / Trimite KYC) este **dezactivat** atât timp cât profilul nu are `isValidRomanianPhone(phone) === true`.
+- Dacă userul totuși forțează (ex. tastatură), `handleSubmit` verifică din nou și afișează un dialog modal cu:
+  - Titlu: „Adaugă numărul de telefon"
+  - Text explicativ
+  - Buton primar: „Mergi la contul meu" → `navigate("/contul-meu")`
+  - Buton secundar: „Anulează"
+- După ce userul completează telefonul în AccountTab și se întoarce, banner-ul dispare și butonul devine activ.
 
-## Plan — 3 pași pentru activare reală
+## Componentă nouă reutilizabilă
 
-### 1. Telefon obligatoriu la KYC + acțiuni critice
-- La submit KYC, validare frontend că `profiles.phone` e completat și valid RO (`+40XXXXXXXXX` sau `0XXXXXXXXX`).
-- La crearea unei rezervări (renter) și la publicarea unui produs (owner), banner non-blocking dacă lipsește telefonul: "Adaugă numărul de telefon ca să primești notificări SMS despre rezervări". Link spre `/cont` (AccountTab).
+`src/components/profile/PhoneRequiredGate.tsx`
+- Hook intern: folosește `useCurrentUserProfile` + `isValidRomanianPhone`.
+- Expune:
+  - `<PhoneRequiredGate>` — banner roșu (înlocuiește `SmsPhonePromptBanner` în cele 4 pagini cu un ton mai ferm)
+  - `usePhoneRequired()` — hook care întoarce `{ hasValidPhone, requirePhone(): boolean }` (deschide dialog dacă lipsește)
+  - `<PhoneRequiredDialog>` — modal global cu redirect spre `/contul-meu`
 
-### 2. UI explicit în setări cont
-- În `AccountTab.tsx`: badge clar lângă câmpul Telefon — verde "SMS activ" dacă e completat și `sms_notifications_enabled=true`, gri "SMS inactiv" altfel, cu mesaj explicativ ("Vei primi SMS la cereri noi, acceptare, anulare, reminder returnare").
-- Validare format la salvare: doar formate RO acceptate, mesaj de eroare clar.
+## Modificări per fișier
 
-### 3. Email de tip "completează profilul"
-- Edge function nouă (one-shot, manuală din Admin) `prompt-missing-phone`: trimite email branded către userii fără telefon, cu link spre `/cont`, explicând beneficiul SMS-urilor pentru rezervări.
-- Buton în AdminDashboard: "Trimite reminder telefon utilizatorilor fără SMS" (cu confirmare + counter).
+### `src/components/profile/PhoneRequiredGate.tsx` (nou)
+- Banner roșu + dialog + hook într-un singur fișier export.
+- Folosește `useUxCopy` pentru toate textele (RO/EN).
+
+### `src/pages/Checkout.tsx`
+- Înlocuiesc `<SmsPhonePromptBanner>` cu `<PhoneRequiredGate>`.
+- În `handleStripeCheckout`: înainte de Stripe, dacă telefonul lipsește → deschid dialog și `return`.
+- Buton „Plătește" — adaug `disabled={!hasValidPhone}`.
+
+### `src/pages/NewProduct.tsx`
+- Idem ca mai sus, în `handleSubmit` blochez înainte de `createProduct`.
+- Buton „Publică anunț" — `disabled={!hasValidPhone}`.
+
+### `src/pages/EditProduct.tsx` (nou de adăugat)
+- Adaug `<PhoneRequiredGate>` sus.
+- Blochez submit-ul de update cu același pattern.
+
+### `src/pages/KycVerification.tsx`
+- Adaug `<PhoneRequiredGate>` sus.
+- Blochez butonul „Trimite spre verificare" + check în handler.
+
+### `src/data/uxCopy.ts`
+- Adaug în `smsNotifications`:
+  - `requiredTitle`: „Numărul de telefon este obligatoriu"
+  - `requiredDesc`: „Adaugă un număr RO valid pentru a continua. Îl folosim pentru SMS-uri despre rezervări."
+  - `dialogTitle`, `dialogDesc`, `goToAccount`, `cancel`
+
+### `src/components/profile/SmsPhonePromptBanner.tsx`
+- Rămâne neschimbat (folosit în alte locuri non-blocante, dacă există). Poate fi deprecated ulterior.
 
 ## Aspecte tehnice
 
-- Edge function-ul `send-sms-notification` și template-urile rămân neschimbate — funcționează corect, dovedit de SMS-ul de test primit.
-- `sms_notifications_enabled` rămâne default `true` (deja așa în DB) — userii pot opta out din `NotificationsTab`.
-- Validare telefon RO reutilizată din helper deja existent (`normalizePhoneRO` — îl portez pe frontend ca util în `src/lib/inputValidation.ts`).
-- Niciun cost suplimentar SMS până când userii nu adaugă telefon real.
+- Validarea folosește `isValidRomanianPhone` deja existent (`+40XXXXXXXXX`, `0XXXXXXXXX`, `40XXXXXXXXX`, `0040XXXXXXXXX`).
+- Nu modificăm RLS sau edge functions — toată logica e client-side, suficientă pentru UX (KYC + RLS protejează server-side oricum).
+- Profilul e citit prin `useCurrentUserProfile` (deja include `phone`).
+- Niciun cost suplimentar Twilio până când userii nu adaugă telefon real.
 
 ## Ce NU schimb
-- Logica din cele 4 edge functions care invocă SMS — deja corectă.
-- Template-urile SMS — rămân ASCII fără diacritice, sub 160 caractere.
-- Tabela `sms_logs` și RLS — deja corecte.
 
-## Rezultat așteptat
-După aplicare: orice user nou care completează telefonul primește automat toate cele 5 tipuri de SMS-uri tranzacționale, fără configurări suplimentare. Userii existenți primesc un prompt vizual + email opțional pentru a-și completa numărul.
+- Edge functions SMS — funcționează corect.
+- Logica de KYC sau Stripe — neatinse.
+- Procesul de signup — telefonul rămâne opțional la registration (forțăm doar la acțiuni critice).
 
-**Aprobă planul ca să trec în Build mode și să implementez.**
+## Rezultat
+
+După aplicare: orice user care încearcă să posteze, să editeze, să rezerve sau să trimită KYC fără telefon valid e oprit cu un mesaj clar și un buton care îl duce direct la pagina unde îl poate adăuga.
