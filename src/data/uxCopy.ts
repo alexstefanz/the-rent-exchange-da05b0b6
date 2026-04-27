@@ -171,6 +171,10 @@ const createUxCopy = () => ({
     dialogDesc: { ro: "Nu poți finaliza această acțiune fără un număr de telefon valid. Te ducem la pagina contului tău ca să-l adaugi acum.", en: "You can't complete this action without a valid phone number. We'll take you to your account page so you can add it now." },
     goToAccount: { ro: "Mergi la contul meu", en: "Go to my account" },
     cancel: { ro: "Anulează", en: "Cancel" },
+    kycGateTitle: { ro: "Adaugă numărul de telefon înainte de verificare", en: "Add your phone number before verification" },
+    kycGateDesc: { ro: "Pentru a începe verificarea identității (KYC), ai nevoie de un număr de telefon românesc valid în profil. Îl folosim ca să-ți trimitem SMS despre statusul KYC și despre rezervări.", en: "To start identity verification (KYC), you need a valid Romanian phone number in your profile. We use it to send you SMS about KYC status and reservations." },
+    kycGateCta: { ro: "Adaugă număr de telefon", en: "Add phone number" },
+    kycGateBack: { ro: "Înapoi", en: "Back" },
   },
   home: {
     heroTitle: { ro: "Închiriază orice,", en: "Rent anything," },

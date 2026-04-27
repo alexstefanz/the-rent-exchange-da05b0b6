@@ -16,6 +16,8 @@ import {
   ArrowLeft,
   X,
   Image as ImageIcon,
+  Phone,
+  ArrowRight,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -24,6 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { PhoneRequiredGate, PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
+import { useUxCopy } from "@/hooks/useUxCopy";
 
 type KycCase = {
   id: string;
@@ -52,6 +55,7 @@ const KycVerification = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const ux = useUxCopy();
 
   const [kycCase, setKycCase] = useState<KycCase | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -254,6 +258,7 @@ const KycVerification = () => {
   const isVerified = kycCase?.status === "VERIFIED" || kycCase?.status === "APPROVED";
   const isRejected = kycCase?.status === "REJECTED";
   const canUpload = !isAlreadySubmitted && !isVerified;
+  const showPhoneGate = canUpload && !phoneGate.isProfileLoading && !phoneGate.hasValidPhone;
 
   const progress = isVerified ? 100 : isAlreadySubmitted ? 66 : docs.length > 0 ? 33 : 0;
 
@@ -368,7 +373,42 @@ const KycVerification = () => {
         )}
 
         {/* Upload section */}
-        {canUpload && (
+        {showPhoneGate && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="flex flex-col items-center text-center gap-4 py-10 px-6">
+              <div className="rounded-full bg-primary/15 p-4">
+                <Phone className="h-8 w-8 text-primary" />
+              </div>
+              <div className="space-y-2 max-w-md">
+                <h2 className="text-lg font-semibold text-foreground">
+                  {ux.smsNotifications.kycGateTitle}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {ux.smsNotifications.kycGateDesc}
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => navigate(-1)}
+                  className="sm:order-1"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  {ux.smsNotifications.kycGateBack}
+                </Button>
+                <Button
+                  onClick={() => navigate("/contul-meu")}
+                  className="sm:order-2"
+                >
+                  {ux.smsNotifications.kycGateCta}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {canUpload && !showPhoneGate && (
           <div className="space-y-4">
             <Card>
               <CardHeader>
