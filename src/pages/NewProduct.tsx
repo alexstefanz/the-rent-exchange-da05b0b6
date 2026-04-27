@@ -22,7 +22,7 @@ import ImageUpload from "@/components/products/ImageUpload";
 import { containsContactInfo } from "@/lib/inputValidation";
 import { useKycGate } from "@/hooks/queries/useKycGate";
 import KycGateBanner from "@/components/kyc/KycGateBanner";
-import SmsPhonePromptBanner from "@/components/profile/SmsPhonePromptBanner";
+import { PhoneRequiredGate, PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
 
 const CONTACT_INFO_ERROR = "Descrierea nu poate conține date de contact (telefon, email sau link-uri). Comunicarea se face prin platforma Rentli.";
 
@@ -48,6 +48,7 @@ const NewProduct = () => {
   const { user, loading: authLoading } = useAuth();
   const kyc = useKycGate();
   const [isLoading, setIsLoading] = useState(false);
+  const phoneGate = usePhoneRequired();
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [images, setImages] = useState<string[]>([]);
   const [includedItems, setIncludedItems] = useState<string[]>([]);
@@ -89,6 +90,7 @@ const NewProduct = () => {
 
   const handleSubmit = async (data: ProductFormData) => {
     if (!user) return;
+    if (!phoneGate.requirePhone()) return;
 
     setIsLoading(true);
     try {
@@ -167,7 +169,8 @@ const NewProduct = () => {
           Înapoi la produse
         </Button>
 
-        <SmsPhonePromptBanner className="mb-4" />
+        <PhoneRequiredGate className="mb-4" />
+        <PhoneRequiredDialog open={phoneGate.dialogOpen} onOpenChange={phoneGate.setDialogOpen} />
 
         <Card>
           <CardHeader>
@@ -399,7 +402,7 @@ const NewProduct = () => {
               </div>
               
               <div className="flex gap-4">
-                <Button type="submit" disabled={isLoading}>
+                <Button type="submit" disabled={isLoading || !phoneGate.hasValidPhone}>
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
