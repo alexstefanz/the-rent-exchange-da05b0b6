@@ -17,7 +17,7 @@ import { createRentalWithStripeCheckout } from "@/features/rentals/rentalsApi";
 import { toast } from "sonner";
 import { useKycGate } from "@/hooks/queries/useKycGate";
 import KycGateBanner from "@/components/kyc/KycGateBanner";
-import SmsPhonePromptBanner from "@/components/profile/SmsPhonePromptBanner";
+import { PhoneRequiredGate, PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
 
 interface CheckoutState {
   product: {
@@ -48,6 +48,7 @@ const Checkout = () => {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const phoneGate = usePhoneRequired();
   const [messageToOwner, setMessageToOwner] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
@@ -75,6 +76,7 @@ const Checkout = () => {
       navigate("/verificare");
       return;
     }
+    if (!phoneGate.requirePhone()) return;
     setIsSubmitting(true);
     try {
       const stripeUrl = await createRentalWithStripeCheckout({
@@ -130,7 +132,8 @@ const Checkout = () => {
             <KycGateBanner reason="book" />
           </div>
         )}
-        <SmsPhonePromptBanner className="mb-6" />
+        <PhoneRequiredGate className="mb-6" />
+        <PhoneRequiredDialog open={phoneGate.dialogOpen} onOpenChange={phoneGate.setDialogOpen} />
         <div className="grid lg:grid-cols-2 gap-8">
           <div className="space-y-4">
             {/* Step 1 - Message to owner */}
@@ -192,7 +195,7 @@ const Checkout = () => {
                     onClick={handleStripeCheckout}
                     className="w-full h-12"
                     size="lg"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !phoneGate.hasValidPhone}
                   >
                     <CreditCard className="mr-2 h-5 w-5" />
                     {isSubmitting

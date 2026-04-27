@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { PhoneRequiredGate, PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
 
 type KycCase = {
   id: string;
@@ -58,6 +59,7 @@ const KycVerification = () => {
   const [docs, setDocs] = useState<UploadedDoc[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeDocType, setActiveDocType] = useState<"id_front" | "id_back" | "selfie" | null>(null);
+  const phoneGate = usePhoneRequired();
 
   // Redirect if not logged in
   useEffect(() => {
@@ -145,6 +147,7 @@ const KycVerification = () => {
 
   const handleSubmit = async () => {
     if (!user || !allDocsUploaded) return;
+    if (!phoneGate.requirePhone()) return;
     setIsSubmitting(true);
 
     try {
@@ -288,6 +291,9 @@ const KycVerification = () => {
             )}
           </p>
         </div>
+
+        <PhoneRequiredGate className="mb-6" />
+        <PhoneRequiredDialog open={phoneGate.dialogOpen} onOpenChange={phoneGate.setDialogOpen} />
 
         {/* Progress */}
         <div className="mb-6">
@@ -464,7 +470,7 @@ const KycVerification = () => {
             <Button
               className="w-full"
               size="lg"
-              disabled={!allDocsUploaded || isSubmitting}
+              disabled={!allDocsUploaded || isSubmitting || !phoneGate.hasValidPhone}
               onClick={handleSubmit}
             >
               {isSubmitting ? (

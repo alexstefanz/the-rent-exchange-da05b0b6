@@ -165,6 +165,12 @@ const createUxCopy = () => ({
     promptDesc: { ro: "Adaugă numărul de telefon ca să primești SMS instant la cereri noi, acceptări, anulări și reminder-ul de returnare.", en: "Add your phone number to get instant SMS for new requests, approvals, cancellations and return reminders." },
     promptCta: { ro: "Adaugă număr telefon", en: "Add phone number" },
     invalidFormat: { ro: "Format invalid. Folosește 07XX XXX XXX sau +40 7XX XXX XXX.", en: "Invalid format. Use 07XX XXX XXX or +40 7XX XXX XXX." },
+    requiredTitle: { ro: "Numărul de telefon este obligatoriu", en: "Phone number is required" },
+    requiredDesc: { ro: "Pentru a continua, adaugă un număr de telefon românesc valid în profil. Îl folosim pentru notificări SMS despre rezervări (cereri, acceptări, anulări, reminder returnare).", en: "To continue, add a valid Romanian phone number in your profile. We use it for SMS notifications about reservations (requests, approvals, cancellations, return reminders)." },
+    dialogTitle: { ro: "Adaugă numărul de telefon", en: "Add your phone number" },
+    dialogDesc: { ro: "Nu poți finaliza această acțiune fără un număr de telefon valid. Te ducem la pagina contului tău ca să-l adaugi acum.", en: "You can't complete this action without a valid phone number. We'll take you to your account page so you can add it now." },
+    goToAccount: { ro: "Mergi la contul meu", en: "Go to my account" },
+    cancel: { ro: "Anulează", en: "Cancel" },
   },
   home: {
     heroTitle: { ro: "Închiriază orice,", en: "Rent anything," },

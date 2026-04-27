@@ -20,6 +20,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ImageUpload from "@/components/products/ImageUpload";
 import { containsContactInfo } from "@/lib/inputValidation";
+import { PhoneRequiredGate, PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
 
 const CONTACT_INFO_ERROR = "Descrierea nu poate conține date de contact (telefon, email sau link-uri). Comunicarea se face prin platforma Rentli.";
 
@@ -53,6 +54,7 @@ const EditProduct = () => {
   const [images, setImages] = useState<string[]>([]);
   const [includedItems, setIncludedItems] = useState<string[]>([]);
   const [newIncludedItem, setNewIncludedItem] = useState("");
+  const phoneGate = usePhoneRequired();
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -138,6 +140,7 @@ const EditProduct = () => {
 
   const handleSubmit = async (data: ProductFormData) => {
     if (!user || !id) return;
+    if (!phoneGate.requirePhone()) return;
 
     setIsSaving(true);
     try {
@@ -194,7 +197,10 @@ const EditProduct = () => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Înapoi la produse
         </Button>
-        
+
+        <PhoneRequiredGate className="mb-4" />
+        <PhoneRequiredDialog open={phoneGate.dialogOpen} onOpenChange={phoneGate.setDialogOpen} />
+
         <Card>
           <CardHeader>
             <CardTitle>Editează produs</CardTitle>
@@ -407,7 +413,7 @@ const EditProduct = () => {
               </div>
               
               <div className="flex gap-4">
-                <Button type="submit" disabled={isSaving}>
+                <Button type="submit" disabled={isSaving || !phoneGate.hasValidPhone}>
                   {isSaving ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
