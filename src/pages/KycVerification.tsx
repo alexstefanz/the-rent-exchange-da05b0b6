@@ -16,6 +16,8 @@ import {
   ArrowLeft,
   X,
   Image as ImageIcon,
+  Phone,
+  ArrowRight,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -24,6 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { PhoneRequiredGate, PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
+import { useUxCopy } from "@/hooks/useUxCopy";
 
 type KycCase = {
   id: string;
