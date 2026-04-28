@@ -87,17 +87,54 @@ const Auth = () => {
   const handleResetPassword = async () => {
     if (!resetEmail) return;
     setIsResetting(true);
+
+    // 1. Pre-check via diagnostic edge function: tell the user clearly
+    //    when no account exists for this email (Supabase silently no-ops in
+    //    that case, which makes it look like the email service is broken).
+    try {
+      const { data: diag } = await supabase.functions.invoke(
+        "password-reset-diagnostics",
+        { body: { email: resetEmail.trim().toLowerCase() } }
+      );
+      if (diag && diag.exists === false) {
+        setIsResetting(false);
+        toast({
+          title: copy.auth.accountNotFound,
+          description: copy.auth.accountNotFoundDesc,
+          variant: "destructive",
+        });
+        return;
+      }
+    } catch (_diagErr) {
+      // Fail open — if diagnostics is unreachable we still try the real reset.
+    }
+
     const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
       redirectTo: `${window.location.origin}/auth?reset=true`,
     });
     setIsResetting(false);
+
     if (error) {
-      toast({ title: copy.auth.errorGeneric, description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: copy.auth.emailSent, description: copy.auth.checkInbox });
-      setShowResetDialog(false);
-      setResetEmail("");
+      const msg = (error.message || "").toLowerCase();
+      if (msg.includes("security purposes") || msg.includes("rate") || (error as any).status === 429) {
+        toast({
+          title: copy.auth.rateLimitTitle,
+          description: copy.auth.rateLimitDesc,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: copy.auth.errorGeneric,
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+      return;
     }
+
+    toast({ title: copy.auth.emailSent, description: copy.auth.checkInbox });
+    setShowResetDialog(false);
+    setResetEmail("");
   };
 
   const loginForm = useForm<LoginFormData>({

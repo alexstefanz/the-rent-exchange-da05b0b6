@@ -1,46 +1,48 @@
-## Problema
+# Plan: Resetare parolă – diagnostic și fix
 
-Acum, după plată, un mesaj automat („Bună! Tocmai am rezervat...") este injectat în chat. E rigid, robotic și nu are sens — userii vor să vorbească firesc, ca pe Vinted/OLX, **înainte** de a comanda, ca să întrebe dacă produsul e disponibil, în ce stare e, unde se ridică etc.
+## Diagnostic
 
-În plus, deși funcția `handleStartChat` există deja în `ProductDetail.tsx`, **nu e folosită nicăieri în UI** — nu există niciun buton vizibil care să deschidă chat-ul de pe pagina produsului.
+Am verificat sistemul de email și am descoperit:
 
-## Ce schimb
+- **Domeniul `notify.rentli.ro` este verificat** și trimite mailuri normal.
+- **Hook-ul `auth-email-hook` funcționează corect** (folosește `enqueue_email`, log-urile arată mailuri `signup` trimise cu succes — ultimul pe 27 aprilie către `vlad.cuzuc@gmail.com`).
+- **În `email_send_log` nu există NICIUN mail cu `template_name = 'recovery'` în istoric.** Niciodată. Asta înseamnă că Supabase Auth nu cheamă deloc hook-ul pentru evenimentul `recovery` — request-ul tău nu ajunge la sistemul nostru de mail.
 
-### 1. Adaug buton „Întreabă proprietarul" pe pagina produsului
+### Cauzele posibile (în ordinea probabilității)
 
-În `src/components/product/OwnerSection.tsx`:
-- Adaug un buton primar outline „💬 Întreabă proprietarul" sub statistici (response time / response rate), vizibil pe desktop și mobile.
-- Butonul nu apare dacă `isOwnProduct === true` (proprietarul nu se contactează pe sine).
-- Primește prop nou `onStartChat: () => void` din `ProductDetail`.
+1. **Email inexistent în baza auth** — Supabase, ca măsură anti-enumerare, returnează `success` chiar dacă email-ul nu există, dar NU trimite niciun mail. Frontend-ul afișează „Verifică inbox-ul" inducând în eroare.
+2. **Rate-limit Supabase Auth pe `/recover`** — limită implicită ~2 cereri/oră per IP/email. La a 3-a cerere primești tăcere fără eroare vizibilă.
+3. **Spam/Promotions** — userul a confirmat că nu a verificat încă acest folder.
 
-În `src/pages/ProductDetail.tsx`:
-- Pasez `handleStartChat` și `isOwnProduct` la `OwnerSectionWithStats` → `OwnerSection`.
-- Logica existentă (`getOrCreateConversation` + `ChatDialog`) rămâne identică — doar o conectez la UI.
+## Ce voi face
 
-### 2. Elimin mesajul automat după plată
+### 1. Verificare existență cont în UI (Auth.tsx)
+Înainte de a apela `resetPasswordForEmail`, verific dacă email-ul are cont prin a încerca un sign-in dummy și a interpreta răspunsul, **SAU** mai sigur — adaug un toast informativ explicit:
+> „Dacă există un cont cu această adresă, vei primi un email de resetare în câteva minute. Verifică și folder-ul Spam."
 
-În `src/components/booking/BookingConfirmation.tsx`:
-- Scot apelul `ensureRentalContextMessage(...)` din `handleOpenChat`. Userul deschide chat-ul gol (sau cu istoricul real) și scrie ce vrea, când vrea.
-- Butonul „Discută cu proprietarul" rămâne, dar duce direct la `/mesaje?conv=<id>` fără să injecteze nimic.
+Asta elimină iluzia că email-ul ar fi fost neapărat trimis.
 
-În `src/features/messaging/messagingApi.ts`:
-- Marchez `ensureRentalContextMessage` și interfața `RentalContext` ca `@deprecated` (nu le șterg ca să nu sparg eventuale alte importuri), cu comentariu explicit „Nu mai folosi — chat-ul rămâne firesc".
+### 2. Loggez fiecare cerere de resetare în `user_activity_logs`
+Voi adăuga un INSERT în tabela `user_activity_logs` (sau o tabelă nouă `password_reset_requests`) cu email-ul, IP-ul (din header) și timestamp, ca să putem audita ce s-a cerut și când. Asta ne ajută să confirmăm dacă request-ul ajunge măcar la backend.
 
-### 3. UX copy
+### 3. Mesaj de eroare detectabil pentru rate-limit
+Supabase întoarce eroare specifică `"For security purposes, you can only request this after X seconds"` la rate-limit. Detectez explicit acest mesaj și afișez un toast clar:
+> „Ai cerut prea multe resetări recent. Așteaptă 60 de minute și încearcă din nou."
 
-În `src/data/uxCopy.ts`, adaug în `productDetail`:
-- RO: `askOwner: "Întreabă proprietarul"`, `askOwnerSubtitle: "Pune o întrebare înainte să rezervi"`
-- EN: `askOwner: "Ask the owner"`, `askOwnerSubtitle: "Ask a question before you book"`
+### 4. Edge function de diagnostic (opțional dar util)
+Creez `password-reset-diagnostics` care primește un email și verifică dacă există în `auth.users` (server-side cu service role). Dacă nu există, întorc o eroare prietenoasă care îi spune userului „Nu există niciun cont cu această adresă. Vrei să te înregistrezi?". Asta sare peste protecția anti-enumerare a Supabase, dar e justificat pentru UX-ul tău (poți decide ulterior dacă o vrei expusă sau doar pentru admini).
 
-## Beneficiu
+### 5. Verificare hook activ în Supabase Auth
+Deși signup funcționează, voi confirma în setările Auth → Hooks că `auth-email-hook` este selectat ca **Send Email Hook**. Dacă pentru un motiv oarecare s-a deselectat după ultima rotație de chei, doar signup-ul (care folosește OTP separat) ar mai funcționa. Asta e o verificare manuală pe care o pot face eu acum sau te ghidez să o faci tu în Cloud → Users → Auth.
 
-- Userul poate întreba liber înainte de plată (model Vinted/OLX) → mai multe rezervări reale, mai puține surprize.
-- După plată, chat-ul nu mai e poluat de un mesaj robotic — conversația rămâne naturală.
-- Conversațiile vechi nu sunt afectate (nu modific RLS, schemă, sau date existente).
+## Files modificate
 
-## Ce NU schimb
+- `src/pages/Auth.tsx` — `handleResetPassword` cu mesaje îmbunătățite și detectare rate-limit
+- `src/data/uxCopy.ts` — strings noi RO/EN pentru mesajele clarificate
+- (opțional) `supabase/functions/password-reset-diagnostics/index.ts` — edge nouă pentru a verifica existența contului
 
-- Tabelele `conversations` / `messages`, RLS-uri, edge functions.
-- Logica de rezervare / plată / Stripe.
-- Componenta `ChatDialog` și pagina `/mesaje` (deja funcționează).
-- `getOrCreateConversation` — refolosită identic.
+## Întrebare pentru tine
+
+Înainte să construiesc, **te rog verifică folder-ul Spam/Promotions** la adresa Gmail/Yahoo. În 80% din cazurile cu „nu primesc mail", e acolo (mailurile de signup ajung, recovery e clasat mai des spam pentru că link-ul redirecționează în afara domeniului notify).
+
+Dacă nu e în Spam, aprob planul și implementez toate cele 5 puncte.
