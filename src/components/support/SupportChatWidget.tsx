@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useLocation } from "react-router-dom";
-import { Headphones, Send, X, MessageSquare, Plus, Bot, Loader2, ImagePlus } from "lucide-react";
+import { useLocation, useParams } from "react-router-dom";
+import { Headphones, Send, X, MessageSquare, Plus, Bot, Loader2, ImagePlus, ChevronRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -16,6 +16,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { SUPPORT_FAQ } from "@/data/supportFaq";
 
 const STORAGE_KEY = "support_chat_ticket_id";
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/support-ai-chat`;
@@ -153,6 +154,14 @@ interface ToolCallData {
   description: string;
   category_group: string;
   category_type: string;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+}
+
+interface ChatContext {
+  route: string;
+  productId?: string;
+  productTitle?: string;
+  reservationId?: string;
 }
 
 const SupportChatWidget = () => {
@@ -173,12 +182,44 @@ const SupportChatWidget = () => {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [showFaq, setShowFaq] = useState(true);
+  const [openFaqId, setOpenFaqId] = useState<string | null>(null);
 
   const [messageText, setMessageText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isAdminRoute = pathname.startsWith("/admin");
   const hasInitiatedAi = useRef(false);
+
+  // Detect contextual page (product / rental) for the AI
+  const { data: chatContext } = useQuery<ChatContext>({
+    queryKey: ["supportChatContext", pathname],
+    queryFn: async () => {
+      const ctx: ChatContext = { route: pathname };
+      // Product page: /produs/:slug or /product/:slug
+      const productMatch = pathname.match(/^\/(?:produs|product)\/([^/]+)/);
+      if (productMatch) {
+        const slug = productMatch[1];
+        const { data } = await supabase
+          .from("products")
+          .select("id, title")
+          .eq("slug", slug)
+          .maybeSingle();
+        if (data) {
+          ctx.productId = data.id;
+          ctx.productTitle = data.title;
+        }
+      }
+      // Rental pages: /inchirieri/:id, /rezervari/:id, /checkout/:id, /rentals/:id, /rentals-out/:id
+      const rentalMatch = pathname.match(/^\/(?:inchirieri|rezervari|checkout|rentals|rentals-out)\/([0-9a-f-]{36})/i);
+      if (rentalMatch) {
+        ctx.reservationId = rentalMatch[1];
+      }
+      return ctx;
+    },
+    enabled: isOpen && !!user && !ticketId,
+    staleTime: 60_000,
+  });
 
   const { data: ticketInfo } = useQuery({
     queryKey: ["supportTicketInfo", ticketId],
@@ -216,11 +257,11 @@ const SupportChatWidget = () => {
   }, [messages, aiMessages]);
 
   useEffect(() => {
-    if (isOpen && user && !ticketId && aiMessages.length === 0 && !hasInitiatedAi.current) {
+    if (isOpen && user && !ticketId && aiMessages.length === 0 && !hasInitiatedAi.current && !showFaq) {
       hasInitiatedAi.current = true;
       streamAiResponse([]);
     }
-  }, [isOpen, user, ticketId]);
+  }, [isOpen, user, ticketId, showFaq]);
 
   const handleToolCall = useCallback(async (toolData: ToolCallData) => {
     setIsCreatingTicket(true);
@@ -230,6 +271,9 @@ const SupportChatWidget = () => {
         description: toolData.description,
         category_group: toolData.category_group,
         category_type: toolData.category_type,
+        priority: toolData.priority,
+        product_id: chatContext?.productId,
+        reservation_id: chatContext?.reservationId,
       });
 
       const aiSummary = aiMessages
@@ -252,7 +296,7 @@ const SupportChatWidget = () => {
     } finally {
       setIsCreatingTicket(false);
     }
-  }, [aiMessages, t, queryClient]);
+  }, [aiMessages, t, queryClient, chatContext]);
 
   const streamAiResponse = async (conversationMessages: AiMessage[]) => {
     setIsAiLoading(true);
@@ -265,7 +309,7 @@ const SupportChatWidget = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: conversationMessages }),
+        body: JSON.stringify({ messages: conversationMessages, context: chatContext }),
       });
 
       if (!resp.ok) {
@@ -429,6 +473,13 @@ const SupportChatWidget = () => {
     setMessageText("");
     setAiMessages([]);
     hasInitiatedAi.current = false;
+    setShowFaq(true);
+    setOpenFaqId(null);
+  };
+
+  const handleSkipFaq = () => {
+    setShowFaq(false);
+    setOpenFaqId(null);
   };
 
   if (isAdminRoute) return null;
@@ -522,8 +573,77 @@ const SupportChatWidget = () => {
             ) : !ticketId ? (
               /* AI Chat Phase */
               <>
+                {showFaq ? (
+                  <ScrollArea className="flex-1 px-4 py-4">
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-2">
+                        <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                          <Bot className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="bg-muted rounded-2xl rounded-bl-md px-3 py-2 text-sm">
+                          {t(
+                            "Salut! 👋 Înainte să deschidem un ticket, vezi dacă răspunsul e mai jos. Dacă nu — sunt aici!",
+                            "Hi! 👋 Before opening a ticket, check if your answer is below. If not — I'm here!",
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 pt-1">
+                        {SUPPORT_FAQ.map((faq) => {
+                          const isOpen = openFaqId === faq.id;
+                          return (
+                            <div key={faq.id} className="border rounded-xl overflow-hidden bg-card">
+                              <button
+                                type="button"
+                                onClick={() => setOpenFaqId(isOpen ? null : faq.id)}
+                                className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left text-sm font-medium hover:bg-muted/50 transition-colors"
+                              >
+                                <span className="flex-1">{t(faq.question.ro, faq.question.en)}</span>
+                                <ChevronRight
+                                  className={`h-4 w-4 text-muted-foreground transition-transform shrink-0 ${
+                                    isOpen ? "rotate-90" : ""
+                                  }`}
+                                />
+                              </button>
+                              {isOpen && (
+                                <div className="px-3 pb-3 pt-1 text-xs text-muted-foreground border-t bg-muted/30 whitespace-pre-wrap">
+                                  {t(faq.answer.ro, faq.answer.en)}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="w-full mt-3 gap-1.5"
+                        onClick={handleSkipFaq}
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        {t("Tot am nevoie de ajutor", "I still need help")}
+                      </Button>
+                      <p className="text-[10px] text-muted-foreground text-center">
+                        {t(
+                          "Asistentul AI te ajută să creezi un ticket pentru echipă.",
+                          "The AI assistant helps you open a ticket for the team.",
+                        )}
+                      </p>
+                    </div>
+                  </ScrollArea>
+                ) : (
+                <>
                 <ScrollArea className="flex-1 px-4 py-3">
                   <div className="space-y-3">
+                    <button
+                      type="button"
+                      onClick={() => { setShowFaq(true); setAiMessages([]); hasInitiatedAi.current = false; }}
+                      className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                    >
+                      <ArrowLeft className="h-3 w-3" />
+                      {t("Întoarce-te la întrebări frecvente", "Back to FAQ")}
+                    </button>
                     {aiMessages.map((msg, idx) => {
                       const isUser = msg.role === "user";
                       return (
@@ -604,6 +724,8 @@ const SupportChatWidget = () => {
                   </div>
                   <p className="hidden lg:block text-[10px] text-muted-foreground text-center pb-2">Chat Rentli</p>
                 </div>
+                </>
+                )}
               </>
             ) : (
               /* Ticket Chat View */

@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, User, Mail, Phone, Calendar, Eye, Loader2,
   Shield, ShieldCheck, Ban, UserCheck, Package, ShoppingCart,
-  MessageCircle, Building2, AlertTriangle
+  MessageCircle, Building2, AlertTriangle, Tags
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import UserRentalsTab from "@/components/admin/user-detail/UserRentalsTab";
 import UserReviewsTab from "@/components/admin/user-detail/UserReviewsTab";
 import UserConversationsTab from "@/components/admin/user-detail/UserConversationsTab";
 import UserActivityTab from "@/components/admin/user-detail/UserActivityTab";
+import AdminSpecializationsTab from "@/components/admin/user-detail/AdminSpecializationsTab";
 import { updateUserRole } from "@/features/admin/adminApi";
 import { banUser, unbanUser } from "@/features/admin/banApi";
 import { useAuth } from "@/contexts/AuthContext";
@@ -389,6 +390,11 @@ const AdminUserDetail = () => {
                 <TabsTrigger value="activity" className="gap-1 text-xs">
                   📋 Activitate
                 </TabsTrigger>
+                {userDetail.user_role === 'admin' && (
+                  <TabsTrigger value="specializations" className="gap-1 text-xs">
+                    <Tags className="h-3.5 w-3.5" /> Specializări
+                  </TabsTrigger>
+                )}
               </TabsList>
 
               <TabsContent value="products">
@@ -430,6 +436,16 @@ const AdminUserDetail = () => {
                   </CardContent>
                 </Card>
               </TabsContent>
+
+              {userDetail.user_role === 'admin' && (
+                <TabsContent value="specializations">
+                  <Card>
+                    <CardContent className="pt-6">
+                      {id && <AdminSpecializationsTab userId={id} />}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              )}
             </Tabs>
           </div>
         </div>
