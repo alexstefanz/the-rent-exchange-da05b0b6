@@ -35,6 +35,7 @@ export const createUserTicket = async (input: {
   category_type: string;
   reservation_id?: string | null;
   product_id?: string | null;
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 }): Promise<OpsTicket> => {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) throw new Error("Not authenticated");
@@ -44,7 +45,7 @@ export const createUserTicket = async (input: {
     description: input.description,
     category_group: input.category_group,
     category_type: input.category_type,
-    priority: 'MEDIUM',
+    priority: input.priority || 'MEDIUM',
     requester_user_id: userData.user.id,
     reservation_id: input.reservation_id || null,
     product_id: input.product_id || null,
