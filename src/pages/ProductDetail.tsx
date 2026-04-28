@@ -38,8 +38,8 @@ interface OwnerInfo {
   avatar_url: string | null;
 }
 
-const OwnerSectionWithStats = ({ ownerId, ownerName, ownerAvatar, responseTime, responseRate, isOwnProduct }: {
-  ownerId: string; ownerName: string; ownerAvatar?: string | null; responseTime?: string; responseRate?: string; isOwnProduct?: boolean;
+const OwnerSectionWithStats = ({ ownerId, ownerName, ownerAvatar, responseTime, responseRate, isOwnProduct, onStartChat }: {
+  ownerId: string; ownerName: string; ownerAvatar?: string | null; responseTime?: string; responseRate?: string; isOwnProduct?: boolean; onStartChat?: () => void;
 }) => {
   const { data: statistics } = useUserStatistics(ownerId);
   const memberSinceYear = statistics?.member_since ? new Date(statistics.member_since).getFullYear().toString() : "N/A";
@@ -54,6 +54,7 @@ const OwnerSectionWithStats = ({ ownerId, ownerName, ownerAvatar, responseTime, 
       responseTime={responseTime}
       responseRate={responseRate}
       isOwnProduct={isOwnProduct}
+      onStartChat={onStartChat}
     />
   );
 };
