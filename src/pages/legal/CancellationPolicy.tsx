@@ -78,17 +78,17 @@ const sections = [
               </tr>
               <tr className="border-b border-border">
                 <td className="p-3">4% – 6%</td>
-                <td className="p-3 text-amber-600">25€ per anulare</td>
+                <td className="p-3 text-amber-600">125 RON per anulare</td>
                 <td className="p-3">Reducere ușoară</td>
               </tr>
               <tr className="border-b border-border">
                 <td className="p-3">6% – 10%</td>
-                <td className="p-3 text-amber-600">50€ per anulare</td>
+                <td className="p-3 text-amber-600">250 RON per anulare</td>
                 <td className="p-3">Reducere semnificativă</td>
               </tr>
               <tr className="border-b border-border">
                 <td className="p-3">Peste 10%</td>
-                <td className="p-3 text-destructive">Suspendare 30 zile + 50€/anulare</td>
+                <td className="p-3 text-destructive">Suspendare 30 zile + 250 RON/anulare</td>
                 <td className="p-3">Anunțul nu mai apare</td>
               </tr>
               <tr>
