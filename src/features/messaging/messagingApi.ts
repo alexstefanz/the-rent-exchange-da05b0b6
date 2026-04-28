@@ -195,6 +195,7 @@ export async function getOwnerContactInfo(ownerId: string) {
   return data && data.length > 0 ? data[0] : null;
 }
 
+/** @deprecated No longer injected after payment. Chat stays organic (Vinted/OLX style). */
 export interface RentalContext {
   productTitle: string;
   startDate: string;
@@ -204,9 +205,9 @@ export interface RentalContext {
 }
 
 /**
- * Inserts a context message into the conversation describing the rental,
- * but only if the conversation has no messages yet (idempotent).
- * Triggers the standard message notification pipeline (email + push) for the owner.
+ * @deprecated No longer used. The post-payment auto-message felt robotic;
+ * chat now stays organic — users write their own messages before/after booking.
+ * Kept exported only to avoid breaking older imports.
  */
 export async function ensureRentalContextMessage(
   conversationId: string,

@@ -16,6 +16,7 @@ interface OwnerSectionProps {
   responseTime?: string;
   responseRate?: string;
   isOwnProduct?: boolean;
+  onStartChat?: () => void;
 }
 
 const OwnerSection = ({
@@ -28,6 +29,7 @@ const OwnerSection = ({
   responseTime = "< 1 oră",
   responseRate = "98%",
   isOwnProduct = false,
+  onStartChat,
 }: OwnerSectionProps) => {
   const copy = useUxCopy();
   const ownerInitial = ownerName.charAt(0).toUpperCase();
@@ -129,6 +131,25 @@ const OwnerSection = ({
         <Shield className="h-5 w-5 text-primary" />
         <span className="text-foreground">{copy.trust.insurance}</span>
       </div>
+
+      {/* Ask owner CTA — Vinted/OLX style */}
+      {!isOwnProduct && onStartChat && (
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          onClick={onStartChat}
+          className="mt-4 w-full border-primary/40 text-primary hover:bg-primary/5 hover:text-primary"
+        >
+          <MessageCircle className="mr-2 h-4 w-4" />
+          <span className="flex flex-col items-start leading-tight">
+            <span className="font-semibold">{copy.productDetail.askOwner}</span>
+            <span className="text-xs font-normal text-muted-foreground">
+              {copy.productDetail.askOwnerSubtitle}
+            </span>
+          </span>
+        </Button>
+      )}
     </div>
   );
 };

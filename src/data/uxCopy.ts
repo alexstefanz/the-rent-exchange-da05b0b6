@@ -338,6 +338,8 @@ const createUxCopy = () => ({
     week: { ro: "săptămână", en: "week" },
     month: { ro: "lună", en: "month" },
     untilLabel: { ro: "Până la", en: "Until" },
+    askOwner: { ro: "Întreabă proprietarul", en: "Ask the owner" },
+    askOwnerSubtitle: { ro: "Pune o întrebare înainte să rezervi", en: "Ask a question before you book" },
   },
   usageRules: {
     cancellation: { ro: "Politică de anulare", en: "Cancellation policy" },
