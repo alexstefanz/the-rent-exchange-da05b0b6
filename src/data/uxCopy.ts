@@ -270,9 +270,28 @@ const createUxCopy = () => ({
     accountExists: { ro: "Un cont cu acest email există deja", en: "An account with this email already exists" },
     accountCreated: { ro: "Cont creat cu succes", en: "Account created successfully" },
     accountCreatedDesc: { ro: "Te-ai înregistrat cu succes!", en: "You have registered successfully!" },
-    emailSent: { ro: "Email trimis", en: "Email sent" },
-    checkInbox: { ro: "Verifică inbox-ul pentru link-ul de resetare a parolei.", en: "Check your inbox for the password reset link." },
+    emailSent: { ro: "Verifică inbox-ul", en: "Check your inbox" },
+    checkInbox: {
+      ro: "Dacă există un cont cu acest email, vei primi link-ul de resetare în câteva minute. Verifică și folder-ul Spam / Promotions.",
+      en: "If an account exists for this email, you'll receive a reset link in a few minutes. Please also check Spam / Promotions.",
+    },
     errorGeneric: { ro: "Eroare", en: "Error" },
+    accountNotFound: {
+      ro: "Nu există niciun cont cu această adresă de email.",
+      en: "No account found for this email address.",
+    },
+    accountNotFoundDesc: {
+      ro: "Verifică adresa sau înregistrează-te pentru a crea un cont nou.",
+      en: "Double-check the address or sign up to create a new account.",
+    },
+    rateLimitTitle: {
+      ro: "Prea multe încercări",
+      en: "Too many attempts",
+    },
+    rateLimitDesc: {
+      ro: "Ai cerut prea multe resetări în scurt timp. Te rugăm să aștepți ~60 de minute și să încerci din nou.",
+      en: "You've requested too many resets in a short time. Please wait ~60 minutes and try again.",
+    },
     // Reset password form
     newPassword: { ro: "Parolă nouă", en: "New password" },
     confirmNewPassword: { ro: "Confirmă parola nouă", en: "Confirm new password" },
