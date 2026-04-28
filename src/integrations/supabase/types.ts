@@ -59,6 +59,27 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_specializations: {
+        Row: {
+          category_group: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          category_group: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          category_group?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           buyer_id: string
