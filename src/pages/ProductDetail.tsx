@@ -245,7 +245,7 @@ const ProductDetail = () => {
               onOpenLightbox={openLightbox}
             />
 
-            <OwnerSectionWithStats ownerId={product.owner_id} ownerName={ownerName} ownerAvatar={owner?.avatar_url} responseTime={copy.owner.responseTimeValue} responseRate="98%" isOwnProduct={user?.id === product.owner_id} />
+            <OwnerSectionWithStats ownerId={product.owner_id} ownerName={ownerName} ownerAvatar={owner?.avatar_url} responseTime={copy.owner.responseTimeValue} responseRate="98%" isOwnProduct={user?.id === product.owner_id} onStartChat={handleStartChat} />
 
             {/* Description */}
             <div className="rounded-xl border border-border bg-card p-6">
