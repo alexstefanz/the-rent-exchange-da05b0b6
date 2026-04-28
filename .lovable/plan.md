@@ -1,42 +1,46 @@
-## Context
+## Problema
 
-Acum, pe pagina `/verificare`, dacă userul nu are număr de telefon valid:
-- Apare banner roșu sus (PhoneRequiredGate)
-- Butonul „Trimite documentele" e dezactivat la final
-- Dar userul vede tot fluxul de upload, poate încărca toate documentele și abia la submit află că e blocat → frustrant și pierdere de timp
+Acum, după plată, un mesaj automat („Bună! Tocmai am rezervat...") este injectat în chat. E rigid, robotic și nu are sens — userii vor să vorbească firesc, ca pe Vinted/OLX, **înainte** de a comanda, ca să întrebe dacă produsul e disponibil, în ce stare e, unde se ridică etc.
+
+În plus, deși funcția `handleStartChat` există deja în `ProductDetail.tsx`, **nu e folosită nicăieri în UI** — nu există niciun buton vizibil care să deschidă chat-ul de pe pagina produsului.
 
 ## Ce schimb
 
-Transform blocarea într-un gate complet, vizibil de la început:
+### 1. Adaug buton „Întreabă proprietarul" pe pagina produsului
 
-### `src/pages/KycVerification.tsx`
+În `src/components/product/OwnerSection.tsx`:
+- Adaug un buton primar outline „💬 Întreabă proprietarul" sub statistici (response time / response rate), vizibil pe desktop și mobile.
+- Butonul nu apare dacă `isOwnProduct === true` (proprietarul nu se contactează pe sine).
+- Primește prop nou `onStartChat: () => void` din `ProductDetail`.
 
-Când `!phoneGate.hasValidPhone && !phoneGate.isProfileLoading && !isVerified && !isAlreadySubmitted`:
+În `src/pages/ProductDetail.tsx`:
+- Pasez `handleStartChat` și `isOwnProduct` la `OwnerSectionWithStats` → `OwnerSection`.
+- Logica existentă (`getOrCreateConversation` + `ChatDialog`) rămâne identică — doar o conectez la UI.
 
-1. **Ascund complet secțiunea de upload** (cardul „Documente necesare", tips-urile, butonul submit)
-2. **Înlocuiesc** cu un card de blocare clar:
-   - Iconiță Phone mare în orange/destructive
-   - Titlu: „Adaugă numărul de telefon înainte de verificarea identității"
-   - Text: „Avem nevoie de numărul tău pentru a-ți trimite SMS-uri legate de KYC și rezervări. Te rog adaugă-l în contul tău înainte de a continua cu verificarea."
-   - Buton primar mare „Mergi la contul meu" → `navigate("/contul-meu")`
-   - Buton secundar „Înapoi" → `navigate(-1)`
-3. **Banner-ul existent** (`PhoneRequiredGate`) rămâne sus pentru context, dar mesajul principal e cardul de gate
-4. Dacă userul e deja verificat sau în review (status VERIFIED/SUBMITTED), gate-ul nu apare — vede statusul normal
+### 2. Elimin mesajul automat după plată
 
-### `src/data/uxCopy.ts`
+În `src/components/booking/BookingConfirmation.tsx`:
+- Scot apelul `ensureRentalContextMessage(...)` din `handleOpenChat`. Userul deschide chat-ul gol (sau cu istoricul real) și scrie ce vrea, când vrea.
+- Butonul „Discută cu proprietarul" rămâne, dar duce direct la `/mesaje?conv=<id>` fără să injecteze nimic.
 
-Adaug în `smsNotifications` cheile noi pentru cardul de gate KYC:
-- `kycGateTitle`: „Adaugă numărul de telefon înainte de verificare"
-- `kycGateDesc`: „Avem nevoie de numărul tău pentru notificări SMS despre statusul KYC și rezervări."
-- `kycGateCta`: „Adaugă număr de telefon"
-- `kycGateBack`: „Înapoi"
+În `src/features/messaging/messagingApi.ts`:
+- Marchez `ensureRentalContextMessage` și interfața `RentalContext` ca `@deprecated` (nu le șterg ca să nu sparg eventuale alte importuri), cu comentariu explicit „Nu mai folosi — chat-ul rămâne firesc".
+
+### 3. UX copy
+
+În `src/data/uxCopy.ts`, adaug în `productDetail`:
+- RO: `askOwner: "Întreabă proprietarul"`, `askOwnerSubtitle: "Pune o întrebare înainte să rezervi"`
+- EN: `askOwner: "Ask the owner"`, `askOwnerSubtitle: "Ask a question before you book"`
 
 ## Beneficiu
 
-User-ul nu mai poate ajunge la pasul de upload fără telefon — înțelege imediat ce trebuie făcut, are un buton clar care îl duce la pagina corectă, fără să piardă timp încărcând documente care nu pot fi trimise.
+- Userul poate întreba liber înainte de plată (model Vinted/OLX) → mai multe rezervări reale, mai puține surprize.
+- După plată, chat-ul nu mai e poluat de un mesaj robotic — conversația rămâne naturală.
+- Conversațiile vechi nu sunt afectate (nu modific RLS, schemă, sau date existente).
 
 ## Ce NU schimb
 
-- `PhoneRequiredGate` și `usePhoneRequired` rămân neatinse (folosite și pe Checkout, NewProduct, EditProduct)
-- Logica de submit / RLS / edge functions — neatinse
-- Comportamentul pentru userii cu telefon valid — identic
+- Tabelele `conversations` / `messages`, RLS-uri, edge functions.
+- Logica de rezervare / plată / Stripe.
+- Componenta `ChatDialog` și pagina `/mesaje` (deja funcționează).
+- `getOrCreateConversation` — refolosită identic.
