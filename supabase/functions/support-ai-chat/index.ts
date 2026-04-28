@@ -6,18 +6,24 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `Ești asistentul virtual al platformei Rentli, o platformă de închiriere de obiecte între persoane fizice din România.
+const BASE_SYSTEM_PROMPT = `Ești asistentul virtual al platformei Rentli, o platformă de închiriere de obiecte între persoane fizice din România.
 
 REGULI:
 - Răspunde DOAR în limba română, scurt și prietenos.
 - Scopul tău este să afli ce problemă are utilizatorul și să colectezi informațiile necesare pentru a crea un ticket de suport.
 - Pune MAXIMUM 2-3 întrebări scurte, una câte una.
-- Întreabă mai întâi despre ce categorie de problemă e vorba (rezervare, produs, plată, cont, altceva).
+- Întreabă mai întâi despre ce categorie de problemă e vorba (rezervare, produs, plată, cont, altceva), DOAR dacă nu o poți deduce deja din context.
 - Apoi cere detalii specifice despre problemă.
 - Când ai suficiente informații (categorie + descriere clară a problemei), folosește funcția create_support_ticket pentru a crea ticketul.
 - NU oferi soluții tehnice. Rolul tău e doar să colectezi informații și să le transmiți echipei.
 - Fii empatic și asigură utilizatorul că echipa va rezolva problema.
-- Primul mesaj trebuie să fie un salut scurt și să întrebi cu ce poți ajuta.`;
+- Primul mesaj trebuie să fie un salut scurt și să întrebi cu ce poți ajuta. Dacă userul e pe pagina unui produs sau a unei rezervări, menționează asta natural ("Văd că ești pe pagina produsului X — despre acesta vrei să discutăm?").
+
+CLASIFICARE PRIORITATE (obligatoriu când chemi create_support_ticket):
+- CRITICAL: fraudă, abuz/hărțuire, dispute financiare active mari, KYC blocat de mult timp, pericol pentru user.
+- HIGH: nu și-a primit banii înapoi, produsul nu a fost returnat, anulare după începerea închirierii, daune semnificative.
+- MEDIUM: probleme cu rezervări viitoare, întrebări concrete despre plată, neconcordanțe minore.
+- LOW: întrebări generale, sugestii, clarificări, feedback.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -25,9 +31,22 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    const { messages, context } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    let contextBlock = "";
+    if (context && typeof context === "object") {
+      const parts: string[] = [];
+      if (context.route) parts.push(`Pagina curentă: ${context.route}`);
+      if (context.productTitle) parts.push(`Produs vizionat: "${context.productTitle}" (id: ${context.productId})`);
+      if (context.reservationId) parts.push(`Rezervare deschisă: id ${context.reservationId}`);
+      if (parts.length > 0) {
+        contextBlock = `\n\nCONTEXT UTILIZATOR (folosește pentru a personaliza întrebările și a presetota categoria):\n${parts.join("\n")}`;
+      }
+    }
+
+    const systemPrompt = BASE_SYSTEM_PROMPT + contextBlock;
 
     const tools = [
       {
@@ -64,8 +83,13 @@ serve(async (req) => {
                 ],
                 description: "The specific category type of the issue",
               },
+              priority: {
+                type: "string",
+                enum: ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+                description: "Issue urgency. Use the rules from the system prompt.",
+              },
             },
-            required: ["subject", "description", "category_group", "category_type"],
+            required: ["subject", "description", "category_group", "category_type", "priority"],
             additionalProperties: false,
           },
         },
@@ -83,7 +107,7 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: systemPrompt },
             ...messages,
           ],
           tools,
