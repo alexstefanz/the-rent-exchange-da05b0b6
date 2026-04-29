@@ -70,14 +70,21 @@ const BookingCard = ({
 
   const totalPrice = useMemo(() => {
     if (rentalDays === 0) return 0;
-    if (rentalDays >= 30) return Math.ceil(rentalDays / 30) * priceMonth;
-    if (rentalDays >= 7) {
-      const weeks = Math.floor(rentalDays / 7);
-      const extraDays = rentalDays % 7;
-      return weeks * priceWeek + extraDays * clientPrice;
-    }
-    return rentalDays * clientPrice;
+    const months = Math.floor(rentalDays / 30);
+    const afterMonths = rentalDays % 30;
+    const weeks = Math.floor(afterMonths / 7);
+    const extraDays = afterMonths % 7;
+    return months * priceMonth + weeks * priceWeek + extraDays * clientPrice;
   }, [rentalDays, clientPrice, priceWeek, priceMonth]);
+
+  const priceBreakdown = useMemo(() => {
+    if (rentalDays === 0) return { months: 0, weeks: 0, days: 0 };
+    const months = Math.floor(rentalDays / 30);
+    const afterMonths = rentalDays % 30;
+    const weeks = Math.floor(afterMonths / 7);
+    const days = afterMonths % 7;
+    return { months, weeks, days };
+  }, [rentalDays]);
 
   const handleBooking = () => {
     if (startDate && endDate) {
@@ -159,10 +166,36 @@ const BookingCard = ({
             <span className="font-medium">{format(endDate, "d MMM yyyy", { locale: dateLocale })}</span>
           </div>
           <Separator className="my-3" />
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">{rentalDays} {copy.booking.priceBreakdown.days} × {clientPrice} RON</span>
-            <span className="font-medium">{totalPrice} RON</span>
-          </div>
+          {priceBreakdown.months > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                {priceBreakdown.months} {language === "ro"
+                  ? (priceBreakdown.months === 1 ? "lună" : "luni")
+                  : (priceBreakdown.months === 1 ? "month" : "months")} × {priceMonth} RON
+              </span>
+              <span className="font-medium">{priceBreakdown.months * priceMonth} RON</span>
+            </div>
+          )}
+          {priceBreakdown.weeks > 0 && (
+            <div className="flex justify-between text-sm mt-1">
+              <span className="text-muted-foreground">
+                {priceBreakdown.weeks} {language === "ro"
+                  ? (priceBreakdown.weeks === 1 ? "săptămână" : "săptămâni")
+                  : (priceBreakdown.weeks === 1 ? "week" : "weeks")} × {priceWeek} RON
+              </span>
+              <span className="font-medium">{priceBreakdown.weeks * priceWeek} RON</span>
+            </div>
+          )}
+          {priceBreakdown.days > 0 && (
+            <div className="flex justify-between text-sm mt-1">
+              <span className="text-muted-foreground">
+                {priceBreakdown.days} {language === "ro"
+                  ? (priceBreakdown.days === 1 ? "zi" : "zile")
+                  : (priceBreakdown.days === 1 ? "day" : "days")} × {clientPrice} RON
+              </span>
+              <span className="font-medium">{priceBreakdown.days * clientPrice} RON</span>
+            </div>
+          )}
           <div className="flex justify-between mt-2 font-semibold">
             <span>{copy.booking.priceBreakdown.total}</span>
             <span className="text-primary">{totalPrice} RON</span>
