@@ -1,50 +1,56 @@
-## Problem
-
-In `src/components/product/BookingCard.tsx`, the `totalPrice` calculation for rental periods of 30+ days uses `Math.ceil(rentalDays / 30) * priceMonth`, which rounds up partial months to a full month price — but then ignores the actual extra days entirely.
-
-This causes the visible bug:
-- **1 May → 31 May** = 31 days → `ceil(31/30) = 2` → `2 × priceMonth`
-- **1 May → 1 June** = 32 days → `ceil(32/30) = 2` → `2 × priceMonth` (same!)
-- **1 May → 30 June** = 61 days → `ceil(61/30) = 3` → `3 × priceMonth`
-
-So any range from 30 to 60 days returns the same total. The screenshot the user attached confirms this: 32 days × 1.05 RON = 46 RON, but the breakdown line is contradictory (shows daily multiplication while the formula actually used months).
-
-There is also a second inconsistency: the breakdown UI always displays `rentalDays × clientPrice`, which doesn't match the tiered calculation (week/month) actually used for `totalPrice`.
-
-## Fix
-
-Update the `totalPrice` `useMemo` in `BookingCard.tsx` to properly decompose the rental into full months + remaining weeks + remaining days, using the cheapest tier for each chunk:
+Am verificat captura și codul: modificarea anterioară a fost aplicată într-o componentă `BookingCard.tsx`, dar pagina curentă `/produs/ferestrau-spada` nu folosește acea componentă. Ea are încă propriul cadran de rezervare în `src/pages/ProductDetail.tsx`, cu formula veche:
 
 ```text
-months   = floor(rentalDays / 30)
-remainder = rentalDays % 30
-weeks    = floor(remainder / 7)
-extraDays = remainder % 7
-total = months*priceMonth + weeks*priceWeek + extraDays*clientPrice
+if rentalDays >= 30:
+  total = ceil(rentalDays / 30) * priceMonth
 ```
 
-Examples after fix (with priceMonth, priceWeek, clientPrice from the product):
-- 31 days → 1 month + 1 day
-- 32 days → 1 month + 2 days
-- 37 days → 1 month + 1 week
-- 60 days → 2 months
-- 61 days → 2 months + 1 day
+De aceea intervalele lungi rămân la același preț pentru blocuri mari de zile. În captura ta, textul arată `33 zile x 1.05 RON`, dar totalul este `46 RON`, adică încă se folosește logica veche cu 2 luni, nu calculul pe zile afișat.
 
-## Breakdown UI fix
+## Plan de corectare
 
-Update the price breakdown block (the muted box that currently shows `{rentalDays} {days} × {clientPrice} RON`) to reflect the tiered breakdown, e.g.:
-- `1 lună × 30 RON`
-- `1 săpt × 10 RON`
-- `2 zile × 2 RON`
-- `Total: 42 RON`
+1. Corectez calculul în `src/pages/ProductDetail.tsx`
+   - Înlocuiesc formula cu descompunere pe luni + săptămâni + zile:
 
-Only show the lines that are non-zero. This keeps the visible math consistent with the computed total.
+```text
+months = floor(rentalDays / 30)
+remaining = rentalDays % 30
+weeks = floor(remaining / 7)
+days = remaining % 7
 
-## Files to change
+total = months * priceMonth + weeks * priceWeek + days * clientPrice
+```
 
-- `src/components/product/BookingCard.tsx` — fix `totalPrice` formula and the breakdown rendering.
+2. Actualizez detalierea prețului din cadranul „Selectează perioada”
+   - În loc de linia greșită `33 zile x 1.05 RON`, afișez liniile reale folosite la calcul, de exemplu:
 
-## Out of scope
+```text
+1 lună × 23 RON      23 RON
+3 zile × 1.05 RON    3.15 RON
+Total                26.15 RON
+```
 
-- No backend, schema, or pricing-data changes. Product prices (`clientPrice`, `priceWeek`, `priceMonth`) remain as stored.
-- Checkout server-side recomputation (if any) is not touched in this plan; if the backend recomputes totals, we'll verify it matches after the client fix.
+   - Se afișează doar liniile nenule: luni, săptămâni, zile.
+   - Textul va rămâne bilingv RO/EN, ca restul paginii.
+
+3. Aliniez checkout-ul cu aceeași logică
+   - Acum checkout-ul creează rezervarea folosind `dailyPrice * rentalDays`, ceea ce poate produce o sumă diferită față de totalul afișat în pagina produsului.
+   - Voi modifica fluxul astfel încât checkout-ul și înregistrarea rezervării să folosească același `totalPrice` calculat pe luni/săptămâni/zile.
+   - Actualizez sumarul din checkout, ca să nu mai afișeze fals `preț/zi × zile` când de fapt se aplică tarife lunare/săptămânale.
+
+4. Reduc riscul de reapariție
+   - Creez o funcție helper reutilizabilă pentru calculul prețului, folosită atât de pagina produsului, cât și de checkout/API-ul de rezervare.
+   - Astfel nu mai există două formule diferite în locuri diferite.
+
+## Rezultat așteptat
+
+Pentru produsul din exemplul tău, intervalul 1 Mai - 2 Iunie nu va mai avea același comportament ca 1 Mai - 31 Mai. Fiecare zi suplimentară peste luna completă va fi inclusă în total, iar detalierea afișată va corespunde exact sumei totale trimise către checkout/plată.
+
+## Fișiere vizate
+
+- `src/pages/ProductDetail.tsx`
+- `src/pages/Checkout.tsx`
+- `src/features/rentals/rentalsApi.ts`
+- posibil un helper nou în `src/lib/` pentru calculul prețului reutilizabil
+
+Nu sunt necesare modificări de bază de date.
