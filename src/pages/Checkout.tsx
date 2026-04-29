@@ -86,6 +86,7 @@ const Checkout = () => {
         endDate: format(new Date(endDate), "yyyy-MM-dd"),
         rentalDays,
         dailyPrice: product.price,
+        subtotal: totalPrice,
         platformFeePercent: product.platformFeePercent,
         paymentMethod: "stripe",
         messageToOwner: messageToOwner || undefined,
@@ -229,7 +230,7 @@ const Checkout = () => {
               <Separator className="my-4" />
               <h4 className="font-semibold mb-3">{copy.booking.priceBreakdown.subtotal}</h4>
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">{product.price} RON × {rentalDays} {copy.checkout.days}</span><span>{totalPrice} RON</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">{rentalDays} {copy.checkout.days}</span><span>{totalPrice} RON</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">{copy.booking.priceBreakdown.serviceFee}</span><span>0 RON</span></div>
               </div>
               <Separator className="my-4" />
