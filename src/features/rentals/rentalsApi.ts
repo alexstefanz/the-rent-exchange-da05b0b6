@@ -7,6 +7,11 @@ interface CreateRentalParams {
   endDate: string;
   rentalDays: number;
   dailyPrice: number;
+  /**
+   * Pre-computed total (months + weeks + days tiers).
+   * If omitted, falls back to dailyPrice * rentalDays for backwards compatibility.
+   */
+  subtotal?: number;
   platformFeePercent?: number;
   paymentMethod: string;
   messageToOwner?: string;
@@ -22,7 +27,9 @@ export async function createRental(params: CreateRentalParams) {
     paymentMethod,
   } = params;
 
-  const subtotal = dailyPrice * rentalDays;
+  const subtotal = typeof params.subtotal === "number" && params.subtotal > 0
+    ? Math.round(params.subtotal * 100) / 100
+    : Math.round(dailyPrice * rentalDays * 100) / 100;
   const platformFee = Math.round(subtotal * platformFeePercent / 100 * 100) / 100;
   const ownerPayout = Math.round((subtotal - platformFee) * 100) / 100;
 
