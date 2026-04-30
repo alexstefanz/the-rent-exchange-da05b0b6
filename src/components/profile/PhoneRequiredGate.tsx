@@ -14,6 +14,8 @@ import { useUxCopy } from "@/hooks/useUxCopy";
 import { useCurrentUserProfile } from "@/hooks/queries/useCurrentUserProfile";
 import { useAuth } from "@/contexts/AuthContext";
 import { isValidRomanianPhone } from "@/lib/inputValidation";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 /**
  * Hook + UI primitives that hard-block actions for users who don't have a
@@ -23,10 +25,28 @@ import { isValidRomanianPhone } from "@/lib/inputValidation";
  */
 export const usePhoneRequired = () => {
   const { user } = useAuth();
-  const { data: profile, isLoading } = useCurrentUserProfile();
+  const { data: profile, isLoading, refetch } = useCurrentUserProfile();
+  const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const hasValidPhone = !!user && isValidRomanianPhone((profile as any)?.phone);
+  // Fall back to phone stored in auth user metadata (e.g. when the profile
+  // row hasn't yet been refreshed after a save). This prevents the gate from
+  // blocking checkout for users who already added a valid RO number.
+  const metadataPhone = (user?.user_metadata as any)?.phone as string | undefined;
+  const hasValidPhone =
+    !!user &&
+    (isValidRomanianPhone((profile as any)?.phone) ||
+      isValidRomanianPhone(metadataPhone));
+
+  // Always refetch the profile when this hook mounts so a freshly-saved
+  // phone number is picked up immediately on Checkout/KYC pages.
+  useEffect(() => {
+    if (user?.id) {
+      queryClient.invalidateQueries({ queryKey: ["currentUserProfile", user.id] });
+      refetch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   // Returns true when the action can proceed; otherwise opens the dialog and
   // returns false. While the profile is still loading we treat it as missing
@@ -44,6 +64,7 @@ export const usePhoneRequired = () => {
     requirePhone,
     dialogOpen,
     setDialogOpen,
+    refetch,
   };
 };
 
@@ -63,7 +84,9 @@ export const PhoneRequiredGate = ({ className = "" }: PhoneRequiredGateProps) =>
 
   if (!user || isLoading) return null;
 
-  const phone = (profile as any)?.phone as string | null | undefined;
+  const profilePhone = (profile as any)?.phone as string | null | undefined;
+  const metadataPhone = (user.user_metadata as any)?.phone as string | undefined;
+  const phone = isValidRomanianPhone(profilePhone) ? profilePhone : metadataPhone;
   if (isValidRomanianPhone(phone)) {
     // Mask middle digits: keep first 4 and last 3 visible.
     const trimmed = (phone || "").replace(/\s+/g, " ").trim();
