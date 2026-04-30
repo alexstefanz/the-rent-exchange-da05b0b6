@@ -1853,6 +1853,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      immutable_unaccent: { Args: { "": string }; Returns: string }
       is_user_favorite: { Args: { target_user_id: string }; Returns: boolean }
       mark_ops_ticket_read: {
         Args: { p_ticket_id: string }
@@ -1875,6 +1876,43 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      search_products: {
+        Args: {
+          _category?: string
+          _location_city?: string
+          _search?: string
+          _subcategory?: string
+        }
+        Returns: {
+          admin_edited_at: string | null
+          admin_edited_by: string | null
+          admin_flagged: boolean
+          approval_status: string
+          category: string | null
+          created_at: string | null
+          daily_price_owner: number
+          description: string | null
+          flag_reason: string | null
+          id: string
+          images: string[] | null
+          included_items: string[] | null
+          is_active: boolean
+          location_city: string | null
+          location_country: string | null
+          owner_id: string
+          pickup_address: string | null
+          platform_fee_percent: number
+          slug: string | null
+          subcategory: string | null
+          title: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "products"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       search_users_by_name: {
         Args: { result_limit?: number; search_query: string }
