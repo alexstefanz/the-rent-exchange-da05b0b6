@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import LegalPageLayout from "./LegalPageLayout";
+import { useLanguage } from "@/contexts/LanguageContext";
 
-const sections = [
+const sectionsRo = [
   {
     id: "ce-sunt",
     title: "Ce sunt cookie-urile?",
@@ -89,13 +90,107 @@ const sections = [
   },
 ];
 
-const CookiePolicy = () => (
-  <LegalPageLayout
-    title="Politica privind Cookie-urile"
-    subtitle="Această politică explică modul în care Rentli utilizează cookie-urile și tehnologiile similare pe site-ul nostru web."
-    lastUpdated="28.02.2026"
-    sections={sections}
-  />
-);
+const sectionsEn = [
+  {
+    id: "ce-sunt",
+    title: "What are cookies?",
+    content: (
+      <div className="space-y-3">
+        <p>Cookies are small text files stored on your device (computer, phone, tablet) when you visit our website. Their purpose is to recognize your device and offer you a better experience.</p>
+        <p>Cookies fall into several categories:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li><strong>Essential cookies:</strong> required for the basic functioning of the site (navigation, access to secure areas). They do not require consent.</li>
+          <li><strong>Performance cookies:</strong> help us understand how you use the site and improve it. Placed only with your consent.</li>
+          <li><strong>Marketing cookies:</strong> used for personalized ads. We currently do not use this category.</li>
+        </ul>
+      </div>
+    ),
+  },
+  {
+    id: "tipuri",
+    title: "Types of cookies used",
+    content: (
+      <div className="space-y-3">
+        <ul className="list-disc pl-5 space-y-2">
+          <li><strong>Essential cookies:</strong> enable core site functionality — navigation, authentication, access to secure areas.</li>
+          <li><strong>Payment cookies:</strong> used by the payment processor to secure transactions and manage payment sessions. They are essential to the payment process.</li>
+          <li><strong>Performance cookies:</strong> collect anonymous data about site usage, helping us optimize the experience. Activated only with your consent.</li>
+        </ul>
+        <div className="mt-3">
+          <h4 className="font-semibold text-foreground mb-2">Legal bases:</h4>
+          <ul className="list-disc pl-5 space-y-1">
+            <li><strong>Essential cookies:</strong> legitimate interest (Art. 6(1)(f) GDPR) — strictly necessary for proper operation.</li>
+            <li><strong>Performance cookies:</strong> consent (Art. 6(1)(a) GDPR) — for site analysis and improvement.</li>
+          </ul>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "gestionare",
+    title: "How to manage cookies",
+    content: (
+      <div className="space-y-3">
+        <p>You can control or disable cookies from your browser settings. Note that disabling some cookies may limit site functionality.</p>
+        <div>
+          <h4 className="font-semibold text-foreground mb-2">Available options:</h4>
+          <ul className="list-disc pl-5 space-y-1">
+            <li><strong>Block all:</strong> you can block all cookies, but site functionality may be affected.</li>
+            <li><strong>Delete cookies:</strong> you can delete existing cookies from your browser, including those storing your preferences.</li>
+            <li><strong>Private browsing:</strong> most browsers offer "incognito" mode, which limits stored data and automatically deletes cookies at the end of the session.</li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-semibold text-foreground mb-2">Managing cookies in popular browsers:</h4>
+          <ul className="list-disc pl-5 space-y-1">
+            <li><a href="https://support.google.com/chrome/answer/95647" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Google Chrome</a></li>
+            <li><a href="https://support.mozilla.org/en-US/kb/clear-cookies-and-site-data-firefox" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Mozilla Firefox</a></li>
+            <li><a href="https://support.microsoft.com/en-us/microsoft-edge/delete-cookies-in-microsoft-edge-63947406-40ac-c3b8-57b9-2a946a29ae09" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Microsoft Edge</a></li>
+            <li><a href="https://support.apple.com/en-us/guide/safari/sfri11471/mac" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Apple Safari</a></li>
+          </ul>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "consimtamant",
+    title: "User consent",
+    content: (
+      <div className="space-y-3">
+        <p>On your first visit, we ask for your consent to use cookies. You can withdraw consent at any time, either from your browser settings or via the consent banner displayed on the site.</p>
+        <p>If you choose to block cookies, certain site features may become unavailable or work incorrectly.</p>
+      </div>
+    ),
+  },
+  {
+    id: "actualizari",
+    title: "Policy updates",
+    content: (
+      <p>We reserve the right to update this policy. Changes will be communicated by email or through platform notifications. We recommend checking this page periodically.</p>
+    ),
+  },
+  {
+    id: "contact",
+    title: "Contact",
+    content: (
+      <p>If you have questions about this cookie policy, you can contact us through the <Link to="/centru-asistenta" className="text-primary hover:underline">support page</Link>.</p>
+    ),
+  },
+];
+
+const CookiePolicy = () => {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+  return (
+    <LegalPageLayout
+      title={isEn ? "Cookie Policy" : "Politica privind Cookie-urile"}
+      subtitle={isEn
+        ? "This policy explains how Rentli uses cookies and similar technologies on our website."
+        : "Această politică explică modul în care Rentli utilizează cookie-urile și tehnologiile similare pe site-ul nostru web."}
+      lastUpdated="28.02.2026"
+      sections={isEn ? sectionsEn : sectionsRo}
+    />
+  );
+};
 
 export default CookiePolicy;
