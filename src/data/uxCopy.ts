@@ -143,6 +143,20 @@ const createUxCopy = () => ({
     return: { ro: "Returnare", en: "Return" },
     receivedBack: { ro: "Confirmare primire", en: "Confirm received back" },
     confirmHandedBack: { ro: "Confirmă predarea", en: "Confirm hand-back" },
+    checklist: {
+      title: { ro: "Proces-verbal de predare/primire", en: "Hand-over / pick-up checklist" },
+      helper: { ro: "Bifează doar condițiile îndeplinite. Pentru cele nebifate, descrie problema în Observații (minim 20 de caractere).", en: "Only check the conditions that are met. For unchecked items, describe the issue in Notes (min. 20 characters)." },
+      notesRequired: { ro: "Observațiile sunt obligatorii când există puncte nebifate (minim 20 de caractere).", en: "Notes are required when some items are unchecked (min. 20 characters)." },
+      checkoutSummary: { ro: (checked: number) => `Stare la predare: ${checked}/6 condiții confirmate de proprietar`, en: (checked: number) => `State at hand-over: ${checked}/6 conditions confirmed by the owner` },
+      items: {
+        functional: { ro: "Produsul este complet funcțional și pornește corect", en: "The item is fully functional and powers on correctly" },
+        no_defects: { ro: "Nu prezintă defecte vizibile (zgârieturi, lovituri, fisuri) în afara celor menționate la observații", en: "No visible defects (scratches, dents, cracks) other than those mentioned in notes" },
+        complete_accessories: { ro: "Conține toate accesoriile incluse în anunț", en: "Includes all accessories listed in the ad" },
+        clean: { ro: "Este curat și în stare de utilizare", en: "Is clean and in usable condition" },
+        packaging: { ro: "Ambalajul / husa de transport este prezent(ă), dacă a fost inclus(ă)", en: "Original packaging / carrying case is present, if originally included" },
+        verified_together: { ro: "Am verificat produsul împreună cu cealaltă parte (sau pe baza pozelor primite)", en: "I have inspected the item together with the other party (or based on shared photos)" },
+      },
+    },
   },
   reassurance: {
     paymentProtected: { ro: "Plata ta este protejată. Suma se blochează temporar și se debitează doar după finalizarea închirierii.", en: "Your payment is protected. The amount is temporarily held and charged only after the rental period ends." },

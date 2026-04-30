@@ -1018,6 +1018,7 @@ export type Database = {
       }
       rental_inspections: {
         Row: {
+          checklist: Json
           created_at: string
           id: string
           notes: string | null
@@ -1028,6 +1029,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          checklist?: Json
           created_at?: string
           id?: string
           notes?: string | null
@@ -1038,6 +1040,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          checklist?: Json
           created_at?: string
           id?: string
           notes?: string | null

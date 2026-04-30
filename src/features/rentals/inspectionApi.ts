@@ -86,6 +86,37 @@ export async function getInspectionSignedUrl(reference: string): Promise<string 
 export type InspectionPhase = "checkout" | "checkin";
 export type InspectionRole = "owner" | "renter";
 
+export const INSPECTION_CHECKLIST_KEYS = [
+  "functional",
+  "no_defects",
+  "complete_accessories",
+  "clean",
+  "packaging",
+  "verified_together",
+] as const;
+
+export type InspectionChecklistKey = typeof INSPECTION_CHECKLIST_KEYS[number];
+export type InspectionChecklist = Record<InspectionChecklistKey, boolean>;
+
+export const emptyChecklist = (): InspectionChecklist =>
+  INSPECTION_CHECKLIST_KEYS.reduce((acc, k) => {
+    acc[k] = false;
+    return acc;
+  }, {} as InspectionChecklist);
+
+export const normalizeChecklist = (raw: unknown): InspectionChecklist => {
+  const base = emptyChecklist();
+  if (raw && typeof raw === "object") {
+    for (const k of INSPECTION_CHECKLIST_KEYS) {
+      base[k] = Boolean((raw as Record<string, unknown>)[k]);
+    }
+  }
+  return base;
+};
+
+export const countChecked = (c: InspectionChecklist): number =>
+  INSPECTION_CHECKLIST_KEYS.reduce((n, k) => n + (c[k] ? 1 : 0), 0);
+
 export interface Inspection {
   id: string;
   rental_id: string;
@@ -94,6 +125,7 @@ export interface Inspection {
   role: InspectionRole;
   photos: string[];
   notes: string | null;
+  checklist: InspectionChecklist;
   created_at: string;
 }
 
@@ -102,7 +134,8 @@ export async function createInspection(
   phase: InspectionPhase,
   role: InspectionRole,
   photos: string[],
-  notes?: string
+  notes: string | undefined,
+  checklist: InspectionChecklist
 ): Promise<Inspection> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Nu ești autentificat");
@@ -116,12 +149,14 @@ export async function createInspection(
       role,
       photos,
       notes: notes || null,
+      checklist: checklist as unknown as any,
     })
     .select()
     .single();
 
   if (error) throw error;
-  return data as Inspection;
+  const row = data as Record<string, unknown>;
+  return { ...(row as object), checklist: normalizeChecklist(row.checklist) } as Inspection;
 }
 
 export async function getInspections(rentalId: string): Promise<Inspection[]> {
@@ -132,5 +167,8 @@ export async function getInspections(rentalId: string): Promise<Inspection[]> {
     .order("created_at", { ascending: true });
 
   if (error) throw error;
-  return (data || []) as Inspection[];
+  return (data || []).map((row) => ({
+    ...(row as object),
+    checklist: normalizeChecklist((row as Record<string, unknown>).checklist),
+  })) as Inspection[];
 }
