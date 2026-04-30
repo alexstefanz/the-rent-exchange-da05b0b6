@@ -105,7 +105,8 @@ const BookingCard = ({
         : copy.booking.ctaPrimary);
 
   return (
-    <div className="sticky top-24 rounded-xl border border-border bg-card p-4 sm:p-6 shadow-card">
+    <div className="sticky top-24 lg:max-h-[calc(100vh-7rem)] lg:flex lg:flex-col rounded-xl border border-border bg-card shadow-card overflow-hidden">
+      <div className="lg:flex-1 lg:overflow-y-auto p-4 sm:p-6 lg:p-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full">
       {showTitle && (
         <>
           <div className="flex items-start justify-between gap-3 mb-3 lg:hidden">
@@ -207,28 +208,6 @@ const BookingCard = ({
         </div>
       )}
 
-      <Button
-        className="w-full"
-        size="lg"
-        disabled={!startDate || !endDate || needsKyc}
-        onClick={handleBooking}
-      >
-        {ctaLabel}
-      </Button>
-
-      {startDate && endDate && (
-        <div className="mt-4 flex items-center gap-2 rounded-full border border-border bg-muted/50 px-4 py-2.5">
-          <CalendarIcon className="h-4 w-4 text-primary flex-shrink-0" />
-          <span className="text-sm font-medium text-foreground">
-            {format(startDate, "dd MMM yyyy", { locale: dateLocale })}
-          </span>
-          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-          <span className="text-sm font-medium text-foreground">
-            {format(endDate, "dd MMM yyyy", { locale: dateLocale })}
-          </span>
-        </div>
-      )}
-
       <div className="mt-4 rounded-xl border border-border bg-muted/30 p-4">
         <div className="flex items-start gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
@@ -252,6 +231,30 @@ const BookingCard = ({
             </p>
           </div>
         </div>
+      </div>
+      </div>
+
+      <div className="border-t border-border bg-card p-4 sm:p-6 lg:p-4 space-y-3">
+        <Button
+          className="w-full"
+          size="lg"
+          disabled={!startDate || !endDate || needsKyc}
+          onClick={handleBooking}
+        >
+          {ctaLabel}
+        </Button>
+        {startDate && endDate && (
+          <div className="flex items-center gap-2 rounded-full border border-border bg-muted/50 px-4 py-2.5">
+            <CalendarIcon className="h-4 w-4 text-primary flex-shrink-0" />
+            <span className="text-sm font-medium text-foreground">
+              {format(startDate, "dd MMM yyyy", { locale: dateLocale })}
+            </span>
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+            <span className="text-sm font-medium text-foreground">
+              {format(endDate, "dd MMM yyyy", { locale: dateLocale })}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
