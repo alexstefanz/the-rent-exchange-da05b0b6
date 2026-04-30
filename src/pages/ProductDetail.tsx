@@ -209,6 +209,10 @@ const ProductDetail = () => {
 
   const location = product.location_city || "România";
   const ownerName = owner?.full_name || copy.dashboard.owner;
+  const displayTitle = (language === "en" && product.title_en) ? product.title_en : product.title;
+  const displayDescription = (language === "en" && product.description_en)
+    ? product.description_en
+    : product.description;
 
   return (
     <div className="min-h-screen bg-background">
@@ -217,7 +221,7 @@ const ProductDetail = () => {
       <ProductImageGallery
         variant="mobile"
         images={images}
-        title={product.title}
+        title={displayTitle}
         isFavorite={isFavorite}
         onToggleFavorite={handleToggleFavorite}
         onShare={handleShare}
@@ -229,9 +233,9 @@ const ProductDetail = () => {
         <nav className="mb-6 hidden md:flex items-center gap-2 text-sm text-muted-foreground overflow-x-auto">
           <Link to="/categorii" className="hover:text-primary text-xs whitespace-nowrap">{copy.product.allCategories}</Link>
           <ChevronRight className="h-4 w-4 flex-shrink-0" />
-          {category && (<><Link to={`/categorie/${category.slug}`} className="hover:text-primary text-xs whitespace-nowrap">{category.name}</Link><ChevronRight className="h-4 w-4 flex-shrink-0" /></>)}
-          {subcategory && (<><Link to={`/subcategorie/${subcategory.id}`} className="hover:text-primary whitespace-nowrap">{subcategory.name}</Link><ChevronRight className="h-4 w-4 flex-shrink-0" /></>)}
-          <span className="text-foreground whitespace-nowrap">{product.title}</span>
+          {category && (<><Link to={`/categorie/${category.slug}`} className="hover:text-primary text-xs whitespace-nowrap">{language === "en" ? category.nameEn : category.name}</Link><ChevronRight className="h-4 w-4 flex-shrink-0" /></>)}
+          {subcategory && (<><Link to={`/subcategorie/${subcategory.id}`} className="hover:text-primary whitespace-nowrap">{language === "en" ? subcategory.nameEn : subcategory.name}</Link><ChevronRight className="h-4 w-4 flex-shrink-0" /></>)}
+          <span className="text-foreground whitespace-nowrap">{displayTitle}</span>
         </nav>
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start">
@@ -239,7 +243,7 @@ const ProductDetail = () => {
             <ProductImageGallery
               variant="desktop"
               images={images}
-              title={product.title}
+              title={displayTitle}
               isFavorite={isFavorite}
               onToggleFavorite={handleToggleFavorite}
               onOpenLightbox={openLightbox}
@@ -250,7 +254,7 @@ const ProductDetail = () => {
             {/* Description */}
             <div className="rounded-xl border border-border bg-card p-6">
               <h2 className="mb-4 font-heading text-xl font-semibold text-foreground">{copy.product.description}</h2>
-              <p className="text-muted-foreground">{product.description || copy.product.noDescription}</p>
+              <p className="text-muted-foreground">{displayDescription || copy.product.noDescription}</p>
             </div>
 
             {/* Location */}
@@ -283,14 +287,14 @@ const ProductDetail = () => {
                 <span>{location}</span>
               </div>
               <div className="flex items-start justify-between gap-3 mb-3 lg:hidden">
-                <h1 className="font-heading text-[25px] font-semibold text-foreground leading-tight flex-1">{product.title}</h1>
+                <h1 className="font-heading text-[25px] font-semibold text-foreground leading-tight flex-1">{displayTitle}</h1>
                 <button onClick={handleToggleFavorite} className="flex-shrink-0 mt-1"><Heart className={`h-6 w-6 ${isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"}`} /></button>
               </div>
               <div className="hidden lg:flex items-center gap-1.5 text-sm text-muted-foreground mb-1.5">
                 <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
                 <span>{location}</span>
               </div>
-              <h1 className="hidden lg:block font-heading text-2xl font-semibold text-foreground mb-3">{product.title}</h1>
+              <h1 className="hidden lg:block font-heading text-2xl font-semibold text-foreground mb-3">{displayTitle}</h1>
               
               <div className="mb-4">
                 <div className="flex items-baseline gap-1"><span className="font-heading text-2xl font-bold text-primary">{clientPrice} RON</span><span className="text-muted-foreground">{copy.common.perDay}</span></div>
