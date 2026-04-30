@@ -52,7 +52,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, loading, signOut } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { data: profile } = useCurrentUserProfile();
   const { data: conversations } = useConversations(user?.id);
   const { data: isAdmin } = useIsAdmin(user?.id);
@@ -528,7 +528,7 @@ const Navbar = () => {
                         >
                           <span className="flex items-center gap-3">
                             <Icon className="h-5 w-5" />
-                            {category.name}
+                            {language === "en" ? category.nameEn : category.name}
                           </span>
                           <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
                         </button>
@@ -543,7 +543,7 @@ const Navbar = () => {
                                   className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary" 
                                   onClick={closeMobileMenu}
                                 >
-                                  {sub.name}
+                                  {language === "en" ? sub.nameEn : sub.name}
                                 </Link>
                               ))}
                             </div>
