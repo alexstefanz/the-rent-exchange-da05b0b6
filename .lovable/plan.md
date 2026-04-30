@@ -1,38 +1,63 @@
-## Problema
+## Obiectiv
+Reface `src/components/dashboard/RentalTimeline.tsx` ca un timeline animat, prietenos și colorat, cu trecere fluidă (ease-in-out) prin liniile de legătură pe măsură ce avansează pașii.
 
-După ce adaugi numărul de telefon în "Contul meu", la checkout îți apare în continuare bannerul roșu "Numărul de telefon este obligatoriu". Cauza: query-ul `useCurrentUserProfile` are `staleTime: 5 minutes` și nu este invalidat după salvarea profilului — așa că `Checkout.tsx` citește încă datele vechi (fără telefon) din cache-ul React Query.
+## Decizii cheie
 
-În plus, vrei un mic banner verde de confirmare ("Număr de telefon verificat") atunci când telefonul este valid, pentru claritate.
+### 1. Paletă pe pas (mai prietenoasă, fiecare etapă altă culoare)
+Fiecare pas primește o culoare distinctă, păstrând tonurile calde ale brandului (Visual Identity V2):
 
-## Soluție
-
-### 1. Invalidare cache după salvare profil
-În `src/components/profile/AccountTab.tsx` și `src/components/profile/ProfileTab.tsx`, după update-ul reușit al profilului, invalidează query-ul:
-```ts
-queryClient.invalidateQueries({ queryKey: ["currentUserProfile", user.id] });
 ```
-Astfel, la întoarcerea pe `/checkout/...`, `PhoneRequiredGate` recitește profilul actualizat și dispare bannerul roșu.
+1. Cerere trimisă          → amber-400  (galben-cald, "început")
+2. Cerere aprobată         → orange-500 (#F59E0B — primary)
+3. În tranzit              → orange-600 (#F98715 — hover)
+4. În folosire             → rose-500   (energie, produs activ)
+5. În curs de returnare    → violet-500 (răcorire, finalizare aproape)
+6. Finalizat               → emerald-500 (succes verde)
+Cancelled                  → destructive (roșu — neschimbat)
+```
 
-### 2. Banner verde "Număr de telefon verificat"
-În `src/components/profile/PhoneRequiredGate.tsx`:
-- În prezent, când telefonul e valid, componenta returnează `null`.
-- Modific astfel: dacă telefonul e valid, randează un banner mic, verde, discret, cu iconul `CheckCircle2` (lucide) și textul localizat: "Număr de telefon verificat" / "Phone number verified", urmat de numărul mascat (ex: `+40 7XX XXX 123`).
-- Stil: `border-emerald-500/40 bg-emerald-50 text-emerald-700`, padding redus (`p-2.5`), text `text-sm`, layout pe un singur rând.
+Implementare: array `STEP_COLORS` cu clase Tailwind `{ ring, bg, text, border, line }` per index, evitând stringuri dinamice (Tailwind safe).
 
-### 3. Texte noi în `src/data/uxCopy.ts`
-Adaug în `smsNotifications`:
-- `verifiedTitle`: "Număr de telefon verificat" / "Phone number verified"
+### 2. Animație a liniei de legătură (ease-in-out)
+Linia dintre două buline este desenată cu un overlay colorat care își animă `width` de la 0% → 100% atunci când pasul devine completat:
 
-### 4. (Opțional) Reducere staleTime
-Reduc `staleTime` în `useCurrentUserProfile` de la 5 min la 30s ca plasă de siguranță, fără cost real (profilul e mic).
+```
+<div className="relative h-1 flex-1 bg-muted rounded-full overflow-hidden">
+  <div
+    className={cn(
+      "absolute inset-y-0 left-0 rounded-full transition-[width] duration-700 ease-in-out",
+      isFilled ? "w-full" : "w-0",
+      STEP_COLORS[idx].line
+    )}
+  />
+</div>
+```
 
-## Fișiere modificate
-- `src/components/profile/PhoneRequiredGate.tsx` — banner verde când telefonul e valid
-- `src/components/profile/AccountTab.tsx` — invalidare cache după update
-- `src/components/profile/ProfileTab.tsx` — invalidare cache după update
-- `src/hooks/queries/useCurrentUserProfile.ts` — staleTime redus
-- `src/data/uxCopy.ts` — text bilingv pentru bannerul verde
+Duration 700ms + `ease-in-out` → trecerea fluidă cerută. React re-render la schimbarea statusului declanșează automat tranziția CSS.
 
-## Rezultat
-- După ce salvezi telefonul în cont și revii la checkout, bannerul roșu dispare imediat și apare unul verde scurt: "Număr de telefon verificat".
-- Dacă telefonul lipsește sau e invalid, bannerul roșu rămâne (cu butonul "Adaugă număr de telefon" deja existent).
+### 3. Bulinele
+- Pas completat: gradient pe culoarea proprie + `Check` alb, micro `scale-in` la apariție.
+- Pas curent: ring colorat + halo `animate-pulse` subtil + scale 1.1.
+- Pas viitor: bg neutru, border muted.
+- Pas cancelled: roșu cu `X`.
+- Tranziții: `transition-all duration-500 ease-in-out` pe culori, scale, shadow.
+
+### 4. Etichete
+- Curent: text colorat în culoarea pasului, semibold, mic `animate-fade-in`.
+- Completat: text foreground.
+- Viitor: muted.
+
+### 5. Mobil (vertical)
+Aceeași logică, dar linia verticală (`w-1 h-full`) între buline animă `height` de la 0 → 100% cu ease-in-out. Buline mai mici, etichete inline.
+
+### 6. Accesibilitate
+- `aria-current="step"` pentru pasul curent (păstrat).
+- Respect `prefers-reduced-motion`: tranzițiile devin instant prin clasa `motion-reduce:transition-none motion-reduce:duration-0`.
+
+## Fișier modificat
+- `src/components/dashboard/RentalTimeline.tsx` — refactor complet UI; API public (`RentalForTimeline`, `getTimelineStep`, props `RentalTimelineProps`) rămâne neschimbat, deci toate locurile care îl folosesc (`RentalsTab`, `RentalsOutTab`, `RequestsTab`) funcționează fără modificări.
+
+## Rezultat vizual
+- Timeline colorat, fiecare etapă cu identitate proprie.
+- La trecerea la următorul pas, linia se "umple" lin de la stânga la dreapta (700ms ease-in-out), bulina se aprinde cu scale + check, eticheta se colorează.
+- Pe mobil, linia verticală curge de sus în jos cu aceeași animație.
