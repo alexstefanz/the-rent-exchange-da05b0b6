@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
 import LegalPageLayout from "./LegalPageLayout";
+import { useLanguage } from "@/contexts/LanguageContext";
 
-const sections = [
+const sectionsRo = [
   {
     id: "anulare-chiriasi",
     title: "Politica de anulare pentru chiriași",
@@ -142,13 +143,160 @@ const sections = [
   },
 ];
 
-const CancellationPolicy = () => (
-  <LegalPageLayout
-    title="Politica de Anulare și Rambursare"
-    subtitle="Această politică reglementează condițiile de anulare și rambursare pentru utilizatorii platformei Rentli, atât pentru chiriași, cât și pentru proprietari."
-    lastUpdated="28.02.2026"
-    sections={sections}
-  />
-);
+const sectionsEn = [
+  {
+    id: "anulare-chiriasi",
+    title: "Cancellation policy for renters",
+    content: (
+      <div className="space-y-4">
+        <p>Renters can cancel a booking at any time. Refund eligibility depends on when the cancellation is made relative to the booking start time:</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border border-border rounded-lg">
+            <thead>
+              <tr className="bg-secondary/50">
+                <th className="text-left p-3 font-semibold border-b border-border">Cancellation timing</th>
+                <th className="text-left p-3 font-semibold border-b border-border">Refund</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-border">
+                <td className="p-3">Within 1 hour of booking</td>
+                <td className="p-3 text-green-600 font-medium">Full refund</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="p-3">48 hours or more before start</td>
+                <td className="p-3 text-green-600 font-medium">Full refund</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="p-3">Less than 48 hours before start</td>
+                <td className="p-3 text-amber-600 font-medium">50% refund</td>
+              </tr>
+              <tr>
+                <td className="p-3">After the rental period has started</td>
+                <td className="p-3 text-destructive font-medium">No refund</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="text-sm"><strong>Exception:</strong> a full refund is granted if the item does not match the description or has major defects. The renter must notify the owner and the platform within 30 minutes of pickup, providing evidence (photos, videos, detailed description of the issues).</p>
+      </div>
+    ),
+  },
+  {
+    id: "forta-majora-chiriasi",
+    title: "Exceptional circumstances (force majeure) — renters",
+    content: (
+      <div className="space-y-3">
+        <p>In unforeseen situations, renters may request a full refund even with less than 48 hours notice. Accepted situations:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>Serious medical issues (accident, hospitalization, severe illness)</li>
+          <li>Natural disasters affecting the pickup area or destination</li>
+          <li>Travel restrictions imposed by authorities (quarantine, movement bans)</li>
+        </ul>
+        <p>The request must be submitted within 24 hours of the event, accompanied by supporting documents (medical certificate, proof of restrictions, etc.), via the <Link to="/centru-asistenta" className="text-primary hover:underline">support page</Link>.</p>
+      </div>
+    ),
+  },
+  {
+    id: "anulare-proprietari",
+    title: "Cancellation policy for owners",
+    content: (
+      <div className="space-y-4">
+        <p>Owners are required to honor all confirmed bookings. Repeated cancellations affect the reputation and visibility of listings.</p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border border-border rounded-lg">
+            <thead>
+              <tr className="bg-secondary/50">
+                <th className="text-left p-3 font-semibold border-b border-border">Cancellation rate</th>
+                <th className="text-left p-3 font-semibold border-b border-border">Penalty</th>
+                <th className="text-left p-3 font-semibold border-b border-border">Visibility impact</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-border">
+                <td className="p-3">Below 4%</td>
+                <td className="p-3 text-green-600">No penalty</td>
+                <td className="p-3">No impact</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="p-3">4% – 6%</td>
+                <td className="p-3 text-amber-600">125 RON per cancellation</td>
+                <td className="p-3">Slight reduction</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="p-3">6% – 10%</td>
+                <td className="p-3 text-amber-600">250 RON per cancellation</td>
+                <td className="p-3">Significant reduction</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="p-3">Above 10%</td>
+                <td className="p-3 text-destructive">30-day suspension + 250 RON/cancellation</td>
+                <td className="p-3">Listing no longer shown</td>
+              </tr>
+              <tr>
+                <td className="p-3">Above 20%</td>
+                <td className="p-3 text-destructive">Permanent removal</td>
+                <td className="p-3">Account deactivated</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="text-sm">If the owner cancels within the first hour after the booking is made, no penalty applies.</p>
+        <div>
+          <h4 className="font-semibold text-foreground mb-2">Exceptional situations (no penalty):</h4>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>The item has been damaged and can no longer be used</li>
+            <li>Serious health problems of the owner</li>
+            <li>Force majeure events</li>
+          </ul>
+          <p className="mt-2 text-sm">Evidence must be provided within 24 hours via the <Link to="/centru-asistenta" className="text-primary hover:underline">support page</Link>.</p>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "proces-rambursare",
+    title: "Refund process",
+    content: (
+      <div className="space-y-3">
+        <p>If you are eligible for a refund, the amount will be returned to your account within 3–5 business days from the cancellation confirmation. Depending on your bank, the transaction may appear in your statement within up to 10 business days.</p>
+        <p>If the refund is not visible after this period, we recommend contacting your bank. For further issues, visit the <Link to="/centru-asistenta" className="text-primary hover:underline">support page</Link>.</p>
+        <p className="text-sm italic">Penalties and related amounts apply according to the platform's policies, which may be updated periodically. By using the platform, you accept this process.</p>
+      </div>
+    ),
+  },
+  {
+    id: "taxe",
+    title: "Platform fees",
+    content: (
+      <p>Fees charged by the platform are non-refundable, except in cases where the cancellation is caused by a major issue on the owner's side or by a force majeure event. In those cases, fees may be refunded in full or in part.</p>
+    ),
+  },
+  {
+    id: "contact",
+    title: "Contact and support",
+    content: (
+      <div className="space-y-3">
+        <p>Before contacting us, we recommend checking the <Link to="/centru-asistenta" className="text-primary hover:underline">help center</Link> for answers to the most common questions.</p>
+        <p>For direct requests, visit the <Link to="/suport" className="text-primary hover:underline">support page</Link> where you can send a message to our team.</p>
+      </div>
+    ),
+  },
+];
+
+const CancellationPolicy = () => {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+  return (
+    <LegalPageLayout
+      title={isEn ? "Cancellation and Refund Policy" : "Politica de Anulare și Rambursare"}
+      subtitle={isEn
+        ? "This policy governs the cancellation and refund conditions for users of the Rentli platform, both renters and owners."
+        : "Această politică reglementează condițiile de anulare și rambursare pentru utilizatorii platformei Rentli, atât pentru chiriași, cât și pentru proprietari."}
+      lastUpdated="28.02.2026"
+      sections={isEn ? sectionsEn : sectionsRo}
+    />
+  );
+};
 
 export default CancellationPolicy;
