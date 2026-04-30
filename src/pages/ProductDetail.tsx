@@ -351,7 +351,7 @@ const ProductDetail = () => {
                 </div>
               )}
 
-              <Button className="w-full" size="lg" disabled={!startDate || !endDate} onClick={() => { if (startDate && endDate) { navigate('/checkout', { state: { product: { id: product.id, title: product.title, images, price: clientPrice, priceUnit: "zi", location, ownerId: product.owner_id, platformFeePercent: product.platform_fee_percent }, startDate, endDate, rentalDays, totalPrice } }); } }}>
+              <Button className="w-full" size="lg" disabled={!startDate || !endDate} onClick={() => { if (startDate && endDate) { navigate('/checkout', { state: { product: { id: product.id, title: displayTitle, images, price: clientPrice, priceUnit: "zi", location, ownerId: product.owner_id, platformFeePercent: product.platform_fee_percent }, startDate, endDate, rentalDays, totalPrice } }); } }}>
                 {startDate && endDate ? copy.booking.ctaPrimary : copy.booking.steps.period}
               </Button>
 
