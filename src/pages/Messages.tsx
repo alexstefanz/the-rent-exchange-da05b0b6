@@ -10,6 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { ChatPanel } from "@/components/messaging/ChatPanel";
 import { useState as useStateReact } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useStateReact(typeof window !== "undefined" ? window.innerWidth >= 1024 : true);
@@ -24,6 +25,7 @@ function useIsDesktop() {
 
 export default function Messages() {
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
@@ -136,7 +138,7 @@ export default function Messages() {
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
                 <MessageCircle className="h-12 w-12 mb-3" />
-                <p className="text-sm">{useMessagesT()}</p>
+                <p className="text-sm">{t("Selectează o conversație pentru a vedea mesajele", "Select a conversation to view the messages")}</p>
               </div>
             )}
           </div>

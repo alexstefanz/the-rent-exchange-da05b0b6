@@ -4,10 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, XCircle, Loader2, MailX } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type UnsubState = "loading" | "valid" | "already_unsubscribed" | "invalid" | "success" | "error";
 
 const Unsubscribe = () => {
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
   const [state, setState] = useState<UnsubState>("loading");
@@ -71,14 +73,14 @@ const Unsubscribe = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-xl font-bold text-foreground">
-            Dezabonare notificări email
+            {t("Dezabonare notificări email", "Unsubscribe from email notifications")}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
           {state === "loading" && (
             <>
               <Loader2 className="h-10 w-10 animate-spin text-primary" />
-              <p className="text-muted-foreground">Se verifică...</p>
+              <p className="text-muted-foreground">{t("Se verifică...", "Verifying...")}</p>
             </>
           )}
 
@@ -86,7 +88,7 @@ const Unsubscribe = () => {
             <>
               <MailX className="h-10 w-10 text-muted-foreground" />
               <p className="text-center text-muted-foreground">
-                Ești sigur că vrei să te dezabonezi de la notificările prin email de la Rentli?
+                {t("Ești sigur că vrei să te dezabonezi de la notificările prin email de la Rentli?", "Are you sure you want to unsubscribe from Rentli email notifications?")}
               </p>
               <Button
                 onClick={handleUnsubscribe}
@@ -96,7 +98,7 @@ const Unsubscribe = () => {
                 {processing ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : null}
-                Confirmă dezabonarea
+                {t("Confirmă dezabonarea", "Confirm unsubscribe")}
               </Button>
             </>
           )}
@@ -105,7 +107,7 @@ const Unsubscribe = () => {
             <>
               <CheckCircle2 className="h-10 w-10 text-green-500" />
               <p className="text-center text-muted-foreground">
-                Te-ai dezabonat cu succes. Nu vei mai primi notificări prin email.
+                {t("Te-ai dezabonat cu succes. Nu vei mai primi notificări prin email.", "You have been unsubscribed. You will no longer receive email notifications.")}
               </p>
             </>
           )}
@@ -114,7 +116,7 @@ const Unsubscribe = () => {
             <>
               <CheckCircle2 className="h-10 w-10 text-muted-foreground" />
               <p className="text-center text-muted-foreground">
-                Ești deja dezabonat de la notificările prin email.
+                {t("Ești deja dezabonat de la notificările prin email.", "You are already unsubscribed from email notifications.")}
               </p>
             </>
           )}
@@ -123,7 +125,7 @@ const Unsubscribe = () => {
             <>
               <XCircle className="h-10 w-10 text-destructive" />
               <p className="text-center text-muted-foreground">
-                Link-ul de dezabonare este invalid sau a expirat.
+                {t("Link-ul de dezabonare este invalid sau a expirat.", "The unsubscribe link is invalid or has expired.")}
               </p>
             </>
           )}
@@ -132,10 +134,10 @@ const Unsubscribe = () => {
             <>
               <XCircle className="h-10 w-10 text-destructive" />
               <p className="text-center text-muted-foreground">
-                A apărut o eroare. Te rugăm să încerci din nou.
+                {t("A apărut o eroare. Te rugăm să încerci din nou.", "An error occurred. Please try again.")}
               </p>
               <Button variant="outline" onClick={handleUnsubscribe}>
-                Încearcă din nou
+                {t("Încearcă din nou", "Try again")}
               </Button>
             </>
           )}
