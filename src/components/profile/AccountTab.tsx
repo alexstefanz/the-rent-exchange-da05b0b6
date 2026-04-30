@@ -178,14 +178,25 @@ const AccountTab = () => {
     }
     setIsSaving(true);
     try {
+      const normalizedPhone = data.phone ? data.phone.trim().replace(/\s+/g, " ") : "";
       const updatedProfile = await updateProfile(user.id, {
         full_name: data.full_name || undefined,
-        phone: data.phone || undefined,
+        phone: normalizedPhone || undefined,
         email: data.email || undefined,
         whatsapp: data.whatsapp || undefined,
       });
       setProfile(updatedProfile);
-      queryClient.invalidateQueries({ queryKey: ["currentUserProfile", user.id] });
+      // Sync the phone into the auth user metadata as well so the checkout
+      // gate (which can read from metadata as a fallback) sees it instantly.
+      if (normalizedPhone && isValidRomanianPhone(normalizedPhone)) {
+        try {
+          await supabase.auth.updateUser({ data: { phone: normalizedPhone } });
+        } catch (metaErr) {
+          console.warn("Could not sync phone to auth metadata", metaErr);
+        }
+      }
+      await queryClient.invalidateQueries({ queryKey: ["currentUserProfile", user.id] });
+      await queryClient.refetchQueries({ queryKey: ["currentUserProfile", user.id] });
       toast({
         title: t("Succes", "Success"),
         description: t("Profil actualizat cu succes", "Profile updated successfully"),

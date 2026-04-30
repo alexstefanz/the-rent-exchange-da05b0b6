@@ -1,32 +1,25 @@
-## Goal
+Am verificat checkout-ul și datele contului curent. Problema nu e în pasul de plată propriu-zis: checkout-ul blochează plata pentru că verifică doar coloana `profiles.phone`, iar pentru contul tău profilul returnează `phone: null`. În același timp, token-ul de autentificare are câmpul `user_metadata.phone_verified: false`, deci e posibil ca numărul pe care îl vezi „pus pe cont” să fie salvat în alt loc/alt câmp sau să nu fi fost persistat în profilul folosit de checkout.
 
-Add full English translations to the 5 currently Romanian-only content pages, using the existing `useLanguage`/`t()` bilingual pattern already used elsewhere.
+Planul de remediere:
 
-## Pages to localize
+1. Corectez salvarea și actualizarea telefonului în profil
+   - Normalizez numărul la un format românesc consistent înainte de salvare.
+   - Mă asigur că după salvare se invalidează/reface query-ul `currentUserProfile`, ca bannerul din checkout să vadă imediat telefonul nou.
+   - Evit trimiterea valorii `undefined` pentru telefon când câmpul este gol; păstrez explicit valorile valide și actualizez local starea profilului.
 
-1. **FAQ** (`src/pages/FAQ.tsx`) — UI shell already uses `t()`, but the 49-item `faqData` array, the `categoryList`, and the `"Toate"` default state are still hardcoded Romanian.
-2. **Terms & Conditions** (`src/pages/legal/TermsAndConditions.tsx`) — fully Romanian.
-3. **Privacy Policy** (`src/pages/legal/PrivacyPolicy.tsx`) — fully Romanian.
-4. **Cancellation & Refund Policy** (`src/pages/legal/CancellationPolicy.tsx`) — fully Romanian.
-5. **Cookie Policy** (`src/pages/legal/CookiePolicy.tsx`) — fully Romanian.
-6. **Shared `LegalPageLayout`** — hardcoded "Acasă", "Cuprins", and "Ultima actualizare:" labels.
+2. Fac verificarea din checkout mai robustă
+   - `usePhoneRequired` va citi telefonul din profilul public folosit de aplicație, dar va avea fallback controlat la metadatele utilizatorului dacă există acolo un telefon valid.
+   - Butonul de checkout nu va rămâne blocat cât timp profilul încă se încarcă; va afișa starea corectă după încărcare.
+   - Bannerul va afișa clar numărul valid detectat, ca utilizatorul să știe de ce poate continua.
 
-## Approach
+3. Adaug o cale de depanare pentru acest caz
+   - Dacă profilul nu are telefon, dar există indicii că utilizatorul are telefon în sesiune/metadate, mesajul va ghida utilizatorul să salveze telefonul în „Detalii cont”.
+   - Mă asigur că CTA-ul „Adaugă număr de telefon” duce exact la pagina potrivită.
 
-- Convert each page to `useLanguage()` with a `language === "en" ? ... : ...` switch on the data arrays/sections (matches existing convention in FAQ, ProductDetail, etc.).
-- For legal pages: keep the `sections` array structure but build it inside the component so it can branch on `language`. Translate each section's `title` and JSX `content` (paragraphs, lists, bold labels, link labels).
-- For FAQ: build a parallel `faqData_en` and `categoryList_en` (mapping each category 1:1: General, Renting, Owners, Account, Payments, Safety, Support, Legal). Switch the default `activeCategory` from `"Toate"` to `"All"` based on language. Translate the "Toate" filter pill.
-- Update `LegalPageLayout` to accept either translated labels via props or use `useLanguage` directly for the 3 fixed strings.
-- Preserve all existing links (to `/suport`, `/centru-asistenta`, etc.), HTML structure, GDPR article references, dates, and brand names.
+4. Verific impactul pe fluxurile care folosesc aceeași condiție
+   - Checkout (`/checkout`)
+   - KYC (`/verificare`)
+   - Publicare/editare anunț
+   - Notificări SMS din cont
 
-## Out of scope
-
-- No design changes, no new routes, no DB changes.
-- Document dates (e.g. "28.02.2026") stay numeric — same in both languages.
-- Email addresses, company name "Rentli", and external browser support links are not translated.
-
-## Technical notes
-
-- Files touched: `src/pages/FAQ.tsx`, `src/pages/legal/LegalPageLayout.tsx`, `src/pages/legal/TermsAndConditions.tsx`, `src/pages/legal/PrivacyPolicy.tsx`, `src/pages/legal/CancellationPolicy.tsx`, `src/pages/legal/CookiePolicy.tsx`.
-- Pattern: `const { language } = useLanguage(); const sections = language === "en" ? sectionsEn : sectionsRo;`
-- No new dependencies, no DB migration, no edge function. Pure client-side string work.
+După aprobare implementez modificările. Pentru contul tău, datele citite acum din backend arată că `profiles.phone` este gol, deci fixul va acoperi atât sincronizarea corectă, cât și situația în care numărul este prezent într-o altă sursă dar nu în profilul citit de checkout.
