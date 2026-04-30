@@ -202,6 +202,7 @@ const createUxCopy = () => ({
     kycGateDesc: { ro: "Pentru a începe verificarea identității (KYC), ai nevoie de un număr de telefon românesc valid în profil. Îl folosim ca să-ți trimitem SMS despre statusul KYC și despre rezervări.", en: "To start identity verification (KYC), you need a valid Romanian phone number in your profile. We use it to send you SMS about KYC status and reservations." },
     kycGateCta: { ro: "Adaugă număr de telefon", en: "Add phone number" },
     kycGateBack: { ro: "Înapoi", en: "Back" },
+    verifiedTitle: { ro: "Număr de telefon verificat", en: "Phone number verified" },
   },
   home: {
     heroTitle: { ro: "Închiriază orice,", en: "Rent anything," },
