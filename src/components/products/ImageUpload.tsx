@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { X, Upload, Loader2, ImagePlus } from "lucide-react";
 import { uploadProductImage, deleteProductImage } from "@/features/products/imageApi";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const MAX_DIMENSION = 1920;
 const JPEG_QUALITY = 0.8;
@@ -73,6 +74,7 @@ const ImageUpload = ({ userId, images, onChange, maxImages = 5 }: ImageUploadPro
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { t } = useLanguage();
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -80,8 +82,8 @@ const ImageUpload = ({ userId, images, onChange, maxImages = 5 }: ImageUploadPro
 
     if (images.length + files.length > maxImages) {
       toast({
-        title: "Prea multe imagini",
-        description: `Poți încărca maxim ${maxImages} imagini`,
+        title: t("Prea multe imagini", "Too many images"),
+        description: t(`Poți încărca maxim ${maxImages} imagini`, `You can upload up to ${maxImages} images`),
         variant: "destructive",
       });
       return;
@@ -93,8 +95,8 @@ const ImageUpload = ({ userId, images, onChange, maxImages = 5 }: ImageUploadPro
     for (const file of Array.from(files)) {
       if (!file.type.startsWith("image/")) {
         toast({
-          title: "Fișier invalid",
-          description: "Poți încărca doar imagini",
+          title: t("Fișier invalid", "Invalid file"),
+          description: t("Poți încărca doar imagini", "You can only upload images"),
           variant: "destructive",
         });
         continue;
@@ -106,8 +108,8 @@ const ImageUpload = ({ userId, images, onChange, maxImages = 5 }: ImageUploadPro
         newImages.push(url);
       } catch (error) {
         toast({
-          title: "Eroare la încărcare",
-          description: "Nu am putut încărca imaginea",
+          title: t("Eroare la încărcare", "Upload error"),
+          description: t("Nu am putut încărca imaginea", "Could not upload the image"),
           variant: "destructive",
         });
       }
@@ -116,8 +118,11 @@ const ImageUpload = ({ userId, images, onChange, maxImages = 5 }: ImageUploadPro
     if (newImages.length > 0) {
       onChange([...images, ...newImages]);
       toast({
-        title: "Imagini încărcate",
-        description: `${newImages.length} ${newImages.length === 1 ? "imagine încărcată" : "imagini încărcate"} cu succes`,
+        title: t("Imagini încărcate", "Images uploaded"),
+        description: t(
+          `${newImages.length} ${newImages.length === 1 ? "imagine încărcată" : "imagini încărcate"} cu succes`,
+          `${newImages.length} ${newImages.length === 1 ? "image uploaded" : "images uploaded"} successfully`
+        ),
       });
     }
 
@@ -135,13 +140,13 @@ const ImageUpload = ({ userId, images, onChange, maxImages = 5 }: ImageUploadPro
       const newImages = images.filter((_, i) => i !== index);
       onChange(newImages);
       toast({
-        title: "Imagine ștearsă",
-        description: "Imaginea a fost eliminată",
+        title: t("Imagine ștearsă", "Image deleted"),
+        description: t("Imaginea a fost eliminată", "The image has been removed"),
       });
     } catch (error) {
       toast({
-        title: "Eroare",
-        description: "Nu am putut șterge imaginea",
+        title: t("Eroare", "Error"),
+        description: t("Nu am putut șterge imaginea", "Could not delete the image"),
         variant: "destructive",
       });
     }
@@ -169,12 +174,12 @@ const ImageUpload = ({ userId, images, onChange, maxImages = 5 }: ImageUploadPro
           {isUploading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Se încarcă...
+              {t("Se încarcă...", "Uploading...")}
             </>
           ) : (
             <>
               <ImagePlus className="mr-2 h-4 w-4" />
-              Adaugă imagini ({images.length}/{maxImages})
+              {t("Adaugă imagini", "Add images")} ({images.length}/{maxImages})
             </>
           )}
         </Button>
@@ -201,7 +206,7 @@ const ImageUpload = ({ userId, images, onChange, maxImages = 5 }: ImageUploadPro
               </button>
               {index === 0 && (
                 <span className="absolute bottom-2 left-2 px-2 py-1 bg-primary text-primary-foreground text-xs rounded">
-                  Principal
+                  {t("Principal", "Main")}
                 </span>
               )}
             </div>
@@ -215,8 +220,8 @@ const ImageUpload = ({ userId, images, onChange, maxImages = 5 }: ImageUploadPro
           onClick={() => fileInputRef.current?.click()}
         >
           <Upload className="h-10 w-10 mx-auto mb-2 opacity-50" />
-          <p>Click pentru a încărca imagini</p>
-          <p className="text-sm">sau trage fișierele aici</p>
+          <p>{t("Click pentru a încărca imagini", "Click to upload images")}</p>
+          <p className="text-sm">{t("sau trage fișierele aici", "or drag files here")}</p>
         </div>
       )}
     </div>
