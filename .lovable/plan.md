@@ -1,62 +1,70 @@
-## Context
+## Proces-verbal de predare/primire cu condiții bifate
 
-Acum chiriașul poate anula doar cereri **neplătite** (în `RequestsTab`, restricție 24h). După plata cu Stripe (status `pending` + `payment_status` `authorized`/`paid`), cererea apare în `RentalsTab` → secțiunea "În așteptarea proprietarului" și **nu există nicio opțiune de anulare** — banii rămân blocați la Stripe până când proprietarul răspunde.
+Extindem fluxul existent de inspecție foto (`InspectionDialog`) cu un proces-verbal: o listă fixă standard de condiții pe care utilizatorul (proprietar la predare, chiriaș la primire, și invers la return) trebuie să le bifeze obligatoriu pentru a confirma. Aceleași condiții apar la check-in (return) ca referință de comparație vizuală.
 
-## Ce facem
+### Lista fixă standard de condiții (RO/EN)
 
-Adăugăm buton **"Anulează cererea"** doar pentru cererile plătite aflate în așteptarea proprietarului. Anularea:
-- marchează rezervarea `cancelled` (motiv: `renter_cancelled_after_payment`)
-- trimite notificare proprietarului că nu mai trebuie să răspundă
-- creează automat un **ticket admin (TCK-XXXXXX)** pentru ca echipa să verifice manual și să elibereze hold-ul Stripe / să returneze banii
-- afișează utilizatorului un mesaj explicit: *"Cererea a fost anulată. Banii blocați la card vor fi eliberați după verificarea echipei (1–3 zile lucrătoare)."*
+Aceleași 6 puncte pentru ambele faze (checkout și checkin), pentru a garanta paritatea „așa s-a predat / așa trebuie returnat":
 
-NU se face refund automat la Stripe (conform deciziei tale).
+1. Produsul este complet funcțional și pornește corect
+2. Nu prezintă defecte vizibile (zgârieturi, lovituri, fisuri) în afara celor menționate la observații
+3. Conține toate accesoriile incluse în anunț
+4. Este curat și în stare de utilizare
+5. Ambalajul / husa de transport este prezent(ă), dacă a fost inclus(ă)
+6. Am verificat produsul împreună cu cealaltă parte (sau pe baza pozelor primite)
 
-## Modificări
+Dacă o condiție nu se aplică sau e încălcată, utilizatorul trebuie să o lase nebifată **și** să descrie problema în câmpul Observații (care devine obligatoriu în acest caz).
 
-### 1. RLS (migrare SQL)
-Politica actuală `Renters can cancel own pending rentals` permite `UPDATE` doar când `status = 'pending'`, deci acoperă deja cazul. Verificăm și extindem dacă e nevoie ca să accepte și actualizarea câmpului `cancellation_reason`. Nu se schimbă schema.
-
-### 2. `src/components/dashboard/RentalsTab.tsx`
-În cardurile din secțiunea `awaitingOwnerRentals` (status `pending` + plătit):
-- Adaug buton outline destructive **"Anulează cererea"** lângă "Contactează proprietarul".
-- `AlertDialog` cu textul:
-  > *Vei anula această cerere către {owner_name} pentru {product_title}. Banii blocați la card vor fi eliberați după verificarea echipei Rentli (1–3 zile lucrătoare). Continui?*
-- La confirmare: `UPDATE rentals SET status='cancelled', cancellation_reason='renter_cancelled_after_payment', cancelled_at=now() WHERE id=...`
-- Apel edge function `send-cancellation-notification` (există deja) pentru email-ul proprietarului.
-- Apel nou la o edge function `create-renter-cancellation-ticket` (vezi #3) care creează un ticket TCK pentru echipa admin.
-- Toast: *"Cererea a fost anulată. Banii vor fi eliberați după verificarea echipei."*
-- Invalidare query `my-rentals`.
-
-### 3. Edge function nouă: `supabase/functions/create-renter-cancellation-ticket/index.ts`
-- Validează JWT + că `auth.uid() === rental.renter_id`.
-- Creează rând în `ops_tickets`:
-  - `category_group = 'PAYMENTS'`, `category_type = 'REFUND_REQUEST'`
-  - `priority = 'HIGH'`
-  - `title = 'Anulare cerere plătită — necesită eliberare hold Stripe'`
-  - `description` cu detalii rezervare + `payment_intent_id`
-  - `requester_user_id = renter_id`, `rental_user_id = renter_id`, `owner_user_id`, `product_id`, `reservation_id = rental.id`
-- Mesaj inițial intern (`is_internal=true`) cu link Stripe către `pi_...` pentru ca admin-ul să poată face refund cu un click.
-
-### 4. `src/data/uxCopy.ts`
-Adaug chei bilingve:
-- `dashboard.cancelRequest` → "Anulează cererea" / "Cancel request"
-- `dashboard.cancelPaidConfirm` → textul AlertDialog (RO/EN)
-- `dashboard.cancelPaidSuccess` → mesaj toast (RO/EN)
-
-## Ce NU schimbăm
-
-- Logica din `RequestsTab` (cereri neplătite cu fereastră de 24h) rămâne identică.
-- Cererile `confirmed`/`active` rămân fără buton de anulare self-serve (necesită contact admin).
-- Nu se face refund automat la Stripe — admin face manual din ticket.
-
-## Tehnic
+### Flux UI
 
 ```text
-RentalsTab "awaitingOwnerRentals"
-  ├─ buton [Anulează cererea] (nou, destructive outline)
-  └─ AlertDialog → confirm
-        ├─ UPDATE rentals (status=cancelled, reason, cancelled_at)
-        ├─ invoke send-cancellation-notification  → email owner
-        └─ invoke create-renter-cancellation-ticket → TCK admin
+InspectionDialog
+├── [Existent] Header + descriere fază
+├── [Existent] Upload poze (min. 1, max. 10)
+├── [NOU] Proces-verbal
+│   ├── 6 checkboxes (lista standard)
+│   └── Banner info: „Bifează doar condițiile îndeplinite. 
+│       Pentru cele nebifate, descrie problema în Observații."
+├── [Existent] Textarea Observații (devine OBLIGATORIE dacă există bife lipsă)
+└── [Existent] Buton Salvează
+    └── Dezactivat până când: poze ≥ 1 AND (toate bifate OR observații completate)
 ```
+
+La vizualizare (când inspecția e deja salvată), se afișează lista cu iconițe ✓ / ✗ pentru fiecare punct, plus observațiile. Astfel ambele părți văd exact ce a confirmat cealaltă.
+
+### Reguli de validare
+
+- Salvarea este blocată dacă: 0 poze, SAU există puncte nebifate FĂRĂ observații (min. 20 caractere).
+- La check-in (return), se afișează deasupra checkboxurilor un sumar al stării declarate la checkout (câte bifate / observații), ca chiriașul/proprietarul să vadă ce trebuie să respecte la returnare.
+
+### Modificări tehnice
+
+**Bază de date** — migrare:
+- `rental_inspections`: adăugăm coloana `checklist jsonb NOT NULL DEFAULT '{}'::jsonb`.
+- Format: `{ "functional": true, "no_defects": false, "complete_accessories": true, "clean": true, "packaging": true, "verified_together": true }`.
+- Cheile sunt fixe (constante în cod), nu un câmp dinamic — păstrăm simplitatea și stabilitatea pentru export PDF/audit ulterior.
+
+**Cod**:
+- `src/features/rentals/inspectionApi.ts`:
+  - Tip nou `InspectionChecklist` cu cele 6 chei booleane.
+  - `Inspection` primește câmpul `checklist`.
+  - `createInspection(...)` primește și `checklist: InspectionChecklist`.
+- `src/data/uxCopy.ts`:
+  - Secțiune nouă `inspection.checklist` cu cele 6 etichete + titlu „Proces-verbal" + textul de ajutor + mesajul „Observațiile sunt obligatorii când există puncte nebifate" — bilingv RO/EN.
+- `src/components/dashboard/InspectionDialog.tsx`:
+  - State `checklist` (toate `false` inițial).
+  - Render listă de `Checkbox` + `Label` pentru fiecare condiție.
+  - Logica `canSubmit`: poze ≥ 1 AND (toate `true` OR notes.trim().length ≥ 20).
+  - La afișarea inspecției salvate: listă cu ✓/✗ + observații.
+  - La checkin: dacă există inspecția corespunzătoare de checkout pentru același rental, afișăm un mic banner „Stare la predare: X/6 condiții confirmate" cu un toggle pentru detalii.
+- Niciun edge function nou — totul rămâne client-side cu RLS existent pe `rental_inspections`.
+
+### Ce NU schimbăm
+
+- Fluxul de butoane din `RentalsTab` / `RentalsOutTab` — același „📷 Predare / Primire / Confirmă predarea" deschide același dialog, doar cu pasul nou înăuntru.
+- Numărul minim/maxim de poze (1–10).
+- Politica de plăți / capture / refund.
+
+### Memorie
+
+După implementare, actualizăm `mem://features/photo-handover-documentation` pentru a reflecta noua componentă „checklist obligatoriu cu 6 puncte standard + observații condiționate".
