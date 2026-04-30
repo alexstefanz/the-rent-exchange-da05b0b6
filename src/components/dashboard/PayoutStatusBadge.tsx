@@ -1,6 +1,7 @@
 import { Wallet, CheckCircle2, Clock, AlertCircle, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface PayoutStatusBadgeProps {
   paymentStatus: string;
@@ -31,45 +32,46 @@ const PayoutStatusBadge = ({
   amount,
   className,
 }: PayoutStatusBadgeProps) => {
+  const { t } = useLanguage();
   const ps = (paymentStatus || "").toLowerCase();
   const rs = (rentalStatus || "").toLowerCase();
 
   let tone: Tone = "neutral";
   let Icon = Clock;
-  let label = "Plată în așteptare";
-  let tooltip = "Plata nu a fost încă inițiată.";
+  let label = t("Plată în așteptare", "Payment pending");
+  let tooltip = t("Plata nu a fost încă inițiată.", "Payment has not been initiated yet.");
 
   if (ps === "paid" || ps === "captured") {
     tone = "success";
     Icon = Wallet;
-    label = `În wallet · ${amount} RON`;
-    tooltip = `Suma de ${amount} RON a fost transferată în balanța ta.`;
+    label = t(`În wallet · ${amount} RON`, `In wallet · ${amount} RON`);
+    tooltip = t(`Suma de ${amount} RON a fost transferată în balanța ta.`, `${amount} RON has been transferred to your balance.`);
   } else if (ps === "authorized") {
     tone = "info";
     Icon = Clock;
-    label = "Plată autorizată";
-    tooltip = `${amount} RON sunt blocați pe cardul chiriașului. Vor intra în wallet după confirmarea returnării.`;
+    label = t("Plată autorizată", "Payment authorized");
+    tooltip = t(`${amount} RON sunt blocați pe cardul chiriașului. Vor intra în wallet după confirmarea returnării.`, `${amount} RON is held on the renter's card. It will be transferred to your wallet after the return is confirmed.`);
   } else if (ps === "refunded") {
     tone = "warning";
     Icon = XCircle;
-    label = "Refundat";
-    tooltip = "Plata a fost returnată chiriașului. Nu vei primi payout pentru această rezervare.";
+    label = t("Refundat", "Refunded");
+    tooltip = t("Plata a fost returnată chiriașului. Nu vei primi payout pentru această rezervare.", "The payment was refunded to the renter. You will not receive a payout for this reservation.");
   } else if (ps === "failed" || rs === "cancelled") {
     tone = "danger";
     Icon = AlertCircle;
-    label = "Plată eșuată";
-    tooltip = "Plata nu a putut fi procesată sau rezervarea a fost anulată.";
+    label = t("Plată eșuată", "Payment failed");
+    tooltip = t("Plata nu a putut fi procesată sau rezervarea a fost anulată.", "Payment could not be processed or the reservation was cancelled.");
   } else if (rs === "completed") {
     // Completed but payment not captured — flag for follow-up
     tone = "warning";
     Icon = AlertCircle;
-    label = "Payout în procesare";
-    tooltip = "Rezervarea e finalizată dar captura plății nu s-a încheiat încă. Reîncearcă în câteva minute sau contactează suportul.";
+    label = t("Payout în procesare", "Payout processing");
+    tooltip = t("Rezervarea e finalizată dar captura plății nu s-a încheiat încă. Reîncearcă în câteva minute sau contactează suportul.", "The reservation is complete but the payment capture has not finished yet. Try again in a few minutes or contact support.");
   } else if (ps === "pending") {
     tone = "neutral";
     Icon = Clock;
-    label = "Plată în așteptare";
-    tooltip = "Așteptăm confirmarea plății de la chiriaș.";
+    label = t("Plată în așteptare", "Payment pending");
+    tooltip = t("Așteptăm confirmarea plății de la chiriaș.", "Waiting for the renter to confirm the payment.");
   }
 
   return (

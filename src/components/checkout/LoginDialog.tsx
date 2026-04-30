@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 import { strongPasswordSchema, isWeakPasswordError } from "@/lib/passwordValidation";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface LoginDialogProps {
   open: boolean;
@@ -26,6 +27,7 @@ interface LoginDialogProps {
 
 const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) => {
   const { signIn, signUp } = useAuth();
+  const { t } = useLanguage();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,17 +49,17 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
         // Client-side strong password check before hitting backend
         const parsed = strongPasswordSchema.safeParse(password);
         if (!parsed.success) {
-          setPasswordError(parsed.error.issues[0]?.message ?? "Parolă invalidă");
-          toast.error("Parolă prea slabă. Verifică cerințele.");
+          setPasswordError(parsed.error.issues[0]?.message ?? t("Parolă invalidă", "Invalid password"));
+          toast.error(t("Parolă prea slabă. Verifică cerințele.", "Password too weak. Check the requirements."));
           setLoading(false);
           return;
         }
         const { error } = await signUp(email, password, fullName || undefined);
         if (error) {
           if (error.message.includes("already registered")) {
-            toast.error("Un cont cu acest email există deja");
+            toast.error(t("Un cont cu acest email există deja", "An account with this email already exists"));
           } else if (isWeakPasswordError(error.message)) {
-            toast.error("Parolă prea slabă. Folosește minim 8 caractere, o literă mare, o literă mică și o cifră sau simbol.");
+            toast.error(t("Parolă prea slabă. Folosește minim 8 caractere, o literă mare, o literă mică și o cifră sau simbol.", "Password too weak. Use at least 8 characters, one uppercase, one lowercase, and a digit or symbol."));
           } else {
             toast.error(error.message);
           }
@@ -69,9 +71,9 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
         const { error } = await signIn(email, password);
         if (error) {
           // Generic message — never disclose whether email exists or why it failed
-          toast.error("Email sau parolă incorecte");
+          toast.error(t("Email sau parolă incorecte", "Incorrect email or password"));
         } else {
-          toast.success("Autentificare reușită!");
+          toast.success(t("Autentificare reușită!", "Successfully signed in!"));
           onLoginSuccess();
         }
       }
@@ -90,9 +92,9 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
     });
     setIsVerifyingOtp(false);
     if (error) {
-      toast.error("Codul introdus este greșit sau a expirat.");
+      toast.error(t("Codul introdus este greșit sau a expirat.", "The code is wrong or has expired."));
     } else {
-      toast.success("Cont verificat cu succes!");
+      toast.success(t("Cont verificat cu succes!", "Account verified successfully!"));
       onLoginSuccess();
     }
   };
@@ -105,9 +107,9 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
     });
     setIsResendingOtp(false);
     if (error) {
-      toast.error("Nu am putut retrimite codul.");
+      toast.error(t("Nu am putut retrimite codul.", "Could not resend the code."));
     } else {
-      toast.success(`Cod retrimis pe ${otpEmail}`);
+      toast.success(t(`Cod retrimis pe ${otpEmail}`, `Code resent to ${otpEmail}`));
       setOtpCode("");
     }
   };
@@ -118,10 +120,10 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
         <DialogHeader className="p-6 pb-4 border-b border-border">
           <DialogTitle className="text-center font-semibold">
             {showOtp
-              ? "Verifică-ți emailul"
+              ? t("Verifică-ți emailul", "Verify your email")
               : isSignUp
-                ? "Creează cont pentru a rezerva"
-                : "Autentifică-te pentru a rezerva"}
+                ? t("Creează cont pentru a rezerva", "Create account to book")
+                : t("Autentifică-te pentru a rezerva", "Sign in to book")}
           </DialogTitle>
         </DialogHeader>
 
@@ -133,7 +135,7 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
                   <Mail className="h-6 w-6 text-primary" />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Am trimis un cod de verificare pe <strong>{otpEmail}</strong>
+                  {t("Am trimis un cod de verificare pe", "We sent a verification code to")} <strong>{otpEmail}</strong>
                 </p>
               </div>
 
@@ -157,18 +159,18 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
                 className="w-full h-12 bg-[#E51D53] hover:bg-[#d41a4c] text-white font-medium"
                 disabled={otpCode.length !== 8 || isVerifyingOtp}
               >
-                {isVerifyingOtp ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Se verifică...</> : "Verifică codul"}
+                {isVerifyingOtp ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("Se verifică...", "Verifying...")}</> : t("Verifică codul", "Verify code")}
               </Button>
 
               <div className="text-center">
-                <p className="text-xs text-muted-foreground mb-1">Nu ai primit codul?</p>
+                <p className="text-xs text-muted-foreground mb-1">{t("Nu ai primit codul?", "Didn't receive the code?")}</p>
                 <Button variant="link" size="sm" onClick={handleResendOtp} disabled={isResendingOtp}>
-                  {isResendingOtp ? "Se retrimite..." : "Retrimite codul"}
+                  {isResendingOtp ? t("Se retrimite...", "Resending...") : t("Retrimite codul", "Resend code")}
                 </Button>
               </div>
 
               <Button variant="ghost" size="sm" className="w-full" onClick={() => { setShowOtp(false); setOtpCode(""); }}>
-                ← Înapoi
+                {t("← Înapoi", "← Back")}
               </Button>
             </>
           ) : (
@@ -177,7 +179,7 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
 
               {isSignUp && (
                 <div className="space-y-2">
-                  <Label htmlFor="fullName">Nume complet</Label>
+                  <Label htmlFor="fullName">{t("Nume complet", "Full name")}</Label>
                   <Input
                     id="fullName"
                     placeholder="Ion Popescu"
@@ -193,7 +195,7 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
                 <Input
                   id="email"
                   type="email"
-                  placeholder="exemplu@email.com"
+                  placeholder={t("exemplu@email.com", "example@email.com")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-12"
@@ -201,11 +203,11 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Parolă</Label>
+                <Label htmlFor="password">{t("Parolă", "Password")}</Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Introdu parola"
+                  placeholder={t("Introdu parola", "Enter password")}
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setPasswordError(null); }}
                   className="h-12"
@@ -213,7 +215,7 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
                 />
                 {isSignUp && (
                   <p className="text-xs text-muted-foreground">
-                    Min. 8 caractere, o literă mare, o literă mică și o cifră sau simbol
+                    {t("Min. 8 caractere, o literă mare, o literă mică și o cifră sau simbol", "Min. 8 characters, one uppercase, one lowercase, and a digit or symbol")}
                   </p>
                 )}
                 {passwordError && (
@@ -226,18 +228,18 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
                 className="w-full h-12 bg-[#E51D53] hover:bg-[#d41a4c] text-white font-medium"
                 disabled={!email || !password || loading}
               >
-                {loading ? "Se procesează..." : isSignUp ? "Creează cont" : "Autentifică-te"}
+                {loading ? t("Se procesează...", "Processing...") : isSignUp ? t("Creează cont", "Create account") : t("Autentifică-te", "Sign in")}
               </Button>
 
               <Separator />
 
               <p className="text-center text-sm text-muted-foreground">
-                {isSignUp ? "Ai deja cont?" : "Nu ai cont?"}{" "}
+                {isSignUp ? t("Ai deja cont?", "Already have an account?") : t("Nu ai cont?", "Don't have an account?")}{" "}
                 <span
                   className="text-primary hover:underline cursor-pointer"
                   onClick={() => setIsSignUp(!isSignUp)}
                 >
-                  {isSignUp ? "Autentifică-te" : "Înregistrează-te"}
+                  {isSignUp ? t("Autentifică-te", "Sign in") : t("Înregistrează-te", "Sign up")}
                 </span>
               </p>
             </>

@@ -21,12 +21,14 @@ import { Loader2, Plus, Package, Edit, MapPin, Trash2, Clock, CheckCircle, XCirc
 import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Owner = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
@@ -47,13 +49,13 @@ const Owner = () => {
       queryClient.invalidateQueries({ queryKey: ["my-products", user.id] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
       toast({
-        title: "Produs șters",
-        description: "Produsul a fost șters cu succes.",
+        title: t("Produs șters", "Product deleted"),
+        description: t("Produsul a fost șters cu succes.", "The product was successfully deleted."),
       });
     } catch (error) {
       toast({
-        title: "Eroare",
-        description: "Nu s-a putut șterge produsul. Încearcă din nou.",
+        title: t("Eroare", "Error"),
+        description: t("Nu s-a putut șterge produsul. Încearcă din nou.", "Could not delete the product. Please try again."),
         variant: "destructive",
       });
     } finally {
@@ -78,16 +80,16 @@ const Owner = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="font-heading text-2xl md:text-3xl font-bold text-foreground">
-              Produsele mele
+              {t("Produsele mele", "My products")}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Gestionează produsele tale listate
+              {t("Gestionează produsele tale listate", "Manage your listed products")}
             </p>
           </div>
           <Button asChild>
             <Link to="/owner/new-product">
               <Plus className="h-4 w-4 mr-2" />
-              Adaugă produs
+              {t("Adaugă produs", "Add product")}
             </Link>
           </Button>
         </div>
@@ -96,14 +98,14 @@ const Owner = () => {
           <Card className="text-center py-12">
             <CardContent>
               <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-semibold text-lg mb-2">Nu ai produse listate</h3>
+              <h3 className="font-semibold text-lg mb-2">{t("Nu ai produse listate", "No products listed yet")}</h3>
               <p className="text-muted-foreground mb-4">
-                Adaugă primul tău produs pentru a începe să câștigi
+                {t("Adaugă primul tău produs pentru a începe să câștigi", "Add your first product to start earning")}
               </p>
               <Button asChild>
                 <Link to="/owner/new-product">
                   <Plus className="h-4 w-4 mr-2" />
-                  Adaugă primul produs
+                  {t("Adaugă primul produs", "Add first product")}
                 </Link>
               </Button>
             </CardContent>
@@ -130,20 +132,20 @@ const Owner = () => {
                     {product.approval_status === 'pending' && (
                       <div className="absolute top-2 left-2">
                         <Badge variant="outline" className="border-yellow-500 text-yellow-700 bg-yellow-50 gap-1">
-                          <Clock className="h-3 w-3" /> În așteptare
+                          <Clock className="h-3 w-3" /> {t("În așteptare", "Pending")}
                         </Badge>
                       </div>
                     )}
                     {product.approval_status === 'rejected' && (
                       <div className="absolute top-2 left-2">
                         <Badge variant="destructive" className="gap-1">
-                          <XCircle className="h-3 w-3" /> Respins
+                          <XCircle className="h-3 w-3" /> {t("Respins", "Rejected")}
                         </Badge>
                       </div>
                     )}
                     {product.approval_status === 'approved' && !product.is_active && (
                       <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-                        <span className="text-sm font-medium text-muted-foreground">Inactiv</span>
+                        <span className="text-sm font-medium text-muted-foreground">{t("Inactiv", "Inactive")}</span>
                       </div>
                     )}
                   </div>
@@ -161,9 +163,9 @@ const Owner = () => {
                     
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs text-muted-foreground">Preț client</p>
+                        <p className="text-xs text-muted-foreground">{t("Preț client", "Client price")}</p>
                         <p className="font-heading text-lg font-bold text-primary">
-                          {clientPrice} RON<span className="text-sm font-normal text-muted-foreground">/zi</span>
+                          {clientPrice} RON<span className="text-sm font-normal text-muted-foreground">/{t("zi", "day")}</span>
                         </p>
                       </div>
                       <div className="flex gap-2">
@@ -178,7 +180,7 @@ const Owner = () => {
                         <Button variant="outline" size="sm" asChild>
                           <Link to={`/owner/edit-product/${product.id}`}>
                             <Edit className="h-4 w-4 mr-1" />
-                            Editează
+                            {t("Editează", "Edit")}
                           </Link>
                         </Button>
                       </div>
@@ -197,13 +199,13 @@ const Owner = () => {
       <AlertDialog open={!!productToDelete} onOpenChange={() => setProductToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Ești sigur că vrei să ștergi acest produs?</AlertDialogTitle>
+            <AlertDialogTitle>{t("Ești sigur că vrei să ștergi acest produs?", "Are you sure you want to delete this product?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Această acțiune nu poate fi anulată. Produsul va fi șters permanent din contul tău.
+              {t("Această acțiune nu poate fi anulată. Produsul va fi șters permanent din contul tău.", "This action cannot be undone. The product will be permanently deleted from your account.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Anulează</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{t("Anulează", "Cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();
@@ -215,10 +217,10 @@ const Owner = () => {
               {isDeleting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Se șterge...
+                  {t("Se șterge...", "Deleting...")}
                 </>
               ) : (
-                "Șterge"
+                t("Șterge", "Delete")
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

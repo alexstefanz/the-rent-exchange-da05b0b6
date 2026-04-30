@@ -83,8 +83,8 @@ const ListItem = () => {
 
     if (containsContactInfo(formData.description)) {
       toast({
-        title: "Date de contact detectate",
-        description: "Descrierea nu poate conține date de contact (telefon, email sau link-uri). Comunicarea se face prin platforma Rentli.",
+        title: "Contact info detected",
+        description: "The description cannot contain contact info (phone, email or links). All communication happens through the Rentli platform.",
         variant: "destructive",
       });
       return;

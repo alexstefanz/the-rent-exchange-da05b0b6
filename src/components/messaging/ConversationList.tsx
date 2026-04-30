@@ -4,7 +4,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, MessageCircle } from "lucide-react";
 import { Conversation } from "@/features/messaging/messagingApi";
 import { format, isToday, isYesterday } from "date-fns";
-import { ro } from "date-fns/locale";
+import { ro, enUS } from "date-fns/locale";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -25,6 +26,8 @@ export function ConversationList({
   onTabChange,
   onSelect,
 }: ConversationListProps) {
+  const { language, t } = useLanguage();
+  const dateLocale = language === "ro" ? ro : enUS;
   const rezervariUnread = conversations
     .filter(c => c.buyer_id === userId)
     .reduce((acc, c) => acc + (c.unread_count || 0), 0);
@@ -42,8 +45,8 @@ export function ConversationList({
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     if (isToday(date)) return format(date, "HH:mm");
-    if (isYesterday(date)) return "Ieri";
-    return format(date, "d MMM", { locale: ro });
+    if (isYesterday(date)) return t("Ieri", "Yesterday");
+    return format(date, "d MMM", { locale: dateLocale });
   };
 
   const renderItem = (conv: Conversation) => (
@@ -62,7 +65,7 @@ export function ConversationList({
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
           <span className="font-medium text-sm truncate">
-            {conv.product?.title || "Produs"}
+            {conv.product?.title || t("Produs", "Product")}
           </span>
           {conv.last_message && (
             <span className="text-xs text-muted-foreground whitespace-nowrap">
@@ -70,14 +73,14 @@ export function ConversationList({
             </span>
           )}
         </div>
-        <p className="text-xs text-muted-foreground truncate">{conv.other_user?.full_name || "Utilizator"}</p>
+        <p className="text-xs text-muted-foreground truncate">{conv.other_user?.full_name || t("Utilizator", "User")}</p>
         {conv.last_message && (
           <p
             className={`text-sm truncate mt-0.5 ${
               conv.unread_count ? "font-medium text-foreground" : "text-muted-foreground"
             }`}
           >
-            {conv.last_message.sender_id === userId ? "Tu: " : ""}
+            {conv.last_message.sender_id === userId ? t("Tu: ", "You: ") : ""}
             {conv.last_message.content}
           </p>
         )}
@@ -94,11 +97,11 @@ export function ConversationList({
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 pb-2">
-        <h1 className="text-xl font-bold mb-3">Mesaje</h1>
+        <h1 className="text-xl font-bold mb-3">{t("Mesaje", "Messages")}</h1>
         <Tabs value={activeTab} onValueChange={onTabChange}>
           <TabsList className="w-full">
             <TabsTrigger value="rezervari" className="flex-1 gap-1.5">
-              Rezervări
+              {t("Rezervări", "Reservations")}
               {rezervariUnread > 0 && (
                 <Badge variant="destructive" className="rounded-full h-5 min-w-5 flex items-center justify-center text-[10px] px-1.5 py-0">
                   {rezervariUnread}
@@ -106,7 +109,7 @@ export function ConversationList({
               )}
             </TabsTrigger>
             <TabsTrigger value="de-inchiriat" className="flex-1 gap-1.5">
-              De Închiriat
+              {t("De Închiriat", "For Rent")}
               {deInchiriatUnread > 0 && (
                 <Badge variant="destructive" className="rounded-full h-5 min-w-5 flex items-center justify-center text-[10px] px-1.5 py-0">
                   {deInchiriatUnread}
@@ -127,8 +130,8 @@ export function ConversationList({
             <MessageCircle className="h-10 w-10 text-muted-foreground mb-3" />
             <p className="text-sm text-muted-foreground">
               {activeTab === "rezervari"
-                ? "Nicio conversație despre rezervări."
-                : "Nicio conversație despre produsele tale."}
+                ? t("Nicio conversație despre rezervări.", "No reservation conversations.")
+                : t("Nicio conversație despre produsele tale.", "No conversations about your products.")}
             </p>
           </div>
         ) : (
@@ -136,7 +139,7 @@ export function ConversationList({
             {unread.length > 0 && (
               <div className="mb-1">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-3 py-2">
-                  Necitite
+                  {t("Necitite", "Unread")}
                 </p>
                 {unread.map(renderItem)}
               </div>
@@ -144,7 +147,7 @@ export function ConversationList({
             {read.length > 0 && (
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-3 py-2">
-                  Citite
+                  {t("Citite", "Read")}
                 </p>
                 {read.map(renderItem)}
               </div>

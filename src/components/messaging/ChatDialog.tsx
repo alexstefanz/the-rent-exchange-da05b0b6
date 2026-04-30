@@ -15,7 +15,8 @@ import {
   MAX_MESSAGE_LENGTH 
 } from "@/features/messaging/messagingApi";
 import { format } from "date-fns";
-import { ro } from "date-fns/locale";
+import { ro, enUS } from "date-fns/locale";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ChatDialogProps {
   open: boolean;
@@ -35,6 +36,8 @@ export function ChatDialog({
   productTitle 
 }: ChatDialogProps) {
   const { user } = useAuth();
+  const { language, t } = useLanguage();
+  const dateLocale = language === "ro" ? ro : enUS;
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -115,7 +118,7 @@ export function ChatDialog({
               <AvatarFallback>{otherUserName?.charAt(0) || 'U'}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col">
-              <span>{otherUserName || 'Utilizator'}</span>
+              <span>{otherUserName || t("Utilizator", "User")}</span>
               <span className="text-xs text-muted-foreground font-normal truncate max-w-[200px]">
                 {productTitle}
               </span>
@@ -130,7 +133,7 @@ export function ChatDialog({
             </div>
           ) : messages.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
-              Niciun mesaj încă. Trimite primul mesaj!
+              {t("Niciun mesaj încă. Trimite primul mesaj!", "No messages yet. Send the first one!")}
             </div>
           ) : (
             <div className="space-y-3">
@@ -150,7 +153,7 @@ export function ChatDialog({
                     >
                       <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                       <p className={`text-xs mt-1 ${isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                        {format(new Date(msg.created_at), 'HH:mm', { locale: ro })}
+                        {format(new Date(msg.created_at), 'HH:mm', { locale: dateLocale })}
                       </p>
                     </div>
                   </div>
@@ -162,7 +165,7 @@ export function ChatDialog({
 
         <div className="p-4 border-t flex gap-2">
           <Input
-            placeholder="Scrie un mesaj..."
+            placeholder={t("Scrie un mesaj...", "Write a message...")}
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value.slice(0, MAX_MESSAGE_LENGTH))}
             onKeyPress={handleKeyPress}

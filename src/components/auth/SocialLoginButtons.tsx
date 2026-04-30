@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SocialLoginButtonsProps {
   onSuccess?: () => void;
@@ -26,6 +27,7 @@ const AppleIcon = () => (
 
 const SocialLoginButtons = ({ onSuccess }: SocialLoginButtonsProps) => {
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
+  const { t } = useLanguage();
 
   const handleSocialLogin = async (provider: "google" | "apple") => {
     setLoadingProvider(provider);
@@ -35,7 +37,7 @@ const SocialLoginButtons = ({ onSuccess }: SocialLoginButtonsProps) => {
       });
 
       if (result.error) {
-        toast.error("Eroare la autentificare. Încearcă din nou.");
+        toast.error(t("Eroare la autentificare. Încearcă din nou.", "Authentication error. Please try again."));
         return;
       }
 
@@ -44,10 +46,10 @@ const SocialLoginButtons = ({ onSuccess }: SocialLoginButtonsProps) => {
       }
 
       // Session set successfully
-      toast.success("Autentificare reușită!");
+      toast.success(t("Autentificare reușită!", "Successfully signed in!"));
       onSuccess?.();
     } catch {
-      toast.error("Eroare la autentificare. Încearcă din nou.");
+      toast.error(t("Eroare la autentificare. Încearcă din nou.", "Authentication error. Please try again."));
     } finally {
       setLoadingProvider(null);
     }
@@ -62,7 +64,7 @@ const SocialLoginButtons = ({ onSuccess }: SocialLoginButtonsProps) => {
         disabled={!!loadingProvider}
       >
         {loadingProvider === "google" ? <Loader2 className="h-4 w-4 animate-spin" /> : <GoogleIcon />}
-        Continuă cu Google
+        {t("Continuă cu Google", "Continue with Google")}
       </Button>
       <Button
         variant="outline"
@@ -71,12 +73,12 @@ const SocialLoginButtons = ({ onSuccess }: SocialLoginButtonsProps) => {
         disabled={!!loadingProvider}
       >
         {loadingProvider === "apple" ? <Loader2 className="h-4 w-4 animate-spin" /> : <AppleIcon />}
-        Continuă cu Apple
+        {t("Continuă cu Apple", "Continue with Apple")}
       </Button>
       <div className="relative my-4">
         <Separator />
         <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-xs text-muted-foreground">
-          sau
+          {t("sau", "or")}
         </span>
       </div>
     </div>

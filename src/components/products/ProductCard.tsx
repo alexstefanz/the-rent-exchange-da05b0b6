@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { addFavoriteProduct, removeFavoriteProduct, isProductFavorite } from "@/features/profile/favoriteProductsApi";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ProductCardProps {
   product: Product;
@@ -20,13 +21,14 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
   const [isToggling, setIsToggling] = useState(false);
   const [rating, setRating] = useState<{ avg: number; count: number } | null>(null);
   const { user } = useAuth();
+  const { t } = useLanguage();
   const clientPrice = calculateClientPrice(
     product.daily_price_owner,
     product.platform_fee_percent
   );
 
   const imageUrl = getOptimizedImageUrl(product.images?.[0] || "/placeholder.svg", "card");
-  const location = [product.location_city, product.pickup_address].filter(Boolean).join(", ") || "România";
+  const location = [product.location_city, product.pickup_address].filter(Boolean).join(", ") || t("România", "Romania");
 
   useEffect(() => {
     if (user) {
@@ -50,7 +52,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
     e.preventDefault();
     e.stopPropagation();
     if (!user) {
-      toast({ title: "Trebuie să fii autentificat pentru a adăuga la favorite.", variant: "destructive" });
+      toast({ title: t("Trebuie să fii autentificat pentru a adăuga la favorite.", "You must be signed in to add favorites."), variant: "destructive" });
       return;
     }
     if (isToggling) return;
@@ -64,7 +66,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
         setIsFavorite(true);
       }
     } catch {
-      toast({ title: "Eroare la actualizarea favoritelor.", variant: "destructive" });
+      toast({ title: t("Eroare la actualizarea favoritelor.", "Error updating favorites."), variant: "destructive" });
     } finally {
       setIsToggling(false);
     }
@@ -122,7 +124,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
               <span className="font-heading text-xl font-bold text-primary">
                 {clientPrice} RON
               </span>
-              <span className="text-sm text-muted-foreground"> / zi</span>
+              <span className="text-sm text-muted-foreground"> / {t("zi", "day")}</span>
             </div>
           </div>
         </div>
@@ -187,7 +189,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
           <span className="font-heading text-lg md:text-xl font-bold text-primary">
             {clientPrice} RON
           </span>
-          <span className="text-xs md:text-sm text-muted-foreground"> / zi</span>
+          <span className="text-xs md:text-sm text-muted-foreground"> / {t("zi", "day")}</span>
         </div>
       </div>
     </Link>

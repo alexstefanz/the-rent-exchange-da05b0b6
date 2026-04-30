@@ -11,11 +11,12 @@ import {
 } from "@/components/ui/dialog";
 import { ShieldCheck, Calendar, Hash, Banknote, MessageCircle, X, Loader2 } from "lucide-react";
 import { format } from "date-fns";
-import { ro } from "date-fns/locale";
+import { ro, enUS } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import type { OwnerRental } from "@/features/rentals/ownerRentalsApi";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface AcceptedRentalDialogProps {
   rental: OwnerRental | null;
@@ -26,6 +27,8 @@ interface AcceptedRentalDialogProps {
 
 export function AcceptedRentalDialog({ rental, open, onOpenChange, onCancelled }: AcceptedRentalDialogProps) {
   const navigate = useNavigate();
+  const { language, t } = useLanguage();
+  const dateLocale = language === "ro" ? ro : enUS;
   const [startingChat, setStartingChat] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
@@ -72,7 +75,7 @@ export function AcceptedRentalDialog({ rental, open, onOpenChange, onCancelled }
       }
     } catch (e) {
       console.error(e);
-      toast.error("Eroare la deschiderea chat-ului");
+      toast.error(t("Eroare la deschiderea chat-ului", "Error opening chat"));
     } finally {
       setStartingChat(false);
     }
@@ -85,18 +88,18 @@ export function AcceptedRentalDialog({ rental, open, onOpenChange, onCancelled }
         .from("rentals")
         .update({
           status: "cancelled",
-          cancellation_reason: "Anulat de proprietar",
+          cancellation_reason: language === "ro" ? "Anulat de proprietar" : "Cancelled by owner",
           cancelled_at: new Date().toISOString(),
         })
         .eq("id", rental.id);
 
       if (error) throw error;
-      toast.success("Cererea a fost anulată");
+      toast.success(t("Cererea a fost anulată", "The request was cancelled"));
       onOpenChange(false);
       onCancelled?.();
     } catch (e) {
       console.error(e);
-      toast.error("Eroare la anularea cererii");
+      toast.error(t("Eroare la anularea cererii", "Error cancelling the request"));
     } finally {
       setCancelling(false);
     }
@@ -107,7 +110,7 @@ export function AcceptedRentalDialog({ rental, open, onOpenChange, onCancelled }
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-center">Cerere acceptată! ✅</DialogTitle>
+            <DialogTitle className="text-center">{t("Cerere acceptată!", "Request accepted!")} ✅</DialogTitle>
           </DialogHeader>
 
           <div className="flex flex-col items-center gap-4 py-2">
@@ -123,12 +126,12 @@ export function AcceptedRentalDialog({ rental, open, onOpenChange, onCancelled }
                 to={`/user/${rental.renter_id}`}
                 className="font-semibold text-foreground hover:underline"
               >
-                {rental.renter_name || "Chiriaș"}
+                {rental.renter_name || t("Chiriaș", "Renter")}
               </Link>
               {kycApproved && (
                 <Badge variant="outline" className="gap-1 border-emerald-500/50 text-emerald-600 dark:text-emerald-400">
                   <ShieldCheck className="h-3.5 w-3.5" />
-                  Verificat ID
+                  {t("Verificat ID", "ID verified")}
                 </Badge>
               )}
             </div>
@@ -137,20 +140,20 @@ export function AcceptedRentalDialog({ rental, open, onOpenChange, onCancelled }
             <div className="grid grid-cols-3 gap-3 w-full">
               <div className="rounded-xl border border-border bg-muted/50 p-3 text-center">
                 <Calendar className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
-                <p className="text-xs text-muted-foreground">Perioadă</p>
+                <p className="text-xs text-muted-foreground">{t("Perioadă", "Period")}</p>
                 <p className="text-sm font-medium">
-                  {format(new Date(rental.start_date), "d MMM", { locale: ro })} -{" "}
-                  {format(new Date(rental.end_date), "d MMM", { locale: ro })}
+                  {format(new Date(rental.start_date), "d MMM", { locale: dateLocale })} -{" "}
+                  {format(new Date(rental.end_date), "d MMM", { locale: dateLocale })}
                 </p>
               </div>
               <div className="rounded-xl border border-border bg-muted/50 p-3 text-center">
                 <Hash className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
-                <p className="text-xs text-muted-foreground">Booking nr.</p>
+                <p className="text-xs text-muted-foreground">{t("Booking nr.", "Booking no.")}</p>
                 <p className="text-sm font-medium font-mono">{bookingNumber}</p>
               </div>
               <div className="rounded-xl border border-border bg-muted/50 p-3 text-center">
                 <Banknote className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
-                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="text-xs text-muted-foreground">{t("Total", "Total")}</p>
                 <p className="text-sm font-semibold text-primary">{rental.subtotal} RON</p>
               </div>
             </div>
@@ -162,7 +165,7 @@ export function AcceptedRentalDialog({ rental, open, onOpenChange, onCancelled }
               ) : (
                 <MessageCircle className="h-4 w-4 mr-2" />
               )}
-              Discută cu chiriașul
+              {t("Discută cu chiriașul", "Chat with renter")}
             </Button>
 
             {/* Cancel button - only within 24h */}
@@ -179,10 +182,10 @@ export function AcceptedRentalDialog({ rental, open, onOpenChange, onCancelled }
                   ) : (
                     <X className="h-4 w-4 mr-2" />
                   )}
-                  Cancel request *
+                  {t("Anulează cererea *", "Cancel request *")}
                 </Button>
                 <p className="text-xs text-muted-foreground text-center">
-                  *Anularea este posibilă doar în primele 24 de ore
+                  {t("*Anularea este posibilă doar în primele 24 de ore", "*Cancellation is only possible within the first 24 hours")}
                 </p>
               </div>
             )}

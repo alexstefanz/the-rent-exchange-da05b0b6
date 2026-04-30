@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const DeactivateAccount = () => {
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
@@ -15,7 +17,7 @@ const DeactivateAccount = () => {
     const token = searchParams.get("token");
     if (!token) {
       setStatus("error");
-      setErrorMsg("Link invalid — token lipsă.");
+      setErrorMsg(t("Link invalid — token lipsă.", "Invalid link — token missing."));
       return;
     }
 
@@ -27,7 +29,7 @@ const DeactivateAccount = () => {
 
         if (error || data?.error) {
           setStatus("error");
-          setErrorMsg(data?.error || error?.message || "Eroare la dezactivarea contului.");
+          setErrorMsg(data?.error || error?.message || t("Eroare la dezactivarea contului.", "Error deactivating the account."));
           return;
         }
 
@@ -36,7 +38,7 @@ const DeactivateAccount = () => {
         setStatus("success");
       } catch {
         setStatus("error");
-        setErrorMsg("Eroare neașteptată. Încearcă din nou.");
+        setErrorMsg(t("Eroare neașteptată. Încearcă din nou.", "Unexpected error. Please try again."));
       }
     };
 
@@ -48,9 +50,9 @@ const DeactivateAccount = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle>
-            {status === "loading" && "Se procesează..."}
-            {status === "success" && "Cont dezactivat"}
-            {status === "error" && "Eroare"}
+            {status === "loading" && t("Se procesează...", "Processing...")}
+            {status === "success" && t("Cont dezactivat", "Account deactivated")}
+            {status === "error" && t("Eroare", "Error")}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
@@ -61,10 +63,10 @@ const DeactivateAccount = () => {
             <>
               <CheckCircle2 className="h-12 w-12 text-green-500" />
               <p className="text-center text-muted-foreground">
-                Contul tău a fost dezactivat cu succes. Ne pare rău că pleci!
+                {t("Contul tău a fost dezactivat cu succes. Ne pare rău că pleci!", "Your account has been deactivated. We're sorry to see you go!")}
               </p>
               <Button onClick={() => navigate("/")} variant="outline">
-                Înapoi la pagina principală
+                {t("Înapoi la pagina principală", "Back to homepage")}
               </Button>
             </>
           )}
@@ -73,7 +75,7 @@ const DeactivateAccount = () => {
               <XCircle className="h-12 w-12 text-destructive" />
               <p className="text-center text-muted-foreground">{errorMsg}</p>
               <Button onClick={() => navigate("/")} variant="outline">
-                Înapoi la pagina principală
+                {t("Înapoi la pagina principală", "Back to homepage")}
               </Button>
             </>
           )}
