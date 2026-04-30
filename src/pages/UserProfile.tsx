@@ -28,6 +28,8 @@ import { addFavoriteUser, removeFavoriteUser } from "@/features/profile/favorite
 import { usePublicUserProducts } from "@/hooks/queries/useProducts";
 import { usePublicProfile, useUserStatistics, useUserReviews, useIsUserFavorite } from "@/hooks/queries/useUserProfile";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getDisplayTitle } from "@/lib/productI18n";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -36,6 +38,7 @@ const ITEMS_PER_PAGE = 6;
 const UserProfile = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const { language } = useLanguage();
   const queryClient = useQueryClient();
   
   // React Query hooks for data fetching
@@ -525,16 +528,16 @@ const UserProfile = () => {
                         <div className="aspect-square overflow-hidden">
                           <img
                             src={getImageUrl(item)}
-                            alt={item.title}
+                            alt={getDisplayTitle(item, language)}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                         </div>
                         <div className="p-4">
                           <h3 className="font-medium text-foreground line-clamp-2">
-                            {item.title}
+                            {getDisplayTitle(item, language)}
                           </h3>
                           <p className="text-primary font-bold mt-2">
-                            {calculateClientPrice(item.daily_price_owner, item.platform_fee_percent)} lei/zi
+                            {calculateClientPrice(item.daily_price_owner, item.platform_fee_percent)} {language === "en" ? "lei/day" : "lei/zi"}
                           </p>
                           <p className="text-xs text-muted-foreground mt-1">
                             {item.location_city}
@@ -554,20 +557,20 @@ const UserProfile = () => {
                         <div className="w-32 h-32 shrink-0 rounded-lg overflow-hidden">
                           <img
                             src={getImageUrl(item)}
-                            alt={item.title}
+                            alt={getDisplayTitle(item, language)}
                             className="w-full h-full object-cover"
                           />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-foreground line-clamp-2">
-                            {item.title}
+                            {getDisplayTitle(item, language)}
                           </h3>
                           <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                             {item.description}
                           </p>
                           <div className="flex items-center justify-between mt-3">
                             <p className="text-primary font-bold">
-                              {calculateClientPrice(item.daily_price_owner, item.platform_fee_percent)} lei/zi
+                              {calculateClientPrice(item.daily_price_owner, item.platform_fee_percent)} {language === "en" ? "lei/day" : "lei/zi"}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {item.location_city}
