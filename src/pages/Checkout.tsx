@@ -72,7 +72,9 @@ const Checkout = () => {
   const handleStripeCheckout = async () => {
     if (isSubmitting) return;
     if (user && !kyc.isVerified) {
-      toast.error("Trebuie să-ți verifici identitatea înainte de a plăti.");
+      toast.error(language === "ro"
+        ? "Trebuie să-ți verifici identitatea înainte de a plăti."
+        : "You must verify your identity before paying.");
       navigate("/verificare");
       return;
     }
@@ -95,12 +97,16 @@ const Checkout = () => {
     } catch (e: any) {
       console.error("Stripe checkout error:", e);
       if (e?.code === "KYC_REQUIRED" || (typeof e?.message === "string" && e.message.includes("KYC_REQUIRED"))) {
-        toast.error("Verificare identitate necesară. Te redirecționăm.");
+        toast.error(language === "ro"
+          ? "Verificare identitate necesară. Te redirecționăm."
+          : "Identity verification required. Redirecting you.");
         setIsSubmitting(false);
         setTimeout(() => navigate("/verificare"), 600);
         return;
       }
-      toast.error(e?.message || "Eroare la inițierea plății. Încearcă din nou.");
+      toast.error(e?.message || (language === "ro"
+        ? "Eroare la inițierea plății. Încearcă din nou."
+        : "Error initiating payment. Please try again."));
       setIsSubmitting(false);
     }
   };
@@ -200,7 +206,7 @@ const Checkout = () => {
                   >
                     <CreditCard className="mr-2 h-5 w-5" />
                     {isSubmitting
-                      ? "Se procesează..."
+                      ? (language === "ro" ? "Se procesează..." : "Processing...")
                       : language === "ro"
                         ? `Rezervă — ${totalPrice} RON`
                         : `Reserve — ${totalPrice} RON`}
