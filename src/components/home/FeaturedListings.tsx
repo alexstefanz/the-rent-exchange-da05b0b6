@@ -6,6 +6,7 @@ import { calculateClientPrice } from "@/features/products/productsApi";
 import { getProductUrl } from "@/lib/slugUtils";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getDisplayTitle, getDisplayCategory } from "@/lib/productI18n";
 import { useState, useEffect, useMemo } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/contexts/AuthContext";
@@ -172,7 +173,7 @@ const FeaturedListings = () => {
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img
                     src={imageUrl}
-                    alt={product.title}
+                    alt={getDisplayTitle(product, language)}
                     width={480}
                     height={360}
                     loading={index < 4 ? "eager" : "lazy"}
@@ -202,10 +203,10 @@ const FeaturedListings = () => {
                 <div className="p-3 md:p-4">
                   {product.category && (
                     <span className="inline-block rounded bg-primary px-2 py-0.5 text-[10px] md:text-xs font-semibold text-primary-foreground mb-1.5">
-                      {product.category}
+                      {getDisplayCategory(product.category, language)}
                     </span>
                   )}
-                  <h3 className="font-heading text-sm text-foreground line-clamp-2 md:text-xl font-bold">{product.title}</h3>
+                  <h3 className="font-heading text-sm text-foreground line-clamp-2 md:text-xl font-bold">{getDisplayTitle(product, language)}</h3>
                   <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground md:text-sm">
                     <MapPin className="h-3 w-3 shrink-0" />
                     <span className="truncate">{location}</span>

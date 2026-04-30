@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ChevronRight, User } from "lucide-react";
 import { usePublicUserProducts } from "@/hooks/queries/useProducts";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getDisplayTitle } from "@/lib/productI18n";
 import { calculateClientPrice } from "@/features/products/productsApi";
 import { getProductUrl } from "@/lib/slugUtils";
 
@@ -48,14 +49,14 @@ const OwnerOtherListings = ({ ownerId, currentProductId, ownerName }: OwnerOther
             >
               <img
                 src={image}
-                alt={product.title}
+                alt={getDisplayTitle(product, language)}
                 className="h-12 w-12 rounded-lg object-cover flex-shrink-0 bg-muted"
               />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{product.title}</p>
-                <p className="text-xs text-muted-foreground">{product.location_city || "România"}</p>
+                <p className="text-sm font-medium text-foreground truncate">{getDisplayTitle(product, language)}</p>
+                <p className="text-xs text-muted-foreground">{product.location_city || (language === "en" ? "Romania" : "România")}</p>
               </div>
-              <span className="text-sm font-semibold text-primary whitespace-nowrap">{clientPrice} RON<span className="text-xs font-normal text-muted-foreground">/zi</span></span>
+              <span className="text-sm font-semibold text-primary whitespace-nowrap">{clientPrice} RON<span className="text-xs font-normal text-muted-foreground">{language === "en" ? "/day" : "/zi"}</span></span>
             </Link>
           );
         })}
