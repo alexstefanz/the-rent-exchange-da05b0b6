@@ -1,26 +1,62 @@
-## Problema
-Eticheta "23 RON / lună" e ambiguă pentru că lunile au 28–31 de zile, dar tarifarea folosește exact 30 de zile. Schimbăm eticheta în "30 zile" / "30 days" pentru claritate.
+## Context
+
+Acum chiriașul poate anula doar cereri **neplătite** (în `RequestsTab`, restricție 24h). După plata cu Stripe (status `pending` + `payment_status` `authorized`/`paid`), cererea apare în `RentalsTab` → secțiunea "În așteptarea proprietarului" și **nu există nicio opțiune de anulare** — banii rămân blocați la Stripe până când proprietarul răspunde.
+
+## Ce facem
+
+Adăugăm buton **"Anulează cererea"** doar pentru cererile plătite aflate în așteptarea proprietarului. Anularea:
+- marchează rezervarea `cancelled` (motiv: `renter_cancelled_after_payment`)
+- trimite notificare proprietarului că nu mai trebuie să răspundă
+- creează automat un **ticket admin (TCK-XXXXXX)** pentru ca echipa să verifice manual și să elibereze hold-ul Stripe / să returneze banii
+- afișează utilizatorului un mesaj explicit: *"Cererea a fost anulată. Banii blocați la card vor fi eliberați după verificarea echipei (1–3 zile lucrătoare)."*
+
+NU se face refund automat la Stripe (conform deciziei tale).
 
 ## Modificări
 
-### 1. `src/data/uxCopy.ts`
-- `productDetail.month`: schimb din `{ ro: "lună", en: "month" }` în `{ ro: "30 zile", en: "30 days" }`.
-- Astfel se actualizează automat afișarea principală a prețului din BookingCard și ProductDetail (`23 RON / 30 zile`).
+### 1. RLS (migrare SQL)
+Politica actuală `Renters can cancel own pending rentals` permite `UPDATE` doar când `status = 'pending'`, deci acoperă deja cazul. Verificăm și extindem dacă e nevoie ca să accepte și actualizarea câmpului `cancellation_reason`. Nu se schimbă schema.
 
-### 2. `src/components/product/BookingCard.tsx` (breakdown la rezervare)
-În descompunerea prețului unde se afișează "1 lună × ..." / "2 luni × ...":
-- RO: în loc de `lună / luni` → `30 zile` (singular și plural identic, mai clar).
-- EN: în loc de `month / months` → `30 days`.
-- Exemplu: `2 × 30 zile × 23 RON = 46 RON` în loc de `2 luni × 23 RON`.
+### 2. `src/components/dashboard/RentalsTab.tsx`
+În cardurile din secțiunea `awaitingOwnerRentals` (status `pending` + plătit):
+- Adaug buton outline destructive **"Anulează cererea"** lângă "Contactează proprietarul".
+- `AlertDialog` cu textul:
+  > *Vei anula această cerere către {owner_name} pentru {product_title}. Banii blocați la card vor fi eliberați după verificarea echipei Rentli (1–3 zile lucrătoare). Continui?*
+- La confirmare: `UPDATE rentals SET status='cancelled', cancellation_reason='renter_cancelled_after_payment', cancelled_at=now() WHERE id=...`
+- Apel edge function `send-cancellation-notification` (există deja) pentru email-ul proprietarului.
+- Apel nou la o edge function `create-renter-cancellation-ticket` (vezi #3) care creează un ticket TCK pentru echipa admin.
+- Toast: *"Cererea a fost anulată. Banii vor fi eliberați după verificarea echipei."*
+- Invalidare query `my-rentals`.
 
-### 3. `src/pages/ProductDetail.tsx` (același breakdown)
-- Aplic exact aceeași schimbare ca la BookingCard în secțiunea `priceBreakdown.months > 0`.
+### 3. Edge function nouă: `supabase/functions/create-renter-cancellation-ticket/index.ts`
+- Validează JWT + că `auth.uid() === rental.renter_id`.
+- Creează rând în `ops_tickets`:
+  - `category_group = 'PAYMENTS'`, `category_type = 'REFUND_REQUEST'`
+  - `priority = 'HIGH'`
+  - `title = 'Anulare cerere plătită — necesită eliberare hold Stripe'`
+  - `description` cu detalii rezervare + `payment_intent_id`
+  - `requester_user_id = renter_id`, `rental_user_id = renter_id`, `owner_user_id`, `product_id`, `reservation_id = rental.id`
+- Mesaj inițial intern (`is_internal=true`) cu link Stripe către `pi_...` pentru ca admin-ul să poată face refund cu un click.
 
-## Ce NU se schimbă
-- Logica de calcul rămâne neatinsă (1 "lună" = 30 zile, deja așa era).
-- Câmpul `priceMonth` din DB rămâne neschimbat.
-- Calendarul, header-ul preț/zi, săptămâna și restul UI-ului sunt neatinse.
+### 4. `src/data/uxCopy.ts`
+Adaug chei bilingve:
+- `dashboard.cancelRequest` → "Anulează cererea" / "Cancel request"
+- `dashboard.cancelPaidConfirm` → textul AlertDialog (RO/EN)
+- `dashboard.cancelPaidSuccess` → mesaj toast (RO/EN)
 
-## Rezultat vizual
-- Card preț: `23 RON / 30 zile`
-- Breakdown: `2 × 30 zile × 23 RON   46 RON`
+## Ce NU schimbăm
+
+- Logica din `RequestsTab` (cereri neplătite cu fereastră de 24h) rămâne identică.
+- Cererile `confirmed`/`active` rămân fără buton de anulare self-serve (necesită contact admin).
+- Nu se face refund automat la Stripe — admin face manual din ticket.
+
+## Tehnic
+
+```text
+RentalsTab "awaitingOwnerRentals"
+  ├─ buton [Anulează cererea] (nou, destructive outline)
+  └─ AlertDialog → confirm
+        ├─ UPDATE rentals (status=cancelled, reason, cancelled_at)
+        ├─ invoke send-cancellation-notification  → email owner
+        └─ invoke create-renter-cancellation-ticket → TCK admin
+```
