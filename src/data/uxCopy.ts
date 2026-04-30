@@ -355,7 +355,7 @@ const createUxCopy = () => ({
     cantContactDesc: { ro: "Nu îți poți trimite mesaje ție.", en: "You can't send messages to yourself." },
     conversationError: { ro: "Nu s-a putut crea conversația.", en: "Could not create conversation." },
     week: { ro: "săptămână", en: "week" },
-    month: { ro: "lună", en: "month" },
+    month: { ro: "30 zile", en: "30 days" },
     untilLabel: { ro: "Până la", en: "Until" },
     askOwner: { ro: "Întreabă proprietarul", en: "Ask the owner" },
     askOwnerSubtitle: { ro: "Pune o întrebare înainte să rezervi", en: "Ask a question before you book" },

@@ -169,9 +169,7 @@ const BookingCard = ({
           {priceBreakdown.months > 0 && (
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">
-                {priceBreakdown.months} {language === "ro"
-                  ? (priceBreakdown.months === 1 ? "lună" : "luni")
-                  : (priceBreakdown.months === 1 ? "month" : "months")} × {priceMonth} RON
+                {priceBreakdown.months} × {language === "ro" ? "30 zile" : "30 days"} × {priceMonth} RON
               </span>
               <span className="font-medium">{priceBreakdown.months * priceMonth} RON</span>
             </div>
