@@ -29,7 +29,7 @@ const Owner = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user, loading: authLoading } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
