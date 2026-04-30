@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { sections } from "@/pages/legal/TermsAndConditions";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface TermsDialogProps {
   open: boolean;
@@ -21,6 +22,7 @@ const TermsDialog = ({ open, onOpenChange, onAccept, isSubmitting }: TermsDialog
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
@@ -42,9 +44,9 @@ const TermsDialog = ({ open, onOpenChange, onAccept, isSubmitting }: TermsDialog
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] sm:max-h-[90vh] flex flex-col p-0 gap-0 w-[95vw] sm:w-full">
         <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-border">
-          <DialogTitle className="text-lg sm:text-xl">Termeni și Condiții</DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">{t("Termeni și Condiții", "Terms & Conditions")}</DialogTitle>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Citește termenii și condițiile până la final pentru a putea continua.
+            {t("Citește termenii și condițiile până la final pentru a putea continua.", "Read the terms and conditions to the end to continue.")}
           </p>
         </DialogHeader>
 
@@ -78,12 +80,12 @@ const TermsDialog = ({ open, onOpenChange, onAccept, isSubmitting }: TermsDialog
                 !hasScrolledToBottom ? "text-muted-foreground/50" : "text-foreground"
               }`}
             >
-              Am citit și accept Termenii și Condițiile
+              {t("Am citit și accept Termenii și Condițiile", "I have read and accept the Terms & Conditions")}
             </label>
           </div>
           {!hasScrolledToBottom && (
             <p className="text-xs text-muted-foreground">
-              ↓ Derulează până la final pentru a activa caseta de bifat
+              {t("↓ Derulează până la final pentru a activa caseta de bifat", "↓ Scroll to the end to enable the checkbox")}
             </p>
           )}
           <Button
@@ -92,7 +94,7 @@ const TermsDialog = ({ open, onOpenChange, onAccept, isSubmitting }: TermsDialog
             className="w-full"
             size="lg"
           >
-            {isSubmitting ? "Se procesează..." : "Confirmă rezervarea"}
+            {isSubmitting ? t("Se procesează...", "Processing...") : t("Confirmă rezervarea", "Confirm reservation")}
           </Button>
         </DialogFooter>
       </DialogContent>
