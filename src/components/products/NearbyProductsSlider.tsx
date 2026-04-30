@@ -5,6 +5,8 @@ import { ChevronLeft, ChevronRight, MapPin, Star, Heart, CheckCircle } from "luc
 import { getNearbyProducts, Product, calculateClientPrice } from "@/features/products/productsApi";
 import { getProductUrl } from "@/lib/slugUtils";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getDisplayTitle, getDisplayCategory } from "@/lib/productI18n";
 import { useAuth } from "@/contexts/AuthContext";
 import { addFavoriteProduct, removeFavoriteProduct, getFavoriteProducts } from "@/features/profile/favoriteProductsApi";
 import { toast } from "@/hooks/use-toast";
@@ -19,6 +21,7 @@ interface NearbyProductsSliderProps {
 
 const NearbyProductsSlider = ({ currentProductId, locationCity, category }: NearbyProductsSliderProps) => {
   const copy = useUxCopy();
+  const { language } = useLanguage();
   const { user } = useAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -225,7 +228,7 @@ const NearbyProductsSlider = ({ currentProductId, locationCity, category }: Near
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img
                     src={imageUrl}
-                    alt={product.title}
+                    alt={getDisplayTitle(product, language)}
                     width={480}
                     height={360}
                     loading="lazy"
@@ -260,10 +263,10 @@ const NearbyProductsSlider = ({ currentProductId, locationCity, category }: Near
                 <div className="p-3 md:p-4">
                   {product.category && (
                     <span className="inline-block rounded-sm bg-primary px-1.5 py-0.5 text-[9px] md:text-[11px] font-semibold text-primary-foreground mb-2 whitespace-nowrap truncate max-w-full">
-                      {product.category}
+                      {getDisplayCategory(product.category, language)}
                     </span>
                   )}
-                  <h3 className="font-heading text-sm text-foreground line-clamp-2 md:text-base font-bold">{product.title}</h3>
+                  <h3 className="font-heading text-sm text-foreground line-clamp-2 md:text-base font-bold">{getDisplayTitle(product, language)}</h3>
                   <div className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-foreground">
                     <MapPin className="h-3 w-3 shrink-0" />
                     <span className="truncate">{location}</span>
