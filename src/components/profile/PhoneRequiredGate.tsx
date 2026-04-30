@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Phone, AlertCircle, ArrowRight } from "lucide-react";
+import { Phone, AlertCircle, ArrowRight, CheckCircle2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -62,7 +62,28 @@ export const PhoneRequiredGate = ({ className = "" }: PhoneRequiredGateProps) =>
   const navigate = useNavigate();
 
   if (!user || isLoading) return null;
-  if (isValidRomanianPhone((profile as any)?.phone)) return null;
+
+  const phone = (profile as any)?.phone as string | null | undefined;
+  if (isValidRomanianPhone(phone)) {
+    // Mask middle digits: keep first 4 and last 3 visible.
+    const trimmed = (phone || "").replace(/\s+/g, " ").trim();
+    const masked =
+      trimmed.length > 7
+        ? `${trimmed.slice(0, 4)} ••• ${trimmed.slice(-3)}`
+        : trimmed;
+    return (
+      <div
+        className={`flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-50 px-3 py-2 text-emerald-700 ${className}`}
+        role="status"
+      >
+        <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+        <p className="text-sm font-medium">
+          {ux.smsNotifications.verifiedTitle}
+          <span className="ml-1.5 font-normal text-emerald-700/80">{masked}</span>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div

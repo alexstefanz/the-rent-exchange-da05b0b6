@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -111,6 +112,7 @@ const AccountTab = () => {
   const ux = useUxCopy();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -183,6 +185,7 @@ const AccountTab = () => {
         whatsapp: data.whatsapp || undefined,
       });
       setProfile(updatedProfile);
+      queryClient.invalidateQueries({ queryKey: ["currentUserProfile", user.id] });
       toast({
         title: t("Succes", "Success"),
         description: t("Profil actualizat cu succes", "Profile updated successfully"),
