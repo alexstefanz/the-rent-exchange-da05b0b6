@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import { useLanguage } from "@/contexts/LanguageContext";
 import logoImage from "@/assets/rentli_logo.webp";
 
 const FacebookIcon = ({ size = 20 }: { size?: number }) => (
@@ -31,6 +32,7 @@ const TiktokIcon = ({ size = 20 }: { size?: number }) => (
 
 const Footer = () => {
   const copy = useUxCopy();
+  const { language } = useLanguage();
 
   return <footer className="border-t border-border bg-secondary/30">
       <div className="container py-12">
@@ -70,7 +72,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link to="/despre-noi" className="transition-colors hover:text-foreground">
-                  Despre Noi
+                  {language === "en" ? "About Us" : "Despre Noi"}
                 </Link>
               </li>
               <li>
@@ -86,7 +88,7 @@ const Footer = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>
                 <Link to="/intrebari-frecvente" className="transition-colors hover:text-foreground">
-                  Întrebări frecvente
+                  {language === "en" ? "FAQ" : "Întrebări frecvente"}
                 </Link>
               </li>
               <li>
@@ -101,17 +103,17 @@ const Footer = () => {
               </li>
               <li>
                 <Link to="/politica-confidentialitate" className="transition-colors hover:text-foreground">
-                  Confidențialitate
+                  {language === "en" ? "Privacy" : "Confidențialitate"}
                 </Link>
               </li>
               <li>
                 <Link to="/politica-anulare" className="transition-colors hover:text-foreground">
-                  Politica de anulare
+                  {language === "en" ? "Cancellation Policy" : "Politica de anulare"}
                 </Link>
               </li>
               <li>
                 <Link to="/politica-cookies" className="transition-colors hover:text-foreground">
-                  Cookie-uri
+                  {language === "en" ? "Cookies" : "Cookie-uri"}
                 </Link>
               </li>
             </ul>
