@@ -212,9 +212,38 @@ const RentalsTab = () => {
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
                     <span className="font-semibold text-primary">{rental.subtotal} RON</span>
-                    <Button variant="outline" size="sm" onClick={() => handleContactOwner(rental)}>
-                      Contactează proprietarul
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            disabled={cancelPaidMutation.isPending}
+                          >
+                            <XCircle className="mr-1 h-4 w-4" />
+                            {copy.dashboard.cancelRequest}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{copy.dashboard.cancelPaidTitle}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {copy.dashboard.cancelPaidConfirm}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{copy.dashboard.keepRequest}</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => cancelPaidMutation.mutate(rental)}>
+                              {copy.dashboard.confirmCancel}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                      <Button variant="outline" size="sm" onClick={() => handleContactOwner(rental)}>
+                        {copy.dashboard.contactOwner}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
