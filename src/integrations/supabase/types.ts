@@ -862,6 +862,7 @@ export type Database = {
           created_at: string | null
           daily_price_owner: number
           description: string | null
+          description_en: string | null
           flag_reason: string | null
           id: string
           images: string[] | null
@@ -875,6 +876,7 @@ export type Database = {
           slug: string | null
           subcategory: string | null
           title: string
+          title_en: string | null
         }
         Insert: {
           admin_edited_at?: string | null
@@ -885,6 +887,7 @@ export type Database = {
           created_at?: string | null
           daily_price_owner: number
           description?: string | null
+          description_en?: string | null
           flag_reason?: string | null
           id?: string
           images?: string[] | null
@@ -898,6 +901,7 @@ export type Database = {
           slug?: string | null
           subcategory?: string | null
           title: string
+          title_en?: string | null
         }
         Update: {
           admin_edited_at?: string | null
@@ -908,6 +912,7 @@ export type Database = {
           created_at?: string | null
           daily_price_owner?: number
           description?: string | null
+          description_en?: string | null
           flag_reason?: string | null
           id?: string
           images?: string[] | null
@@ -921,6 +926,7 @@ export type Database = {
           slug?: string | null
           subcategory?: string | null
           title?: string
+          title_en?: string | null
         }
         Relationships: [
           {
@@ -1896,6 +1902,7 @@ export type Database = {
           created_at: string | null
           daily_price_owner: number
           description: string | null
+          description_en: string | null
           flag_reason: string | null
           id: string
           images: string[] | null
@@ -1909,6 +1916,7 @@ export type Database = {
           slug: string | null
           subcategory: string | null
           title: string
+          title_en: string | null
         }[]
         SetofOptions: {
           from: "*"

@@ -361,11 +361,17 @@ const ProductDetail = () => {
                   <ThumbsUp className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <p className="font-semibold text-foreground text-sm">Anulare gratuită</p>
+                  <p className="font-semibold text-foreground text-sm">
+                    {language === "ro" ? "Anulare gratuită" : "Free cancellation"}
+                  </p>
                   <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-                    Anulează gratuit cu 48h înainte de începerea închirierii. Rambursare parțială după. Consultă{" "}
-                    <Link to="/politica-anulare" className="text-primary hover:underline font-medium">politica de anulare</Link>
-                    {" "}pentru mai multe detalii.
+                    {language === "ro"
+                      ? "Anulează gratuit cu 48h înainte de începerea închirierii. Rambursare parțială după. Consultă"
+                      : "Cancel for free up to 48h before the rental starts. Partial refund after. See the"}{" "}
+                    <Link to="/politica-anulare" className="text-primary hover:underline font-medium">
+                      {language === "ro" ? "politica de anulare" : "cancellation policy"}
+                    </Link>
+                    {" "}{language === "ro" ? "pentru mai multe detalii." : "for more details."}
                   </p>
                 </div>
               </div>
