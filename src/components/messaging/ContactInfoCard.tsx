@@ -2,6 +2,7 @@ import { Phone, Mail, MessageCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ContactInfoCardProps {
   ownerName: string | null;
@@ -12,6 +13,7 @@ interface ContactInfoCardProps {
 }
 
 export function ContactInfoCard({ ownerName, avatarUrl, phone, email, whatsapp }: ContactInfoCardProps) {
+  const { t } = useLanguage();
   const hasContactInfo = phone || email || whatsapp;
 
   const handleWhatsApp = () => {
@@ -35,13 +37,13 @@ export function ContactInfoCard({ ownerName, avatarUrl, phone, email, whatsapp }
             <AvatarImage src={avatarUrl || undefined} />
             <AvatarFallback>{ownerName?.charAt(0) || 'P'}</AvatarFallback>
           </Avatar>
-          <span>{ownerName || 'Proprietar'}</span>
+          <span>{ownerName || t("Proprietar", "Owner")}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {!hasContactInfo ? (
           <p className="text-muted-foreground text-sm">
-            Nu există informații de contact disponibile.
+            {t("Nu există informații de contact disponibile.", "No contact information available.")}
           </p>
         ) : (
           <>

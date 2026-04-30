@@ -15,8 +15,9 @@ import {
 import { useMessages } from "@/hooks/queries/useConversations";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { ro } from "date-fns/locale";
+import { ro, enUS } from "date-fns/locale";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface ChatPanelProps {
   conversationId: string;
@@ -38,6 +39,8 @@ export function ChatPanel({
   className = "",
 }: ChatPanelProps) {
   const { user } = useAuth();
+  const { language, t } = useLanguage();
+  const dateLocale = language === "ro" ? ro : enUS;
   const queryClient = useQueryClient();
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -135,7 +138,7 @@ export function ChatPanel({
         </Avatar>
         <div className="flex flex-col min-w-0 flex-1">
           <span className="font-medium text-sm truncate">{productTitle}</span>
-          <span className="text-xs text-muted-foreground truncate">{otherUserName || "Utilizator"}</span>
+          <span className="text-xs text-muted-foreground truncate">{otherUserName || t("Utilizator", "User")}</span>
         </div>
         {ownerPhone && (
           <TooltipProvider>
@@ -154,7 +157,7 @@ export function ChatPanel({
                   </Button>
                 </a>
               </TooltipTrigger>
-              <TooltipContent>Apelează prin 3CX</TooltipContent>
+              <TooltipContent>{t("Apelează prin 3CX", "Call via 3CX")}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}
@@ -168,7 +171,7 @@ export function ChatPanel({
           </div>
         ) : localMessages.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
-            Niciun mesaj încă. Trimite primul mesaj!
+            {t("Niciun mesaj încă. Trimite primul mesaj!", "No messages yet. Send the first one!")}
           </div>
         ) : (
           <div className="space-y-3">
@@ -183,7 +186,7 @@ export function ChatPanel({
                   >
                     <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                     <p className={`text-xs mt-1 ${isOwn ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                      {format(new Date(msg.created_at), "HH:mm", { locale: ro })}
+                      {format(new Date(msg.created_at), "HH:mm", { locale: dateLocale })}
                     </p>
                   </div>
                 </div>
@@ -196,7 +199,7 @@ export function ChatPanel({
       {/* Input */}
       <div className="p-4 border-t flex gap-2 bg-background">
         <Input
-          placeholder="Scrie un mesaj..."
+          placeholder={t("Scrie un mesaj...", "Write a message...")}
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value.slice(0, MAX_MESSAGE_LENGTH))}
           onKeyDown={handleKeyPress}
