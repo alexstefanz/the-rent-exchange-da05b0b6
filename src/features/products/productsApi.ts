@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { sanitizeSearchInput, normalizeDiacritics } from "@/lib/inputValidation";
+import { sanitizeSearchInput } from "@/lib/inputValidation";
 import { handleApiError } from "@/lib/errorHandler";
 
 export interface Product {
@@ -34,41 +34,23 @@ export const calculateClientPrice = (ownerPrice: number, feePercent: number): nu
 };
 
 export const getProducts = async (filters?: ProductFilters): Promise<Product[]> => {
-  let query = (supabase
-    .from("products")
-    .select("*") as any)
-    .eq("is_active", true)
-    .eq("approval_status", "approved")
-    .order("created_at", { ascending: false });
+  // Use the diacritic-insensitive RPC so that "roaba" matches "Roabă", etc.
+  const sanitizedSearch = filters?.search
+    ? sanitizeSearchInput(filters.search, 100)
+    : null;
 
-  if (filters?.category) {
-    query = query.eq("category", filters.category);
-  }
-
-  if (filters?.subcategory) {
-    query = query.eq("subcategory", filters.subcategory);
-  }
-
-  if (filters?.location_city) {
-    // Normalize diacritics and use partial matching for location search
-    const normalizedLocation = normalizeDiacritics(filters.location_city);
-    query = query.ilike("location_city", `%${normalizedLocation}%`);
-  }
-
-  if (filters?.search) {
-    const sanitizedSearch = sanitizeSearchInput(filters.search, 100);
-    if (sanitizedSearch) {
-      query = query.ilike("title", `%${sanitizedSearch}%`);
-    }
-  }
-
-  const { data, error } = await query;
+  const { data, error } = await (supabase.rpc as any)("search_products", {
+    _search: sanitizedSearch || null,
+    _category: filters?.category || null,
+    _subcategory: filters?.subcategory || null,
+    _location_city: filters?.location_city || null,
+  });
 
   if (error) {
     handleApiError("Error fetching products", error);
   }
 
-  return data || [];
+  return (data as Product[]) || [];
 };
 
 export const getProductById = async (id: string): Promise<Product | null> => {
