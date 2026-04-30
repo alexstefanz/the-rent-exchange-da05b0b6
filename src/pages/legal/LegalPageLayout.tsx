@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { FileText, ChevronRight } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Section {
   id: string;
@@ -20,6 +21,7 @@ interface LegalPageLayoutProps {
 }
 
 const LegalPageLayout = ({ title, subtitle, lastUpdated, sections }: LegalPageLayoutProps) => {
+  const { language } = useLanguage();
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -33,7 +35,7 @@ const LegalPageLayout = ({ title, subtitle, lastUpdated, sections }: LegalPageLa
       <div className="bg-gradient-to-br from-primary/10 via-accent/5 to-background border-b border-border">
         <div className="container py-10 md:py-16">
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-            <Link to="/" className="hover:text-foreground transition-colors">Acasă</Link>
+            <Link to="/" className="hover:text-foreground transition-colors">{language === "en" ? "Home" : "Acasă"}</Link>
             <ChevronRight className="h-3.5 w-3.5" />
             <span className="text-foreground font-medium">{title}</span>
           </div>
@@ -45,7 +47,7 @@ const LegalPageLayout = ({ title, subtitle, lastUpdated, sections }: LegalPageLa
               <h1 className="text-2xl md:text-4xl font-heading font-bold text-foreground">{title}</h1>
               <p className="text-muted-foreground mt-2 max-w-2xl">{subtitle}</p>
               <Badge variant="secondary" className="mt-3">
-                Ultima actualizare: {lastUpdated}
+                {language === "en" ? "Last updated" : "Ultima actualizare"}: {lastUpdated}
               </Badge>
             </div>
           </div>
@@ -59,7 +61,7 @@ const LegalPageLayout = ({ title, subtitle, lastUpdated, sections }: LegalPageLa
           <aside className="hidden lg:block">
             <div className="sticky top-24">
               <Card className="p-4">
-                <h3 className="font-heading font-semibold text-sm mb-3 text-muted-foreground uppercase tracking-wider">Cuprins</h3>
+                <h3 className="font-heading font-semibold text-sm mb-3 text-muted-foreground uppercase tracking-wider">{language === "en" ? "Table of contents" : "Cuprins"}</h3>
                 <nav className="space-y-1">
                   {sections.map((section, i) => (
                     <button

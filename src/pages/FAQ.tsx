@@ -254,14 +254,98 @@ const categoryList = [
   "Juridic",
 ];
 
+const categoryListEn = [
+  "All",
+  "General",
+  "Renting",
+  "Owners",
+  "Account",
+  "Payments",
+  "Safety",
+  "Support",
+  "Legal",
+];
+
+const categoryRoToEn: Record<string, string> = {
+  "Toate": "All",
+  "General": "General",
+  "Închiriere": "Renting",
+  "Proprietari": "Owners",
+  "Cont": "Account",
+  "Plăți": "Payments",
+  "Siguranță": "Safety",
+  "Suport": "Support",
+  "Juridic": "Legal",
+};
+
+const faqDataEn: FaqItem[] = [
+  // General
+  { category: "General", question: "What is Rentli and how does it work?", answer: "Rentli is a digital platform that connects people who own various items with those who need to use them temporarily. You can rent a wide range of goods — from sports equipment and electronics to tools, vehicles and more. The platform simplifies the entire process: searching, booking, communication and payment." },
+  { category: "General", question: "How do I create a Rentli account?", answer: "Creating an account is quick and free. Go to the registration page, fill in your email address and choose a password. You will receive a confirmation email to activate the account. After verification, you can start using the platform immediately." },
+  { category: "General", question: "Why is identity verification needed?", answer: "Identity verification ensures a safe environment for all users. This process helps prevent fraud, protects owners' items and builds mutual trust between renters and those offering items for rent." },
+  // Renting
+  { category: "Renting", question: "How do I find items I want to rent?", answer: "Use the search bar on the main page or browse the available categories. You can filter results by location, price or item type to find exactly what you need." },
+  { category: "Renting", question: "What are the steps to make a booking?", answer: "Select the desired item, choose the rental period, check availability and submit the booking request. The owner will accept or decline the request, and you will be notified by email and on the platform." },
+  { category: "Renting", question: "What documents do I need to rent?", answer: "Generally, a verified account on the platform is enough. For certain item categories (e.g. vehicles), the owner may require additional documents such as an ID card or driving license." },
+  { category: "Renting", question: "Where do I pick up and return the item?", answer: "The pickup and return location is set by the owner and shown in the listing. It is usually at the address indicated by the owner. Exact details are discussed via the platform's messaging before the rental starts." },
+  { category: "Renting", question: "In what condition must I return the item?", answer: "The item must be returned in the same condition in which you received it. Any damage or excessive wear beyond normal use may incur additional costs, in line with the platform's policy." },
+  { category: "Renting", question: "Can I cancel a booking? How do I get my money back?", answer: 'Yes, you can cancel a booking under our cancellation policy. Refund conditions depend on the time of cancellation relative to the rental start date. See the "Cancellation policy" page for full details.' },
+  { category: "Renting", question: "What happens if I don't return the item on time?", answer: "Late returns may incur additional costs. It's important to communicate with the owner if you are having difficulty meeting the deadline. The platform helps the conversation so any issues can be resolved." },
+  // Owners
+  { category: "Owners", question: "How do I list my items for rent?", answer: 'Go to the "Add listing" section in your account, fill in the item details (title, description, photos, daily price, location) and publish the listing. It will be visible on the platform immediately.' },
+  { category: "Owners", question: "What documents do I need to list items?", answer: "To list items you need a verified account. Depending on the item category, additional documents may be required to prove ownership or right of use." },
+  { category: "Owners", question: "How much can I earn from renting out my items?", answer: "Earnings depend on the type of item, market demand and the price you set. The platform charges a fee on each transaction, and the rest of the amount is yours in full. You can check the earnings section in your profile." },
+  { category: "Owners", question: "How do I manage booking requests?", answer: "All booking requests appear in your dashboard. You can accept or decline each request, communicate with the renter and track the status of each rental in real time." },
+  { category: "Owners", question: "Do I have the right to refuse a booking request?", answer: "Yes, as an owner you are free to accept or decline any request. However, a high number of refusals may affect the visibility of your listing on the platform." },
+  // Account
+  { category: "Account", question: "How do I verify my account and identity?", answer: "Go to the verification section in your profile and follow the indicated steps. The process usually involves uploading an identity document and, in some cases, additional verification." },
+  { category: "Account", question: "How do I add or change my payment method?", answer: 'Go to your account settings, "Payments" section, and add or update your card or preferred payment method. All data is encrypted and secured.' },
+  { category: "Account", question: "How do I update my password or personal information?", answer: "From the profile page you can change your password, email address, phone number and other personal information. Changes are saved immediately." },
+  { category: "Account", question: "I forgot my password. What can I do?", answer: 'On the sign-in page, click "Forgot password". You will receive an email with a reset link. Follow the instructions to set a new password.' },
+  // Payments
+  { category: "Payments", question: "What fees apply?", answer: "The platform charges a fee on each transaction, which covers operating, support and insurance costs. The exact fee is shown transparently before each booking is confirmed." },
+  { category: "Payments", question: "How does the security deposit work?", answer: "For certain items, a security deposit may be required and is held at the time of booking. It is refunded in full once the item is returned in good condition." },
+  { category: "Payments", question: "When and how do I receive my rental income?", answer: "Earnings are transferred to your bank account after each rental is successfully completed. Processing time may vary depending on the chosen payment method." },
+  { category: "Payments", question: "What happens if the renter doesn't pay?", answer: "The platform handles payments upfront, so the owner is protected. If a payment issue arises, the support team steps in to resolve the situation." },
+  // Safety
+  { category: "Safety", question: "Are rented items insured?", answer: "The platform provides a basic level of protection for rented items. For high-value goods, we recommend that owners check the additional insurance options available." },
+  { category: "Safety", question: "What happens if the item is damaged during use?", answer: "In case of damage, the renter is responsible for repair or replacement, in line with the terms accepted at booking. The platform mediates the resolution process between the parties." },
+  { category: "Safety", question: "How do I report a problem with an item or user?", answer: 'Use the "Report" button on the item page or user profile, or contact the support team. Each report is reviewed as a priority.' },
+  { category: "Safety", question: "What do I do if the item is lost or stolen?", answer: "Contact the support team immediately and file a complaint with the competent authorities. The platform will work with both parties to find a fair solution." },
+  { category: "Safety", question: "How can I check whether a user is trustworthy?", answer: "Check the user's profile — review the ratings received, verification badges and history on the platform. Verified users have a special indicator on their profile." },
+  // Support
+  { category: "Support", question: "I'm not receiving notifications or emails from the platform", answer: "Check the spam folder in your inbox. Make sure notifications are enabled in your account settings. If the issue persists, contact the support team." },
+  { category: "Support", question: "The platform isn't working correctly on my device", answer: "Try updating your browser or clearing the cache. The platform works best on the latest versions of popular browsers. If the issue persists, contact support." },
+  { category: "Support", question: "How do I use the search filters?", answer: "On the search page, you have filters for category, location and price. Apply the desired filters to narrow the results to the items you're interested in." },
+  { category: "Support", question: "How does the platform's messaging system work?", answer: "Built-in messaging lets you communicate directly with owners or renters without sharing personal contact details. All messages are stored securely on the platform." },
+  // Legal
+  { category: "Legal", question: "What are the platform's usage rules?", answer: "The full terms and conditions are available on the dedicated page. They cover the rights and obligations of all users, payment, cancellation and data protection policies." },
+  { category: "Legal", question: "How is my personal data protected?", answer: "Your data is processed in line with GDPR legislation and our privacy policy. We use encryption and advanced security measures to protect your information." },
+  { category: "Legal", question: "How do I permanently delete my account?", answer: "You can request account deletion from your profile settings or by contacting the support team. All your data will be permanently removed in line with the privacy policy." },
+];
+
 const FAQ = () => {
-  const { t } = useLanguage();
-  const [activeCategory, setActiveCategory] = useState("Toate");
+  const { t, language } = useLanguage();
+  const isEn = language === "en";
+  const allLabel = isEn ? "All" : "Toate";
+  const [activeCategory, setActiveCategory] = useState<string>(allLabel);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filtered = faqData.filter((item) => {
+  const data = isEn ? faqDataEn : faqData;
+  const cats = isEn ? categoryListEn : categoryList;
+
+  // Keep activeCategory in sync with language switch
+  const normalizedActive = (() => {
+    if (cats.includes(activeCategory)) return activeCategory;
+    if (isEn) return categoryRoToEn[activeCategory] ?? "All";
+    // map EN back to RO
+    const reverse = Object.entries(categoryRoToEn).find(([, en]) => en === activeCategory);
+    return reverse ? reverse[0] : "Toate";
+  })();
+
+  const filtered = data.filter((item) => {
     const matchesCategory =
-      activeCategory === "Toate" || item.category === activeCategory;
+      normalizedActive === allLabel || item.category === normalizedActive;
     const matchesSearch =
       !searchQuery ||
       item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -270,9 +354,9 @@ const FAQ = () => {
   });
 
   const getCategoryCount = (cat: string) =>
-    cat === "Toate"
-      ? faqData.length
-      : faqData.filter((f) => f.category === cat).length;
+    cat === allLabel
+      ? data.length
+      : data.filter((f) => f.category === cat).length;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -331,12 +415,12 @@ const FAQ = () => {
                   {t("Categorii", "Categories")}
                 </h3>
                 <nav className="space-y-1">
-                  {categoryList.map((cat) => (
+                  {cats.map((cat) => (
                     <button
                       key={cat}
                       onClick={() => setActiveCategory(cat)}
                       className={`w-full text-left text-sm py-2 px-3 rounded-md transition-colors flex items-center justify-between ${
-                        activeCategory === cat
+                        normalizedActive === cat
                           ? "bg-primary/10 text-primary font-medium"
                           : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                       }`}
@@ -354,12 +438,12 @@ const FAQ = () => {
 
           {/* Mobile category pills */}
           <div className="flex flex-wrap gap-2 lg:hidden">
-            {categoryList.map((cat) => (
+            {cats.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 className={`text-sm px-3 py-1.5 rounded-full border transition-colors ${
-                  activeCategory === cat
+                  normalizedActive === cat
                     ? "bg-primary text-primary-foreground border-primary"
                     : "bg-card text-muted-foreground border-border hover:border-primary/50"
                 }`}
@@ -371,9 +455,9 @@ const FAQ = () => {
 
           {/* FAQ accordion */}
           <div>
-            {activeCategory !== "Toate" && (
+            {normalizedActive !== allLabel && (
               <h2 className="text-lg font-heading font-semibold mb-4">
-                {activeCategory}
+                {normalizedActive}
               </h2>
             )}
 
@@ -396,7 +480,7 @@ const FAQ = () => {
                   >
                     <AccordionTrigger className="hover:no-underline text-left">
                       <span className="flex items-center gap-3">
-                        {activeCategory === "Toate" && (
+                        {normalizedActive === allLabel && (
                           <Badge variant="outline" className="text-xs shrink-0">
                             {item.category}
                           </Badge>

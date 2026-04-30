@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import LegalPageLayout from "./LegalPageLayout";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const sections = [
   {
@@ -187,13 +188,205 @@ export const sections = [
   },
 ];
 
-const TermsAndConditions = () => (
-  <LegalPageLayout
-    title="Termeni și Condiții"
-    subtitle="Aceste condiții reglementează utilizarea platformei Rentli și relația dintre platformă, proprietari și chiriași. Prin utilizarea platformei, sunteți de acord cu acești termeni."
-    lastUpdated="28.02.2026"
-    sections={sections}
-  />
-);
+const sectionsEn = [
+  {
+    id: "definitii",
+    title: "Definitions",
+    content: (
+      <div className="space-y-3">
+        <p><strong>"Platform"</strong> — the website operated by Rentli through which users can list, search for and rent various items. It includes all available features: product listings, account management, payment processing and user-to-user communication.</p>
+        <p><strong>"Listing"</strong> — the process by which an owner registers an item on the platform, providing details such as description, photos, rental price and availability.</p>
+        <p><strong>"Item" / "Object"</strong> — any product or piece of equipment that can be listed and rented through the platform (e.g., sports equipment, electronics, tools, recreational vehicles, etc.).</p>
+        <p><strong>"Owner"</strong> — the natural or legal person who owns an item and makes it available for rent through Rentli. Responsible for the accuracy of the information provided and for fulfilling contractual obligations.</p>
+        <p><strong>"Renter"</strong> — the natural or legal person who uses the platform to identify, book and rent an item from an owner.</p>
+        <p><strong>"Service"</strong> — all features offered by Rentli, including item listings, processing of bookings and payments, and intermediating the relationship between owners and renters.</p>
+        <p><strong>"Users"</strong> — all persons who access the platform, whether owners, renters or simple visitors.</p>
+        <p><strong>"Agreement"</strong> — the agreement entered into between Rentli and a user by accepting these conditions. It enters into force when the account is created.</p>
+        <p><strong>"Rental Contract"</strong> — the agreement established between an owner and a renter for the rental of an item, generated electronically through the platform.</p>
+      </div>
+    ),
+  },
+  {
+    id: "servicii",
+    title: "Platform services and their use",
+    content: (
+      <div className="space-y-3">
+        <p>Rentli offers a digital space where owners can list items they want to rent out, and renters can search, compare and book those items. The platform facilitates communication, booking management and payment processing.</p>
+        <p>Owners are responsible for the accuracy and the up-to-date nature of the information about listed items. They must comply with applicable law and ensure the items are in proper condition, as described in the listings.</p>
+        <p>Renters are required to comply with the established usage conditions, pay the rental fee on the agreed terms and use the item appropriately.</p>
+        <p>Rentli is not a party to the rental contract between owner and renter. The platform acts solely as an intermediary and cannot be held liable for the failure of those parties to fulfill their contractual obligations.</p>
+        <p>Users are required to follow the procedures set on the platform, including those related to listing items, making bookings, payments and returning items.</p>
+      </div>
+    ),
+  },
+  {
+    id: "contract",
+    title: "Agreement with Rentli",
+    content: (
+      <div className="space-y-3">
+        <p><strong>Conclusion of the agreement:</strong> By registering on the platform and accepting these conditions, the user enters into an agreement with Rentli. The agreement is formed electronically and enters into force upon account creation.</p>
+        <p><strong>Purpose:</strong> Provision of the platform's services, including intermediation between owners and renters, management of bookings and payments, and technical support.</p>
+        <p><strong>Validity:</strong> The agreement is valid for an indefinite period, from the date of registration until terminated by either party.</p>
+        <p><strong>Termination:</strong> Either party may terminate the agreement with 15 calendar days' prior notice, sent by email.</p>
+        <p><strong>Account closure:</strong> Users may close their account at any time. Closing the account does not relieve them of unfulfilled obligations (outstanding payments, damage coverage, etc.).</p>
+        <p><strong>Suspension by Rentli:</strong> Rentli reserves the right to suspend or close an account, without notice, in case of breach of the usage conditions, fraudulent activity or justified complaints from other users.</p>
+      </div>
+    ),
+  },
+  {
+    id: "plati",
+    title: "Payments and fees",
+    content: (
+      <div className="space-y-3">
+        <p><strong>Platform fee:</strong> Rentli charges a fee from owners and renters, which is clearly displayed at payment confirmation. The fee includes VAT in accordance with applicable law.</p>
+        <p><strong>Automatic charging:</strong> Renters agree that the platform may automatically charge the associated payment method to cover rental costs, penalties or other related fees.</p>
+        <p><strong>Additional costs:</strong> In situations such as late returns or damages, additional costs may apply, communicated in advance to the user.</p>
+        <p><strong>Refunds:</strong> Refunds are governed by the <Link to="/politica-anulare" className="text-primary hover:underline">cancellation policy</Link>.</p>
+      </div>
+    ),
+  },
+  {
+    id: "inchiriere",
+    title: "Rental process",
+    content: (
+      <div className="space-y-3">
+        <p><strong>Item selection:</strong> Renters can choose an item from the offers available on the platform, depending on their needs and preferences.</p>
+        <p><strong>Booking cancellation:</strong> Free cancellation is possible at least 48 hours before the start of the rental period. For full details, see the <Link to="/politica-anulare" className="text-primary hover:underline">cancellation policy</Link>.</p>
+        <p><strong>Prohibited activities:</strong> The renter may not use the item for illegal activities, extreme sports or any other use beyond the declared purpose of the rental.</p>
+        <p><strong>Returning the item:</strong> The renter is required to return the item in the same condition in which it was received, on the date and time agreed. Delays or damages incur penalties.</p>
+        <p><strong>Damage or loss:</strong> In case of damage or loss of the item, the renter is responsible for repair or replacement costs. The owner must notify the platform and provide evidence.</p>
+        <p><strong>Force majeure:</strong> In force majeure situations (natural disasters, pandemics, restrictions imposed by authorities), the platform is not liable for failure to fulfill obligations. Users may request refunds under the cancellation policy.</p>
+      </div>
+    ),
+  },
+  {
+    id: "documentare",
+    title: "Documenting the item's condition",
+    content: (
+      <div className="space-y-3">
+        <p>The platform allows users to document the item's condition by uploading photos, both at pickup and at return.</p>
+        <p>It is each user's sole responsibility to upload relevant images. The platform is not liable for missing photo documentation or for the consequences of its absence.</p>
+        <p>Uploaded images can serve as evidence in case of disputes about the item's condition. Each user can view only their own uploads.</p>
+        <p>A maximum of 5 images can be uploaded per event (pickup or return). Images must reflect the actual condition of the item and cannot be modified afterwards.</p>
+        <p>We strongly recommend photo documentation at every pickup and return. Lack of evidence may affect the fair resolution of any disputes.</p>
+      </div>
+    ),
+  },
+  {
+    id: "drepturi-obligatii",
+    title: "Users' rights and obligations",
+    content: (
+      <div className="space-y-4">
+        <div>
+          <h4 className="font-semibold text-foreground mb-2">General obligations</h4>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Compliance with platform procedures regarding listings, bookings and payments</li>
+            <li>Provision of accurate and up-to-date information in the user account</li>
+            <li>Immediate notification of any changes to personal data</li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-semibold text-foreground mb-2">Renters' obligations</h4>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Prohibition of third-party access to the rented item without the owner's consent</li>
+            <li>Compliance with applicable law during the use of the item</li>
+            <li>Immediate notification of the owner and authorities in case of accident or damage</li>
+            <li>Returning the item in the condition in which it was received</li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-semibold text-foreground mb-2">Owners' obligations</h4>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Provision of complete and accurate information about listed items</li>
+            <li>Honoring confirmed bookings and ensuring item availability</li>
+            <li>Tax responsibility for income generated from rentals</li>
+            <li>Warranty that the item meets applicable safety standards</li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="font-semibold text-foreground mb-2">Sanctions</h4>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>Financial penalties for late item returns</li>
+            <li>Coverage of repair or replacement costs in case of damage</li>
+            <li>Account suspension or closure for repeated breaches</li>
+          </ul>
+        </div>
+      </div>
+    ),
+  },
+  {
+    id: "protectia-datelor",
+    title: "Personal data protection",
+    content: (
+      <div className="space-y-3">
+        <p>Rentli processes users' personal data in accordance with the <Link to="/politica-confidentialitate" className="text-primary hover:underline">Privacy Policy</Link>.</p>
+        <p>Users have the right to access, rectify or request deletion of their personal data, in accordance with applicable data protection law (GDPR).</p>
+      </div>
+    ),
+  },
+  {
+    id: "limitarea-raspunderii",
+    title: "Limitation of liability",
+    content: (
+      <div className="space-y-3">
+        <p>Rentli is not liable for damages caused by users or for technical issues that occur while using the platform. The platform acts solely as an intermediary.</p>
+        <p>The platform cannot be held liable for indirect damages (loss of profit, business interruption) resulting from the use or non-use of the services.</p>
+        <p>Rentli does not verify the authenticity of information provided by users and is not liable for the content listed by owners (descriptions, photos, etc.).</p>
+        <p>In case of damage or loss of an item during the rental period, the renter bears the full cost. The owner must provide evidence.</p>
+        <p>The platform is not liable for incidents, accidents or legal breaches that occur during the use of the items. Users are solely responsible.</p>
+        <p>Rentli is not liable for the reviews and feedback posted by users, which represent their personal opinions.</p>
+        <p>We work with trusted third-party providers, but we cannot be held liable for any issues caused by them.</p>
+      </div>
+    ),
+  },
+  {
+    id: "litigii",
+    title: "Disputes and applicable law",
+    content: (
+      <div className="space-y-3">
+        <p><strong>Amicable resolution:</strong> In case of disputes, the parties agree to attempt amicable resolution within 30 days of the issue being raised.</p>
+        <p><strong>Jurisdiction:</strong> These conditions are governed by Romanian law. Disputes not resolved amicably will be submitted to the competent courts in Romania.</p>
+        <p><strong>Communications:</strong> Any notices regarding disputes must be sent in writing, to the email address associated with the account or to the platform's contact address.</p>
+      </div>
+    ),
+  },
+  {
+    id: "forta-majora",
+    title: "Force majeure",
+    content: (
+      <div className="space-y-3">
+        <p>Force majeure includes events independent of the parties' will: natural disasters, restrictions imposed by authorities, pandemics or other exceptional situations preventing the normal operation of the platform.</p>
+        <p>In such situations, Rentli will not be liable for delays or failure to fulfill obligations. Users may request refunds under the <Link to="/politica-anulare" className="text-primary hover:underline">cancellation policy</Link>.</p>
+        <p>To benefit from solutions in case of force majeure, users must provide supporting documents within 24 hours of the event.</p>
+      </div>
+    ),
+  },
+  {
+    id: "modificari",
+    title: "Amendments and final provisions",
+    content: (
+      <div className="space-y-3">
+        <p>Rentli reserves the right to update these conditions at any time. Users will be notified of significant changes, and continued use of the platform constitutes acceptance of the new terms.</p>
+        <p>If any provision is found to be invalid, the remaining provisions remain in force.</p>
+        <p>For questions or clarifications, please contact us via the <Link to="/centru-asistenta" className="text-primary hover:underline">support page</Link>.</p>
+      </div>
+    ),
+  },
+];
+
+const TermsAndConditions = () => {
+  const { language } = useLanguage();
+  const isEn = language === "en";
+  return (
+    <LegalPageLayout
+      title={isEn ? "Terms and Conditions" : "Termeni și Condiții"}
+      subtitle={isEn
+        ? "These conditions govern the use of the Rentli platform and the relationship between the platform, owners and renters. By using the platform, you agree to these terms."
+        : "Aceste condiții reglementează utilizarea platformei Rentli și relația dintre platformă, proprietari și chiriași. Prin utilizarea platformei, sunteți de acord cu acești termeni."}
+      lastUpdated="28.02.2026"
+      sections={isEn ? sectionsEn : sections}
+    />
+  );
+};
 
 export default TermsAndConditions;
