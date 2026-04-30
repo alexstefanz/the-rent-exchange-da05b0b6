@@ -281,7 +281,8 @@ const ProductDetail = () => {
 
           {/* Right Sidebar - Booking */}
           <div className="order-1 lg:order-2 lg:self-stretch">
-            <div className="lg:sticky lg:top-24 rounded-xl border border-border bg-card p-4 sm:p-6">
+            <div className="lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:flex lg:flex-col rounded-xl border border-border bg-card overflow-hidden">
+              <div className="lg:flex-1 lg:overflow-y-auto p-4 sm:p-6 lg:p-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full">
               <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-1.5 lg:hidden">
                 <MapPin className="h-4 w-4 text-primary flex-shrink-0" />
                 <span>{location}</span>
@@ -351,11 +352,6 @@ const ProductDetail = () => {
                 </div>
               )}
 
-              <Button className="w-full" size="lg" disabled={!startDate || !endDate} onClick={() => { if (startDate && endDate) { navigate('/checkout', { state: { product: { id: product.id, title: displayTitle, images, price: clientPrice, priceUnit: "zi", location, ownerId: product.owner_id, platformFeePercent: product.platform_fee_percent }, startDate, endDate, rentalDays, totalPrice } }); } }}>
-                {startDate && endDate ? copy.booking.ctaPrimary : copy.booking.steps.period}
-              </Button>
-
-              <Separator className="my-4" />
               <div className="flex items-start gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
                   <ThumbsUp className="h-4 w-4 text-primary" />
@@ -374,6 +370,13 @@ const ProductDetail = () => {
                     {" "}{language === "ro" ? "pentru mai multe detalii." : "for more details."}
                   </p>
                 </div>
+              </div>
+              </div>
+
+              <div className="border-t border-border bg-card p-4 sm:p-6 lg:p-4">
+                <Button className="w-full" size="lg" disabled={!startDate || !endDate} onClick={() => { if (startDate && endDate) { navigate('/checkout', { state: { product: { id: product.id, title: displayTitle, images, price: clientPrice, priceUnit: "zi", location, ownerId: product.owner_id, platformFeePercent: product.platform_fee_percent }, startDate, endDate, rentalDays, totalPrice } }); } }}>
+                  {startDate && endDate ? copy.booking.ctaPrimary : copy.booking.steps.period}
+                </Button>
               </div>
             </div>
           </div>
