@@ -235,16 +235,21 @@ const BookingCard = ({
             <ThumbsUp className="h-4.5 w-4.5 text-primary" />
           </div>
           <div>
-            <p className="font-semibold text-foreground text-sm">Anulare gratuită</p>
-            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-              Poți anula gratuit în primele 48 de ore de la rezervare.
+            <p className="font-semibold text-foreground text-sm">
+              {language === "ro" ? "Anulare gratuită" : "Free cancellation"}
             </p>
-            <Link
-              to="/politica-anulare"
-              className="text-xs text-primary hover:underline mt-1 inline-block font-medium"
-            >
-              Află mai multe
-            </Link>
+            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+              {language === "ro"
+                ? "Anulează gratuit cu 48h înainte de începerea închirierii. Rambursare parțială după. Consultă"
+                : "Cancel for free up to 48h before the rental starts. Partial refund after. See the"}{" "}
+              <Link
+                to="/politica-anulare"
+                className="text-primary hover:underline font-medium"
+              >
+                {language === "ro" ? "politica de anulare" : "cancellation policy"}
+              </Link>{" "}
+              {language === "ro" ? "pentru mai multe detalii." : "for more details."}
+            </p>
           </div>
         </div>
       </div>

@@ -8,6 +8,8 @@ export interface Product {
   title: string;
   slug: string | null;
   description: string | null;
+  title_en?: string | null;
+  description_en?: string | null;
   daily_price_owner: number;
   platform_fee_percent: number;
   category: string | null;
