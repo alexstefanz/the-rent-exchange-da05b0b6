@@ -41,3 +41,5 @@ project_id = "tsffyecastudajmgrckt"
     verify_jwt = false
   [functions.send-sms-notification]
     verify_jwt = false
+  [functions.translate-product]
+    verify_jwt = false
