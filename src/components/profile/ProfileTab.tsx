@@ -49,6 +49,7 @@ const ProfileTab = ({ onProfileLoaded }: ProfileTabProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const queryClient = useQueryClient();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -136,6 +137,9 @@ const ProfileTab = ({ onProfileLoaded }: ProfileTabProps) => {
       });
       setProfile(updatedProfile);
       onProfileLoaded?.(updatedProfile);
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: ["currentUserProfile", user.id] });
+      }
       toast({
         title: t("Succes", "Success"),
         description: t("Profil actualizat cu succes", "Profile updated successfully"),
