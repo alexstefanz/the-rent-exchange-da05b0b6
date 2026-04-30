@@ -94,10 +94,10 @@ const Index = () => {
         <div className="container">
           <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
             {[
-              { icon: Shield, label: "Plăți securizate" },
-              { icon: CheckCircle, label: "Utilizatori verificați" },
-              { icon: ShieldCheck, label: "Asigurare inclusă" },
-              { icon: Headphones, label: "Suport dedicat" },
+              { icon: Shield, label: language === "en" ? "Secure payments" : "Plăți securizate" },
+              { icon: CheckCircle, label: language === "en" ? "Verified users" : "Utilizatori verificați" },
+              { icon: ShieldCheck, label: language === "en" ? "Insurance included" : "Asigurare inclusă" },
+              { icon: Headphones, label: language === "en" ? "Dedicated support" : "Suport dedicat" },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-2">
                 <item.icon className="h-4 w-4 text-white" />
