@@ -10,6 +10,7 @@ import { addFavoriteProduct, removeFavoriteProduct, isProductFavorite } from "@/
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getDisplayTitle, getDisplayDescription, getDisplayCategory } from "@/lib/productI18n";
 
 interface ProductCardProps {
   product: Product;
@@ -21,7 +22,10 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
   const [isToggling, setIsToggling] = useState(false);
   const [rating, setRating] = useState<{ avg: number; count: number } | null>(null);
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const displayTitle = getDisplayTitle(product, language);
+  const displayDescription = getDisplayDescription(product, language);
+  const displayCategory = getDisplayCategory(product.category, language);
   const clientPrice = calculateClientPrice(
     product.daily_price_owner,
     product.platform_fee_percent
@@ -82,7 +86,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
           <div className="relative aspect-[4/3] sm:aspect-square sm:w-48 overflow-hidden">
             <img
               src={imageUrl}
-              alt={product.title}
+              alt={displayTitle}
               width={480}
               height={360}
               loading="lazy"
@@ -103,15 +107,15 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
           <div className="flex-1 p-4">
             {product.category && (
           <span className="inline-block rounded-sm bg-primary px-1.5 py-0.5 text-[9px] md:text-[11px] font-semibold text-primary-foreground mb-1.5 whitespace-nowrap truncate max-w-full">
-                {product.category}
+                {displayCategory}
               </span>
             )}
             <h3 className="font-heading text-lg font-semibold text-foreground">
-              {product.title}
+              {displayTitle}
             </h3>
-            {product.description && (
+            {displayDescription && (
               <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
-                {product.description}
+                {displayDescription}
               </p>
             )}
             <div className="mt-3 flex flex-wrap items-center gap-4">
@@ -141,7 +145,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
       <div className="relative aspect-[4/3] overflow-hidden">
         <img
           src={imageUrl}
-          alt={product.title}
+          alt={displayTitle}
           width={480}
           height={360}
           loading="lazy"
@@ -175,11 +179,11 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
       <div className="p-3 md:p-4">
         {product.category && (
           <span className="inline-block rounded-sm bg-primary px-1.5 py-0.5 text-[9px] md:text-[11px] font-semibold text-primary-foreground mb-2 whitespace-nowrap truncate max-w-full">
-            {product.category}
+            {displayCategory}
           </span>
         )}
         <h3 className="font-heading text-base md:text-lg font-semibold text-foreground line-clamp-2">
-          {product.title}
+          {displayTitle}
         </h3>
         <div className="mt-2.5 flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
           <MapPin className="h-3 w-3 md:h-4 md:w-4 shrink-0" />

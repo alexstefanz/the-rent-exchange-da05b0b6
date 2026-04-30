@@ -22,6 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { getDisplayTitle } from "@/lib/productI18n";
 
 const Owner = () => {
   const navigate = useNavigate();
@@ -121,7 +122,7 @@ const Owner = () => {
                     {product.images && product.images.length > 0 ? (
                       <img
                         src={product.images[0]}
-                        alt={product.title}
+                        alt={getDisplayTitle(product, language)}
                         className="h-full w-full object-cover transition-transform group-hover:scale-105"
                       />
                     ) : (
@@ -151,7 +152,7 @@ const Owner = () => {
                   </div>
                   <CardContent className="p-4">
                     <h3 className="font-semibold text-foreground line-clamp-2 mb-2">
-                      {product.title}
+                      {getDisplayTitle(product, language)}
                     </h3>
                     
                     {product.location_city && (
