@@ -228,7 +228,7 @@ const LoginDialog = ({ open, onOpenChange, onLoginSuccess }: LoginDialogProps) =
                 className="w-full h-12 bg-[#E51D53] hover:bg-[#d41a4c] text-white font-medium"
                 disabled={!email || !password || loading}
               >
-                {loading ? t("Se procesează...", "Processing...") : isSignUp ? t("Creează cont", "Create account") : t("Sign in", "Sign in") /* placeholder */}
+                {loading ? t("Se procesează...", "Processing...") : isSignUp ? t("Creează cont", "Create account") : t("Autentifică-te", "Sign in")}
               </Button>
 
               <Separator />
