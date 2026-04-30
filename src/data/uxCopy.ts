@@ -101,6 +101,19 @@ const createUxCopy = () => ({
     accept: { ro: "Acceptă", en: "Accept" },
     reject: { ro: "Refuză", en: "Reject" },
     addListing: { ro: "Adaugă anunț", en: "Add listing" },
+    cancelRequest: { ro: "Anulează cererea", en: "Cancel request" },
+    cancelPaidTitle: { ro: "Anulează cererea de închiriere", en: "Cancel rental request" },
+    cancelPaidConfirm: {
+      ro: "Vei anula această cerere. Banii blocați la card vor fi eliberați după verificarea echipei Rentli (1–3 zile lucrătoare). Continui?",
+      en: "You're about to cancel this request. The funds held on your card will be released after our team's review (1–3 business days). Continue?",
+    },
+    cancelPaidSuccess: {
+      ro: "Cererea a fost anulată. Banii vor fi eliberați după verificarea echipei.",
+      en: "Request cancelled. The funds will be released after our team's review.",
+    },
+    cancelPaidError: { ro: "Eroare la anularea cererii", en: "Failed to cancel the request" },
+    keepRequest: { ro: "Înapoi", en: "Back" },
+    confirmCancel: { ro: "Da, anulează", en: "Yes, cancel" },
   },
   status: {
     pending: { ro: "În așteptare", en: "Pending" },
