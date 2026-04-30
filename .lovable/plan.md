@@ -1,38 +1,26 @@
-# Căutare insensibilă la diacritice
-
 ## Problema
-Când scrii "roaba" nu apare nimic, dar "roabă" găsește produsul. Cauza: query-ul folosește `ILIKE '%roaba%'` direct pe `title`, iar PostgreSQL nu tratează `a`=`ă`, `s`=`ș`, `t`=`ț`, `i`=`î`, `a`=`â` ca echivalente.
-
-Normalizarea există deja client-side (`normalizeDiacritics`) dar e aplicată doar pe locație, nu și pe căutarea din titlu — și oricum nu ajută, pentru că datele din DB conțin diacriticele originale.
-
-## Soluție
-Folosim extensia `unaccent` (deja instalată în proiect) prin **o funcție RPC** care normalizează ambele părți ale comparației direct în SQL:
-
-```
-unaccent(lower(title)) ILIKE unaccent(lower('%roaba%'))
-```
-
-Astfel "roaba", "roabă", "ROABĂ" găsesc toate același produs, indiferent de cum e scris în DB.
+Eticheta "23 RON / lună" e ambiguă pentru că lunile au 28–31 de zile, dar tarifarea folosește exact 30 de zile. Schimbăm eticheta în "30 zile" / "30 days" pentru claritate.
 
 ## Modificări
 
-### 1. Migrație SQL nouă
-- Funcție `public.search_products(_search text, _category text, _subcategory text, _location_city text)` cu `SECURITY INVOKER`, `STABLE`, returnează `SETOF public.products`.
-- Filtrează pe `is_active = true` și `approval_status = 'approved'`.
-- Aplică `unaccent` pe titlu, descriere și locație pentru match insensibil la diacritice.
-- Index funcțional `idx_products_title_unaccent_trgm` pe `unaccent(lower(title))` cu `gin_trgm_ops` pentru performanță.
-- Aceeași logică pentru locație (înlocuiește filtrul ILIKE existent).
+### 1. `src/data/uxCopy.ts`
+- `productDetail.month`: schimb din `{ ro: "lună", en: "month" }` în `{ ro: "30 zile", en: "30 days" }`.
+- Astfel se actualizează automat afișarea principală a prețului din BookingCard și ProductDetail (`23 RON / 30 zile`).
 
-### 2. `src/features/products/productsApi.ts`
-- `getProducts()` apelează noua RPC `supabase.rpc('search_products', { ... })` în loc de `.from('products').select().ilike(...)`.
-- Păstrăm semnătura `ProductFilters` neschimbată — restul aplicației nu se modifică.
-- Restul funcțiilor (getProductById, getMyProducts, etc.) rămân cum sunt.
+### 2. `src/components/product/BookingCard.tsx` (breakdown la rezervare)
+În descompunerea prețului unde se afișează "1 lună × ..." / "2 luni × ...":
+- RO: în loc de `lună / luni` → `30 zile` (singular și plural identic, mai clar).
+- EN: în loc de `month / months` → `30 days`.
+- Exemplu: `2 × 30 zile × 23 RON = 46 RON` în loc de `2 luni × 23 RON`.
 
-### 3. (Opțional, dacă timpul permite) `getPublicUserProducts` și `getNearbyProducts`
-- Acestea nu fac search pe titlu, deci rămân neschimbate.
+### 3. `src/pages/ProductDetail.tsx` (același breakdown)
+- Aplic exact aceeași schimbare ca la BookingCard în secțiunea `priceBreakdown.months > 0`.
 
-## Rezultat
-- "roaba" → găsește "Roabă de grădină"
-- "masina" → găsește "Mașină de tuns iarba"
-- "tepusa" → găsește "Țepușă"
-- Locațiile rămân tolerante la diacritice (deja funcționau, dar acum prin unaccent în loc de normalizare client-side).
+## Ce NU se schimbă
+- Logica de calcul rămâne neatinsă (1 "lună" = 30 zile, deja așa era).
+- Câmpul `priceMonth` din DB rămâne neschimbat.
+- Calendarul, header-ul preț/zi, săptămâna și restul UI-ului sunt neatinse.
+
+## Rezultat vizual
+- Card preț: `23 RON / 30 zile`
+- Breakdown: `2 × 30 zile × 23 RON   46 RON`
