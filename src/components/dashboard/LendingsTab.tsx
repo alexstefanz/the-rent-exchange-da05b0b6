@@ -3,6 +3,8 @@ import { Package, Plus, Eye, Edit, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import StatusBadge from "./StatusBadge";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { getDisplayTitle } from "@/lib/productI18n";
 import { useMyProducts } from "@/hooks/queries/useProducts";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateClientPrice } from "@/features/products/productsApi";
@@ -10,6 +12,7 @@ import { getProductUrl } from "@/lib/slugUtils";
 
 const LendingsTab = () => {
   const copy = useUxCopy();
+  const { language } = useLanguage();
   const { user } = useAuth();
   const { data: products = [], isLoading } = useMyProducts(user?.id);
 
@@ -70,10 +73,10 @@ const LendingsTab = () => {
             const clientPrice = calculateClientPrice(product.daily_price_owner, product.platform_fee_percent);
             return (
               <div key={product.id} className="flex gap-4 rounded-xl border border-border bg-card p-4">
-                <img src={product.images?.[0] || "/placeholder.svg"} alt={product.title} className="w-20 h-20 rounded-lg object-cover" />
+                <img src={product.images?.[0] || "/placeholder.svg"} alt={getDisplayTitle(product, language)} className="w-20 h-20 rounded-lg object-cover" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-medium text-foreground truncate">{product.title}</h4>
+                    <h4 className="font-medium text-foreground truncate">{getDisplayTitle(product, language)}</h4>
                     <StatusBadge status={product.is_active ? "active" : "inactive"} size="sm" />
                   </div>
                   <p className="mt-1 text-sm font-semibold text-primary">{clientPrice} RON/{copy.common.perDay.replace("/ ", "")}</p>
