@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, MapPin, Search, Camera, AlertCircle, Receipt, ChevronDown, CheckCircle2, Clock } from "lucide-react";
+import { Calendar, MapPin, Search, Camera, AlertCircle, Receipt, ChevronDown, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getOrCreateConversation } from "@/features/messaging/messagingApi";
 import StatusBadge from "./StatusBadge";
@@ -8,13 +8,18 @@ import { InspectionDialog } from "./InspectionDialog";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import RentalTimeline, { getTimelineStep } from "./RentalTimeline";
 import type { InspectionPhase } from "@/features/rentals/inspectionApi";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
+import { toast } from "sonner";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Rental {
   id: string;
@@ -67,6 +72,7 @@ const RentalsTab = () => {
   const copy = useUxCopy();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [inspectionRental, setInspectionRental] = useState<{ rental: Rental; phase: InspectionPhase } | null>(null);
 
   const handleContactOwner = async (rental: Rental) => {
@@ -76,6 +82,39 @@ const RentalsTab = () => {
       navigate(`/mesaje?conv=${conv.id}`);
     }
   };
+
+  const cancelPaidMutation = useMutation({
+    mutationFn: async (rental: Rental) => {
+      // Mark rental as cancelled (RLS allows renter to cancel own pending rentals)
+      const { error } = await supabase
+        .from("rentals")
+        .update({
+          status: "cancelled",
+          cancellation_reason: "renter_cancelled_after_payment",
+          cancelled_at: new Date().toISOString(),
+        })
+        .eq("id", rental.id);
+      if (error) throw error;
+
+      // Notify owner (non-blocking)
+      supabase.functions
+        .invoke("send-cancellation-notification", { body: { rental_id: rental.id } })
+        .catch((e) => console.error("Cancellation notification error:", e));
+
+      // Create admin ticket so the team releases the Stripe hold
+      supabase.functions
+        .invoke("create-renter-cancellation-ticket", { body: { rental_id: rental.id } })
+        .catch((e) => console.error("Cancellation ticket error:", e));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-rentals"] });
+      queryClient.invalidateQueries({ queryKey: ["my-requests"] });
+      toast.success(copy.dashboard.cancelPaidSuccess);
+    },
+    onError: () => {
+      toast.error(copy.dashboard.cancelPaidError);
+    },
+  });
 
   const { data: rentals = [], isLoading } = useQuery({
     queryKey: ["my-rentals", user?.id],
