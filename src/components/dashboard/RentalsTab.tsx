@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Calendar, MapPin, Search, Camera, AlertCircle, Receipt, ChevronDown, CheckCircle2, Clock, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getOrCreateConversation } from "@/features/messaging/messagingApi";
+import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import StatusBadge from "./StatusBadge";
 import { InspectionDialog } from "./InspectionDialog";
 import { useUxCopy } from "@/hooks/useUxCopy";
@@ -76,10 +76,10 @@ const RentalsTab = () => {
   const [inspectionRental, setInspectionRental] = useState<{ rental: Rental; phase: InspectionPhase } | null>(null);
 
   const handleContactOwner = async (rental: Rental) => {
-    if (!rental.product_id || !rental.owner_id) return;
-    const conv = await getOrCreateConversation(rental.product_id, rental.owner_id);
-    if (conv) {
-      navigate(`/mesaje?conv=${conv.id}`);
+    if (!rental.id) return;
+    const convId = await getOrCreateRentalConversation(rental.id);
+    if (convId) {
+      navigate(`/mesaje?conv=${convId}`);
     }
   };
 

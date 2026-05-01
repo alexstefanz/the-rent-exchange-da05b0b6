@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Calendar, MapPin, Search, XCircle, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getOrCreateConversation } from "@/features/messaging/messagingApi";
+import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import StatusBadge from "./StatusBadge";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useAuth } from "@/contexts/AuthContext";
@@ -78,10 +78,10 @@ const RequestsTab = () => {
   const navigate = useNavigate();
 
   const handleContactOwner = async (request: Request) => {
-    if (!request.product_id || !request.owner_id) return;
-    const conv = await getOrCreateConversation(request.product_id, request.owner_id);
-    if (conv) {
-      navigate(`/mesaje?conv=${conv.id}`);
+    if (!request.id) return;
+    const convId = await getOrCreateRentalConversation(request.id);
+    if (convId) {
+      navigate(`/mesaje?conv=${convId}`);
     }
   };
 
