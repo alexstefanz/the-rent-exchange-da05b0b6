@@ -87,6 +87,7 @@ export type Database = {
           id: string
           owner_id: string
           product_id: string
+          rentals_id: string | null
           updated_at: string
         }
         Insert: {
@@ -95,6 +96,7 @@ export type Database = {
           id?: string
           owner_id: string
           product_id: string
+          rentals_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -103,6 +105,7 @@ export type Database = {
           id?: string
           owner_id?: string
           product_id?: string
+          rentals_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -125,6 +128,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "conversations_rentals_id_fkey"
+            columns: ["rentals_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
             referencedColumns: ["id"]
           },
         ]
@@ -1738,6 +1748,10 @@ export type Database = {
           rentals_count: number
         }[]
       }
+      get_or_create_rental_conversation: {
+        Args: { p_rental_id: string }
+        Returns: string
+      }
       get_owner_rentals: {
         Args: { owner_uuid: string }
         Returns: {
@@ -1816,6 +1830,10 @@ export type Database = {
           product_id: string
           product_images: string[]
           product_title: string
+          rental_days: number
+          rental_end_date: string
+          rental_start_date: string
+          rentals_id: string
           unread_count: number
           updated_at: string
         }[]
