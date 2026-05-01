@@ -104,12 +104,24 @@ const createUxCopy = () => ({
     cancelRequest: { ro: "Anulează cererea", en: "Cancel request" },
     cancelPaidTitle: { ro: "Anulează cererea de închiriere", en: "Cancel rental request" },
     cancelPaidConfirm: {
-      ro: "Vei anula această cerere. Banii blocați la card vor fi eliberați după verificarea echipei Rentli (1–3 zile lucrătoare). Continui?",
-      en: "You're about to cancel this request. The funds held on your card will be released after our team's review (1–3 business days). Continue?",
+      ro: "Politica de anulare: rambursare integrală dacă anulezi cu cel puțin 48h înainte de start, 50% sub 48h, fără rambursare după ce începe închirierea. Suma se eliberează automat pe cardul folosit. Continui?",
+      en: "Cancellation policy: full refund if you cancel at least 48h before start, 50% under 48h, no refund after the rental period starts. The amount is released automatically to the card used. Continue?",
     },
     cancelPaidSuccess: {
       ro: "Cererea a fost anulată. Banii vor fi eliberați după verificarea echipei.",
       en: "Request cancelled. The funds will be released after our team's review.",
+    },
+    cancelFullRefundSuccess: {
+      ro: "Cererea a fost anulată. Rambursare integrală în 3–5 zile lucrătoare.",
+      en: "Request cancelled. Full refund within 3–5 business days.",
+    },
+    cancelPartialRefundSuccess: {
+      ro: "Cererea a fost anulată. Rambursare 50% în 3–5 zile lucrătoare:",
+      en: "Request cancelled. 50% refund within 3–5 business days:",
+    },
+    cancelNoRefundSuccess: {
+      ro: "Cererea a fost anulată. Rambursare nu este posibilă conform politicii.",
+      en: "Request cancelled. No refund per policy.",
     },
     cancelPaidError: { ro: "Eroare la anularea cererii", en: "Failed to cancel the request" },
     keepRequest: { ro: "Înapoi", en: "Back" },
