@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { CalendarCheck, Filter, Loader2, ChevronDown, ChevronUp, User, MapPin, Tag, DollarSign, Calendar } from "lucide-react";
+import { CalendarCheck, Filter, Loader2, ChevronDown, ChevronUp, User, MapPin, Tag, DollarSign, Calendar, Copy, Hash } from "lucide-react";
 import SortableTableHead, { SortDirection, sortData, useToggleSort } from "@/components/admin/SortableTableHead";
 import TableColumnFilterRow, { applyColumnFilters, ColumnFilterConfig } from "@/components/admin/TableColumnFilter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,8 +58,38 @@ const RentalExpandedPanel = ({
   formatCurrency: (v: number) => string;
 }) => {
   const isUpdating = updatingId === rental.id;
+  const copyId = (value: string, label: string) => {
+    navigator.clipboard?.writeText(value).then(
+      () => toast.success(`${label} copiat: ${value}`),
+      () => toast.error("Nu am putut copia"),
+    );
+  };
   return (
     <div className="p-4 space-y-3 bg-muted/30 border-t">
+      <div className="flex flex-wrap items-center gap-2 rounded-lg bg-card p-3 border">
+        <Hash className="h-4 w-4 text-primary" />
+        <span className="text-xs uppercase font-semibold text-muted-foreground">ID Rezervare</span>
+        <button
+          type="button"
+          onClick={() => copyId(rental.public_id, "ID Rezervare")}
+          className="font-mono text-sm font-bold text-primary hover:underline inline-flex items-center gap-1"
+          title="Click pentru a copia"
+        >
+          {rental.public_id}
+          <Copy className="h-3 w-3" />
+        </button>
+        <span className="text-xs text-muted-foreground ml-auto">
+          UUID:{" "}
+          <button
+            type="button"
+            onClick={() => copyId(rental.id, "UUID")}
+            className="font-mono hover:underline"
+            title="Click pentru a copia UUID-ul intern"
+          >
+            {rental.id.slice(0, 8)}…
+          </button>
+        </span>
+      </div>
       <Tabs defaultValue="summary">
         <TabsList>
           <TabsTrigger value="summary">Sumar</TabsTrigger>
@@ -187,6 +217,7 @@ const AdminReservations = () => {
   }, [categories]);
 
   const rentalColumnFilters: ColumnFilterConfig[] = [
+    { key: "public_id", type: "text", placeholder: "RNT-..." },
     { key: "product_title", type: "text", placeholder: "Produs..." },
     { key: "renter_name", type: "text", placeholder: "Chiriaș..." },
     { key: "owner_name", type: "text", placeholder: "Proprietar..." },
@@ -209,7 +240,8 @@ const AdminReservations = () => {
     setUpdatingId(rentalId);
     try {
       await updateRentalStatus(rentalId, newStatus);
-      toast.success(`Statusul rezervării a fost actualizat la "${statusLabels[newStatus]}"`);
+      const ref = rentals?.find((r: any) => r.id === rentalId)?.public_id || rentalId.slice(0, 8);
+      toast.success(`Statusul ${ref} a fost actualizat la "${statusLabels[newStatus]}"`);
       queryClient.invalidateQueries({ queryKey: ['adminRentals'] });
       queryClient.invalidateQueries({ queryKey: ['adminStats'] });
     } catch (error) {
@@ -273,6 +305,7 @@ const AdminReservations = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <SortableTableHead label="ID" sortKey="public_id" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
                         <SortableTableHead label="Produs" sortKey="product_title" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
                         <SortableTableHead label="Chiriaș" sortKey="renter_name" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
                         <SortableTableHead label="Proprietar" sortKey="owner_name" currentSortKey={sortKey} currentDirection={sortDirection} onSort={handleSort} />
@@ -293,6 +326,21 @@ const AdminReservations = () => {
                       {filteredData.map((rental) => (
                         <>
                           <TableRow key={rental.id} className="cursor-pointer hover:bg-muted/50" onClick={() => toggleExpand(rental.id)}>
+                            <TableCell className="whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard?.writeText(rental.public_id);
+                                  toast.success(`Copiat: ${rental.public_id}`);
+                                }}
+                                className="font-mono text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1"
+                                title="Click pentru a copia ID-ul"
+                              >
+                                {rental.public_id}
+                                <Copy className="h-3 w-3 opacity-60" />
+                              </button>
+                            </TableCell>
                             <TableCell className="font-medium max-w-[200px]">
                               <div className="flex items-center gap-2">
                                 <span className="line-clamp-1">{rental.product_title}</span>
@@ -323,7 +371,7 @@ const AdminReservations = () => {
                           </TableRow>
                           {expandedId === rental.id && (
                             <TableRow key={`${rental.id}-expand`}>
-                              <TableCell colSpan={7} className="p-0">
+                              <TableCell colSpan={8} className="p-0">
                                 <RentalExpandedPanel rental={rental} updatingId={updatingId} onStatusChange={handleStatusChange} formatCurrency={formatCurrency} />
                               </TableCell>
                             </TableRow>
@@ -340,6 +388,18 @@ const AdminReservations = () => {
                     <Card key={rental.id} className="overflow-hidden">
                       <div className="p-3 cursor-pointer flex items-center justify-between" onClick={() => toggleExpand(rental.id)}>
                         <div className="min-w-0 flex-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard?.writeText(rental.public_id);
+                              toast.success(`Copiat: ${rental.public_id}`);
+                            }}
+                            className="font-mono text-[11px] font-semibold text-primary hover:underline inline-flex items-center gap-1 mb-0.5"
+                          >
+                            {rental.public_id}
+                            <Copy className="h-2.5 w-2.5 opacity-60" />
+                          </button>
                           <p className="text-sm font-medium truncate">{rental.product_title}</p>
                           <p className="text-xs text-muted-foreground">{rental.renter_name} → {rental.owner_name} • {format(new Date(rental.start_date), 'd MMM', { locale: ro })} - {format(new Date(rental.end_date), 'd MMM', { locale: ro })}</p>
                         </div>
