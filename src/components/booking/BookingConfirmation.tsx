@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { CheckCircle, Clock, MessageCircle, ArrowRight, Home, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUxCopy } from "@/hooks/useUxCopy";
-import { getOrCreateConversation } from "@/features/messaging/messagingApi";
+import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import { toast } from "sonner";
 
 interface BookingConfirmationProps {
@@ -15,10 +15,11 @@ interface BookingConfirmationProps {
   rentalDays: number;
   productId: string;
   ownerId: string;
+  rentalId: string;
 }
 
 const BookingConfirmation = ({
-  productTitle, ownerName, startDate, endDate, totalPrice, rentalDays, productId, ownerId,
+  productTitle, ownerName, startDate, endDate, totalPrice, rentalDays, productId, ownerId, rentalId,
 }: BookingConfirmationProps) => {
   const copy = useUxCopy();
   const navigate = useNavigate();
@@ -27,9 +28,9 @@ const BookingConfirmation = ({
   const handleOpenChat = async () => {
     setIsOpeningChat(true);
     try {
-      const conversation = await getOrCreateConversation(productId, ownerId);
-      if (conversation) {
-        navigate(`/mesaje?conv=${conversation.id}`);
+      const conversationId = await getOrCreateRentalConversation(rentalId);
+      if (conversationId) {
+        navigate(`/mesaje?conv=${conversationId}`);
       } else {
         toast.error("Nu s-a putut deschide conversația.");
       }

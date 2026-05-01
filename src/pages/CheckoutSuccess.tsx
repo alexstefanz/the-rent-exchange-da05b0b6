@@ -102,6 +102,7 @@ const CheckoutSuccess = () => {
           rentalDays={rentalData.rental_days}
           productId={rentalData.product_id}
           ownerId={rentalData.owner_id}
+          rentalId={rentalData.id}
         />
       </main>
     </div>

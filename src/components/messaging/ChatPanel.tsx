@@ -25,6 +25,11 @@ interface ChatPanelProps {
   otherUserAvatar: string | null;
   productTitle: string;
   ownerId?: string;
+  rentalInfo?: {
+    start_date: string;
+    end_date: string;
+    rental_days: number;
+  } | null;
   onBack?: () => void;
   className?: string;
 }
@@ -35,6 +40,7 @@ export function ChatPanel({
   otherUserAvatar,
   productTitle,
   ownerId,
+  rentalInfo,
   onBack,
   className = "",
 }: ChatPanelProps) {
@@ -139,6 +145,16 @@ export function ChatPanel({
         <div className="flex flex-col min-w-0 flex-1">
           <span className="font-medium text-sm truncate">{productTitle}</span>
           <span className="text-xs text-muted-foreground truncate">{otherUserName || t("Utilizator", "User")}</span>
+          {rentalInfo && (
+            <span className="text-[11px] text-primary font-medium truncate">
+              {format(new Date(rentalInfo.start_date), "d MMM", { locale: dateLocale })}
+              {" – "}
+              {format(new Date(rentalInfo.end_date), "d MMM yyyy", { locale: dateLocale })}
+              {" · "}
+              {rentalInfo.rental_days}{" "}
+              {rentalInfo.rental_days === 1 ? t("zi", "day") : t("zile", "days")}
+            </span>
+          )}
         </div>
         {ownerPhone && (
           <TooltipProvider>
