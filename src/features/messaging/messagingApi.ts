@@ -7,6 +7,7 @@ export interface Conversation {
   owner_id: string;
   created_at: string;
   updated_at: string;
+  rentals_id?: string | null;
   product?: {
     title: string;
     images: string[] | null;
@@ -17,6 +18,11 @@ export interface Conversation {
   };
   last_message?: Message | null;
   unread_count?: number;
+  rental?: {
+    start_date: string;
+    end_date: string;
+    rental_days: number;
+  } | null;
 }
 
 export interface Message {
@@ -32,23 +38,25 @@ export async function getOrCreateConversation(productId: string, ownerId: string
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  // Check if conversation exists
+  // Check if an "organic" (non-rental) conversation exists for this product+buyer
   const { data: existing } = await supabase
     .from('conversations')
     .select('*')
     .eq('product_id', productId)
     .eq('buyer_id', user.id)
+    .is('rentals_id', null)
     .maybeSingle();
 
   if (existing) return existing as Conversation;
 
-  // Create new conversation
+  // Create a new organic conversation (rentals_id stays null)
   const { data: newConv, error } = await supabase
     .from('conversations')
     .insert({
       product_id: productId,
       buyer_id: user.id,
-      owner_id: ownerId
+      owner_id: ownerId,
+      rentals_id: null,
     })
     .select()
     .single();
@@ -59,6 +67,23 @@ export async function getOrCreateConversation(productId: string, ownerId: string
   }
 
   return newConv as Conversation;
+}
+
+/**
+ * Returns (or creates) the dedicated conversation thread tied to a specific rental booking.
+ * Each rental gets its own chat thread, even if the renter and owner already chatted before.
+ */
+export async function getOrCreateRentalConversation(rentalId: string): Promise<string | null> {
+  const { data, error } = await supabase.rpc('get_or_create_rental_conversation', {
+    p_rental_id: rentalId,
+  });
+
+  if (error) {
+    console.error('Error creating rental conversation:', error);
+    return null;
+  }
+
+  return data as string;
 }
 
 export async function getConversations(): Promise<Conversation[]> {
@@ -81,6 +106,7 @@ export async function getConversations(): Promise<Conversation[]> {
     owner_id: conv.owner_id,
     created_at: conv.created_at,
     updated_at: conv.updated_at,
+    rentals_id: (conv as any).rentals_id ?? null,
     product: {
       title: conv.product_title,
       images: conv.product_images,
@@ -98,6 +124,13 @@ export async function getConversations(): Promise<Conversation[]> {
       created_at: conv.last_message_created_at,
     } : null,
     unread_count: Number(conv.unread_count) || 0,
+    rental: (conv as any).rental_start_date && (conv as any).rental_end_date
+      ? {
+          start_date: (conv as any).rental_start_date,
+          end_date: (conv as any).rental_end_date,
+          rental_days: Number((conv as any).rental_days) || 0,
+        }
+      : null,
   }));
 }
 
