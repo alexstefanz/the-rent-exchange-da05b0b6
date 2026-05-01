@@ -371,6 +371,7 @@ const AdminFinances = () => {
                     {recentRentals.map((rental) => (
                       <div key={rental.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border gap-2">
                         <div className="space-y-1 min-w-0">
+                          <p className="font-mono text-[10px] text-primary font-semibold">{rental.public_id}</p>
                           <p className="font-medium text-sm truncate">{rental.product_title}</p>
                           <p className="text-xs text-muted-foreground">{rental.renter_name} • {format(new Date(rental.created_at), 'd MMM yyyy', { locale: ro })}</p>
                         </div>
