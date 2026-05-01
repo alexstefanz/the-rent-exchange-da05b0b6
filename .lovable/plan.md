@@ -1,69 +1,83 @@
-## Obiectiv
 
-Atunci când un produs este închiriat, să se creeze ÎNTOTDEAUNA o conversație nouă (separată) — chiar dacă chiriașul a mai discutat sau a mai închiriat acel produs în trecut. Titlul conversației afișat în lista de mesaje trebuie să arate: **titlul produsului + perioada închirierii (data început – data sfârșit) + numărul de zile**.
+## Problemă
 
-Conversațiile organice pre-rezervare (cele deschise din pagina produsului prin „Întreabă proprietarul") rămân ca acum — un singur fir per (produs, chiriaș). Doar la momentul rezervării plătite se naște o conversație nouă, „ancorată" rezervării respective.
+Pe `/produs/...` (cardul de booking) afișezi:
+> „Anulează gratuit cu **48h** înainte de începerea închirierii. Rambursare parțială după.”
 
-## Schimbări în baza de date
+Backend-ul / restul aplicației **NU se conformează** cu acest mesaj. Sunt 3 incoerențe majore:
 
-1. **Eliminăm constrângerea unică** `conversations_product_id_buyer_id_key` care actualmente forțează un singur chat per (produs, chiriaș). Astfel pot exista mai multe conversații între aceiași doi utilizatori pentru același produs.
-2. **Adăugăm coloana** `rentals_id uuid NULL` pe `conversations`, cu `FK -> rentals(id) ON DELETE SET NULL` și `UNIQUE` (o singură conversație per rezervare).
-   - `NULL` = conversație organică (ca azi, „Întreabă proprietarul").
-   - Setată = conversație creată automat la confirmarea plății pentru acea rezervare.
-3. **Nouă funcție RPC** `get_or_create_rental_conversation(p_rental_id uuid)` (SECURITY DEFINER) care:
-   - Validează că apelantul este `renter_id` sau `owner_id` al rezervării.
-   - Întoarce conversația existentă cu `rentals_id = p_rental_id` dacă există, altfel o creează (folosind `product_id`, `renter_id` ca `buyer_id`, `owner_id` din rental).
-   - Garantează idempotență (siguranță la dublu-click / retry).
-4. **Actualizăm RPC-ul** `get_user_conversations` ca să returneze și `rentals_id`, `rental_start_date`, `rental_end_date`, `rental_days` (LEFT JOIN pe `rentals`). Acestea sunt folosite în UI pentru titlul conversației.
+### 1. Politica oficială vs mesajul de pe card — parțial ok
+`src/pages/legal/CancellationPolicy.tsx` confirmă regula 48h:
+- ≥48h înainte → rambursare integrală ✅
+- <48h înainte → **rambursare 50%** (deci „parțială” = 50%) ✅
+- după start → fără rambursare
 
-## Schimbări în cod
+Deci textul juridic e aliniat cu mesajul de pe card. **OK** aici.
 
-### `src/features/messaging/messagingApi.ts`
-- Extindem interfața `Conversation` cu câmpurile noi: `rentals_id`, `rental?: { start_date, end_date, rental_days }`.
-- Adăugăm funcție nouă `getOrCreateRentalConversation(rentalId: string)` care apelează RPC-ul nou.
-- `getOrCreateConversation(productId, ownerId)` rămâne neschimbată pentru chat-ul organic — DAR adăugăm filtrul `.is('rentals_id', null)` la SELECT și INSERT-ul setează `rentals_id: null`. Astfel nu mai „găsește" conversațiile de rezervare și nu strică firul organic.
-- `getConversations()` mapează noile câmpuri în obiectul returnat.
+### 2. Restul UI-ului contrazice mesajul (24h în loc de 48h)
+În `src/data/uxCopy.ts`, `src/pages/FAQ.tsx`, `supportFaq`, `AcceptedRentalDialog.tsx`:
+- „Poți anula gratuit cu până la **24 de ore** înainte…”
+- „cancellation up to **24 hours** before…”
+- FAQ: „Yes, you can cancel for free at least **24 hours** before…”
+- AcceptedRentalDialog: „Anularea este posibilă doar în primele 24 de ore”
+- uxCopy `freeCancellation`: „Poți anula gratuit **până la confirmare**.”
+- T&C (EN): „cancellation is possible at least **48 hours** before” (corect)
 
-### `src/components/booking/BookingConfirmation.tsx`
-- Primește în plus `rentalId: string`.
-- Butonul „Discută cu proprietarul" apelează `getOrCreateRentalConversation(rentalId)` în loc de `getOrCreateConversation`.
+→ Userul vede 3 reguli diferite în 3 locuri (24h, 48h, „până la confirmare”). **Inconsistent.**
 
-### `src/pages/CheckoutSuccess.tsx`
-- Pasează `rentalId={rentalData.id}` către `BookingConfirmation` (deja avem `rentalData.id`).
+### 3. Backend-ul NU implementează regula 50% deloc
+Căutare în întregul cod (`src/`, `supabase/functions/`):
+- **Nu există** nicio logică care să calculeze ore până la `start_date`.
+- **Nu există** niciun calcul de refund 50% / parțial.
+- `create-renter-cancellation-ticket` doar creează un **tichet manual** către admin („eliberare hold Stripe — refund / cancel pe payment intent”), fără să transmită suma.
+- `verify-stripe-payment` și flow-ul Stripe folosesc **hold & capture**: dacă plata nu a fost capturată încă (înainte de predare), o anulare = void = refund 100% automat. Nu există capture parțial pentru cazul „<48h dar înainte de predare”.
+- Nu există un job care să captureze automat plata cu 48h înainte (deci tehnic, până la predarea fizică, refund-ul e 100% indiferent de mesaj).
 
-### `src/components/dashboard/RequestsTab.tsx` și `RentalsTab.tsx`
-- Butonul „Mesaje" din lista cererilor / închirierilor folosește `getOrCreateRentalConversation(rental.id)` în loc de `getOrCreateConversation(product_id, owner_id)`. Astfel proprietarul și chiriașul aterizează amândoi în firul dedicat acelei rezervări.
+→ Backend-ul promite o regulă pe care **nu o aplică**.
 
-### `src/components/messaging/ConversationList.tsx`
-- Când `conv.rental` există, titlul afișat devine, în RO:
-  > „{titlu produs} · {start_date} – {end_date} ({n} zile)"
-  
-  iar în EN: același pattern cu „days".
-- Când `conv.rental` lipsește (chat organic), rămâne doar titlul produsului — comportament actual.
+## Plan de aliniere
 
-### `src/components/messaging/ChatPanel.tsx` (header chat)
-- Sub numele celuilalt utilizator, dacă există context de rental, afișăm un mic subtitlu cu perioada și numărul de zile, ca să fie clar despre ce rezervare e vorba.
+### A. Decide regula oficială (recomand 48h, ca pe card + în T&C + în Politica de Anulare)
 
-## Comportament rezultat
+### B. Standardizare text în tot UI-ul la „48h gratuit, 50% după”
 
-- Chat organic (din pagina produsului): un singur fir per (produs, chiriaș), neatins.
-- Fiecare rezervare plătită → fir nou separat, cu titlu îmbogățit: „Playstation 5 · 12 mai – 15 mai 2026 (3 zile)".
-- A doua oară când același chiriaș închiriază același produs → al doilea fir nou, distinct.
-- Atât proprietarul, cât și chiriașul văd toate firele lor în tab-urile „Rezervări" / „De Închiriat" exact ca azi.
+Fișiere de actualizat (RO + EN):
+1. `src/data/uxCopy.ts`
+   - `cancellationDesc`: „24 de ore” → „48 de ore”
+   - `benefit5Desc`: „24 de ore” → „48 de ore”
+   - `faq3A`: „24 de ore” → „48 de ore”, adaugă mențiune 50% pentru anulări tardive
+   - `freeCancellation`: „până la confirmare” → „cu 48h înainte de începere”
+2. `src/pages/FAQ.tsx` — clarifică regula 48h + 50% explicit (în loc de „depends on time”)
+3. `src/data/supportFaq.ts` — aliniază textul „free until owner confirms”
+4. `src/components/dashboard/AcceptedRentalDialog.tsx` — schimbă „primele 24 de ore” cu regula reală: gratis dacă plata nu e capturată / >48h, 50% sub 48h
 
-## Fișiere care vor fi modificate
+### C. Implementare backend a regulii 50% (sau ajustare mesaj)
 
-- migrare nouă SQL (drop unique, add column, add RPC, update get_user_conversations)
-- `src/features/messaging/messagingApi.ts`
-- `src/components/booking/BookingConfirmation.tsx`
-- `src/pages/CheckoutSuccess.tsx`
-- `src/components/dashboard/RequestsTab.tsx`
-- `src/components/dashboard/RentalsTab.tsx`
-- `src/components/messaging/ConversationList.tsx`
-- `src/components/messaging/ChatPanel.tsx`
+Două variante — alege una:
 
-## Aspecte care NU se schimbă
+**Varianta 1 (recomandată) — backend aplică regula promisă:**
+- În flow-ul de anulare a chiriașului (creare tichet + handler), calculează `hoursUntilStart = (start_date - now) / 3600`.
+- Dacă `payment_status = 'authorized'` (hold neprins):
+  - `hoursUntilStart >= 48` → void payment intent → refund 100%
+  - `0 <= hoursUntilStart < 48` → capture 50% din subtotal + transfer doar acea parte la owner; restul void → refund 50% chiriaș
+  - `hoursUntilStart < 0` → fără refund
+- Dacă `payment_status = 'captured'` (după predare): fără refund.
+- Tichetul către admin trebuie să conțină **suma de refund calculată** (nu doar link Stripe).
+- Edge function nouă/extinsă: `cancel-rental-by-renter` care decide automat suma și apelează Stripe (`paymentIntents.cancel` sau `refunds.create` cu `amount`).
+- Notificarea trimisă (`send-cancellation-notification`) trebuie să includă suma rambursată.
 
-- RLS pe `conversations` rămâne identic (participantul vede firele lui).
-- Conversațiile vechi (existente azi) rămân nemodificate; vor avea `rentals_id = NULL` și se comportă în continuare ca fire organice.
-- Nu migrăm retroactiv conversațiile vechi în fire pe rezervări — ar fi ambiguu (un fir conține deseori discuții despre mai multe rezervări succesive).
+**Varianta 2 — simplifică promisiunea ca să se potrivească cu realitatea actuală:**
+- Schimbă mesajul de pe `ProductDetail.tsx` în: „Anulare gratuită oricând **înainte de predare**. După predare nu se mai acordă rambursare.”
+- Aliniază T&C + Politica de Anulare la fel (elimină rândul „<48h → 50%”).
+- Mai puțin muncă, dar pierzi protecția proprietarului împotriva anulărilor de ultim moment.
+
+### D. UI booking card — opțional
+În cardul de booking arată dinamic, în funcție de `startDate` selectat: „Anulare gratuită până pe DD.MM (cu 48h înainte). După, rambursare 50%.”
+
+## Întrebare pentru tine
+
+Înainte să intrăm în default mode pentru a executa, confirmă:
+1. **Regula oficială rămâne 48h gratis + 50% sub 48h?** (cum scrie pe card și în Politica de Anulare)
+2. **Mergi pe Varianta 1** (backend aplică automat 50% via Stripe partial capture/refund) sau **Varianta 2** (simplifici mesajul la „gratis până la predare”)?
+
+După ce confirmi, aplic toate modificările într-o singură rundă.
