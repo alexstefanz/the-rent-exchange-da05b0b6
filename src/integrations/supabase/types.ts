@@ -1098,6 +1098,7 @@ export type Database = {
           platform_fee: number
           platform_fee_percent: number
           product_id: string | null
+          public_id: string
           refunded_at: string | null
           rental_days: number
           renter_id: string | null
@@ -1128,6 +1129,7 @@ export type Database = {
           platform_fee: number
           platform_fee_percent?: number
           product_id?: string | null
+          public_id?: string
           refunded_at?: string | null
           rental_days: number
           renter_id?: string | null
@@ -1158,6 +1160,7 @@ export type Database = {
           platform_fee?: number
           platform_fee_percent?: number
           product_id?: string | null
+          public_id?: string
           refunded_at?: string | null
           rental_days?: number
           renter_id?: string | null
@@ -1652,6 +1655,7 @@ export type Database = {
           platform_fee: number
           product_id: string
           product_title: string
+          public_id: string
           rental_days: number
           renter_id: string
           renter_name: string
@@ -1784,6 +1788,26 @@ export type Database = {
           avatar_url: string
           full_name: string
           id: string
+        }[]
+      }
+      get_rental_by_public_id: {
+        Args: { p_public_id: string }
+        Returns: {
+          created_at: string
+          end_date: string
+          id: string
+          owner_id: string
+          owner_name: string
+          payment_status: string
+          product_id: string
+          product_title: string
+          public_id: string
+          rental_days: number
+          renter_id: string
+          renter_name: string
+          start_date: string
+          status: string
+          subtotal: number
         }[]
       }
       get_rental_details: {

@@ -148,6 +148,9 @@ const AdminDashboard = () => {
                       className="flex items-center justify-between gap-2 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors min-w-0"
                     >
                       <div className="space-y-1 min-w-0">
+                        <p className="font-mono text-[10px] text-primary font-semibold">
+                          {rental.public_id}
+                        </p>
                         <p className="font-medium text-sm truncate">
                           {rental.product_title}
                         </p>
