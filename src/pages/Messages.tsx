@@ -80,6 +80,7 @@ export default function Messages() {
           otherUserAvatar={selectedConversation.other_user?.avatar_url || null}
           productTitle={selectedConversation.product?.title || ""}
           ownerId={selectedConversation.owner_id}
+          rentalInfo={selectedConversation.rental || null}
           onBack={handleBack}
         />
       </div>
@@ -134,6 +135,7 @@ export default function Messages() {
                 otherUserAvatar={selectedConversation.other_user?.avatar_url || null}
                 productTitle={selectedConversation.product?.title || ""}
                 ownerId={selectedConversation.owner_id}
+                rentalInfo={selectedConversation.rental || null}
               />
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
