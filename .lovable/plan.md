@@ -1,52 +1,69 @@
-## Problem
+## Obiectiv
 
-On the product page, the right-side booking card is `lg:sticky lg:top-24`, but its content (location + title + price + calendar + price breakdown + free-cancellation block) is taller than a typical laptop viewport (~853px). Because the sticky container has no height cap, the bottom of the card — including the "Trimite cererea" / "Send request" button — falls below the viewport. The user has to scroll the entire page down to the very bottom to reach it.
+Atunci când un produs este închiriat, să se creeze ÎNTOTDEAUNA o conversație nouă (separată) — chiar dacă chiriașul a mai discutat sau a mai închiriat acel produs în trecut. Titlul conversației afișat în lista de mesaje trebuie să arate: **titlul produsului + perioada închirierii (data început – data sfârșit) + numărul de zile**.
 
-## Goal
+Conversațiile organice pre-rezervare (cele deschise din pagina produsului prin „Întreabă proprietarul") rămân ca acum — un singur fir per (produs, chiriaș). Doar la momentul rezervării plătite se naște o conversație nouă, „ancorată" rezervării respective.
 
-The booking CTA must be visible without leaving the first scroll position. The sticky card should fit within the viewport on desktop and scroll internally when needed, while staying clean on mobile.
+## Schimbări în baza de date
 
-## Changes
+1. **Eliminăm constrângerea unică** `conversations_product_id_buyer_id_key` care actualmente forțează un singur chat per (produs, chiriaș). Astfel pot exista mai multe conversații între aceiași doi utilizatori pentru același produs.
+2. **Adăugăm coloana** `rentals_id uuid NULL` pe `conversations`, cu `FK -> rentals(id) ON DELETE SET NULL` și `UNIQUE` (o singură conversație per rezervare).
+   - `NULL` = conversație organică (ca azi, „Întreabă proprietarul").
+   - Setată = conversație creată automat la confirmarea plății pentru acea rezervare.
+3. **Nouă funcție RPC** `get_or_create_rental_conversation(p_rental_id uuid)` (SECURITY DEFINER) care:
+   - Validează că apelantul este `renter_id` sau `owner_id` al rezervării.
+   - Întoarce conversația existentă cu `rentals_id = p_rental_id` dacă există, altfel o creează (folosind `product_id`, `renter_id` ca `buyer_id`, `owner_id` din rental).
+   - Garantează idempotență (siguranță la dublu-click / retry).
+4. **Actualizăm RPC-ul** `get_user_conversations` ca să returneze și `rentals_id`, `rental_start_date`, `rental_end_date`, `rental_days` (LEFT JOIN pe `rentals`). Acestea sunt folosite în UI pentru titlul conversației.
 
-Single file: `src/pages/ProductDetail.tsx` (the inline booking sidebar around line 283–395). `src/components/product/BookingCard.tsx` is not rendered on this page, but apply the same fix there for consistency since other entry points may reuse it.
+## Schimbări în cod
 
-### 1. Constrain the sticky card height on desktop
+### `src/features/messaging/messagingApi.ts`
+- Extindem interfața `Conversation` cu câmpurile noi: `rentals_id`, `rental?: { start_date, end_date, rental_days }`.
+- Adăugăm funcție nouă `getOrCreateRentalConversation(rentalId: string)` care apelează RPC-ul nou.
+- `getOrCreateConversation(productId, ownerId)` rămâne neschimbată pentru chat-ul organic — DAR adăugăm filtrul `.is('rentals_id', null)` la SELECT și INSERT-ul setează `rentals_id: null`. Astfel nu mai „găsește" conversațiile de rezervare și nu strică firul organic.
+- `getConversations()` mapează noile câmpuri în obiectul returnat.
 
-Change the sticky wrapper so it cannot grow taller than the viewport, and let internal content scroll:
+### `src/components/booking/BookingConfirmation.tsx`
+- Primește în plus `rentalId: string`.
+- Butonul „Discută cu proprietarul" apelează `getOrCreateRentalConversation(rentalId)` în loc de `getOrCreateConversation`.
 
-- Wrapper: `lg:sticky lg:top-24 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto`
-- Add subtle scrollbar styling (`scrollbar-thin` utility already supported via tailwind config / use `[&::-webkit-scrollbar]:w-1.5` etc.) so it doesn't look broken.
+### `src/pages/CheckoutSuccess.tsx`
+- Pasează `rentalId={rentalData.id}` către `BookingConfirmation` (deja avem `rentalData.id`).
 
-### 2. Pin the CTA inside the card (preferred UX)
+### `src/components/dashboard/RequestsTab.tsx` și `RentalsTab.tsx`
+- Butonul „Mesaje" din lista cererilor / închirierilor folosește `getOrCreateRentalConversation(rental.id)` în loc de `getOrCreateConversation(product_id, owner_id)`. Astfel proprietarul și chiriașul aterizează amândoi în firul dedicat acelei rezervări.
 
-To guarantee the button is visible without forcing the user to scroll inside the card, restructure the card into two regions:
+### `src/components/messaging/ConversationList.tsx`
+- Când `conv.rental` există, titlul afișat devine, în RO:
+  > „{titlu produs} · {start_date} – {end_date} ({n} zile)"
+  
+  iar în EN: același pattern cu „days".
+- Când `conv.rental` lipsește (chat organic), rămâne doar titlul produsului — comportament actual.
 
-- Scrollable region: title, price summary, calendar, price breakdown.
-- Pinned footer (inside the card): the action button + the dates pill.
+### `src/components/messaging/ChatPanel.tsx` (header chat)
+- Sub numele celuilalt utilizator, dacă există context de rental, afișăm un mic subtitlu cu perioada și numărul de zile, ca să fie clar despre ce rezervare e vorba.
 
-Implementation:
-- Wrap the card content in `flex flex-col` with the outer wrapper getting `lg:max-h-[calc(100vh-7rem)]`.
-- Put the calendar/details block in a `flex-1 overflow-y-auto pr-1` div.
-- Keep the `<Button>` (and the selected-dates pill, if any) in a `pt-4 border-t border-border bg-card sticky bottom-0` footer so it never scrolls out of sight.
-- Move the "Anulare gratuită" info block above the footer (inside the scrollable area) — it's secondary info and shouldn't compete with the CTA for fixed space.
+## Comportament rezultat
 
-### 3. Trim vertical padding slightly on desktop
+- Chat organic (din pagina produsului): un singur fir per (produs, chiriaș), neatins.
+- Fiecare rezervare plătită → fir nou separat, cu titlu îmbogățit: „Playstation 5 · 12 mai – 15 mai 2026 (3 zile)".
+- A doua oară când același chiriaș închiriază același produs → al doilea fir nou, distinct.
+- Atât proprietarul, cât și chiriașul văd toate firele lor în tab-urile „Rezervări" / „De Închiriat" exact ca azi.
 
-Reduce `p-6` to `lg:p-5` and `mb-4` separators to `mb-3` in the booking card on `lg+` so the card naturally takes less vertical space. This gives breathing room for shorter laptops (≤768px tall).
+## Fișiere care vor fi modificate
 
-### 4. Mobile behavior
+- migrare nouă SQL (drop unique, add column, add RPC, update get_user_conversations)
+- `src/features/messaging/messagingApi.ts`
+- `src/components/booking/BookingConfirmation.tsx`
+- `src/pages/CheckoutSuccess.tsx`
+- `src/components/dashboard/RequestsTab.tsx`
+- `src/components/dashboard/RentalsTab.tsx`
+- `src/components/messaging/ConversationList.tsx`
+- `src/components/messaging/ChatPanel.tsx`
 
-On mobile (`<lg`) the card is not sticky and renders above the description, so leave layout unchanged there — only the desktop branch (`lg:` utilities) gets the height cap and pinned footer.
+## Aspecte care NU se schimbă
 
-### 5. Apply same pattern to `src/components/product/BookingCard.tsx`
-
-Mirror the structure (max-height, internal scroll area, pinned CTA footer) so any other page that imports `BookingCard` benefits as well.
-
-## Verification
-
-After implementing:
-1. Open `/produs/playstation-5` at 1366×768 and 1920×853.
-2. Without scrolling, confirm the orange "Trimite cererea / Send request" button is visible inside the sticky card.
-3. Select dates, confirm the price breakdown appears and the CTA stays visible (footer pinned).
-4. Switch to mobile (375×812) and confirm card layout/order is unchanged and CTA reachable normally.
-5. Toggle RO/EN to confirm both labels fit.
+- RLS pe `conversations` rămâne identic (participantul vede firele lui).
+- Conversațiile vechi (existente azi) rămân nemodificate; vor avea `rentals_id = NULL` și se comportă în continuare ca fire organice.
+- Nu migrăm retroactiv conversațiile vechi în fire pe rezervări — ar fi ambiguu (un fir conține deseori discuții despre mai multe rezervări succesive).
