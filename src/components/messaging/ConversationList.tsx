@@ -49,6 +49,12 @@ export function ConversationList({
     return format(date, "d MMM", { locale: dateLocale });
   };
 
+  const formatRentalRange = (start: string, end: string) => {
+    const s = new Date(start);
+    const e = new Date(end);
+    return `${format(s, "d MMM", { locale: dateLocale })} – ${format(e, "d MMM yyyy", { locale: dateLocale })}`;
+  };
+
   const renderItem = (conv: Conversation) => (
     <button
       key={conv.id}
@@ -73,6 +79,14 @@ export function ConversationList({
             </span>
           )}
         </div>
+        {conv.rental && (
+          <p className="text-[11px] text-primary font-medium truncate mt-0.5">
+            {formatRentalRange(conv.rental.start_date, conv.rental.end_date)}
+            {" · "}
+            {conv.rental.rental_days}{" "}
+            {conv.rental.rental_days === 1 ? t("zi", "day") : t("zile", "days")}
+          </p>
+        )}
         <p className="text-xs text-muted-foreground truncate">{conv.other_user?.full_name || t("Utilizator", "User")}</p>
         {conv.last_message && (
           <p
