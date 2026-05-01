@@ -12,8 +12,8 @@ export const SUPPORT_FAQ: SupportFaqEntry[] = [
       en: "How do I cancel a reservation?",
     },
     answer: {
-      ro: "Mergi la **Rezervările mele** → alege rezervarea → apasă **Anulează**. Anularea e gratuită până la confirmarea proprietarului. După confirmare se aplică politica de anulare a anunțului.",
-      en: "Go to **My Rentals** → pick the reservation → tap **Cancel**. Cancellation is free until the owner confirms. After confirmation the listing's cancellation policy applies.",
+      ro: "Mergi la **Rezervările mele** → alege rezervarea → apasă **Anulează**. Anulare gratuită cu cel puțin 48h înainte de începerea închirierii (rambursare 100%). Sub 48h se rambursează 50%. După ce începe perioada nu se mai acordă rambursare.",
+      en: "Go to **My Rentals** → pick the reservation → tap **Cancel**. Free cancellation at least 48h before the rental starts (100% refund). Under 48h, 50% is refunded. No refund once the rental period has started.",
     },
   },
   {

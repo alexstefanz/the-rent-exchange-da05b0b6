@@ -85,31 +85,27 @@ const RentalsTab = () => {
 
   const cancelPaidMutation = useMutation({
     mutationFn: async (rental: Rental) => {
-      // Mark rental as cancelled (RLS allows renter to cancel own pending rentals)
-      const { error } = await supabase
-        .from("rentals")
-        .update({
-          status: "cancelled",
-          cancellation_reason: "renter_cancelled_after_payment",
-          cancelled_at: new Date().toISOString(),
-        })
-        .eq("id", rental.id);
+      // Edge function handles tier decision (full / 50% / none),
+      // Stripe action (cancel hold / partial capture / refund) and notifications.
+      const { data, error } = await supabase.functions.invoke("cancel-rental-by-renter", {
+        body: { rental_id: rental.id },
+      });
       if (error) throw error;
-
-      // Notify owner (non-blocking)
-      supabase.functions
-        .invoke("send-cancellation-notification", { body: { rental_id: rental.id } })
-        .catch((e) => console.error("Cancellation notification error:", e));
-
-      // Create admin ticket so the team releases the Stripe hold
-      supabase.functions
-        .invoke("create-renter-cancellation-ticket", { body: { rental_id: rental.id } })
-        .catch((e) => console.error("Cancellation ticket error:", e));
+      if (data?.error) throw new Error(data.error);
+      return data as { tier: string; refunded_amount: number };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["my-rentals"] });
       queryClient.invalidateQueries({ queryKey: ["my-requests"] });
-      toast.success(copy.dashboard.cancelPaidSuccess);
+      const amount = data?.refunded_amount ?? 0;
+      const tier = data?.tier;
+      if (tier === "FULL_REFUND") {
+        toast.success(copy.dashboard.cancelFullRefundSuccess);
+      } else if (tier === "PARTIAL_50") {
+        toast.success(`${copy.dashboard.cancelPartialRefundSuccess} (${amount} RON)`);
+      } else {
+        toast.success(copy.dashboard.cancelNoRefundSuccess);
+      }
     },
     onError: () => {
       toast.error(copy.dashboard.cancelPaidError);
