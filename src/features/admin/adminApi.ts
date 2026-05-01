@@ -12,6 +12,7 @@ export interface AdminStats {
 
 export interface AdminRental {
   id: string;
+  public_id: string;
   product_id: string | null;
   product_title: string;
   renter_id: string | null;
