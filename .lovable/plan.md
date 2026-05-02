@@ -1,36 +1,54 @@
-## ID unic pentru rezervări (RNT-XXXXXX)
+## Goal
 
-Fiecare rezervare va primi automat un cod public scurt și ușor de citit, în formatul **RNT-000123**, similar cu ce avem deja pentru tichete (TCK-) și KYC (KYC-). Acest cod va fi vizibil în Admin → Rezervări, poate fi copiat cu un click și folosit în filtre/căutare sau referit de chatbot.
+Unify the colors of the **Status** and **Plată** badges across the admin dashboard, and rename `captured` → `Plătit`, so admins can visually associate them at a glance.
 
-### Ce vede adminul
-- O coloană nouă **„ID Rezervare"** la începutul tabelului (ex: `RNT-000045`), monospace, cu buton de copiere lângă.
-- În card-ul mobil, ID-ul apare ca prima linie deasupra titlului produsului.
-- În panoul expandat (Sumar) este reluat ca element principal, alături de ID-ul intern UUID (ascuns by default, copiabil).
-- Filtru text nou pe coloana ID-ului — adminul poate căuta după `RNT-000045` sau parțial `45`.
-- ID-ul este menționat și în toast-urile de schimbare status: „Statusul RNT-000045 a fost actualizat…".
+## Color Mapping
 
-### Backend (migrație SQL)
-1. **Coloană nouă** `public_id text NOT NULL DEFAULT 'RNT-000000'` pe `rentals` + `UNIQUE INDEX`.
-2. **Sequence** `rental_public_id_seq` (start 1).
-3. **Trigger** `BEFORE INSERT` care generează `RNT-` + `lpad(nextval, 6, '0')` — identic ca pattern-ul folosit la `ops_tickets` și `kyc_cases`.
-4. **Backfill**: toate rezervările existente primesc retroactiv un `public_id` ordonat după `created_at` (cele mai vechi primele).
-5. Update RPC `get_admin_rentals` ca să returneze `public_id`.
-6. (Opțional util pentru chatbot) RPC mic `get_rental_by_public_id(text)` care întoarce rezervarea pentru admin sau participant — util ulterior, dar îl includ acum ca să poată fi apelat din suport.
+**Status (rezervare)**
+- `pending` (În așteptare) → **Galben** (yellow-100/yellow-800)
+- `confirmed` (Confirmată) → **Albastru** (blue-100/blue-800) — kept (subset of "active flow")
+- `active` (Activă) → **Albastru** (blue-100/blue-800) ← changed from verde
+- `completed` (Finalizată) → **Verde** (green-100/green-800) ← changed from gri
+- `cancelled` (Anulată) → **Roșu** (red-100/red-800)
+- `overdue` (Întârziată) → **Portocaliu** (orange-100/orange-800) — kept
 
-### Frontend
-- `src/integrations/supabase/types.ts` se regenerează automat după migrație.
-- `src/pages/admin/AdminReservations.tsx`:
-  - coloană nouă + filtru text pe `public_id`,
-  - mobile card cu ID-ul vizibil,
-  - panou expandat cu ID + buton copy (folosind `navigator.clipboard`),
-  - toast-uri actualizate să includă ID-ul.
-- `src/components/admin/RentalPaymentStatus.tsx` și `AdminDashboard` (recent rentals) — afișez `public_id` în loc de fragmente UUID acolo unde apar acum.
+**Plată**
+- `pending` / `unpaid` (Neplătit) → **Roșu** (red-100/red-800) ← changed from outline
+- `captured` → relabeled **Plătit**, **Verde** (green-100/green-800)
+- `paid` (Plătit) → **Verde** (green-100/green-800)
+- `refunded` (Rambursat) → **Portocaliu** (orange-100/orange-800)
+- `failed` (Eșuat) → **Roșu** (red-100/red-800)
 
-### Detalii tehnice
-- Format: `RNT-` + 6 cifre cu padding (până la 999.999 rezervări fără schimbare de format).
-- Trigger SECURITY DEFINER `SET search_path = public`, identic cu cele existente — fără riscuri RLS noi.
-- Migrația rulează backfill într-un singur `UPDATE ... FROM (SELECT id, row_number() OVER (ORDER BY created_at))` ca să fie deterministă și rapidă.
-- RLS pe `rentals` rămâne neschimbat — `public_id` nu schimbă cine vede ce.
+Both badges will use the same colored-pill style (`Badge` with custom `className`), so identical states share the same visual.
 
-### Confirmare scurtă
-Mergem cu **format `RNT-XXXXXX`**? Dacă vrei alt prefix (ex: `RES-`, `BK-`) sau mai multe cifre, spune-mi înainte să implementez. Altfel aprobă și execut.
+## Files to update
+
+1. **`src/pages/admin/AdminReservations.tsx`**
+   - Update `statusColors` map (active → blue, completed → green).
+   - Replace the `paymentStatusLabels` map with a combined `paymentStatusLabels` + `paymentStatusColors` map that includes `captured: "Plătit"` and `pending: "Neplătit"`.
+   - Replace both `<Badge variant=…>` for payment (desktop table + expanded panel) with `<Badge className={paymentStatusColors[…]}>` so colors apply.
+
+2. **`src/pages/admin/AdminDashboard.tsx`**
+   - Update its local `statusColors` map with the same palette.
+   - If it renders payment status, apply the same `paymentStatusColors` map (add it if missing).
+
+3. **`src/pages/admin/AdminFinances.tsx`**
+   - Same treatment: align `statusColors` and add `paymentStatusColors` + `Plătit` label where payment is shown.
+
+4. **`src/components/admin/RentalPaymentStatus.tsx`**
+   - In `statusVariant`, change `active` to blue, `completed` to green.
+   - When rendering the `captured` payment label, display **"Plătit"** (keep the underlying value `captured` intact — only the displayed text changes).
+
+5. **`src/components/admin/user-detail/UserRentalsTab.tsx`**
+   - Update `statusColors` map to match.
+
+## Out of scope
+
+- Database values are **not** renamed — `captured` stays as the canonical payment status in DB and code; only the UI label becomes "Plătit".
+- Renter/owner dashboards (`RentalsTab`, `RentalsOutTab`, `LendingsTab`) and the `StatusBadge` shared component are **not** touched in this pass — request was specifically for admin dashboard. We can extend after if you want.
+
+## Acceptance
+
+- In Admin → Rezervări (and Dashboard, Finanțe), the Status column shows yellow / blue / green / red / orange pills per the mapping above.
+- The Plată column shows red for Neplătit and green pill labeled **"Plătit"** for captured rentals.
+- Same visuals appear on both desktop table and mobile cards, and inside the expanded rental panel.
