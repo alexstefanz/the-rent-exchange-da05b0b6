@@ -384,9 +384,14 @@ const AdminFinances = () => {
                             <p className="text-xs text-muted-foreground">Comision</p>
                             <p className="font-medium text-sm text-primary">{formatCurrency(rental.platform_fee)}</p>
                           </div>
-                          <Badge variant={rental.payment_status === 'paid' ? 'default' : 'outline'} className="text-[10px]">
-                            {rental.payment_status === 'paid' ? 'Plătit' : 'Neplătit'}
-                          </Badge>
+                          {(() => {
+                            const isPaid = rental.payment_status === 'paid' || rental.payment_status === 'captured';
+                            return (
+                              <Badge className={`text-[10px] ${isPaid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                {isPaid ? 'Plătit' : 'Neplătit'}
+                              </Badge>
+                            );
+                          })()}
                         </div>
                       </div>
                     ))}
