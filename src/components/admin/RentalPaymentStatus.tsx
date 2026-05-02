@@ -80,7 +80,7 @@ export const RentalPaymentStatus = ({ rentalId, mode = "admin" }: Props) => {
             Status: {data.rental.status}
           </Badge>
           <Badge className={cn("border", statusVariant[data.rental.payment_status] || statusVariant.pending)}>
-            Plată: {data.rental.payment_status}
+            Plată: {data.rental.payment_status === "captured" ? "Plătit" : data.rental.payment_status}
           </Badge>
           {showAdminFeatures && (
             data.is_synced ? (
