@@ -14,8 +14,8 @@ import { cn } from "@/lib/utils";
 const statusVariant: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
   confirmed: "bg-blue-100 text-blue-800 border-blue-200",
-  active: "bg-green-100 text-green-800 border-green-200",
-  completed: "bg-gray-100 text-gray-800 border-gray-200",
+  active: "bg-blue-100 text-blue-800 border-blue-200",
+  completed: "bg-green-100 text-green-800 border-green-200",
   cancelled: "bg-red-100 text-red-800 border-red-200",
   authorized: "bg-blue-100 text-blue-800 border-blue-200",
   captured: "bg-green-100 text-green-800 border-green-200",
@@ -80,7 +80,7 @@ export const RentalPaymentStatus = ({ rentalId, mode = "admin" }: Props) => {
             Status: {data.rental.status}
           </Badge>
           <Badge className={cn("border", statusVariant[data.rental.payment_status] || statusVariant.pending)}>
-            Plată: {data.rental.payment_status}
+            Plată: {data.rental.payment_status === "captured" ? "Plătit" : data.rental.payment_status}
           </Badge>
           {showAdminFeatures && (
             data.is_synced ? (
