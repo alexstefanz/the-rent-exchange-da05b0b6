@@ -150,7 +150,7 @@ const RentalExpandedPanel = ({
         </div>
         <div>
           <span className="text-muted-foreground">Plată:</span>{" "}
-          <Badge variant={rental.payment_status === 'paid' ? 'default' : 'outline'}>
+          <Badge className={paymentStatusColors[rental.payment_status] || "bg-gray-100 text-gray-800"}>
             {paymentStatusLabels[rental.payment_status] || rental.payment_status}
           </Badge>
         </div>
@@ -377,7 +377,7 @@ const AdminReservations = () => {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <Badge variant={rental.payment_status === 'paid' ? 'default' : 'outline'}>
+                              <Badge className={paymentStatusColors[rental.payment_status] || "bg-gray-100 text-gray-800"}>
                                 {paymentStatusLabels[rental.payment_status] || rental.payment_status}
                               </Badge>
                             </TableCell>
