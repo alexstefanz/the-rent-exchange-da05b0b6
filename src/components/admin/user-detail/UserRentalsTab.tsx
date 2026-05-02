@@ -13,10 +13,30 @@ interface Props {
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
   confirmed: "bg-blue-100 text-blue-800",
-  active: "bg-green-100 text-green-800",
-  completed: "bg-gray-100 text-gray-800",
+  active: "bg-blue-100 text-blue-800",
+  completed: "bg-green-100 text-green-800",
   cancelled: "bg-red-100 text-red-800",
   rejected: "bg-red-100 text-red-800",
+};
+
+const paymentStatusLabels: Record<string, string> = {
+  pending: "Neplătit",
+  unpaid: "Neplătit",
+  authorized: "Autorizat",
+  captured: "Plătit",
+  paid: "Plătit",
+  refunded: "Rambursat",
+  failed: "Eșuat",
+};
+
+const paymentStatusColors: Record<string, string> = {
+  pending: "bg-red-100 text-red-800",
+  unpaid: "bg-red-100 text-red-800",
+  authorized: "bg-blue-100 text-blue-800",
+  captured: "bg-green-100 text-green-800",
+  paid: "bg-green-100 text-green-800",
+  refunded: "bg-orange-100 text-orange-800",
+  failed: "bg-red-100 text-red-800",
 };
 
 const UserRentalsTab = ({ userId }: Props) => {
@@ -57,7 +77,9 @@ const UserRentalsTab = ({ userId }: Props) => {
                 {isRenter ? "🛒 Chiriaș" : "📦 Proprietar"}
               </Badge>
               <Badge className={`text-xs ${statusColors[r.status] || ''}`}>{r.status}</Badge>
-              <Badge variant="outline" className="text-xs">{r.payment_status}</Badge>
+              <Badge className={`text-xs ${paymentStatusColors[r.payment_status] || 'bg-gray-100 text-gray-800'}`}>
+                {paymentStatusLabels[r.payment_status] || r.payment_status}
+              </Badge>
             </div>
             <p className="font-medium text-sm">{product?.title || 'Produs șters'}</p>
             <p className="text-xs text-muted-foreground">
