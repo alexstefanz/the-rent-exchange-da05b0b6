@@ -14,7 +14,8 @@ import {
   MessageCircle,
   Mail,
   Bell,
-  MessageSquare
+  MessageSquare,
+  Banknote
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAdminNotificationSummary } from "@/hooks/queries/useAdminNotifications";
@@ -52,7 +53,8 @@ const menuItems: Array<{
   { title: "Tickete", url: "/admin/tickets", icon: TicketCheck, badgeKey: "open_tickets" },
   { title: "Conversații", url: "/admin/conversations", icon: MessageCircle },
   { title: "Categorii", url: "/admin/categories", icon: FolderTree },
-  { title: "Financiar", url: "/admin/finances", icon: Wallet, badgeKey: "pending_withdrawals" },
+  { title: "Financiar", url: "/admin/finances", icon: Wallet },
+  { title: "Retrageri", url: "/admin/withdrawals", icon: Banknote, badgeKey: "pending_withdrawals" },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Utilizatori", url: "/admin/users", icon: Users },
   { title: "Verificări KYC", url: "/admin/kyc", icon: ShieldCheck, badgeKey: "pending_kyc" },

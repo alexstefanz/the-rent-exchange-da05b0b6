@@ -1,22 +1,67 @@
-## Problem
+## Goal
+Adaugă o secțiune dedicată **Retrageri** în Admin ERP (separată de pagina Financiar), cu detalii complete pentru fiecare cerere: profil utilizator, IBAN, identitate KYC.
 
-Notificarea "Identitate verificată ✓" duce către pagina de recenzii (`/recenzii`).
+## 1. Rută & navigație
+- Adaugă ruta `/admin/withdrawals` în `src/App.tsx` (lazy import `AdminWithdrawals`).
+- În `src/components/admin/AdminSidebar.tsx`:
+  - Inserez nou item "Retrageri" (icon `Banknote`) cu badgeKey `pending_withdrawals`, plasat sub "Financiar".
+  - Mut badgeKey-ul `pending_withdrawals` de pe "Financiar" pe noul item (Financiar rămâne fără badge).
+- În `src/pages/admin/AdminFinances.tsx`: scot tab-ul "Retrageri" și componenta `WithdrawalsAdminTab` (rămâne doar Tranzacții/sumare). Logica se mută în pagina nouă.
 
-Cauză:
-1. Trigger-ul DB `notify_user_kyc_decision` salvează link-ul `/profile` pentru notificarea `kyc_approved`.
-2. În `src/components/profile/NotificationsTab.tsx`, `mapLink` are regula `if (link === "/profile") return "/recenzii"`, deci orice notificare cu `/profile` ajunge pe Recenzii.
+## 2. Pagină nouă `src/pages/admin/AdminWithdrawals.tsx`
 
-## Fix
+Layout: `AdminLayout` cu:
 
-### 1. Migrație DB
-Recreez funcția `public.notify_user_kyc_decision` astfel încât notificarea `kyc_approved` să folosească link-ul `/owner/new-product` (pagina "Adaugă produs / Start listing"). Restul branch-urilor rămân neschimbate.
+### Header & KPI
+- 4 carduri (StatsCard): În așteptare (count + sumă), Aprobate (sumă), Finalizate luna curentă (sumă), Respinse luna curentă.
 
-### 2. `src/components/profile/NotificationsTab.tsx`
-- Elimin regula `if (link === "/profile") return "/recenzii"` din `mapLink` (era fix vechi care acum trimite greșit notificarea KYC).
-- Las restul mapării intactă.
+### Filtre
+- Tab-uri status: Toate / În așteptare / Aprobate / Finalizate / Respinse.
+- Search după nume/email/IBAN.
+- Sort: dată (default desc), sumă.
 
-### 3. (Opțional, consistent) `supabase/functions/_shared/transactional-email-templates/kyc-approved.tsx`
-Schimb butonul din email din "Vezi contul meu" → `/profile` în "Adaugă primul tău produs" → `/owner/new-product`, astfel încât emailul și notificarea in-app să ducă în același loc.
+### Tabel principal (responsiv)
+Coloane: data, utilizator (avatar+nume+email), sumă, IBAN (mascat: `RO** **** **** **** **** 1234`, click → reveal), status (badge cu paleta proiectului), KYC status (badge color-coded), acțiuni rapide (Aprobă/Respinge/Marchează transferat), buton "Detalii" → expand.
 
-## Rezultat
-Click pe notificarea "Identitate verificată ✓" duce la `/owner/new-product` (Adaugă produs).
+### Panel "Detalii cerere" (expand inline / Sheet)
+Trei secțiuni:
+
+1. **Profil utilizator**
+   - Avatar, nume, email, telefon, dată înregistrare.
+   - Buton "Vezi profil complet" → `/admin/users/:id`.
+   - Statistici rapide: nr. produse, nr. rezervări (înch+închiriate), balanță curentă, total retras până acum.
+
+2. **Cont bancar**
+   - IBAN complet (cu buton copy).
+   - Titular cont (`account_holder`).
+   - Compară `account_holder` cu `full_name` din profil → afișează ⚠️ dacă diferă.
+   - Listă "Retrageri anterioare" (ultimele 10) cu status & dată.
+
+3. **Identitate KYC**
+   - Status KYC (badge), nivel, dată ultima verificare.
+   - Dacă există case KYC: cod public (KYC-XXXXXX), buton "Vezi caz KYC" → `/admin/kyc/:caseId`.
+   - Galerie miniaturi documente (ID_FRONT, ID_BACK, SELFIE, PROOF_OF_ADDRESS) cu signed URLs (`fetchKycDocuments`); click → lightbox/preview.
+   - Dacă utilizatorul nu e verificat → banner roșu "Utilizator NEVERIFIAT — recomandăm respingere până la KYC".
+
+### Acțiuni
+- Aprobă (`status=approved` + `processed_at`)
+- Respinge (cu notă obligatorie)
+- Marchează ca transferat (`status=completed`) → creează automat rând în `transactions` (type `withdrawal`)
+- Toate acțiunile: confirm dialog + toast + invalidare query.
+
+## 3. API helper nou `src/features/admin/withdrawalsApi.ts`
+Funcții:
+- `fetchWithdrawals(filters)` — `withdrawal_requests` cu join manual la `profiles` (id, full_name, email, phone, avatar_url, kyc_status, kyc_level, kyc_last_verified_at).
+- `fetchWithdrawalContext(userId)` — agregare: total retras (sum completed), balanță (existing logic), produse count, rentals count, ultimul KYC case (`kyc_cases` ordered by `created_at` desc) + documente.
+- `updateWithdrawalStatus(id, status, note?)`.
+- `markWithdrawalCompleted(id)` — update + insert `transactions`.
+
+## 4. Detalii tehnice
+- KYC docs: refolosesc `fetchKycDocuments` din `kycApi.ts` (semnează URL-urile pentru bucketul privat `kyc-documents`).
+- Mascarea IBAN: helper local `maskIban(iban)`.
+- Culori status retragere reutilizate din convenția existentă: pending=galben, approved=albastru, completed=verde, rejected=roșu.
+- React Query keys: `['adminWithdrawals', filter]`, `['withdrawalContext', userId]`.
+
+## 5. Out of scope
+- Nicio schimbare de schemă DB (RLS și coloane existente acoperă tot).
+- Nu modific paginile KYC sau Users existente.
