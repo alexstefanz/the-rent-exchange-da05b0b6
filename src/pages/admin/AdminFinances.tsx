@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, Calendar, CheckCircle2, AlertTriangle, Download, ChevronDown, ChevronUp, DollarSign, Loader2 } from "lucide-react";
+import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, Calendar, CheckCircle2, AlertTriangle, Download, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import AdminLayout from "@/components/admin/AdminLayout";
 import StatsCard from "@/components/admin/StatsCard";
