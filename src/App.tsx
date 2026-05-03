@@ -89,6 +89,7 @@ const AdminApprovals = lazy(() => import("./pages/admin/AdminApprovals"));
 const AdminTestEmails = lazy(() => import("./pages/admin/AdminTestEmails"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 const AdminSmsLogs = lazy(() => import("./pages/admin/AdminSmsLogs"));
+const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
 
 const queryClient = new QueryClient();
 
@@ -161,6 +162,7 @@ const App = () => (
                 <Route path="/admin/tickets/:id" element={<AdminTicketDetail />} />
                 <Route path="/admin/categories" element={<AdminCategories />} />
                 <Route path="/admin/finances" element={<AdminFinances />} />
+                <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
                 <Route path="/admin/users/:id" element={<AdminUserDetail />} />
