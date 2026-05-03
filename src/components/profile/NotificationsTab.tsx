@@ -88,7 +88,6 @@ const NotificationsTab = () => {
     if (link.includes("#cereri") || link.includes("?tab=rentals")) return "/cereri";
     if (link.includes("#rezervari")) return "/rezervari";
     if (link.includes("#notificari")) return "/notificari";
-    if (link === "/profile") return "/recenzii";
     return link;
   };
 

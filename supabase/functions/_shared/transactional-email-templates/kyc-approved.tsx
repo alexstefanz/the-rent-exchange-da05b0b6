@@ -28,7 +28,7 @@ const KycApprovedEmail = ({ name }: Props) => (
           Felicitări! Contul tău este complet verificat. Acum poți închiria orice produs
           de pe platformă fără restricții.
         </Text>
-        <Button href={`${APP_URL}/profile`} style={button}>Vezi contul meu</Button>
+        <Button href={`${APP_URL}/owner/new-product`} style={button}>Adaugă primul tău produs</Button>
         <Hr style={hr} />
         <Text style={footer}>Cu drag, Echipa {SITE_NAME}</Text>
       </Container>
