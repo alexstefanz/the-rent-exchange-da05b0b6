@@ -174,7 +174,6 @@ const AdminFinances = () => {
           <TabsList>
             <TabsTrigger value="overview">Prezentare generală</TabsTrigger>
             <TabsTrigger value="payments">Verificare Plăți</TabsTrigger>
-            <TabsTrigger value="withdrawals">Retrageri</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
@@ -344,7 +343,16 @@ const AdminFinances = () => {
           </TabsContent>
 
           <TabsContent value="withdrawals" className="space-y-4">
-            <WithdrawalsAdminTab formatCurrency={formatCurrency} />
+            <Card>
+              <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                Cererile de retragere au o secțiune dedicată.
+                <Button asChild variant="link" className="ml-1">
+                  <Link to="/admin/withdrawals">
+                    Deschide Retrageri <ArrowRight className="h-3 w-3 ml-1" />
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
