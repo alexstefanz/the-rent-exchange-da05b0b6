@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, Calendar, CheckCircle2, AlertTriangle, Download, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Wallet, TrendingUp, ArrowUpRight, ArrowDownRight, Calendar, CheckCircle2, AlertTriangle, Download, ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
