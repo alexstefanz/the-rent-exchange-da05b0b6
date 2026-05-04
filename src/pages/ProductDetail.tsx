@@ -155,6 +155,10 @@ const ProductDetail = () => {
     if (!startDate || (startDate && endDate)) { setStartDate(date); setEndDate(undefined); }
     else if (isBefore(date, startDate)) { setStartDate(date); }
     else {
+      if (differenceInDays(date, startDate) < 1) {
+        toast({ title: language === "ro" ? "Perioadă prea scurtă" : "Period too short", description: language === "ro" ? "Produsul se închiriază minim 2 zile." : "The product must be rented for at least 2 days.", variant: "destructive" });
+        return;
+      }
       if (hasBookedDateInRange(startDate, date, bookedDates)) {
         toast({ title: language === "ro" ? "Perioada indisponibilă" : "Period unavailable", description: language === "ro" ? "Există zile rezervate în intervalul selectat." : "There are booked days in the selected range.", variant: "destructive" });
         return;
