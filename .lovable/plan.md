@@ -1,29 +1,28 @@
-## Notificări retrageri pentru admin — îmbogățire date
+## Obiectiv
+1. Când proprietarul acceptă o cerere, notificarea trimisă chiriașului trebuie să ducă **direct la pagina produsului rezervat** (`/produs/{slug}`), nu la `/cereri`.
+2. Eliminarea complet a secțiunii "Cereri" din "Contul meu" (deoarece odată acceptate cererile apar deja în Rezervări).
 
-Momentan, când un utilizator solicită o retragere, notificarea pentru admin afișează doar numele și suma. Vom adăuga datele necesare pentru verificare rapidă.
+## Modificări
 
-### Schimbare
+### 1. Edge function `supabase/functions/respond-rental-request/index.ts`
+- La pasul în care se preia produsul (`productRes`), se va selecta și `slug` pe lângă `title`.
+- Pentru notificarea de acceptare, `link` devine `/produs/{slug}` (fallback `/rezervari` dacă slug lipsește).
+- Pentru notificarea de respingere, `link` devine `/rezervari` (request-ul cancelled apare în istoric Rezervări).
 
-Actualizez funcția trigger `notify_admin_withdrawal_requested` astfel încât descrierea notificării din panoul admin să includă:
+### 2. `src/pages/Profile.tsx`
+- Șterg item-ul `cereri` din `NAV_ITEMS`.
+- Elimin query-ul `pending-requests-count` și logica `badgeCount` corespunzătoare (rămâne doar `inchirieri-out`).
+- Grid-ul devine `lg:grid-cols-5`.
 
-- **Nume complet** (din `profiles.full_name` — același nume verificat în KYC)
-- **IBAN** (din `withdrawal_requests.iban`)
-- **Telefon** (din `profiles.phone`)
+### 3. `src/App.tsx`
+- Elimin route-ul `/cereri` și import-ul lazy `RequestsPage`.
 
-### Exemplu notificare (RO)
-```
-Ion Popescu solicită 250 RON
-IBAN: RO49AAAA1B31007593840000
-Telefon: +40712345678
-```
+### 4. `src/pages/RequestsPage.tsx` și `src/components/dashboard/RequestsTab.tsx`
+- Șterse (nu mai sunt folosite).
 
-### Detalii tehnice
+### 5. Maparea notificărilor (link legacy `/cereri?...`)
+- `src/components/layout/NotificationBell.tsx` și `src/components/profile/NotificationsTab.tsx`: rescriu mapările care duc la `/cereri` să meargă la `/rezervari` (pentru notificările vechi din DB care încă au link-uri `/cereri?rental_id=...`).
 
-- Migrare SQL care înlocuiește (`CREATE OR REPLACE`) funcția `public.notify_admin_withdrawal_requested()`.
-- Link-ul notificării se actualizează la `/admin/withdrawals` (pagina dedicată de retrageri creată recent), în loc de `/admin/finances`.
-- Versiunile RO și EN ale descrierii sunt ambele actualizate.
-- Nu se modifică schema tabelelor și nici alte triggere.
-
-### Notă
-
-Aceasta afectează doar **notificările noi** create după aplicarea migrării. Notificările existente rămân neschimbate.
+## Note
+- Notificările vechi din baza de date păstrează link-ul `/cereri?...`; mapping-ul updatat le redirecționează la `/rezervari` ca să nu apară 404.
+- Nu se modifică schema DB.
