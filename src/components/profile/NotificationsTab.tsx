@@ -85,7 +85,7 @@ const NotificationsTab = () => {
 
   const mapLink = (link: string) => {
     if (link.includes("#anunturi") || link.includes("?tab=lendings")) return "/anunturi";
-    if (link.includes("#cereri") || link.includes("?tab=rentals")) return "/cereri";
+    if (link.startsWith("/cereri") || link.includes("#cereri") || link.includes("?tab=rentals")) return "/rezervari";
     if (link.includes("#rezervari")) return "/rezervari";
     if (link.includes("#notificari")) return "/notificari";
     return link;
