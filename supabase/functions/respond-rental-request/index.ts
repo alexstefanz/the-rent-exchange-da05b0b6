@@ -181,7 +181,7 @@ Deno.serve(async (req) => {
     await supabaseAdmin.from("rentals").update(updateData).eq("id", rental_id);
 
     const [productRes, renterRes, ownerRes] = await Promise.all([
-      supabaseAdmin.from("products").select("title").eq("id", rental.product_id).single(),
+      supabaseAdmin.from("products").select("title, slug").eq("id", rental.product_id).single(),
       supabaseAdmin.from("profiles").select("full_name, email").eq("id", rental.renter_id).single(),
       supabaseAdmin.from("profiles").select("full_name, email").eq("id", rental.owner_id).single(),
     ]);
@@ -207,6 +207,7 @@ Deno.serve(async (req) => {
     const renterEmail = await getEmail(rental.renter_id, renter?.email || null);
     const productTitle = escapeHtml(product?.title || "Produs");
     const ownerName = escapeHtml(owner?.full_name || "Proprietarul");
+    const productLink = product?.slug ? `/produs/${product.slug}` : "/rezervari";
 
     const rows = [
       { label: "📦 Produs", value: productTitle },
@@ -223,7 +224,7 @@ Deno.serve(async (req) => {
         title_en: "Your request was accepted! 🎉",
         description_ro: `${ownerName} a acceptat cererea ta pentru "${productTitle}". Poți discuta detaliile de predare.`,
         description_en: `${ownerName} accepted your request for "${productTitle}". You can discuss pickup details.`,
-        link: `/cereri?rental_id=${rental_id}`,
+        link: productLink,
       });
 
       await supabaseAdmin
@@ -239,7 +240,7 @@ Deno.serve(async (req) => {
         title_en: "Your request was declined",
         description_ro: `${ownerName} a refuzat cererea pentru "${productTitle}".${reason ? ` Motiv: ${reason}` : ""}`,
         description_en: `${ownerName} declined your request for "${productTitle}".${reason ? ` Reason: ${reason}` : ""}`,
-        link: `/cereri?rental_id=${rental_id}`,
+        link: `/rezervari`,
       });
     }
 
