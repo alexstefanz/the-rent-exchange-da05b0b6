@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { createProduct } from "@/features/products/productsApi";
 import { categories } from "@/data/categories";
+import { judete } from "@/data/romaniaLocations";
 import { Loader2, ArrowLeft, X } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -35,8 +36,8 @@ const productSchema = z.object({
   daily_price_owner: z.number({ invalid_type_error: "Introdu un preț valid" }).min(1, "Prețul minim este 1 RON"),
   category: z.string().optional(),
   subcategory: z.string().optional(),
-  location_city: z.string().optional(),
-  location_country: z.string().optional(),
+  location_county: z.string().min(1, "Selectează un județ"),
+  location_city: z.string().min(1, "Selectează o localitate"),
   pickup_address: z.string().max(200, "Adresa nu poate depăși 200 caractere").optional(),
 });
 
@@ -64,8 +65,8 @@ const NewProduct = () => {
       daily_price_owner: undefined,
       category: "",
       subcategory: "",
+      location_county: "",
       location_city: "",
-      location_country: "Romania",
       pickup_address: "",
     },
   });
@@ -101,7 +102,7 @@ const NewProduct = () => {
         category: data.category,
         subcategory: data.subcategory,
         location_city: data.location_city,
-        location_country: data.location_country || "Romania",
+        location_country: "Romania",
         pickup_address: data.pickup_address,
         images: images,
         included_items: includedItems,
