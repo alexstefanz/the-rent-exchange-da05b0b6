@@ -369,20 +369,46 @@ const NewProduct = () => {
               {/* 6. Locație */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="city">Oraș</Label>
-                  <Input
-                    id="city"
-                    placeholder="București"
-                    {...form.register("location_city")}
-                  />
+                  <Label htmlFor="county">Județ *</Label>
+                  <Select
+                    value={form.watch("location_county") || ""}
+                    onValueChange={(value) => {
+                      form.setValue("location_county", value, { shouldValidate: true });
+                      form.setValue("location_city", "", { shouldValidate: true });
+                    }}
+                  >
+                    <SelectTrigger id="county">
+                      <SelectValue placeholder="Selectează județul" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {judete.map((j) => (
+                        <SelectItem key={j.name} value={j.name}>{j.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.location_county && (
+                    <p className="text-sm text-destructive">{form.formState.errors.location_county.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="country">Țară</Label>
-                  <Input
-                    id="country"
-                    placeholder="Romania"
-                    {...form.register("location_country")}
-                  />
+                  <Label htmlFor="city">Localitate *</Label>
+                  <Select
+                    value={form.watch("location_city") || ""}
+                    onValueChange={(value) => form.setValue("location_city", value, { shouldValidate: true })}
+                    disabled={!form.watch("location_county")}
+                  >
+                    <SelectTrigger id="city">
+                      <SelectValue placeholder={form.watch("location_county") ? "Selectează localitatea" : "Alege întâi județul"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(judete.find((j) => j.name === form.watch("location_county"))?.localitati || []).map((loc) => (
+                        <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.location_city && (
+                    <p className="text-sm text-destructive">{form.formState.errors.location_city.message}</p>
+                  )}
                 </div>
               </div>
 
