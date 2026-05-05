@@ -1,20 +1,28 @@
-## Mutare bloc "Anulare gratuită"
+# Dropdown Județ + Localitate la adăugare/editare anunț
 
-Mut blocul de anulare gratuită din `BookingCard` (de sub calendar) sub poza produsului în pagina de produs.
+## Ce se schimbă
 
-### Modificări
+În pagina "Adaugă anunț" (și pentru consistență, "Editează anunț"), secțiunea de Locație nu mai are inputuri text + câmp "Țară". În loc apar:
 
-1. **`src/components/product/BookingCard.tsx`**
-   - Elimin blocul `<div className="mt-4 rounded-xl border border-border bg-muted/30 p-4">...Anulare gratuită...</div>` plasat sub calendar/breakdown.
-   - Restul cardului (preț, calendar, breakdown, CTA) rămâne neschimbat.
+- **Județ** — dropdown cu toate cele 42 de județe (din `src/data/romaniaLocations.ts`)
+- **Localitate** — dropdown care se populează dinamic cu localitățile județului selectat. Dezactivat până se alege un județ.
 
-2. **`src/components/product/FreeCancellationNotice.tsx`** (nou)
-   - Componentă mică reutilizabilă cu același conținut bilingv (RO/EN), iconiță `ThumbsUp` în cerc `bg-primary/10`, link către `/politica-anulare`.
-   - Folosește `useLanguage` pentru text.
+Câmpul "Țară" dispare complet din UI. În baza de date `location_country` rămâne salvat automat ca `"Romania"` (fără să fie editabil), pentru a nu strica datele existente și RLS-ul.
 
-3. **`src/pages/ProductDetail.tsx`**
-   - Import `FreeCancellationNotice`.
-   - Mobile (după `<ProductImageGallery variant="mobile" ... />` la linia 234): adaug `<div className="lg:hidden px-[10px] mt-3"><FreeCancellationNotice /></div>`.
-   - Desktop (în coloana stângă, imediat după `<ProductImageGallery variant="desktop" ... />` la linia 254): adaug `<FreeCancellationNotice />` (apare ca un card separat, înainte de `OwnerSectionWithStats`).
+## Detalii tehnice
 
-Rezultat: mesajul de anulare gratuită apare imediat sub poza produsului atât pe desktop cât și pe mobile, iar booking card-ul devine mai compact.
+**`src/pages/NewProduct.tsx`**
+- Schema zod: înlocuiesc `location_city` cu o validare care cere `location_county` (județ) și `location_city` (localitate). Păstrez `location_country` ca default `"Romania"` în payload, scos din formular.
+- State pentru județul selectat (sau `form.watch("location_county")`) ca să resetez `location_city` când se schimbă județul.
+- UI: două componente `Select` (din `@/components/ui/select`) populate din `judete` (import din `src/data/romaniaLocations.ts`). Localitățile se mapează din `judete.find(j => j.name === selectedCounty)?.localitati`.
+- La submit, salvez `location_city` (localitatea), `location_country: "Romania"`. Dacă DB are coloană `location_county`, o salvez; altfel concatenez „Localitate, Județ" în câmpul `location_city` — verific tipul în `src/integrations/supabase/types.ts` înainte.
+
+**`src/pages/EditProduct.tsx`**
+- Aceeași înlocuire. La preîncărcare, dacă valoarea existentă din `location_city` se potrivește cu o localitate cunoscută, identific automat județul (caut în `judete`) și pre-selectez ambele dropdown-uri. Dacă nu se potrivește, las dropdown-urile goale și utilizatorul re-selectează.
+
+**Fișiere atinse**
+- `src/pages/NewProduct.tsx` — înlocuit blocul Locație + schema
+- `src/pages/EditProduct.tsx` — același tratament + logică de preîncărcare
+- `src/data/romaniaLocations.ts` — deja există, doar import
+
+Nu se schimbă nimic în baza de date sau în alte pagini.
