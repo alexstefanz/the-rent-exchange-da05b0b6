@@ -113,7 +113,7 @@ const Index = () => {
           <div className="mb-10 text-center">
             <h2 className="font-heading text-3xl font-semibold text-foreground">{copy.home.popularCategories}</h2>
           </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
             {categories.map((category) => {
               const Icon = getCategoryIcon(category.id);
               const name = language === "en" ? (category.nameEn || category.name) : category.name;
@@ -122,7 +122,7 @@ const Index = () => {
                 <Link
                   key={category.id}
                   to={`/categorie/${category.slug}`}
-                  className="group flex flex-col items-center rounded-xl bg-card p-6 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
+                  className="group flex flex-col items-center rounded-xl bg-card p-4 text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
                   style={{ boxShadow: 'rgba(35, 29, 26, 0.08) 0px 4px 20px -4px' }}
                 >
                   <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
