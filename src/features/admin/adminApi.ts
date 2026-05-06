@@ -42,6 +42,8 @@ export interface AdminUser {
   created_at: string;
   products_count: number;
   rentals_count: number;
+  total_earned: number;
+  total_spent: number;
   kyc_status: string;
   user_role: string;
 }
