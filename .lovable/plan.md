@@ -1,28 +1,11 @@
-# Dropdown Județ + Localitate la adăugare/editare anunț
+## Change
 
-## Ce se schimbă
+On the homepage (`src/pages/Index.tsx`), the categories grid currently uses `grid-cols-2 sm:grid-cols-3 md:grid-cols-4` which renders 12 categories on 3 rows of 4 on desktop.
 
-În pagina "Adaugă anunț" (și pentru consistență, "Editează anunț"), secțiunea de Locație nu mai are inputuri text + câmp "Țară". În loc apar:
+Update it to display **6 categories per row × 2 rows** on desktop:
 
-- **Județ** — dropdown cu toate cele 42 de județe (din `src/data/romaniaLocations.ts`)
-- **Localitate** — dropdown care se populează dinamic cu localitățile județului selectat. Dezactivat până se alege un județ.
+- Change the grid classes to: `grid-cols-2 sm:grid-cols-3 lg:grid-cols-6`
+- Mobile (2 cols) and tablet (3 cols) stay readable; desktop (≥1024px) shows 6 per row.
+- Reduce card padding slightly (`p-6` → `p-4`) so the narrower cards don't feel cramped at 6-up.
 
-Câmpul "Țară" dispare complet din UI. În baza de date `location_country` rămâne salvat automat ca `"Romania"` (fără să fie editabil), pentru a nu strica datele existente și RLS-ul.
-
-## Detalii tehnice
-
-**`src/pages/NewProduct.tsx`**
-- Schema zod: înlocuiesc `location_city` cu o validare care cere `location_county` (județ) și `location_city` (localitate). Păstrez `location_country` ca default `"Romania"` în payload, scos din formular.
-- State pentru județul selectat (sau `form.watch("location_county")`) ca să resetez `location_city` când se schimbă județul.
-- UI: două componente `Select` (din `@/components/ui/select`) populate din `judete` (import din `src/data/romaniaLocations.ts`). Localitățile se mapează din `judete.find(j => j.name === selectedCounty)?.localitati`.
-- La submit, salvez `location_city` (localitatea), `location_country: "Romania"`. Dacă DB are coloană `location_county`, o salvez; altfel concatenez „Localitate, Județ" în câmpul `location_city` — verific tipul în `src/integrations/supabase/types.ts` înainte.
-
-**`src/pages/EditProduct.tsx`**
-- Aceeași înlocuire. La preîncărcare, dacă valoarea existentă din `location_city` se potrivește cu o localitate cunoscută, identific automat județul (caut în `judete`) și pre-selectez ambele dropdown-uri. Dacă nu se potrivește, las dropdown-urile goale și utilizatorul re-selectează.
-
-**Fișiere atinse**
-- `src/pages/NewProduct.tsx` — înlocuit blocul Locație + schema
-- `src/pages/EditProduct.tsx` — același tratament + logică de preîncărcare
-- `src/data/romaniaLocations.ts` — deja există, doar import
-
-Nu se schimbă nimic în baza de date sau în alte pagini.
+No other pages affected (the `/categorii` Categories page keeps its 4-column layout).
