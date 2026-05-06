@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Search, Shield, ShieldCheck, Ban, ChevronDown, ChevronUp, Package, CalendarCheck, ExternalLink } from "lucide-react";
+import { Users, Search, Shield, ShieldCheck, Ban, ChevronDown, ChevronUp, Package, CalendarCheck, ExternalLink, Wallet, ShoppingBag } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +39,16 @@ const UserExpandedPanel = ({ user, onViewProfile }: { user: any; onViewProfile: 
         <CalendarCheck className="h-4 w-4 text-muted-foreground" />
         <span className="text-muted-foreground">Rezervări:</span>
         <span className="font-medium">{user.rentals_count}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <Wallet className="h-4 w-4 text-muted-foreground" />
+        <span className="text-muted-foreground">Câștigat:</span>
+        <span className="font-medium text-green-700">{Number(user.total_earned || 0).toLocaleString('ro-RO')} RON</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+        <span className="text-muted-foreground">Cheltuit:</span>
+        <span className="font-medium">{Number(user.total_spent || 0).toLocaleString('ro-RO')} RON</span>
       </div>
       <div>
         <span className="text-muted-foreground">KYC:</span>{" "}
@@ -111,6 +121,8 @@ const AdminUsers = () => {
                         <TableHead>Email</TableHead>
                         <TableHead>Produse</TableHead>
                         <TableHead>Rezervări</TableHead>
+                        <TableHead>Câștigat</TableHead>
+                        <TableHead>Cheltuit</TableHead>
                         <TableHead>KYC</TableHead>
                         <TableHead>Rol</TableHead>
                         <TableHead>Status</TableHead>
@@ -138,6 +150,8 @@ const AdminUsers = () => {
                             <TableCell className="text-muted-foreground">{u.email || '-'}</TableCell>
                             <TableCell>{u.products_count}</TableCell>
                             <TableCell>{u.rentals_count}</TableCell>
+                            <TableCell className="font-medium text-green-700 whitespace-nowrap">{Number(u.total_earned || 0).toLocaleString('ro-RO')} RON</TableCell>
+                            <TableCell className="font-medium whitespace-nowrap">{Number(u.total_spent || 0).toLocaleString('ro-RO')} RON</TableCell>
                             <TableCell>
                               <Badge className={kycStatusLabels[u.kyc_status]?.color || "bg-gray-100"}>
                                 {kycStatusLabels[u.kyc_status]?.label || u.kyc_status}
@@ -162,7 +176,7 @@ const AdminUsers = () => {
                           </TableRow>
                           {expandedUserId === u.id && (
                             <TableRow key={`${u.id}-expand`}>
-                              <TableCell colSpan={8} className="p-0">
+                              <TableCell colSpan={10} className="p-0">
                                 <UserExpandedPanel user={u} onViewProfile={() => navigate(`/admin/users/${u.id}`)} />
                               </TableCell>
                             </TableRow>
