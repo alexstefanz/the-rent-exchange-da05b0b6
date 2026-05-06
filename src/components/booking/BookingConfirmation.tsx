@@ -102,7 +102,7 @@ const BookingConfirmation = ({
 
       <div className="mt-8 flex flex-col sm:flex-row gap-3 w-full max-w-md animate-fade-up" style={{ animationDelay: "0.3s" }}>
         <Button variant="outline" className="flex-1" asChild>
-          <Link to="/profile#cereri">
+          <Link to="/rezervari">
             <Search className="mr-2 h-4 w-4" />
             {copy.checkout.viewRequest}
           </Link>
