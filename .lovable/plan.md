@@ -1,11 +1,32 @@
-## Change
+## Problem
 
-On the homepage (`src/pages/Index.tsx`), the categories grid currently uses `grid-cols-2 sm:grid-cols-3 md:grid-cols-4` which renders 12 categories on 3 rows of 4 on desktop.
+The "Identitate verificată ✓" notification redirects to `/recenzii` (Reviews) instead of the "Add product" CTA.
 
-Update it to display **6 categories per row × 2 rows** on desktop:
+Cause:
+- Older `kyc_approved` notifications stored in DB use `link = '/profile'`.
+- `NotificationBell.tsx` mapLink contains a fallback rule: `if (link === "/profile") return "/recenzii"`, which sends the user to Reviews.
+- The newer trigger (migration `20260503112903`) already writes `/owner/new-product`, but historical rows still point at `/profile`.
 
-- Change the grid classes to: `grid-cols-2 sm:grid-cols-3 lg:grid-cols-6`
-- Mobile (2 cols) and tablet (3 cols) stay readable; desktop (≥1024px) shows 6 per row.
-- Reduce card padding slightly (`p-6` → `p-4`) so the narrower cards don't feel cramped at 6-up.
+## Changes
 
-No other pages affected (the `/categorii` Categories page keeps its 4-column layout).
+### 1. `src/components/layout/NotificationBell.tsx`
+- Remove (or replace) the rule that sends bare `/profile` links to `/recenzii`. Instead, route by notification `type`:
+  - When `n.type === 'kyc_approved'` → navigate to `/owner/new-product` regardless of stored link.
+  - Drop the `/profile → /recenzii` catch-all so generic `/profile` links land on the profile hub.
+
+### 2. `src/components/profile/NotificationsTab.tsx`
+- Apply the same `kyc_approved → /owner/new-product` override in its click handler (so the in-page list behaves identically to the bell).
+
+### 3. Migration: `supabase/migrations/<timestamp>_kyc_approved_link_fix.sql`
+- Backfill existing rows so the link is correct everywhere:
+  ```sql
+  UPDATE public.notifications
+  SET link = '/owner/new-product'
+  WHERE type = 'kyc_approved'
+    AND (link IS NULL OR link = '/profile');
+  ```
+- The trigger function is already correct (uses `/owner/new-product`); no further trigger change needed.
+
+## Result
+
+Clicking the "Identitate verificată ✓" notification (bell or notifications page, old or new) takes the user directly to the "Adaugă produs" page (`/owner/new-product`), matching the email CTA.
