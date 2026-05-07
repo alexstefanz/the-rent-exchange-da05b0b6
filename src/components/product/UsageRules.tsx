@@ -1,4 +1,4 @@
-import { AlertCircle, Clock, Wallet, ShieldCheck } from "lucide-react";
+import { AlertCircle, CreditCard, CalendarX, Camera, MessageSquare, PackageCheck, Wallet } from "lucide-react";
 import { useUxCopy } from "@/hooks/useUxCopy";
 
 interface UsageRule {
@@ -16,9 +16,11 @@ const UsageRules = ({ rules, depositAmount }: UsageRulesProps) => {
   const copy = useUxCopy();
 
   const defaultRules: UsageRule[] = [
-    { icon: Clock, title: copy.usageRules.cancellation, description: copy.usageRules.cancellationDesc },
-    { icon: Wallet, title: copy.usageRules.payment, description: copy.usageRules.paymentDesc },
-    { icon: ShieldCheck, title: copy.usageRules.return, description: copy.usageRules.returnDesc },
+    { icon: CreditCard, title: copy.usageRules.payment, description: copy.usageRules.paymentDesc },
+    { icon: CalendarX, title: copy.usageRules.cancellation, description: copy.usageRules.cancellationDesc },
+    { icon: Camera, title: copy.usageRules.handover, description: copy.usageRules.handoverDesc },
+    { icon: MessageSquare, title: copy.usageRules.communication, description: copy.usageRules.communicationDesc },
+    { icon: PackageCheck, title: copy.usageRules.return, description: copy.usageRules.returnDesc },
   ];
 
   const displayRules = rules || defaultRules;
@@ -34,8 +36,8 @@ const UsageRules = ({ rules, depositAmount }: UsageRulesProps) => {
           const Icon = rule.icon;
           return (
             <div key={index} className="flex items-start gap-3">
-              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
-                <Icon className="h-4 w-4 text-muted-foreground" />
+              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
+                <Icon className="h-4 w-4 text-primary" />
               </div>
               <div>
                 <h4 className="font-medium text-foreground text-sm">{rule.title}</h4>
