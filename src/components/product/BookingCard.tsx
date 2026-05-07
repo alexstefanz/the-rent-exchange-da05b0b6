@@ -6,7 +6,6 @@ import { Calendar as CalendarIcon, Heart, ChevronRight } from "lucide-react";
 import { useBookedDates, isDateBooked, hasBookedDateInRange } from "@/hooks/queries/useBookedDates";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Separator } from "@/components/ui/separator";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
@@ -109,34 +108,31 @@ const BookingCard = ({
         : copy.booking.ctaPrimary);
 
   return (
-    <div className="sticky top-24 lg:max-h-[calc(100vh-7rem)] lg:flex lg:flex-col rounded-xl border border-border bg-card shadow-card overflow-hidden">
-      <div className="lg:flex-1 lg:overflow-y-auto p-4 sm:p-6 lg:p-5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full">
+    <div className="sticky top-24 rounded-xl border border-border bg-card shadow-card overflow-hidden">
+      <div className="p-3 sm:p-4 lg:p-4">
       {showTitle && (
         <>
-          <div className="flex items-start justify-between gap-3 mb-3 lg:hidden">
-            <h1 className="font-heading text-[25px] font-semibold text-foreground leading-tight flex-1">{title}</h1>
+          <div className="flex items-start justify-between gap-3 mb-2 lg:hidden">
+            <h1 className="font-heading text-xl font-semibold text-foreground leading-tight flex-1">{title}</h1>
             <button onClick={onFavoriteToggle} className="flex-shrink-0 mt-1">
-              <Heart className={cn("h-6 w-6 transition-colors", isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground")} />
+              <Heart className={cn("h-5 w-5 transition-colors", isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground")} />
             </button>
           </div>
-          <h1 className="hidden lg:block font-heading text-2xl font-semibold text-foreground mb-3">{title}</h1>
+          <h1 className="hidden lg:block font-heading text-lg font-semibold text-foreground mb-2 leading-tight">{title}</h1>
         </>
       )}
 
-      <div className="mb-4">
+      <div className="mb-3 flex items-baseline justify-between gap-2 flex-wrap">
         <div className="flex items-baseline gap-1">
-          <span className="font-heading text-2xl font-bold text-primary">{clientPrice} RON</span>
-          <span className="text-muted-foreground">{copy.common.perDay}</span>
+          <span className="font-heading text-xl font-bold text-primary">{clientPrice} RON</span>
+          <span className="text-xs text-muted-foreground">{copy.common.perDay}</span>
         </div>
-        <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-          <p>{priceWeek} RON / {copy.productDetail.week}</p>
-          <p>{priceMonth} RON / {copy.productDetail.month}</p>
+        <div className="text-xs text-muted-foreground">
+          {priceWeek} RON / {copy.productDetail.week} · {priceMonth} RON / {copy.productDetail.month}
         </div>
       </div>
 
-      <Separator className="my-4" />
-
-      <div className="mb-4">
+      <div className="mb-3">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-medium text-foreground flex items-center gap-2">
             <CalendarIcon className="h-4 w-4" />
@@ -161,46 +157,19 @@ const BookingCard = ({
       </div>
 
       {startDate && endDate && (
-        <div className="mb-4 rounded-lg bg-muted p-4">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">{copy.booking.priceBreakdown.perDay}:</span>
-            <span className="font-medium">{format(startDate, "d MMM yyyy", { locale: dateLocale })}</span>
+        <div className="mb-3 rounded-lg bg-muted p-3 space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <span>{format(startDate, "d MMM yyyy", { locale: dateLocale })}</span>
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+            <span>{format(endDate, "d MMM yyyy", { locale: dateLocale })}</span>
           </div>
-          <div className="flex justify-between text-sm mt-1">
-            <span className="text-muted-foreground">{copy.productDetail.untilLabel}:</span>
-            <span className="font-medium">{format(endDate, "d MMM yyyy", { locale: dateLocale })}</span>
-          </div>
-          <Separator className="my-3" />
-          {priceBreakdown.months > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {priceBreakdown.months} × {language === "ro" ? "30 zile" : "30 days"} × {priceMonth} RON
+          <div className="flex justify-between items-baseline font-semibold">
+            <span>
+              {copy.booking.priceBreakdown.total}{" "}
+              <span className="font-normal text-muted-foreground text-sm">
+                ({rentalDays} {language === "ro" ? (rentalDays === 1 ? "zi" : "zile") : (rentalDays === 1 ? "day" : "days")})
               </span>
-              <span className="font-medium">{priceBreakdown.months * priceMonth} RON</span>
-            </div>
-          )}
-          {priceBreakdown.weeks > 0 && (
-            <div className="flex justify-between text-sm mt-1">
-              <span className="text-muted-foreground">
-                {priceBreakdown.weeks} {language === "ro"
-                  ? (priceBreakdown.weeks === 1 ? "săptămână" : "săptămâni")
-                  : (priceBreakdown.weeks === 1 ? "week" : "weeks")} × {priceWeek} RON
-              </span>
-              <span className="font-medium">{priceBreakdown.weeks * priceWeek} RON</span>
-            </div>
-          )}
-          {priceBreakdown.days > 0 && (
-            <div className="flex justify-between text-sm mt-1">
-              <span className="text-muted-foreground">
-                {priceBreakdown.days} {language === "ro"
-                  ? (priceBreakdown.days === 1 ? "zi" : "zile")
-                  : (priceBreakdown.days === 1 ? "day" : "days")} × {clientPrice} RON
-              </span>
-              <span className="font-medium">{priceBreakdown.days * clientPrice} RON</span>
-            </div>
-          )}
-          <div className="flex justify-between mt-2 font-semibold">
-            <span>{copy.booking.priceBreakdown.total}</span>
+            </span>
             <span className="text-primary">{totalPrice} RON</span>
           </div>
         </div>
@@ -212,9 +181,6 @@ const BookingCard = ({
         </div>
       )}
 
-      </div>
-
-      <div className="border-t border-border bg-card p-4 sm:p-6 lg:p-4 space-y-3">
         <Button
           className="w-full"
           size="lg"
@@ -223,18 +189,6 @@ const BookingCard = ({
         >
           {ctaLabel}
         </Button>
-        {startDate && endDate && (
-          <div className="flex items-center gap-2 rounded-full border border-border bg-muted/50 px-4 py-2.5">
-            <CalendarIcon className="h-4 w-4 text-primary flex-shrink-0" />
-            <span className="text-sm font-medium text-foreground">
-              {format(startDate, "dd MMM yyyy", { locale: dateLocale })}
-            </span>
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-            <span className="text-sm font-medium text-foreground">
-              {format(endDate, "dd MMM yyyy", { locale: dateLocale })}
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );
