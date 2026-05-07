@@ -157,14 +157,14 @@ const NotificationBell = () => {
     });
   };
 
-  const mapLink = (link: string) => {
+  const mapLink = (link: string, type?: string) => {
+    if (type === "kyc_approved") return "/owner/new-product";
     if (link.includes("?tab=lendings")) return "/anunturi";
     if (link.includes("?tab=rentals")) return "/rezervari";
     if (link.includes("#anunturi") || link === "/profile#anunturi") return "/anunturi";
     if (link.startsWith("/cereri") || link.includes("#cereri") || link === "/profile#cereri") return "/rezervari";
     if (link.includes("#rezervari") || link === "/profile#rezervari") return "/rezervari";
     if (link.includes("#notificari") || link === "/profile#notificari") return "/notificari";
-    if (link === "/profile" && !link.includes("#") && !link.includes("?")) return "/recenzii";
     return link;
   };
 
@@ -177,7 +177,7 @@ const NotificationBell = () => {
     }
     if (n.link) {
       if (isMobile) setMobileOpen(false);
-      navigate(mapLink(n.link));
+      navigate(mapLink(n.link, n.type));
     }
   };
 
