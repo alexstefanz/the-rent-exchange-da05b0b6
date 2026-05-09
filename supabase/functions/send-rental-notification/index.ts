@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
     }
 
     const [productRes, renterRes, ownerRes] = await Promise.all([
-      supabaseAdmin.from("products").select("title, images").eq("id", rental.product_id).single(),
+      supabaseAdmin.from("products").select("title, images, location").eq("id", rental.product_id).single(),
       supabaseAdmin.from("profiles").select("full_name, email").eq("id", rental.renter_id).single(),
       supabaseAdmin.from("profiles").select("full_name, email").eq("id", rental.owner_id).single(),
     ]);
@@ -167,6 +167,9 @@ Deno.serve(async (req) => {
     const renterName = renter?.full_name || "Un utilizator";
     const startStr = formatDateRo(rental.start_date);
     const endStr = formatDateRo(rental.end_date);
+    const productImage = Array.isArray((product as any)?.images) && (product as any).images.length > 0 ? (product as any).images[0] : undefined;
+    const location = (product as any)?.location || undefined;
+    const totalPrice = typeof rental.subtotal === "number" ? rental.subtotal : undefined;
 
     const sendBranded = async (templateName: string, recipientEmail: string, templateData: Record<string, unknown>, idempotencyKey: string) => {
       try {
@@ -185,7 +188,7 @@ Deno.serve(async (req) => {
       tasks.push(sendBranded(
         "rental-request-owner",
         ownerEmail,
-        { renterName, productTitle, startDate: startStr, endDate: endStr, rentalId: rental.id },
+        { renterName, productTitle, productImage, location, startDate: startStr, endDate: endStr, totalPrice, currency: "RON", rentalId: rental.id },
         `rental-req-owner-${rental.id}`
       ));
     }
@@ -193,7 +196,7 @@ Deno.serve(async (req) => {
       tasks.push(sendBranded(
         "rental-request-renter",
         renterEmail,
-        { productTitle, startDate: startStr, endDate: endStr, rentalId: rental.id },
+        { productTitle, productImage, location, startDate: startStr, endDate: endStr, totalPrice, currency: "RON", rentalId: rental.id },
         `rental-req-renter-${rental.id}`
       ));
     }
