@@ -1356,6 +1356,93 @@ export type Database = {
           },
         ]
       }
+      url_allowlist: {
+        Row: {
+          created_at: string
+          host: string
+          note: string | null
+        }
+        Insert: {
+          created_at?: string
+          host: string
+          note?: string | null
+        }
+        Update: {
+          created_at?: string
+          host?: string
+          note?: string | null
+        }
+        Relationships: []
+      }
+      url_reports: {
+        Row: {
+          created_at: string
+          host: string | null
+          id: string
+          message_id: string | null
+          reason: string | null
+          reporter_id: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          host?: string | null
+          id?: string
+          message_id?: string | null
+          reason?: string | null
+          reporter_id: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          host?: string | null
+          id?: string
+          message_id?: string | null
+          reason?: string | null
+          reporter_id?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      url_scan_cache: {
+        Row: {
+          classification: string
+          created_at: string
+          expires_at: string
+          gsb_threat: string | null
+          host: string
+          normalized_url: string
+          reasons: Json
+          risk_score: number
+          updated_at: string
+          url_hash: string
+        }
+        Insert: {
+          classification: string
+          created_at?: string
+          expires_at?: string
+          gsb_threat?: string | null
+          host: string
+          normalized_url: string
+          reasons?: Json
+          risk_score?: number
+          updated_at?: string
+          url_hash: string
+        }
+        Update: {
+          classification?: string
+          created_at?: string
+          expires_at?: string
+          gsb_threat?: string | null
+          host?: string
+          normalized_url?: string
+          reasons?: Json
+          risk_score?: number
+          updated_at?: string
+          url_hash?: string
+        }
+        Relationships: []
+      }
       user_activity_logs: {
         Row: {
           action: string
