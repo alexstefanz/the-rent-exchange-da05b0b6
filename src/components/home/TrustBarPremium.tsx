@@ -61,7 +61,7 @@ const TrustBarPremium = () => {
     <section className="relative -mt-8 z-30">
       <div className="container">
         <div className="rounded-2xl bg-card/90 backdrop-blur-xl border border-border/60 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.18)] p-3 md:p-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-3">
             {items.map((it, i) => (
               <div
                 key={i}
@@ -70,11 +70,11 @@ const TrustBarPremium = () => {
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 group-hover:scale-110 transition-transform">
                   <it.icon className={`h-5 w-5 ${it.tone}`} />
                 </div>
-                <div className="min-w-0">
-                  <div className="font-heading text-sm md:text-base font-bold text-foreground leading-tight truncate">
+                <div className="min-w-0 flex-1">
+                  <div className="font-heading text-sm md:text-base font-bold text-foreground leading-tight">
                     {it.value}
                   </div>
-                  <div className="text-[11px] md:text-xs text-muted-foreground leading-tight truncate">
+                  <div className="text-[11px] md:text-xs text-muted-foreground leading-tight">
                     {it.label}
                   </div>
                 </div>
