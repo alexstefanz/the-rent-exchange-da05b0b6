@@ -724,6 +724,7 @@ export type Database = {
           id: string
           is_internal: boolean | null
           message_text: string
+          read_at: string | null
           ticket_id: string
         }
         Insert: {
@@ -733,6 +734,7 @@ export type Database = {
           id?: string
           is_internal?: boolean | null
           message_text: string
+          read_at?: string | null
           ticket_id: string
         }
         Update: {
@@ -742,6 +744,7 @@ export type Database = {
           id?: string
           is_internal?: boolean | null
           message_text?: string
+          read_at?: string | null
           ticket_id?: string
         }
         Relationships: [
@@ -2142,6 +2145,10 @@ export type Database = {
         Returns: undefined
       }
       mark_ops_ticket_read: {
+        Args: { p_ticket_id: string }
+        Returns: undefined
+      }
+      mark_ticket_messages_read: {
         Args: { p_ticket_id: string }
         Returns: undefined
       }

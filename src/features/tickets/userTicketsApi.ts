@@ -1,13 +1,15 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { OpsTicket, OpsTicketMessage, CreateOpsTicketInput } from "@/features/admin/opsTicketsApi";
+import type { OpsTicket, OpsTicketMessage as BaseOpsTicketMessage, CreateOpsTicketInput } from "@/features/admin/opsTicketsApi";
 import { CATEGORY_GROUPS, CATEGORY_TYPES, CATEGORY_GROUP_LABELS } from "@/features/admin/opsTicketsApi";
 
 export { CATEGORY_GROUPS, CATEGORY_TYPES, CATEGORY_GROUP_LABELS };
-export type { OpsTicket, OpsTicketMessage };
+export type { OpsTicket };
+export type OpsTicketMessage = BaseOpsTicketMessage & { read_at?: string | null };
 
 // Helper to bypass type checking for tables not fully in generated types
 const opsTickets = () => supabase.from('ops_tickets' as any);
 const opsMessages = () => supabase.from('ops_ticket_messages' as any);
+const opsAttachments = () => supabase.from('ops_ticket_attachments' as any);
 
 /**
  * Fetch tickets for the current authenticated user
@@ -123,3 +125,83 @@ export const addUserTicketMessage = async (
   if (error) throw new Error(error.message);
   return data as unknown as OpsTicketMessage;
 };
+
+/**
+ * Mark all non-customer (admin/system) messages on a ticket as read by the current user.
+ * RPC enforces ownership server-side.
+ */
+export const markUserTicketRead = async (ticketId: string): Promise<void> => {
+  const { error } = await supabase.rpc('mark_ticket_messages_read' as any, { p_ticket_id: ticketId });
+  if (error) console.warn('[mark_ticket_messages_read]', error.message);
+};
+
+/**
+ * Upload an image attachment to the user's ticket.
+ * Stored at <ticket_id>/<timestamp>-<rand>.jpg in the private `ticket-attachments` bucket.
+ * Inserts a CUSTOMER message with the storage reference and links it to ops_ticket_attachments.
+ */
+const TICKET_BUCKET = "ticket-attachments";
+const TICKET_PATH_PREFIX = "ticket-attachments://";
+
+export const addUserTicketAttachment = async (
+  ticketId: string,
+  file: File
+): Promise<OpsTicketMessage> => {
+  const { data: userData } = await supabase.auth.getUser();
+  if (!userData.user) throw new Error("Not authenticated");
+
+  const ext = (file.type.split("/")[1] || "jpg").replace(/[^a-z0-9]/gi, "");
+  const path = `${ticketId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+  const { error: upErr } = await supabase.storage
+    .from(TICKET_BUCKET)
+    .upload(path, file, { contentType: file.type, cacheControl: "3600" });
+  if (upErr) throw new Error(upErr.message);
+
+  const reference = `${TICKET_PATH_PREFIX}${path}`;
+
+  const { data: msg, error: msgErr } = await opsMessages()
+    .insert({
+      ticket_id: ticketId,
+      author_type: 'CUSTOMER',
+      author_id: userData.user.id,
+      message_text: reference,
+      is_internal: false,
+    })
+    .select()
+    .single();
+  if (msgErr) throw new Error(msgErr.message);
+
+  // Best-effort row in attachments table for admin visibility
+  await opsAttachments()
+    .insert({
+      ticket_id: ticketId,
+      message_id: (msg as any).id,
+      file_url: reference,
+      file_name: file.name,
+      file_type: file.type,
+      file_size: file.size,
+      uploaded_by_type: 'CUSTOMER',
+      uploaded_by_id: userData.user.id,
+    });
+
+  return msg as unknown as OpsTicketMessage;
+};
+
+/**
+ * Resolve a stored ticket attachment reference to a short-lived signed URL.
+ * Accepts both `ticket-attachments://<path>` and raw paths.
+ */
+export const getTicketAttachmentSignedUrl = async (reference: string): Promise<string | null> => {
+  const path = reference.startsWith(TICKET_PATH_PREFIX)
+    ? reference.slice(TICKET_PATH_PREFIX.length)
+    : reference;
+  const { data, error } = await supabase.storage
+    .from(TICKET_BUCKET)
+    .createSignedUrl(path, 3600);
+  if (error) return null;
+  return data.signedUrl;
+};
+
+export const isTicketAttachmentRef = (text: string): boolean =>
+  text.trim().startsWith(TICKET_PATH_PREFIX);

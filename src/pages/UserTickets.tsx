@@ -1,84 +1,136 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { formatDistanceToNow } from "date-fns";
+import { ro, enUS } from "date-fns/locale";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Plus, Search, LifeBuoy, Loader2, ArrowLeft, MessageSquare, Filter,
+  Inbox, CheckCircle2, Clock4, Sparkles,
+} from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Loader2, Plus, MessageCircle, Send, LifeBuoy, ChevronDown, ChevronUp, Clock } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { ro } from "date-fns/locale";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import {
-  fetchUserTickets,
-  createUserTicket,
-  fetchUserTicketMessages,
-  addUserTicketMessage,
-  CATEGORY_GROUPS,
-  CATEGORY_TYPES,
-  CATEGORY_GROUP_LABELS,
+  fetchUserTickets, createUserTicket,
+  CATEGORY_GROUPS, CATEGORY_TYPES, CATEGORY_GROUP_LABELS,
   type OpsTicket,
-  type OpsTicketMessage,
 } from "@/features/tickets/userTicketsApi";
+import { useUserTicketsRealtime } from "@/hooks/useTicketRealtime";
+import { StatusPill } from "@/components/support/center/StatusPill";
+import { TicketTimeline } from "@/components/support/center/TicketTimeline";
+import { TicketContextPanel } from "@/components/support/center/TicketContextPanel";
+import { TicketChat } from "@/components/support/center/TicketChat";
 
-const STATUS_LABELS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-  NEW: { label: "Nou", variant: "default" },
-  IN_PROGRESS: { label: "În lucru", variant: "secondary" },
-  WAITING_CUSTOMER: { label: "Așteptare răspuns", variant: "outline" },
-  WAITING_OWNER: { label: "Așteptare owner", variant: "outline" },
-  WAITING_INTERNAL: { label: "În procesare", variant: "secondary" },
-  RESOLVED: { label: "Rezolvat", variant: "default" },
-  CLOSED: { label: "Închis", variant: "destructive" },
-};
+type FilterKey = "all" | "active" | "waiting" | "resolved";
+
+const FILTERS: { key: FilterKey; ro: string; en: string; icon: any }[] = [
+  { key: "all",      ro: "Toate",          en: "All",          icon: Inbox },
+  { key: "active",   ro: "Active",         en: "Active",       icon: Clock4 },
+  { key: "waiting",  ro: "În așteptare",   en: "Waiting",      icon: Sparkles },
+  { key: "resolved", ro: "Rezolvate",      en: "Resolved",     icon: CheckCircle2 },
+];
+
+function matchesFilter(t: OpsTicket, f: FilterKey): boolean {
+  if (f === "all") return true;
+  if (f === "active") return ["NEW", "IN_PROGRESS"].includes(t.status);
+  if (f === "waiting") return ["WAITING_CUSTOMER", "WAITING_OWNER", "WAITING_INTERNAL"].includes(t.status);
+  if (f === "resolved") return ["RESOLVED", "CLOSED"].includes(t.status);
+  return true;
+}
 
 const UserTickets = () => {
   const { user, loading: authLoading } = useAuth();
-  const { t } = useLanguage();
-  const { toast } = useToast();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [expandedTicketId, setExpandedTicketId] = useState<string | null>(null);
+  const [params, setParams] = useSearchParams();
+  const [createOpen, setCreateOpen] = useState(false);
+  const [filter, setFilter] = useState<FilterKey>("all");
+  const [search, setSearch] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(params.get("open"));
+  const locale = language === "ro" ? ro : enUS;
 
-  // Redirect if not logged in
-  if (!authLoading && !user) {
-    navigate("/auth", { replace: true });
-    return null;
-  }
+  useEffect(() => {
+    if (!authLoading && !user) navigate("/auth", { replace: true });
+  }, [authLoading, user, navigate]);
+
+  useUserTicketsRealtime(user?.id);
 
   const { data: tickets, isLoading } = useQuery({
-    queryKey: ['userTickets'],
+    queryKey: ["userTickets"],
     queryFn: fetchUserTickets,
     enabled: !!user,
   });
 
+  const filtered = useMemo(() => {
+    if (!tickets) return [];
+    const q = search.trim().toLowerCase();
+    return tickets.filter((tk) => {
+      if (!matchesFilter(tk, filter)) return false;
+      if (!q) return true;
+      return (
+        tk.title.toLowerCase().includes(q) ||
+        tk.public_id.toLowerCase().includes(q) ||
+        tk.description?.toLowerCase().includes(q)
+      );
+    });
+  }, [tickets, filter, search]);
+
+  const counts = useMemo(() => {
+    const c = { all: 0, active: 0, waiting: 0, resolved: 0 } as Record<FilterKey, number>;
+    tickets?.forEach((tk) => {
+      c.all++;
+      if (matchesFilter(tk, "active")) c.active++;
+      if (matchesFilter(tk, "waiting")) c.waiting++;
+      if (matchesFilter(tk, "resolved")) c.resolved++;
+    });
+    return c;
+  }, [tickets]);
+
+  const selected = tickets?.find((tk) => tk.id === selectedId) || null;
+
+  const handleSelect = (id: string | null) => {
+    setSelectedId(id);
+    if (id) setParams({ open: id }, { replace: true });
+    else setParams({}, { replace: true });
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      <main className="flex-1 container py-8 pt-24 lg:pt-8">
-        <div className="max-w-3xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
+      <main className="flex-1 container py-6 pt-24 lg:pt-8">
+        {/* Hero */}
+        <div className="rounded-3xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-border/60 p-6 md:p-8 mb-6">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-primary/15 grid place-items-center shrink-0">
                 <LifeBuoy className="h-6 w-6 text-primary" />
-                {t("Suport & Tickete", "Support & Tickets")}
-              </h1>
-              <p className="text-muted-foreground text-sm mt-1">
-                {t("Creează și urmărește cererile tale de suport", "Create and track your support requests")}
-              </p>
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+                  {t("Cum te putem ajuta?", "How can we help?")}
+                </h1>
+                <p className="text-sm text-muted-foreground mt-1 max-w-md">
+                  {t(
+                    "Echipa Rentli îți răspunde de obicei în câteva ore.",
+                    "The Rentli team usually replies within a few hours."
+                  )}
+                </p>
+              </div>
             </div>
-            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button size="lg" className="rounded-xl shadow-sm">
                   <Plus className="h-4 w-4 mr-2" />
                   {t("Ticket nou", "New ticket")}
                 </Button>
@@ -88,46 +140,109 @@ const UserTickets = () => {
                   <DialogTitle>{t("Creează un ticket", "Create a ticket")}</DialogTitle>
                 </DialogHeader>
                 <CreateTicketForm
-                  onSuccess={() => {
-                    setCreateDialogOpen(false);
-                    queryClient.invalidateQueries({ queryKey: ['userTickets'] });
-                  }}
+                  onSuccess={(id) => { setCreateOpen(false); handleSelect(id); }}
                 />
               </DialogContent>
             </Dialog>
           </div>
+        </div>
 
-          {/* Tickets List */}
-          {isLoading || authLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : !tickets?.length ? (
-            <Card>
-              <CardContent className="flex flex-col items-center py-12">
-                <LifeBuoy className="h-12 w-12 text-muted-foreground mb-4" />
-                <p className="text-lg font-medium mb-1">{t("Niciun ticket", "No tickets")}</p>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {t("Nu ai creat încă niciun ticket de suport.", "You haven't created any support tickets yet.")}
+        {/* Filter pills + search */}
+        <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between mb-4">
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {FILTERS.map((f) => {
+              const Icon = f.icon;
+              const active = filter === f.key;
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => setFilter(f.key)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition shrink-0 border",
+                    active
+                      ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                      : "bg-card text-muted-foreground border-border/60 hover:border-primary/40 hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {t(f.ro, f.en)}
+                  <span className={cn(
+                    "ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold",
+                    active ? "bg-primary-foreground/20" : "bg-muted"
+                  )}>
+                    {counts[f.key]}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="relative md:w-72">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t("Caută ticket sau cod…", "Search ticket or code…")}
+              className="pl-8 rounded-xl"
+            />
+          </div>
+        </div>
+
+        {/* Split layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4 min-h-[60vh]">
+          {/* Inbox list */}
+          <div className={cn("space-y-2", selected && "hidden lg:block")}>
+            {isLoading || authLoading ? (
+              <div className="space-y-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-24 w-full rounded-2xl" />
+                ))}
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="rounded-2xl bg-card border border-border/60 p-8 text-center">
+                <LifeBuoy className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
+                <p className="text-sm font-medium mb-1">
+                  {t("Niciun ticket aici", "No tickets here")}
                 </p>
-                <Button onClick={() => setCreateDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t("Creează primul ticket", "Create first ticket")}
+                <p className="text-xs text-muted-foreground mb-4">
+                  {t("Creează un ticket nou când ai nevoie de ajutor.", "Create a new ticket when you need help.")}
+                </p>
+                <Button size="sm" onClick={() => setCreateOpen(true)}>
+                  <Plus className="h-4 w-4 mr-1.5" />
+                  {t("Ticket nou", "New ticket")}
                 </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-3">
-              {tickets.map((ticket) => (
+              </div>
+            ) : (
+              filtered.map((tk) => (
                 <TicketCard
-                  key={ticket.id}
-                  ticket={ticket}
-                  isExpanded={expandedTicketId === ticket.id}
-                  onToggle={() => setExpandedTicketId(expandedTicketId === ticket.id ? null : ticket.id)}
+                  key={tk.id}
+                  ticket={tk}
+                  active={tk.id === selectedId}
+                  onClick={() => handleSelect(tk.id)}
+                  locale={locale}
                 />
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
+
+          {/* Detail panel */}
+          <div className={cn(
+            selected ? "block" : "hidden lg:block",
+            "rounded-2xl bg-card border border-border/60 overflow-hidden"
+          )}>
+            {selected ? (
+              <TicketDetailView
+                ticket={selected}
+                onBack={() => handleSelect(null)}
+              />
+            ) : (
+              <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-center p-8">
+                <MessageSquare className="h-12 w-12 text-muted-foreground/30 mb-3" />
+                <p className="text-sm text-muted-foreground">
+                  {t("Selectează un ticket pentru a vedea conversația.", "Select a ticket to view the conversation.")}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </main>
       <Footer />
@@ -135,157 +250,95 @@ const UserTickets = () => {
   );
 };
 
-// ============================================
-// Ticket Card with expandable messages
-// ============================================
+// ============= Ticket Card =============
 
-const TicketCard = ({ ticket, isExpanded, onToggle }: { ticket: OpsTicket; isExpanded: boolean; onToggle: () => void }) => {
+function TicketCard({
+  ticket, active, onClick, locale,
+}: { ticket: OpsTicket; active: boolean; onClick: () => void; locale: Locale }) {
   const { t } = useLanguage();
-  const statusInfo = STATUS_LABELS[ticket.status] || { label: ticket.status, variant: "outline" as const };
   const categoryLabel = CATEGORY_GROUP_LABELS[ticket.category_group] || ticket.category_group;
-  const typeLabel = CATEGORY_TYPES[ticket.category_group]?.find(ct => ct.value === ticket.category_type)?.label || ticket.category_type;
-
   return (
-    <Card className="overflow-hidden">
-      <button
-        onClick={onToggle}
-        className="w-full text-left p-4 hover:bg-muted/50 transition-colors"
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <span className="text-xs font-mono text-muted-foreground">{ticket.public_id}</span>
-              <Badge variant={statusInfo.variant} className="text-[10px] px-1.5 py-0">
-                {statusInfo.label}
-              </Badge>
-            </div>
-            <p className="font-medium text-sm truncate">{ticket.title}</p>
-            <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-              <span>{categoryLabel} → {typeLabel}</span>
-              <span>•</span>
-              <Clock className="h-3 w-3" />
-              <span>{format(new Date(ticket.created_at), "d MMM yyyy, HH:mm", { locale: ro })}</span>
-            </div>
-          </div>
-          {isExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0 mt-1" /> : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0 mt-1" />}
-        </div>
-      </button>
-
-      {isExpanded && (
-        <div className="border-t border-border">
-          {/* Description */}
-          <div className="p-4 bg-muted/30">
-            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{ticket.description}</p>
-          </div>
-          {/* Messages Timeline */}
-          <TicketMessages ticketId={ticket.id} ticketStatus={ticket.status} />
-        </div>
+    <motion.button
+      layout
+      onClick={onClick}
+      whileTap={{ scale: 0.99 }}
+      className={cn(
+        "w-full text-left p-4 rounded-2xl border transition-all bg-card",
+        active
+          ? "border-primary shadow-md ring-1 ring-primary/20"
+          : "border-border/60 hover:border-primary/40 hover:shadow-sm"
       )}
-    </Card>
+    >
+      <div className="flex items-start justify-between gap-2 mb-1.5">
+        <span className="text-[10px] font-mono text-muted-foreground">{ticket.public_id}</span>
+        <StatusPill status={ticket.status} size="xs" />
+      </div>
+      <p className="font-medium text-sm leading-tight line-clamp-2 mb-1.5">{ticket.title}</p>
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <span className="truncate">{categoryLabel}</span>
+        <span className="shrink-0">
+          {formatDistanceToNow(new Date(ticket.updated_at || ticket.created_at), { addSuffix: true, locale })}
+        </span>
+      </div>
+    </motion.button>
   );
-};
+}
 
-// ============================================
-// Messages Timeline
-// ============================================
+// ============= Detail View =============
 
-const TicketMessages = ({ ticketId, ticketStatus }: { ticketId: string; ticketStatus: string }) => {
+function TicketDetailView({ ticket, onBack }: { ticket: OpsTicket; onBack: () => void }) {
   const { t } = useLanguage();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [newMessage, setNewMessage] = useState("");
-
-  const { data: messages, isLoading } = useQuery({
-    queryKey: ['userTicketMessages', ticketId],
-    queryFn: () => fetchUserTicketMessages(ticketId),
-    refetchInterval: 15000,
-  });
-
-  const sendMutation = useMutation({
-    mutationFn: (text: string) => addUserTicketMessage(ticketId, text),
-    onSuccess: () => {
-      setNewMessage("");
-      queryClient.invalidateQueries({ queryKey: ['userTicketMessages', ticketId] });
-    },
-    onError: () => {
-      toast({ title: t("Eroare", "Error"), description: t("Nu s-a putut trimite mesajul", "Could not send message"), variant: "destructive" });
-    },
-  });
-
-  const isClosed = ticketStatus === 'CLOSED' || ticketStatus === 'RESOLVED';
+  const isClosed = ticket.status === "CLOSED" || ticket.status === "RESOLVED";
 
   return (
-    <div className="p-4 space-y-3">
-      {isLoading ? (
-        <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-      ) : messages?.length ? (
-        <div className="space-y-3 max-h-80 overflow-y-auto">
-          {messages.map((msg) => (
-            <div key={msg.id} className={`flex ${msg.author_type === 'CUSTOMER' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] rounded-lg p-3 text-sm ${
-                msg.author_type === 'CUSTOMER'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted'
-              }`}>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[10px] font-medium opacity-70">
-                    {msg.author_type === 'CUSTOMER'
-                      ? t("Tu", "You")
-                      : msg.author_type === 'SYSTEM'
-                        ? t("Sistem", "System")
-                        : msg.author_name
-                          ? `${t("Suport", "Support")} · ${msg.author_name}`
-                          : t("Suport", "Support")}
-                  </span>
-                  <span className="text-[10px] opacity-50">
-                    {format(new Date(msg.created_at), "d MMM, HH:mm", { locale: ro })}
-                  </span>
-                </div>
-                <p className="whitespace-pre-wrap">{msg.message_text}</p>
-              </div>
-            </div>
-          ))}
+    <div className="flex flex-col h-full max-h-[calc(100vh-12rem)]">
+      {/* Header */}
+      <div className="border-b border-border/60 p-4 flex items-start gap-3">
+        <Button variant="ghost" size="icon" className="h-8 w-8 lg:hidden shrink-0" onClick={onBack}>
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] font-mono text-muted-foreground">{ticket.public_id}</span>
+            <StatusPill status={ticket.status} size="xs" />
+          </div>
+          <h2 className="font-semibold text-base leading-tight">{ticket.title}</h2>
         </div>
-      ) : (
-        <p className="text-xs text-muted-foreground text-center py-2">
-          {t("Niciun mesaj încă", "No messages yet")}
-        </p>
-      )}
+      </div>
 
-      {/* Reply input */}
-      {!isClosed && (
-        <div className="flex gap-2 pt-2">
-          <Input
-            placeholder={t("Scrie un mesaj...", "Write a message...")}
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey && newMessage.trim()) {
-                e.preventDefault();
-                sendMutation.mutate(newMessage.trim());
-              }
-            }}
-          />
-          <Button
-            size="icon"
-            disabled={!newMessage.trim() || sendMutation.isPending}
-            onClick={() => sendMutation.mutate(newMessage.trim())}
-          >
-            {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          </Button>
+      {/* Body: chat + side context */}
+      <div className="flex-1 min-h-0 grid grid-cols-1 xl:grid-cols-[1fr_280px]">
+        <div className="flex flex-col min-h-0 border-r border-border/60">
+          {/* Description preview */}
+          {ticket.description && (
+            <div className="px-4 pt-3 pb-2">
+              <details className="text-xs">
+                <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                  {t("Vezi descrierea inițială", "View original description")}
+                </summary>
+                <p className="mt-2 whitespace-pre-wrap text-foreground/80">{ticket.description}</p>
+              </details>
+            </div>
+          )}
+          <div className="flex-1 min-h-0">
+            <TicketChat ticketId={ticket.id} isClosed={isClosed} />
+          </div>
         </div>
-      )}
+        <div className="hidden xl:block p-4 space-y-3 overflow-y-auto bg-muted/10">
+          <TicketTimeline ticket={ticket} />
+          <TicketContextPanel ticket={ticket} />
+        </div>
+      </div>
     </div>
   );
-};
+}
 
-// ============================================
-// Create Ticket Form
-// ============================================
+// ============= Create Form =============
 
-const CreateTicketForm = ({ onSuccess }: { onSuccess: () => void }) => {
+function CreateTicketForm({ onSuccess }: { onSuccess: (id: string) => void }) {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const qc = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [categoryGroup, setCategoryGroup] = useState("");
@@ -293,9 +346,10 @@ const CreateTicketForm = ({ onSuccess }: { onSuccess: () => void }) => {
 
   const createMutation = useMutation({
     mutationFn: createUserTicket,
-    onSuccess: () => {
-      toast({ title: t("Ticket creat", "Ticket created"), description: t("Ticketul tău a fost trimis cu succes.", "Your ticket has been submitted successfully.") });
-      onSuccess();
+    onSuccess: (created) => {
+      toast({ title: t("Ticket creat", "Ticket created") });
+      qc.invalidateQueries({ queryKey: ["userTickets"] });
+      onSuccess(created.id);
     },
     onError: (err: Error) => {
       toast({ title: t("Eroare", "Error"), description: err.message, variant: "destructive" });
@@ -303,79 +357,63 @@ const CreateTicketForm = ({ onSuccess }: { onSuccess: () => void }) => {
   });
 
   const categoryTypes = categoryGroup ? (CATEGORY_TYPES[categoryGroup] || []) : [];
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim() || !description.trim() || !categoryGroup || !categoryType) return;
-    createMutation.mutate({
-      title: title.trim(),
-      description: description.trim(),
-      category_group: categoryGroup,
-      category_type: categoryType,
-    });
-  };
+  const valid = title.trim() && description.trim() && categoryGroup && categoryType;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!valid) return;
+        createMutation.mutate({
+          title: title.trim(),
+          description: description.trim(),
+          category_group: categoryGroup,
+          category_type: categoryType,
+        });
+      }}
+      className="space-y-4"
+    >
       <div className="space-y-2">
         <Label>{t("Categorie", "Category")}</Label>
         <Select value={categoryGroup} onValueChange={(v) => { setCategoryGroup(v); setCategoryType(""); }}>
           <SelectTrigger><SelectValue placeholder={t("Selectează categoria", "Select category")} /></SelectTrigger>
           <SelectContent>
-            {CATEGORY_GROUPS.map(g => (
+            {CATEGORY_GROUPS.map((g) => (
               <SelectItem key={g} value={g}>{CATEGORY_GROUP_LABELS[g] || g}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
-
       {categoryGroup && (
         <div className="space-y-2">
           <Label>{t("Tip problemă", "Issue type")}</Label>
           <Select value={categoryType} onValueChange={setCategoryType}>
             <SelectTrigger><SelectValue placeholder={t("Selectează tipul", "Select type")} /></SelectTrigger>
             <SelectContent>
-              {categoryTypes.map(ct => (
-                <SelectItem key={ct.value} value={ct.value}>{ct.label}</SelectItem>
+              {categoryTypes.map((c) => (
+                <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
       )}
-
       <div className="space-y-2">
         <Label>{t("Titlu", "Title")}</Label>
-        <Input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder={t("Descrie pe scurt problema", "Briefly describe the issue")}
-          maxLength={200}
-        />
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200}
+          placeholder={t("Descrie pe scurt problema", "Briefly describe the issue")} />
       </div>
-
       <div className="space-y-2">
         <Label>{t("Descriere", "Description")}</Label>
-        <Textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder={t("Explică în detaliu problema întâmpinată...", "Explain the issue in detail...")}
-          rows={4}
-        />
+        <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4}
+          placeholder={t("Explică în detaliu problema…", "Explain the issue in detail…")} />
       </div>
-
-      <Button
-        type="submit"
-        className="w-full"
-        disabled={!title.trim() || !description.trim() || !categoryGroup || !categoryType || createMutation.isPending}
-      >
-        {createMutation.isPending ? (
-          <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("Se trimite...", "Submitting...")}</>
-        ) : (
-          t("Trimite ticketul", "Submit ticket")
-        )}
+      <Button type="submit" className="w-full" disabled={!valid || createMutation.isPending}>
+        {createMutation.isPending
+          ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("Se trimite…", "Submitting…")}</>
+          : t("Trimite ticketul", "Submit ticket")}
       </Button>
     </form>
   );
-};
+}
 
 export default UserTickets;
