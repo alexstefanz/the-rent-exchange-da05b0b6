@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { differenceInDays, isBefore } from "date-fns";
 import { useBookedDates, isDateBooked, hasBookedDateInRange } from "@/hooks/queries/useBookedDates";
-import { ChevronLeft, ChevronRight, MapPin, Loader2, Heart, X, Share2 } from "lucide-react";
+import { ChevronRight, MapPin, Heart, Share2 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,9 @@ import HowItWorksMini from "@/components/product/HowItWorksMini";
 import SocialProofStrip from "@/components/product/SocialProofStrip";
 import LocationCard from "@/components/product/LocationCard";
 import ReviewSummaryCard from "@/components/product/ReviewSummaryCard";
+import StickyProductHeader from "@/components/product/StickyProductHeader";
+import PremiumLightbox from "@/components/product/PremiumLightbox";
+import ProductDetailSkeleton from "@/components/product/ProductDetailSkeleton";
 import { useProductExtendedStats } from "@/hooks/queries/useProductExtendedStats";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -54,6 +57,7 @@ const ProductDetail = () => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const titleBlockRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -115,18 +119,6 @@ const ProductDetail = () => {
   const priceMonth = Math.round(clientPrice * 22);
   const images = product?.images && product.images.length > 0 ? product.images : ["/placeholder.svg"];
   const openLightbox = (index: number) => { setLightboxIndex(index); setLightboxOpen(true); };
-
-  useEffect(() => {
-    if (!lightboxOpen) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setLightboxOpen(false);
-      if (e.key === 'ArrowRight') setLightboxIndex(p => (p + 1) % images.length);
-      if (e.key === 'ArrowLeft') setLightboxIndex(p => (p - 1 + images.length) % images.length);
-    };
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', handleKey);
-    return () => { window.removeEventListener('keydown', handleKey); document.body.style.overflow = ''; };
-  }, [lightboxOpen, images.length]);
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!date || isDateBooked(date, bookedDates)) return;
@@ -215,7 +207,7 @@ const ProductDetail = () => {
     } catch { toast({ title: copy.auth?.errorGeneric || "Error", variant: "destructive" }); }
   };
 
-  if (isLoading) return (<div className="min-h-screen bg-background"><Navbar /><div className="flex items-center justify-center py-24"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div><Footer /></div>);
+  if (isLoading) return <ProductDetailSkeleton />;
   if (!product) return (<div className="min-h-screen bg-background"><Navbar /><main className="container py-16 text-center"><h1 className="font-heading text-2xl font-bold text-foreground">{copy.product.notFound}</h1><Button asChild className="mt-4"><Link to="/categorii">{copy.product.backToCategories}</Link></Button></main><Footer /></div>);
 
   const location = product.location_city || "România";
@@ -227,6 +219,16 @@ const ProductDetail = () => {
   return (
     <div className="min-h-screen bg-background pb-24 lg:pb-0">
       <Navbar />
+
+      <StickyProductHeader
+        title={displayTitle}
+        clientPrice={clientPrice}
+        rating={extendedStats?.owner_avg_rating}
+        reviewCount={extendedStats?.owner_review_count}
+        triggerRef={titleBlockRef}
+        onReserve={handleReserve}
+        isOwnProduct={isOwnProduct}
+      />
 
       <ProductImageGallery
         variant="mobile"
@@ -252,7 +254,7 @@ const ProductDetail = () => {
         </nav>
 
         {/* Title block desktop */}
-        <div className="hidden lg:flex items-start justify-between gap-4 mb-4">
+        <div ref={titleBlockRef} className="hidden lg:flex items-start justify-between gap-4 mb-4">
           <div className="min-w-0">
             <h1 className="font-heading text-3xl font-semibold text-foreground">{displayTitle}</h1>
             <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
@@ -382,22 +384,14 @@ const ProductDetail = () => {
         <ChatDialog open={chatOpen} onOpenChange={setChatOpen} conversationId={conversationId} otherUserName={owner?.full_name || null} otherUserAvatar={owner?.avatar_url || null} productTitle={product?.title || 'Produs'} />
       )}
 
-      {lightboxOpen && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center" onClick={() => setLightboxOpen(false)}>
-          <button className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white" onClick={() => setLightboxOpen(false)}>
-            <X className="h-6 w-6" />
-          </button>
-          {images.length > 1 && (<>
-            <button className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white" onClick={(e) => { e.stopPropagation(); setLightboxIndex(p => (p - 1 + images.length) % images.length); }}>
-              <ChevronLeft className="h-6 w-6" />
-            </button>
-            <button className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white" onClick={(e) => { e.stopPropagation(); setLightboxIndex(p => (p + 1) % images.length); }}>
-              <ChevronRight className="h-6 w-6" />
-            </button>
-          </>)}
-          <img src={images[lightboxIndex]} alt={product?.title} className="max-h-[90vh] max-w-[90vw] object-contain" onClick={(e) => e.stopPropagation()} />
-        </div>
-      )}
+      <PremiumLightbox
+        open={lightboxOpen}
+        images={images}
+        index={lightboxIndex}
+        onClose={() => setLightboxOpen(false)}
+        onIndexChange={setLightboxIndex}
+        title={displayTitle}
+      />
     </div>
   );
 };
