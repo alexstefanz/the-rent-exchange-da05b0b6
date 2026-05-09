@@ -16,6 +16,8 @@ import type { InspectionPhase } from "@/features/rentals/inspectionApi";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
 import { toast } from "sonner";
+import NextActionCard from "./NextActionCard";
+import { useRentalRealtime } from "@/hooks/useRentalRealtime";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -74,6 +76,8 @@ const RentalsTab = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [inspectionRental, setInspectionRental] = useState<{ rental: Rental; phase: InspectionPhase } | null>(null);
+
+  useRentalRealtime(user?.id, "renter", [["my-rentals", user?.id], ["my-renter-checkin-inspections", user?.id]]);
 
   const handleContactOwner = async (rental: Rental) => {
     if (!rental.id) return;
@@ -256,6 +260,7 @@ const RentalsTab = () => {
               const tlRental = {
                 status: rental.status,
                 payment_status: rental.payment_status,
+                start_date: rental.start_date,
                 end_date: rental.end_date_raw,
                 handover_confirmed_at: rental.handover_confirmed_at,
                 return_confirmed_at: rental.return_confirmed_at,
@@ -277,6 +282,15 @@ const RentalsTab = () => {
                   <div className="mt-4 pt-3 border-t border-border/50">
                     <RentalTimeline rental={tlRental} />
                   </div>
+                  <div className="mt-3">
+                    <NextActionCard
+                      rental={{ id: rental.id, product_id: rental.product_id, product_title: rental.product_title, start_date: rental.end_date_raw, end_date: rental.end_date_raw, status: rental.status, payment_status: rental.payment_status, handover_confirmed_at: rental.handover_confirmed_at, return_confirmed_at: rental.return_confirmed_at }}
+                      step={step}
+                      role="renter"
+                      onPrimary={() => setInspectionRental({ rental, phase: step >= 6 ? "checkin" : "checkout" })}
+                      onChat={() => handleContactOwner(rental)}
+                    />
+                  </div>
                   <Collapsible>
                     <CollapsibleTrigger asChild>
                       <Button variant="ghost" size="sm" className="mt-2 h-7 px-2 text-xs">
@@ -289,7 +303,7 @@ const RentalsTab = () => {
                       <RentalPaymentStatus rentalId={rental.id} mode="user" />
                     </CollapsibleContent>
                   </Collapsible>
-                  {step === 5 && (
+                  {step === 6 && (
                     <div className="mt-3 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
                       <AlertCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
                       <p className="text-xs text-foreground">{copy.timeline.returnReminder}</p>
