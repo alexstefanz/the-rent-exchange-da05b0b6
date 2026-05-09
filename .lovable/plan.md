@@ -1,87 +1,131 @@
-## Email Redesign Plan — Rentli Premium
+# Redesign Flow Rezervare & Închiriere
 
-Currently we have 25 transactional templates (`supabase/functions/_shared/transactional-email-templates/`) + 6 auth templates (`supabase/functions/_shared/email-templates/`). Each is hand-rolled with duplicated inline styles, no product card, no status badge. We'll standardize the visual language and enrich rental emails with product context.
+## Obiectiv
+Transformare flow-ului actual (6 statusuri) într-o experiență premium cu **7 pași clari**, **proces verbal ca checkpoint oficial**, **timeline animat realtime** și **next-action card** care ghidează utilizatorul pas cu pas.
 
-### 1. Shared design system (new file)
+## Flow nou (7 pași)
 
-Create `supabase/functions/_shared/transactional-email-templates/_components.tsx` exporting reusable React Email building blocks. Auth templates can re-import from this path too.
+```text
+1. Cerere trimisă          (status: pending)
+2. Cerere aprobată         (status: confirmed, înainte de start_date)
+3. În tranzit              (start_date trecut, fără handover_confirmed_at)
+4. Confirmare primire      (proces verbal predare — checkpoint oficial)
+5. Produs în folosire      (handover_confirmed_at setat, înainte de end_date)
+6. În curs de returnare    (end_date trecut, fără return_confirmed_at)
+7. Finalizat               (return_confirmed_at setat → status: completed)
+```
 
-- `BaseLayout({ preview, children })` — full HTML shell with:
-  - `Head` containing `<meta name="color-scheme" content="light dark">`, `<meta name="supported-color-schemes" content="light dark">`, viewport meta, and MSO conditional comments for Outlook
-  - Page background `#F5F2EE` (warm neutral framing the card)
-  - Centered 600px white card with `border-radius: 16px`, soft shadow `0 4px 24px rgba(48,37,32,0.06)`
-  - Subtle Plus Jakarta Sans web font import with Arial fallback
-- `Header()` — gradient hero `linear-gradient(135deg,#F59E0B 0%,#F98715 100%)`, 28px Rentli logo, 24px vertical padding, rounded top corners
-- `H1`, `Lead`, `Body`, `Muted` typography primitives
-- `ProductCard({ image, title, period, totalPrice, location, status })` — table-based for Outlook; left 96×96 image with `border-radius: 12px`, right column with title, location pin, period row, status badge, total row separated by `Hr`
-- `StatusBadge({ status })` — color map:
-  - pending → `#F59E0B` bg `#FEF3C7`
-  - approved/active → `#16A34A` bg `#DCFCE7`
-  - declined/cancelled → `#DC2626` bg `#FEE2E2`
-  - payment_pending → `#2563EB` bg `#DBEAFE`
-  - completed → `#7C3AED` bg `#EDE9FE`
-- `CTAButton({ href, children, variant })` — primary (`#F59E0B`, white text) and ghost (transparent, `#F59E0B` border); 14px vertical / 28px horizontal padding; 12px radius; 100% width on mobile via `<!--[if !mso]>`/media query CSS
-- `Divider`, `MessagePreview` (chat quote box), `InfoRow` (label/value pair)
-- `Footer()` — support email, links to Help/Terms/Privacy, social icons (using public Storage SVGs we already host), trust line "Rentli — închiriere între oameni, securizată", and `{{unsubscribe}}` placeholder is **not** added (system appends it)
+Mapare logică în `getTimelineStep()` din `RentalTimeline.tsx` — fără schimbări de schemă DB, doar reinterpretare timestamps existente (`handover_confirmed_at`, `return_confirmed_at`, `start_date`, `end_date`).
 
-All styles are inline objects to satisfy email clients. A small CSS string in `<Head>` handles `@media (max-width:600px)` to stack ProductCard rows and force CTA full width, and `@media (prefers-color-scheme: dark)` to keep the card white but soften the page background — the body itself stays `#ffffff` per platform rules.
+## Componente noi / refăcute
 
-### 2. Redesign all 25 transactional templates
+### 1. `RentalTimelineV2.tsx` (înlocuiește `RentalTimeline.tsx`)
+- 7 cercuri cu iconițe (Send, ThumbsUp, Truck, ClipboardCheck, Package, RotateCcw, CheckCircle2)
+- Linie de progres animată (Framer Motion `width` transition)
+- Pas activ: `pulse` subtil + glow ring
+- Pași completați: scale-in animation, static
+- Pas „Finalizat": pulse oprit, emerald glow
+- Mobile: layout vertical compact; Desktop: orizontal cu labels
 
-Rewrite each template to compose `BaseLayout + Header + H1 + Lead + (optional ProductCard / MessagePreview / InfoRow) + CTAButton + Footer`. No file/registry changes — same exports, same `template` shape, same `previewData` keys (extended where needed).
+### 2. `NextActionCard.tsx` (NOU — sticky sub timeline)
+Card mare premium cu:
+- Iconiță contextuală
+- Titlu „Ce trebuie să faci acum"
+- Sub-text explicativ
+- CTA primary (variabil: „Încarcă pozele", „Confirmă primirea", „Așteaptă confirmarea proprietarului", etc.)
+- Stări per rol (renter vs owner) și per step
 
-**Rental flow (gets ProductCard + StatusBadge):**
-- `rental-request-owner`, `rental-request-renter` — status `pending`, primary CTA "Vezi cererea"
-- `rental-accepted` — status `approved`, CTA "Vezi rezervarea"
-- `rental-rejected` — status `declined`, ghost CTA "Caută alternative"
-- `cancellation-owner`, `cancellation-renter` — status `cancelled`
-- `payout-received` — status `completed` + amount row
+### 3. `InspectionWizard.tsx` (refactor complet din `InspectionDialog.tsx`)
+Wizard step-by-step mobile-first cu progres bar sus:
 
-**Account / KYC / product moderation (no ProductCard, branded info card instead):**
-- `welcome` — hero illustration block with 3 quick-start tiles (Caută / Listează / Mesaje)
-- `kyc-submitted/approved/rejected/reupload-requested` — KYC tier badge
-- `product-published` (ProductCard preview) / `product-rejected` (reason callout)
-- `password-changed`, `account-deactivation`, `account-banned` — security icon block
+```text
+Step 1 → Introducere (de ce e important procesul verbal)
+Step 2 → Poze obligatorii (min 3: față, spate, defecte)
+Step 3 → Checklist (critice obligatorii + secundare opționale)
+Step 4 → Observații (obligatorii dacă există puncte nebifate)
+Step 5 → Declarație legală (2 checkboxes)
+Step 6 → Confirmare finală (rezumat + CTA mare)
+```
 
-**Engagement:**
-- `new-message` — sender avatar circle with initial, MessagePreview quote, CTA "Răspunde"
-- `review-received` — star row (★★★★☆) + review excerpt
+Validări per step blochează „Continuă". După confirmare: lock edit, salvare timestamp + audit metadata (deja avem device prin user agent în client logs).
 
-**Support tickets:**
-- `ticket-created/replied/resolved` — ticket # pill, status badge, CTA "Vezi tichetul"
+### 4. `SupportFromRentalButton.tsx` (NOU)
+Buton „Ai o problemă?" care creează automat ops_ticket cu:
+- `rental_user_id`, `owner_user_id`, `reservation_id`, `product_id`
+- titlu prefilat „Problemă rezervare {public_id}"
+- categorie `RENTAL_DISPUTE`
 
-**Withdrawals:**
-- `withdrawal-requested/processed/rejected` — amount row, IBAN masked, status badge
+### 5. `ChatQuickActions.tsx` (NOU — în NextActionCard)
+- Buton „Discută cu proprietarul" / „Discută cu chiriașul" → navighează la `/messages?conversation=...`
+- Disclaimer subtil: „Pentru siguranță, recomandăm comunicarea prin platformă."
 
-### 3. Auth template refresh
+### 6. `ReviewPromptDialog.tsx` (NOU)
+Popup elegant la primul mount după `status=completed`:
+- 2 CTA: „Lasă review acum" / „Mai târziu"
+- Skip persistă în localStorage; reminder după 24h prin notificare in-app
 
-Update the 6 templates in `_shared/email-templates/` (`signup`, `magic-link`, `recovery`, `invite`, `email-change`, `reauthentication`) to use the same `BaseLayout + Header + Footer` so brand looks identical to transactional. Big OTP block uses 32px monospace digits with letter-spacing for clarity. No prop or hook changes — they keep their existing `auth-email-hook` integration.
+## Realtime sync
 
-### 4. Sender enrichment (rental emails only)
+În `RentalsTab.tsx` și `RentalsOutTab.tsx`:
+- Subscribe la `postgres_changes` pe `rentals` filtrat pe `renter_id` / `owner_id`
+- Invalidează `useQuery` keys la fiecare UPDATE → timeline se re-randează automat
+- Bonus: subscribe pe `rental_inspections` pentru check-uri live
 
-To populate the ProductCard, extend two senders to fetch and forward extra fields. UI/business logic untouched.
+## Pages care primesc redesign
 
-- `supabase/functions/send-rental-notification/index.ts`: change product select to `title, images, location, daily_price` and pass `productImage` (first image), `location`, `totalPrice` (`rental.subtotal`), `currency` to both `rental-request-owner` and `rental-request-renter` payloads.
-- `supabase/functions/send-rental-status-notification/index.ts` (and any sibling for accept/reject/cancel — will grep and wire identically) — pass the same enriched payload to `rental-accepted`, `rental-rejected`, `cancellation-*`.
+| Pagină | Schimbare |
+|---|---|
+| `RentalsPage.tsx` | Card per rezervare cu nou timeline + NextActionCard inline |
+| `RentalsOutPage.tsx` | Idem, perspectivă owner |
+| `RentalsTab.tsx` / `RentalsOutTab.tsx` | Filtre cu badge-uri colorate noi (7 statusuri), grid cards refăcute |
+| `AcceptedRentalDialog.tsx` | Refactor: integrează NextActionCard + buton către InspectionWizard |
+| Admin `AdminReservations.tsx` | Vizualizare timeline complet + galerie poze inspections + audit trail |
 
-Templates accept the new props as optional — when missing (legacy queued payloads, test harness) the ProductCard gracefully falls back to a placeholder gradient tile and hides empty rows. No DB migration, no RLS change.
+## Notificări
 
-### 5. Test harness alignment
+Existente (păstrate, doar adăugate triggere noi):
+- Email + in-app la fiecare schimbare status
+- Push (placeholder pentru viitor — Web Push API)
 
-Update `supabase/functions/test-email-notifications/index.ts` and `src/pages/admin/AdminTestEmails.tsx` sample payloads to include `productImage`, `location`, `totalPrice`, `currency` so admin previews show the new rich layout.
+Triggere noi:
+- „Proces verbal predare necesar" (când rental devine `în tranzit`)
+- „Proces verbal retur necesar" (owner, când end_date a trecut)
+- „Review reminder" (24h după finalizare)
 
-### 6. Deploy
+## Securitate (out of scope acest sprint — listate ca follow-up)
+2FA după 30 zile inactivitate, OTP email re-auth, device trust și suspicious login → recomand sprint separat (necesită infra auth schimbată).
 
-Single `deploy_edge_functions` call covering: `send-transactional-email` (re-bundles registry + components), `auth-email-hook`, `send-rental-notification`, `send-rental-status-notification`, `test-email-notifications`.
+## Detalii tehnice
 
-### Out of scope
+**Fișiere create:**
+- `src/components/dashboard/RentalTimelineV2.tsx`
+- `src/components/dashboard/NextActionCard.tsx`
+- `src/components/dashboard/inspection/InspectionWizard.tsx`
+- `src/components/dashboard/inspection/StepIntro.tsx`
+- `src/components/dashboard/inspection/StepPhotos.tsx`
+- `src/components/dashboard/inspection/StepChecklist.tsx`
+- `src/components/dashboard/inspection/StepNotes.tsx`
+- `src/components/dashboard/inspection/StepDeclaration.tsx`
+- `src/components/dashboard/inspection/StepConfirm.tsx`
+- `src/components/dashboard/SupportFromRentalButton.tsx`
+- `src/components/dashboard/ReviewPromptDialog.tsx`
+- `src/hooks/useRentalRealtime.ts`
 
-- No new templates, no removals
-- No queue / cron / domain changes
-- No marketing emails
-- No attachment support
-- No language switch logic — emails stay Romanian as today
+**Fișiere modificate:**
+- `RentalTimeline.tsx` → marcat deprecated, redirectă la V2
+- `RentalsTab.tsx`, `RentalsOutTab.tsx` → folosesc V2 + NextActionCard + realtime hook
+- `AcceptedRentalDialog.tsx` → integrare wizard
+- `InspectionDialog.tsx` → înlocuit de InspectionWizard
+- `pages/admin/AdminReservations.tsx` → tab nou „Procese verbale"
+- `data/uxCopy.ts` → texte noi RO/EN pentru 7 pași + next actions + wizard
 
-### Client compatibility
+**Fără schimbări:**
+- Schema DB (folosim coloane existente)
+- Edge functions
+- Email templates (deja redesign-uite)
+- Stripe flow
 
-Tested visual targets: Gmail (web + iOS + Android), Apple Mail (macOS + iOS), Outlook 2016/365 (Windows uses MSO conditionals → ProductCard renders as `<table>`), Yahoo. Dark mode keeps card white per Lovable platform rule; only the outer page bg subtly inverts.
+## Out of scope
+- 2FA / OTP / device trust (sprint separat)
+- Push notifications native
+- Schimbare schemă inspections (folosim cea existentă)
