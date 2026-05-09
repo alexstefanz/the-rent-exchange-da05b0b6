@@ -321,12 +321,7 @@ const AccountTab = () => {
         >
           <Card className="overflow-hidden border-0 shadow-md">
             <div className="relative">
-              {/* Gradient banner */}
-              <div className="h-32 bg-gradient-to-br from-[#F59E0B] via-[#F98715] to-[#FB923C] relative overflow-hidden">
-                <div className="absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
-                <div className="absolute -left-8 bottom-0 h-32 w-32 rounded-full bg-white/10 blur-xl" />
-              </div>
-              <div className="px-6 sm:px-8 pb-6 -mt-14">
+              <div className="px-6 sm:px-8 py-6">
                 <div className="flex flex-col sm:flex-row sm:items-end gap-5">
                   {/* Avatar */}
                   <div className="relative">
