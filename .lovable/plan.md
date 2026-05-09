@@ -1,117 +1,86 @@
-## Wallet Dashboard Redesign — `/castiguri`
+# Redesign "Contul Meu" — Premium Account Hub
 
-Pagina actuală arată 4 carduri simple + 2 tabele basic. Acest plan o transformă într-un Wallet premium (Stripe Express + Airbnb Earnings + Revolut), păstrând logica financiară existentă (`rentals.owner_payout` × `payment_status` minus `withdrawal_requests` aprobate/în curs) și sursa unică pentru IBAN (`profiles.iban` / `account_holder_name`) — exact cum este declarat în memoria proiectului.
+Transformăm pagina `/profile` (azi: titlu + BalanceCard + 5 butoane portocalii identice) într-un dashboard contextual inspirat din Airbnb Host, Revolut Home, Stripe Express și Uber Driver, păstrând stack-ul existent (React + Tailwind + shadcn + design tokens Rentli).
 
-### Componente noi
+## Structura nouă a paginii
 
+```text
+┌──────────────────────────────────────────────────────────────┐
+│  HERO ACCOUNT CARD (gradient subtil, full width)             │
+│  Avatar · Nume · Verificat · Rating · Închirieri · Member    │
+│  Progress bar "Profil completat 80%" · CTA Completează       │
+├──────────────────────────────────────────────────────────────┤
+│  QUICK ACTIONS (1 primary + 4 secondary)                     │
+│  [+ Adaugă produs] (orange)  · Rezervări · Mesaje · etc.     │
+├───────────────────────────────┬──────────────────────────────┤
+│  SMART CARDS (contextual)     │  ACCOUNT HEALTH              │
+│  - 1 închiriere activă        │  Email · Telefon · KYC ·     │
+│  - 2 mesaje necitite          │  IBAN · Profil               │
+│  - 500 RON disponibili        │  Progress 4/5                │
+│  - Review nou primit          │                              │
+├───────────────────────────────┼──────────────────────────────┤
+│  ACTIVITY FEED (realtime)     │  NOTIFICATION CENTER         │
+│  ultimele 8 evenimente        │  grupate pe tip + badges     │
+└───────────────────────────────┴──────────────────────────────┘
+              NAV GROUPS: Activitate · Cont · Suport
 ```
-src/components/earnings/
-  WalletHeroCard.tsx          — card mare cu balanță disponibilă, CTA "Retrage"
-  BalanceBreakdown.tsx        — pills: Disponibil / În așteptare / Retras / Total
-  WithdrawalMethodCard.tsx    — afișează IBAN + titular din profile, edit / empty state
-  TransactionsTable.tsx       — tabel desktop + listă cards mobile, status badges, filtre
-  TransactionDetailDrawer.tsx — Sheet cu detalii produs/perioadă/comision/ID
-  WithdrawalsTable.tsx        — istoric cereri retragere cu PayoutTimeline
-  PayoutTimeline.tsx          — mini stepper: Cerută → Procesare → Trimis → Finalizat
-  WithdrawDrawer.tsx          — wizard multi-step (Sheet) cu STEP 1-4
-  EmptyEarnings.tsx           — empty state premium
-src/hooks/
-  useEarnings.ts              — fetch + agregare (extras din EarningsTab existent)
-  useWithdrawalsRealtime.ts   — Supabase Realtime pe withdrawal_requests
-```
 
-### Refactor
+Mobile: o singură coloană, sticky Quick Actions sub Hero, smart cards swipeable, restul stacked.
 
-**`src/components/profile/EarningsTab.tsx`** — devine orchestrator slim (~120 linii):
-- Folosește `useEarnings` (logica de calcul rămâne identică — păstrăm formula curentă: `total - pending - completedWithdrawals - pendingWithdrawals`).
-- Compoziție: `WalletHeroCard` → `BalanceBreakdown` → `WithdrawalMethodCard` → `WithdrawalsTable` (dacă există) → `TransactionsTable` → `WithdrawDrawer`.
-- `useWithdrawalsRealtime` invalidează datele când admin aprobă/respinge.
+## Componente noi (`src/components/profile/dashboard/`)
 
-**`src/pages/EarningsPage.tsx`** — păstrat aproape identic (Navbar + container). Adaug breadcrumbs și un mic header cu icon Wallet.
+- `AccountHeroCard.tsx` — avatar + nume + chip-uri trust (verificat, rating, închirieri, member since), progress bar completare profil cu CTA `Completează profilul` și link `Vezi profil public`. Gradient `--primary/5` peste `--background`, shadow elegant, fade-in.
+- `QuickActions.tsx` — grid: 1 acțiune primară `Adaugă produs` (gradient orange, mai mare) + 4 acțiuni neutre (icon-only stil Revolut: Rezervări, Închirieri, Mesaje, Câștiguri). Doar primary e portocaliu — restul `bg-card border` cu hover discret.
+- `SmartCards.tsx` + `SmartCard.tsx` — cardurile apar **doar dacă sunt relevante** (active rentals, unread messages, available balance, new reviews, pending KYC). Fiecare card: icon, titlu, sub-text dinamic, CTA contextual ("Confirmă returul", "Vezi conversațiile", "Retrage bani"). Empty state premium când nu e nimic.
+- `AccountHealth.tsx` — checklist 5 itemi (Email, Telefon, KYC, IBAN, Profil complet) cu iconițe verde/gri și progress bar agregat. CTA per item lipsă.
+- `ActivityFeed.tsx` — listă cronologică cu icon colorat per tip (booking, review, payout, message), timestamp relativ ("acum 2h"), realtime via Supabase channel.
+- `NotificationCenter.tsx` — preluat din `notifications`, grupat pe categorie cu badge count, link "Vezi toate".
+- `NavGroups.tsx` — 3 secțiuni colapsabile (Activitate / Cont / Suport) cu link-uri ușoare, fără gradient orange.
 
-**`src/components/profile/WithdrawalDialog.tsx`** — înlocuit cu `WithdrawDrawer.tsx` (Sheet din dreapta, mobile-first full-screen).
+## Hooks & date
 
-### Wallet Hero Card
+`src/hooks/useAccountDashboard.ts` — un singur hook care returnează:
+- `profileCompletion` (calculat din: avatar, full_name, phone, iban, kyc_status, account_holder_name)
+- `trustStats` (rating mediu user reviews, total rentals completate, member since)
+- `smartSignals` (active rentals count + next action, unread messages, available balance reuse `useEarnings`, new reviews în ultimele 7 zile, KYC pending)
+- `activity` (ultimele 8 din `notifications` + agregare opțională `rentals`/`product_reviews`)
 
-- Card mare (rounded-2xl, shadow elegant), fundal `from-primary/5 via-background to-background`, accent border-primary/20.
-- Stânga: icon Wallet în cerc primary/10, label "Disponibil pentru retragere", suma mare (text-4xl bold tabular-nums) + animație count-up la load.
-- Dreapta (desktop) / dedesubt (mobile): CTA `Retrage bani` (size lg, primary), disabled cu tooltip dacă `availableBalance ≤ 0` sau `!profileIban`.
-- Sub: micro-row cu "Câștiguri luna aceasta + X RON" (text verde delta).
+Realtime: subscribe la `notifications`, `messages`, `rentals` pentru utilizator (reuse pattern din `useProfileRealtime`).
 
-### Balance Breakdown
+## Refactor `src/pages/Profile.tsx`
 
-4 pills inline (grid-cols-2 sm:grid-cols-4):
-- **Disponibil** (verde, CheckCircle) — `availableBalance`
-- **În așteptare** (amber, Clock) — `pendingPayout`, tooltip explicativ
-- **Retras** (slate, ArrowUpRight) — sumă completed
-- **Total câștiguri** (primary, TrendingUp) — `totalAllTime`
+- Devine orchestrator slim (~80 linii): Navbar + grid 2-col desktop / 1-col mobile cu noile componente.
+- BalanceCard actual rămâne folosit doar în `/castiguri` (eliminat din această pagină — info-ul apare în Smart Card "Câștiguri disponibile" + Quick Action).
+- Se păstrează redirect-ul către `/auth` pentru utilizatori neautentificați și skeleton loaders pentru fiecare secțiune.
 
-Fiecare pill: icon mic + label uppercase + valoare + sublabel optional. Hover: ring-primary/20.
+## Design system
 
-### Withdrawal Method Card
+- Folosim exclusiv tokeni semantici (`bg-card`, `text-foreground`, `border-border`, `--primary`, `--muted`).
+- Orange (`#F59E0B` / `#F98715`) doar pe: CTA Hero "Completează", Quick Action primară "Adaugă produs", smart card cu cea mai urgentă acțiune.
+- Border radius 12px (consistent cu memoria), shadow-uri subtile, `animate-fade-in`/`hover-scale` pentru micro-interacțiuni.
+- Plus Jakarta Sans (deja default), iconițe `lucide-react`.
+- Bilingual via `useLanguage` (RO/EN) pentru toate textele noi.
 
-- Dacă `profile.iban` există: card cu icon Bank, IBAN mascat (`RO49 •••• •••• •••• 0000`), titular, badge "Implicit", buton "Editează" (link spre `/contul-meu` secțiunea `payout`).
-- Dacă nu există: empty state premium cu copy + CTA "Adaugă IBAN" → `/contul-meu#section-payout`.
-- Notă trust: "Datele tale bancare sunt criptate și protejate." cu icon Lock.
+## Fișiere
 
-**Notă:** card bancar (Stripe SetupIntent) nu este implementat — afișăm doar IBAN, fără opțiune "Adaugă card" (ar fi `disabled` cu badge "În curând" doar dacă userul cere ulterior).
+Create:
+- `src/components/profile/dashboard/AccountHeroCard.tsx`
+- `src/components/profile/dashboard/QuickActions.tsx`
+- `src/components/profile/dashboard/SmartCards.tsx`
+- `src/components/profile/dashboard/SmartCard.tsx`
+- `src/components/profile/dashboard/AccountHealth.tsx`
+- `src/components/profile/dashboard/ActivityFeed.tsx`
+- `src/components/profile/dashboard/NotificationCenter.tsx`
+- `src/components/profile/dashboard/NavGroups.tsx`
+- `src/components/profile/dashboard/DashboardSkeleton.tsx`
+- `src/hooks/useAccountDashboard.ts`
 
-### Withdraw Drawer (wizard)
+Edit:
+- `src/pages/Profile.tsx` (rescris ca orchestrator)
 
-Sheet din dreapta (mobile: full-screen), header cu progress dots (1-4) și buton Back.
+## Out of scope (explicit)
 
-- **STEP 1 — Sumă:** input mare cu sufix " RON", presetări (25%, 50%, 100%), buton "Retrage tot", hint "Disponibil: X RON". Validare: `min 50 RON, max availableBalance`.
-- **STEP 2 — Metodă:** radio cu cardul IBAN existent (preselectat). CTA inline "Adaugă/schimbă IBAN" → deschide drawer secundar sau redirect către `/contul-meu`.
-- **STEP 3 — Confirmare:** sumar (sumă, IBAN mascat, comision = 0 RON deocamdată, estimare 1-3 zile lucrătoare). Checkbox confirmare.
-- **STEP 4 — Succes:** animație checkmark, copy "Retragerea a fost inițiată cu succes", două butoane: "Vezi cererea" / "Închide".
-
-La submit: insert în `withdrawal_requests` (păstrăm logica existentă din `WithdrawalDialog`); IBAN-ul nu se mai re-salvează în profile (sursa rămâne `profiles`).
-
-### Transactions Table
-
-**Desktop (table):** Imagine produs (12px rounded), titlu, sumă (verde), tip (Închiriere finalizată / Avans blocat), dată, status badge, buton "Detalii" (icon ChevronRight).
-
-**Mobile (cards):** stack vertical cu thumbnail + titlu + sumă + status + chevron, tap → drawer.
-
-**Status badges:**
-- Disponibil — emerald
-- Blocat (în așteptare) — amber
-- Retragere inițiată — blue
-- Procesare — blue cu pulse
-- Plătit — emerald solid
-- Eșuat — destructive
-- Anulat — slate
-
-Filtre topbar: chips (Toate / Câștiguri / Retrageri) + select status + range dată (compact).
-
-### Transaction Detail Drawer
-
-Sheet cu: imagine produs mare, titlu, perioadă închiriere, chiriaș (link profil), breakdown financiar (sumă brută, comision platformă 5%, sumă netă), status, data disponibilizării, ID rezervare (`RNT-XXXXXX` cu copy), link "Vezi rezervarea" → `/rezervare/{public_id}`.
-
-### Withdrawals Table + Payout Timeline
-
-Sub Hero (dacă există cereri), card cu listă cereri. Fiecare rând expandabil dezvăluie `PayoutTimeline`: 4 pași (Cerută ✓ / Procesare ⏳ / Trimis către bancă / Finalizat). Dacă status `rejected`: motivul (`admin_note`) cu icon AlertCircle + CTA "Schimbă IBAN" / "Încearcă din nou".
-
-### Realtime & micro-interactions
-
-- `useWithdrawalsRealtime` — Supabase channel pe `withdrawal_requests` filter `user_id=eq.${user.id}`, invalidare React Query.
-- `useRentalRealtime`-like pe `rentals` (filter owner_id) pentru update balanță live.
-- Skeleton loaders pentru hero, breakdown și tabele.
-- Framer-motion: fade+slide-in pe secțiuni la mount, count-up pe sumă, stagger pe pills.
-- Toast confirmări la fiecare acțiune.
-
-### Bilingv
-
-Adaug toate stringurile noi în `src/data/uxCopy.ts` sub `wallet.*` (RO/EN).
-
-### Out of scope (explicit)
-
-Aceste cereri necesită backend nou și NU sunt incluse în acest redesign de UI; rămân ca task-uri viitoare separate:
-- **OTP confirmare retragere** (necesită edge function + table tokens).
-- **Blocare retragere dacă IBAN schimbat recent** (necesită `iban_changed_at` în profiles + trigger).
-- **Audit log schimbare metodă retragere** (tabel nou).
-- **Adăugare card bancar (Stripe Connect Express)** — model curent este IBAN manual aprobat de admin.
-- **Email-uri tranzacționale noi** pentru `withdrawal initiated/processed/failed` — există deja templateuri `withdrawal-*` în `supabase/functions/_shared/transactional-email-templates/`; integrarea trigger-ului poate fi cerută separat.
-- **Admin dashboard** — `AdminWithdrawals.tsx` rămâne neschimbat; redesign-ul este focusat pe userul final.
-
-Vom semnaliza în UI fiecare zonă "În curând" relevantă, fără a falsifica funcționalitate.
+- Fără modificări la backend / RLS / migrări noi.
+- Fără redesign la `/contul-meu` (AccountTab — deja făcut), `/castiguri` (deja făcut), `/mesaje`, `/rezervari`.
+- Fără sidebar global nou — păstrăm Navbar + MobileBottomNav existente.
+- Fără modificări la BalanceCard (rămâne disponibil pentru alte pagini).
