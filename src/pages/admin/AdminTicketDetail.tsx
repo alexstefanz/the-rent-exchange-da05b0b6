@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft, Send, Paperclip, Lock, User, Package, Calendar, FileText, History,
-  AlertTriangle, Loader2, MessageCircle
+  AlertTriangle, Loader2, MessageCircle, Sparkles, Wand2, ListChecks
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const statusColors: Record<string, string> = {
   NEW: "bg-blue-100 text-blue-800",
@@ -75,6 +76,9 @@ const AdminTicketDetail = () => {
   }, [ticket?.id]);
   const [sending, setSending] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [aiLoading, setAiLoading] = useState<null | "summarize" | "suggest_reply" | "suggest_action">(null);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [aiActionRec, setAiActionRec] = useState<string | null>(null);
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ['opsTicket', id] });
@@ -117,6 +121,29 @@ const AdminTicketDetail = () => {
       queryClient.invalidateQueries({ queryKey: ['ticketAttachments', id] });
     } catch { toast.error("Eroare la upload"); }
     finally { setSending(false); }
+  };
+
+  const runAiAssist = async (mode: "summarize" | "suggest_reply" | "suggest_action") => {
+    if (!id) return;
+    setAiLoading(mode);
+    try {
+      const { data, error } = await supabase.functions.invoke("support-ai-admin-assist", {
+        body: { ticketId: id, mode },
+      });
+      if (error) throw error;
+      const text = (data as any)?.text?.trim();
+      if (!text) throw new Error("Răspuns gol de la AI");
+      if (mode === "summarize") setAiSummary(text);
+      else if (mode === "suggest_action") setAiActionRec(text);
+      else if (mode === "suggest_reply") {
+        setMessageText(text);
+        toast.success("Răspuns sugerat — revizuiește înainte de a trimite");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Eroare AI");
+    } finally {
+      setAiLoading(null);
+    }
   };
 
   if (isLoading) {
@@ -335,6 +362,55 @@ const AdminTicketDetail = () => {
                 <Button variant="outline" size="sm" className="w-full" disabled>
                   ⚠️ Aplică Penalizare (TODO)
                 </Button>
+              </CardContent>
+            </Card>
+
+            {/* AI Assist */}
+            <Card className="border-primary/30">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" /> AI Assist
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button
+                  variant="outline" size="sm" className="w-full justify-start"
+                  onClick={() => runAiAssist("summarize")}
+                  disabled={aiLoading !== null}
+                >
+                  {aiLoading === "summarize" ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <ListChecks className="h-3.5 w-3.5 mr-2" />}
+                  Sumarizează ticket
+                </Button>
+                <Button
+                  variant="outline" size="sm" className="w-full justify-start"
+                  onClick={() => runAiAssist("suggest_reply")}
+                  disabled={aiLoading !== null || isClosed}
+                >
+                  {aiLoading === "suggest_reply" ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <Wand2 className="h-3.5 w-3.5 mr-2" />}
+                  Sugerează răspuns
+                </Button>
+                <Button
+                  variant="outline" size="sm" className="w-full justify-start"
+                  onClick={() => runAiAssist("suggest_action")}
+                  disabled={aiLoading !== null}
+                >
+                  {aiLoading === "suggest_action" ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <Sparkles className="h-3.5 w-3.5 mr-2" />}
+                  Recomandă status & prioritate
+                </Button>
+
+                {aiSummary && (
+                  <div className="text-xs whitespace-pre-wrap bg-muted/40 border rounded-md p-2 mt-2">
+                    <p className="font-semibold text-[10px] uppercase tracking-wide text-primary mb-1">Sumar</p>
+                    {aiSummary}
+                  </div>
+                )}
+                {aiActionRec && (
+                  <div className="text-xs whitespace-pre-wrap bg-muted/40 border rounded-md p-2">
+                    <p className="font-semibold text-[10px] uppercase tracking-wide text-primary mb-1">Recomandare</p>
+                    {aiActionRec}
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground pt-1">Asistență AI internă — verifică înainte de a trimite.</p>
               </CardContent>
             </Card>
 

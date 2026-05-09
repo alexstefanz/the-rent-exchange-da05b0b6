@@ -3,6 +3,8 @@ project_id = "tsffyecastudajmgrckt"
 [functions]
   [functions.auth-email-hook]
     verify_jwt = false
+  [functions.ops-tickets-cron]
+    verify_jwt = false
   [functions.confirm-account-deactivation]
     verify_jwt = false
   [functions.odoo-proxy]
