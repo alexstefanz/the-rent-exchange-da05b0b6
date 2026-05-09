@@ -1,131 +1,101 @@
-# Redesign Flow Rezervare & Închiriere
 
-## Obiectiv
-Transformare flow-ului actual (6 statusuri) într-o experiență premium cu **7 pași clari**, **proces verbal ca checkpoint oficial**, **timeline animat realtime** și **next-action card** care ghidează utilizatorul pas cu pas.
+# Redesign Account Hub — "Detalii cont"
 
-## Flow nou (7 pași)
+Restructurez complet pagina `/contul-meu` într-un hub modern cu overview vizual, secțiuni clar separate (Identitate, Securitate, Verificare, Plăți, Payout, Notificări, Suport, Danger Zone) și interacțiuni premium. Folosesc datele existente; pentru funcționalitățile fără backend (2FA, sesiuni, login history, carduri Stripe) afișez UI-ul cu stare "În curând" pentru a păstra design-ul scalabil fără a inventa logică inexistentă.
 
-```text
-1. Cerere trimisă          (status: pending)
-2. Cerere aprobată         (status: confirmed, înainte de start_date)
-3. În tranzit              (start_date trecut, fără handover_confirmed_at)
-4. Confirmare primire      (proces verbal predare — checkpoint oficial)
-5. Produs în folosire      (handover_confirmed_at setat, înainte de end_date)
-6. În curs de returnare    (end_date trecut, fără return_confirmed_at)
-7. Finalizat               (return_confirmed_at setat → status: completed)
-```
-
-Mapare logică în `getTimelineStep()` din `RentalTimeline.tsx` — fără schimbări de schemă DB, doar reinterpretare timestamps existente (`handover_confirmed_at`, `return_confirmed_at`, `start_date`, `end_date`).
-
-## Componente noi / refăcute
-
-### 1. `RentalTimelineV2.tsx` (înlocuiește `RentalTimeline.tsx`)
-- 7 cercuri cu iconițe (Send, ThumbsUp, Truck, ClipboardCheck, Package, RotateCcw, CheckCircle2)
-- Linie de progres animată (Framer Motion `width` transition)
-- Pas activ: `pulse` subtil + glow ring
-- Pași completați: scale-in animation, static
-- Pas „Finalizat": pulse oprit, emerald glow
-- Mobile: layout vertical compact; Desktop: orizontal cu labels
-
-### 2. `NextActionCard.tsx` (NOU — sticky sub timeline)
-Card mare premium cu:
-- Iconiță contextuală
-- Titlu „Ce trebuie să faci acum"
-- Sub-text explicativ
-- CTA primary (variabil: „Încarcă pozele", „Confirmă primirea", „Așteaptă confirmarea proprietarului", etc.)
-- Stări per rol (renter vs owner) și per step
-
-### 3. `InspectionWizard.tsx` (refactor complet din `InspectionDialog.tsx`)
-Wizard step-by-step mobile-first cu progres bar sus:
+## Structura nouă a paginii
 
 ```text
-Step 1 → Introducere (de ce e important procesul verbal)
-Step 2 → Poze obligatorii (min 3: față, spate, defecte)
-Step 3 → Checklist (critice obligatorii + secundare opționale)
-Step 4 → Observații (obligatorii dacă există puncte nebifate)
-Step 5 → Declarație legală (2 checkboxes)
-Step 6 → Confirmare finală (rezumat + CTA mare)
+/contul-meu
+├── 1. AccountHeroCard         ← NOU (overview premium)
+├── 2. ProfileCompletionCard   ← NOU (progres + checklist)
+├── 3. Tabs / Sections sticky nav
+│    ├── Personal Information
+│    ├── Verification Center (KYC redesign)
+│    ├── Security Center
+│    ├── Payment Methods       (placeholder UI)
+│    ├── Payout Methods        (IBAN actual)
+│    ├── Notification Center
+│    └── Support & Safety
+└── 4. Danger Zone (collapsible, jos)
 ```
 
-Validări per step blochează „Continuă". După confirmare: lock edit, salvare timestamp + audit metadata (deja avem device prin user agent în client logs).
+## Secțiuni — comportament
 
-### 4. `SupportFromRentalButton.tsx` (NOU)
-Buton „Ai o problemă?" care creează automat ops_ticket cu:
-- `rental_user_id`, `owner_user_id`, `reservation_id`, `product_id`
-- titlu prefilat „Problemă rezervare {public_id}"
-- categorie `RENTAL_DISPUTE`
+### 1. AccountHeroCard
+- Avatar mare cu inel gradient + buton cameră (cropper modal cu zoom — react-easy-crop deja disponibil ca dep dacă lipsește îl adaug).
+- Nume, badge "Verified" (din `kyc_status=VERIFIED`), "Member since" (`created_at`).
+- Trust score derivat din: KYC + telefon + email contact + IBAN + nr. review-uri (`get_user_statistics`).
+- Stats inline: rentals completed, rating mediu, response rate (placeholder dacă nu există).
 
-### 5. `ChatQuickActions.tsx` (NOU — în NextActionCard)
-- Buton „Discută cu proprietarul" / „Discută cu chiriașul" → navighează la `/messages?conversation=...`
-- Disclaimer subtil: „Pentru siguranță, recomandăm comunicarea prin platformă."
+### 2. ProfileCompletionCard
+- Progress bar animat (Framer Motion) 0–100%.
+- Checklist cu iconițe verde/portocaliu:
+  - ✓ Email cont, ✓ Telefon RO valid, ✓ Fotografie, ✓ Identitate (KYC), ⚠ IBAN.
+- Click pe item → scroll la secțiunea relevantă.
 
-### 6. `ReviewPromptDialog.tsx` (NOU)
-Popup elegant la primul mount după `status=completed`:
-- 2 CTA: „Lasă review acum" / „Mai târziu"
-- Skip persistă în localStorage; reminder după 24h prin notificare in-app
+### 3. Personal Information
+- Form actual reorganizat: card cu spacing premium, live validation (zod onChange), toast subtil la save, sticky save bar pe mobile.
+- Cropper avatar modal (zoom + preview rotund) înainte de upload.
 
-## Realtime sync
+### 4. Verification Center (KYC redesign)
+- Înlocuiesc "LEVEL 1/2/3" cu badge-uri umane: "Identitate verificată" / "În curs de verificare" / "Verificare necesară".
+- Mini-stepper vizual (3 pași) + CTA mare "Începe verificarea" → `/verificare-identitate`.
+- Trust copy: "Verificarea crește încrederea și deblochează închirieri premium".
 
-În `RentalsTab.tsx` și `RentalsOutTab.tsx`:
-- Subscribe la `postgres_changes` pe `rentals` filtrat pe `renter_id` / `owner_id`
-- Invalidează `useQuery` keys la fiecare UPDATE → timeline se re-randează automat
-- Bonus: subscribe pe `rental_inspections` pentru check-uri live
+### 5. Security Center
+- Card "Parolă" — buton "Schimbă parola" (folosește flow-ul existent recovery email).
+- Carduri "În curând" pentru: 2FA, Sesiuni active, Trusted devices, Login history. Placeholder vizual cu badge `Coming soon` ca să nu mint funcționalitate.
+- Indicator "Ultima conectare" din `user.last_sign_in_at`.
 
-## Pages care primesc redesign
+### 6. Payment Methods (placeholder)
+- Empty-state elegant cu mock card preview Visa/Mastercard, CTA "Adaugă card" disabled cu tooltip "Disponibil curând". Justificat: integrarea Stripe customer cards nu există încă.
 
-| Pagină | Schimbare |
-|---|---|
-| `RentalsPage.tsx` | Card per rezervare cu nou timeline + NextActionCard inline |
-| `RentalsOutPage.tsx` | Idem, perspectivă owner |
-| `RentalsTab.tsx` / `RentalsOutTab.tsx` | Filtre cu badge-uri colorate noi (7 statusuri), grid cards refăcute |
-| `AcceptedRentalDialog.tsx` | Refactor: integrează NextActionCard + buton către InspectionWizard |
-| Admin `AdminReservations.tsx` | Vizualizare timeline complet + galerie poze inspections + audit trail |
+### 7. Payout Methods (IBAN — există)
+- Refac IbanForm într-un card separat: input IBAN cu format mask `RO## #### #### #### #### ####`, holder, badge status (verificat dacă completat), copy clar despre rolul IBAN-ului.
 
-## Notificări
+### 8. Notification Center
+- Toggle-uri animate: SMS (existent — `sms_notifications_enabled`), Email rental updates, Email marketing, Chat email digest.
+- Pentru cele fără coloană DB încă, salvez în `profiles` (adaug coloane prin migrare separată dacă userul confirmă; momentan doar SMS este real, restul disabled cu tooltip).
 
-Existente (păstrate, doar adăugate triggere noi):
-- Email + in-app la fiecare schimbare status
-- Push (placeholder pentru viitor — Web Push API)
+### 9. Support & Safety
+- Linkuri rapide: Centru suport, Deschide ticket (`/tichete`), Politici, Plăți sigure.
 
-Triggere noi:
-- „Proces verbal predare necesar" (când rental devine `în tranzit`)
-- „Proces verbal retur necesar" (owner, când end_date a trecut)
-- „Review reminder" (24h după finalizare)
+### 10. Danger Zone
+- Collapsible (Radix `Collapsible`) închis by default, border destructiv subtil.
+- Conține: Dezactivare cont (logica existentă `request-account-deactivation`).
 
-## Securitate (out of scope acest sprint — listate ca follow-up)
-2FA după 30 zile inactivitate, OTP email re-auth, device trust și suspicious login → recomand sprint separat (necesită infra auth schimbată).
+## Fișiere
 
-## Detalii tehnice
+**Noi:**
+- `src/components/profile/account/AccountHeroCard.tsx`
+- `src/components/profile/account/ProfileCompletionCard.tsx`
+- `src/components/profile/account/SectionNav.tsx` (sticky tab nav cu scroll-spy)
+- `src/components/profile/account/PersonalInfoSection.tsx`
+- `src/components/profile/account/VerificationSection.tsx`
+- `src/components/profile/account/SecuritySection.tsx`
+- `src/components/profile/account/PaymentMethodsSection.tsx`
+- `src/components/profile/account/PayoutMethodsSection.tsx`
+- `src/components/profile/account/NotificationCenterSection.tsx`
+- `src/components/profile/account/SupportSection.tsx`
+- `src/components/profile/account/DangerZoneSection.tsx`
+- `src/components/profile/account/AvatarCropperDialog.tsx`
+- `src/hooks/useProfileCompletion.ts`
 
-**Fișiere create:**
-- `src/components/dashboard/RentalTimelineV2.tsx`
-- `src/components/dashboard/NextActionCard.tsx`
-- `src/components/dashboard/inspection/InspectionWizard.tsx`
-- `src/components/dashboard/inspection/StepIntro.tsx`
-- `src/components/dashboard/inspection/StepPhotos.tsx`
-- `src/components/dashboard/inspection/StepChecklist.tsx`
-- `src/components/dashboard/inspection/StepNotes.tsx`
-- `src/components/dashboard/inspection/StepDeclaration.tsx`
-- `src/components/dashboard/inspection/StepConfirm.tsx`
-- `src/components/dashboard/SupportFromRentalButton.tsx`
-- `src/components/dashboard/ReviewPromptDialog.tsx`
-- `src/hooks/useRentalRealtime.ts`
+**Editate:**
+- `src/components/profile/AccountTab.tsx` — devine orchestrator slim (compune secțiunile noi).
+- `src/data/uxCopy.ts` — copy bilingv pentru toate secțiunile noi.
 
-**Fișiere modificate:**
-- `RentalTimeline.tsx` → marcat deprecated, redirectă la V2
-- `RentalsTab.tsx`, `RentalsOutTab.tsx` → folosesc V2 + NextActionCard + realtime hook
-- `AcceptedRentalDialog.tsx` → integrare wizard
-- `InspectionDialog.tsx` → înlocuit de InspectionWizard
-- `pages/admin/AdminReservations.tsx` → tab nou „Procese verbale"
-- `data/uxCopy.ts` → texte noi RO/EN pentru 7 pași + next actions + wizard
+## Note tehnice
+- Toate culorile prin design tokens (primary `#F59E0B`, semantic), border radius 12px.
+- Framer Motion pentru progress bar + scale-in carduri (deja folosit în proiect).
+- Mobile-first: stack vertical, sticky save bar, bottom-sheet (Drawer) pentru editări rapide pe mobile.
+- Zero schimbări de schemă DB în acest pas. Coloane noi (notif preferințe, sesiuni, 2FA) sunt out-of-scope și marcate "În curând" în UI.
 
-**Fără schimbări:**
-- Schema DB (folosim coloane existente)
-- Edge functions
-- Email templates (deja redesign-uite)
-- Stripe flow
+## Out of scope (necesită backend separat)
+- 2FA real, login history, trusted devices, suspicious login detection.
+- Stripe SetupIntent pentru carduri salvate.
+- Push notifications (web push / FCM).
+- Verificare IBAN automată.
 
-## Out of scope
-- 2FA / OTP / device trust (sprint separat)
-- Push notifications native
-- Schimbare schemă inspections (folosim cea existentă)
+Acestea pot fi următoarele sprinturi după ce shell-ul UI e aprobat.
