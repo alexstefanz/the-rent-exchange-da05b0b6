@@ -1,76 +1,87 @@
-## Faza 2: Integrare UI redesign chat
+## Email Redesign Plan — Rentli Premium
 
-Conectez componentele create în Faza 1 (`RentalStageStepper`, `TransactionCard`, `MediaLightbox`, `TypingIndicator`, `useChatPresence`, `chatMedia`) într-o experiență coerentă, premium, în stil KeyVue/Airbnb/Telegram.
+Currently we have 25 transactional templates (`supabase/functions/_shared/transactional-email-templates/`) + 6 auth templates (`supabase/functions/_shared/email-templates/`). Each is hand-rolled with duplicated inline styles, no product card, no status badge. We'll standardize the visual language and enrich rental emails with product context.
 
-### 1. Layout `Messages.tsx` (desktop 3 coloane / mobile full-screen)
+### 1. Shared design system (new file)
 
-```text
-┌─────────────┬──────────────────────────┬───────────────┐
-│ Convos 340  │ ChatHeader (peer+stage)  │ InfoPanel 340 │
-│ • search    │ ─────────────────────────│ • avatar+KYC  │
-│ • lista     │ TransactionCard (sticky) │ • contact     │
-│   convo     │ ─────────────────────────│ • shared media│
-│             │ Mesaje (bubbles+date sep)│   tabs        │
-│             │ TypingIndicator          │ • report/block│
-│             │ ─────────────────────────│               │
-│             │ MessageInput (+ attach)  │               │
-└─────────────┴──────────────────────────┴───────────────┘
-```
+Create `supabase/functions/_shared/transactional-email-templates/_components.tsx` exporting reusable React Email building blocks. Auth templates can re-import from this path too.
 
-Mobile: lista plin-ecran → chat plin-ecran (back arrow) → InfoPanel slide-up sheet.
+- `BaseLayout({ preview, children })` — full HTML shell with:
+  - `Head` containing `<meta name="color-scheme" content="light dark">`, `<meta name="supported-color-schemes" content="light dark">`, viewport meta, and MSO conditional comments for Outlook
+  - Page background `#F5F2EE` (warm neutral framing the card)
+  - Centered 600px white card with `border-radius: 16px`, soft shadow `0 4px 24px rgba(48,37,32,0.06)`
+  - Subtle Plus Jakarta Sans web font import with Arial fallback
+- `Header()` — gradient hero `linear-gradient(135deg,#F59E0B 0%,#F98715 100%)`, 28px Rentli logo, 24px vertical padding, rounded top corners
+- `H1`, `Lead`, `Body`, `Muted` typography primitives
+- `ProductCard({ image, title, period, totalPrice, location, status })` — table-based for Outlook; left 96×96 image with `border-radius: 12px`, right column with title, location pin, period row, status badge, total row separated by `Hr`
+- `StatusBadge({ status })` — color map:
+  - pending → `#F59E0B` bg `#FEF3C7`
+  - approved/active → `#16A34A` bg `#DCFCE7`
+  - declined/cancelled → `#DC2626` bg `#FEE2E2`
+  - payment_pending → `#2563EB` bg `#DBEAFE`
+  - completed → `#7C3AED` bg `#EDE9FE`
+- `CTAButton({ href, children, variant })` — primary (`#F59E0B`, white text) and ghost (transparent, `#F59E0B` border); 14px vertical / 28px horizontal padding; 12px radius; 100% width on mobile via `<!--[if !mso]>`/media query CSS
+- `Divider`, `MessagePreview` (chat quote box), `InfoRow` (label/value pair)
+- `Footer()` — support email, links to Help/Terms/Privacy, social icons (using public Storage SVGs we already host), trust line "Rentli — închiriere între oameni, securizată", and `{{unsubscribe}}` placeholder is **not** added (system appends it)
 
-### 2. Componente noi
+All styles are inline objects to satisfy email clients. A small CSS string in `<Head>` handles `@media (max-width:600px)` to stack ProductCard rows and force CTA full width, and `@media (prefers-color-scheme: dark)` to keep the card white but soften the page background — the body itself stays `#ffffff` per platform rules.
 
-- **`ChatHeader.tsx`** – avatar peer cu dot online, nume, status („online" / „acum X min" / „typing…"), buton info (mobile), buton 3CX (păstrat din memoria existentă).
-- **`MessageBubble.tsx`** – bubble rotunjit (rounded-2xl, primary pentru self, muted pentru peer), grupare consecutive, footer cu timestamp + bifa „seen", suport `MessageContent` (link scanner) + `AttachmentGrid`.
-- **`AttachmentGrid.tsx`** – grilă 1/2/3+ cu max 6 thumbs (imagini & poster video cu icon play), click → `MediaLightbox`.
-- **`MessageInput.tsx`** – textarea autosize, buton attach (image/video, max 25MB, max 6), preview thumbnails înainte de send, progress bar upload, emit `typing` events.
-- **`InfoPanel.tsx`** – tab-uri: **Detalii** (avatar, KYC, membru din, contact gated) / **Media** (Imagini | Video | Linkuri grid lazy) / **Acțiuni** (Raportează, Blochează).
-- **`DateSeparator.tsx`** – „Astăzi" / „Ieri" / „12 mai" cu pill glassmorphism.
+### 2. Redesign all 25 transactional templates
 
-### 3. Refactor `ChatPanel.tsx` (orchestrator)
+Rewrite each template to compose `BaseLayout + Header + H1 + Lead + (optional ProductCard / MessagePreview / InfoRow) + CTAButton + Footer`. No file/registry changes — same exports, same `template` shape, same `previewData` keys (extended where needed).
 
-Devine container care compune: `ChatHeader` + `RentalStageStepper` + `TransactionCard` + listă bubbles + `TypingIndicator` + `MessageInput`. Wire-up:
+**Rental flow (gets ProductCard + StatusBadge):**
+- `rental-request-owner`, `rental-request-renter` — status `pending`, primary CTA "Vezi cererea"
+- `rental-accepted` — status `approved`, CTA "Vezi rezervarea"
+- `rental-rejected` — status `declined`, ghost CTA "Caută alternative"
+- `cancellation-owner`, `cancellation-renter` — status `cancelled`
+- `payout-received` — status `completed` + amount row
 
-- `useChatPresence(conversationId, userId)` → `peerOnline`, `peerTyping`, `setSelfTyping`.
-- `messagingApi.markRead(conversationId)` la deschidere și la mesaj nou (cu `mark_conversation_read` RPC).
-- Realtime subscribe `messages` + `message_attachments` + `conversations` (pt. `*_last_read_at` → seen).
-- Send: dacă există atașamente, pipeline `uploadChatAttachments` → `sendMessageWithAttachments` (insert message + update attachments cu `message_id`).
+**Account / KYC / product moderation (no ProductCard, branded info card instead):**
+- `welcome` — hero illustration block with 3 quick-start tiles (Caută / Listează / Mesaje)
+- `kyc-submitted/approved/rejected/reupload-requested` — KYC tier badge
+- `product-published` (ProductCard preview) / `product-rejected` (reason callout)
+- `password-changed`, `account-deactivation`, `account-banned` — security icon block
 
-### 4. Extindere `messagingApi.ts`
+**Engagement:**
+- `new-message` — sender avatar circle with initial, MessagePreview quote, CTA "Răspunde"
+- `review-received` — star row (★★★★☆) + review excerpt
 
-- `sendMessageWithAttachments({ conversationId, content, attachmentIds })`
-- `markRead(conversationId)` → invocă RPC `mark_conversation_read`
-- `getSharedMedia(conversationId, kind)` cu paginare
-- `reportMessage`, `blockUser`, `unblockUser`
-- `getMessagesWithAttachments(conversationId)` (join `message_attachments`)
+**Support tickets:**
+- `ticket-created/replied/resolved` — ticket # pill, status badge, CTA "Vezi tichetul"
 
-### 5. Animații (Framer Motion)
+**Withdrawals:**
+- `withdrawal-requested/processed/rejected` — amount row, IBAN masked, status badge
 
-- Bubble enter: `fade + slide-up 8px`, `spring stiffness 260`.
-- TypingIndicator: deja animat.
-- Lightbox: `scale 0.95 → 1`, backdrop fade.
-- InfoPanel mobile: `slide-up` sheet.
-- Stage stepper: `width` animat la trecere status.
+### 3. Auth template refresh
 
-### 6. Stil premium
+Update the 6 templates in `_shared/email-templates/` (`signup`, `magic-link`, `recovery`, `invite`, `email-change`, `reauthentication`) to use the same `BaseLayout + Header + Footer` so brand looks identical to transactional. Big OTP block uses 32px monospace digits with letter-spacing for clarity. No prop or hook changes — they keep their existing `auth-email-hook` integration.
 
-- Bubble: `rounded-2xl`, `shadow-[0_1px_2px_rgba(0,0,0,0.04)]`, padding `px-4 py-2.5`, `max-w-[75%]`.
-- Background canal: `bg-[#FCFAF8]` (deja brand) cu pattern subtil noise opcional.
-- Date pill: `backdrop-blur bg-background/70 border`.
-- Self bubble: `bg-primary text-primary-foreground` (#F59E0B).
-- Peer bubble: `bg-white border border-border/50`.
+### 4. Sender enrichment (rental emails only)
 
-### 7. Restricționat (out of scope Faza 2)
+To populate the ProductCard, extend two senders to fetch and forward extra fields. UI/business logic untouched.
 
-- Admin Messaging dashboard (faza 3).
-- Voice messages, reactions, threads, edit/delete.
-- Virtualizare (volum scăzut, nu e necesar).
+- `supabase/functions/send-rental-notification/index.ts`: change product select to `title, images, location, daily_price` and pass `productImage` (first image), `location`, `totalPrice` (`rental.subtotal`), `currency` to both `rental-request-owner` and `rental-request-renter` payloads.
+- `supabase/functions/send-rental-status-notification/index.ts` (and any sibling for accept/reject/cancel — will grep and wire identically) — pass the same enriched payload to `rental-accepted`, `rental-rejected`, `cancellation-*`.
 
-### Fișiere
+Templates accept the new props as optional — when missing (legacy queued payloads, test harness) the ProductCard gracefully falls back to a placeholder gradient tile and hides empty rows. No DB migration, no RLS change.
 
-**Create:** `ChatHeader.tsx`, `MessageBubble.tsx`, `MessageInput.tsx`, `AttachmentGrid.tsx`, `InfoPanel.tsx`, `DateSeparator.tsx`.
+### 5. Test harness alignment
 
-**Edit:** `ChatPanel.tsx` (rewrite orchestrator), `Messages.tsx` (layout 3 coloane + mobile flow), `messagingApi.ts` (funcții noi).
+Update `supabase/functions/test-email-notifications/index.ts` and `src/pages/admin/AdminTestEmails.tsx` sample payloads to include `productImage`, `location`, `totalPrice`, `currency` so admin previews show the new rich layout.
 
-**Păstrate intacte:** `MessageContent.tsx` (security URL), `urlScanner.ts`, `ChatDialog.tsx`, `ConversationList.tsx`, `ContactInfoCard.tsx` (refolosit în InfoPanel).
+### 6. Deploy
+
+Single `deploy_edge_functions` call covering: `send-transactional-email` (re-bundles registry + components), `auth-email-hook`, `send-rental-notification`, `send-rental-status-notification`, `test-email-notifications`.
+
+### Out of scope
+
+- No new templates, no removals
+- No queue / cron / domain changes
+- No marketing emails
+- No attachment support
+- No language switch logic — emails stay Romanian as today
+
+### Client compatibility
+
+Tested visual targets: Gmail (web + iOS + Android), Apple Mail (macOS + iOS), Outlook 2016/365 (Windows uses MSO conditionals → ProductCard renders as `<table>`), Yahoo. Dark mode keeps card white per Lovable platform rule; only the outer page bg subtly inverts.
