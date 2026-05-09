@@ -46,6 +46,7 @@ import { supabase } from "@/integrations/supabase/client";
 import LanguageSwitcher from "./LanguageSwitcher";
 import NotificationBell from "./NotificationBell";
 import MobileBottomNav from "./MobileBottomNav";
+import { AccountHubMenu } from "./AccountHubMenu";
 import logoImage from "@/assets/rentli_logo.webp";
 
 const Navbar = () => {
