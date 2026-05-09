@@ -59,3 +59,39 @@ export function useUserTicketsRealtime(userId: string | null | undefined) {
     };
   }, [userId, qc]);
 }
+
+/**
+ * Admin-side realtime: listens to all ops_tickets and ops_ticket_messages changes
+ * and refreshes the inbox / open ticket caches.
+ */
+export function useAdminTicketsRealtime(activeTicketId?: string | null) {
+  const qc = useQueryClient();
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-tickets-global")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "ops_tickets" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["opsTickets"] });
+          if (activeTicketId) qc.invalidateQueries({ queryKey: ["opsTicket", activeTicketId] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "ops_ticket_messages" },
+        (payload: any) => {
+          qc.invalidateQueries({ queryKey: ["opsTickets"] });
+          const tid = payload?.new?.ticket_id;
+          if (tid) {
+            qc.invalidateQueries({ queryKey: ["ticketMessages", tid] });
+            qc.invalidateQueries({ queryKey: ["opsTicket", tid] });
+          }
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc, activeTicketId]);
+}
