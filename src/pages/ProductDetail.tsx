@@ -85,6 +85,19 @@ const ProductDetail = () => {
   const { bookedDates } = useBookedDates(product?.id);
   const { data: extendedStats } = useProductExtendedStats(product?.id);
 
+  // Track recently viewed
+  useEffect(() => {
+    if (!product) return;
+    trackRecentlyViewed({
+      id: product.id,
+      slug: product.slug,
+      title: (language === "en" && product.title_en) ? product.title_en : product.title,
+      image: product.images?.[0],
+      price: calculateClientPrice(product.daily_price_owner, product.platform_fee_percent),
+      city: product.location_city,
+    });
+  }, [product, language]);
+
   const ensureConversation = async () => {
     if (!user) {
       toast({ title: copy.productDetail.authRequired, description: copy.productDetail.authRequiredDesc, variant: "destructive" });
