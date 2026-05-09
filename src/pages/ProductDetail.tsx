@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { differenceInDays, isBefore } from "date-fns";
 import { useBookedDates, isDateBooked, hasBookedDateInRange } from "@/hooks/queries/useBookedDates";
+import { computeRentalPrice } from "@/lib/rentalPricing";
 import { ChevronRight, MapPin, Heart, Share2 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -203,7 +204,8 @@ const ProductDetail = () => {
 
   const handleReserve = () => {
     if (!product || !startDate || !endDate) return;
-    navigate('/checkout', { state: { product: { id: product.id, title: displayTitle, images, price: clientPrice, priceUnit: "zi", location, ownerId: product.owner_id, platformFeePercent: product.platform_fee_percent }, startDate, endDate, rentalDays, totalPrice: 0 } });
+    const totalPrice = computeRentalPrice(rentalDays, clientPrice, priceWeek, priceMonth).total;
+    navigate('/checkout', { state: { product: { id: product.id, title: displayTitle, images, price: clientPrice, priceUnit: "zi", location, ownerId: product.owner_id, platformFeePercent: product.platform_fee_percent }, startDate, endDate, rentalDays, totalPrice } });
   };
 
   const handleShare = () => setShareOpen(true);
