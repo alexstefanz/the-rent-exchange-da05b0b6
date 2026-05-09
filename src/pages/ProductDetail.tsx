@@ -203,7 +203,8 @@ const ProductDetail = () => {
 
   const handleReserve = () => {
     if (!product || !startDate || !endDate) return;
-    navigate('/checkout', { state: { product: { id: product.id, title: displayTitle, images, price: clientPrice, priceUnit: "zi", location, ownerId: product.owner_id, platformFeePercent: product.platform_fee_percent }, startDate, endDate, rentalDays, totalPrice: 0 } });
+    const totalPrice = computeRentalPrice(rentalDays, clientPrice, priceWeek, priceMonth).total;
+    navigate('/checkout', { state: { product: { id: product.id, title: displayTitle, images, price: clientPrice, priceUnit: "zi", location, ownerId: product.owner_id, platformFeePercent: product.platform_fee_percent }, startDate, endDate, rentalDays, totalPrice } });
   };
 
   const handleShare = () => setShareOpen(true);
