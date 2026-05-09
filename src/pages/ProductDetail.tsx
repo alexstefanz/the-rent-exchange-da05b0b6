@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { differenceInDays, isBefore } from "date-fns";
 import { useBookedDates, isDateBooked, hasBookedDateInRange } from "@/hooks/queries/useBookedDates";
+import { computeRentalPrice } from "@/lib/rentalPricing";
 import { ChevronRight, MapPin, Heart, Share2 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
