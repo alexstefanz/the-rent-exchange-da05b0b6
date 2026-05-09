@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, ImagePlus, Loader2, CheckCheck, Check } from "lucide-react";
-import { format, isToday, isYesterday } from "date-fns";
+import { format, isToday, isYesterday, type Locale } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
