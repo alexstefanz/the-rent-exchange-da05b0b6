@@ -665,6 +665,84 @@ const AdminProducts = () => {
             )}
           </CardContent>
         </Card>
+        </TabsContent>
+
+        <TabsContent value="trash" className="space-y-4 md:space-y-6 mt-0">
+          <Card>
+            <CardHeader className="pb-3 md:pb-6">
+              <CardTitle className="text-lg md:text-2xl flex items-center gap-2">
+                <Trash className="h-5 w-5" /> Coș de gunoi
+              </CardTitle>
+              <CardDescription>
+                Produsele șterse de utilizatori sunt păstrate 14 zile înainte de a fi șterse definitiv.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {deletedLoading ? (
+                <div className="space-y-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
+              ) : deletedProducts.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Trash className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Coșul de gunoi este gol</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Produs</TableHead>
+                        <TableHead>Proprietar</TableHead>
+                        <TableHead>Șters la</TableHead>
+                        <TableHead>Zile rămase</TableHead>
+                        <TableHead className="text-right">Acțiuni</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {deletedProducts.map((p) => {
+                        const deletedAt = new Date(p.deleted_at);
+                        const daysSince = Math.floor((Date.now() - deletedAt.getTime()) / (1000 * 60 * 60 * 24));
+                        const daysLeft = Math.max(0, 14 - daysSince);
+                        return (
+                          <TableRow key={p.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                {p.images?.[0] && <img src={p.images[0]} alt="" className="h-10 w-10 rounded object-cover" />}
+                                <div>
+                                  <span className="font-medium line-clamp-1">{p.title}</span>
+                                  <div className="text-xs text-muted-foreground">{p.category || '-'} · {formatCurrency(p.daily_price_owner)}/zi</div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">{p.owner_name}</TableCell>
+                            <TableCell className="text-muted-foreground whitespace-nowrap">
+                              {format(deletedAt, 'd MMM yyyy, HH:mm', { locale: ro })}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={daysLeft <= 3 ? "destructive" : "secondary"}>
+                                {daysLeft} {daysLeft === 1 ? "zi" : "zile"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button size="sm" variant="outline" onClick={() => handleRestoreDeleted(p.id)} className="gap-1">
+                                  <RotateCcw className="h-3.5 w-3.5" /> Restaurează
+                                </Button>
+                                <Button size="sm" variant="destructive" onClick={() => handlePurgeDeleted(p.id, p.title)} className="gap-1">
+                                  <Trash2 className="h-3.5 w-3.5" /> Șterge
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        </Tabs>
       </div>
 
       {/* Flag Dialog */}
