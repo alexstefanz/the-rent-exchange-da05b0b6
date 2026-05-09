@@ -29,6 +29,9 @@ import { uploadAvatar } from "@/features/profile/avatarApi";
 import { supabase } from "@/integrations/supabase/client";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { isValidRomanianPhone } from "@/lib/inputValidation";
+import { useProfileRealtime } from "@/hooks/useProfileRealtime";
+import { TrustScoreRing } from "@/components/profile/account/TrustScoreRing";
+import { AvatarCropperDialog } from "@/components/profile/account/AvatarCropperDialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -89,6 +92,8 @@ const AccountTab = () => {
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [activeSection, setActiveSection] = useState("personal");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
+  const [cropperOpen, setCropperOpen] = useState(false);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -100,6 +105,15 @@ const AccountTab = () => {
     queryKey: ["userStatistics", user?.id],
     queryFn: () => getUserStatistics(user!.id),
     enabled: !!user?.id,
+  });
+
+  /* ---- realtime sync of profile across devices / admin edits ---- */
+  useProfileRealtime(user?.id, async () => {
+    if (!user) return;
+    try {
+      const fresh = await getProfile(user.id);
+      if (fresh) setProfile(fresh);
+    } catch { /* ignore */ }
   });
 
   /* ---- load profile ---- */
@@ -194,7 +208,18 @@ const AccountTab = () => {
     } finally {
       setIsUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      setCropperOpen(false);
+      setPendingAvatar(null);
     }
+  };
+
+  const handleAvatarPicked = (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: t("Eroare", "Error"), description: t("Fișier prea mare (max 10MB)", "File too large (max 10MB)"), variant: "destructive" });
+      return;
+    }
+    setPendingAvatar(file);
+    setCropperOpen(true);
   };
 
   const handleSubmit = async (data: ProfileFormData) => {
@@ -297,13 +322,16 @@ const AccountTab = () => {
           <Card className="overflow-hidden border-0 shadow-md">
             <div className="relative">
               {/* Gradient banner */}
-              <div className="h-28 bg-gradient-to-br from-[#F59E0B] via-[#F98715] to-[#FB923C]" />
+              <div className="h-32 bg-gradient-to-br from-[#F59E0B] via-[#F98715] to-[#FB923C] relative overflow-hidden">
+                <div className="absolute -right-12 -top-12 h-48 w-48 rounded-full bg-white/10 blur-2xl" />
+                <div className="absolute -left-8 bottom-0 h-32 w-32 rounded-full bg-white/10 blur-xl" />
+              </div>
               <div className="px-6 sm:px-8 pb-6 -mt-14">
                 <div className="flex flex-col sm:flex-row sm:items-end gap-5">
                   {/* Avatar */}
                   <div className="relative">
-                    <div className="rounded-full p-1 bg-background shadow-lg w-fit">
-                      <Avatar className="h-24 w-24 sm:h-28 sm:w-28 ring-2 ring-primary/20">
+                    <div className="rounded-full p-[3px] bg-gradient-to-br from-[#F59E0B] via-[#F98715] to-[#FB923C] shadow-xl w-fit">
+                      <Avatar className="h-24 w-24 sm:h-28 sm:w-28 ring-4 ring-background">
                         <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
                         <AvatarFallback className="bg-primary/10 text-primary text-2xl font-semibold">{initials}</AvatarFallback>
                       </Avatar>
@@ -313,7 +341,7 @@ const AccountTab = () => {
                       ref={fileInputRef}
                       accept="image/jpeg,image/png,image/webp"
                       className="hidden"
-                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarChange(f); }}
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarPicked(f); }}
                     />
                     <button
                       type="button"
@@ -348,24 +376,42 @@ const AccountTab = () => {
                   </div>
                 </div>
 
-                {/* Stats row */}
-                <div className="grid grid-cols-3 gap-3 mt-6">
-                  <StatPill
-                    icon={<Sparkles className="h-4 w-4" />}
-                    label={t("Trust score", "Trust score")}
-                    value={`${trustScore}%`}
-                  />
-                  <StatPill
-                    icon={<Star className="h-4 w-4 fill-current" />}
-                    label={t("Rating", "Rating")}
-                    value={stats?.average_rating ? stats.average_rating.toFixed(1) : "—"}
-                    sublabel={stats?.reviews_count ? `${stats.reviews_count} ${t("recenzii", "reviews")}` : undefined}
-                  />
-                  <StatPill
-                    icon={<ShieldCheck className="h-4 w-4" />}
-                    label={t("Anunțuri", "Listings")}
-                    value={String(stats?.products_count ?? 0)}
-                  />
+                {/* Trust ring + stats */}
+                <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] gap-6 mt-6 items-center">
+                  <div className="flex justify-center sm:justify-start">
+                    <TrustScoreRing
+                      value={trustScore}
+                      label={t("Trust", "Trust")}
+                      sublabel={
+                        trustScore >= 80 ? t("Excelent", "Excellent") :
+                        trustScore >= 50 ? t("Bun", "Good") :
+                        t("În progres", "In progress")
+                      }
+                    />
+                  </div>
+                  <motion.div
+                    className="grid grid-cols-2 sm:grid-cols-3 gap-2.5"
+                    initial="hidden"
+                    animate="show"
+                    variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06 } } }}
+                  >
+                    {[
+                      { icon: <Star className="h-4 w-4 fill-current text-amber-500" />, label: t("Rating", "Rating"),
+                        value: stats?.average_rating ? stats.average_rating.toFixed(1) : "—",
+                        sublabel: stats?.reviews_count ? `${stats.reviews_count} ${t("recenzii", "reviews")}` : undefined },
+                      { icon: <ShieldCheck className="h-4 w-4 text-primary" />, label: t("Anunțuri", "Listings"),
+                        value: String(stats?.products_count ?? 0) },
+                      { icon: <Calendar className="h-4 w-4 text-muted-foreground" />, label: t("Membru din", "Member since"),
+                        value: memberSinceLabel || "—" },
+                    ].map((p, i) => (
+                      <motion.div
+                        key={i}
+                        variants={{ hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } }}
+                      >
+                        <StatPill icon={p.icon} label={p.label} value={p.value} sublabel={p.sublabel} />
+                      </motion.div>
+                    ))}
+                  </motion.div>
                 </div>
               </div>
             </div>
@@ -674,6 +720,14 @@ const AccountTab = () => {
           </Card>
         </Collapsible>
       </div>
+
+      <AvatarCropperDialog
+        file={pendingAvatar}
+        open={cropperOpen}
+        onOpenChange={(o) => { setCropperOpen(o); if (!o) setPendingAvatar(null); }}
+        saving={isUploadingAvatar}
+        onConfirm={handleAvatarChange}
+      />
     </TooltipProvider>
   );
 };
