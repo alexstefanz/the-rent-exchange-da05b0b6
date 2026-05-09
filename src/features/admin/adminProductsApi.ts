@@ -166,6 +166,64 @@ export const deleteProduct = async (productId: string): Promise<void> => {
   if (error) throw new Error(error.message);
 };
 
+// ============ TRASH (soft-delete) ============
+
+export interface DeletedProduct {
+  id: string;
+  title: string;
+  category: string | null;
+  daily_price_owner: number;
+  images: string[] | null;
+  owner_id: string;
+  owner_name: string;
+  slug: string | null;
+  deleted_at: string;
+  deleted_by: string | null;
+  deleted_by_name: string | null;
+}
+
+export const fetchDeletedProducts = async (): Promise<DeletedProduct[]> => {
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, title, category, daily_price_owner, images, owner_id, slug, deleted_at, deleted_by')
+    .not('deleted_at', 'is', null)
+    .order('deleted_at', { ascending: false });
+  if (error) throw new Error(error.message);
+
+  const rows = (data || []) as Array<Record<string, any>>;
+  const userIds = Array.from(new Set(rows.flatMap(r => [r.owner_id, r.deleted_by]).filter(Boolean)));
+  let nameById = new Map<string, string>();
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', userIds);
+    (profiles || []).forEach((p: any) => nameById.set(p.id, p.full_name || 'Utilizator'));
+  }
+
+  return rows.map(r => ({
+    id: r.id,
+    title: r.title,
+    category: r.category,
+    daily_price_owner: r.daily_price_owner,
+    images: r.images,
+    owner_id: r.owner_id,
+    owner_name: nameById.get(r.owner_id) || 'Utilizator',
+    slug: r.slug,
+    deleted_at: r.deleted_at,
+    deleted_by: r.deleted_by,
+    deleted_by_name: r.deleted_by ? (nameById.get(r.deleted_by) || 'Utilizator') : null,
+  }));
+};
+
+export const restoreProduct = async (productId: string): Promise<void> => {
+  const { error } = await supabase
+    .from('products')
+    .update({ deleted_at: null, deleted_by: null } as Record<string, unknown>)
+    .eq('id', productId);
+  if (error) throw new Error(error.message);
+};
+
 export const fetchProductFullDetails = async (productId: string) => {
   const { data, error } = await supabase
     .from('products')

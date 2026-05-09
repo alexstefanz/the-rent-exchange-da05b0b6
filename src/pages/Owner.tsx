@@ -205,7 +205,10 @@ const Owner = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>{t("Ești sigur că vrei să ștergi acest produs?", "Are you sure you want to delete this product?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("Această acțiune nu poate fi anulată. Produsul va fi șters permanent din contul tău.", "This action cannot be undone. The product will be permanently deleted from your account.")}
+              {t(
+                "Produsul va fi mutat în coșul de gunoi pentru 14 zile. În acest interval, un administrator îl poate restaura. După 14 zile, este șters definitiv.",
+                "The product will be moved to the trash for 14 days. During this period, an administrator can restore it. After 14 days, it will be permanently deleted."
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

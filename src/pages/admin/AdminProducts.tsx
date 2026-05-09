@@ -14,10 +14,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchAdminProducts, toggleProductActive, flagProduct, unflagProduct, deleteProduct, approveProduct, rejectProduct, fetchProductFullDetails, updateProductAdmin, AdminProduct } from "@/features/admin/adminProductsApi";
+import { fetchAdminProducts, toggleProductActive, flagProduct, unflagProduct, deleteProduct, approveProduct, rejectProduct, fetchProductFullDetails, updateProductAdmin, AdminProduct, fetchDeletedProducts, restoreProduct, DeletedProduct } from "@/features/admin/adminProductsApi";
 import { fetchProductReviews, deleteProductReview, AdminProductReview } from "@/features/admin/adminReviewsApi";
+import { RotateCcw, Trash } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
@@ -259,6 +261,34 @@ const AdminProducts = () => {
     staleTime: 30000,
   });
 
+  const { data: deletedProducts = [], isLoading: deletedLoading } = useQuery({
+    queryKey: ['adminDeletedProducts'],
+    queryFn: () => fetchDeletedProducts(),
+    staleTime: 30000,
+  });
+
+  const handleRestoreDeleted = async (id: string) => {
+    try {
+      await restoreProduct(id);
+      await queryClient.invalidateQueries({ queryKey: ['adminDeletedProducts'] });
+      await queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+      toast.success('Produs restaurat');
+    } catch (e: any) {
+      toast.error(e?.message || 'Eroare la restaurare');
+    }
+  };
+
+  const handlePurgeDeleted = async (id: string, title: string) => {
+    if (!confirm(`Șterge definitiv „${title}"? Acțiunea este ireversibilă.`)) return;
+    try {
+      await deleteProduct(id);
+      await queryClient.invalidateQueries({ queryKey: ['adminDeletedProducts'] });
+      toast.success('Produs șters definitiv');
+    } catch (e: any) {
+      toast.error(e?.message || 'Eroare la ștergere');
+    }
+  };
+
   // Dynamic options from data
   const cityOptions = useMemo(() => {
     if (!products) return [];
@@ -458,6 +488,18 @@ const AdminProducts = () => {
           </div>
         </div>
 
+        <Tabs defaultValue="active" className="space-y-4 md:space-y-6">
+          <TabsList>
+            <TabsTrigger value="active">Active</TabsTrigger>
+            <TabsTrigger value="trash" className="gap-2">
+              <Trash className="h-4 w-4" /> Coș de gunoi
+              {deletedProducts.length > 0 && (
+                <Badge variant="secondary" className="ml-1">{deletedProducts.length}</Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="active" className="space-y-4 md:space-y-6 mt-0">
         {/* Search & Filter */}
         <Card>
           <CardContent className="pt-4 md:pt-6">
@@ -623,6 +665,84 @@ const AdminProducts = () => {
             )}
           </CardContent>
         </Card>
+        </TabsContent>
+
+        <TabsContent value="trash" className="space-y-4 md:space-y-6 mt-0">
+          <Card>
+            <CardHeader className="pb-3 md:pb-6">
+              <CardTitle className="text-lg md:text-2xl flex items-center gap-2">
+                <Trash className="h-5 w-5" /> Coș de gunoi
+              </CardTitle>
+              <CardDescription>
+                Produsele șterse de utilizatori sunt păstrate 14 zile înainte de a fi șterse definitiv.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {deletedLoading ? (
+                <div className="space-y-4">{Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 w-full" />)}</div>
+              ) : deletedProducts.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Trash className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Coșul de gunoi este gol</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Produs</TableHead>
+                        <TableHead>Proprietar</TableHead>
+                        <TableHead>Șters la</TableHead>
+                        <TableHead>Zile rămase</TableHead>
+                        <TableHead className="text-right">Acțiuni</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {deletedProducts.map((p) => {
+                        const deletedAt = new Date(p.deleted_at);
+                        const daysSince = Math.floor((Date.now() - deletedAt.getTime()) / (1000 * 60 * 60 * 24));
+                        const daysLeft = Math.max(0, 14 - daysSince);
+                        return (
+                          <TableRow key={p.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                {p.images?.[0] && <img src={p.images[0]} alt="" className="h-10 w-10 rounded object-cover" />}
+                                <div>
+                                  <span className="font-medium line-clamp-1">{p.title}</span>
+                                  <div className="text-xs text-muted-foreground">{p.category || '-'} · {formatCurrency(p.daily_price_owner)}/zi</div>
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">{p.owner_name}</TableCell>
+                            <TableCell className="text-muted-foreground whitespace-nowrap">
+                              {format(deletedAt, 'd MMM yyyy, HH:mm', { locale: ro })}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={daysLeft <= 3 ? "destructive" : "secondary"}>
+                                {daysLeft} {daysLeft === 1 ? "zi" : "zile"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button size="sm" variant="outline" onClick={() => handleRestoreDeleted(p.id)} className="gap-1">
+                                  <RotateCcw className="h-3.5 w-3.5" /> Restaurează
+                                </Button>
+                                <Button size="sm" variant="destructive" onClick={() => handlePurgeDeleted(p.id, p.title)} className="gap-1">
+                                  <Trash2 className="h-3.5 w-3.5" /> Șterge
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        </Tabs>
       </div>
 
       {/* Flag Dialog */}

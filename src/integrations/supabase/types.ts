@@ -871,6 +871,8 @@ export type Database = {
           category: string | null
           created_at: string | null
           daily_price_owner: number
+          deleted_at: string | null
+          deleted_by: string | null
           description: string | null
           description_en: string | null
           flag_reason: string | null
@@ -896,6 +898,8 @@ export type Database = {
           category?: string | null
           created_at?: string | null
           daily_price_owner: number
+          deleted_at?: string | null
+          deleted_by?: string | null
           description?: string | null
           description_en?: string | null
           flag_reason?: string | null
@@ -921,6 +925,8 @@ export type Database = {
           category?: string | null
           created_at?: string | null
           daily_price_owner?: number
+          deleted_at?: string | null
+          deleted_by?: string | null
           description?: string | null
           description_en?: string | null
           flag_reason?: string | null
@@ -1920,6 +1926,7 @@ export type Database = {
         Returns: number
       }
       normalize_full_name: { Args: { input_name: string }; Returns: string }
+      purge_expired_deleted_products: { Args: never; Returns: number }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
@@ -1943,6 +1950,8 @@ export type Database = {
           category: string | null
           created_at: string | null
           daily_price_owner: number
+          deleted_at: string | null
+          deleted_by: string | null
           description: string | null
           description_en: string | null
           flag_reason: string | null
