@@ -179,53 +179,6 @@ const ProductDetail = () => {
   const displayDescription = (language === "en" && product.description_en) ? product.description_en : product.description;
   const isOwnProduct = user?.id === product.owner_id;
 
-  // SEO
-  const seoTitle = `${displayTitle} - ${location} | Rentli`;
-  const rawDesc = (displayDescription || "").replace(/\s+/g, " ").trim();
-  const seoDesc = rawDesc.length > 0
-    ? (rawDesc.length > 160 ? rawDesc.slice(0, 157) + "..." : rawDesc)
-    : t(`Închiriază ${displayTitle} în ${location} pe Rentli. Plată securizată, predare cu poze, suport 7/7.`, `Rent ${displayTitle} in ${location} on Rentli. Secure payment, photo handover, 7/7 support.`);
-  const seoImage = images[0]?.startsWith("http") ? images[0] : `${window.location.origin}${images[0]}`;
-  const canonicalUrl = `${window.location.origin}${getProductUrl(product)}`;
-  useSEO({
-    title: seoTitle,
-    description: seoDesc,
-    image: seoImage,
-    url: canonicalUrl,
-    canonical: canonicalUrl,
-    type: "product",
-    jsonLd: {
-      "@context": "https://schema.org",
-      "@type": "Product",
-      name: displayTitle,
-      description: seoDesc,
-      image: images.filter(i => i && i !== "/placeholder.svg").map(i => i.startsWith("http") ? i : `${window.location.origin}${i}`),
-      brand: { "@type": "Brand", name: "Rentli" },
-      category: product.category || undefined,
-      offers: {
-        "@type": "Offer",
-        price: clientPrice,
-        priceCurrency: "RON",
-        priceSpecification: {
-          "@type": "UnitPriceSpecification",
-          price: clientPrice,
-          priceCurrency: "RON",
-          unitText: "DAY",
-        },
-        availability: "https://schema.org/InStock",
-        url: canonicalUrl,
-        seller: { "@type": "Person", name: ownerName },
-      },
-      ...(extendedStats?.owner_avg_rating && extendedStats.owner_review_count ? {
-        aggregateRating: {
-          "@type": "AggregateRating",
-          ratingValue: Number(extendedStats.owner_avg_rating).toFixed(1),
-          reviewCount: extendedStats.owner_review_count,
-        },
-      } : {}),
-    },
-  });
-
   return (
     <div className="min-h-screen bg-background pb-24 lg:pb-0">
       <Navbar />
