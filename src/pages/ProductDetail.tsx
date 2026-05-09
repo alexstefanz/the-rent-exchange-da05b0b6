@@ -207,7 +207,7 @@ const ProductDetail = () => {
     } catch { toast({ title: copy.auth?.errorGeneric || "Error", variant: "destructive" }); }
   };
 
-  if (isLoading) return (<div className="min-h-screen bg-background"><Navbar /><div className="flex items-center justify-center py-24"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div><Footer /></div>);
+  if (isLoading) return <ProductDetailSkeleton />;
   if (!product) return (<div className="min-h-screen bg-background"><Navbar /><main className="container py-16 text-center"><h1 className="font-heading text-2xl font-bold text-foreground">{copy.product.notFound}</h1><Button asChild className="mt-4"><Link to="/categorii">{copy.product.backToCategories}</Link></Button></main><Footer /></div>);
 
   const location = product.location_city || "România";
@@ -219,6 +219,16 @@ const ProductDetail = () => {
   return (
     <div className="min-h-screen bg-background pb-24 lg:pb-0">
       <Navbar />
+
+      <StickyProductHeader
+        title={displayTitle}
+        clientPrice={clientPrice}
+        rating={extendedStats?.owner_avg_rating}
+        reviewCount={extendedStats?.owner_review_count}
+        triggerRef={titleBlockRef}
+        onReserve={handleReserve}
+        isOwnProduct={isOwnProduct}
+      />
 
       <ProductImageGallery
         variant="mobile"
