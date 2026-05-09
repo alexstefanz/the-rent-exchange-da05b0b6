@@ -75,7 +75,7 @@ export const useEarnings = () => {
         supabase
           .from("rentals")
           .select(
-            "id, public_id, owner_payout, subtotal, platform_fee, payment_status, status, created_at, start_date, end_date, product_id, renter_id, products:product_id(title, images), renter:profiles!rentals_renter_id_fkey(full_name)"
+            "id, public_id, owner_payout, subtotal, platform_fee, payment_status, status, created_at, start_date, end_date, product_id, renter_id, products:product_id(title, images)"
           )
           .eq("owner_id", user.id)
           .order("created_at", { ascending: false }),
@@ -143,7 +143,7 @@ export const useEarnings = () => {
           productTitle: r.products?.title || "Produs",
           productImage: r.products?.images?.[0] || null,
           renterId: r.renter_id,
-          renterName: r.renter?.full_name || null,
+          renterName: null,
           startDate: r.start_date,
           endDate: r.end_date,
           subtotal: Number(r.subtotal) || 0,
