@@ -2125,6 +2125,7 @@ export type Database = {
           whatsapp: string
         }[]
       }
+      get_homepage_activity: { Args: never; Returns: Json }
       get_kyc_duplicate_users: {
         Args: { case_id: string }
         Returns: {
