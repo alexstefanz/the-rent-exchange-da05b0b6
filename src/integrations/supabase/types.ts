@@ -2169,6 +2169,10 @@ export type Database = {
           subtotal: number
         }[]
       }
+      get_product_extended_stats: {
+        Args: { p_product_id: string }
+        Returns: Json
+      }
       get_product_owner_public_info: {
         Args: { owner_uuid: string }
         Returns: {
@@ -2176,6 +2180,10 @@ export type Database = {
           full_name: string
           id: string
         }[]
+      }
+      get_product_review_breakdown: {
+        Args: { p_product_id: string }
+        Returns: Json
       }
       get_rental_by_public_id: {
         Args: { p_public_id: string }
