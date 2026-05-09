@@ -365,6 +365,55 @@ const AdminTicketDetail = () => {
               </CardContent>
             </Card>
 
+            {/* AI Assist */}
+            <Card className="border-primary/30">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-primary" /> AI Assist
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button
+                  variant="outline" size="sm" className="w-full justify-start"
+                  onClick={() => runAiAssist("summarize")}
+                  disabled={aiLoading !== null}
+                >
+                  {aiLoading === "summarize" ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <ListChecks className="h-3.5 w-3.5 mr-2" />}
+                  Sumarizează ticket
+                </Button>
+                <Button
+                  variant="outline" size="sm" className="w-full justify-start"
+                  onClick={() => runAiAssist("suggest_reply")}
+                  disabled={aiLoading !== null || isClosed}
+                >
+                  {aiLoading === "suggest_reply" ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <Wand2 className="h-3.5 w-3.5 mr-2" />}
+                  Sugerează răspuns
+                </Button>
+                <Button
+                  variant="outline" size="sm" className="w-full justify-start"
+                  onClick={() => runAiAssist("suggest_action")}
+                  disabled={aiLoading !== null}
+                >
+                  {aiLoading === "suggest_action" ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <Sparkles className="h-3.5 w-3.5 mr-2" />}
+                  Recomandă status & prioritate
+                </Button>
+
+                {aiSummary && (
+                  <div className="text-xs whitespace-pre-wrap bg-muted/40 border rounded-md p-2 mt-2">
+                    <p className="font-semibold text-[10px] uppercase tracking-wide text-primary mb-1">Sumar</p>
+                    {aiSummary}
+                  </div>
+                )}
+                {aiActionRec && (
+                  <div className="text-xs whitespace-pre-wrap bg-muted/40 border rounded-md p-2">
+                    <p className="font-semibold text-[10px] uppercase tracking-wide text-primary mb-1">Recomandare</p>
+                    {aiActionRec}
+                  </div>
+                )}
+                <p className="text-[10px] text-muted-foreground pt-1">Asistență AI internă — verifică înainte de a trimite.</p>
+              </CardContent>
+            </Card>
+
             {/* Context */}
             <Card>
               <CardHeader><CardTitle className="text-base">Context</CardTitle></CardHeader>
