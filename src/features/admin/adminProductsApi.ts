@@ -27,6 +27,51 @@ export const approveProduct = async (productId: string): Promise<void> => {
     .update({ approval_status: 'approved', is_active: true } as Record<string, unknown>)
     .eq('id', productId);
   if (error) throw new Error(error.message);
+
+  // Notify owner: email + in-app notification (non-blocking)
+  try {
+    const { data: prod } = await supabase
+      .from('products')
+      .select('title, slug, owner_id')
+      .eq('id', productId)
+      .single();
+    if (prod?.owner_id) {
+      const link = `/produs/${prod.slug ?? productId}`;
+
+      // In-app notification
+      await supabase.from('notifications').insert({
+        user_id: prod.owner_id,
+        type: 'product_published',
+        title_ro: 'Anunțul tău a fost aprobat',
+        title_en: 'Your listing has been approved',
+        description_ro: `Anunțul „${prod.title}" este acum vizibil pe platformă.`,
+        description_en: `The listing "${prod.title}" is now visible on the platform.`,
+        link,
+      });
+
+      // Transactional email
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email, full_name')
+        .eq('id', prod.owner_id)
+        .single();
+      if (profile?.email) {
+        await supabase.functions.invoke('send-transactional-email', {
+          body: {
+            templateName: 'product-published',
+            recipientEmail: profile.email,
+            idempotencyKey: `product-published-${productId}`,
+            templateData: {
+              name: profile.full_name || undefined,
+              productTitle: prod.title,
+            },
+          },
+        });
+      }
+    }
+  } catch (e) {
+    console.error('[adminProductsApi] Failed to send product-published notifications:', e);
+  }
 };
 
 export const rejectProduct = async (productId: string, reason: string): Promise<void> => {
