@@ -29,6 +29,9 @@ import { uploadAvatar } from "@/features/profile/avatarApi";
 import { supabase } from "@/integrations/supabase/client";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { isValidRomanianPhone } from "@/lib/inputValidation";
+import { useProfileRealtime } from "@/hooks/useProfileRealtime";
+import { TrustScoreRing } from "@/components/profile/account/TrustScoreRing";
+import { AvatarCropperDialog } from "@/components/profile/account/AvatarCropperDialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -89,6 +92,8 @@ const AccountTab = () => {
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [activeSection, setActiveSection] = useState("personal");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
+  const [cropperOpen, setCropperOpen] = useState(false);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -100,6 +105,15 @@ const AccountTab = () => {
     queryKey: ["userStatistics", user?.id],
     queryFn: () => getUserStatistics(user!.id),
     enabled: !!user?.id,
+  });
+
+  /* ---- realtime sync of profile across devices / admin edits ---- */
+  useProfileRealtime(user?.id, async () => {
+    if (!user) return;
+    try {
+      const fresh = await getProfile(user.id);
+      if (fresh) setProfile(fresh);
+    } catch { /* ignore */ }
   });
 
   /* ---- load profile ---- */
@@ -194,7 +208,18 @@ const AccountTab = () => {
     } finally {
       setIsUploadingAvatar(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      setCropperOpen(false);
+      setPendingAvatar(null);
     }
+  };
+
+  const handleAvatarPicked = (file: File) => {
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: t("Eroare", "Error"), description: t("Fișier prea mare (max 10MB)", "File too large (max 10MB)"), variant: "destructive" });
+      return;
+    }
+    setPendingAvatar(file);
+    setCropperOpen(true);
   };
 
   const handleSubmit = async (data: ProfileFormData) => {
