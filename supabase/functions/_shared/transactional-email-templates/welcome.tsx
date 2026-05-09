@@ -1,51 +1,33 @@
 /// <reference types="npm:@types/react@18.3.1" />
-
 import * as React from 'npm:react@18.3.1'
-
-import {
-  Body,
-  Container,
-  Head,
-  Heading,
-  Html,
-  Img,
-  Preview,
-  Text,
-  Hr,
-} from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
+import { BaseLayout, H1, Lead, Para, CTAButton, APP_URL, Section, Text } from './_components.tsx'
 
-const SITE_NAME = 'Rentli'
-const LOGO_URL = 'https://tsffyecastudajmgrckt.supabase.co/storage/v1/object/public/email-assets/rentli_logo.png'
+interface Props { name?: string }
 
-interface WelcomeEmailProps {
-  name?: string
-}
+const tile = { backgroundColor: '#FBF8F4', borderRadius: 14, padding: '18px 16px', textAlign: 'center' as const, border: '1px solid #EFE9E2' }
+const tileTitle = { fontSize: 14, fontWeight: 700, color: '#1A1410', margin: '8px 0 4px' }
+const tileText = { fontSize: 12, color: '#6B6360', margin: 0, lineHeight: 1.5 }
 
-const WelcomeEmail = ({ name }: WelcomeEmailProps) => (
-  <Html lang="ro" dir="ltr">
-    <Head />
-    <Preview>Bine ai venit pe {SITE_NAME}!</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <div style={header}>
-          <Img src={LOGO_URL} alt="Rentli" width="120" height="40" style={logoStyle} />
-        </div>
-        <Heading style={h1}>
-          {name ? `Bine ai venit, ${name}!` : 'Bine ai venit pe Rentli!'}
-        </Heading>
-        <Text style={text}>
-          Suntem bucuroși că te-ai alăturat comunității Rentli. Acum poți
-          închiria și oferi spre închiriere orice obiect, simplu și sigur.
-        </Text>
-        <Text style={text}>
-          Explorează categoriile disponibile și găsește exact ce ai nevoie!
-        </Text>
-        <Hr style={hr} />
-        <Text style={footer}>Cu drag, Echipa {SITE_NAME}</Text>
-      </Container>
-    </Body>
-  </Html>
+const WelcomeEmail = ({ name }: Props) => (
+  <BaseLayout preview={`Bine ai venit pe Rentli${name ? `, ${name}` : ''}!`}>
+    <H1>{name ? `Bine ai venit, ${name} 👋` : 'Bine ai venit pe Rentli 👋'}</H1>
+    <Lead>
+      Suntem bucuroși că te-ai alăturat comunității. Pe Rentli poți închiria sau pune
+      la închiriere orice obiect, simplu, sigur și cu plată în escrow.
+    </Lead>
+    <table cellPadding={0} cellSpacing={8} role="presentation" style={{ width: '100%', margin: '12px 0 24px' }}>
+      <tbody>
+        <tr>
+          <td style={tile}><div style={{ fontSize: 22 }}>🔍</div><div style={tileTitle}>Caută</div><Text style={tileText}>Mii de produse</Text></td>
+          <td style={tile}><div style={{ fontSize: 22 }}>📦</div><div style={tileTitle}>Listează</div><Text style={tileText}>Câștigă din lucrurile tale</Text></td>
+          <td style={tile}><div style={{ fontSize: 22 }}>💬</div><div style={tileTitle}>Discută</div><Text style={tileText}>Chat sigur, în-app</Text></td>
+        </tr>
+      </tbody>
+    </table>
+    <CTAButton href={APP_URL}>Explorează platforma</CTAButton>
+    <Para>Dacă ai întrebări, suntem la un click distanță.</Para>
+  </BaseLayout>
 )
 
 export const template = {
@@ -54,12 +36,3 @@ export const template = {
   displayName: 'Welcome email',
   previewData: { name: 'Maria' },
 } satisfies TemplateEntry
-
-const main = { backgroundColor: '#ffffff', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
-const container = { padding: '0', maxWidth: '560px', margin: '0 auto' }
-const header = { backgroundColor: '#F59E0B', padding: '20px 25px', borderRadius: '8px 8px 0 0' }
-const logoStyle = { display: 'block' as const }
-const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#302520', margin: '25px 25px 10px' }
-const text = { fontSize: '14px', color: '#7D7471', lineHeight: '1.5', margin: '0 25px 15px' }
-const hr = { borderColor: '#eee', margin: '20px 25px' }
-const footer = { fontSize: '12px', color: '#999999', margin: '0 25px 25px' }

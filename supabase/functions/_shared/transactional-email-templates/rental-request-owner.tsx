@@ -1,48 +1,42 @@
 /// <reference types="npm:@types/react@18.3.1" />
 import * as React from 'npm:react@18.3.1'
-import { Body, Container, Head, Heading, Html, Img, Preview, Text, Button, Hr } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
-
-const SITE_NAME = 'Rentli'
-const LOGO_URL = 'https://tsffyecastudajmgrckt.supabase.co/storage/v1/object/public/email-assets/rentli_logo.png'
+import { BaseLayout, H1, Lead, Para, ProductCard, CTAButton, APP_URL } from './_components.tsx'
 
 interface Props {
   renterName?: string
   productTitle?: string
+  productImage?: string
+  location?: string
   startDate?: string
   endDate?: string
+  totalPrice?: number
+  currency?: string
   rentalId?: string
 }
 
-const RentalRequestOwnerEmail = ({ renterName = 'Un utilizator', productTitle = 'produsul tău', startDate, endDate, rentalId }: Props) => {
-  const ctaHref = rentalId
-    ? `https://rentli.ro/inchirieri?rental_id=${rentalId}`
-    : 'https://rentli.ro/inchirieri'
+const RentalRequestOwnerEmail = (p: Props) => {
+  const period = p.startDate && p.endDate ? `${p.startDate} – ${p.endDate}` : undefined
+  const cta = p.rentalId ? `${APP_URL}/inchirieri?rental_id=${p.rentalId}` : `${APP_URL}/inchirieri`
   return (
-  <Html lang="ro" dir="ltr">
-    <Head />
-    <Preview>Ai primit o cerere nouă de închiriere pe {SITE_NAME}</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <div style={header}>
-          <Img src={LOGO_URL} alt="Rentli" width="120" height="40" style={logoStyle} />
-        </div>
-        <Heading style={h1}>Cerere nouă de închiriere</Heading>
-        <Text style={text}>
-          <strong>{renterName}</strong> dorește să închirieze <strong>{productTitle}</strong>
-          {startDate && endDate ? ` în perioada ${startDate} – ${endDate}` : ''}.
-        </Text>
-        <Text style={text}>
-          Accesează contul tău pentru a accepta sau refuza cererea.
-        </Text>
-        <Button style={button} href={ctaHref}>
-          Vezi cererea
-        </Button>
-        <Hr style={hr} />
-        <Text style={footer}>Cu drag, Echipa {SITE_NAME}</Text>
-      </Container>
-    </Body>
-  </Html>
+    <BaseLayout preview={`Cerere nouă de la ${p.renterName ?? 'un utilizator'}`}>
+      <H1>Cerere nouă de închiriere</H1>
+      <Lead>
+        <strong>{p.renterName ?? 'Un utilizator'}</strong> dorește să închirieze produsul tău
+        {period ? ` în perioada ${period}` : ''}.
+      </Lead>
+      <ProductCard
+        image={p.productImage}
+        title={p.productTitle}
+        location={p.location}
+        period={period}
+        totalPrice={p.totalPrice}
+        currency={p.currency}
+        status="pending"
+      />
+      <CTAButton href={cta}>Vezi cererea</CTAButton>
+      <Para>Răspunde rapid pentru o experiență excelentă pentru chiriaș.</Para>
+    </BaseLayout>
   )
 }
 
@@ -50,15 +44,15 @@ export const template = {
   component: RentalRequestOwnerEmail,
   subject: 'Ai primit o cerere nouă de închiriere',
   displayName: 'Cerere nouă (Owner)',
-  previewData: { renterName: 'Ion Popescu', productTitle: 'Bicicletă Mountain Bike', startDate: '15 ian 2025', endDate: '18 ian 2025', rentalId: '326efd56-9af7-4af2-a57c-b0cdea56e5dd' },
+  previewData: {
+    renterName: 'Ion Popescu',
+    productTitle: 'Bicicletă Mountain Bike Trek',
+    productImage: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=400',
+    location: 'București, Sector 1',
+    startDate: '15 ian 2026',
+    endDate: '18 ian 2026',
+    totalPrice: 240,
+    currency: 'RON',
+    rentalId: '326efd56-9af7-4af2-a57c-b0cdea56e5dd',
+  },
 } satisfies TemplateEntry
-
-const main = { backgroundColor: '#ffffff', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
-const container = { padding: '0', maxWidth: '560px', margin: '0 auto' }
-const header = { backgroundColor: '#F59E0B', padding: '20px 25px', borderRadius: '8px 8px 0 0' }
-const logoStyle = { display: 'block' as const }
-const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#302520', margin: '25px 25px 10px' }
-const text = { fontSize: '14px', color: '#7D7471', lineHeight: '1.5', margin: '0 25px 15px' }
-const button = { backgroundColor: '#F59E0B', color: '#ffffff', padding: '12px 24px', borderRadius: '6px', fontWeight: 'bold' as const, textDecoration: 'none', display: 'inline-block', margin: '10px 25px 20px' }
-const hr = { borderColor: '#eee', margin: '20px 25px' }
-const footer = { fontSize: '12px', color: '#999999', margin: '0 25px 25px' }

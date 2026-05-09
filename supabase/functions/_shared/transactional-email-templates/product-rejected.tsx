@@ -1,67 +1,28 @@
 /// <reference types="npm:@types/react@18.3.1" />
-
 import * as React from 'npm:react@18.3.1'
-import {
-  Body, Button, Container, Head, Heading, Hr, Html, Img, Preview, Section, Text,
-} from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
-
-const SITE_NAME = 'Rentli'
-const LOGO_URL = 'https://tsffyecastudajmgrckt.supabase.co/storage/v1/object/public/email-assets/rentli_logo.png'
-const APP_URL = 'https://rentli.ro'
+import { BaseLayout, H1, Lead, Para, ReasonBox, CTAButton, APP_URL } from './_components.tsx'
 
 interface Props { name?: string; productTitle?: string; productId?: string; reason?: string }
 
-const ProductRejectedEmail = ({ name, productTitle, productId, reason }: Props) => (
-  <Html lang="ro" dir="ltr">
-    <Head />
-    <Preview>Anunțul tău nu a fost aprobat</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <div style={header}>
-          <Img src={LOGO_URL} alt="Rentli" width="120" height="40" style={logoStyle} />
-        </div>
-        <Heading style={h1}>
-          {name ? `${name}, anunțul tău nu a fost aprobat` : 'Anunțul tău nu a fost aprobat'}
-        </Heading>
-        <Text style={text}>
-          Anunțul <strong>{productTitle || 'tău'}</strong> nu a fost aprobat de echipa de moderare.
-          Te rugăm să verifici motivul de mai jos și să faci modificările necesare.
-        </Text>
-        {reason && (
-          <Section style={reasonBox}>
-            <Text style={reasonLabel}>Motiv:</Text>
-            <Text style={reasonText}>{reason}</Text>
-          </Section>
-        )}
-        {productId && (
-          <Button href={`${APP_URL}/edit-product/${productId}`} style={button}>
-            Editează anunțul
-          </Button>
-        )}
-        <Hr style={hr} />
-        <Text style={footer}>Cu drag, Echipa {SITE_NAME}</Text>
-      </Container>
-    </Body>
-  </Html>
+const ProductRejectedEmail = (p: Props) => (
+  <BaseLayout preview={`Anunțul "${p.productTitle ?? ''}" necesită ajustări`}>
+    <H1>Anunțul tău necesită ajustări</H1>
+    <Lead>
+      {p.name ? `${p.name}, ` : ''}am revizuit anunțul <strong>{p.productTitle ?? 'tău'}</strong> și
+      am identificat câteva detalii de îmbunătățit înainte de publicare.
+    </Lead>
+    {p.reason && <ReasonBox label="Detalii">{p.reason}</ReasonBox>}
+    <CTAButton href={p.productId ? `${APP_URL}/produs/editeaza/${p.productId}` : `${APP_URL}/profile`}>
+      Editează anunțul
+    </CTAButton>
+    <Para>După ajustări, anunțul intră automat în coada de aprobare.</Para>
+  </BaseLayout>
 )
 
 export const template = {
   component: ProductRejectedEmail,
-  subject: (data) => `Anunțul "${data?.productTitle || ''}" nu a fost aprobat`,
+  subject: (data) => `Anunțul "${data?.productTitle || ''}" necesită ajustări`,
   displayName: 'Produs respins',
-  previewData: { name: 'Maria', productTitle: 'Bormașină Bosch', productId: 'abc', reason: 'Imaginile nu sunt clare.' },
+  previewData: { name: 'Maria', productTitle: 'Bormașină Bosch', productId: 'abc', reason: 'Imaginile sunt neclare. Te rugăm să încarci poze cu lumină naturală.' },
 } satisfies TemplateEntry
-
-const main = { backgroundColor: '#ffffff', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
-const container = { padding: '0', maxWidth: '560px', margin: '0 auto' }
-const header = { backgroundColor: '#F59E0B', padding: '20px 25px', borderRadius: '8px 8px 0 0' }
-const logoStyle = { display: 'block' as const }
-const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#302520', margin: '25px 25px 10px' }
-const text = { fontSize: '14px', color: '#7D7471', lineHeight: '1.5', margin: '0 25px 15px' }
-const reasonBox = { backgroundColor: '#FEF3C7', padding: '12px 16px', borderRadius: '12px', margin: '10px 25px 20px' }
-const reasonLabel = { fontSize: '12px', color: '#92400E', fontWeight: 600 as const, margin: '0 0 4px' }
-const reasonText = { fontSize: '14px', color: '#302520', margin: 0 }
-const button = { backgroundColor: '#F59E0B', color: '#ffffff', padding: '12px 24px', borderRadius: '12px', textDecoration: 'none', display: 'inline-block', margin: '10px 25px', fontWeight: 600 }
-const hr = { borderColor: '#eee', margin: '20px 25px' }
-const footer = { fontSize: '12px', color: '#999999', margin: '0 25px 25px' }

@@ -1,49 +1,55 @@
 /// <reference types="npm:@types/react@18.3.1" />
 import * as React from 'npm:react@18.3.1'
-import { Body, Container, Head, Heading, Html, Img, Preview, Text, Button, Hr } from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
-
-const SITE_NAME = 'Rentli'
-const LOGO_URL = 'https://tsffyecastudajmgrckt.supabase.co/storage/v1/object/public/email-assets/rentli_logo.png'
+import { BaseLayout, H1, Lead, Para, ProductCard, CTAButton, APP_URL } from './_components.tsx'
 
 interface Props {
   productTitle?: string
+  productImage?: string
+  location?: string
   ownerName?: string
+  startDate?: string
+  endDate?: string
+  totalPrice?: number
+  currency?: string
 }
 
-const RentalRejectedEmail = ({ productTitle = 'produsul solicitat', ownerName = 'Proprietarul' }: Props) => (
-  <Html lang="ro" dir="ltr">
-    <Head />
-    <Preview>Cererea ta de închiriere a fost refuzată</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <div style={header}><Img src={LOGO_URL} alt="Rentli" width="120" height="40" style={logoStyle} /></div>
-        <Heading style={h1}>Cerere refuzată</Heading>
-        <Text style={text}>
-          Din păcate, <strong>{ownerName}</strong> a refuzat cererea ta pentru <strong>{productTitle}</strong>.
-        </Text>
-        <Text style={text}>Nu-ți face griji — poți căuta alte produse similare disponibile pe platformă.</Text>
-        <Button style={button} href="https://rentli.ro/search">Caută alte produse</Button>
-        <Hr style={hr} />
-        <Text style={footer}>Cu drag, Echipa {SITE_NAME}</Text>
-      </Container>
-    </Body>
-  </Html>
-)
+const RentalRejectedEmail = (p: Props) => {
+  const period = p.startDate && p.endDate ? `${p.startDate} – ${p.endDate}` : undefined
+  return (
+    <BaseLayout preview="Cererea ta a fost refuzată">
+      <H1>Cerere refuzată</H1>
+      <Lead>
+        Din păcate, <strong>{p.ownerName ?? 'proprietarul'}</strong> nu a putut accepta cererea ta.
+        Suma a fost returnată automat în metoda ta de plată.
+      </Lead>
+      <ProductCard
+        image={p.productImage}
+        title={p.productTitle}
+        location={p.location}
+        period={period}
+        totalPrice={p.totalPrice}
+        currency={p.currency}
+        status="declined"
+      />
+      <CTAButton href={`${APP_URL}/cauta`} variant="primary">Caută alternative</CTAButton>
+      <Para>Sunt mii de produse similare disponibile pe platformă.</Para>
+    </BaseLayout>
+  )
+}
 
 export const template = {
   component: RentalRejectedEmail,
   subject: 'Cererea ta de închiriere a fost refuzată',
   displayName: 'Cerere refuzată',
-  previewData: { productTitle: 'Bicicletă Mountain Bike', ownerName: 'Maria Ionescu' },
+  previewData: {
+    productTitle: 'Bicicletă Mountain Bike Trek',
+    productImage: 'https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=400',
+    location: 'București, Sector 1',
+    ownerName: 'Maria Ionescu',
+    startDate: '15 ian 2026',
+    endDate: '18 ian 2026',
+    totalPrice: 240,
+    currency: 'RON',
+  },
 } satisfies TemplateEntry
-
-const main = { backgroundColor: '#ffffff', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
-const container = { padding: '0', maxWidth: '560px', margin: '0 auto' }
-const header = { backgroundColor: '#F59E0B', padding: '20px 25px', borderRadius: '8px 8px 0 0' }
-const logoStyle = { display: 'block' as const }
-const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#302520', margin: '25px 25px 10px' }
-const text = { fontSize: '14px', color: '#7D7471', lineHeight: '1.5', margin: '0 25px 15px' }
-const button = { backgroundColor: '#F59E0B', color: '#ffffff', padding: '12px 24px', borderRadius: '6px', fontWeight: 'bold' as const, textDecoration: 'none', display: 'inline-block', margin: '10px 25px 20px' }
-const hr = { borderColor: '#eee', margin: '20px 25px' }
-const footer = { fontSize: '12px', color: '#999999', margin: '0 25px 25px' }
