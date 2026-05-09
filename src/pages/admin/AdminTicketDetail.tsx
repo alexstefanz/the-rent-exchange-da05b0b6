@@ -1,36 +1,21 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import {
-  ArrowLeft, Send, Paperclip, Lock, User, Package, Calendar, FileText, History,
-  AlertTriangle, Loader2, MessageCircle, Sparkles, Wand2, ListChecks
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
-import AdminLayout from "@/components/admin/AdminLayout";
-import { useOpsTicket, useTicketMessages, useTicketAuditLog, useTicketAttachments } from "@/hooks/queries/useOpsTickets";
-import {
-  updateOpsTicketField,
-  createTicketMessage,
-  uploadTicketAttachment,
-  markTicketRead,
-  CATEGORY_GROUP_LABELS,
-  CATEGORY_TYPES,
-  STATUS_OPTIONS,
-  PRIORITY_OPTIONS,
-} from "@/features/admin/opsTicketsApi";
-import { useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { ro } from "date-fns/locale";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+
+/**
+ * Legacy detail route — preserves bookmarks/links by redirecting to the
+ * new 3-panel inbox (`/admin/tickets?id=…`).
+ */
+const AdminTicketDetail = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (id) navigate(`/admin/tickets?id=${id}`, { replace: true });
+    else navigate("/admin/tickets", { replace: true });
+  }, [id, navigate]);
+  return null;
+};
+
+export default AdminTicketDetail;
 
 const statusColors: Record<string, string> = {
   NEW: "bg-blue-100 text-blue-800",
