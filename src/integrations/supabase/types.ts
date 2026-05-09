@@ -297,6 +297,98 @@ export type Database = {
           },
         ]
       }
+      kb_article_views: {
+        Row: {
+          article_id: string
+          created_at: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kb_article_views_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "kb_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kb_articles: {
+        Row: {
+          category_group: string | null
+          content_en: string | null
+          content_ro: string
+          created_at: string
+          created_by: string | null
+          excerpt_en: string | null
+          excerpt_ro: string | null
+          helpful_count: number
+          id: string
+          is_published: boolean
+          not_helpful_count: number
+          slug: string
+          sort_order: number
+          tags: string[]
+          title_en: string | null
+          title_ro: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          category_group?: string | null
+          content_en?: string | null
+          content_ro: string
+          created_at?: string
+          created_by?: string | null
+          excerpt_en?: string | null
+          excerpt_ro?: string | null
+          helpful_count?: number
+          id?: string
+          is_published?: boolean
+          not_helpful_count?: number
+          slug: string
+          sort_order?: number
+          tags?: string[]
+          title_en?: string | null
+          title_ro: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          category_group?: string | null
+          content_en?: string | null
+          content_ro?: string
+          created_at?: string
+          created_by?: string | null
+          excerpt_en?: string | null
+          excerpt_ro?: string | null
+          helpful_count?: number
+          id?: string
+          is_published?: boolean
+          not_helpful_count?: number
+          slug?: string
+          sort_order?: number
+          tags?: string[]
+          title_en?: string | null
+          title_ro?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
       kyc_audit_log: {
         Row: {
           action: string
@@ -1344,6 +1436,66 @@ export type Database = {
         }
         Relationships: []
       }
+      support_csat: {
+        Row: {
+          comment: string | null
+          id: string
+          rating: number
+          submitted_at: string
+          ticket_id: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          id?: string
+          rating: number
+          submitted_at?: string
+          ticket_id: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          id?: string
+          rating?: number
+          submitted_at?: string
+          ticket_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      support_macros: {
+        Row: {
+          body: string
+          category_group: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          title: string
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          body: string
+          category_group?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          title: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          body?: string
+          category_group?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          title?: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           admin_notes: string | null
@@ -2113,6 +2265,7 @@ export type Database = {
           reviewer_id: string
         }[]
       }
+      get_user_health_score: { Args: { p_user_id: string }; Returns: Json }
       get_user_reviews_with_reviewers: {
         Args: { target_user_id: string }
         Returns: {
@@ -2143,7 +2296,29 @@ export type Database = {
         Returns: boolean
       }
       immutable_unaccent: { Args: { "": string }; Returns: string }
+      increment_macro_usage: {
+        Args: { p_macro_id: string }
+        Returns: undefined
+      }
       is_user_favorite: { Args: { target_user_id: string }; Returns: boolean }
+      kb_record_view: { Args: { p_slug: string }; Returns: undefined }
+      kb_search: {
+        Args: { p_limit?: number; p_query: string }
+        Returns: {
+          category_group: string
+          excerpt_en: string
+          excerpt_ro: string
+          id: string
+          similarity: number
+          slug: string
+          title_en: string
+          title_ro: string
+        }[]
+      }
+      kb_vote: {
+        Args: { p_article_id: string; p_helpful: boolean }
+        Returns: undefined
+      }
       mark_conversation_read: {
         Args: { p_conversation_id: string }
         Returns: undefined
