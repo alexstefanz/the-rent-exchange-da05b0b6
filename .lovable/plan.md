@@ -1,143 +1,153 @@
+# Faza 5 — Optimizare AI Chat + 4 module opționale
 
-# Support & Tickets Redesign — Faza 1 (User-side)
+## 0. Bugfix prioritar: AI Chat se blochează
 
-Faza 1 livrează experiența completă a utilizatorului: Smart Ticket Flow ghidat de AI, Support Center premium, floating widget realtime și chat cu media. Faza 2 (admin Support Operations + automations) e descrisă la finalul planului și va fi livrată într-o iterație separată după validarea Fazei 1.
+**Problemă identificată** (din screenshot): după ce userul a confirmat draftul ("Confirm, trimite ticketul."), AI-ul a răspuns cu o nouă cerere de atașament în loc să apeleze `create_support_ticket`. Cauză: prompt-ul actual permite re-întrebări nelimitate și nu impune o limită de pași.
 
-## 1. Smart Ticket Flow ghidat (AI Assistant 4 pași)
+**Fix în `supabase/functions/support-ai-chat/index.ts`:**
 
-Refactor `supabase/functions/support-ai-chat/index.ts` (extindem, nu rescriem):
+- Rescriu system prompt cu reguli stricte: **maxim 3 întrebări totale înainte de draft**, apoi draft direct, apoi create la prima confirmare.
+- Adaug în prompt un counter explicit ("Numără întrebările tale puse în mesajele anterioare. Dacă ai pus deja 3, NU mai întreba — apelează `draft_ticket` ACUM cu ce ai").
+- Categoria din quick action sau context = nu se mai numără ca întrebare.
+- Atașament = sugerat o singură dată, opțional, niciodată după draft.
+- După `draft_ticket`: la orice mesaj user care conține "confirm/trimite/ok/da/yes/send" → apelează **direct** `create_support_ticket` cu fields-urile draftului. Nu mai pune întrebări.
+- Reduc temperatura modelului (`temperature: 0.3`) pentru consistență.
+- Dacă userul scrie "modifică" pe draft → reformulează doar field-ul cerut, nu reia flow-ul.
 
-- Înlocuim prompt-ul liber cu o **state machine în 4 pași** transmisă în system prompt: `step: "category" | "details" | "attachments" | "confirm"`. Frontend trimite step-ul curent + context acumulat.
-- Step 1 — Categorie: AI propune chips cu cele 5 grupuri (Rezervare / Plată / Produs / Cont / KYC) prin tool `propose_category_chips`. Userul tap-uiește, NU scrie.
-- Step 2 — Detalii: AI pune max 3 întrebări scurte adaptate categoriei, fiecare cu chips de răspuns rapid + opțiune "altceva" pentru text liber.
-- Step 3 — Atașamente: AI sugerează contextual ("trimite o poză cu produsul"). Skip dacă nu e relevant.
-- Step 4 — Confirmare: AI generează cu tool `draft_ticket` un brief complet (titlu, categorie, prioritate, rezumat) afișat într-un card "Confirmă ticketul" cu butoane Edit / Confirmă. Tool-ul existent `create_support_ticket` se apelează DOAR după confirm explicit.
-- Reuse priority logic și auto-context (route, productId, reservationId) deja existente.
-
-Beneficii: zero typing pe mobil, brief curat pentru admin, nu mai trebuie repetat contextul.
-
-## 2. Support Center user (`src/pages/UserTickets.tsx`)
-
-Înlocuim accordion-ul actual cu inbox modern card-based.
+**Flow țintă (3 întrebări max):**
 
 ```text
-┌──────────────────────────────────────────────────────┐
-│ HERO: "Cum te putem ajuta?"                          │
-│  [Caută ticketele tale…]   [+ Ticket nou]            │
-├──────────────────────────────────────────────────────┤
-│ QUICK ACTIONS: 4 tile-uri (Rezervare / Plată /       │
-│  Produs / Altceva) → deschid widget cu step preset   │
-├──────────────────────────────────────────────────────┤
-│ FILTRE: Toate · Active · În așteptare · Rezolvate    │
-├─────────────────────────────┬────────────────────────┤
-│ LISTA TICKETE (card-based)  │ DETALIU (desktop)      │
-│  TCK-001234 · Nou · 2h      │  Timeline status       │
-│  Plată nereușită…           │  Conversație realtime  │
-│  → Rezervare RNT-…          │  Atașamente grid       │
-│  TCK-001233 · În lucru…     │  Context rezervare     │
-└─────────────────────────────┴────────────────────────┘
+1. Salut + chips categorie         → user tap chip
+2. Întrebare detalii principale     → user răspunde
+3. (opțional) Întrebare clarificare → user răspunde
+   SAU sugestie atașament           → user atașează/skip
+4. draft_ticket                     → card confirmare
+5. user "confirm"                   → create_support_ticket
 ```
 
-Mobile: o coloană, click pe card → full-screen detail view (similar cu Mesaje).
+## 1. Macros & Saved Replies (admin)
 
-Componente noi în `src/components/support/center/`:
+**DB** (1 tabel nou):
 
-- `SupportHero.tsx` — search + CTA + 4 quick action tiles.
-- `TicketsInbox.tsx` — filtre (Active / Așteptare răspuns / Rezolvate), search live, lista scrollabilă.
-- `TicketCard.tsx` — public_id, titlu, status pill colorat, last activity relativă, ultimul mesaj truncat, badge unread, indicator atașament. Hover scale subtil.
-- `TicketDetail.tsx` — split-view container desktop / full-screen mobile.
-- `TicketTimeline.tsx` — vizual stepper status (Nou → În analiză → În lucru → Rezolvat) cu timestamps și SLA pill ("răspuns în 2h"). Reuse pattern din `RentalTimeline.tsx`.
-- `TicketContextPanel.tsx` — card lateral cu link către rezervarea/produsul asociat (deja avem `reservation_id` / `product_id`).
-- `TicketChat.tsx` — bubbles user/admin/system, reuse stiluri din `MessageBubble.tsx`, suport markdown via `react-markdown` deja prezent, atașamente inline.
+- `support_macros`: `title`, `body` (text cu placeholders `{user_name}`, `{ticket_id}`, `{rental_id}`, `{product_title}`), `category_group` (nullable, pentru filtrare contextuală), `created_by`, `usage_count`.
+- RLS: admins full access.
 
-Statusuri vizuale (mapate pe cele existente în DB):
+**Admin UI:**
 
-| DB | Label RO | Culoare |
-|---|---|---|
-| NEW | Nou | primary |
-| IN_PROGRESS | În lucru | blue |
-| WAITING_CUSTOMER | Așteptăm răspunsul tău | orange |
-| WAITING_OWNER / WAITING_INTERNAL | În procesare | muted |
-| RESOLVED | Rezolvat | green |
-| CLOSED | Închis | muted |
+- Pagina nouă `/admin/macros` (sidebar item) — listă + editor inline (titlu, corp, categorie, preview).
+- În `AdminConversation.tsx`: buton **"Macros"** lângă "AI Assist" → popover cu lista filtrată pe categoria ticketului. Click pe macro → înlocuiește `{placeholders}` cu valorile reale (din ticket: requester name, public_id, rental public_id, product title) și inserează în textarea. Increment `usage_count`.
+- Sortare default după `usage_count DESC` (cele mai folosite sus).
 
-Fără valori "Escaladat" în DB acum — dacă apar din Faza 2 admin (tag), le mapăm după.
+**Seed** (10 macro-uri uzuale): "Cer dovadă plată", "Cer poză daună", "Confirmare refund inițiat", "Escalare la tehnic", "Închidere automată după 14 zile", etc.
 
-## 3. Floating Support Widget premium (`SupportChatWidget.tsx`)
+## 2. CSAT (rating după rezolvare)
 
-Refactor incremental, păstrăm logica existentă (FAQ, AI stream, ticket persist în localStorage):
+**DB** (1 tabel nou):
 
-- FAB redesign: gradient subtle `--primary` → `--primary-hover`, badge realtime cu count nereaduri, pulse subtle on new admin reply, AI avatar mic (bot icon) când e activ flow-ul AI.
-- Drawer redesign: header cu status pill ticket activ ("Conectat cu suportul · Online"), subtle entrance animation, mobile 100dvh deja prezent, desktop card flotant cu shadow elegant.
-- Quick actions sub FAQ: chips pentru "Rezervare nouă / Plată / Altceva" care presetază step 1 al AI flow-ului.
-- Input bar: attach buton (camera mobile / fișier desktop), placeholder "Scrie sau selectează…", send disabled when empty.
-- Smooth animations via framer-motion (deja folosit în proiect).
+- `support_csat`: `ticket_id` (unique), `user_id`, `rating` 1-5, `comment`, `submitted_at`.
+- RLS: user poate insert pentru ticketul propriu rezolvat; admin select all.
 
-## 4. Realtime support chat cu media
+**User UI:**
 
-Migrație DB (single migration):
+- În `TicketDetail.tsx`: când `status === 'RESOLVED'` și nu există CSAT pentru ticket, banner sus cu **5 stele clickable + textarea opțional + buton "Trimite feedback"**. După submit, banner devine "Mulțumim! ⭐⭐⭐⭐⭐".
+- Trigger Postgres: la INSERT csat cu rating ≤ 2 → `admin_notifications` priority high "CSAT scăzut pe TCK-XXXX".
 
-- `ALTER TABLE ops_ticket_messages ADD COLUMN read_at timestamptz` + index `(ticket_id, author_type, read_at)`.
-- `ALTER PUBLICATION supabase_realtime ADD TABLE ops_ticket_messages, ops_tickets;` — enable realtime.
-- `REPLICA IDENTITY FULL` pe ambele.
-- Storage bucket `ticket-attachments` (verificăm dacă există deja — `uploadTicketAttachment` îl folosește pentru admini); dacă da, adăugăm RLS-uri pentru clienți: insert dacă `requester_user_id = auth.uid()` pe ticket-ul țintă; select pe path-uri din ticketele proprii. Path convention: `<ticket_id>/<uuid>.<ext>`.
-- RPC `mark_ticket_messages_read(p_ticket_id uuid)` — marchează ca citite mesajele non-CUSTOMER din ticket-ul propriu.
+**Analytics:**
 
-Hook nou `src/hooks/useTicketRealtime.ts`:
+- Extind RPC `get_support_analytics` cu: `csat_avg`, `csat_count`, `csat_distribution` (jsonb {1: n, 2: n, ...}).
+- Adaug card KPI "Satisfacție" + bar chart distribuție în `AdminSupportAnalytics.tsx`.
+- Coloană nouă "CSAT mediu" în tabelul "Performanță echipă" (per admin).
 
-- Subscribe la `postgres_changes` pe `ops_ticket_messages` filtrat pe `ticket_id`, invalidează queries.
-- Presence channel `ticket:{id}` pentru typing indicator (event `typing`, throttle 2s) și online status admin.
-- Auto-call `mark_ticket_messages_read` când drawer/detail e vizibil.
+## 3. Knowledge Base self-service
 
-API extinderi în `src/features/tickets/userTicketsApi.ts`:
+**DB** (2 tabele):
 
-- `addUserTicketAttachment(ticketId, file)` — compresie Canvas (reuse pattern din `SupportChatWidget`), upload, creează message + attachment row.
-- `markTicketMessagesRead(ticketId)`.
+- `kb_articles`: `slug`, `title_ro`, `title_en`, `content_ro` (markdown), `content_en`, `category_group`, `tags` (text[]), `view_count`, `helpful_count`, `is_published`.
+- `kb_article_views`: `article_id`, `user_id` (nullable), `created_at` — pentru analytics.
+- RLS: anyone read published; admins full access.
+- Index pg_trgm pe titlu pentru search rapid.
 
-`TicketChat.tsx` features: typing indicator (reuse `TypingIndicator.tsx` deja existent), seen tick când admin a citit, timestamps relative + DateSeparator (reuse component messaging), attach poze/video cu lightbox (reuse `MediaLightbox.tsx`).
+**Public UI:**
 
-## 5. Notificări
+- `/help` — listă cu search + filtre pe categorie. Cards cu titlu, preview, view count.
+- `/help/:slug` — pagină articol cu markdown render (`react-markdown`), buton "Util / Nu e util", related articles, link "Tot nu m-a ajutat → Deschide ticket" care preset-ează AI flow-ul cu categoria articolului.
+- Bilingual via `useLanguage`.
 
-Reuse `notifications` table existent. La fiecare update pe ticket (admin reply, status change), backend emite deja email — adăugăm:
+**Integrare AI Chat:**
 
-- Trigger Postgres pe `ops_ticket_messages` (insert non-internal, author_type != CUSTOMER) → insert în `notifications` cu link `/tickete?open={ticket_id}`.
-- Realtime pe `notifications` deja activ → bell-ul existent va arăta badge instant.
+- Nou edge function `support-kb-search`: primește query, face full-text search peste `kb_articles`, returnează top 3 cu titlu + slug + snippet.
+- În `support-ai-chat`: adaug tool `suggest_kb_articles` apelat de AI **înainte de a pune prima întrebare detalii** dacă topicul e clar (ex: user spune "cum anulez o rezervare"). UI render card "Articole recomandate" cu link-uri. Userul poate alege "Continuă cu ticket" sau click pe articol.
 
-Push notifications: out of scope acum, dar structura de notificări e pregătită.
+**Admin UI:**
 
-## 6. Tehnic
+- `/admin/kb` (sidebar) — listă articole + editor markdown cu preview live + publish toggle.
 
-Fișiere noi:
+## 4. Customer Health Score
 
-- `src/components/support/center/SupportHero.tsx`
-- `src/components/support/center/TicketsInbox.tsx`
-- `src/components/support/center/TicketCard.tsx`
-- `src/components/support/center/TicketDetail.tsx`
-- `src/components/support/center/TicketTimeline.tsx`
-- `src/components/support/center/TicketContextPanel.tsx`
-- `src/components/support/center/TicketChat.tsx`
-- `src/components/support/center/StatusPill.tsx`
-- `src/components/support/center/AttachmentBubble.tsx`
-- `src/hooks/useTicketRealtime.ts`
-- `src/features/tickets/userTicketsApi.ts` (extins)
-- 1 migrație DB (read_at, realtime publication, storage policies, RPC)
+**RPC nou** `get_user_health_score(p_user_id uuid)` returnează jsonb:
 
-Fișiere modificate:
+```text
+{
+  score: 0-100,
+  tier: 'EXCELLENT' | 'GOOD' | 'AT_RISK' | 'CRITICAL',
+  signals: {
+    open_tickets_count,
+    last_30d_tickets_count,
+    avg_csat,
+    sla_breaches_count,
+    lifetime_rentals,
+    sentiment_label  // optional, din analiză AI a ultimelor mesaje
+  }
+}
+```
 
-- `src/pages/UserTickets.tsx` — orchestrator nou (~120 linii).
-- `src/components/support/SupportChatWidget.tsx` — refactor UI + integrare 4-step flow + realtime widget badge.
-- `supabase/functions/support-ai-chat/index.ts` — state machine 4 pași + 2 tool-uri noi (`propose_category_chips`, `draft_ticket`).
+**Formulă (linear-weighted):**
 
-Design system: tokeni semantici (`--primary` orange doar pe FAB / CTA principal / status pill cel mai urgent), 12px radius, Plus Jakarta Sans, framer-motion pentru animații, bilingual RO/EN via `useLanguage`.
+- Base 100, scade cu: tickete deschise (-5/each, max -25), tickete recente (-3/each), CSAT ≤ 2 (-15/each), SLA breach (-10/each).
+- Crește cu: rentări lifetime (+1/each, max +20), CSAT ≥ 4 (+5/each).
+- Tier: ≥80 EXCELLENT (verde), 60-79 GOOD (albastru), 40-59 AT_RISK (orange), <40 CRITICAL (roșu).
 
-## 7. Out of scope (Faza 1)
+**Admin UI (`AdminContextSidebar.tsx`):**
 
-- Admin Support Operations 3-panel (`AdminTickets`, `AdminTicketDetail`).
-- AI assist pentru admini (summarize, suggest reply, fraud detection).
-- Automations (auto-assign, SLA cron, auto-close inactive).
-- Analytics dashboard (response time, resolution time, AI resolved %).
-- Push notifications native.
+- Card nou "Health Score" în top: badge colorat cu scorul + tier-ul + tooltip cu signals defalcate.
+- În `AdminInboxList.tsx`: dot colorat mic lângă avatar requester pentru tier ≤ AT_RISK.
 
-## Faza 2 (preview, NU se livrează acum)
+## 5. Tehnic — fișiere & migrații
 
-Admin Support Operations Dashboard cu layout 3-panel (lista tickete / chat realtime / context user+rezervare+plăți+KYC), AI assist pe replies, internal notes redesign, SLA cron edge functions, analytics. Va fi planificată separat după validarea Fazei 1.
+**Migrație DB unică** (Macros, CSAT, KB, Health RPC, CSAT trigger, extindere `get_support_analytics`).
+
+**Edge functions noi:**
+
+- `support-kb-search` (full-text search articole pentru AI).
+
+**Edge functions modificate:**
+
+- `support-ai-chat` (prompt strict + tool `suggest_kb_articles` + temperatura 0.3).
+
+**Fișiere noi React:**
+
+- `src/pages/admin/AdminMacros.tsx`
+- `src/pages/admin/AdminKnowledgeBase.tsx`
+- `src/pages/Help.tsx`, `src/pages/HelpArticle.tsx`
+- `src/components/admin/tickets/MacrosPopover.tsx`
+- `src/components/admin/tickets/HealthScoreCard.tsx`
+- `src/components/support/center/CsatPrompt.tsx`
+- `src/components/support/KbSuggestionsCard.tsx` (în chat widget)
+- `src/features/support/macrosApi.ts`, `csatApi.ts`, `kbApi.ts`, `healthScoreApi.ts`
+
+**Fișiere modificate:**
+
+- `src/components/admin/tickets/AdminConversation.tsx` — buton Macros
+- `src/components/admin/tickets/AdminContextSidebar.tsx` — Health Score card
+- `src/components/admin/tickets/AdminInboxList.tsx` — health dot
+- `src/components/support/center/TicketDetail.tsx` — CSAT prompt
+- `src/components/support/SupportChatWidget.tsx` — KB suggestions render
+- `src/pages/admin/AdminSupportAnalytics.tsx` — CSAT KPI + chart
+- `src/components/admin/AdminSidebar.tsx` — items Macros + KB
+- `src/App.tsx` — rute noi (`/help`, `/help/:slug`, `/admin/macros`, `/admin/kb`)
+
+## 6. QA verificare
+
+- Testez chat-ul cu un scenariu real (browser preview): pornesc, aleg "Produs" → o întrebare → confirm → ticket creat fără re-întrebări.
+- Verific edge function logs după test.
+- Confirm că draftul nu mai re-cere atașamente după confirmare.
