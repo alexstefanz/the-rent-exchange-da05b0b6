@@ -1,59 +1,66 @@
-## Redesign pagina "Cum funcționează Rentli"
+# KYC inline în „Contul meu"
 
-Refacere completă a `src/pages/HowItWorks.tsx` într-un ghid premium, mobile-first, care explică toate flow-urile noi (proces verbal digital, poze obligatorii, dispute, suport).
+Permite utilizatorului să completeze flow-ul KYC direct din pagina `/contul-meu`, fără redirect către `/verificare`.
 
-### Structură nouă a paginii (de sus în jos)
+## Stadiu actual
 
-1. **Hero premium** — titlu nou ("Închiriază simplu, sigur și transparent"), subtitle, 2 CTA (Caută produse / Listează gratuit) și 4 trust badges sub hero (Plăți securizate, Utilizatori verificați, Proces verbal digital, Suport dedicat). Background subtil cu gradient orange/cream conform brand.
+- `AccountTab.tsx` are o secțiune `Verification` care arată statusul KYC + un buton „Începe verificarea" care face `navigate("/verificare")`.
+- `src/pages/KycVerification.tsx` (536 linii) conține tot UI-ul + logica (load case, upload docs, submit) într-o singură pagină cu `<Navbar/>`, `<main/>`, `<Footer/>`.
 
-2. **Process Overview Timeline (10 pași)** — timeline orizontal pe desktop, vertical pe mobil, cu animații `animate-fade-in` staggerate, iconuri Lucide premium și conector colorat între pași. Pașii: Alegi produsul → Trimiți cererea → Proprietarul aprobă → Predare → **Proces verbal predare** → Folosire → Returnare → **Proces verbal returnare** → Finalizare → Review.
+## Plan
 
-3. **Tabs "Pentru chiriași / Pentru proprietari"** — un singur component cu Tabs (shadcn) ce comută între cele două flow-uri detaliate (10 pași fiecare). Mai compact decât două secțiuni separate, evită scroll lung. Sub fiecare tab: o casetă "Bună de știut" care explică rolul pozelor în dispute.
+### 1. Extrage flow-ul KYC într-un component reutilizabil
 
-4. **Proces verbal digital** (secțiune dedicată, nouă) — layout 2 coloane:
-   - stânga: explicație + checklist (poze obligatorii predare/returnare, observații, timestamp, dovadă în dispute)
-   - dreapta: card mock-up vizual cu mini-preview de 4 thumbnail-uri (placeholder), badge "Dovadă salvată automat" și pill cu timestamp
-   
-5. **Plăți & garanție** (refăcută) — card cu Lock icon, lista actualizată: plată securizată Stripe, fonduri blocate până la confirmare predare, payout după finalizare, politică anulări, dispute → blocare temporară.
+Creez `src/components/kyc/KycInlineFlow.tsx` care conține:
+- Tot state-ul: `kycCase`, `docs`, `isLoading`, `isSubmitting`, `activeDocType`, `phoneGate`
+- Tot logic-ul: load case, upload, submit, file input handling
+- UI-ul: cardurile cu pașii (upload ID front/back/selfie, submit button, status banners)
 
-6. **Comunicare în siguranță** (nouă) — card cu MessageSquare icon: chat în platformă, recomandare păstrare conversație, suport în dispute, marcare linkuri suspecte, trimitere poze.
+**NU** include `<Navbar/>`, `<main className="container...">`, `<Footer/>`, `<ArrowLeft Înapoi>`. Doar conținutul intern.
 
-7. **Suport & dispute** (nouă) — card cu LifeBuoy/Headphones icon: ticket suport, AI Assistant, analiză rezervare/timeline/chat/proces verbal, evaluare echipă.
+Prop opțional `variant?: "page" | "inline"` pentru micile diferențe de spacing (ex: `max-w-2xl` doar pe variantul page).
 
-8. **De ce este Rentli sigur?** — grid 7 carduri (Verificați, Proces verbal, Poze obligatorii, Plăți, Chat în platformă, Suport, Reviews) — refolosește style-ul existent de benefits.
+### 2. Refactor `KycVerification.tsx` (page)
 
-9. **FAQ redesign** — 10 întrebări noi, cu:
-   - Input search (filtrare client-side după întrebare/răspuns)
-   - Tabs pe categorii: Toate / Chiriași / Proprietari / Plăți / Dispute
-   - Accordion shadcn cu animație
-   - Empty state când search-ul nu returnează nimic
+Devine un wrapper subțire:
+```tsx
+<Navbar />
+<main className="container max-w-2xl py-8 px-4 pt-20 lg:pt-8">
+  <Button onClick={() => navigate(-1)}>Înapoi</Button>
+  <KycInlineFlow variant="page" />
+</main>
+<Footer />
+```
 
-10. **CTA final premium** — gradient bg, "Gata să începi?", două CTA-uri, text final.
+### 3. Integrare în `AccountTab.tsx` — secțiunea Verification
 
-11. **Sticky CTA mobil** — bară fixă jos (ascunsă pe desktop) cu "Caută produse" și "Listează gratuit", apare după scroll de hero.
+Înlocuiesc butonul „Începe verificarea" cu un mecanism progressive disclosure:
 
-### Detalii tehnice
+- **Dacă** `kycStatus === "VERIFIED"` → păstrez doar badge-ul de status (nimic de făcut)
+- **Dacă** `kycStatus === "SUBMITTED" / "NEEDS_MANUAL_REVIEW"` → păstrez badge „În curs de verificare" (read-only)
+- **Altfel** → afișez un toggle „Începe verificarea" / „Reîncepe verificarea" care expand-uiește inline `<KycInlineFlow variant="inline" />` chiar în secțiune
 
-- **Fișier principal**: refactor `src/pages/HowItWorks.tsx` (~600 linii → split în sub-componente).
-- **Sub-componente noi în `src/components/how-it-works/`**:
-  - `HeroSection.tsx`
-  - `LifecycleTimeline.tsx` (10 pași, responsive horizontal/vertical)
-  - `RoleFlowsTabs.tsx` (Tabs chiriași/proprietari)
-  - `DigitalHandoverSection.tsx` (cu mock card)
-  - `InfoCardSection.tsx` (reutilizabil pt Plăți, Chat, Suport)
-  - `TrustGrid.tsx`
-  - `FaqSection.tsx` (cu search + tabs + accordion)
-  - `StickyMobileCta.tsx`
-- **Copy bilingv**: extindere `src/data/uxCopy.ts` cu noua secțiune `howItWorksPage` (păstrăm cheile vechi unde se suprapun, adăugăm: `digitalHandover*`, `payments*`, `chat*`, `support*`, noile întrebări FAQ cu `category`, sticky CTA, etc.). Toate textele RO/EN.
-- **Iconografie**: Lucide — `Search, Send, CheckCircle2, Truck, ClipboardCheck, Package, Undo2, FileCheck2, Trophy, Star, Lock, MessageSquare, ShieldCheck, Camera, Clock, AlertTriangle, LifeBuoy, Sparkles`.
-- **Animații**: `animate-fade-in` staggerat pe timeline (delay via inline style), `hover-scale` pe CTA-uri, `accordion-down/up` pentru FAQ.
-- **Tokens**: doar `primary`, `secondary`, `card`, `muted-foreground`, `border`, gradient `from-primary to-[#F98715]` (consistent cu codul existent). Border radius 12-16px, shadow `shadow-card`.
-- **SEO**: `useSEO` cu titlu nou (<60 char) și meta description (<160 char), H1 unic în hero, breadcrumb păstrat.
-- **Performance**: skeleton loaders nu sunt necesari (pagină statică); FAQ search e pur in-memory.
-- **Mobile-first**: testat la 390px (viewport curent user); timeline vertical, tabs full width, sticky CTA jos cu `safe-area-inset-bottom`.
+State local nou în `AccountTab`: `const [showKyc, setShowKyc] = useState(false)`. La click pe buton → `setShowKyc(true)` și scroll smooth la zona expandată.
 
-### Out of scope
+Mini-stepper-ul existent (Date personale / Documente / Aprobat) rămâne deasupra ca progress indicator.
 
-- Modificări de DB / RLS / edge functions.
-- Componente reale pentru proces verbal (folosim doar mock vizual).
-- Modificări la pagina FAQ separată sau la centrul de suport.
+### 4. Păstrez ruta `/verificare`
+
+- Linkurile existente (drawer mobile, KycRejectedBanner, notificări email, deep links) continuă să funcționeze.
+- E doar o cale alternativă: utilizatorii pot completa KYC fie pe pagina dedicată, fie inline în Contul meu.
+
+## Fișiere modificate
+
+- **Nou:** `src/components/kyc/KycInlineFlow.tsx` (~470 linii — conținutul intern din KycVerification)
+- **Refactorizat:** `src/pages/KycVerification.tsx` (~50 linii — doar shell)
+- **Modificat:** `src/components/profile/AccountTab.tsx` — secțiunea Verification afișează `<KycInlineFlow variant="inline" />` la cerere
+
+## Out of scope
+
+- Modificări DB / RLS (folosim aceleași tabele `kyc_cases` + `kyc_documents`)
+- Logică nouă de validare / status — totul reutilizat 1:1
+- Redesign vizual al pașilor — păstrez UI-ul actual
+
+## Risc
+
+Minim — doar mutare de cod într-un component partajat. Dacă vrei și un redesign mai compact pentru variantul `inline` (ex: stepper orizontal în loc de carduri full-width), pot face într-o fază separată.
