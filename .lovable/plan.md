@@ -1,17 +1,25 @@
-## Confirmări Anunțuri — Buton "Previzualizează anunț"
+## Produsele mele — Preview pentru anunțuri în așteptare
 
 ### Scop
-În `/admin/approvals`, pe fiecare card de anunț în așteptare, adaug un buton **„Previzualizează anunț"** înaintea butonului „Aprobă", astfel încât adminul să poată inspecta anunțul exact așa cum îl va vedea publicul, înainte de a lua o decizie.
+În `/owner/listings` (componenta `LendingsTab`), când un produs are `approval_status = 'pending'`, proprietarul vede:
+- Un **badge „În așteptare"** (galben), nu „Inactiv".
+- Un buton vizibil **„Previzualizează anunț"** (icon `Eye` + text), care deschide pagina publică `/produs/:slug` într-un tab nou — exact așa cum o va vedea publicul după aprobare.
+
+Astfel, până ce adminul aprobă, owner-ul poate vedea instant cum arată anunțul real.
 
 ### Comportament
-- Butonul se deschide într-un **tab nou** (`target="_blank"` + `rel="noopener noreferrer"`) pentru a nu pierde lista de aprobări și starea de scroll.
-- Link către `/produs/:slug` (ruta publică existentă). Dacă produsul nu are `slug`, fallback pe `/produs/{id}`.
-- Stil: variant `outline` cu iconiță `Eye` din lucide-react, păstrând cele 12px border radius și paleta primary (#F59E0B) prin tokens semantici.
-- Ordinea acțiunilor în card: **Previzualizează** → **Aprobă** → **Respinge**.
-- Anunțurile pending sunt vizibile de admin pe pagina publică (RLS „Admins can view all products" e deja activ), deci preview-ul va încărca corect chiar dacă `approval_status = 'pending'`.
+- Logică status badge:
+  - `approval_status === 'rejected'` → badge `rejected` („Respins").
+  - `approval_status === 'pending'` → badge `pending` („În așteptare").
+  - altfel → `active` / `inactive` în funcție de `is_active` (comportament actual).
+- Pentru produse **pending**: buton dedicat „Previzualizează anunț" (variant `outline`, full text) lângă butonul Edit. Iconița Eye standalone se ascunde pentru pending (este înlocuită de butonul cu text). Pentru celelalte stări rămâne iconița Eye actuală.
+- Preview-ul deschide ruta `/produs/${product.slug ?? product.id}` cu `target="_blank"` + `rel="noopener noreferrer"`. RLS „Owners can view their own products" permite owner-ului să citească produse pending, deci pagina se va încărca corect.
 
 ### Detalii tehnice
-- Fișier modificat: `src/pages/admin/AdminApprovals.tsx`
-  - Import `Eye` din `lucide-react`.
-  - În blocul `{/* Actions */}` (în jurul liniei 309), inserez un `<Button asChild variant="outline">` cu un `<a>` către `/produs/${product.slug ?? product.id}` deschis în tab nou, plasat înainte de butonul „Aprobă".
-- Fără modificări de logică/business, fără migrații, fără schimbări în `uxCopy.ts` (text scurt RO inline, în linie cu butoanele existente „Aprobă"/„Respinge" din aceeași pagină).
+- Fișier modificat: `src/components/dashboard/LendingsTab.tsx`
+  - Calculez `derivedStatus` per produs (`pending` | `rejected` | `active` | `inactive`).
+  - Pasez statusul derivat lui `StatusBadge` (suportă deja `pending`/`rejected`).
+  - Render condițional buton: pending ⇒ `<Button variant="outline" asChild><a href={...} target="_blank" rel="noopener noreferrer">Previzualizează anunț</a></Button>`; restul ⇒ icon Eye actual.
+- Fișier modificat: `src/data/uxCopy.ts`
+  - Adaug cheie `dashboard.previewListing` = `{ ro: "Previzualizează anunț", en: "Preview listing" }` pentru consistență bilingvă.
+- Fără migrații, fără modificări de business logic, fără modificări la `StatusBadge` (etichetele „pending"/„rejected" există deja în `uxCopy.status`).

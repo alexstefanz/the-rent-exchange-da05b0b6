@@ -71,19 +71,39 @@ const LendingsTab = () => {
         <div className="grid gap-4 sm:grid-cols-2">
           {products.map((product) => {
             const clientPrice = calculateClientPrice(product.daily_price_owner, product.platform_fee_percent);
+            const approval = (product as any).approval_status as string | undefined;
+            const derivedStatus: "pending" | "rejected" | "active" | "inactive" =
+              approval === "pending"
+                ? "pending"
+                : approval === "rejected"
+                ? "rejected"
+                : product.is_active
+                ? "active"
+                : "inactive";
+            const isPending = derivedStatus === "pending";
+            const productUrl = getProductUrl(product);
             return (
               <div key={product.id} className="flex gap-4 rounded-xl border border-border bg-card p-4">
                 <img src={product.images?.[0] || "/placeholder.svg"} alt={getDisplayTitle(product, language)} className="w-20 h-20 rounded-lg object-cover" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <h4 className="font-medium text-foreground truncate">{getDisplayTitle(product, language)}</h4>
-                    <StatusBadge status={product.is_active ? "active" : "inactive"} size="sm" />
+                    <StatusBadge status={derivedStatus} size="sm" />
                   </div>
                   <p className="mt-1 text-sm font-semibold text-primary">{clientPrice} RON/{copy.common.perDay.replace("/ ", "")}</p>
                   <div className="mt-2 flex gap-2">
-                    <Button variant="ghost" size="sm" className="h-8 px-2" asChild>
-                      <Link to={getProductUrl(product)}><Eye className="h-4 w-4" /></Link>
-                    </Button>
+                    {isPending ? (
+                      <Button variant="outline" size="sm" className="h-8 gap-2" asChild>
+                        <a href={productUrl} target="_blank" rel="noopener noreferrer">
+                          <Eye className="h-4 w-4" />
+                          {copy.dashboard.previewListing}
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="sm" className="h-8 px-2" asChild>
+                        <Link to={productUrl}><Eye className="h-4 w-4" /></Link>
+                      </Button>
+                    )}
                     <Button variant="ghost" size="sm" className="h-8 px-2" asChild>
                       <Link to={`/owner/edit-product/${product.id}`}><Edit className="h-4 w-4" /></Link>
                     </Button>
