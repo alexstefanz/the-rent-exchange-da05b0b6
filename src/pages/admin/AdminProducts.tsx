@@ -488,6 +488,18 @@ const AdminProducts = () => {
           </div>
         </div>
 
+        <Tabs defaultValue="active" className="space-y-4 md:space-y-6">
+          <TabsList>
+            <TabsTrigger value="active">Active</TabsTrigger>
+            <TabsTrigger value="trash" className="gap-2">
+              <Trash className="h-4 w-4" /> Coș de gunoi
+              {deletedProducts.length > 0 && (
+                <Badge variant="secondary" className="ml-1">{deletedProducts.length}</Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="active" className="space-y-4 md:space-y-6 mt-0">
         {/* Search & Filter */}
         <Card>
           <CardContent className="pt-4 md:pt-6">
