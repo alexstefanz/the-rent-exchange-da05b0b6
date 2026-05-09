@@ -16,6 +16,7 @@ export interface TransactionCardData {
   subtotal?: number | null;
   status: string;
   paymentStatus?: string | null;
+  role?: "renter" | "owner";
 }
 
 function statusVariant(status: string): { className: string; label: { ro: string; en: string } } {
@@ -40,7 +41,7 @@ export function TransactionCard({ data }: { data: TransactionCardData }) {
   const { language, t } = useLanguage();
   const locale = language === "ro" ? ro : enUS;
   const variant = statusVariant(data.status);
-  const link = data.publicId ? `/rentals/${data.publicId}` : null;
+  const link = data.role === "owner" ? "/inchirieri" : "/rezervari";
 
   return (
     <div className="mx-4 my-3 rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">

@@ -235,6 +235,7 @@ export function ChatPanel({
               subtotal: rentalCtx.subtotal,
               status: rentalCtx.status,
               paymentStatus: rentalCtx.payment_status,
+              role: isOwner ? "owner" : "renter",
             }}
           />
         </>
