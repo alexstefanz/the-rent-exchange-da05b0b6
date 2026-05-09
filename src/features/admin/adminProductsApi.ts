@@ -47,7 +47,7 @@ export const approveProduct = async (productId: string): Promise<void> => {
         description_ro: `Anunțul „${prod.title}" este acum vizibil pe platformă.`,
         description_en: `The listing "${prod.title}" is now visible on the platform.`,
         link,
-      } as Record<string, unknown>);
+      });
 
       // Transactional email
       const { data: profile } = await supabase
