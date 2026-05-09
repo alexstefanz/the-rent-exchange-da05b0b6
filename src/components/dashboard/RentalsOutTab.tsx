@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { AcceptedRentalDialog } from "./AcceptedRentalDialog";
 import { InspectionDialog } from "./InspectionDialog";
+import LeaveReviewDialog, { type LeaveReviewRental } from "./LeaveReviewDialog";
 import RentalTimeline, { getTimelineStep } from "./RentalTimeline";
 import NextActionCard from "./NextActionCard";
 import { useRentalRealtime } from "@/hooks/useRentalRealtime";
@@ -83,6 +84,7 @@ const RentalsOutTab = () => {
   const [rejectReason, setRejectReason] = useState("");
   const [acceptedRental, setAcceptedRental] = useState<OwnerRental | null>(null);
   const [inspectionRental, setInspectionRental] = useState<{ rental: OwnerRental; phase: InspectionPhase } | null>(null);
+  const [reviewRental, setReviewRental] = useState<LeaveReviewRental | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const pendingRentals = rentals.filter(r => r.status === "pending");
@@ -314,7 +316,15 @@ const RentalsOutTab = () => {
                                 else if (step === 6) handleConfirmReturn(rental);
                               }}
                               onChat={() => navigate("/mesaje")}
-                              onLeaveReview={() => rental.product_id && navigate(`/produs/${rental.product_id}#review`)}
+                              onLeaveReview={() =>
+                                setReviewRental({
+                                  id: rental.id,
+                                  product_id: rental.product_id,
+                                  product_title: rental.product_title,
+                                  counterparty_id: rental.renter_id,
+                                  counterparty_name: rental.renter_name || "Chiriaș",
+                                })
+                              }
                             />
                           </div>
                         );
