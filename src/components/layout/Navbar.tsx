@@ -61,7 +61,6 @@ const Navbar = () => {
   const unreadMessagesCount = conversations?.reduce((sum: number, c: any) => sum + (c.unread_count || 0), 0) || 0;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeMegaMenu, setActiveMegaMenu] = useState<number | null>(null);
-  const [expandedMobileCategory, setExpandedMobileCategory] = useState<number | null>(null);
   const [showBalance, setShowBalance] = useState(() => {
     return localStorage.getItem("show_balance") !== "false";
   });
@@ -132,13 +131,8 @@ const Navbar = () => {
     setActiveMegaMenu(null);
   };
 
-  const toggleMobileCategory = (categoryId: number) => {
-    setExpandedMobileCategory(expandedMobileCategory === categoryId ? null : categoryId);
-  };
-
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
-    setExpandedMobileCategory(null);
   };
 
   const handleLogout = async () => {
