@@ -44,7 +44,8 @@ const SupportFromRentalButton = ({ rentalId, rentalPublicId, productTitle, class
         reservation_id: rentalId,
       });
       toast.success(t("Ticket creat", "Ticket created"));
-      navigate(`/profil/tickets/${ticket.id}`);
+      navigate(`/suport`);
+      void ticket;
     } catch (e) {
       console.error(e);
       toast.error(t("Nu am putut crea ticket-ul", "Could not create ticket"));
