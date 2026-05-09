@@ -94,6 +94,7 @@ const AccountTab = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
   const [cropperOpen, setCropperOpen] = useState(false);
+  const [showKycFlow, setShowKycFlow] = useState(false);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
