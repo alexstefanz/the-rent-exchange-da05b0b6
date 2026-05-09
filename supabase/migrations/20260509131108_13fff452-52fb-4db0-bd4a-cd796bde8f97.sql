@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.purge_expired_deleted_products() FROM PUBLIC, anon, authenticated;
