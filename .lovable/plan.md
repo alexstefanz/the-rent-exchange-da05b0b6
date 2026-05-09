@@ -1,18 +1,14 @@
 ## Problem
-Pe pagina produsului, descrierea este randată într-un singur `<p>` fără păstrarea rândurilor noi (`\n`). Astfel orice text introdus pe mai multe rânduri apare ca un bloc continuu.
+În `Profil → Anunțurile mele`, cardurile produselor nu sunt clickable. Acum doar iconul mic 👁 deschide anunțul.
 
 ## Soluție
-În `src/pages/ProductDetail.tsx` (linia 267), schimb `<p>` astfel încât să respecte rândurile și spațiile:
+În `src/components/dashboard/LendingsTab.tsx` fac întregul card clickable:
 
-```tsx
-<p className="text-muted-foreground whitespace-pre-wrap break-words">
-  {displayDescription || copy.product.noDescription}
-</p>
-```
-
-- `whitespace-pre-wrap` păstrează `\n` și spațiile multiple
-- `break-words` asigură că URL-uri/cuvinte lungi nu sparg layoutul
+- Imaginea + titlul + prețul devin un `<Link to={productUrl}>` (sau `<a target="_blank">` pentru produsele `pending`, ca să fie consistent cu butonul de preview existent).
+- Butoanele rămân separate (Eye/Preview, Edit) cu `e.stopPropagation()` ca să nu declanșeze navigarea când se face click pe ele.
+- Hover state pe card: `hover:shadow-card-hover transition-all cursor-pointer`.
+- `StatusBadge` rămâne în colț, în afara zonei de click pentru a nu interfera vizual.
 
 ## Scope
-- Doar UI, un singur fișier: `src/pages/ProductDetail.tsx`
-- Fără modificări în backend, validare sau alte componente
+- Doar UI, un singur fișier: `src/components/dashboard/LendingsTab.tsx`
+- Fără schimbări de rute, API sau business logic.

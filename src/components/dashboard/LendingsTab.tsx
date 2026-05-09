@@ -82,12 +82,20 @@ const LendingsTab = () => {
                 : "inactive";
             const isPending = derivedStatus === "pending";
             const productUrl = getProductUrl(product);
+            const CardLink = isPending ? "a" : (Link as any);
+            const linkProps: any = isPending
+              ? { href: productUrl, target: "_blank", rel: "noopener noreferrer" }
+              : { to: productUrl };
             return (
-              <div key={product.id} className="flex gap-4 rounded-xl border border-border bg-card p-4">
-                <img src={product.images?.[0] || "/placeholder.svg"} alt={getDisplayTitle(product, language)} className="w-20 h-20 rounded-lg object-cover" />
+              <div key={product.id} className="flex gap-4 rounded-xl border border-border bg-card p-4 transition-all hover:shadow-card-hover">
+                <CardLink {...linkProps} className="shrink-0">
+                  <img src={product.images?.[0] || "/placeholder.svg"} alt={getDisplayTitle(product, language)} className="w-20 h-20 rounded-lg object-cover" />
+                </CardLink>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
-                    <h4 className="font-medium text-foreground truncate">{getDisplayTitle(product, language)}</h4>
+                    <CardLink {...linkProps} className="min-w-0 flex-1 hover:text-primary transition-colors">
+                      <h4 className="font-medium text-foreground truncate hover:text-primary">{getDisplayTitle(product, language)}</h4>
+                    </CardLink>
                     <StatusBadge status={derivedStatus} size="sm" />
                   </div>
                   <p className="mt-1 text-sm font-semibold text-primary">{clientPrice} RON/{copy.common.perDay.replace("/ ", "")}</p>
