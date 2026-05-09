@@ -1,40 +1,22 @@
 /// <reference types="npm:@types/react@18.3.1" />
-
 import * as React from 'npm:react@18.3.1'
-import {
-  Body, Button, Container, Head, Heading, Hr, Html, Img, Preview, Text,
-} from 'npm:@react-email/components@0.0.22'
 import type { TemplateEntry } from './registry.ts'
-
-const SITE_NAME = 'Rentli'
-const LOGO_URL = 'https://tsffyecastudajmgrckt.supabase.co/storage/v1/object/public/email-assets/rentli_logo.png'
-const APP_URL = 'https://rentli.ro'
+import { BaseLayout, H1, Lead, Para, StatusBadge, InfoRow, CTAButton, APP_URL, Section } from './_components.tsx'
 
 interface Props { name?: string; ticketId?: string; ticketTitle?: string }
 
 const TicketCreatedEmail = ({ name, ticketId, ticketTitle }: Props) => (
-  <Html lang="ro" dir="ltr">
-    <Head />
-    <Preview>Tichetul tău a fost înregistrat</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <div style={header}>
-          <Img src={LOGO_URL} alt="Rentli" width="120" height="40" style={logoStyle} />
-        </div>
-        <Heading style={h1}>
-          {name ? `Mulțumim, ${name}!` : 'Tichetul tău a fost înregistrat'}
-        </Heading>
-        <Text style={text}>
-          Am primit solicitarea ta {ticketId ? <>cu ID-ul <strong>{ticketId}</strong></> : ''}{' '}
-          și revenim cu un răspuns în cel mai scurt timp.
-        </Text>
-        {ticketTitle && <Text style={text}>Subiect: <strong>{ticketTitle}</strong></Text>}
-        <Button href={`${APP_URL}/suport`} style={button}>Vezi tichetul meu</Button>
-        <Hr style={hr} />
-        <Text style={footer}>Cu drag, Echipa {SITE_NAME}</Text>
-      </Container>
-    </Body>
-  </Html>
+  <BaseLayout preview={`Tichet creat: ${ticketId ?? ''}`}>
+    <H1>{name ? `Mulțumim, ${name}!` : 'Tichet creat'}</H1>
+    <Section style={{ margin: '0 0 14px' }}><StatusBadge kind="pending" label="Nou" /></Section>
+    <Lead>Tichetul tău a fost înregistrat cu succes. Echipa de suport îți răspunde în cel mai scurt timp.</Lead>
+    {ticketId && <InfoRow label="Număr tichet" value={ticketId} />}
+    {ticketTitle && <InfoRow label="Subiect" value={ticketTitle} />}
+    <div style={{ marginTop: 18 }}>
+      <CTAButton href={`${APP_URL}/suport`}>Vezi tichetul</CTAButton>
+    </div>
+    <Para>Răspunsurile se trimit pe email și apar și în istoricul tău din contul Rentli.</Para>
+  </BaseLayout>
 )
 
 export const template = {
@@ -43,13 +25,3 @@ export const template = {
   displayName: 'Tichet creat',
   previewData: { name: 'Maria', ticketId: 'TCK-000123', ticketTitle: 'Problemă plată' },
 } satisfies TemplateEntry
-
-const main = { backgroundColor: '#ffffff', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
-const container = { padding: '0', maxWidth: '560px', margin: '0 auto' }
-const header = { backgroundColor: '#F59E0B', padding: '20px 25px', borderRadius: '8px 8px 0 0' }
-const logoStyle = { display: 'block' as const }
-const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#302520', margin: '25px 25px 10px' }
-const text = { fontSize: '14px', color: '#7D7471', lineHeight: '1.5', margin: '0 25px 15px' }
-const button = { backgroundColor: '#F59E0B', color: '#ffffff', padding: '12px 24px', borderRadius: '12px', textDecoration: 'none', display: 'inline-block', margin: '10px 25px', fontWeight: 600 }
-const hr = { borderColor: '#eee', margin: '20px 25px' }
-const footer = { fontSize: '12px', color: '#999999', margin: '0 25px 25px' }
