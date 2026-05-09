@@ -22,7 +22,10 @@ import {
 } from "@/components/ui/dialog";
 import { AcceptedRentalDialog } from "./AcceptedRentalDialog";
 import { InspectionDialog } from "./InspectionDialog";
-import RentalTimeline from "./RentalTimeline";
+import RentalTimeline, { getTimelineStep } from "./RentalTimeline";
+import NextActionCard from "./NextActionCard";
+import { useRentalRealtime } from "@/hooks/useRentalRealtime";
+import { useNavigate } from "react-router-dom";
 import type { InspectionPhase } from "@/features/rentals/inspectionApi";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
@@ -42,6 +45,12 @@ const RentalsOutTab = () => {
   const copy = useUxCopy();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  useRentalRealtime(user?.id, "owner", [
+    ["ownerRentals", user?.id],
+    ["renter-checkin-inspections"],
+  ]);
 
   const { data: rentals = [], isLoading } = useQuery({
     queryKey: ["ownerRentals", user?.id],
@@ -270,6 +279,46 @@ const RentalsOutTab = () => {
                           refunded_at: rental.refunded_at,
                         }} />
                       </div>
+                      {(() => {
+                        const { current: step, cancelled } = getTimelineStep({
+                          status: rental.status,
+                          payment_status: rental.payment_status,
+                          start_date: rental.start_date,
+                          end_date: rental.end_date,
+                          handover_confirmed_at: rental.handover_confirmed_at,
+                          return_confirmed_at: rental.return_confirmed_at,
+                          refunded_at: rental.refunded_at,
+                        });
+                        const renterCheckinSubmitted = renterCheckinIds.has(rental.id);
+                        return (
+                          <div className="mt-3">
+                            <NextActionCard
+                              rental={{
+                                id: rental.id,
+                                product_id: rental.product_id,
+                                product_title: rental.product_title,
+                                start_date: rental.start_date,
+                                end_date: rental.end_date,
+                                status: rental.status,
+                                payment_status: rental.payment_status,
+                                handover_confirmed_at: rental.handover_confirmed_at,
+                                return_confirmed_at: rental.return_confirmed_at,
+                              }}
+                              step={step}
+                              cancelled={cancelled}
+                              role="owner"
+                              renterCheckinSubmitted={renterCheckinSubmitted}
+                              onPrimary={() => {
+                                if (step === 3) setInspectionRental({ rental, phase: "checkout" });
+                                else if (step === 4) setInspectionRental({ rental, phase: "checkin" });
+                                else if (step === 6) handleConfirmReturn(rental);
+                              }}
+                              onChat={() => navigate("/mesaje")}
+                              onLeaveReview={() => rental.product_id && navigate(`/produs/${rental.product_id}#review`)}
+                            />
+                          </div>
+                        );
+                      })()}
                       <Collapsible>
                         <CollapsibleTrigger asChild>
                           <Button variant="ghost" size="sm" className="mt-2 h-7 px-2 text-xs">
