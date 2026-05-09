@@ -1,11 +1,15 @@
-import { useEffect, useRef, lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Shield, CheckCircle, ShieldCheck, Headphones } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
-import HeroSearchForm from "@/components/HeroSearchForm";
+import HeroDynamic from "@/components/home/HeroDynamic";
+import TrustBarPremium from "@/components/home/TrustBarPremium";
+import SocialProofLive from "@/components/home/SocialProofLive";
 const FeaturedListings = lazy(() => import("@/components/home/FeaturedListings"));
+const WhyRentli = lazy(() => import("@/components/home/WhyRentli"));
+const HowItWorksMini = lazy(() => import("@/components/home/HowItWorksMini"));
 const Footer = lazy(() => import("@/components/layout/Footer"));
 import { categories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
@@ -16,22 +20,6 @@ import { supabase } from "@/integrations/supabase/client";
 const Index = () => {
   const copy = useUxCopy();
   const { language } = useLanguage();
-  const heroRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    // Disable parallax on mobile to avoid forced reflow
-    const isMobile = window.matchMedia("(max-width: 767px)").matches;
-    if (isMobile) return;
-
-    const handleScroll = () => {
-      const img = document.getElementById("hero-parallax-img") as HTMLImageElement | null;
-      if (!img) return;
-      const scrollY = window.scrollY;
-      img.style.transform = `translateY(${scrollY * 0.4}px)`;
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const { data: categoryCounts } = useQuery({
     queryKey: ["category-counts"],
@@ -55,58 +43,11 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <section className="relative overflow-hidden h-[78svh] md:h-[500px]">
-        <picture>
-          <source
-            media="(max-width: 768px)"
-            type="image/webp"
-            srcSet="/images/banner_hero_mobile.webp 1x, /images/banner_hero_mobile@2x.webp 2x, /images/banner_hero_mobile@3x.webp 3x"
-          />
-          <img
-            src="/images/banner_hero.webp"
-            alt=""
-            width={1920}
-            height={1088}
-            fetchPriority="high"
-            decoding="async"
-            className="absolute inset-0 w-full h-[130%] object-cover"
-            style={{ transform: 'translateZ(0)' }}
-            id="hero-parallax-img"
-          />
-        </picture>
-        <div className="absolute inset-0 bg-black/50" />
-        <div className="container relative h-full flex flex-col items-center justify-center">
-          <div className="mx-auto w-full max-w-4xl text-center">
-            <h1 className="mt-[30px] animate-fade-up font-heading font-bold tracking-tight text-white md:mt-0 text-4xl">
-              {copy.home.heroTitle}{" "}
-              <br className="md:hidden" />
-              <span className="text-primary">{copy.home.heroTitleHighlight}</span>
-            </h1>
-            <div className="mt-6 animate-fade-up md:mx-0 md:mt-10" style={{ animationDelay: "0.2s" }}>
-              <HeroSearchForm />
-            </div>
-          </div>
-        </div>
-      </section>
+      <HeroDynamic />
 
-      {/* USP Bar */}
-      <section className="py-3" style={{ backgroundColor: '#F98715' }}>
-        <div className="container">
-          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10">
-            {[
-              { icon: Shield, label: language === "en" ? "Secure payments" : "Plăți securizate" },
-              { icon: CheckCircle, label: language === "en" ? "Verified users" : "Utilizatori verificați" },
-              { icon: ShieldCheck, label: language === "en" ? "Insurance included" : "Asigurare inclusă" },
-              { icon: Headphones, label: language === "en" ? "Dedicated support" : "Suport dedicat" },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center gap-2">
-                <item.icon className="h-4 w-4 text-white" />
-                <span className="text-sm font-medium text-white">{item.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <SocialProofLive />
+
+      <TrustBarPremium />
 
       <section className="pt-16 pb-10">
         <div className="container">
@@ -141,6 +82,14 @@ const Index = () => {
 
       <Suspense fallback={<div className="py-12" />}>
         <FeaturedListings />
+      </Suspense>
+
+      <Suspense fallback={<div className="py-12" />}>
+        <HowItWorksMini />
+      </Suspense>
+
+      <Suspense fallback={<div className="py-12" />}>
+        <WhyRentli />
       </Suspense>
 
       {/* CTA Banner */}
