@@ -31,6 +31,7 @@ import {
   ImageIcon,
   ChevronLeft,
   ChevronRight,
+  Eye,
 } from "lucide-react";
 
 interface PendingProduct {
@@ -307,6 +308,20 @@ const AdminApprovals = () => {
 
                         {/* Actions */}
                         <div className="flex gap-3 pt-2 border-t border-border">
+                          <Button
+                            asChild
+                            variant="outline"
+                            className="gap-2"
+                          >
+                            <a
+                              href={`/produs/${product.slug ?? product.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Eye className="h-4 w-4" />
+                              Previzualizează anunț
+                            </a>
+                          </Button>
                           <Button
                             onClick={() => approveMutation.mutate(product.id)}
                             disabled={approveMutation.isPending}

@@ -1,43 +1,17 @@
-## Compactare BookingCard pe pagina de produs
+## Confirmări Anunțuri — Buton "Previzualizează anunț"
 
-Modificări în `src/components/product/BookingCard.tsx` pentru a elimina scroll-ul intern al cardului.
+### Scop
+În `/admin/approvals`, pe fiecare card de anunț în așteptare, adaug un buton **„Previzualizează anunț"** înaintea butonului „Aprobă", astfel încât adminul să poată inspecta anunțul exact așa cum îl va vedea publicul, înainte de a lua o decizie.
 
-### 1. Header titlu + prețuri (imagine 1)
-
-În prezent:
-- Titlu `text-2xl` (desktop) / `text-[25px]` (mobil)
-- Sub titlu, bloc preț cu `1 RON / zi` mare, apoi 2 rânduri separate pentru `6 RON / săptămână` și `22 RON / 30 zile`
-
-Devine:
-- Titlu desktop redus la `text-lg` (titlu mobil rămâne dar redus la `text-xl`)
-- Pe un singur rând sub titlu: `1 RON / zi` (primary, bold, `text-xl`) la stânga, iar la dreapta — pe același rând — `6 RON / săpt.` · `22 RON / 30 zile` (text muted, `text-xs`, separator `·`)
-- Eliminăm `Separator` dintre header și calendar pentru a câștiga spațiu vertical
-- Reducem marginile (`mb-4` → `mb-2/3`) și padding-ul cardului (`p-4 sm:p-6 lg:p-5` → `p-3 sm:p-4 lg:p-4`)
-
-### 2. Sumar perioadă + total (imagine 2)
-
-În prezent (când există `startDate` + `endDate`):
-- Bloc cu 2 rânduri separate: `preț/zi: 13 mai 2026` și `Până la: 15 mai 2026`
-- Apoi breakdown pe luni/săptămâni/zile (până la 3 rânduri)
-- Apoi total
-
-Devine — bloc compact cu 2 rânduri:
-- Rând 1 (inline): `13 mai 2026 → 15 mai 2026` (data start, săgeată/`→`, data end), aliniat stânga, font medium
-- Rând 2: `Total (3 zile)` la stânga, `3 RON` în primary la dreapta, font semibold
-- Eliminăm complet breakdown-ul detaliat luni/săptămâni/zile din card (rămâne implicit doar `Total (N zile)`); calculul rămâne neschimbat în spate
-- Eliminăm `Separator` interior din bloc, reducem `p-4` → `p-3`
-
-### 3. Curățare scroll
-
-- Scoatem clasele `lg:max-h-[calc(100vh-7rem)] lg:flex lg:flex-col` și `lg:flex-1 lg:overflow-y-auto` plus scrollbar custom — cardul devine `sticky` cu înălțime naturală, fără scroll intern
-- Footer cu butonul rămâne în card, dar fără `border-t` separat (sau cu `mt-3` simplu)
-
-### 4. Pastila cu intervalul de sub buton
-
-Pastila existentă „dd MMM yyyy → dd MMM yyyy" devine redundantă cu noul rând inline din sumar — o eliminăm.
+### Comportament
+- Butonul se deschide într-un **tab nou** (`target="_blank"` + `rel="noopener noreferrer"`) pentru a nu pierde lista de aprobări și starea de scroll.
+- Link către `/produs/:slug` (ruta publică existentă). Dacă produsul nu are `slug`, fallback pe `/produs/{id}`.
+- Stil: variant `outline` cu iconiță `Eye` din lucide-react, păstrând cele 12px border radius și paleta primary (#F59E0B) prin tokens semantici.
+- Ordinea acțiunilor în card: **Previzualizează** → **Aprobă** → **Respinge**.
+- Anunțurile pending sunt vizibile de admin pe pagina publică (RLS „Admins can view all products" e deja activ), deci preview-ul va încărca corect chiar dacă `approval_status = 'pending'`.
 
 ### Detalii tehnice
-- Fișier modificat: `src/components/product/BookingCard.tsx`
-- Localizare ro/en pentru `Total (N zile / N days)` folosind `language` deja disponibil; nu adăugăm chei noi în `uxCopy.ts` (scurtături inline acceptabile, similar codului existent)
-- `priceBreakdown` poate rămâne calculat sau poate fi simplificat la doar `rentalDays` (prefer să-l păstrăm pentru a nu sparge alte locuri, dar nu-l mai randăm)
-- Logica calendar, KYC gate, navigare checkout — neschimbate
+- Fișier modificat: `src/pages/admin/AdminApprovals.tsx`
+  - Import `Eye` din `lucide-react`.
+  - În blocul `{/* Actions */}` (în jurul liniei 309), inserez un `<Button asChild variant="outline">` cu un `<a>` către `/produs/${product.slug ?? product.id}` deschis în tab nou, plasat înainte de butonul „Aprobă".
+- Fără modificări de logică/business, fără migrații, fără schimbări în `uxCopy.ts` (text scurt RO inline, în linie cu butoanele existente „Aprobă"/„Respinge" din aceeași pagină).
