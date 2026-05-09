@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { Headphones, Send, X, MessageSquare, Plus, Bot, Loader2, ImagePlus, ChevronRight, ArrowLeft } from "lucide-react";
+import { Headphones, Send, X, MessageSquare, Plus, Bot, Loader2, ImagePlus, ChevronRight, ArrowLeft, Sparkles, Check, Pencil, Paperclip } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -147,6 +147,9 @@ const renderMessageContent = (text: string) => {
 interface AiMessage {
   role: "user" | "assistant";
   content: string;
+  chips?: string[];
+  attachmentHint?: string;
+  draft?: ToolCallData;
 }
 
 interface ToolCallData {
@@ -309,7 +312,10 @@ const SupportChatWidget = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: conversationMessages, context: chatContext }),
+        body: JSON.stringify({
+          messages: conversationMessages.map(({ role, content }) => ({ role, content })),
+          context: chatContext,
+        }),
       });
 
       if (!resp.ok) {
@@ -323,9 +329,8 @@ const SupportChatWidget = () => {
       const decoder = new TextDecoder();
       let textBuffer = "";
       let assistantSoFar = "";
-      let toolCallName = "";
-      let toolCallArgs = "";
-      let hasToolCallFlag = false;
+      // Tool calls accumulated by `index` (multiple calls in one stream)
+      const toolCallsByIndex: Record<number, { name: string; args: string }> = {};
 
       const updateAssistant = (content: string) => {
         assistantSoFar = content;
@@ -362,10 +367,11 @@ const SupportChatWidget = () => {
             }
 
             if (delta?.tool_calls) {
-              hasToolCallFlag = true;
               for (const tc of delta.tool_calls) {
-                if (tc.function?.name) toolCallName = tc.function.name;
-                if (tc.function?.arguments) toolCallArgs += tc.function.arguments;
+                const idx = typeof tc.index === "number" ? tc.index : 0;
+                if (!toolCallsByIndex[idx]) toolCallsByIndex[idx] = { name: "", args: "" };
+                if (tc.function?.name) toolCallsByIndex[idx].name = tc.function.name;
+                if (tc.function?.arguments) toolCallsByIndex[idx].args += tc.function.arguments;
               }
             }
           } catch {
@@ -375,18 +381,48 @@ const SupportChatWidget = () => {
         }
       }
 
-      if (hasToolCallFlag && toolCallName === "create_support_ticket") {
+      // Process tool calls
+      const calls = Object.values(toolCallsByIndex).filter(c => c.name);
+      let chips: string[] | undefined;
+      let attachmentHint: string | undefined;
+      let draft: ToolCallData | undefined;
+      let createPayload: ToolCallData | undefined;
+
+      for (const call of calls) {
         try {
-          const toolData = JSON.parse(toolCallArgs) as ToolCallData;
-          const handoffMsg = t(
-            "Am înțeles problema ta. Creez acum un ticket și un administrator va prelua conversația. Mulțumesc pentru răbdare! 🙏",
-            "I understand your issue. Creating a ticket now and an admin will take over. Thank you for your patience! 🙏"
-          );
-          updateAssistant(handoffMsg);
-          await handleToolCall(toolData);
+          const parsed = JSON.parse(call.args || "{}");
+          if (call.name === "propose_quick_replies" && Array.isArray(parsed.chips)) {
+            chips = parsed.chips.slice(0, 5);
+          } else if (call.name === "propose_attachment_hint" && typeof parsed.hint === "string") {
+            attachmentHint = parsed.hint;
+          } else if (call.name === "draft_ticket") {
+            draft = parsed as ToolCallData;
+          } else if (call.name === "create_support_ticket") {
+            createPayload = parsed as ToolCallData;
+          }
         } catch (e) {
-          console.error("Failed to parse tool call:", e);
+          console.warn("Failed to parse tool call args:", call.name, e);
         }
+      }
+
+      if (chips || attachmentHint || draft) {
+        setAiMessages(prev => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last?.role === "assistant") {
+            updated[updated.length - 1] = { ...last, chips, attachmentHint, draft };
+          }
+          return updated;
+        });
+      }
+
+      if (createPayload) {
+        const handoffMsg = t(
+          "Perfect! Creez ticketul și un coleg din echipă va prelua conversația. Mulțumesc! 🙏",
+          "Perfect! Creating the ticket — a team member will take over. Thank you! 🙏"
+        );
+        updateAssistant(handoffMsg);
+        await handleToolCall(createPayload);
       }
     } catch (err) {
       console.error("AI stream error:", err);
@@ -408,17 +444,26 @@ const SupportChatWidget = () => {
     }
   };
 
-  const handleSendAiMessage = () => {
-    const text = aiInput.trim();
-    if (!text || isAiLoading) return;
-
-    const userMsg: AiMessage = { role: "user", content: text };
+  const sendAiText = useCallback((text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed || isAiLoading) return;
+    const userMsg: AiMessage = { role: "user", content: trimmed };
     const newMessages = [...aiMessages, userMsg];
-    setAiMessages(newMessages);
-    setAiInput("");
-
+    // Strip chips/draft from prior messages before resending so AI doesn't re-propose
+    setAiMessages(newMessages.map((m, i) =>
+      i < newMessages.length - 1 && m.role === "assistant"
+        ? { ...m, chips: undefined, draft: undefined, attachmentHint: undefined }
+        : m
+    ));
     const apiMessages = newMessages.filter(m => m.content.trim());
     streamAiResponse(apiMessages);
+  }, [aiMessages, isAiLoading]);
+
+  const handleSendAiMessage = () => {
+    const text = aiInput.trim();
+    if (!text) return;
+    setAiInput("");
+    sendAiText(text);
   };
 
   const sendMutation = useMutation({
