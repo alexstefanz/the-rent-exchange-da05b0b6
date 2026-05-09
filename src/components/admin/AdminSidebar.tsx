@@ -51,6 +51,7 @@ const menuItems: Array<{
   { title: "Produse", url: "/admin/products", icon: Package },
   { title: "Confirmări", url: "/admin/approvals", icon: ClipboardCheck, badgeKey: "pending_products" },
   { title: "Tickete", url: "/admin/tickets", icon: TicketCheck, badgeKey: "open_tickets" },
+  { title: "Analytics Suport", url: "/admin/tickets/analytics", icon: BarChart3 },
   { title: "Conversații", url: "/admin/conversations", icon: MessageCircle },
   { title: "Categorii", url: "/admin/categories", icon: FolderTree },
   { title: "Financiar", url: "/admin/finances", icon: Wallet },

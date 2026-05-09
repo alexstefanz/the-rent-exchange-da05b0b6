@@ -2072,6 +2072,10 @@ export type Database = {
           id: string
         }[]
       }
+      get_support_analytics: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: Json
+      }
       get_user_conversations: {
         Args: { user_uuid: string }
         Returns: {
@@ -2162,6 +2166,10 @@ export type Database = {
         Returns: number
       }
       normalize_full_name: { Args: { input_name: string }; Returns: string }
+      pick_admin_for_ticket_category: {
+        Args: { p_group: string }
+        Returns: string
+      }
       purge_expired_deleted_products: { Args: never; Returns: number }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
