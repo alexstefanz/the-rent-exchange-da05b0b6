@@ -18,6 +18,7 @@ import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
 import { toast } from "sonner";
 import NextActionCard from "./NextActionCard";
 import { useRentalRealtime } from "@/hooks/useRentalRealtime";
+import LeaveReviewDialog, { type LeaveReviewRental } from "./LeaveReviewDialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -76,6 +77,7 @@ const RentalsTab = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [inspectionRental, setInspectionRental] = useState<{ rental: Rental; phase: InspectionPhase } | null>(null);
+  const [reviewRental, setReviewRental] = useState<LeaveReviewRental | null>(null);
 
   useRentalRealtime(user?.id, "renter", [["my-rentals", user?.id], ["my-renter-checkin-inspections", user?.id]]);
 
@@ -288,7 +290,15 @@ const RentalsTab = () => {
                       role="renter"
                       onPrimary={() => setInspectionRental({ rental, phase: step >= 6 ? "checkin" : "checkout" })}
                       onChat={() => handleContactOwner(rental)}
-                      onLeaveReview={() => rental.product_id && navigate(`/produs/${rental.product_id}#review`)}
+                      onLeaveReview={() =>
+                        setReviewRental({
+                          id: rental.id,
+                          product_id: rental.product_id,
+                          product_title: rental.product_title,
+                          counterparty_id: rental.owner_id,
+                          counterparty_name: rental.owner_name,
+                        })
+                      }
                     />
                   </div>
                   <Collapsible>
@@ -453,6 +463,12 @@ const RentalsTab = () => {
           productTitle={inspectionRental.rental.product_title}
         />
       )}
+      <LeaveReviewDialog
+        open={!!reviewRental}
+        onOpenChange={(open) => !open && setReviewRental(null)}
+        rental={reviewRental}
+        currentUserRole="renter"
+      />
     </div>
   );
 };
