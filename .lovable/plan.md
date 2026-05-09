@@ -1,139 +1,137 @@
+## Obiectiv
+Transformare chat-ul existent (`src/components/messaging/*`) într-o experiență premium tip Airbnb/Telegram/WhatsApp, cu media, presence realtime și context puternic legat de rezervare. Păstrăm stack-ul curent (React Query + Supabase Realtime) — doar UI + features noi, fără Zustand sau virtualizare.
 
-# Sistem de securitate linkuri în chat
+## 1. Design System Chat (frontend pur)
 
-## 1. Rezumat funcțional
-
-Orice mesaj din chat este scanat pentru URL-uri. Fiecare URL primește un **risk score** și o **clasificare** (SAFE / WARNING / BLOCKED). În UI, linkurile sunt redate cu badge-uri și bannere de avertizare. Linkurile către `rentli.ro` / `rentli.com` sunt mereu SAFE. Linkurile BLOCKED nu sunt clickabile direct — necesită confirmare.
-
-## 2. Scope (ce intră acum)
-
-- Detectare URL în mesaje (la randare + la trimitere).
-- Normalizare: lowercase domeniu, decode percent-encoding, strip zero-width chars, detecție punycode/IDN homograph.
-- Scoring euristic + verificare Google Safe Browsing (GSB).
-- Allowlist intern (`rentli.ro`, `rentli.com`, `*.rentli.ro`).
-- Cache rezultate în Postgres (TTL 7 zile pentru SAFE, 24h pentru WARNING/BLOCKED).
-- Endpoint = Supabase Edge Function `scan-url`.
-- UI bilingv în `ChatPanel` (RO/EN via `t()`).
-- Logging linkuri BLOCKED + sistem de "Raportează acest link" (insert în tabel).
-
-**Out of scope (faza ulterioară, menționăm dar nu construim):** Redis, ML heuristics, reputație utilizatori, VirusTotal/PhishTank (necesită chei și quote separate), rate-limiting (per directiva proiectului — backend nu are primitive).
-
-## 3. Arhitectură
-
-```text
-Mesaj nou ──► extractUrls() ──► pentru fiecare URL:
-                                    │
-                                    ├─ allowlist? → SAFE (skip)
-                                    │
-                                    └─ supabase.functions.invoke('scan-url')
-                                             │
-                                             ├─ cache hit (url_scan_cache) → return
-                                             │
-                                             └─ scoring local + GSB API
-                                                       │
-                                                       └─ insert cache + return
+**Layout desktop nou (3 coloane):**
 ```
+┌──────────┬──────────────────────────┬──────────┐
+│ Convos   │  Stage Header            │ Info     │
+│ (340px)  │  Transaction Card        │ Panel    │
+│          │  Messages (bubbles)      │ (320px)  │
+│          │  Sticky input + media    │          │
+└──────────┴──────────────────────────┴──────────┘
+```
+Mobile: full-screen chat, info panel ca sheet (slide-up din header tap), conversation list separat.
 
-## 4. Schema bază de date
+**Bubble style premium:**
+- Own: `bg-primary text-primary-foreground`, colț bottom-right square (tail), `rounded-3xl rounded-br-md`, soft shadow.
+- Other: `bg-card border border-border/40`, colț bottom-left square, `rounded-3xl rounded-bl-md`.
+- Group consecutive messages from same sender (avatar + timestamp doar pe ultimul).
+- Date separators ("Astăzi", "Ieri", "12 mai") — chip centrat cu glassmorphism (`bg-background/60 backdrop-blur`).
+- Timestamps subtile sub bubble la hover (desktop) sau permanent mic (mobile).
 
-Tabel nou `url_scan_cache`:
-- `url_hash` text PK (SHA-256 din URL normalizat)
-- `normalized_url` text
-- `host` text
-- `classification` text (SAFE | WARNING | BLOCKED)
-- `risk_score` int (0-100)
-- `reasons` jsonb (listă motive: ['gsb_match','idn_homograph','shortener',...])
-- `gsb_threat` text nullable
-- `expires_at` timestamptz
-- `created_at`, `updated_at`
+**Animații (Framer Motion):**
+- Mesaje noi: `initial={{ opacity:0, y:8, scale:0.96 }}` → `animate spring`.
+- Typing indicator: 3 dots cu `animate-bounce` staggered.
+- Seen tick: scale-in cu fade.
+- Upload progress: bar `motion.div` width animat.
+- Tab switch info panel: `AnimatePresence` slide.
 
-Tabel nou `url_reports` (raportări user):
-- `id`, `reporter_id` (uuid → auth.users), `url`, `host`, `reason`, `message_id` nullable, `created_at`
-- RLS: insert pentru orice user autentificat; select doar admin.
+## 2. Rental Stage Header
 
-Tabel nou `url_allowlist` (gestionat de admin):
-- `host` text PK, `note` text, `created_at`
-- Seed inițial: `rentli.ro`, `rentli.com`, `www.rentli.ro`, `www.rentli.com`.
+Banda subtilă deasupra mesajelor cu stepper compact (5 pași): `Cerere → Aprobat → Plătit → Predare → Returnat`.
+- Stage curent derivat din `rentals.status` + flaguri (`paid_at`, `handover_confirmed_at`, `return_confirmed_at`).
+- Fiecare pas: dot color-coded (Verde=done, Orange=current, Gri=todo). Negru pe `cancelled`.
+- Sub stepper: linie text "Plata urmează după aprobare" / acțiunea recomandată.
+- Realtime: subscribe la `rentals` UPDATE pe `rental_id` din conversation.
 
-## 5. Edge function `scan-url`
+## 3. Transaction Card (read-only)
 
-`supabase/functions/scan-url/index.ts`:
-- Input: `{ url: string }` validat cu Zod (max 2048 chars).
-- Pași:
-  1. Normalizare URL (URL API + decoders).
-  2. Verifică allowlist (DB) → return SAFE.
-  3. Cache lookup pe `url_hash` (dacă nu expirat).
-  4. Scoring euristic:
-     - `+30` non-HTTPS
-     - `+25` IDN/punycode + asemănare cu brand cunoscut (Levenshtein ≤ 2 față de listă: rentli, google, paypal, stripe, revolut, ing, brd, bcr, emag, olx)
-     - `+20` shortener (bit.ly, tinyurl, t.co, goo.gl, ow.ly, is.gd, cutt.ly, rb.gy, s.id, shorturl.at)
-     - `+15` >4 subdomenii
-     - `+15` caractere suspecte în host (`@`, `--xn`, mix scripts)
-     - `+10` TLD high-risk (.zip, .mov, .top, .xyz, .click, .country, .work)
-     - `+10` path/query conține cuvinte phishing (login, verify, secure, account, wallet, bank, password)
-  5. Apel Google Safe Browsing v4 `threatMatches:find`. Match → `+70` și `gsb_threat = MALWARE/SOCIAL_ENGINEERING/...`.
-  6. Clasificare:
-     - score ≥ 70 sau GSB hit → **BLOCKED**
-     - score ≥ 30 → **WARNING**
-     - altfel → **SAFE**
-  7. Upsert cache cu `expires_at` adecvat.
-  8. Răspuns: `{ classification, risk_score, reasons, host, normalized_url }`.
-- CORS standard, `verify_jwt = true` (default) — chemat de utilizatori autentificați.
-- Secret necesar: `GOOGLE_SAFE_BROWSING_API_KEY` (cer prin `add_secret` la implementare; dacă nu există, pasul GSB se sare degradat).
+Card sticky sub stage header (collapsibil pe mobile), regenerat din `conversations.rental`:
+- Thumbnail produs + titlu + perioadă + total RON + badge status colorat.
+- Un singur CTA: "Vezi rezervarea" → `/rentals/{public_id}`.
+- Variant compact când scrollezi în jos (header se shrink-uiește).
 
-Înregistrare în `supabase/config.toml` doar dacă schimbăm setări implicite (probabil nu).
+## 4. Upload Media (imagini + MP4 ≤ 25MB)
 
-## 6. Frontend
+**DB / Storage:**
+- Bucket nou `chat-media` (privat). RLS: insert dacă user e participant la `conversation_id` (folder structure `{conversation_id}/{uuid}.{ext}`); select cu signed URLs prin RPC.
+- Tabel nou `message_attachments`: `id, message_id, conversation_id, uploader_id, kind ('image'|'video'), storage_path, mime_type, size_bytes, width, height, duration_ms, thumbnail_path, created_at`.
+- Index pe `conversation_id, created_at`.
+- RLS: SELECT participanți + admin; INSERT uploader_id = auth.uid().
 
-### Utilitar nou `src/lib/urlScanner.ts`
-- `extractUrls(text)`: regex robust (RFC-style, suportă `www.`).
-- `normalizeUrl(url)`: lowercase host, decode, strip `\u200B-\u200F\uFEFF`.
-- `isAllowlisted(host)`: check sincron `rentli.ro`/`rentli.com`.
-- `scanUrl(url)`: cache memorie (Map) + apel `supabase.functions.invoke('scan-url')`.
+**Frontend:**
+- Buton paperclip + drag & drop overlay în zona mesajelor.
+- Validare client: max 25MB, mime allow-list, count ≤ 6 per mesaj.
+- Imagini >1MB: comprimă cu Canvas API existent (max 1920px, JPEG 0.8) — refolosim utilul din `image-upload-optimization`.
+- Video: extrage primul frame ca thumbnail (Canvas + `<video>` seek 0.1s).
+- Preview înainte de send: row de thumbnails cu X de eliminat.
+- Upload paralel cu `Promise.all`, progress per fișier, apoi `sendMessage` cu `attachment_ids`.
+- Mesaj cu attachments: bubble afișează grid de imagini (1=full, 2=split, 3=2+1, 4+=2x2 cu "+N"), video cu poster + play overlay.
+- Click → `MediaLightbox` (refolosim Embla din product gallery): swipe între toate media din conversație.
 
-### Hook nou `src/hooks/useScannedUrls.ts`
-- Primește `text` mesaj, returnează `Map<url, ScanResult | 'loading'>` + reactive React Query (`['url-scan', hash]`, staleTime 1h).
+## 5. Shared Media Panel
 
-### Componentă nouă `src/components/messaging/MessageContent.tsx`
-- Înlocuiește randarea curentă `<p>{msg.content}</p>` în `ChatPanel` (linia 203) și `ChatDialog` (analog).
-- Tokenizează textul în segmente text/URL.
-- Pentru fiecare URL:
-  - **SAFE**: `<a target="_blank" rel="noopener noreferrer nofollow ugc">` cu icon shield verde mic.
-  - **WARNING**: `<a>` + banner galben sub bula mesajului: "Atenție: link extern neverificat (host)." Click deschide direct, dar cu confirm dialog rapid.
-  - **BLOCKED**: text non-clickable cu strikethrough + banner roșu: "Link blocat pentru protecția ta." Buton "Văd riscul, deschide oricum" → `AlertDialog` cu detalii (motive, score) → confirmare → `window.open`.
-  - Fiecare link are buton mic "Raportează" → insert `url_reports`.
-- Loader subtil cât timp `scanning`.
+Tab "Media" în Info Panel dreapta (desktop) / bottom sheet (mobile):
+- Sub-tabs: `Imagini | Videoclipuri | Linkuri`.
+- Grid 3 coloane, lazy load, click → lightbox.
+- "Linkuri" listează URL-uri extrase cu `extractUrls` (deja există în `urlScanner`) + classification badge (Safe/Warning/Blocked).
 
-### Modificări puncte de integrare
-- `src/components/messaging/ChatPanel.tsx` — folosește `<MessageContent text={msg.content} />`.
-- `src/components/messaging/ChatDialog.tsx` — la fel.
+## 6. Contact Info Panel (refactor `ContactInfoCard`)
 
-### Bilingv
-- Toate stringurile noi prin `t('RO','EN')` din `useLanguage`. Adăugăm chei dedicate în `src/data/uxCopy.ts` la secțiunea messaging: `linkSafeBadge`, `linkWarningBanner`, `linkBlockedBanner`, `linkOpenAnyway`, `linkReport`, `linkReportSuccess`, `linkScanning`.
+Coloana dreaptă desktop: avatar mare, nume, KYC badge (`kyc_level`), "Membru din", email/telefon/WhatsApp **respectând Gated Contact Flow v2** (nu afișa până nu există rental activ/plătit). Buton "Vezi profil".
 
-## 7. Securitate & detalii tehnice
+## 7. Realtime Presence (online + typing + delivered + seen)
 
-- Toate apelurile către `scan-url` necesită JWT (default Supabase) — previne abuz anonim.
-- RLS:
-  - `url_scan_cache`: SELECT public (read-only), INSERT/UPDATE doar service_role (din edge function).
-  - `url_reports`: INSERT pentru `auth.uid() IS NOT NULL`; SELECT doar `has_role(auth.uid(),'admin')`.
-  - `url_allowlist`: SELECT public; ALL doar admin.
-- Edge function validează input cu Zod, escapează totul, nu execută SQL raw.
-- Cache hash = `sha256(normalized_url)` pentru a ține tabela mică și a evita PII în chei.
-- Conform regulii proiectului, **nu adăugăm rate limiting** la edge function (notăm ca gap).
+**Folosim Supabase Realtime Presence** pe canalul existent `chat-panel-{conversationId}`:
+- `track({ user_id, online_at, typing: false })` la subscribe.
+- Typing: debounced `track({ typing: true })` la `onChange` input + reset după 2.5s.
+- Online dot pe avatar header (verde dacă peer prezent, gri + "ultima dată activ" altfel — last_seen din presence sync).
+- Delivered: marcăm la INSERT realtime în client (postgres_changes deja există).
+- Seen: existing `markMessagesAsRead` + afișăm dublu-tick orange pe mesajele proprii când peer-ul are `last_read_at >= msg.created_at`.
+- Adăugăm coloană `conversations.{buyer,owner}_last_read_at` (timestamptz) updatată de `markMessagesAsRead` pentru a calcula seen state corect cross-session.
 
-## 8. Plan de implementare (pași)
+## 8. Securitate & Moderare
 
-1. Migrație: tabele `url_scan_cache`, `url_reports`, `url_allowlist` + RLS + seed allowlist.
-2. Cer secret `GOOGLE_SAFE_BROWSING_API_KEY` (dacă utilizatorul confirmă să-l furnizeze; altfel scoring rulează doar euristic).
-3. Edge function `scan-url`.
-4. `src/lib/urlScanner.ts` + `src/hooks/useScannedUrls.ts`.
-5. `src/components/messaging/MessageContent.tsx`.
-6. Integrare în `ChatPanel.tsx` și `ChatDialog.tsx`.
-7. Chei UX bilingve în `src/data/uxCopy.ts`.
-8. Test manual: link safe (rentli.ro), link extern necunoscut (example.com), shortener (bit.ly/test), URL phishing test GSB (`http://malware.testing.google.test/testing/malware/`).
+- Reuse `MessageContent` + `urlScanner` pentru linkuri (deja livrat).
+- Media moderation: buton "Raportează" pe fiecare attachment → reuse `url_reports` extins sau tabel `message_reports` (`id, message_id, attachment_id, reporter_id, reason, created_at`).
+- Block user: buton în Info Panel → tabel nou `user_blocks` (`blocker_id, blocked_id`); ascunde conversațiile cu blocați + împiedică INSERT mesaje (RLS).
 
-## 9. Întrebări înainte de implementare
+## 9. Admin Dashboard Chat Control
 
-- Vrei să folosim **Google Safe Browsing** acum (necesită API key gratuit de la Google Cloud)? Alternativ rulăm doar scoring euristic în prima fază.
-- Vrei tab admin separat în dashboard pentru `url_reports` și gestionarea `url_allowlist`, sau lăsăm pe mai târziu?
+Tab nou `/admin/messaging`:
+- Listă conversații cu filter (utilizator, produs, raportate).
+- Click → vizualizare read-only mesaje + media grid + linkuri scanate.
+- Acțiuni admin: marchează attachment ca `hidden_by_admin` (boolean nou pe `message_attachments`), ban user (folosim `profiles.is_banned`), vezi `message_reports`.
+
+## 10. Animations / Performance
+
+- `framer-motion` (deja în dep tree pentru alte feature-uri — verificăm; dacă nu, adăugăm).
+- React Query keep păstrat; mesajele rămân în state local pentru optimistic updates la send (mesaj cu `status: sending → sent → delivered → seen`).
+- Smooth scroll: doar dacă userul e deja la bottom (altfel arată badge "↓ N mesaje noi").
+
+---
+
+## Tehnic — fișiere modificate / create
+
+**Migrare SQL:**
+- `chat-media` storage bucket + policies.
+- `message_attachments` tabel + RLS + index.
+- `message_reports` tabel + RLS.
+- `user_blocks` tabel + RLS, ajustare RLS `messages` INSERT.
+- `conversations.buyer_last_read_at`, `owner_last_read_at`.
+- RPC `get_signed_chat_media(attachment_id)` cu verificare participant.
+
+**Frontend nou:**
+- `src/components/messaging/ChatHeader.tsx` (avatar + presence + actions)
+- `src/components/messaging/RentalStageStepper.tsx`
+- `src/components/messaging/TransactionCard.tsx`
+- `src/components/messaging/MessageBubble.tsx` (cu grouping, animations, attachments)
+- `src/components/messaging/MessageInput.tsx` (autosize, paperclip, drag&drop, preview)
+- `src/components/messaging/AttachmentGrid.tsx` + `MediaLightbox.tsx`
+- `src/components/messaging/InfoPanel.tsx` (tabs: Detalii / Media / Linkuri)
+- `src/components/messaging/TypingIndicator.tsx`
+- `src/hooks/useChatPresence.ts`
+- `src/lib/chatMedia.ts` (compress, thumbnail, upload)
+- `src/pages/admin/AdminMessaging.tsx`
+
+**Refactor:**
+- `ChatPanel.tsx` devine orchestrator (folosește componentele de sus).
+- `messagingApi.ts` adăugări: `sendMessageWithAttachments`, `markRead` actualizat, `getSharedMedia`, `reportMessage`, `blockUser`.
+- `Messages.tsx` layout 3 coloane desktop.
+
+## Out of scope (faza 1)
+- Mesaje vocale, reacții emoji, replies threaded, ștergere mesaje, edit.
+- Virtualizare listă (rămâne dacă apare nevoia >500 msg).
+- ML phishing / VirusTotal.

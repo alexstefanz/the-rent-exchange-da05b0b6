@@ -83,27 +83,33 @@ export type Database = {
       conversations: {
         Row: {
           buyer_id: string
+          buyer_last_read_at: string | null
           created_at: string
           id: string
           owner_id: string
+          owner_last_read_at: string | null
           product_id: string
           rentals_id: string | null
           updated_at: string
         }
         Insert: {
           buyer_id: string
+          buyer_last_read_at?: string | null
           created_at?: string
           id?: string
           owner_id: string
+          owner_last_read_at?: string | null
           product_id: string
           rentals_id?: string | null
           updated_at?: string
         }
         Update: {
           buyer_id?: string
+          buyer_last_read_at?: string | null
           created_at?: string
           id?: string
           owner_id?: string
+          owner_last_read_at?: string | null
           product_id?: string
           rentals_id?: string | null
           updated_at?: string
@@ -429,6 +435,110 @@ export type Database = {
             columns: ["kyc_case_id"]
             isOneToOne: false
             referencedRelation: "kyc_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_attachments: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          duration_ms: number | null
+          height: number | null
+          hidden_by_admin: boolean
+          id: string
+          kind: string
+          message_id: string | null
+          mime_type: string
+          size_bytes: number
+          storage_path: string
+          thumbnail_path: string | null
+          uploader_id: string
+          width: number | null
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          duration_ms?: number | null
+          height?: number | null
+          hidden_by_admin?: boolean
+          id?: string
+          kind: string
+          message_id?: string | null
+          mime_type: string
+          size_bytes: number
+          storage_path: string
+          thumbnail_path?: string | null
+          uploader_id: string
+          width?: number | null
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          duration_ms?: number | null
+          height?: number | null
+          hidden_by_admin?: boolean
+          id?: string
+          kind?: string
+          message_id?: string | null
+          mime_type?: string
+          size_bytes?: number
+          storage_path?: string
+          thumbnail_path?: string | null
+          uploader_id?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_reports: {
+        Row: {
+          attachment_id: string | null
+          created_at: string
+          id: string
+          message_id: string | null
+          reason: string | null
+          reporter_id: string
+          resolved: boolean
+        }
+        Insert: {
+          attachment_id?: string | null
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          reason?: string | null
+          reporter_id: string
+          resolved?: boolean
+        }
+        Update: {
+          attachment_id?: string | null
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          reason?: string | null
+          reporter_id?: string
+          resolved?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reports_attachment_id_fkey"
+            columns: ["attachment_id"]
+            isOneToOne: false
+            referencedRelation: "message_attachments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reports_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
         ]
@@ -1473,6 +1583,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       user_reviews: {
         Row: {
           comment: string | null
@@ -1822,6 +1953,13 @@ export type Database = {
           start_date: string
         }[]
       }
+      get_chat_signed_media_url: {
+        Args: { p_attachment_id: string; p_expires_in?: number }
+        Returns: {
+          signed_url: string
+          thumbnail_url: string
+        }[]
+      }
       get_contact_info_if_in_conversation: {
         Args: { owner_uuid: string }
         Returns: {
@@ -1999,6 +2137,10 @@ export type Database = {
       }
       immutable_unaccent: { Args: { "": string }; Returns: string }
       is_user_favorite: { Args: { target_user_id: string }; Returns: boolean }
+      mark_conversation_read: {
+        Args: { p_conversation_id: string }
+        Returns: undefined
+      }
       mark_ops_ticket_read: {
         Args: { p_ticket_id: string }
         Returns: undefined
