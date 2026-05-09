@@ -360,7 +360,7 @@ const ProductDetail = () => {
                 onAsk={handleStartChat}
                 isOwnProduct={isOwnProduct}
                 responseMinutes={extendedStats?.owner_response_minutes}
-                ownerVerified
+                ownerVerified={!!extendedStats?.owner_kyc_verified}
               />
             </div>
           </div>
@@ -373,6 +373,8 @@ const ProductDetail = () => {
         <div className="mt-8">
           <NearbyProductsSlider currentProductId={product.id} locationCity={product.location_city} category={product.category} />
         </div>
+
+        <RecentlyViewedSlider excludeId={product.id} />
       </main>
 
       <Footer />
@@ -391,7 +393,7 @@ const ProductDetail = () => {
         onAsk={handleStartChat}
         isOwnProduct={isOwnProduct}
         responseMinutes={extendedStats?.owner_response_minutes}
-        ownerVerified
+        ownerVerified={!!extendedStats?.owner_kyc_verified}
       />
 
       {conversationId && (
@@ -405,6 +407,14 @@ const ProductDetail = () => {
         onClose={() => setLightboxOpen(false)}
         onIndexChange={setLightboxIndex}
         title={displayTitle}
+      />
+
+      <ShareDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        url={canonicalUrl}
+        title={displayTitle}
+        image={seoImage}
       />
     </div>
   );
