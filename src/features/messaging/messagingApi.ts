@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { AttachmentRow } from "@/lib/chatMedia";
 
 export interface Conversation {
   id: string;
@@ -32,6 +33,7 @@ export interface Message {
   content: string;
   is_read: boolean;
   created_at: string;
+  attachments?: AttachmentRow[];
 }
 
 export async function getOrCreateConversation(productId: string, ownerId: string): Promise<Conversation | null> {
@@ -147,6 +149,83 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
   }
 
   return data as Message[];
+}
+
+/** Fetch messages joined with their attachments in a single round-trip. */
+export async function getMessagesWithAttachments(conversationId: string): Promise<Message[]> {
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*, attachments:message_attachments(*)')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching messages with attachments:', error);
+    return [];
+  }
+  return (data || []).map((m: any) => ({
+    ...m,
+    attachments: (m.attachments || []).filter((a: any) => !a.hidden_by_admin),
+  })) as Message[];
+}
+
+/** Update last_read timestamps via secure RPC. */
+export async function markConversationRead(conversationId: string): Promise<void> {
+  await supabase.rpc('mark_conversation_read', { p_conversation_id: conversationId });
+}
+
+export interface RentalContextRow {
+  id: string;
+  public_id: string;
+  status: string;
+  payment_status: string | null;
+  paid_at: string | null;
+  handover_confirmed_at: string | null;
+  return_confirmed_at: string | null;
+  cancelled_at: string | null;
+  start_date: string;
+  end_date: string;
+  rental_days: number;
+  subtotal: number;
+  product_id: string;
+  product_title: string | null;
+  product_image: string | null;
+}
+
+export async function getRentalContext(rentalId: string): Promise<RentalContextRow | null> {
+  const { data, error } = await supabase
+    .from('rentals')
+    .select(`
+      id, public_id, status, payment_status, paid_at,
+      handover_confirmed_at, return_confirmed_at, cancelled_at,
+      start_date, end_date, rental_days, subtotal, product_id,
+      product:products(title, images)
+    `)
+    .eq('id', rentalId)
+    .maybeSingle();
+
+  if (error || !data) {
+    if (error) console.error('Error fetching rental context:', error);
+    return null;
+  }
+  const product = (data as any).product;
+  return {
+    id: data.id,
+    public_id: data.public_id,
+    status: data.status,
+    payment_status: data.payment_status,
+    paid_at: data.paid_at,
+    handover_confirmed_at: data.handover_confirmed_at,
+    return_confirmed_at: data.return_confirmed_at,
+    cancelled_at: data.cancelled_at,
+    start_date: data.start_date,
+    end_date: data.end_date,
+    rental_days: data.rental_days,
+    subtotal: Number(data.subtotal),
+    product_id: data.product_id!,
+    product_title: product?.title ?? null,
+    product_image: Array.isArray(product?.images) && product.images.length > 0 ? product.images[0] : null,
+  };
 }
 
 const MAX_MESSAGE_LENGTH = 5000;
