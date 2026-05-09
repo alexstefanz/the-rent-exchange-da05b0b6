@@ -9,11 +9,12 @@ import { useConversations } from "@/hooks/queries/useConversations";
 import { useQueryClient } from "@tanstack/react-query";
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { ChatPanel } from "@/components/messaging/ChatPanel";
-import { useState as useStateReact } from "react";
+import { InfoPanel } from "@/components/messaging/InfoPanel";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 function useIsDesktop() {
-  const [isDesktop, setIsDesktop] = useStateReact(typeof window !== "undefined" ? window.innerWidth >= 1024 : true);
+  const [isDesktop, setIsDesktop] = useState(typeof window !== "undefined" ? window.innerWidth >= 1024 : true);
   useEffect(() => {
     const mql = window.matchMedia("(min-width: 1024px)");
     const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
@@ -32,6 +33,7 @@ export default function Messages() {
   const isDesktop = useIsDesktop();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [activeTab, setActiveTab] = useState("rezervari");
+  const [mobileInfoOpen, setMobileInfoOpen] = useState(false);
 
   if (!authLoading && !user) {
     navigate("/auth", { replace: true });
@@ -39,13 +41,11 @@ export default function Messages() {
 
   const { data: conversations = [], isLoading } = useConversations(user?.id);
 
-  // Auto-select conversation from URL query param and switch to correct tab
   useEffect(() => {
     const convId = searchParams.get("conv");
     if (convId && conversations.length > 0 && !selectedConversation) {
       const found = conversations.find((c) => c.id === convId);
       if (found) {
-        // Switch to the correct tab based on user role in conversation
         const correctTab = found.buyer_id === user?.id ? "rezervari" : "de_inchiriat";
         setActiveTab(correctTab);
         setSelectedConversation(found);
@@ -53,10 +53,7 @@ export default function Messages() {
     }
   }, [searchParams, conversations, selectedConversation, user?.id]);
 
-  const handleSelect = (conv: Conversation) => {
-    setSelectedConversation(conv);
-  };
-
+  const handleSelect = (conv: Conversation) => setSelectedConversation(conv);
   const handleBack = () => {
     setSelectedConversation(null);
     queryClient.invalidateQueries({ queryKey: ["conversations"] });
@@ -70,24 +67,46 @@ export default function Messages() {
     );
   }
 
-  // Mobile: fullscreen chat when a conversation is selected
+  const peerId = selectedConversation
+    ? selectedConversation.buyer_id === user?.id
+      ? selectedConversation.owner_id
+      : selectedConversation.buyer_id
+    : null;
+
+  // Mobile fullscreen chat
   if (!isDesktop && selectedConversation) {
     return (
-      <div className="h-[100dvh] flex flex-col">
-        <ChatPanel
-          conversationId={selectedConversation.id}
-          otherUserName={selectedConversation.other_user?.full_name || null}
-          otherUserAvatar={selectedConversation.other_user?.avatar_url || null}
-          productTitle={selectedConversation.product?.title || ""}
-          ownerId={selectedConversation.owner_id}
-          rentalInfo={selectedConversation.rental || null}
-          onBack={handleBack}
-        />
-      </div>
+      <>
+        <div className="h-[100dvh] flex flex-col">
+          <ChatPanel
+            conversationId={selectedConversation.id}
+            otherUserName={selectedConversation.other_user?.full_name || null}
+            otherUserAvatar={selectedConversation.other_user?.avatar_url || null}
+            productTitle={selectedConversation.product?.title || ""}
+            ownerId={selectedConversation.owner_id}
+            buyerId={selectedConversation.buyer_id}
+            rentalsId={selectedConversation.rentals_id || null}
+            onBack={handleBack}
+            onOpenInfo={() => setMobileInfoOpen(true)}
+          />
+        </div>
+        <Sheet open={mobileInfoOpen} onOpenChange={setMobileInfoOpen}>
+          <SheetContent side="bottom" className="h-[90vh] p-0 rounded-t-3xl">
+            {peerId && (
+              <InfoPanel
+                conversationId={selectedConversation.id}
+                peerId={peerId}
+                peerName={selectedConversation.other_user?.full_name || null}
+                peerAvatar={selectedConversation.other_user?.avatar_url || null}
+              />
+            )}
+          </SheetContent>
+        </Sheet>
+      </>
     );
   }
 
-  // Mobile: conversation list (no chat selected)
+  // Mobile list
   if (!isDesktop) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
@@ -107,13 +126,13 @@ export default function Messages() {
     );
   }
 
-  // Desktop: split view
+  // Desktop: 3-column layout
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-6">
-        <div className="flex h-[calc(100vh-10rem)] border rounded-xl overflow-hidden bg-background shadow-sm">
-          {/* Left: conversation list */}
+        <div className="flex h-[calc(100vh-10rem)] border rounded-2xl overflow-hidden bg-background shadow-sm">
+          {/* Left: list */}
           <div className="w-[340px] shrink-0 border-r flex flex-col">
             <ConversationList
               conversations={conversations}
@@ -126,8 +145,8 @@ export default function Messages() {
             />
           </div>
 
-          {/* Right: chat area */}
-          <div className="flex-1 flex flex-col">
+          {/* Center: chat */}
+          <div className="flex-1 flex flex-col min-w-0">
             {selectedConversation ? (
               <ChatPanel
                 conversationId={selectedConversation.id}
@@ -135,15 +154,28 @@ export default function Messages() {
                 otherUserAvatar={selectedConversation.other_user?.avatar_url || null}
                 productTitle={selectedConversation.product?.title || ""}
                 ownerId={selectedConversation.owner_id}
-                rentalInfo={selectedConversation.rental || null}
+                buyerId={selectedConversation.buyer_id}
+                rentalsId={selectedConversation.rentals_id || null}
               />
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
+              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground bg-[#FCFAF8]">
                 <MessageCircle className="h-12 w-12 mb-3" />
                 <p className="text-sm">{t("Selectează o conversație pentru a vedea mesajele", "Select a conversation to view the messages")}</p>
               </div>
             )}
           </div>
+
+          {/* Right: info panel */}
+          {selectedConversation && peerId && (
+            <div className="w-[320px] shrink-0 border-l hidden xl:flex flex-col">
+              <InfoPanel
+                conversationId={selectedConversation.id}
+                peerId={peerId}
+                peerName={selectedConversation.other_user?.full_name || null}
+                peerAvatar={selectedConversation.other_user?.avatar_url || null}
+              />
+            </div>
+          )}
         </div>
       </main>
       <Footer />
