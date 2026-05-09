@@ -32,6 +32,7 @@ import { isValidRomanianPhone } from "@/lib/inputValidation";
 import { useProfileRealtime } from "@/hooks/useProfileRealtime";
 import { TrustScoreRing } from "@/components/profile/account/TrustScoreRing";
 import { AvatarCropperDialog } from "@/components/profile/account/AvatarCropperDialog";
+import KycInlineFlow from "@/components/kyc/KycInlineFlow";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -94,6 +95,7 @@ const AccountTab = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
   const [cropperOpen, setCropperOpen] = useState(false);
+  const [showKycFlow, setShowKycFlow] = useState(false);
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -537,9 +539,17 @@ const AccountTab = () => {
                 </div>
               </div>
               {kycStatus !== "VERIFIED" && kycStatus !== "SUBMITTED" && kycStatus !== "NEEDS_MANUAL_REVIEW" && (
-                <Button onClick={() => navigate("/verificare")} className="sm:w-auto w-full">
+                <Button
+                  onClick={() => setShowKycFlow((v) => !v)}
+                  variant={showKycFlow ? "outline" : "default"}
+                  className="sm:w-auto w-full"
+                >
                   <Shield className="mr-2 h-4 w-4" />
-                  {kycStatus === "REJECTED" ? t("Reîncepe verificarea", "Restart verification") : t("Începe verificarea", "Start verification")}
+                  {showKycFlow
+                    ? t("Ascunde", "Hide")
+                    : kycStatus === "REJECTED"
+                    ? t("Reîncepe verificarea", "Restart verification")
+                    : t("Începe verificarea", "Start verification")}
                 </Button>
               )}
             </div>
@@ -557,6 +567,13 @@ const AccountTab = () => {
                 </div>
               ))}
             </div>
+
+            {/* Inline KYC flow */}
+            {showKycFlow && kycStatus !== "VERIFIED" && kycStatus !== "SUBMITTED" && kycStatus !== "NEEDS_MANUAL_REVIEW" && (
+              <div className="mt-4 pt-4 border-t border-border animate-fade-in">
+                <KycInlineFlow variant="inline" />
+              </div>
+            )}
           </div>
         </Section>
 
