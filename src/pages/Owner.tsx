@@ -23,6 +23,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getDisplayTitle } from "@/lib/productI18n";
+import { getProductUrl } from "@/lib/slugUtils";
 
 const Owner = () => {
   const navigate = useNavigate();
@@ -117,8 +118,8 @@ const Owner = () => {
               const clientPrice = calculateClientPrice(product.daily_price_owner, product.platform_fee_percent);
               
               return (
-                <Card key={product.id} className="overflow-hidden group">
-                  <div className="relative aspect-[4/3] overflow-hidden">
+                <Card key={product.id} className="overflow-hidden group transition-shadow hover:shadow-card-hover">
+                  <Link to={getProductUrl(product)} className="block relative aspect-[4/3] overflow-hidden">
                     {product.images && product.images.length > 0 ? (
                       <img
                         src={product.images[0]}
@@ -149,11 +150,13 @@ const Owner = () => {
                         <span className="text-sm font-medium text-muted-foreground">{t("Inactiv", "Inactive")}</span>
                       </div>
                     )}
-                  </div>
+                  </Link>
                   <CardContent className="p-4">
-                    <h3 className="font-semibold text-foreground line-clamp-2 mb-2">
-                      {getDisplayTitle(product, language)}
-                    </h3>
+                    <Link to={getProductUrl(product)} className="block">
+                      <h3 className="font-semibold text-foreground line-clamp-2 mb-2 hover:text-primary transition-colors">
+                        {getDisplayTitle(product, language)}
+                      </h3>
+                    </Link>
                     
                     {product.location_city && (
                       <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">

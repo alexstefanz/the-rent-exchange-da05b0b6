@@ -1,14 +1,16 @@
 ## Problem
-În `Profil → Anunțurile mele`, cardurile produselor nu sunt clickable. Acum doar iconul mic 👁 deschide anunțul.
+Pagina `/owner` (Produsele mele) nu folosește `LendingsTab`, ci `src/pages/Owner.tsx`. Acolo imaginea și titlul nu sunt link-uri — de asta click-ul nu face nimic.
 
 ## Soluție
-În `src/components/dashboard/LendingsTab.tsx` fac întregul card clickable:
+În `src/pages/Owner.tsx`, fac imaginea și titlul clickable către anunțul live folosind `getProductUrl(product)`:
 
-- Imaginea + titlul + prețul devin un `<Link to={productUrl}>` (sau `<a target="_blank">` pentru produsele `pending`, ca să fie consistent cu butonul de preview existent).
-- Butoanele rămân separate (Eye/Preview, Edit) cu `e.stopPropagation()` ca să nu declanșeze navigarea când se face click pe ele.
-- Hover state pe card: `hover:shadow-card-hover transition-all cursor-pointer`.
-- `StatusBadge` rămâne în colț, în afara zonei de click pentru a nu interfera vizual.
+- Import `getProductUrl` din `@/lib/slugUtils`.
+- Wrap container-ul imaginii (`<div className="relative aspect-[4/3]...">`) într-un `<Link to={getProductUrl(product)}>`.
+- Wrap `<h3>` titlu într-un `<Link>` cu `hover:text-primary`.
+- Pentru produse `pending`/`rejected`/`approved + inactive` păstrez aceleași link-uri (anunțul oricum este vizibil ownerului, iar pentru pending/rejected ownerul tot îl poate previzualiza).
+- Butoanele Delete/Edit rămân neschimbate (sunt deja în afara ariei imaginii/titlului).
+- Adaug `cursor-pointer` și hover subtil pe Card.
 
 ## Scope
-- Doar UI, un singur fișier: `src/components/dashboard/LendingsTab.tsx`
-- Fără schimbări de rute, API sau business logic.
+- Doar UI, un singur fișier: `src/pages/Owner.tsx`
+- Fără schimbări de rute, API, sau business logic.
