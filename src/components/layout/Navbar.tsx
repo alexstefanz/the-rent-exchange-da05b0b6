@@ -46,6 +46,7 @@ import { supabase } from "@/integrations/supabase/client";
 import LanguageSwitcher from "./LanguageSwitcher";
 import NotificationBell from "./NotificationBell";
 import MobileBottomNav from "./MobileBottomNav";
+import { AccountHubMenu } from "./AccountHubMenu";
 import logoImage from "@/assets/rentli_logo.webp";
 
 const Navbar = () => {
@@ -188,128 +189,8 @@ const Navbar = () => {
                   <NotificationBell />
                 </div>
 
-                {/* User Avatar Dropdown - Desktop */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="hidden lg:flex rounded-full h-10 w-10 p-0">
-                      <Avatar className="h-9 w-9 border-2 border-primary/20 transition-all hover:border-primary">
-                        <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
-                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                          {getInitials()}
-                        </AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56 bg-background">
-                    {/* User Info Header */}
-                    <div className="px-3 py-2 border-b border-border">
-                      <p className="font-medium text-sm truncate">
-                        {profile?.full_name || user.email?.split("@")[0]}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                    </div>
-
-                    {/* Balance Display */}
-                    <Link to="/castiguri" className="px-3 py-2 border-b border-border flex items-center gap-2 hover:bg-muted transition-colors cursor-pointer">
-                      <Wallet className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">
-                        {showBalance ? `${(balance ?? 0).toFixed(2)} RON` : "••••••"}
-                      </span>
-                      <button
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleBalance(e); }}
-                        className="ml-auto p-1 rounded hover:bg-muted transition-colors"
-                        aria-label={showBalance ? t("Ascunde balanța", "Hide balance") : t("Arată balanța", "Show balance")}
-                      >
-                        {showBalance ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5 text-muted-foreground" />}
-                      </button>
-                    </Link>
-
-                    {/* Chat Button */}
-                    <DropdownMenuItem asChild>
-                      <Link to="/mesaje" className="flex items-center gap-3 py-2 relative">
-                        <MessageCircle className="h-4 w-4" />
-                        Chat
-                        {unreadMessagesCount > 0 && (
-                          <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-bold text-destructive-foreground">
-                            {unreadMessagesCount > 99 ? "99+" : unreadMessagesCount}
-                          </span>
-                        )}
-                      </Link>
-                    </DropdownMenuItem>
-
-                    {/* Admin Button */}
-                    {isAdmin && (
-                      <DropdownMenuItem asChild>
-                        <Link to="/admin" className="flex items-center gap-3 py-2 text-green-600 font-semibold focus:text-green-600">
-                          <ShieldCheck className="h-4 w-4" />
-                          {t("Panou Admin", "Admin Panel")}
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
-
-                    {/* Profile Section */}
-                    <DropdownMenuItem asChild>
-                      <Link to="/profile#contul-meu" className="flex items-center gap-3 py-2">
-                        <User className="h-4 w-4" />
-                        {t("Contul meu", "My Account")}
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/owner" className="flex items-center gap-3 py-2">
-                        <FileText className="h-4 w-4" />
-                        {t("Anunțurile mele", "My Listings")}
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/inchirieri" className="flex items-center gap-3 py-2">
-                        <Package className="h-4 w-4" />
-                        {t("Închirieri", "Lendings")}
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/rezervari" className="flex items-center gap-3 py-2">
-                        <CalendarCheck className="h-4 w-4" />
-                        {t("Rezervări", "Reservations")}
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/favorite" className="flex items-center gap-3 py-2">
-                        <Heart className="h-4 w-4" />
-                        {t("Favorite", "Favorites")}
-                      </Link>
-                    </DropdownMenuItem>
-
-                    <DropdownMenuSeparator />
-
-                    {/* Actions Section */}
-                    <DropdownMenuItem asChild>
-                      <Link to="/owner/new-product" className="flex items-center gap-3 py-2">
-                        <PlusCircle className="h-4 w-4" />
-                        {t("Adaugă un anunț", "Add a listing")}
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/verificare" className="flex items-center gap-3 py-2">
-                        <Shield className="h-4 w-4" />
-                        {t("Verificare KYC", "KYC Verification")}
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/suport" className="flex items-center gap-3 py-2">
-                        <HelpCircle className="h-4 w-4" />
-                        {t("Suport & Tickete", "Support & Tickets")}
-                      </Link>
-                    </DropdownMenuItem>
-
-                    <DropdownMenuSeparator />
-
-                    {/* Logout */}
-                    <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-3 py-2 text-destructive focus:text-destructive">
-                      <LogOut className="h-4 w-4" />
-                      {t("Ieși din cont", "Log out")}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {/* Premium Account Hub */}
+                <AccountHubMenu onLogout={handleLogout} />
               </>
             ) : (
               <Button variant="ghost" size="sm" className="hidden lg:flex" asChild>
