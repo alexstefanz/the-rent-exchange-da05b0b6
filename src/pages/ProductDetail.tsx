@@ -344,8 +344,8 @@ const ProductDetail = () => {
             <ProductReviewsSection productId={product.id} isOwnProduct={isOwnProduct} />
           </div>
 
-          {/* Sidebar */}
-          <div className="order-1 lg:order-2 lg:self-stretch hidden lg:block">
+          {/* Booking card — inline on mobile, sticky sidebar on desktop */}
+          <div className="order-1 lg:order-2 lg:self-stretch">
             <div className="lg:sticky lg:top-24">
               <PremiumBookingCard
                 clientPrice={clientPrice}
