@@ -147,6 +147,51 @@ const ProductDetail = () => {
   const clearDates = () => { setStartDate(undefined); setEndDate(undefined); };
   const rentalDays = useMemo(() => (startDate && endDate) ? differenceInDays(endDate, startDate) + 1 : 0, [startDate, endDate]);
 
+  // SEO (must run before early returns to keep hook order stable)
+  const seoLocation = product?.location_city || "România";
+  const seoTitle = product ? `${(language === "en" && product.title_en) ? product.title_en : product.title} - ${seoLocation} | Rentli` : "Rentli";
+  const seoDisplayTitle = product ? ((language === "en" && product.title_en) ? product.title_en : product.title) : "";
+  const seoDisplayDesc = product ? ((language === "en" && product.description_en) ? product.description_en : product.description) : "";
+  const rawDesc = (seoDisplayDesc || "").replace(/\s+/g, " ").trim();
+  const seoDesc = rawDesc.length > 0
+    ? (rawDesc.length > 160 ? rawDesc.slice(0, 157) + "..." : rawDesc)
+    : t(`Închiriază pe Rentli. Plată securizată, predare cu poze, suport 7/7.`, `Rent on Rentli. Secure payment, photo handover, 7/7 support.`);
+  const seoFirstImage = images[0];
+  const seoImage = seoFirstImage?.startsWith("http") ? seoFirstImage : `${typeof window !== "undefined" ? window.location.origin : ""}${seoFirstImage}`;
+  const canonicalUrl = product ? `${typeof window !== "undefined" ? window.location.origin : ""}${getProductUrl(product)}` : (typeof window !== "undefined" ? window.location.href : "");
+  useSEO({
+    title: seoTitle,
+    description: seoDesc,
+    image: seoImage,
+    url: canonicalUrl,
+    canonical: canonicalUrl,
+    type: "product",
+    jsonLd: product ? {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      name: seoDisplayTitle,
+      description: seoDesc,
+      image: images.filter(i => i && i !== "/placeholder.svg").map(i => i.startsWith("http") ? i : `${window.location.origin}${i}`),
+      brand: { "@type": "Brand", name: "Rentli" },
+      category: product.category || undefined,
+      offers: {
+        "@type": "Offer",
+        price: clientPrice,
+        priceCurrency: "RON",
+        availability: "https://schema.org/InStock",
+        url: canonicalUrl,
+        seller: { "@type": "Person", name: owner?.full_name || "Rentli" },
+      },
+      ...(extendedStats?.owner_avg_rating && extendedStats.owner_review_count ? {
+        aggregateRating: {
+          "@type": "AggregateRating",
+          ratingValue: Number(extendedStats.owner_avg_rating).toFixed(1),
+          reviewCount: extendedStats.owner_review_count,
+        },
+      } : {}),
+    } : null,
+  });
+
   const handleReserve = () => {
     if (!product || !startDate || !endDate) return;
     navigate('/checkout', { state: { product: { id: product.id, title: displayTitle, images, price: clientPrice, priceUnit: "zi", location, ownerId: product.owner_id, platformFeePercent: product.platform_fee_percent }, startDate, endDate, rentalDays, totalPrice: 0 } });
