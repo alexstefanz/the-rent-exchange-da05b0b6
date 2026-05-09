@@ -288,6 +288,7 @@ const RentalsTab = () => {
                       role="renter"
                       onPrimary={() => setInspectionRental({ rental, phase: step >= 6 ? "checkin" : "checkout" })}
                       onChat={() => handleContactOwner(rental)}
+                      onLeaveReview={() => rental.product_id && navigate(`/produs/${rental.product_id}#review`)}
                     />
                   </div>
                   <Collapsible>
