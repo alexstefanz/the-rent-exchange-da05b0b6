@@ -692,8 +692,8 @@ const SupportChatWidget = () => {
                     {aiMessages.map((msg, idx) => {
                       const isUser = msg.role === "user";
                       return (
+                        <div key={idx} className="space-y-2">
                         <div
-                          key={idx}
                           className={`flex ${isUser ? "justify-end" : "justify-start"}`}
                         >
                           {!isUser && (
@@ -717,6 +717,78 @@ const SupportChatWidget = () => {
                               </div>
                             )}
                           </div>
+                        </div>
+                        {!isUser && msg.chips && msg.chips.length > 0 && idx === aiMessages.length - 1 && !isAiLoading && (
+                          <div className="flex flex-wrap gap-1.5 pl-9">
+                            {msg.chips.map((chip, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => sendAiText(chip)}
+                                disabled={isAiLoading || isCreatingTicket}
+                                className="text-xs px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                              >
+                                {chip}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {!isUser && msg.attachmentHint && idx === aiMessages.length - 1 && !isAiLoading && (
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploadingImage}
+                            className="ml-9 inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-dashed border-primary/30 text-primary hover:bg-primary/5 transition-colors"
+                          >
+                            <Paperclip className="h-3 w-3" />
+                            {msg.attachmentHint}
+                          </button>
+                        )}
+                        {!isUser && msg.draft && idx === aiMessages.length - 1 && !isAiLoading && (
+                          <div className="ml-9 rounded-2xl border border-primary/30 bg-card p-3 space-y-2 shadow-sm">
+                            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-primary uppercase tracking-wide">
+                              <Sparkles className="h-3 w-3" />
+                              {t("Pregătire ticket", "Ticket draft")}
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">{t("Subiect", "Subject")}</p>
+                              <p className="text-sm font-medium">{msg.draft.subject}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">{t("Sumar", "Summary")}</p>
+                              <p className="text-xs whitespace-pre-wrap">{msg.draft.description}</p>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted">{msg.draft.category_group}</span>
+                              {msg.draft.priority && (
+                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                                  {msg.draft.priority}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex gap-2 pt-1">
+                              <Button
+                                size="sm"
+                                className="flex-1 h-8 text-xs"
+                                onClick={() => sendAiText(t("Confirm, trimite ticketul.", "Confirmed, send the ticket."))}
+                                disabled={isAiLoading || isCreatingTicket}
+                              >
+                                <Check className="h-3.5 w-3.5 mr-1" />
+                                {t("Confirmă", "Confirm")}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1 h-8 text-xs"
+                                onClick={() => sendAiText(t("Vreau să modific ceva.", "I want to edit something."))}
+                                disabled={isAiLoading || isCreatingTicket}
+                              >
+                                <Pencil className="h-3.5 w-3.5 mr-1" />
+                                {t("Modifică", "Edit")}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                         </div>
                       );
                     })}
