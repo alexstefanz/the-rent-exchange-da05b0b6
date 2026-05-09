@@ -1,228 +1,177 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { TicketCheck, Search, Clock, AlertTriangle, Plus } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Inbox, MessageSquare, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { useOpsTickets } from "@/hooks/queries/useOpsTickets";
-import {
-  CATEGORY_GROUP_LABELS,
-  CATEGORY_GROUPS,
-  PRIORITY_OPTIONS,
-  STATUS_OPTIONS,
-  type FetchTicketsFilters,
-} from "@/features/admin/opsTicketsApi";
-import { format, differenceInHours } from "date-fns";
-import { ro } from "date-fns/locale";
-
-const statusColors: Record<string, string> = {
-  NEW: "bg-blue-100 text-blue-800",
-  IN_PROGRESS: "bg-yellow-100 text-yellow-800",
-  WAITING_CUSTOMER: "bg-purple-100 text-purple-800",
-  WAITING_OWNER: "bg-purple-100 text-purple-800",
-  WAITING_INTERNAL: "bg-gray-100 text-gray-800",
-  RESOLVED: "bg-green-100 text-green-800",
-  CLOSED: "bg-gray-200 text-gray-600",
-};
-
-const priorityColors: Record<string, string> = {
-  LOW: "bg-blue-100 text-blue-800",
-  MEDIUM: "bg-yellow-100 text-yellow-800",
-  HIGH: "bg-orange-100 text-orange-800",
-  URGENT: "bg-red-100 text-red-800",
-};
+import { AdminInboxList } from "@/components/admin/tickets/AdminInboxList";
+import { AdminConversation } from "@/components/admin/tickets/AdminConversation";
+import { AdminContextSidebar } from "@/components/admin/tickets/AdminContextSidebar";
+import { useOpsTickets, useOpsTicket } from "@/hooks/queries/useOpsTickets";
+import { useAdminTicketsRealtime } from "@/hooks/useTicketRealtime";
+import { markTicketRead, type FetchTicketsFilters } from "@/features/admin/opsTicketsApi";
+import { StatusPill } from "@/components/support/center/StatusPill";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 const AdminTickets = () => {
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedId = searchParams.get("id");
+
   const [filters, setFilters] = useState<FetchTicketsFilters>({});
-  const [searchInput, setSearchInput] = useState("");
+  const [draftReply, setDraftReply] = useState("");
+  const [aiSuggestLoading, setAiSuggestLoading] = useState(false);
+
   const { data: tickets, isLoading } = useOpsTickets(filters);
+  const { data: activeTicket, isLoading: ticketLoading } = useOpsTicket(selectedId || undefined);
 
-  const handleSearch = () => {
-    setFilters(f => ({ ...f, search: searchInput || undefined }));
+  useAdminTicketsRealtime(selectedId);
+
+  // Mark as read when opening
+  useEffect(() => {
+    if (!selectedId) return;
+    markTicketRead(selectedId)
+      .then(() => {
+        qc.invalidateQueries({ queryKey: ["opsTickets"] });
+        qc.invalidateQueries({ queryKey: ["admin-notification-summary"] });
+        qc.invalidateQueries({ queryKey: ["admin-notifications"] });
+      })
+      .catch(() => undefined);
+  }, [selectedId, qc]);
+
+  // Reset draft on ticket change
+  useEffect(() => { setDraftReply(""); }, [selectedId]);
+
+  const onSelect = (id: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("id", id);
+    setSearchParams(next, { replace: true });
+  };
+  const onClose = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("id");
+    setSearchParams(next, { replace: true });
   };
 
-  const stats = {
-    newCount: tickets?.filter(t => t.status === 'NEW').length || 0,
-    inProgress: tickets?.filter(t => t.status === 'IN_PROGRESS').length || 0,
-    urgent: tickets?.filter(t => t.priority === 'URGENT' && !['RESOLVED', 'CLOSED'].includes(t.status)).length || 0,
+  const handleAiSuggestFromConv = async () => {
+    if (!selectedId) return;
+    setAiSuggestLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("support-ai-admin-assist", {
+        body: { ticketId: selectedId, mode: "suggest_reply" },
+      });
+      if (error) throw error;
+      const text = (data as any)?.text?.trim();
+      if (!text) throw new Error("Răspuns gol AI");
+      setDraftReply(text);
+      toast.success("Răspuns sugerat — revizuiește înainte de a trimite");
+    } catch (e: any) {
+      toast.error(e?.message || "Eroare AI");
+    } finally { setAiSuggestLoading(false); }
   };
-
-  const getStatusLabel = (s: string) => STATUS_OPTIONS.find(o => o.value === s)?.label || s;
-  const getPriorityLabel = (p: string) => PRIORITY_OPTIONS.find(o => o.value === p)?.label || p;
-  const isSlaBreached = (ticket: { priority: string; status: string; created_at: string }) =>
-    ticket.priority === 'URGENT' && ticket.status === 'NEW' && differenceInHours(new Date(), new Date(ticket.created_at)) >= 2;
-  const isUnread = (ticket: { status: string; updated_at: string; last_admin_read_at: string | null }) =>
-    !['CLOSED', 'RESOLVED'].includes(ticket.status) &&
-    (!ticket.last_admin_read_at || new Date(ticket.last_admin_read_at) < new Date(ticket.updated_at));
-  const goToTicket = (id: string) => navigate(`/admin/tickets/${id}`);
 
   return (
     <AdminLayout>
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <TicketCheck className="h-5 w-5" />
-            <h1 className="text-xl font-bold tracking-tight">Tickete Operaționale</h1>
-          </div>
-          <Button size="sm" onClick={() => navigate('/admin/tickets/new')}>
-            <Plus className="h-4 w-4 mr-1" /> Ticket nou
-          </Button>
+      <div className="h-[calc(100vh-8rem)] -mx-4 -my-2 md:m-0 md:h-[calc(100vh-7rem)] grid grid-cols-1 md:grid-cols-[320px_1fr] xl:grid-cols-[340px_1fr_340px] border rounded-none md:rounded-xl overflow-hidden bg-card">
+        {/* LEFT — inbox */}
+        <div className={cn("border-r overflow-hidden", selectedId && "hidden md:block")}>
+          <AdminInboxList
+            tickets={tickets}
+            isLoading={isLoading}
+            selectedId={selectedId}
+            onSelect={onSelect}
+            filters={filters}
+            setFilters={setFilters}
+            onNew={() => navigate("/admin/tickets/new")}
+          />
         </div>
 
-        <div className="grid gap-4 grid-cols-3">
-          <Card>
-            <CardContent className="pt-4 flex items-center gap-3">
-              <TicketCheck className="h-6 w-6 text-blue-500" />
-              <div>
-                <p className="text-xl font-bold">{stats.newCount}</p>
-                <p className="text-xs text-muted-foreground">Noi</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 flex items-center gap-3">
-              <Clock className="h-6 w-6 text-yellow-500" />
-              <div>
-                <p className="text-xl font-bold">{stats.inProgress}</p>
-                <p className="text-xs text-muted-foreground">În lucru</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 flex items-center gap-3">
-              <AlertTriangle className="h-6 w-6 text-red-500" />
-              <div>
-                <p className="text-xl font-bold">{stats.urgent}</p>
-                <p className="text-xs text-muted-foreground">Urgente</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardContent className="pt-4">
-            <div className="flex flex-wrap gap-3">
-              <div className="flex gap-2 flex-1 min-w-[200px]">
-                <Input placeholder="Caută TCK-... sau titlu" value={searchInput} onChange={e => setSearchInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} />
-                <Button variant="outline" size="icon" onClick={handleSearch}><Search className="h-4 w-4" /></Button>
-              </div>
-              <Select value={filters.status || "all"} onValueChange={v => setFilters(f => ({ ...f, status: v === 'all' ? undefined : v }))}>
-                <SelectTrigger className="w-[150px]"><SelectValue placeholder="Status" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toate statusurile</SelectItem>
-                  {STATUS_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Select value={filters.priority || "all"} onValueChange={v => setFilters(f => ({ ...f, priority: v === 'all' ? undefined : v }))}>
-                <SelectTrigger className="w-[150px]"><SelectValue placeholder="Prioritate" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toate prioritățile</SelectItem>
-                  {PRIORITY_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-              <Select value={filters.category_group || "all"} onValueChange={v => setFilters(f => ({ ...f, category_group: v === 'all' ? undefined : v, category_type: undefined }))}>
-                <SelectTrigger className="w-[150px]"><SelectValue placeholder="Categorie" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toate categoriile</SelectItem>
-                  {CATEGORY_GROUPS.map(g => <SelectItem key={g} value={g}>{CATEGORY_GROUP_LABELS[g]}</SelectItem>)}
-                </SelectContent>
-              </Select>
+        {/* CENTER — conversation */}
+        <div className={cn("flex flex-col overflow-hidden", !selectedId && "hidden md:flex")}>
+          {!selectedId ? (
+            <EmptyState />
+          ) : ticketLoading || !activeTicket ? (
+            <div className="p-6 space-y-3">
+              <Skeleton className="h-8 w-1/3" />
+              <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-32 w-full" />
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Lista Ticketelor</CardTitle>
-            <CardDescription>{tickets?.length || 0} tickete</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="space-y-3">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}</div>
-            ) : tickets && tickets.length > 0 ? (
-              <>
-                {/* Desktop table */}
-                <div className="hidden md:block">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Titlu</TableHead>
-                        <TableHead>Categorie</TableHead>
-                        <TableHead>Prioritate</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead>SLA</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {tickets.map(ticket => (
-                        <TableRow key={ticket.id} className="cursor-pointer hover:bg-muted/50" onClick={() => goToTicket(ticket.id)}>
-                          <TableCell className="font-mono text-xs">{ticket.public_id}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {isUnread(ticket) && <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" aria-label="necitit" />}
-                              <p className={`line-clamp-1 ${isUnread(ticket) ? 'font-bold text-foreground' : 'font-medium text-muted-foreground'}`}>{ticket.title}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-sm">{CATEGORY_GROUP_LABELS[ticket.category_group] || ticket.category_group}</TableCell>
-                          <TableCell>
-                            <Badge className={priorityColors[ticket.priority] || ''}>{getPriorityLabel(ticket.priority)}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={statusColors[ticket.status] || ''}>{getStatusLabel(ticket.status)}</Badge>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
-                            {format(new Date(ticket.created_at), 'd MMM yyyy', { locale: ro })}
-                          </TableCell>
-                          <TableCell>
-                            {isSlaBreached(ticket) && <AlertTriangle className="h-4 w-4 text-red-500" />}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+          ) : (
+            <>
+              {/* Center header */}
+              <div className="px-4 py-3 border-b flex items-center gap-2">
+                <Button variant="ghost" size="icon" className="md:hidden h-8 w-8" onClick={onClose}>
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[11px] text-muted-foreground">{activeTicket.public_id}</span>
+                    <StatusPill status={activeTicket.status} size="xs" />
+                    {aiSuggestLoading && (
+                      <span className="text-[10px] text-primary inline-flex items-center gap-1">
+                        <Loader2 className="h-3 w-3 animate-spin" /> AI lucrează…
+                      </span>
+                    )}
+                  </div>
+                  <h2 className="font-semibold text-sm truncate">{activeTicket.title}</h2>
                 </div>
-
-                {/* Mobile cards */}
-                <div className="md:hidden space-y-3">
-                  {tickets.map(ticket => (
-                    <Card key={ticket.id} className="overflow-hidden cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => goToTicket(ticket.id)}>
-                      <div className="p-3 flex items-center justify-between">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            {isUnread(ticket) && <span className="h-2 w-2 rounded-full bg-primary flex-shrink-0" aria-label="necitit" />}
-                            <span className="font-mono text-xs text-muted-foreground">{ticket.public_id}</span>
-                            {isSlaBreached(ticket) && <AlertTriangle className="h-3 w-3 text-red-500" />}
-                          </div>
-                          <p className={`text-sm truncate ${isUnread(ticket) ? 'font-bold text-foreground' : 'font-medium text-muted-foreground'}`}>{ticket.title}</p>
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <Badge className={`${priorityColors[ticket.priority] || ''} text-[10px]`}>{getPriorityLabel(ticket.priority)}</Badge>
-                          <Badge className={`${statusColors[ticket.status] || ''} text-[10px]`}>{getStatusLabel(ticket.status)}</Badge>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-12 text-muted-foreground">
-                <TicketCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Nu există tickete</p>
               </div>
-            )}
-          </CardContent>
-        </Card>
+              <div className="flex-1 overflow-hidden">
+                <AdminConversation
+                  ticket={activeTicket}
+                  onAiAssist={handleAiSuggestFromConv}
+                  draftReply={draftReply}
+                  setDraftReply={setDraftReply}
+                />
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* RIGHT — context (xl only; on mobile/tablet, scroll-down section below conv) */}
+        {selectedId && activeTicket && (
+          <>
+            <div className="hidden xl:block border-l overflow-hidden">
+              <AdminContextSidebar ticket={activeTicket} onAiSuggestReply={(t) => setDraftReply(t)} />
+            </div>
+            <div className="xl:hidden border-t md:border-l md:border-t-0 overflow-y-auto md:max-h-full md:hidden">
+              {/* Mobile context tab placeholder — visible below conv on small screens */}
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Mobile context drawer below conversation when ticket selected */}
+      {selectedId && activeTicket && (
+        <div className="xl:hidden mt-4 md:mt-3">
+          <details className="border rounded-xl bg-card overflow-hidden">
+            <summary className="px-4 py-2.5 text-xs font-semibold text-muted-foreground cursor-pointer flex items-center gap-2">
+              <Inbox className="h-3.5 w-3.5" /> Context, AI și acțiuni
+            </summary>
+            <AdminContextSidebar ticket={activeTicket} onAiSuggestReply={(t) => setDraftReply(t)} />
+          </details>
+        </div>
+      )}
     </AdminLayout>
   );
 };
+
+function EmptyState() {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center text-center px-6 text-muted-foreground">
+      <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+        <MessageSquare className="h-7 w-7 opacity-50" />
+      </div>
+      <h3 className="font-semibold text-foreground mb-1">Selectează un ticket</h3>
+      <p className="text-sm max-w-sm">
+        Inbox realtime cu filtre rapide, conversație premium cu note interne și AI Assist integrat.
+      </p>
+    </div>
+  );
+}
 
 export default AdminTickets;
