@@ -1,60 +1,24 @@
 /// <reference types="npm:@types/react@18.3.1" />
-
 import * as React from 'npm:react@18.3.1'
+import { BaseLayout, H1, Lead, Para, Text } from '../transactional-email-templates/_components.tsx'
 
-import {
-  Body,
-  Container,
-  Head,
-  Heading,
-  Html,
-  Img,
-  Preview,
-  Text,
-} from 'npm:@react-email/components@0.0.22'
+interface Props { token: string }
 
-const LOGO_URL = 'https://tsffyecastudajmgrckt.supabase.co/storage/v1/object/public/email-assets/rentli_logo.png'
-
-interface ReauthenticationEmailProps {
-  token: string
+const otpBox: React.CSSProperties = {
+  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
+  fontSize: 34, fontWeight: 800, color: '#1A1410',
+  backgroundColor: '#FBF8F4', border: '1px solid #EFE9E2', borderRadius: 14,
+  padding: '20px 16px', textAlign: 'center' as const, letterSpacing: 8, margin: '4px 0 22px',
 }
 
-export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => (
-  <Html lang="ro" dir="ltr">
-    <Head />
-    <Preview>Codul tău de verificare Rentli</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <div style={header}>
-          <Img src={LOGO_URL} alt="Rentli" width="120" height="40" style={logoStyle} />
-        </div>
-        <Heading style={h1}>Cod de verificare</Heading>
-        <Text style={text}>Folosește codul de mai jos pentru a-ți confirma identitatea:</Text>
-        <Text style={codeStyle}>{token}</Text>
-        <Text style={footerText}>
-          Acest cod va expira în curând. Dacă nu ai solicitat acest cod,
-          poți ignora acest email.
-        </Text>
-      </Container>
-    </Body>
-  </Html>
+export const ReauthenticationEmail = ({ token }: Props) => (
+  <BaseLayout preview={`Codul tău de verificare Rentli: ${token}`}>
+    <H1>Cod de verificare</H1>
+    <Lead>Folosește codul de mai jos pentru a-ți confirma identitatea pe Rentli:</Lead>
+    <Text style={{ fontSize: 14, color: '#6B6360', margin: '0 0 8px', textTransform: 'uppercase' as const, letterSpacing: '0.6px', fontWeight: 700 }}>Codul tău</Text>
+    <div style={otpBox}>{token}</div>
+    <Para>Codul expiră în câteva minute. Dacă nu ai cerut tu acest cod, poți ignora acest email.</Para>
+  </BaseLayout>
 )
 
 export default ReauthenticationEmail
-
-const main = { backgroundColor: '#ffffff', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
-const container = { padding: '0', maxWidth: '560px', margin: '0 auto' }
-const header = { backgroundColor: '#F59E0B', padding: '20px 25px', borderRadius: '8px 8px 0 0' }
-const logoStyle = { display: 'block' as const }
-const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#302520', margin: '25px 25px 10px' }
-const text = { fontSize: '14px', color: '#7D7471', lineHeight: '1.5', margin: '0 25px 15px' }
-const codeStyle = {
-  fontFamily: 'Courier, monospace',
-  fontSize: '28px',
-  fontWeight: 'bold' as const,
-  color: '#F59E0B',
-  margin: '0 25px 30px',
-  letterSpacing: '4px',
-  textAlign: 'center' as const,
-}
-const footerText = { fontSize: '12px', color: '#999999', margin: '30px 25px 25px' }

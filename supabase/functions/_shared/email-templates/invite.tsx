@@ -1,78 +1,19 @@
 /// <reference types="npm:@types/react@18.3.1" />
-
 import * as React from 'npm:react@18.3.1'
+import { BaseLayout, H1, Lead, Para, CTAButton } from '../transactional-email-templates/_components.tsx'
 
-import {
-  Body,
-  Button,
-  Container,
-  Head,
-  Heading,
-  Html,
-  Img,
-  Link,
-  Preview,
-  Text,
-} from 'npm:@react-email/components@0.0.22'
+interface Props { siteName: string; siteUrl: string; confirmationUrl: string }
 
-const LOGO_URL = 'https://tsffyecastudajmgrckt.supabase.co/storage/v1/object/public/email-assets/rentli_logo.png'
-
-interface InviteEmailProps {
-  siteName: string
-  siteUrl: string
-  confirmationUrl: string
-}
-
-export const InviteEmail = ({
-  siteName,
-  siteUrl,
-  confirmationUrl,
-}: InviteEmailProps) => (
-  <Html lang="ro" dir="ltr">
-    <Head />
-    <Preview>Ai fost invitat pe Rentli</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <div style={header}>
-          <Img src={LOGO_URL} alt="Rentli" width="120" height="40" style={logoStyle} />
-        </div>
-        <Heading style={h1}>Ai fost invitat!</Heading>
-        <Text style={text}>
-          Ai fost invitat să te alături{' '}
-          <Link href={siteUrl} style={link}>
-            <strong>Rentli</strong>
-          </Link>
-          . Apasă butonul de mai jos pentru a accepta invitația și a-ți crea contul.
-        </Text>
-        <Button style={button} href={confirmationUrl}>
-          Acceptă invitația
-        </Button>
-        <Text style={footerText}>
-          Dacă nu așteptai această invitație, poți ignora acest email.
-        </Text>
-      </Container>
-    </Body>
-  </Html>
+export const InviteEmail = ({ confirmationUrl }: Props) => (
+  <BaseLayout preview="Ai fost invitat pe Rentli">
+    <H1>Ai fost invitat pe Rentli ✨</H1>
+    <Lead>
+      Cineva te-a invitat să te alături comunității Rentli — marketplace-ul de
+      închirieri între oameni cu plată în escrow. Apasă pentru a-ți activa contul.
+    </Lead>
+    <CTAButton href={confirmationUrl}>Acceptă invitația</CTAButton>
+    <Para>Dacă nu așteptai această invitație, poți ignora acest email.</Para>
+  </BaseLayout>
 )
 
 export default InviteEmail
-
-const main = { backgroundColor: '#ffffff', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
-const container = { padding: '0', maxWidth: '560px', margin: '0 auto' }
-const header = { backgroundColor: '#F59E0B', padding: '20px 25px', borderRadius: '8px 8px 0 0' }
-const logoStyle = { display: 'block' as const }
-const h1 = { fontSize: '22px', fontWeight: 'bold' as const, color: '#302520', margin: '25px 25px 10px' }
-const text = { fontSize: '14px', color: '#7D7471', lineHeight: '1.5', margin: '0 25px 15px' }
-const link = { color: '#F59E0B', textDecoration: 'underline' }
-const button = {
-  backgroundColor: '#F59E0B',
-  color: '#ffffff',
-  fontSize: '14px',
-  borderRadius: '12px',
-  padding: '12px 24px',
-  textDecoration: 'none',
-  fontWeight: 'bold' as const,
-  margin: '10px 25px 20px',
-  display: 'inline-block' as const,
-}
-const footerText = { fontSize: '12px', color: '#999999', margin: '30px 25px 25px' }
