@@ -10,14 +10,17 @@ const BASE_SYSTEM_PROMPT = `Ești asistentul virtual al platformei Rentli, o pla
 
 REGULI:
 - Răspunde DOAR în limba română, scurt și prietenos.
-- Scopul tău este să afli ce problemă are utilizatorul și să colectezi informațiile necesare pentru a crea un ticket de suport.
-- Pune MAXIMUM 2-3 întrebări scurte, una câte una.
-- Întreabă mai întâi despre ce categorie de problemă e vorba (rezervare, produs, plată, cont, altceva), DOAR dacă nu o poți deduce deja din context.
-- Apoi cere detalii specifice despre problemă.
-- Când ai suficiente informații (categorie + descriere clară a problemei), folosește funcția create_support_ticket pentru a crea ticketul.
-- NU oferi soluții tehnice. Rolul tău e doar să colectezi informații și să le transmiți echipei.
-- Fii empatic și asigură utilizatorul că echipa va rezolva problema.
-- Primul mesaj trebuie să fie un salut scurt și să întrebi cu ce poți ajuta. Dacă userul e pe pagina unui produs sau a unei rezervări, menționează asta natural ("Văd că ești pe pagina produsului X — despre acesta vrei să discutăm?").
+- Scopul tău este să ghidezi utilizatorul în 4 pași simpli pentru a crea un ticket: (1) categorie, (2) detalii, (3) atașamente (opțional), (4) confirmare.
+- Pune MAXIMUM o întrebare per mesaj. Mesaje scurte (1-2 propoziții).
+- La fiecare întrebare, oferă variante rapide apelând tool-ul \`propose_quick_replies\` cu 3-5 opțiuni scurte (max 4 cuvinte fiecare) — niciodată mai mult.
+- PASUL 1 (categorie): Dacă nu o poți deduce din context, întreabă categoria și apelează \`propose_quick_replies\` cu chips: ["Rezervare", "Produs", "Plată", "Cont/KYC", "Altceva"].
+- PASUL 2 (detalii): pune 1-2 întrebări țintite în funcție de categorie. Oferă chips relevante când e posibil (ex: "În ce stadiu e?", chips: ["Înainte de start", "În desfășurare", "După returnare"]).
+- PASUL 3 (atașamente): sugerează blând să atașeze poze/screenshot-uri dacă e relevant (daune, dovezi plată, erori UI). Folosește \`propose_attachment_hint\`.
+- PASUL 4 (confirmare): când ai suficiente informații, NU crea direct ticketul. Apelează ÎNTÂI \`draft_ticket\` cu titlu/categorie/prioritate/sumar — utilizatorul va confirma sau edita.
+- Doar după ce utilizatorul confirmă explicit (răspunde cu "confirm", "trimite", "ok", "da") apelează \`create_support_ticket\`.
+- NU oferi soluții tehnice. Rolul tău e să colectezi informații și să le transmiți echipei.
+- Fii empatic, profesionist, modern.
+- Primul mesaj: salut scurt + întreabă cu ce poți ajuta + apelează \`propose_quick_replies\` cu categoriile. Dacă userul e pe pagina unui produs/rezervări, menționează asta natural.
 
 CLASIFICARE PRIORITATE (obligatoriu când chemi create_support_ticket):
 - CRITICAL: fraudă, abuz/hărțuire, dispute financiare active mari, KYC blocat de mult timp, pericol pentru user.
@@ -52,9 +55,79 @@ serve(async (req) => {
       {
         type: "function",
         function: {
+          name: "propose_quick_replies",
+          description:
+            "Show the user 3-5 short quick-reply chips below your message. Use for category selection and short branching answers. Keep each label under 4 words.",
+          parameters: {
+            type: "object",
+            properties: {
+              chips: {
+                type: "array",
+                minItems: 2,
+                maxItems: 5,
+                items: { type: "string" },
+              },
+            },
+            required: ["chips"],
+            additionalProperties: false,
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "propose_attachment_hint",
+          description:
+            "Suggest the user attach an image/screenshot. Provide a one-line hint shown next to the input.",
+          parameters: {
+            type: "object",
+            properties: { hint: { type: "string" } },
+            required: ["hint"],
+            additionalProperties: false,
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "draft_ticket",
+          description:
+            "Generate a draft of the ticket for the user to review BEFORE creation. Always call this before create_support_ticket. The user will confirm or edit.",
+          parameters: {
+            type: "object",
+            properties: {
+              subject: { type: "string", description: "Short ticket title (max 100 chars)" },
+              description: { type: "string", description: "Compiled description of the issue" },
+              category_group: {
+                type: "string",
+                enum: ["RESERVATION", "PRODUCT", "FINANCIAL", "DISPUTE", "USER"],
+              },
+              category_type: {
+                type: "string",
+                enum: [
+                  "OWNER_CANT_FULFILL", "LATE_HANDOVER", "NO_SHOW", "RESERVATION_CHANGE", "CANCELLATION_ISSUE",
+                  "DEFECTIVE", "DAMAGED_ON_RETURN", "MISSING_PARTS", "NOT_AS_DESCRIBED",
+                  "PAYMENT_ISSUE", "REFUND_REQUEST", "REFUND_DISPUTE", "CHARGEBACK", "PENALTY",
+                  "OWNER_VS_RENTER", "DAMAGE_LIABILITY", "DEPOSIT_DISPUTE",
+                  "KYC_REVIEW", "FRAUD_SUSPECTED", "ABUSIVE_BEHAVIOR", "GENERAL_INQUIRY",
+                ],
+              },
+              priority: {
+                type: "string",
+                enum: ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
+              },
+            },
+            required: ["subject", "description", "category_group", "category_type", "priority"],
+            additionalProperties: false,
+          },
+        },
+      },
+      {
+        type: "function",
+        function: {
           name: "create_support_ticket",
           description:
-            "Creates a support ticket when you have gathered enough information from the user. Call this when you know the category and have a clear description of the problem.",
+            "Final step: actually creates the ticket. ONLY call after the user has explicitly confirmed the draft from draft_ticket. Reuse exactly the fields from the confirmed draft (or user's edits).",
           parameters: {
             type: "object",
             properties: {

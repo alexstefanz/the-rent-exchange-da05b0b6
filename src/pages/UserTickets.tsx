@@ -254,7 +254,7 @@ const UserTickets = () => {
 
 function TicketCard({
   ticket, active, onClick, locale,
-}: { ticket: OpsTicket; active: boolean; onClick: () => void; locale: Locale }) {
+}: { ticket: OpsTicket; active: boolean; onClick: () => void; locale: any }) {
   const { t } = useLanguage();
   const categoryLabel = CATEGORY_GROUP_LABELS[ticket.category_group] || ticket.category_group;
   return (
