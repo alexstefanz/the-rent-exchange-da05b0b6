@@ -79,6 +79,7 @@ const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
 const AdminTickets = lazy(() => import("./pages/admin/AdminTickets"));
 const AdminTicketDetail = lazy(() => import("./pages/admin/AdminTicketDetail"));
 const AdminTicketCreate = lazy(() => import("./pages/admin/AdminTicketCreate"));
+const AdminSupportAnalytics = lazy(() => import("./pages/admin/AdminSupportAnalytics"));
 const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
 const AdminKYCDetail = lazy(() => import("./pages/admin/AdminKYCDetail"));
 const AdminUserDetail = lazy(() => import("./pages/admin/AdminUserDetail"));
@@ -159,6 +160,7 @@ const App = () => (
                 <Route path="/admin/tickets" element={<AdminTickets />} />
                 <Route path="/admin/tickets/new" element={<AdminTicketCreate />} />
                 <Route path="/admin/tickets/:id" element={<AdminTicketDetail />} />
+                <Route path="/admin/tickets/analytics" element={<AdminSupportAnalytics />} />
                 <Route path="/admin/categories" element={<AdminCategories />} />
                 <Route path="/admin/finances" element={<AdminFinances />} />
                 <Route path="/admin/withdrawals" element={<AdminWithdrawals />} />
