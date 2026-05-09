@@ -720,6 +720,14 @@ const AccountTab = () => {
           </Card>
         </Collapsible>
       </div>
+
+      <AvatarCropperDialog
+        file={pendingAvatar}
+        open={cropperOpen}
+        onOpenChange={(o) => { setCropperOpen(o); if (!o) setPendingAvatar(null); }}
+        saving={isUploadingAvatar}
+        onConfirm={handleAvatarChange}
+      />
     </TooltipProvider>
   );
 };
