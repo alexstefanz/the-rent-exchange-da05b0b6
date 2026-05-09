@@ -1,24 +1,29 @@
-import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, Loader2, ArrowLeft, Phone } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  sendMessage,
-  markMessagesAsRead,
-  Message,
-  MAX_MESSAGE_LENGTH,
+  markConversationRead,
+  getMessagesWithAttachments,
+  getRentalContext,
   getOwnerContactInfo,
+  sendMessage,
+  Message,
+  RentalContextRow,
 } from "@/features/messaging/messagingApi";
-import { useMessages } from "@/hooks/queries/useConversations";
-import { useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { ro, enUS } from "date-fns/locale";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { attachToMessage, type AttachmentRow, type UploadedAttachment } from "@/lib/chatMedia";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { MessageContent } from "@/components/messaging/MessageContent";
+import { useChatPresence } from "@/hooks/useChatPresence";
+import { ChatHeader } from "@/components/messaging/ChatHeader";
+import { RentalStageStepper } from "@/components/messaging/RentalStageStepper";
+import { TransactionCard } from "@/components/messaging/TransactionCard";
+import { MessageBubble } from "@/components/messaging/MessageBubble";
+import { MessageInput } from "@/components/messaging/MessageInput";
+import { TypingIndicator } from "@/components/messaging/TypingIndicator";
+import { DateSeparator } from "@/components/messaging/DateSeparator";
+import { MediaLightbox } from "@/components/messaging/MediaLightbox";
+import { isSameDay } from "date-fns";
 
 interface ChatPanelProps {
   conversationId: string;
@@ -26,12 +31,10 @@ interface ChatPanelProps {
   otherUserAvatar: string | null;
   productTitle: string;
   ownerId?: string;
-  rentalInfo?: {
-    start_date: string;
-    end_date: string;
-    rental_days: number;
-  } | null;
+  buyerId?: string;
+  rentalsId?: string | null;
   onBack?: () => void;
+  onOpenInfo?: () => void;
   className?: string;
 }
 
@@ -41,192 +44,253 @@ export function ChatPanel({
   otherUserAvatar,
   productTitle,
   ownerId,
-  rentalInfo,
+  buyerId,
+  rentalsId,
   onBack,
+  onOpenInfo,
   className = "",
 }: ChatPanelProps) {
   const { user } = useAuth();
-  const { language, t } = useLanguage();
-  const dateLocale = language === "ro" ? ro : enUS;
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [sending, setSending] = useState(false);
+  const [peerLastReadAt, setPeerLastReadAt] = useState<string | null>(null);
   const [ownerPhone, setOwnerPhone] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ items: AttachmentRow[]; index: number } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const isOwner = user?.id === ownerId;
+  const peerId = isOwner ? buyerId : ownerId;
 
-  const { data: fetchedMessages, isLoading } = useMessages(conversationId);
+  const { peerOnline, peerTyping, setTyping } = useChatPresence(
+    conversationId,
+    user?.id || null,
+    peerId || null
+  );
 
-  // Sync fetched messages to local state
+  const { data: fetchedMessages, isLoading } = useQuery({
+    queryKey: ["messages-attached", conversationId],
+    queryFn: () => getMessagesWithAttachments(conversationId),
+    enabled: !!conversationId,
+    staleTime: 10_000,
+  });
+
+  const { data: rentalCtx } = useQuery<RentalContextRow | null>({
+    queryKey: ["rental-context", rentalsId],
+    queryFn: () => (rentalsId ? getRentalContext(rentalsId) : Promise.resolve(null)),
+    enabled: !!rentalsId,
+    staleTime: 30_000,
+  });
+
+  // Sync messages
   useEffect(() => {
-    if (fetchedMessages) {
-      setLocalMessages(fetchedMessages);
-    }
+    if (fetchedMessages) setLocalMessages(fetchedMessages);
   }, [fetchedMessages]);
 
-  // Subscribe to realtime + mark as read
+  // Initial conversation read state + subscribe to read receipts
+  useEffect(() => {
+    if (!conversationId || !user?.id) return;
+    (async () => {
+      const { data } = await supabase
+        .from("conversations")
+        .select("buyer_id,owner_id,buyer_last_read_at,owner_last_read_at")
+        .eq("id", conversationId)
+        .maybeSingle();
+      if (data) {
+        const peerRead = user.id === (data as any).buyer_id
+          ? (data as any).owner_last_read_at
+          : (data as any).buyer_last_read_at;
+        setPeerLastReadAt(peerRead);
+      }
+    })();
+  }, [conversationId, user?.id]);
+
+  // Mark read on open + on new incoming
   useEffect(() => {
     if (!conversationId) return;
+    markConversationRead(conversationId);
+  }, [conversationId]);
 
-    markMessagesAsRead(conversationId);
-
+  // Realtime: messages + attachments + conversations updates
+  useEffect(() => {
+    if (!conversationId) return;
     const channel = supabase
       .channel(`chat-panel-${conversationId}`)
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        (payload) => {
+        { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
+        async (payload) => {
           const newMsg = payload.new as Message;
+          // Refetch attachments for new message
+          const { data: atts } = await supabase
+            .from("message_attachments")
+            .select("*")
+            .eq("message_id", newMsg.id);
+          const enriched: Message = { ...newMsg, attachments: (atts || []) as AttachmentRow[] };
           setLocalMessages((prev) => {
-            if (prev.some((m) => m.id === newMsg.id)) return prev;
-            return [...prev, newMsg];
+            if (prev.some((m) => m.id === enriched.id)) return prev;
+            return [...prev, enriched];
           });
           if (newMsg.sender_id !== user?.id) {
-            markMessagesAsRead(conversationId);
+            markConversationRead(conversationId);
           }
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "conversations", filter: `id=eq.${conversationId}` },
+        (payload) => {
+          const conv = payload.new as any;
+          const peerRead =
+            user?.id === conv.buyer_id ? conv.owner_last_read_at : conv.buyer_last_read_at;
+          setPeerLastReadAt(peerRead);
+        }
+      )
       .subscribe();
-
     return () => {
       supabase.removeChannel(channel);
-      // Refresh conversations unread counts on unmount
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
     };
   }, [conversationId, user?.id, queryClient]);
 
-  // Fetch owner phone for 3CX call button
+  // Fetch owner phone for header (only if peer is owner)
   useEffect(() => {
-    if (!ownerId) return;
-    getOwnerContactInfo(ownerId).then((info) => {
-      setOwnerPhone(info?.phone || null);
-    });
-  }, [ownerId]);
+    if (!ownerId || isOwner) {
+      setOwnerPhone(null);
+      return;
+    }
+    getOwnerContactInfo(ownerId).then((info) => setOwnerPhone(info?.phone || null));
+  }, [ownerId, isOwner]);
 
-  // Scroll to bottom
+  // Scroll to bottom on new messages
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [localMessages]);
+  }, [localMessages, peerTyping]);
 
-  const handleSend = async () => {
-    if (!newMessage.trim() || sending) return;
-    setSending(true);
-    const sent = await sendMessage(conversationId, newMessage);
-    if (sent) setNewMessage("");
-    setSending(false);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  const handleSend = async (content: string, uploaded: UploadedAttachment[]) => {
+    if (!content.trim() && uploaded.length === 0) return;
+    // For text-only just send. For attachments, ensure there's at least a placeholder content.
+    const finalContent = content.trim() || "📎";
+    const sent = await sendMessage(conversationId, finalContent);
+    if (sent && uploaded.length > 0) {
+      await attachToMessage(sent.id, uploaded.map((u) => u.id));
     }
   };
 
-  return (
-    <div className={`flex flex-col h-full ${className}`}>
-      {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b bg-background">
-        {onBack && (
-          <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        )}
-        <Avatar className="h-9 w-9 shrink-0">
-          <AvatarImage src={otherUserAvatar || undefined} />
-          <AvatarFallback>{otherUserName?.charAt(0) || "U"}</AvatarFallback>
-        </Avatar>
-        <div className="flex flex-col min-w-0 flex-1">
-          <span className="font-medium text-sm truncate">{productTitle}</span>
-          <span className="text-xs text-muted-foreground truncate">{otherUserName || t("Utilizator", "User")}</span>
-          {rentalInfo && (
-            <span className="text-[11px] text-primary font-medium truncate">
-              {format(new Date(rentalInfo.start_date), "d MMM", { locale: dateLocale })}
-              {" – "}
-              {format(new Date(rentalInfo.end_date), "d MMM yyyy", { locale: dateLocale })}
-              {" · "}
-              {rentalInfo.rental_days}{" "}
-              {rentalInfo.rental_days === 1 ? t("zi", "day") : t("zile", "days")}
-            </span>
-          )}
-        </div>
-        {ownerPhone && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <a href={`tel:${ownerPhone}`} className="shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-green-600 transition-colors"
-                    asChild
-                  >
-                    <span>
-                      <Phone className="h-5 w-5" />
-                    </span>
-                  </Button>
-                </a>
-              </TooltipTrigger>
-              <TooltipContent>{t("Apelează prin 3CX", "Call via 3CX")}</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-      </div>
+  // Group messages with date separators + grouping logic
+  const renderItems = useMemo(() => {
+    const items: Array<
+      | { kind: "date"; date: string; key: string }
+      | { kind: "msg"; msg: Message; isOwn: boolean; isLastInGroup: boolean; seen: boolean; key: string }
+    > = [];
+    let prev: Message | null = null;
+    for (let i = 0; i < localMessages.length; i++) {
+      const m = localMessages[i];
+      const next = localMessages[i + 1];
+      if (!prev || !isSameDay(new Date(prev.created_at), new Date(m.created_at))) {
+        items.push({ kind: "date", date: m.created_at, key: `d-${m.id}` });
+      }
+      const isOwn = m.sender_id === user?.id;
+      const sameSenderAsNext =
+        next &&
+        next.sender_id === m.sender_id &&
+        isSameDay(new Date(m.created_at), new Date(next.created_at)) &&
+        new Date(next.created_at).getTime() - new Date(m.created_at).getTime() < 5 * 60_000;
+      const isLastInGroup = !sameSenderAsNext;
+      const seen =
+        isOwn && peerLastReadAt
+          ? new Date(peerLastReadAt).getTime() >= new Date(m.created_at).getTime()
+          : false;
+      items.push({ kind: "msg", msg: m, isOwn, isLastInGroup, seen, key: m.id });
+      prev = m;
+    }
+    return items;
+  }, [localMessages, user?.id, peerLastReadAt]);
 
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
+  return (
+    <div className={`flex flex-col h-full bg-[#FCFAF8] ${className}`}>
+      <ChatHeader
+        name={otherUserName}
+        avatarUrl={otherUserAvatar}
+        productTitle={productTitle}
+        online={peerOnline}
+        typing={peerTyping}
+        onBack={onBack}
+        onInfo={onOpenInfo}
+        phone={ownerPhone}
+      />
+
+      {rentalCtx && (
+        <>
+          <RentalStageStepper rental={rentalCtx} />
+          <TransactionCard
+            data={{
+              publicId: rentalCtx.public_id,
+              productTitle: rentalCtx.product_title || productTitle,
+              productImage: rentalCtx.product_image,
+              startDate: rentalCtx.start_date,
+              endDate: rentalCtx.end_date,
+              rentalDays: rentalCtx.rental_days,
+              subtotal: rentalCtx.subtotal,
+              status: rentalCtx.status,
+              paymentStatus: rentalCtx.payment_status,
+            }}
+          />
+        </>
+      )}
+
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3">
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : localMessages.length === 0 ? (
-          <div className="text-center text-muted-foreground py-8">
+          <div className="text-center text-muted-foreground py-12 text-sm">
             {t("Niciun mesaj încă. Trimite primul mesaj!", "No messages yet. Send the first one!")}
           </div>
         ) : (
-          <div className="space-y-3">
-            {localMessages.map((msg) => {
-              const isOwn = msg.sender_id === user?.id;
-              return (
-                <div key={msg.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className={`max-w-[75%] rounded-2xl px-4 py-2 ${
-                      isOwn ? "bg-primary text-primary-foreground" : "bg-muted"
-                    }`}
-                  >
-                    <MessageContent text={msg.content} messageId={msg.id} isOwn={isOwn} />
-                    <p className={`text-xs mt-1 ${isOwn ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                      {format(new Date(msg.created_at), "HH:mm", { locale: dateLocale })}
-                    </p>
-                  </div>
+          <div className="space-y-1.5">
+            {renderItems.map((it) =>
+              it.kind === "date" ? (
+                <DateSeparator key={it.key} date={it.date} />
+              ) : (
+                <MessageBubble
+                  key={it.key}
+                  message={it.msg}
+                  isOwn={it.isOwn}
+                  showAvatar={false}
+                  isLastInGroup={it.isLastInGroup}
+                  seen={it.seen}
+                  onOpenAttachment={(items, index) => setLightbox({ items, index })}
+                />
+              )
+            )}
+            {peerTyping && (
+              <div className="flex justify-start pt-1">
+                <div className="bg-white border border-border/60 rounded-2xl rounded-bl-md px-3 py-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+                  <TypingIndicator />
                 </div>
-              );
-            })}
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Input */}
-      <div className="p-4 border-t flex gap-2 bg-background">
-        <Input
-          placeholder={t("Scrie un mesaj...", "Write a message...")}
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value.slice(0, MAX_MESSAGE_LENGTH))}
-          onKeyDown={handleKeyPress}
-          maxLength={MAX_MESSAGE_LENGTH}
-          disabled={sending}
+      <MessageInput
+        conversationId={conversationId}
+        onSend={handleSend}
+        onTyping={() => setTyping(true)}
+      />
+
+      {lightbox && (
+        <MediaLightbox
+          attachments={lightbox.items}
+          startIndex={lightbox.index}
+          open={!!lightbox}
+          onClose={() => setLightbox(null)}
         />
-        <Button size="icon" onClick={handleSend} disabled={!newMessage.trim() || sending}>
-          {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        </Button>
-      </div>
+      )}
     </div>
   );
 }
