@@ -260,7 +260,6 @@ const RentalsTab = () => {
               const tlRental = {
                 status: rental.status,
                 payment_status: rental.payment_status,
-                start_date: rental.start_date,
                 end_date: rental.end_date_raw,
                 handover_confirmed_at: rental.handover_confirmed_at,
                 return_confirmed_at: rental.return_confirmed_at,
