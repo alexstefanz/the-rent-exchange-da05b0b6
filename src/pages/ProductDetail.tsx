@@ -264,7 +264,7 @@ const ProductDetail = () => {
             {/* Description */}
             <div className="rounded-xl border border-border bg-card p-6">
               <h2 className="mb-4 font-heading text-xl font-semibold text-foreground">{copy.product.description}</h2>
-              <p className="text-muted-foreground">{displayDescription || copy.product.noDescription}</p>
+              <p className="text-muted-foreground whitespace-pre-wrap break-words">{displayDescription || copy.product.noDescription}</p>
             </div>
 
             {/* Location */}
