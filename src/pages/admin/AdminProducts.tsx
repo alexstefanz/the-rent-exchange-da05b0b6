@@ -261,6 +261,34 @@ const AdminProducts = () => {
     staleTime: 30000,
   });
 
+  const { data: deletedProducts = [], isLoading: deletedLoading } = useQuery({
+    queryKey: ['adminDeletedProducts'],
+    queryFn: () => fetchDeletedProducts(),
+    staleTime: 30000,
+  });
+
+  const handleRestoreDeleted = async (id: string) => {
+    try {
+      await restoreProduct(id);
+      await queryClient.invalidateQueries({ queryKey: ['adminDeletedProducts'] });
+      await queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
+      toast.success('Produs restaurat');
+    } catch (e: any) {
+      toast.error(e?.message || 'Eroare la restaurare');
+    }
+  };
+
+  const handlePurgeDeleted = async (id: string, title: string) => {
+    if (!confirm(`Șterge definitiv „${title}"? Acțiunea este ireversibilă.`)) return;
+    try {
+      await deleteProduct(id);
+      await queryClient.invalidateQueries({ queryKey: ['adminDeletedProducts'] });
+      toast.success('Produs șters definitiv');
+    } catch (e: any) {
+      toast.error(e?.message || 'Eroare la ștergere');
+    }
+  };
+
   // Dynamic options from data
   const cityOptions = useMemo(() => {
     if (!products) return [];
