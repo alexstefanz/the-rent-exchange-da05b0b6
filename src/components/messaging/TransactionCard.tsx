@@ -16,6 +16,7 @@ export interface TransactionCardData {
   subtotal?: number | null;
   status: string;
   paymentStatus?: string | null;
+  role?: "renter" | "owner";
 }
 
 function statusVariant(status: string): { className: string; label: { ro: string; en: string } } {
