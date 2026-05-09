@@ -23,10 +23,9 @@ import { useTicketAuditLog } from "@/hooks/queries/useOpsTickets";
 interface Props {
   ticket: OpsTicket;
   onAiSuggestReply: (text: string) => void;
-  aiTrigger: number; // increments to fire suggest_reply from outside
 }
 
-export function AdminContextSidebar({ ticket, onAiSuggestReply, aiTrigger }: Props) {
+export function AdminContextSidebar({ ticket, onAiSuggestReply }: Props) {
   const qc = useQueryClient();
   const { data: auditLog } = useTicketAuditLog(ticket.id);
   const [updating, setUpdating] = useState(false);
@@ -68,13 +67,6 @@ export function AdminContextSidebar({ ticket, onAiSuggestReply, aiTrigger }: Pro
       toast.error(e?.message || "Eroare AI");
     } finally { setAiLoading(null); }
   };
-
-  // Fire suggest_reply when external trigger changes
-  useState(() => undefined);
-  if (aiTrigger > 0 && aiLoading === null && (window as any).__lastAiTrigger !== aiTrigger) {
-    (window as any).__lastAiTrigger = aiTrigger;
-    runAi("suggest_reply");
-  }
 
   const categoryTypeLabel = CATEGORY_TYPES[ticket.category_group]?.find(t => t.value === ticket.category_type)?.label || ticket.category_type;
 
