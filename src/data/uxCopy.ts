@@ -101,6 +101,7 @@ const createUxCopy = () => ({
     accept: { ro: "Acceptă", en: "Accept" },
     reject: { ro: "Refuză", en: "Reject" },
     addListing: { ro: "Adaugă anunț", en: "Add listing" },
+    previewListing: { ro: "Previzualizează anunț", en: "Preview listing" },
     cancelRequest: { ro: "Anulează cererea", en: "Cancel request" },
     cancelPaidTitle: { ro: "Anulează cererea de închiriere", en: "Cancel rental request" },
     cancelPaidConfirm: {
