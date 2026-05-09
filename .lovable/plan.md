@@ -1,95 +1,81 @@
-## Obiectiv
-Transformare completă a `/produs/:slug` într-o experiență premium de booking, inspirată din Airbnb / Turo / Apple, cu focus pe trust, claritate și conversie. Mobile-first, fără a încărca pagina inutil.
+# Faze rămase pentru pagina de produs
 
-## Layout final (desktop)
+Redesign-ul de bază e live (galerie cinematic 1+4, booking card sticky, owner trust, social proof, accordion, rental protection, mobile sticky bar, etc.). Mai jos sunt fazele care ar ridica pagina la nivelul Airbnb/Turo complet.
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│ Navbar                                                  │
-├─────────────────────────────────────────────────────────┤
-│ Breadcrumb · titlu · rating · locație · share/heart     │
-├─────────────────────────────────────────────────────────┤
-│ ╔════ Cinematic gallery (1 mare + 4 thumbs) ════╗  ┌──┐ │
-│ ║                                                ║  │  │ │
-│ ╚════════════════════════════════════════════════╝  │ B│ │
-│ Free cancellation strip                              │ o│ │
-│ Owner Trust Card (premium)                           │ o│ │
-│ Quick Questions chips                                │ k│ │
-│ Description (accordion)                              │ i│ │
-│ Specificații / Accesorii / Reguli (accordion)        │ n│ │
-│ Rental Protection (4 carduri)                        │ g│ │
-│ Cum funcționează (4 pași)                            │  │ │
-│ Locație + map                                         │  │ │
-│ Reviews summary + listă                              │  │ │
-│ More from this owner · Nearby products               │  │ │
-└─────────────────────────────────────────────────────────┘
-```
+---
 
-Mobile: gallery full-bleed sus, restul stivuit, **sticky bottom CTA bar** cu preț + "Verifică disponibilitatea". Tap → bottom sheet cu calendar + breakdown.
+## P1 — Esențiale (recomandat acum)
 
-## Componente noi (`src/components/product/`)
+### 1. QA vizual mobil + desktop
+- Verificare 375px / 768px / 1280px / 1920px pe produs real cu poze multiple și produs cu o singură poză
+- Verificare fallback când produsul are <5 imagini (carousel) vs ≥5 (grid 1+4)
+- Verificare sticky booking card nu se suprapune cu footer
+- Verificare mobile sticky bar nu acoperă conținut la scroll
 
-1. **PremiumBookingCard.tsx** — sticky desktop, preț ierarhizat (mare/zi + mic/săpt+lună), calendar range cu hover preview, breakdown live, "Anulare gratuită 48h", trust mini-strip (verificat · răspuns rapid · plată sigură), CTA dual (Rezervă · Întreabă).
-2. **MobileStickyBookingBar.tsx** — `fixed bottom-0`, doar mobile, afișează preț + buton "Verifică datele". Deschide `MobileBookingSheet` (Drawer/shadcn Sheet) cu același calendar+breakdown+CTA.
-3. **OwnerTrustCard.tsx** — înlocuiește OwnerSection: avatar XL cu dot online, nume + verified badge, rating·rentals·response time·response rate·member since, butoane "Mesaj" + "Vezi profil". Date din nou RPC `get_product_owner_stats`.
-4. **QuickQuestionsChips.tsx** — 3-4 chips ("E disponibil azi?", "Include accesorii?", "Livrare?", "Pickup flexibil?"). Click → deschide ChatDialog cu `initialMessage` prefilled (necesită mic prop nou pe ChatDialog).
-5. **ProductInfoAccordion.tsx** — wrap shadcn Accordion: Descriere (default open), Specificații, Accesorii incluse, Reguli, Livrare & pickup, Politici. Conținut existent reutilizat.
-6. **RentalProtection.tsx** — 4 carduri (Plăți securizate Stripe · Proces verbal digital · Protecție dispute · Suport 7/7) cu iconuri + 1-2 rânduri de copy.
-7. **HowItWorksMini.tsx** (în product/) — 4 pași orizontali (Cere → Confirmă → Ridică → Returnează) cu Lucide icons și conector.
-8. **PremiumGallery.tsx** — refactor `ProductImageGallery` desktop: layout 1 mare + grid 2x2 thumbs (Airbnb style), buton "Vezi toate (N)" overlay, hover zoom subtil, lightbox cu animații. Mobile rămâne swipe (Embla deja există) + counter.
-9. **SocialProofStrip.tsx** — sub titlu: "Închiriat de N ori · Ultima rezervare acum 2 zile · X persoane urmăresc". Date din RPC nou.
-10. **ProductReviewsPremium.tsx** — refactor: sumar (rating big + 3 bare progres pe sub-criterii: comunicare, condiție, punctualitate), tag-uri top ("Comunicare excelentă", "Punctual"), grid 2 col cu avatar+rating+verified badge, paginare/load more.
-11. **LocationCard.tsx** — wrap map cu titlu, oraș, distanță față de user (geolocation opt-in), notă "Adresa exactă apare după rezervare".
+### 2. SEO & Meta tags
+- `<title>` dinamic: `{Titlu produs} - {Oraș} | Rentli`
+- `<meta description>` din primul paragraf descriere (max 160 char)
+- Open Graph: og:title, og:description, og:image (prima poză), og:url canonical
+- JSON-LD `Product` schema cu price, availability, aggregateRating, review-uri
+- `<link rel="canonical">` pe URL slug-based
 
-## Backend (1 migration nouă)
+### 3. Copy bilingv extins în `uxCopy.ts`
+- Texte hardcodate în noile componente (RentalProtection, HowItWorksMini, QuickQuestionsChips, OwnerTrustCard) trebuie mutate în `uxCopy.ts` pentru EN
+- Strings tip "Anulare gratuită 48h", "Răspunde în X min", chip-uri quick questions
 
-**RPC `get_product_extended_stats(p_product_id uuid)`** — SECURITY DEFINER, public:
-- `times_rented` — count rentals confirmed/active/completed
-- `last_booking_at` — max(confirmed_at)
-- `watchers_count` — count favorite_products
-- `owner_total_rentals` — count rentals where owner_id = product.owner_id, status completed
-- `owner_response_time_minutes` — avg(first message reply latency) din messages join conversations
-- `owner_response_rate` — % conversații cu reply / total
-- `owner_member_since` — profiles.created_at
-- `owner_avg_rating` — avg din product_reviews pe toate produsele owner-ului
-- `owner_review_count` — count
+---
 
-Cache 60s în React Query. Hook nou: `src/hooks/queries/useProductExtendedStats.ts`.
+## P2 — Polish premium (high impact, low effort)
 
-**RPC `get_product_review_breakdown(p_product_id uuid)`** — agregat: avg rating, count, avg pe sub-criterii (communication, product_condition, punctuality), top 3 tag-uri (din keyword extract simplu pe comment — sau, mai sigur, omitem tag-urile auto și folosim doar sub-criterii pentru MVP). **Decision:** doar sub-criterii pentru sigure, fără tag-uri (vine în iterație ulterioară).
+### 4. Sticky compact header on scroll (Airbnb-style)
+- La scroll sub fold-ul galeriei, apare un mini-header sticky cu: titlu produs + preț/zi + buton "Rezervă"
+- Doar desktop, dispare la scroll up rapid
+- Implementare: IntersectionObserver pe gallery + Framer Motion slide-down
 
-## Modificări fișiere existente
+### 5. Lightbox premium
+- Zoom & pan (pinch pe mobile, scroll wheel pe desktop)
+- Thumb strip jos pentru navigare rapidă
+- Counter + caption opțional
+- Swipe gestures pe mobil
 
-- `src/pages/ProductDetail.tsx` — restructurat complet pe blocurile de mai sus, păstrăm logica (handlers, calendar, navigare checkout). Devine ~250 linii cu compoziție.
-- `src/components/messaging/ChatDialog.tsx` — accept `initialMessage?: string` care pre-completează inputul la deschidere (folosit de QuickQuestions).
-- `src/components/product/ProductImageGallery.tsx` — split în PremiumGallery (desktop) + mobile swipe; sau extins cu props `variant="cinematic"`.
-- `src/index.css` — adăugat keyframe `shimmer` pentru skeleton loaders.
+### 6. Skeleton loaders premium
+- Înlocuire `Loader2` spinner cu skeleton care imită exact layout-ul (gallery skeleton + booking card skeleton + content skeleton)
+- Reduce CLS și percepția de loading
 
-## Micro-interactions
-- `hover:scale-[1.02]` pe carduri trust + protecție.
-- `transition-all duration-200` standard.
-- Skeleton shimmer pentru booking card înainte de încărcare stats.
-- Heart toggle: `animate-scale-in` la favorite.
-- CTA primary: subtle `hover:shadow-lg` + `hover:-translate-y-0.5`.
-- Reduce-motion: respectat peste tot.
+### 7. Realtime watchers count
+- `watchers_count` din `SocialProofStrip` să fie live via Supabase Realtime pe `favorite_products`
+- "X persoane se uită acum" cu pulse animation
 
-## Mobile-first
-- Sticky bottom CTA cu safe-area-inset.
-- Toate accordeoanele colapsate by default pe mobil (Descriere parțial deschis cu "Citește mai mult").
-- Galerie swipe + counter "3/12" + tap → fullscreen lightbox.
-- Spacing thumb-friendly (min 44px tap targets).
-- Owner trust collapse on mobile cu mini-row + "Vezi detalii".
+---
 
-## Bilingv
-Toate copy-urile noi adăugate în `src/data/uxCopy.ts` sub `productDetail.*` (RO + EN).
+## P3 — Features avansate (scope mai mare)
 
-## Out of scope (clar)
-- "Compare" feature (link la favorite există deja).
-- "Recently viewed" persistent (skip — necesită schimbări mai mari).
-- Push real-time pe watchers count (folosim doar query la mount, fără realtime).
-- Tag-uri auto din review-uri (skip — neclar fără NLP).
+### 8. Recently viewed products
+- LocalStorage tracking ultime 10 produse vizualizate
+- Slider sub "More from owner" cu titlul "Vizualizate recent"
 
-## Riscuri & mitigare
-- **Performanță:** RPC-urile noi rulează 1x la mount. Indexele există deja pe `rentals(product_id, status)` și `favorite_products(product_id)`.
-- **RLS:** RPC-urile sunt SECURITY DEFINER, returnează doar agregate, nu expun date sensibile.
-- **QA vizual:** verificăm 375 / 768 / 1280 după implementare; sticky bar nu trebuie să acopere conținut (padding-bottom pe `<main>` mobil).
+### 9. Comparare produse
+- Buton "Compară" pe card → drawer lateral cu max 3 produse
+- Tabel side-by-side: preț, locație, rating, owner
+
+### 10. Share dialog îmbogățit
+- Înlocuire `navigator.share` cu modal custom: copy link, WhatsApp, Facebook, Email, QR code
+- Tracking analytics pe canal
+
+### 11. Report listing & Save to collection
+- Buton "Raportează" cu modal (motiv: spam/fake/contact info)
+- "Salvează în colecție" în loc de simple favorite (Wishlist multiple)
+
+### 12. Owner verified badge bazat pe KYC tier real
+- Acum `ownerVerified={true}` e hardcodat în `PremiumBookingCard`
+- Fetch real `kyc_tier` din profil owner și afișare badge "Verificat" doar pentru tier ≥ 2
+
+---
+
+## Recomandare
+
+**Acum:** P1 (1+2+3) — QA + SEO + bilingv. Asigură că ce e deja construit e production-ready.
+**Următorul sprint:** P2 (4+5+6) — polish-ul care face diferența vizual.
+**Backlog:** P3 — features ce necesită discuții suplimentare de scope și UX.
+
+Spune-mi care prioritate o ataci și o execut într-un task focusat.
