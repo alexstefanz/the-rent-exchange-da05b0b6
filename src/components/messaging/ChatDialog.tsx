@@ -17,6 +17,7 @@ import {
 import { format } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { MessageContent } from "@/components/messaging/MessageContent";
 
 interface ChatDialogProps {
   open: boolean;
@@ -151,7 +152,7 @@ export function ChatDialog({
                           : 'bg-muted'
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                      <MessageContent text={msg.content} messageId={msg.id} isOwn={isOwn} />
                       <p className={`text-xs mt-1 ${isOwn ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
                         {format(new Date(msg.created_at), 'HH:mm', { locale: dateLocale })}
                       </p>
