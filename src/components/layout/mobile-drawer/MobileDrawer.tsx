@@ -1,0 +1,336 @@
+import { useEffect, useRef, useState, TouchEvent } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import {
+  X,
+  Plus,
+  LogOut,
+  User,
+  FileText,
+  Package,
+  Heart,
+  MessageCircle,
+  CalendarCheck,
+  Shield,
+  Wallet,
+  HelpCircle,
+  ShieldCheck,
+  Star,
+  Activity,
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useCurrentUserProfile } from "@/hooks/queries/useCurrentUserProfile";
+import { useConversations } from "@/hooks/queries/useConversations";
+import { useIsAdmin } from "@/hooks/queries/useAdminStats";
+import { useDrawerStats } from "@/hooks/queries/useDrawerStats";
+import LanguageSwitcher from "../LanguageSwitcher";
+import logoImage from "@/assets/rentli_logo.webp";
+import { DrawerProfileHero } from "./DrawerProfileHero";
+import { DrawerQuickActions } from "./DrawerQuickActions";
+import { DrawerContextualStatus } from "./DrawerContextualStatus";
+import { DrawerSearch } from "./DrawerSearch";
+import { DrawerNavGroup, DrawerNavItem } from "./DrawerNavGroup";
+import { DrawerCategoryExplorer } from "./DrawerCategoryExplorer";
+import { DrawerAccountHealth } from "./DrawerAccountHealth";
+
+interface Props {
+  open: boolean;
+  onClose: () => void;
+  onLogout: () => void;
+}
+
+export function MobileDrawer({ open, onClose, onLogout }: Props) {
+  const { user } = useAuth();
+  const { t } = useLanguage();
+  const { data: profile } = useCurrentUserProfile();
+  const { data: conversations } = useConversations(user?.id);
+  const { data: isAdmin } = useIsAdmin(user?.id);
+  const { data: stats } = useDrawerStats(user?.id);
+
+  const unreadMessages =
+    conversations?.reduce((sum: number, c: any) => sum + (c.unread_count || 0), 0) || 0;
+  const activeRentals = stats?.activeRentals ?? 0;
+  const openTickets = stats?.openTickets ?? 0;
+  const balance = stats?.balance ?? 0;
+
+  const kycStatus = profile?.kyc_status;
+  const kycPending = !!user && kycStatus !== "APPROVED" && kycStatus !== "VERIFIED";
+
+  const getInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+    }
+    if (user?.email) return user.email.slice(0, 2).toUpperCase();
+    return "U";
+  };
+
+  // Body scroll lock
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
+  // Escape key
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  // Swipe to close
+  const touchStart = useRef<number | null>(null);
+  const [dragX, setDragX] = useState(0);
+
+  const onTouchStart = (e: TouchEvent) => {
+    touchStart.current = e.touches[0].clientX;
+  };
+  const onTouchMove = (e: TouchEvent) => {
+    if (touchStart.current === null) return;
+    const delta = e.touches[0].clientX - touchStart.current;
+    if (delta < 0) setDragX(Math.max(delta, -300));
+  };
+  const onTouchEnd = () => {
+    if (dragX < -70) onClose();
+    setDragX(0);
+    touchStart.current = null;
+  };
+
+  const activityItems: DrawerNavItem[] = [
+    { to: "/mesaje", label: t("Mesaje", "Messages"), icon: MessageCircle, badge: unreadMessages },
+    { to: "/rezervari", label: t("Rezervări", "Bookings"), icon: CalendarCheck, badge: activeRentals },
+    { to: "/inchirieri", label: t("Închirieri", "Lendings"), icon: Package },
+    { to: "/favorite", label: t("Favorite", "Favorites"), icon: Heart },
+    { to: "/recenzii", label: t("Recenzii", "Reviews"), icon: Star },
+    { to: "/activitate", label: t("Activitate", "Activity"), icon: Activity },
+  ];
+
+  const accountItems: DrawerNavItem[] = [
+    { to: "/contul-meu", label: t("Contul meu", "My Account"), icon: User },
+    { to: "/anunturi", label: t("Anunțurile mele", "My Listings"), icon: FileText },
+    { to: "/verificare", label: t("Verificare KYC", "KYC Verification"), icon: Shield },
+    { to: "/castiguri", label: t("Plăți & Retrageri", "Payments & Withdrawals"), icon: Wallet },
+  ];
+
+  const supportItems: DrawerNavItem[] = [
+    {
+      to: "/suport",
+      label: t("Suport & Tickete", "Support & Tickets"),
+      icon: HelpCircle,
+      badge: openTickets,
+    },
+  ];
+
+  const stagger = (i: number): React.CSSProperties => ({
+    animationDelay: `${i * 40}ms`,
+    animationFillMode: "both",
+  });
+
+  return (
+    <>
+      {/* Overlay */}
+      <div
+        aria-hidden={!open}
+        onClick={onClose}
+        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+          open ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+      />
+
+      {/* Panel */}
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{
+          transform: open
+            ? `translateX(${dragX}px)`
+            : "translateX(-100%)",
+          transitionProperty: dragX !== 0 ? "none" : "transform",
+        }}
+        className={`fixed top-0 left-0 z-50 h-[100dvh] w-[88vw] max-w-[360px] bg-background/95 backdrop-blur-xl shadow-2xl transition-transform duration-300 ease-[cubic-bezier(.32,.72,0,1)] lg:hidden ${
+          open ? "" : "pointer-events-none"
+        }`}
+      >
+        <div className="flex h-full flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-border/40 px-4 py-3">
+            <Link to="/" onClick={onClose} className="flex items-center">
+              <img src={logoImage} alt="Rentli" className="h-7 w-auto" />
+            </Link>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="h-9 w-9 rounded-full"
+              aria-label={t("Închide", "Close")}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Scrollable content */}
+          <div
+            className="flex-1 overflow-y-auto overscroll-contain pb-28"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            <div className="flex flex-col gap-4 py-4">
+              {user && profile && (
+                <div className="px-2 animate-fade-in" style={stagger(0)}>
+                  <DrawerProfileHero
+                    fullName={profile.full_name || user.email?.split("@")[0] || "User"}
+                    email={user.email || ""}
+                    avatarUrl={profile.avatar_url}
+                    initials={getInitials()}
+                    kycStatus={kycStatus}
+                    activeRentals={activeRentals}
+                    onNavigate={onClose}
+                  />
+                </div>
+              )}
+
+              {user && (
+                <div className="animate-fade-in" style={stagger(1)}>
+                  <DrawerQuickActions
+                    unreadMessages={unreadMessages}
+                    activeRentals={activeRentals}
+                    balance={balance}
+                    onNavigate={onClose}
+                  />
+                </div>
+              )}
+
+              {user && (
+                <div className="animate-fade-in" style={stagger(2)}>
+                  <DrawerContextualStatus
+                    kycPending={kycPending}
+                    activeRentals={activeRentals}
+                    balance={balance}
+                    openTickets={openTickets}
+                    onNavigate={onClose}
+                  />
+                </div>
+              )}
+
+              <div className="animate-fade-in" style={stagger(3)}>
+                <DrawerSearch onNavigate={onClose} />
+              </div>
+
+              {user && (
+                <div className="animate-fade-in" style={stagger(4)}>
+                  <DrawerNavGroup
+                    title={t("Activitate", "Activity")}
+                    items={activityItems}
+                    onNavigate={onClose}
+                  />
+                </div>
+              )}
+
+              {user && (
+                <div className="animate-fade-in" style={stagger(5)}>
+                  <DrawerNavGroup
+                    title={t("Cont", "Account")}
+                    items={accountItems}
+                    onNavigate={onClose}
+                  />
+                </div>
+              )}
+
+              <div className="animate-fade-in" style={stagger(6)}>
+                <DrawerCategoryExplorer onNavigate={onClose} />
+              </div>
+
+              {user && profile && (
+                <div className="animate-fade-in" style={stagger(7)}>
+                  <DrawerAccountHealth
+                    emailVerified={!!user.email_confirmed_at}
+                    hasPhone={!!profile.phone}
+                    hasIban={!!profile.iban}
+                    onNavigate={onClose}
+                  />
+                </div>
+              )}
+
+              <div className="animate-fade-in" style={stagger(8)}>
+                <DrawerNavGroup
+                  title={t("Suport", "Support")}
+                  items={supportItems}
+                  onNavigate={onClose}
+                />
+              </div>
+
+              {isAdmin && (
+                <div className="animate-fade-in" style={stagger(9)}>
+                  <DrawerNavGroup
+                    title={t("Admin", "Admin")}
+                    items={[
+                      {
+                        to: "/admin",
+                        label: t("Panou Admin", "Admin Panel"),
+                        icon: ShieldCheck,
+                        accent: "success",
+                      },
+                    ]}
+                    onNavigate={onClose}
+                  />
+                </div>
+              )}
+
+              {/* Footer row: language + logout */}
+              <div className="mt-2 flex items-center justify-between gap-2 px-4 animate-fade-in" style={stagger(10)}>
+                <LanguageSwitcher />
+                {user ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      onClose();
+                      onLogout();
+                    }}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    <LogOut className="h-4 w-4 mr-1.5" />
+                    {t("Deconectare", "Log out")}
+                  </Button>
+                ) : (
+                  <Button size="sm" asChild>
+                    <Link to="/auth" onClick={onClose}>
+                      {t("Autentificare", "Login")}
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Floating CTA */}
+          {user && (
+            <div
+              className="absolute bottom-0 left-0 right-0 border-t border-border/40 bg-background/95 backdrop-blur-xl px-4 pt-3"
+              style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+            >
+              <Button asChild className="w-full h-11 rounded-xl shadow-lg shadow-primary/20">
+                <Link to="/owner/new-product" onClick={onClose}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  {t("Adaugă produs", "Add product")}
+                </Link>
+              </Button>
+            </div>
+          )}
+        </div>
+      </aside>
+    </>
+  );
+}
