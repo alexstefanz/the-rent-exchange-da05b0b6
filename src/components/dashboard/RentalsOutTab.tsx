@@ -458,6 +458,12 @@ const RentalsOutTab = () => {
           productTitle={inspectionRental.rental.product_title}
         />
       )}
+      <LeaveReviewDialog
+        open={!!reviewRental}
+        onOpenChange={(open) => !open && setReviewRental(null)}
+        rental={reviewRental}
+        currentUserRole="owner"
+      />
     </div>
   );
 };
