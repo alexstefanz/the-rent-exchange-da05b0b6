@@ -1,76 +1,70 @@
+## Account Hub Redesign — Plan
 
-# Redesign Account Hub — "Detalii cont"
+Pagina `AccountTab.tsx` a fost deja restructurată într-un hub cu secțiuni, dar nu atinge încă nivelul "premium marketplace" cerut (Airbnb/Revolut/Stripe). Acest plan finalizează redesign-ul cu accent pe ierarhie vizuală, trust, realtime și mobile-first.
 
-Restructurez complet pagina `/contul-meu` într-un hub modern cu overview vizual, secțiuni clar separate (Identitate, Securitate, Verificare, Plăți, Payout, Notificări, Suport, Danger Zone) și interacțiuni premium. Folosesc datele existente; pentru funcționalitățile fără backend (2FA, sesiuni, login history, carduri Stripe) afișez UI-ul cu stare "În curând" pentru a păstra design-ul scalabil fără a inventa logică inexistentă.
+### 1. Account Overview — card hero premium
+Componentă nouă `AccountOverviewCard.tsx` afișată sus, full-width:
+- Avatar mare cu inel gradient (primary → accent), buton cameră flotant
+- Nume + handle + "Membru din {luna an}"
+- Trust score vizual (cerc semicircular 0–100) + label ("Excelent / Bun / În progres")
+- 4 trust pills inline: Email ✓, Telefon ✓, Identitate ✓/⏳/⚠, IBAN ✓/⚠
+- Bara de progres "X% cont completat" cu următorul pas sugerat ca CTA ("Adaugă IBAN →")
+- Stats row: rentals completed, review score (★), response rate, member since
 
-## Structura nouă a paginii
+### 2. Section Nav — sticky premium
+- Pe desktop: tab bar sticky sub header, scroll-spy activ, indicator gradient sub tab activ
+- Pe mobile: chips orizontale scroll-snap, plus un FAB "Salvează" sticky bottom când există modificări nesalvate
 
-```text
-/contul-meu
-├── 1. AccountHeroCard         ← NOU (overview premium)
-├── 2. ProfileCompletionCard   ← NOU (progres + checklist)
-├── 3. Tabs / Sections sticky nav
-│    ├── Personal Information
-│    ├── Verification Center (KYC redesign)
-│    ├── Security Center
-│    ├── Payment Methods       (placeholder UI)
-│    ├── Payout Methods        (IBAN actual)
-│    ├── Notification Center
-│    └── Support & Safety
-└── 4. Danger Zone (collapsible, jos)
-```
+### 3. Personal Information — card editorial
+- Layout pe 2 coloane (desktop) / stack (mobile)
+- Live validation cu iconițe inline (verde/roșu) și mesaje subtle
+- "Salvează" cu animație succes (checkmark draw)
+- Sub fotografie: hint "Adaugă o fotografie clară pentru mai multă încredere"
+- Cropper modern: dialog `AvatarCropperDialog.tsx` cu zoom slider, pan, preview cerc
 
-## Secțiuni — comportament
+### 4. Verification Center — redesign KYC
+- Înlocuiește "LEVEL 1/2/3" cu carduri status:
+  - "Identitate verificată" (verde, BadgeCheck)
+  - "În curs de verificare" (amber, pulse animation)
+  - "Verificare necesară pentru închirieri >X RON" (slate)
+- Mini-stepper orizontal: Date → Document → Selfie → Aprobat
+- Trust copy: "De ce verificăm identitatea" — accordion scurt
 
-### 1. AccountHeroCard
-- Avatar mare cu inel gradient + buton cameră (cropper modal cu zoom — react-easy-crop deja disponibil ca dep dacă lipsește îl adaug).
-- Nume, badge "Verified" (din `kyc_status=VERIFIED`), "Member since" (`created_at`).
-- Trust score derivat din: KYC + telefon + email contact + IBAN + nr. review-uri (`get_user_statistics`).
-- Stats inline: rentals completed, rating mediu, response rate (placeholder dacă nu există).
+### 5. Security Center — evidențiat
+- Card cu fundal subtle gradient (slate)
+- Listă acțiuni cu iconițe: Schimbă parola (activ), 2FA (badge "În curând"), Sesiuni active (placeholder), Login history (placeholder), Trusted devices (placeholder)
+- Fiecare item: icon + titlu + descriere + chevron / status pill
+- Pulse pe badge-uri pending
 
-### 2. ProfileCompletionCard
-- Progress bar animat (Framer Motion) 0–100%.
-- Checklist cu iconițe verde/portocaliu:
-  - ✓ Email cont, ✓ Telefon RO valid, ✓ Fotografie, ✓ Identitate (KYC), ⚠ IBAN.
-- Click pe item → scroll la secțiunea relevantă.
+### 6. Payments vs Payouts — separare clară
+- **Payment Methods**: empty state cu mock card visual (Visa/MC), CTA "Adaugă card" (disabled cu tag "În curând" — Stripe SetupIntent nu e implementat). Notă onestă.
+- **Payout Methods**: form IBAN cu mască RO## #### #### #### #### ####, status badge (Verificat / În verificare / Lipsă), copy clar despre folosire
 
-### 3. Personal Information
-- Form actual reorganizat: card cu spacing premium, live validation (zod onChange), toast subtil la save, sticky save bar pe mobile.
-- Cropper avatar modal (zoom + preview rotund) înainte de upload.
+### 7. Notification Center
+- Grupuri: Tranzacționale (always on, disabled toggle), Rental updates, Chat, Marketing
+- Toggle-uri animate (framer-motion), toast la modificare, debounce save 500ms
+- Canale per grup: Email / SMS (real) / Push (badge "În curând")
 
-### 4. Verification Center (KYC redesign)
-- Înlocuiesc "LEVEL 1/2/3" cu badge-uri umane: "Identitate verificată" / "În curs de verificare" / "Verificare necesară".
-- Mini-stepper vizual (3 pași) + CTA mare "Începe verificarea" → `/verificare-identitate`.
-- Trust copy: "Verificarea crește încrederea și deblochează închirieri premium".
+### 8. Support & Safety
+- 3 carduri compacte: Centru ajutor, Deschide ticket, Plăți sigure (link explicativ)
+- Iconițe în cerc primary/10, hover lift
 
-### 5. Security Center
-- Card "Parolă" — buton "Schimbă parola" (folosește flow-ul existent recovery email).
-- Carduri "În curând" pentru: 2FA, Sesiuni active, Trusted devices, Login history. Placeholder vizual cu badge `Coming soon` ca să nu mint funcționalitate.
-- Indicator "Ultima conectare" din `user.last_sign_in_at`.
+### 9. Danger Zone
+- Collapsible, default închis, border destructive subtle
+- Dezactivare cont (existent), copy clar despre consecințe
 
-### 6. Payment Methods (placeholder)
-- Empty-state elegant cu mock card preview Visa/Mastercard, CTA "Adaugă card" disabled cu tooltip "Disponibil curând". Justificat: integrarea Stripe customer cards nu există încă.
+### 10. Realtime & micro-interactions
+- Subscribe la `profiles` pentru user curent → invalidare React Query la UPDATE (sincronizare cross-device)
+- Skeleton loaders pentru toate secțiunile la mount
+- Framer-motion: fade+slide-in pe secțiuni la scroll, stagger pe trust pills
+- Toast confirmations cu iconițe contextuale
 
-### 7. Payout Methods (IBAN — există)
-- Refac IbanForm într-un card separat: input IBAN cu format mask `RO## #### #### #### #### ####`, holder, badge status (verificat dacă completat), copy clar despre rolul IBAN-ului.
+### Files
 
-### 8. Notification Center
-- Toggle-uri animate: SMS (existent — `sms_notifications_enabled`), Email rental updates, Email marketing, Chat email digest.
-- Pentru cele fără coloană DB încă, salvez în `profiles` (adaug coloane prin migrare separată dacă userul confirmă; momentan doar SMS este real, restul disabled cu tooltip).
-
-### 9. Support & Safety
-- Linkuri rapide: Centru suport, Deschide ticket (`/tichete`), Politici, Plăți sigure.
-
-### 10. Danger Zone
-- Collapsible (Radix `Collapsible`) închis by default, border destructiv subtil.
-- Conține: Dezactivare cont (logica existentă `request-account-deactivation`).
-
-## Fișiere
-
-**Noi:**
-- `src/components/profile/account/AccountHeroCard.tsx`
-- `src/components/profile/account/ProfileCompletionCard.tsx`
-- `src/components/profile/account/SectionNav.tsx` (sticky tab nav cu scroll-spy)
+**New:**
+- `src/components/profile/account/AccountOverviewCard.tsx`
+- `src/components/profile/account/TrustScoreRing.tsx`
+- `src/components/profile/account/SectionNav.tsx`
 - `src/components/profile/account/PersonalInfoSection.tsx`
 - `src/components/profile/account/VerificationSection.tsx`
 - `src/components/profile/account/SecuritySection.tsx`
@@ -80,22 +74,18 @@ Restructurez complet pagina `/contul-meu` într-un hub modern cu overview vizual
 - `src/components/profile/account/SupportSection.tsx`
 - `src/components/profile/account/DangerZoneSection.tsx`
 - `src/components/profile/account/AvatarCropperDialog.tsx`
+- `src/components/profile/account/MobileSaveBar.tsx`
 - `src/hooks/useProfileCompletion.ts`
+- `src/hooks/useProfileRealtime.ts`
 
-**Editate:**
-- `src/components/profile/AccountTab.tsx` — devine orchestrator slim (compune secțiunile noi).
-- `src/data/uxCopy.ts` — copy bilingv pentru toate secțiunile noi.
+**Edited:**
+- `src/components/profile/AccountTab.tsx` → orchestrator slim (~150 linii)
+- `src/data/uxCopy.ts` → copy bilingv pentru toate label-urile noi
 
-## Note tehnice
-- Toate culorile prin design tokens (primary `#F59E0B`, semantic), border radius 12px.
-- Framer Motion pentru progress bar + scale-in carduri (deja folosit în proiect).
-- Mobile-first: stack vertical, sticky save bar, bottom-sheet (Drawer) pentru editări rapide pe mobile.
-- Zero schimbări de schemă DB în acest pas. Coloane noi (notif preferințe, sesiuni, 2FA) sunt out-of-scope și marcate "În curând" în UI.
+### Out of scope (necesită backend separat)
+- 2FA real, login history, trusted devices, suspicious login detection
+- Stripe SetupIntent pentru payment methods
+- Push notifications (web push / FCM)
+- Email OTP după 30 zile inactivitate
 
-## Out of scope (necesită backend separat)
-- 2FA real, login history, trusted devices, suspicious login detection.
-- Stripe SetupIntent pentru carduri salvate.
-- Push notifications (web push / FCM).
-- Verificare IBAN automată.
-
-Acestea pot fi următoarele sprinturi după ce shell-ul UI e aprobat.
+Aceste zone vor avea UI complet cu badge "În curând" și sunt pregătite pentru wiring viitor.
