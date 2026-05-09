@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
 import useEmblaCarousel from "embla-carousel-react";
-import { ChevronLeft, ChevronRight, ArrowLeft, Share2, Heart } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowLeft, Share2, Heart, Grid3x3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -91,6 +91,52 @@ const ProductImageGallery = ({
   }
 
   // Desktop variant
+  // Cinematic Airbnb-style 1+4 grid when 5+ images
+  if (images.length >= 5) {
+    return (
+      <div className="hidden lg:grid grid-cols-4 grid-rows-2 gap-2 rounded-xl overflow-hidden h-[460px] relative group">
+        <button
+          className="col-span-2 row-span-2 relative overflow-hidden bg-muted"
+          onClick={() => onOpenLightbox(0)}
+        >
+          <img
+            src={getOptimizedImageUrl(images[0], "gallery")}
+            alt={`${title} 1`}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+          />
+        </button>
+        {[1, 2, 3, 4].map((i) => (
+          <button
+            key={i}
+            className="relative overflow-hidden bg-muted"
+            onClick={() => onOpenLightbox(i)}
+          >
+            <img
+              src={getOptimizedImageUrl(images[i], "gallery")}
+              alt={`${title} ${i + 1}`}
+              className="h-full w-full object-cover transition-transform duration-500 hover:scale-[1.04]"
+            />
+          </button>
+        ))}
+        <button
+          onClick={() => onOpenLightbox(0)}
+          className="absolute bottom-4 right-4 inline-flex items-center gap-2 bg-card border border-border text-foreground text-sm font-medium px-4 py-2 rounded-lg shadow-md hover:bg-muted transition-all"
+        >
+          <Grid3x3 className="h-4 w-4" />
+          {images.length} {images.length === 1 ? "foto" : "foto"}
+        </button>
+        <button
+          onClick={onToggleFavorite}
+          className="absolute top-4 right-4 w-10 h-10 rounded-full bg-card/90 backdrop-blur-sm border border-border flex items-center justify-center hover:scale-105 transition-all"
+          aria-label="favorite"
+        >
+          <Heart className={cn("h-4 w-4", isFavorite ? "fill-red-500 text-red-500" : "text-foreground")} />
+        </button>
+      </div>
+    );
+  }
+
+  // Fallback carousel for <5 images
   return (
     <div className="relative overflow-hidden rounded-xl bg-muted hidden lg:block">
       <div ref={emblaRef} className="overflow-hidden">
