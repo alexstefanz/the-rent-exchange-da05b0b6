@@ -1,12 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { OpsTicket, OpsTicketMessage, CreateOpsTicketInput } from "@/features/admin/opsTicketsApi";
+import type { OpsTicket, OpsTicketMessage as BaseOpsTicketMessage, CreateOpsTicketInput } from "@/features/admin/opsTicketsApi";
 import { CATEGORY_GROUPS, CATEGORY_TYPES, CATEGORY_GROUP_LABELS } from "@/features/admin/opsTicketsApi";
 
 export { CATEGORY_GROUPS, CATEGORY_TYPES, CATEGORY_GROUP_LABELS };
 export type { OpsTicket };
-export type OpsTicketMessage = import("@/features/admin/opsTicketsApi").OpsTicketMessage & {
-  read_at?: string | null;
-};
+export type OpsTicketMessage = BaseOpsTicketMessage & { read_at?: string | null };
 
 // Helper to bypass type checking for tables not fully in generated types
 const opsTickets = () => supabase.from('ops_tickets' as any);
