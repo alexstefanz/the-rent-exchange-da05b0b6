@@ -53,9 +53,11 @@ const OwnerTrustCard = ({ ownerId, ownerName, ownerAvatar, isOwnProduct, onStart
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-heading text-lg font-semibold text-foreground truncate">{ownerName}</h3>
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-[11px] font-semibold">
-              <ShieldCheck className="h-3 w-3" /> {t("Verificat", "Verified")}
-            </span>
+            {stats?.owner_kyc_verified && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-[11px] font-semibold">
+                <ShieldCheck className="h-3 w-3" /> {t("Verificat", "Verified")}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground mt-0.5">
             <Star className="h-3.5 w-3.5 text-amber-500 fill-amber-500" />

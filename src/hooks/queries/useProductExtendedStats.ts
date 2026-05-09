@@ -11,6 +11,7 @@ export interface ProductExtendedStats {
   owner_member_since: string | null;
   owner_avg_rating: number | null;
   owner_review_count: number;
+  owner_kyc_verified?: boolean;
 }
 
 export function useProductExtendedStats(productId?: string) {

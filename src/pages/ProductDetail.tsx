@@ -32,6 +32,9 @@ import ReviewSummaryCard from "@/components/product/ReviewSummaryCard";
 import StickyProductHeader from "@/components/product/StickyProductHeader";
 import PremiumLightbox from "@/components/product/PremiumLightbox";
 import ProductDetailSkeleton from "@/components/product/ProductDetailSkeleton";
+import RecentlyViewedSlider from "@/components/product/RecentlyViewedSlider";
+import ShareDialog from "@/components/product/ShareDialog";
+import { trackRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { useProductExtendedStats } from "@/hooks/queries/useProductExtendedStats";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -57,6 +60,7 @@ const ProductDetail = () => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [shareOpen, setShareOpen] = useState(false);
   const titleBlockRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -80,6 +84,19 @@ const ProductDetail = () => {
 
   const { bookedDates } = useBookedDates(product?.id);
   const { data: extendedStats } = useProductExtendedStats(product?.id);
+
+  // Track recently viewed
+  useEffect(() => {
+    if (!product) return;
+    trackRecentlyViewed({
+      id: product.id,
+      slug: product.slug,
+      title: (language === "en" && product.title_en) ? product.title_en : product.title,
+      image: product.images?.[0],
+      price: calculateClientPrice(product.daily_price_owner, product.platform_fee_percent),
+      city: product.location_city,
+    });
+  }, [product, language]);
 
   const ensureConversation = async () => {
     if (!user) {
@@ -189,10 +206,7 @@ const ProductDetail = () => {
     navigate('/checkout', { state: { product: { id: product.id, title: displayTitle, images, price: clientPrice, priceUnit: "zi", location, ownerId: product.owner_id, platformFeePercent: product.platform_fee_percent }, startDate, endDate, rentalDays, totalPrice: 0 } });
   };
 
-  const handleShare = async () => {
-    if (navigator.share) { try { await navigator.share({ title: product?.title || "Produs", url: window.location.href }); } catch {} }
-    else { navigator.clipboard.writeText(window.location.href); }
-  };
+  const handleShare = () => setShareOpen(true);
 
   const handleToggleFavorite = async () => {
     if (!user) {
@@ -346,7 +360,7 @@ const ProductDetail = () => {
                 onAsk={handleStartChat}
                 isOwnProduct={isOwnProduct}
                 responseMinutes={extendedStats?.owner_response_minutes}
-                ownerVerified
+                ownerVerified={!!extendedStats?.owner_kyc_verified}
               />
             </div>
           </div>
@@ -359,6 +373,8 @@ const ProductDetail = () => {
         <div className="mt-8">
           <NearbyProductsSlider currentProductId={product.id} locationCity={product.location_city} category={product.category} />
         </div>
+
+        <RecentlyViewedSlider excludeId={product.id} />
       </main>
 
       <Footer />
@@ -377,7 +393,7 @@ const ProductDetail = () => {
         onAsk={handleStartChat}
         isOwnProduct={isOwnProduct}
         responseMinutes={extendedStats?.owner_response_minutes}
-        ownerVerified
+        ownerVerified={!!extendedStats?.owner_kyc_verified}
       />
 
       {conversationId && (
@@ -391,6 +407,14 @@ const ProductDetail = () => {
         onClose={() => setLightboxOpen(false)}
         onIndexChange={setLightboxIndex}
         title={displayTitle}
+      />
+
+      <ShareDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        url={canonicalUrl}
+        title={displayTitle}
+        image={seoImage}
       />
     </div>
   );
