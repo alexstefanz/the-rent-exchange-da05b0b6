@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { differenceInDays, isBefore } from "date-fns";
 import { useBookedDates, isDateBooked, hasBookedDateInRange } from "@/hooks/queries/useBookedDates";
@@ -29,6 +29,9 @@ import HowItWorksMini from "@/components/product/HowItWorksMini";
 import SocialProofStrip from "@/components/product/SocialProofStrip";
 import LocationCard from "@/components/product/LocationCard";
 import ReviewSummaryCard from "@/components/product/ReviewSummaryCard";
+import StickyProductHeader from "@/components/product/StickyProductHeader";
+import PremiumLightbox from "@/components/product/PremiumLightbox";
+import ProductDetailSkeleton from "@/components/product/ProductDetailSkeleton";
 import { useProductExtendedStats } from "@/hooks/queries/useProductExtendedStats";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -54,6 +57,7 @@ const ProductDetail = () => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const titleBlockRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -115,18 +119,6 @@ const ProductDetail = () => {
   const priceMonth = Math.round(clientPrice * 22);
   const images = product?.images && product.images.length > 0 ? product.images : ["/placeholder.svg"];
   const openLightbox = (index: number) => { setLightboxIndex(index); setLightboxOpen(true); };
-
-  useEffect(() => {
-    if (!lightboxOpen) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setLightboxOpen(false);
-      if (e.key === 'ArrowRight') setLightboxIndex(p => (p + 1) % images.length);
-      if (e.key === 'ArrowLeft') setLightboxIndex(p => (p - 1 + images.length) % images.length);
-    };
-    document.body.style.overflow = 'hidden';
-    window.addEventListener('keydown', handleKey);
-    return () => { window.removeEventListener('keydown', handleKey); document.body.style.overflow = ''; };
-  }, [lightboxOpen, images.length]);
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!date || isDateBooked(date, bookedDates)) return;
