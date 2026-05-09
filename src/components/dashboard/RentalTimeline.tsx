@@ -1,10 +1,11 @@
-import { Check, X, Send, ThumbsUp, Truck, Package, RotateCcw, PartyPopper } from "lucide-react";
+import { Check, X, Send, ThumbsUp, Truck, ClipboardCheck, Package, RotateCcw, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUxCopy } from "@/hooks/useUxCopy";
 
 export interface RentalForTimeline {
   status: string;
   payment_status?: string | null;
+  start_date?: string;
   end_date: string;
   handover_confirmed_at?: string | null;
   return_confirmed_at?: string | null;
@@ -12,7 +13,8 @@ export interface RentalForTimeline {
   cancelled_at?: string | null;
 }
 
-function isLastDayOrPast(endDate: string): boolean {
+function isLastDayOrPast(endDate?: string | null): boolean {
+  if (!endDate) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const end = new Date(endDate);
@@ -20,17 +22,44 @@ function isLastDayOrPast(endDate: string): boolean {
   return end.getTime() <= today.getTime();
 }
 
+function isStartReached(startDate?: string | null): boolean {
+  if (!startDate) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+  return start.getTime() <= today.getTime();
+}
+
+/**
+ * 7-step rental timeline:
+ * 1. Cerere trimisă         (pending, not yet authorized)
+ * 2. Cerere aprobată        (paid/confirmed before pickup window OR cancelled)
+ * 3. În tranzit             (confirmed + start_date reached, no handover yet)
+ * 4. Confirmare primire     (transient checkpoint — proces verbal predare)
+ * 5. Produs în folosire     (handover_confirmed_at set, end_date not passed)
+ * 6. În curs de returnare   (active + end_date passed, no return confirm yet)
+ * 7. Finalizat              (status completed OR return_confirmed_at set)
+ */
 export function getTimelineStep(rental: RentalForTimeline): { current: number; cancelled: boolean } {
   if (rental.status === "cancelled") return { current: 2, cancelled: true };
-  if (rental.status === "completed" || rental.return_confirmed_at) return { current: 6, cancelled: false };
-  if (rental.status === "active" && isLastDayOrPast(rental.end_date)) return { current: 5, cancelled: false };
-  if (rental.status === "active" || rental.handover_confirmed_at) return { current: 4, cancelled: false };
-  if (rental.status === "confirmed") return { current: 3, cancelled: false };
+  if (rental.status === "completed" || rental.return_confirmed_at) return { current: 7, cancelled: false };
+  if (rental.handover_confirmed_at || rental.status === "active") {
+    if (isLastDayOrPast(rental.end_date)) return { current: 6, cancelled: false };
+    return { current: 5, cancelled: false };
+  }
+  if (rental.status === "confirmed") {
+    if (isStartReached(rental.start_date)) return { current: 4, cancelled: false };
+    return { current: 3, cancelled: false };
+  }
+  if (rental.payment_status === "authorized" || rental.payment_status === "paid") {
+    return { current: 2, cancelled: false };
+  }
   return { current: 1, cancelled: false };
 }
 
 // Per-step palette — full Tailwind class strings (safe for JIT).
-// Order matches steps 1..6.
+// Order matches steps 1..7.
 const STEP_STYLES = [
   // 1. Cerere trimisă — amber
   {
@@ -59,7 +88,16 @@ const STEP_STYLES = [
     line: "bg-[#F98715]",
     shadow: "shadow-[0_0_0_4px_rgba(249,135,21,0.20)]",
   },
-  // 4. În folosire — rose
+  // 4. Confirmare primire (proces verbal) — sky
+  {
+    bg: "bg-sky-500",
+    border: "border-sky-500",
+    ring: "ring-sky-500/30",
+    text: "text-sky-600",
+    line: "bg-sky-500",
+    shadow: "shadow-[0_0_0_4px_rgba(14,165,233,0.20)]",
+  },
+  // 5. În folosire — rose
   {
     bg: "bg-rose-500",
     border: "border-rose-500",
@@ -68,7 +106,7 @@ const STEP_STYLES = [
     line: "bg-rose-500",
     shadow: "shadow-[0_0_0_4px_rgba(244,63,94,0.18)]",
   },
-  // 5. În curs de returnare — violet
+  // 6. În curs de returnare — violet
   {
     bg: "bg-violet-500",
     border: "border-violet-500",
@@ -77,7 +115,7 @@ const STEP_STYLES = [
     line: "bg-violet-500",
     shadow: "shadow-[0_0_0_4px_rgba(139,92,246,0.20)]",
   },
-  // 6. Finalizat — emerald
+  // 7. Finalizat — emerald
   {
     bg: "bg-emerald-500",
     border: "border-emerald-500",
@@ -88,7 +126,7 @@ const STEP_STYLES = [
   },
 ];
 
-const STEP_ICONS = [Send, ThumbsUp, Truck, Package, RotateCcw, PartyPopper];
+const STEP_ICONS = [Send, ThumbsUp, Truck, ClipboardCheck, Package, RotateCcw, CheckCircle2];
 
 interface RentalTimelineProps {
   rental: RentalForTimeline;
@@ -104,6 +142,7 @@ const RentalTimeline = ({ rental, compact = false, className }: RentalTimelinePr
     copy.timeline.requestSent,
     cancelled ? copy.timeline.requestRejected : copy.timeline.requestApproved,
     copy.timeline.inTransit,
+    copy.timeline.confirmReceipt,
     copy.timeline.inUse,
     copy.timeline.returning,
     copy.timeline.completed,
