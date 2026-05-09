@@ -216,7 +216,7 @@ function NavRow({
     <button
       onClick={() => onNav(to)}
       className={cn(
-        "group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm text-foreground transition-all hover:bg-primary/5 hover:translate-x-0.5",
+        "group flex w-full items-center gap-3 rounded-lg px-2.5 py-1.5 text-sm text-foreground transition-all hover:bg-primary/5 hover:translate-x-0.5",
         className,
       )}
     >
@@ -234,7 +234,7 @@ function NavRow({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="px-2.5 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+    <div className="px-2.5 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
       {children}
     </div>
   );
@@ -317,9 +317,8 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
   );
 
   /* ----- shared content ----- */
-  const Body = (
-    <div className="flex flex-col">
-      {/* Header */}
+  const TopZone = (
+    <div className="shrink-0 p-3 pb-2 space-y-2">
       {isLoading || !profile ? (
         <div className="rounded-2xl bg-muted/40 p-4 animate-pulse">
           <div className="flex items-center gap-3">
@@ -345,7 +344,7 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
       )}
 
       {/* Quick status */}
-      <div className="grid grid-cols-2 gap-2 mt-3">
+      <div className="grid grid-cols-2 gap-2">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="h-[68px] rounded-xl bg-muted/40 animate-pulse" />
@@ -418,15 +417,19 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
       {/* Primary CTA */}
       <button
         onClick={() => handleNav("/owner/new-product")}
-        className="mt-3 flex items-center justify-center gap-2 w-full rounded-xl bg-gradient-to-r from-primary to-[#F98715] px-4 py-3 text-sm font-semibold text-primary-foreground shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.55)] transition-all hover:shadow-[0_10px_24px_-6px_hsl(var(--primary)/0.65)] hover:-translate-y-0.5 active:translate-y-0"
+        className="flex items-center justify-center gap-2 w-full rounded-xl bg-gradient-to-r from-primary to-[#F98715] px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.55)] transition-all hover:shadow-[0_10px_24px_-6px_hsl(var(--primary)/0.65)] hover:-translate-y-0.5 active:translate-y-0"
       >
         <PlusCircle className="h-4 w-4" />
         {t("Adaugă anunț", "Add a listing")}
       </button>
+    </div>
+  );
 
+  const MiddleZone = (
+    <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-2 [scrollbar-width:thin]">
       {/* Account Health */}
       {!isLoading && health && (
-        <div className="mt-3 rounded-xl border border-border/60 bg-card p-3">
+        <div className="rounded-xl border border-border/60 bg-card p-3">
           {incompleteHealth.length === 0 ? (
             <div className="flex items-center gap-2 text-xs text-emerald-700">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
@@ -546,9 +549,11 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
           />
         </>
       )}
+    </div>
+  );
 
-      {/* Footer */}
-      <div className="mt-3 pt-3 border-t border-border/60 flex items-center justify-between gap-2">
+  const FooterZone = (
+    <div className="shrink-0 px-3 py-2 border-t border-border/60 flex items-center justify-between gap-2 bg-background">
         <LanguageSwitcher />
         <button
           onClick={() => {
@@ -560,7 +565,6 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
           <LogOut className="h-3.5 w-3.5" />
           {t("Ieși din cont", "Log out")}
         </button>
-      </div>
     </div>
   );
 
@@ -572,9 +576,11 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
         <DropdownMenuContent
           align="end"
           sideOffset={8}
-          className="w-[360px] p-3 bg-background border border-border/70 shadow-2xl rounded-2xl"
+          className="w-[360px] p-0 bg-background border border-border/70 shadow-2xl rounded-2xl flex flex-col max-h-[min(640px,75vh)] overflow-hidden"
         >
-          {Body}
+          {TopZone}
+          {MiddleZone}
+          {FooterZone}
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -603,10 +609,12 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
       </SheetTrigger>
       <SheetContent
         side="bottom"
-        className="rounded-t-3xl p-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] max-h-[92dvh] overflow-y-auto bg-background"
+        className="rounded-t-3xl p-0 pb-[env(safe-area-inset-bottom)] max-h-[92dvh] bg-background flex flex-col overflow-hidden"
       >
-        <div className="mx-auto mb-3 h-1 w-9 rounded-full bg-muted-foreground/30" />
-        {Body}
+        <div className="mx-auto mt-2 mb-1 h-1 w-9 shrink-0 rounded-full bg-muted-foreground/30" />
+        {TopZone}
+        {MiddleZone}
+        {FooterZone}
       </SheetContent>
     </Sheet>
   );
