@@ -1,81 +1,159 @@
-# Faze rămase pentru pagina de produs
+# Redesign Mobile Drawer Premium
 
-Redesign-ul de bază e live (galerie cinematic 1+4, booking card sticky, owner trust, social proof, accordion, rental protection, mobile sticky bar, etc.). Mai jos sunt fazele care ar ridica pagina la nivelul Airbnb/Turo complet.
+Transform actualul mobile menu (`Navbar.tsx`, ~240 linii inline) într-o experiență mobile-first premium, modulară, cu feel de aplicație nativă.
 
----
+## Arhitectură nouă
 
-## P1 — Esențiale (recomandat acum)
+Extragem totul din `Navbar.tsx` într-un nou folder `src/components/layout/mobile-drawer/`:
 
-### 1. QA vizual mobil + desktop
-- Verificare 375px / 768px / 1280px / 1920px pe produs real cu poze multiple și produs cu o singură poză
-- Verificare fallback când produsul are <5 imagini (carousel) vs ≥5 (grid 1+4)
-- Verificare sticky booking card nu se suprapune cu footer
-- Verificare mobile sticky bar nu acoperă conținut la scroll
+```text
+mobile-drawer/
+├── MobileDrawer.tsx              ← shell (overlay + panel + swipe-to-close + body-scroll lock)
+├── DrawerProfileHero.tsx         ← avatar, nume, email, KYC badge, quick stats
+├── DrawerQuickActions.tsx        ← 4 large touch cards (Adaugă, Mesaje, Rezervări, Câștiguri)
+├── DrawerContextualStatus.tsx    ← banner-uri smart (rezervare activă, KYC pending, balanță)
+├── DrawerSearch.tsx              ← input search rapid (produse/categorii/rezervări/mesaje)
+├── DrawerNavGroup.tsx            ← reusable section: header + items + active state
+├── DrawerCategoryExplorer.tsx    ← chips populare + "Vezi toate" → /categorii
+├── DrawerAccountHealth.tsx       ← checklist email/telefon/plată/KYC
+├── DrawerSupportMini.tsx         ← ticket activ + AI assistant entry
+└── DrawerFloatingCTA.tsx         ← sticky "Adaugă produs" jos
+```
 
-### 2. SEO & Meta tags
-- `<title>` dinamic: `{Titlu produs} - {Oraș} | Rentli`
-- `<meta description>` din primul paragraf descriere (max 160 char)
-- Open Graph: og:title, og:description, og:image (prima poză), og:url canonical
-- JSON-LD `Product` schema cu price, availability, aggregateRating, review-uri
-- `<link rel="canonical">` pe URL slug-based
+`Navbar.tsx` păstrează doar butonul hamburger și randează `<MobileDrawer open={...} onClose={...} />`. Tot blocul `{/* Off-canvas Mobile Menu */}` (linii ~232–470) este eliminat.
 
-### 3. Copy bilingv extins în `uxCopy.ts`
-- Texte hardcodate în noile componente (RentalProtection, HowItWorksMini, QuickQuestionsChips, OwnerTrustCard) trebuie mutate în `uxCopy.ts` pentru EN
-- Strings tip "Anulare gratuită 48h", "Răspunde în X min", chip-uri quick questions
+## Layout drawer (de sus în jos)
 
----
+```text
+┌─────────────────────────────────┐
+│ [logo]              [X]         │ ← header sticky, blur backdrop
+├─────────────────────────────────┤
+│ ╭───────────────────────────╮   │
+│ │ Avatar  Alex Test         │   │ ← Profile Hero (gradient subtil)
+│ │         alex@mail.com     │   │
+│ │         ✓ Verificat       │   │
+│ │         2 rez. active     │   │
+│ ╰───────────────────────────╯   │
+│                                 │
+│ [+Adaugă][Mesaje•3]             │ ← Quick Actions grid 2×2
+│ [Rezervări][Câștiguri]          │
+│                                 │
+│ ⚠ KYC pending → Verifică        │ ← Contextual status (doar dacă e cazul)
+│                                 │
+│ 🔍 Caută orice...               │ ← Search
+│                                 │
+│ ── ACTIVITATE ──                │ ← Grouped nav
+│  Mesaje • Rezervări • Închirieri│
+│  Favorite                       │
+│                                 │
+│ ── CONT ──                      │
+│  Contul meu • Anunțurile mele   │
+│  Verificare KYC • Plăți         │
+│                                 │
+│ ── CATEGORII ──                 │
+│  [chip][chip][chip][chip]       │ ← top 6 populare
+│  → Vezi toate categoriile       │
+│                                 │
+│ ── ACCOUNT HEALTH ──            │
+│  ✓ Email  ✓ Telefon  ⚠ IBAN     │
+│                                 │
+│ ── SUPORT ──                    │
+│  Ticket #TCK-001 • AI Assistant │
+│                                 │
+│ ── ADMIN ── (doar admin)        │
+│  Panou Admin                    │
+│                                 │
+│ Limbă: RO/EN    [Logout]        │
+└─────────────────────────────────┘
+│ [+ Adaugă produs] floating CTA  │ ← sticky bottom (safe-area)
+└─────────────────────────────────┘
+```
 
-## P2 — Polish premium (high impact, low effort)
+## Componente — detalii
 
-### 4. Sticky compact header on scroll (Airbnb-style)
-- La scroll sub fold-ul galeriei, apare un mini-header sticky cu: titlu produs + preț/zi + buton "Rezervă"
-- Doar desktop, dispare la scroll up rapid
-- Implementare: IntersectionObserver pe gallery + Framer Motion slide-down
+### MobileDrawer (shell)
+- Width `min(88vw, 360px)`, h-full, `bg-background/95 backdrop-blur-xl`
+- Overlay `bg-black/60 backdrop-blur-sm`, fade 250ms
+- Panel: spring slide cu `transition-transform duration-300 ease-[cubic-bezier(.32,.72,0,1)]`
+- Swipe-to-close: `onTouchStart/Move/End` — dacă `deltaX < -60px` → close
+- Body scroll lock + `momentum scrolling` (`-webkit-overflow-scrolling: touch`)
+- Stagger animation pe secțiuni (`animate-fade-in` cu delay incremental 40ms)
 
-### 5. Lightbox premium
-- Zoom & pan (pinch pe mobile, scroll wheel pe desktop)
-- Thumb strip jos pentru navigare rapidă
-- Counter + caption opțional
-- Swipe gestures pe mobil
+### DrawerProfileHero
+- Card cu `bg-gradient-to-br from-primary/10 via-background to-primary/5`, border subtle, rounded-2xl
+- Avatar 56px cu ring + KYC `ShieldCheck` overlay dacă verificat
+- Nume + email truncate, badge "✓ Identitate verificată" sau "⚠ Neverificat"
+- Quick stats inline: `2 rezervări active • ★ 4.9`
+- Click → `/contul-meu`
 
-### 6. Skeleton loaders premium
-- Înlocuire `Loader2` spinner cu skeleton care imită exact layout-ul (gallery skeleton + booking card skeleton + content skeleton)
-- Reduce CLS și percepția de loading
+### DrawerQuickActions
+- Grid 2×2, fiecare card: `aspect-[1.6] rounded-2xl bg-card border hover:border-primary/40`
+- Icon 24px în cerc `bg-primary/10`, label sub, badge realtime în colț (mesaje necitite, etc.)
+- Touch target ≥ 64px
 
-### 7. Realtime watchers count
-- `watchers_count` din `SocialProofStrip` să fie live via Supabase Realtime pe `favorite_products`
-- "X persoane se uită acum" cu pulse animation
+### DrawerContextualStatus
+- Apare doar dacă există signal: rezervare în curs, KYC pending, balanță retrăgătoare, ticket nou
+- Card slim cu icon stâng + text + CTA arrow → link contextual
 
----
+### DrawerSearch
+- Input cu `Search` icon, `rounded-xl`, on submit → `/cauta?q=...`
+- Faza 1: doar redirect (nu inline results) — keeps drawer rapid
 
-## P3 — Features avansate (scope mai mare)
+### DrawerNavGroup
+- Header: `text-[11px] uppercase tracking-wider text-muted-foreground font-semibold px-3 mb-2`
+- Items: `flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/8 active:scale-[.98]`
+- Suport `badge` + `active` (NavLink) state cu `bg-primary/10 text-primary`
 
-### 8. Recently viewed products
-- LocalStorage tracking ultime 10 produse vizualizate
-- Slider sub "More from owner" cu titlul "Vizualizate recent"
+### DrawerCategoryExplorer
+- 6 chip-uri populare (din `categories` slice 0..6) cu icon
+- Buton "Vezi toate categoriile" → `/categorii` (route existent)
+- ELIMINĂ accordion-ul actual cu toate subcategoriile (cauza principală a "drawer prea lung")
 
-### 9. Comparare produse
-- Buton "Compară" pe card → drawer lateral cu max 3 produse
-- Tabel side-by-side: preț, locație, rating, owner
+### DrawerAccountHealth
+- Listă compactă 3 itemi: email, telefon, IBAN
+- Status `Check` (verde) sau `AlertCircle` (warning) + CTA inline pentru completare
 
-### 10. Share dialog îmbogățit
-- Înlocuire `navigator.share` cu modal custom: copy link, WhatsApp, Facebook, Email, QR code
-- Tracking analytics pe canal
+### DrawerSupportMini
+- Dacă `ops_tickets` open există → arată `TCK-XXXXXX` + status
+- Link "AI Assistant" → `/suport`
 
-### 11. Report listing & Save to collection
-- Buton "Raportează" cu modal (motiv: spam/fake/contact info)
-- "Salvează în colecție" în loc de simple favorite (Wishlist multiple)
+### DrawerFloatingCTA
+- Sticky bottom inside drawer, `pb-[env(safe-area-inset-bottom)]`
+- Buton primary fullwidth "Adaugă produs" cu `Plus` icon
 
-### 12. Owner verified badge bazat pe KYC tier real
-- Acum `ownerVerified={true}` e hardcodat în `PremiumBookingCard`
-- Fetch real `kyc_tier` din profil owner și afișare badge "Verificat" doar pentru tier ≥ 2
+## Date & hooks
 
----
+Folosește hookuri existente — fără modificări DB:
+- `useCurrentUserProfile` (kyc_status, full_name, avatar)
+- `useConversations` (unread badge)
+- `useQuery` balance (deja în Navbar — îl mutăm în drawer)
+- Nou hook `useDrawerStats(userId)` în `src/hooks/queries/`:
+  - count rentals active (`status in ('confirmed','in_progress')` ca renter+owner)
+  - count tickets open (`ops_tickets.status='NEW'/'OPEN'`)
+  - returnează `{ activeRentals, openTickets, kycPending }`
+  - Single query batched, `staleTime: 60_000`
 
-## Recomandare
+## Design tokens
 
-**Acum:** P1 (1+2+3) — QA + SEO + bilingv. Asigură că ce e deja construit e production-ready.
-**Următorul sprint:** P2 (4+5+6) — polish-ul care face diferența vizual.
-**Backlog:** P3 — features ce necesită discuții suplimentare de scope și UX.
+- Toate culorile prin tokens (`bg-primary`, `text-foreground`, etc.) — fără hardcoded
+- Border radius: `rounded-2xl` (16px) pentru carduri, `rounded-xl` pentru items
+- Spacing: `p-4` container, `gap-3` între secțiuni, `gap-1` între items
+- Shadows: `shadow-2xl` pe panel, `shadow-sm` pe quick action cards
+- Animations: `animate-fade-in`, `animate-scale-in`, custom stagger via inline `style={{animationDelay}}`
 
-Spune-mi care prioritate o ataci și o execut într-un task focusat.
+## Bilingv
+
+Toate stringurile prin `t("RO", "EN")` — pattern-ul existent.
+
+## Cleanup în Navbar.tsx
+
+- Șterge `expandedMobileCategory`, `toggleMobileCategory`, `closeMobileMenu` body
+- Șterge tot blocul JSX al drawer-ului vechi
+- Păstrează `isMobileMenuOpen` state, butonul hamburger, body scroll lock se mută în `MobileDrawer`
+- Net: Navbar.tsx scade de la 473 → ~250 linii
+
+## Out of scope (faze ulterioare dacă vrei)
+
+- Inline search results în drawer (faza 2)
+- Full-page Category Explorer redesign (există deja `/categorii`)
+- Push notifications real-time în quick actions badges (deja realtime via React Query invalidation)
