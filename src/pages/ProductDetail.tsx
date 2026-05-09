@@ -32,6 +32,9 @@ import ReviewSummaryCard from "@/components/product/ReviewSummaryCard";
 import StickyProductHeader from "@/components/product/StickyProductHeader";
 import PremiumLightbox from "@/components/product/PremiumLightbox";
 import ProductDetailSkeleton from "@/components/product/ProductDetailSkeleton";
+import RecentlyViewedSlider from "@/components/product/RecentlyViewedSlider";
+import ShareDialog from "@/components/product/ShareDialog";
+import { trackRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { useProductExtendedStats } from "@/hooks/queries/useProductExtendedStats";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -57,6 +60,7 @@ const ProductDetail = () => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [shareOpen, setShareOpen] = useState(false);
   const titleBlockRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -189,10 +193,7 @@ const ProductDetail = () => {
     navigate('/checkout', { state: { product: { id: product.id, title: displayTitle, images, price: clientPrice, priceUnit: "zi", location, ownerId: product.owner_id, platformFeePercent: product.platform_fee_percent }, startDate, endDate, rentalDays, totalPrice: 0 } });
   };
 
-  const handleShare = async () => {
-    if (navigator.share) { try { await navigator.share({ title: product?.title || "Produs", url: window.location.href }); } catch {} }
-    else { navigator.clipboard.writeText(window.location.href); }
-  };
+  const handleShare = () => setShareOpen(true);
 
   const handleToggleFavorite = async () => {
     if (!user) {
