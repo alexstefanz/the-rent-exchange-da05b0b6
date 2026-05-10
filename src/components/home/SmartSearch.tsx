@@ -7,6 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { judete } from "@/data/romaniaLocations";
+import { expandSearchTerms } from "@/lib/searchSynonyms";
 
 const RECENT_KEY = "rentli_recent_searches";
 const MAX_RECENT = 5;
@@ -115,10 +116,14 @@ const SmartSearch = () => {
       return;
     }
     debounceRef.current = window.setTimeout(async () => {
+      // Expand abbreviations: "TV" → also search "Televizor", "OLED", etc.
+      const terms = expandSearchTerms(probe);
+      const escape = (s: string) => s.replace(/[,()]/g, " ");
+      const orClause = terms.map((t) => `title.ilike.%${escape(t)}%`).join(",");
       const { data } = await supabase
         .from("products")
         .select("id, title, slug, category")
-        .ilike("title", `%${probe}%`)
+        .or(orClause)
         .eq("is_active", true)
         .eq("approval_status", "approved")
         .is("deleted_at", null)
