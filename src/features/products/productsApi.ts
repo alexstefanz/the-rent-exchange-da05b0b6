@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeSearchInput } from "@/lib/inputValidation";
 import { handleApiError } from "@/lib/errorHandler";
+import { expandSearchTerms } from "@/lib/searchSynonyms";
 
 export interface Product {
   id: string;
@@ -41,8 +42,13 @@ export const getProducts = async (filters?: ProductFilters): Promise<Product[]> 
     ? sanitizeSearchInput(filters.search, 100)
     : null;
 
+  // Expand abbreviations / synonyms so that "TV" also matches "Televizor".
+  const expandedTerms = sanitizedSearch ? expandSearchTerms(sanitizedSearch) : null;
+  const useTerms = expandedTerms && expandedTerms.length > 1;
+
   const { data, error } = await (supabase.rpc as any)("search_products", {
-    _search: sanitizedSearch || null,
+    _search: useTerms ? null : sanitizedSearch || null,
+    _search_terms: useTerms ? expandedTerms : null,
     _category: filters?.category || null,
     _subcategory: filters?.subcategory || null,
     _location_city: filters?.location_city || null,
