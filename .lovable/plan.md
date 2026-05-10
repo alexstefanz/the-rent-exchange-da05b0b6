@@ -1,62 +1,104 @@
-## Goals
+## Goal
 
-Improve the homepage hero search (`src/components/home/SmartSearch.tsx`) on three fronts requested by the user.
+Recunoaște prescurtări și sinonime în căutare astfel încât "TV" să găsească "Televizor OLED", "frigi" → "Frigider", "PS5" → "PlayStation 5", "bici" → "Bicicletă", etc. Acoperă atât dropdown-ul live (`SmartSearch` pe homepage) cât și pagina `/cauta`.
 
-### 1. Location-aware search ("Bicicleta Iași")
+## Approach
 
-When the user types a query that contains a Romanian county or city, route to `/cauta` with both `q` and `judet`/`localitate` set so results are filtered by location.
+Hybrid: dicționar de sinonime gestionat în cod (rapid, fără cost de DB) + extindere ușoară a RPC-ului existent ca să accepte mai mulți termeni OR-uniți.
 
-How:
-- Build a lookup index from `src/data/romaniaLocations.ts` (`judete` + their `localitati`) once via `useMemo`, normalized (lowercase, diacritics stripped).
-- On submit (and on suggestion click), tokenize the query, scan tokens (longest-match first, supports 2-word cities like "Cluj Napoca") against the index. If a match is found:
-  - Strip the matched location tokens from the search query.
-  - Append `judet=...` and, when a city matches, `localitate=...` to the URL.
-  - If only the leftover query is empty, still navigate with the location filters.
-- Add a small visual hint inside the dropdown when a location is detected: a `MapPin` chip showing "Caut «bicicletă» în Iași / Searching «bike» in Iași" so the user knows it parsed correctly.
-- Live product suggestions query stays the same (uses original title `ilike`), but we strip the location term when probing so suggestions stay relevant.
+### 1. Dicționar de sinonime — `src/lib/searchSynonyms.ts` (nou)
 
-### 2. Readable text on the blurred dropdown (poza 2)
+Un dicționar bidirecțional curat, focusat pe cele mai comune categorii de pe Rentli (RO + EN + abrevieri):
 
-Current popover uses `bg-background/98` which on the dark hero appears blurred-dark, and its text uses `text-foreground` / `text-muted-foreground` — invisible against the dark blur.
+```ts
+const SYNONYM_GROUPS: string[][] = [
+  ["tv", "televizor", "televizoare", "smart tv", "oled", "qled"],
+  ["bici", "bike", "bicicleta", "bicicletă", "biciclete", "mtb"],
+  ["ps", "ps4", "ps5", "playstation", "consola", "consolă"],
+  ["xbox", "xbox series", "consola xbox"],
+  ["frigi", "frigider", "combina frigorifica", "combină frigorifică"],
+  ["masina spalat", "mașină spălat", "masina de spalat", "spălătorie"],
+  ["aspi", "aspirator", "vacuum"],
+  ["foto", "aparat foto", "camera foto", "dslr", "mirrorless"],
+  ["video", "camera video", "camcorder", "gopro"],
+  ["drona", "dronă", "drone", "uav", "quadcopter"],
+  ["boxa", "boxă", "boxe", "speaker", "difuzor", "soundbar"],
+  ["laptop", "notebook", "macbook", "ultrabook"],
+  ["tableta", "tabletă", "ipad", "tablet"],
+  ["telefon", "smartphone", "iphone", "mobil"],
+  ["proiector", "videoproiector", "projector"],
+  ["cort", "tent", "camping"],
+  ["rulota", "rulotă", "caravan", "trailer"],
+  ["scula", "sculă", "unealtă", "tool", "drujba", "drujbă", "bormasina", "bormașină", "polizor"],
+  ["masina tuns", "masina de tuns", "trimmer", "motocoasa", "motocoasă"],
+  ["generator", "agregat curent"],
+  // ... open list, easy to extend
+];
+```
 
-Change inside `PopoverContent`:
-- Switch surface to a translucent dark glass: `bg-black/55 backdrop-blur-xl border-white/10`.
-- Section headers ("Sugestii", "Căutări recente", "În tendințe"): `text-white/70`.
-- Suggestion rows, recent rows: `text-white`, leading icon `text-white/70`, hover `hover:bg-white/10`.
-- Trailing chevron / category label: `text-white/50`.
-- Trending pills: `bg-white/10 text-white hover:bg-white/15` (drop the orange-on-orange combo that disappears on the blur).
-- "Șterge" clear-recent button: `text-white/60 hover:text-white`.
+Funcție exportată `expandSearchTerms(query: string): string[]`:
 
-The input itself (above, on white card) stays unchanged.
+1. Normalizează query-ul (diacritice scoase, lowercase).
+2. Pentru fiecare grup: dacă orice variantă apare ca substring în query, adaugă **toate** variantele grupului în lista returnată.
+3. Întoarce `[query, ...synonymsUnique]` cu max ~10 termeni (limită de siguranță).
 
-### 3. Trending bug after typing then clicking away (poza 3)
+Exemplu: `expandSearchTerms("tv samsung")` → `["tv samsung", "tv", "televizor", "televizoare", "smart tv", "oled", "qled"]`.
 
-Repro: type "playstation" → click outside → popover closes, but next focus shows broken/empty state.
+### 2. Update RPC `search_products` — termeni multipli
 
-Root causes in current code:
-- `suggestions` state is left populated from the previous query. When the user re-opens with a stale query, the "Sugestii" block renders but "Recent" / "Trending" blocks render conditionally on `query.trim().length < 2`, producing a half-empty UI.
-- The popover only opens via `onFocus` / `onChange`; clicking back into the input when it already has focus does not reopen it.
-- The debounce timeout is not cleared on close, so a stale fetch can still set suggestions after close.
+Migrare nouă (nu editez pe cea veche). Schimbări:
 
-Fixes:
-- Add `onClick` on the input that sets `setOpen(true)`.
-- When popover closes (`onOpenChange(false)`), clear any pending debounce.
-- Always render the "Trending" section (even when there are suggestions) so the dropdown never looks empty; reorder: Suggestions → Recent → Trending.
-- Guard the suggestions block so it only renders when both `query.length >= 2` AND suggestions exist; otherwise fall through to recent + trending.
-- Ensure the trending block is shown unconditionally at the bottom — this also matches the design in poza 1 where trending should always be visible.
+- Adaug parametru opțional `_search_terms text[] DEFAULT NULL`.
+- Dacă e prezent, condiția de filtrare devine: orice termen din array match-uiește (ILIKE) titlul SAU descrierea (după unaccent+lower).
+- Păstrez `_search` pentru backward-compat — dacă vine `_search` și nu `_search_terms`, comportament identic cu acum.
+
+Schiță SQL:
+```sql
+AND (
+  (_search_terms IS NULL AND _search IS NULL)
+  OR (_search IS NOT NULL AND <ILIKE pe _search ca acum>)
+  OR (_search_terms IS NOT NULL AND EXISTS (
+    SELECT 1 FROM unnest(_search_terms) AS term
+    WHERE public.immutable_unaccent(lower(p.title)) LIKE
+          ('%' || public.immutable_unaccent(lower(term)) || '%')
+       OR public.immutable_unaccent(lower(coalesce(p.description,''))) LIKE
+          ('%' || public.immutable_unaccent(lower(term)) || '%')
+  ))
+)
+```
+
+Indexurile trigram existente acoperă automat `LIKE '%...%'` deci performanța rămâne bună.
+
+### 3. Wire-up client
+
+**`src/features/products/productsApi.ts`**
+- După `sanitizeSearchInput`, dacă search-ul are minim 2 caractere, rulez `expandSearchTerms` și pasez ca `_search_terms`.
+- Trec `_search: null` când `_search_terms` are mai mult de un termen, ca să folosim noul branch.
+
+**`src/components/home/SmartSearch.tsx`**
+- Înlocuiesc `.ilike("title", '%' + probe + '%')` cu `.or(terms.map(t => 'title.ilike.%' + t + '%').join(','))` peste termenii expandați.
+- Limit 6 sugestii, deduplicate după `id`.
+
+### 4. Mic UX hint (opțional dar util)
+
+În dropdown-ul `SmartSearch`, când expansiunea adaugă sinonime, afișez un mic chip:
+"Caut și după: televizor, smart tv" — text alb pe blur dark, identic cu hint-ul de locație existent.
 
 ## Out of scope
 
-- No backend / RPC changes.
-- No changes to `Search.tsx` filtering (it already accepts `q`, `judet`, `localitate`).
-- No changes to `HeroSearchForm.tsx` (legacy form, not currently mounted on the redesigned hero).
+- Fără full-text search Postgres (`tsvector`/`tsquery`) — overkill pentru volumul curent și am deja indexuri trigram.
+- Fără admin UI pentru editat sinonime (deocamdată e gestionat în cod). Pot adăuga ulterior tabelă `search_synonyms` dacă userul vrea.
+- Fără modificări la `Search.tsx` UI sau filtre.
 
-## Files touched
+## Files
 
-- `src/components/home/SmartSearch.tsx` — all three changes above.
+- `src/lib/searchSynonyms.ts` — nou.
+- `src/features/products/productsApi.ts` — apel RPC cu `_search_terms`.
+- `src/components/home/SmartSearch.tsx` — sugestii live cu OR pe sinonime + hint.
+- `supabase/migrations/<timestamp>_search_products_synonyms.sql` — RPC extins cu parametrul nou.
 
 ## Technical notes
 
-- Diacritics stripping: `s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase()`.
-- Location matching priority: city match wins over county match; longest token sequence wins to handle "Cluj Napoca", "Baia Mare", "Târgu Mureș".
-- Keep the component a single file, no new deps.
+- Normalizare consistentă: `s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase()`.
+- Match case-insensitive și diacritic-insensitive deja garantat de `immutable_unaccent` în RPC.
+- Lista de sinonime e ușor de extins — un singur fișier, un singur format.
