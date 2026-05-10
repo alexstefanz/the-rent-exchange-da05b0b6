@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover"
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { judete } from "@/data/romaniaLocations";
 
 const RECENT_KEY = "rentli_recent_searches";
 const MAX_RECENT = 5;
@@ -39,6 +40,54 @@ function pushRecent(q: string) {
   } catch {/* ignore */}
 }
 
+const norm = (s: string) =>
+  s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
+
+type LocationMatch = { judet: string; localitate?: string; matchedText: string };
+
+function buildLocationIndex() {
+  const cities: { norm: string; original: string; judet: string; words: number }[] = [];
+  const counties: { norm: string; original: string; words: number }[] = [];
+  for (const j of judete) {
+    counties.push({ norm: norm(j.name), original: j.name, words: j.name.split(/\s+/).length });
+    for (const loc of j.localitati) {
+      cities.push({ norm: norm(loc), original: loc, judet: j.name, words: loc.split(/[\s-]+/).length });
+    }
+  }
+  // Longest first so multi-word names win
+  cities.sort((a, b) => b.words - a.words || b.norm.length - a.norm.length);
+  counties.sort((a, b) => b.words - a.words || b.norm.length - a.norm.length);
+  return { cities, counties };
+}
+
+function detectLocation(
+  query: string,
+  index: ReturnType<typeof buildLocationIndex>,
+): { match: LocationMatch | null; cleanedQuery: string } {
+  const n = ` ${norm(query)} `;
+  for (const c of index.cities) {
+    const needle = ` ${c.norm} `;
+    if (n.includes(needle)) {
+      const cleaned = n.replace(needle, " ").replace(/\s+/g, " ").trim();
+      return {
+        match: { judet: c.judet, localitate: c.original, matchedText: c.original },
+        cleanedQuery: cleaned,
+      };
+    }
+  }
+  for (const c of index.counties) {
+    const needle = ` ${c.norm} `;
+    if (n.includes(needle)) {
+      const cleaned = n.replace(needle, " ").replace(/\s+/g, " ").trim();
+      return {
+        match: { judet: c.original, matchedText: c.original },
+        cleanedQuery: cleaned,
+      };
+    }
+  }
+  return { match: null, cleanedQuery: query.trim() };
+}
+
 const SmartSearch = () => {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
@@ -48,6 +97,11 @@ const SmartSearch = () => {
   const [suggestions, setSuggestions] = useState<{ id: string; title: string; slug: string | null; category: string | null }[]>([]);
   const debounceRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const locationIndex = useMemo(buildLocationIndex, []);
+  const detected = useMemo(
+    () => (query.trim().length >= 2 ? detectLocation(query, locationIndex) : { match: null, cleanedQuery: query }),
+    [query, locationIndex],
+  );
 
   useEffect(() => {
     setRecent(loadRecent());
@@ -55,7 +109,8 @@ const SmartSearch = () => {
 
   useEffect(() => {
     if (debounceRef.current) window.clearTimeout(debounceRef.current);
-    if (query.trim().length < 2) {
+    const probe = (detected.cleanedQuery || query).trim();
+    if (probe.length < 2) {
       setSuggestions([]);
       return;
     }
@@ -63,7 +118,7 @@ const SmartSearch = () => {
       const { data } = await supabase
         .from("products")
         .select("id, title, slug, category")
-        .ilike("title", `%${query}%`)
+        .ilike("title", `%${probe}%`)
         .eq("is_active", true)
         .eq("approval_status", "approved")
         .is("deleted_at", null)
@@ -73,12 +128,21 @@ const SmartSearch = () => {
     return () => {
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
     };
-  }, [query]);
+  }, [query, detected.cleanedQuery]);
 
   const submit = (q: string) => {
     pushRecent(q);
     setOpen(false);
-    navigate(`/cauta?q=${encodeURIComponent(q)}`);
+    const { match, cleanedQuery } = detectLocation(q, locationIndex);
+    const params = new URLSearchParams();
+    const finalQ = (cleanedQuery || "").trim();
+    if (finalQ) params.set("q", finalQ);
+    if (match) {
+      params.set("judet", match.judet);
+      if (match.localitate) params.set("localitate", match.localitate);
+    }
+    const qs = params.toString();
+    navigate(qs ? `/cauta?${qs}` : `/cauta`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -100,9 +164,17 @@ const SmartSearch = () => {
     [language],
   );
 
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next && debounceRef.current) {
+      window.clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+  };
+
   return (
     <div className="w-full max-w-2xl mx-auto">
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverAnchor asChild>
           <form
             onSubmit={handleSubmit}
@@ -117,6 +189,7 @@ const SmartSearch = () => {
                 placeholder={t("Ce vrei să închiriezi?", "What do you want to rent?")}
                 value={query}
                 onFocus={() => setOpen(true)}
+                onClick={() => setOpen(true)}
                 onChange={(e) => {
                   setQuery(e.target.value);
                   setOpen(true);
@@ -147,43 +220,58 @@ const SmartSearch = () => {
           align="start"
           sideOffset={8}
           onOpenAutoFocus={(e) => e.preventDefault()}
-          className="w-[--radix-popover-trigger-width] p-0 rounded-2xl border-border/70 shadow-2xl bg-background/98 backdrop-blur-xl max-w-[calc(100vw-2rem)]"
+          className="w-[--radix-popover-trigger-width] p-0 rounded-2xl border border-white/10 shadow-2xl bg-black/55 backdrop-blur-xl max-w-[calc(100vw-2rem)]"
           style={{ width: "var(--radix-popover-trigger-width, 100%)" }}
         >
           <div className="max-h-[60vh] overflow-y-auto p-2">
+            {/* Location hint */}
+            {detected.match && (
+              <div className="mb-2 mx-1 flex items-center gap-2 rounded-lg bg-primary/20 px-2.5 py-2 text-xs text-white">
+                <MapPin className="h-3.5 w-3.5 text-primary" />
+                <span className="truncate">
+                  {t("Caut", "Searching")}{" "}
+                  {detected.cleanedQuery && <span className="font-semibold">«{detected.cleanedQuery}» </span>}
+                  {t("în", "in")}{" "}
+                  <span className="font-semibold">
+                    {detected.match.localitate || detected.match.judet}
+                  </span>
+                </span>
+              </div>
+            )}
+
             {/* Live suggestions */}
-            {query.trim().length >= 2 && suggestions.length > 0 && (
+            {(detected.cleanedQuery || query).trim().length >= 2 && suggestions.length > 0 && (
               <div className="mb-2">
-                <div className="px-2 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <div className="px-2 pt-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-white/60">
                   {t("Sugestii", "Suggestions")}
                 </div>
                 {suggestions.map((s) => (
                   <button
                     key={s.id}
                     onClick={() => submit(s.title)}
-                    className="group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm text-foreground hover:bg-primary/5 transition-colors text-left"
+                    className="group flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm text-white hover:bg-white/10 transition-colors text-left"
                   >
-                    <Search className="h-4 w-4 text-muted-foreground" />
+                    <Search className="h-4 w-4 text-white/70" />
                     <span className="flex-1 truncate">{s.title}</span>
                     {s.category && (
-                      <span className="text-[10px] text-muted-foreground">{s.category}</span>
+                      <span className="text-[10px] text-white/60">{s.category}</span>
                     )}
-                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                    <ArrowRight className="h-3.5 w-3.5 text-white/40 group-hover:text-primary transition-colors" />
                   </button>
                 ))}
               </div>
             )}
 
             {/* Recent */}
-            {query.trim().length < 2 && recent.length > 0 && (
+            {recent.length > 0 && (
               <div className="mb-2">
                 <div className="flex items-center justify-between px-2 pt-1 pb-1">
-                  <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/60">
                     <Clock className="h-3 w-3" /> {t("Căutări recente", "Recent searches")}
                   </span>
                   <button
                     onClick={clearRecent}
-                    className="text-[10px] text-muted-foreground hover:text-foreground"
+                    className="text-[10px] text-white/60 hover:text-white"
                   >
                     {t("Șterge", "Clear")}
                   </button>
@@ -192,9 +280,9 @@ const SmartSearch = () => {
                   <button
                     key={r}
                     onClick={() => submit(r)}
-                    className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm text-foreground hover:bg-primary/5 transition-colors text-left"
+                    className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm text-white hover:bg-white/10 transition-colors text-left"
                   >
-                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <Clock className="h-4 w-4 text-white/70" />
                     <span className="flex-1 truncate">{r}</span>
                   </button>
                 ))}
@@ -203,7 +291,7 @@ const SmartSearch = () => {
 
             {/* Trending */}
             <div>
-              <div className="px-2 pt-1 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground inline-flex items-center gap-1.5">
+              <div className="px-2 pt-1 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-white/60 inline-flex items-center gap-1.5">
                 <TrendingUp className="h-3 w-3 text-primary" /> {t("În tendințe", "Trending now")}
               </div>
               <div className="flex flex-wrap gap-1.5 px-1.5 pb-1.5">
@@ -213,7 +301,7 @@ const SmartSearch = () => {
                     onClick={() => submit(label)}
                     className={cn(
                       "inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium",
-                      "bg-primary/10 text-primary hover:bg-primary/15 transition-all hover:-translate-y-0.5",
+                      "bg-white/10 text-white hover:bg-white/15 transition-all hover:-translate-y-0.5",
                     )}
                   >
                     🔥 {label}
