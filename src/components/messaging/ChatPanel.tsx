@@ -133,6 +133,7 @@ export function ChatPanel({
           if (newMsg.sender_id !== user?.id) {
             markConversationRead(conversationId);
           }
+          queryClient.invalidateQueries({ queryKey: ["conversations"] });
         }
       )
       .on(
@@ -173,8 +174,20 @@ export function ChatPanel({
     // For text-only just send. For attachments, ensure there's at least a placeholder content.
     const finalContent = content.trim() || "📎";
     const sent = await sendMessage(conversationId, finalContent);
-    if (sent && uploaded.length > 0) {
-      await attachToMessage(sent.id, uploaded.map((u) => u.id));
+    if (sent) {
+      let attachments: AttachmentRow[] = [];
+      if (uploaded.length > 0) {
+        await attachToMessage(sent.id, uploaded.map((u) => u.id));
+        const { data } = await supabase
+          .from("message_attachments")
+          .select("*")
+          .eq("message_id", sent.id);
+        attachments = (data || []) as AttachmentRow[];
+      }
+      setLocalMessages((prev) =>
+        prev.some((m) => m.id === sent.id) ? prev : [...prev, { ...sent, attachments }]
+      );
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
     }
   };
 
