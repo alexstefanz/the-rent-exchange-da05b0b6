@@ -212,3 +212,12 @@
     transform: scale(1);
   }
 }
+
+/* Hide scrollbar utility (used by horizontal pill rows) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
