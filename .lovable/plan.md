@@ -1,52 +1,31 @@
-## Problemă
+## Problema
 
-În `ChatPanel.tsx`, când trimiți un mesaj:
-1. `sendMessage()` face INSERT în `messages`
-2. UI-ul **NU** adaugă mesajul local — așteaptă ca evenimentul Realtime `postgres_changes` să-l aducă înapoi
-3. Dacă Realtime întârzie sau nu se declanșează, mesajul apare doar după refresh (când React Query refetch-uiește)
+Când userul apasă **„Confirmă"** pe draftul de ticket din chat-ul de suport, butonul trimite mesajul `"Confirm, trimite ticketul."` înapoi la AI și se bazează pe el să apeleze tool-ul `create_support_ticket`. În practică modelul (Gemini Flash Preview) reapelează `draft_ticket` în loc de `create_support_ticket` → draftul reapare, userul mai apasă Confirmă, se intră într-un loop fără ca ticketul să fie vreodată creat.
 
-În plus, tabela `conversations` **nu este** în publication-ul `supabase_realtime`, deci read receipts (peer_last_read_at) nu se actualizează în timp real.
+Fluxul este fragil pentru că depinde de comportamentul probabilistic al modelului ca să declanșeze o acțiune deterministă (crearea ticketului).
 
-## Soluție
+## Soluția
 
-### 1. Optimistic update la trimitere (`src/components/messaging/ChatPanel.tsx`)
-În `handleSend`, după ce `sendMessage` returnează mesajul, adaugă-l imediat în `localMessages` (cu deduplicare după `id` — guard-ul existent din canalul realtime previne dublarea când evenimentul ajunge ulterior).
+Eliminăm AI-ul din pasul de confirmare. Când userul apasă **„Confirmă"**, apelăm direct `handleToolCall(msg.draft)` (care face deja `createUserTicket` + flush mesaje AI + setare `ticketId` + invalidare query). Draftul conține deja toate câmpurile necesare (subject, description, category_group, category_type, priority), deci nu mai e nevoie de un alt round-trip prin AI.
 
-```ts
-const sent = await sendMessage(conversationId, finalContent);
-if (sent) {
-  let attachments: AttachmentRow[] = [];
-  if (uploaded.length > 0) {
-    await attachToMessage(sent.id, uploaded.map((u) => u.id));
-    // refetch attachments pentru a le include în bula optimistă
-    const { data } = await supabase
-      .from("message_attachments")
-      .select("*")
-      .eq("message_id", sent.id);
-    attachments = (data || []) as AttachmentRow[];
-  }
-  setLocalMessages((prev) =>
-    prev.some((m) => m.id === sent.id) ? prev : [...prev, { ...sent, attachments }]
-  );
-}
-```
+Butonul **„Modifică"** rămâne neschimbat — continuă să trimită mesaj la AI ca să întrebe ce să schimbe.
 
-Astfel sender-ul vede mesajul instant, iar receiver-ul îl primește prin canalul realtime existent.
+## Modificări
 
-### 2. Adaugă `conversations` în publicația realtime (migrare nouă)
-Pentru ca update-urile de read receipt (`buyer_last_read_at` / `owner_last_read_at`) să ajungă instant la peer:
+**`src/components/support/SupportChatWidget.tsx`** (singura modificare)
 
-```sql
-ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
-ALTER TABLE public.conversations REPLICA IDENTITY FULL;
-```
+În blocul draft (linia ~770), butonul „Confirmă":
+- `onClick`: `() => handleToolCall(msg.draft!)` în loc de `sendAiText(...)`
+- păstrăm `disabled={isAiLoading || isCreatingTicket}` și loaderul „Se creează ticketul..." existent
 
-Tabela `messages` este deja în publicație, deci INSERT-urile funcționează — iar fix-ul #1 elimină dependența vizuală de latența realtime pentru sender.
-
-### 3. (Opțional, recomandat) Invalidare conversations la mesaj nou
-În handler-ul realtime `INSERT` din `ChatPanel`, adaugă un `queryClient.invalidateQueries({ queryKey: ["conversations"] })` ca să se actualizeze sidebar-ul cu ultimul mesaj/badge unread fără refresh.
+Opțional: ascundem cardul de draft în timpul `isCreatingTicket` ca să nu mai fie clickable (deja e disabled, dar vizual e mai curat).
 
 ## Out of scope
-- Schimbări la `useChatPresence` sau presence/typing.
-- Refactor la `messagingApi.ts` sau la flow-ul de attachments.
-- Schimbări UI/styling.
+
+- System prompt-ul edge function `support-ai-chat` rămâne cum e (nu schimbăm logică AI).
+- Nu schimbăm nimic la flow-ul „Modifică", la upload imagini, la FAQ sau la realtime mesaje.
+- Nu schimbăm `userTicketsApi` sau migrațiile.
+
+## Verificare
+
+După deploy: deschid widgetul de suport, parcurg întrebările AI până la draft, apăs „Confirmă" → ticketul trebuie creat instant (fără să mai treacă prin AI), chat-ul trece în modul „ticket activ" cu mesajele anterioare salvate.

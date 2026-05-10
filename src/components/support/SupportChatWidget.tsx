@@ -770,7 +770,7 @@ const SupportChatWidget = () => {
                               <Button
                                 size="sm"
                                 className="flex-1 h-8 text-xs"
-                                onClick={() => sendAiText(t("Confirm, trimite ticketul.", "Confirmed, send the ticket."))}
+                                onClick={() => msg.draft && handleToolCall(msg.draft)}
                                 disabled={isAiLoading || isCreatingTicket}
                               >
                                 <Check className="h-3.5 w-3.5 mr-1" />
