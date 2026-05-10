@@ -415,13 +415,25 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
       </div>
 
       {/* Primary CTA */}
-      <button
-        onClick={() => handleNav("/owner/new-product")}
-        className="flex items-center justify-center gap-2 w-full rounded-xl bg-gradient-to-r from-primary to-[#F98715] px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.55)] transition-all hover:shadow-[0_10px_24px_-6px_hsl(var(--primary)/0.65)] hover:-translate-y-0.5 active:translate-y-0"
-      >
-        <PlusCircle className="h-4 w-4" />
-        {t("Adaugă anunț", "Add a listing")}
-      </button>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => handleNav("/owner/new-product")}
+          className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[#F98715] px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.55)] transition-all hover:shadow-[0_10px_24px_-6px_hsl(var(--primary)/0.65)] hover:-translate-y-0.5 active:translate-y-0"
+        >
+          <PlusCircle className="h-4 w-4" />
+          {t("Adaugă anunț", "Add a listing")}
+        </button>
+        {isAdmin && (
+          <button
+            onClick={() => handleNav("/admin")}
+            className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-3 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(16,185,129,0.55)] transition-all hover:shadow-[0_10px_24px_-6px_rgba(16,185,129,0.65)] hover:-translate-y-0.5 active:translate-y-0"
+            aria-label={t("Panou Admin", "Admin Panel")}
+          >
+            <ShieldCheck className="h-4 w-4" />
+            <span className="whitespace-nowrap">{t("Panou Admin", "Admin Panel")}</span>
+          </button>
+        )}
+      </div>
     </div>
   );
 
@@ -537,18 +549,6 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
         onNav={handleNav}
       />
 
-      {isAdmin && (
-        <>
-          <SectionLabel>Admin</SectionLabel>
-          <NavRow
-            to="/admin"
-            icon={ShieldCheck}
-            label={t("Panou Admin", "Admin Panel")}
-            onNav={handleNav}
-            className="text-emerald-600 hover:text-emerald-700"
-          />
-        </>
-      )}
     </div>
   );
 
