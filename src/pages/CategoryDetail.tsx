@@ -1,76 +1,162 @@
-import { useState, useMemo } from "react";
-import { useParams, Link, useNavigate, Navigate } from "react-router-dom";
-import { ChevronLeft, Loader2, Grid3X3, List } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Slider } from "@/components/ui/slider";
+import { useEffect, useMemo, useState } from "react";
+import { Link, Navigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ProductCard from "@/components/products/ProductCard";
+import CategoryHero from "@/components/category/CategoryHero";
+import SubcategoryPills from "@/components/category/SubcategoryPills";
+import CategorySearchBar from "@/components/category/CategorySearchBar";
+import StickyFilterBar, { type QuickFilters } from "@/components/category/StickyFilterBar";
+import MobileFilterSheet from "@/components/category/MobileFilterSheet";
+import DiscoveryRails from "@/components/category/DiscoveryRails";
+import EmptyCategoryState from "@/components/category/EmptyCategoryState";
+import ProductCardSkeleton from "@/components/category/ProductCardSkeleton";
+import { Button } from "@/components/ui/button";
 import { getCategoryBySlug } from "@/data/categories";
 import { useProducts } from "@/hooks/queries/useProducts";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { expandSearchTerms } from "@/lib/searchSynonyms";
+import { supabase } from "@/integrations/supabase/client";
+import { Filter } from "lucide-react";
+
+const PAGE_SIZE = 24;
 
 const CategoryDetail = () => {
   const { slug } = useParams();
-  const navigate = useNavigate();
   const category = getCategoryBySlug(slug || "");
   const copy = useUxCopy();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
+
+  // Filters state
+  const [selectedSubcategory, setSelectedSubcategory] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [sortBy, setSortBy] = useState("relevance");
   const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
-  const [selectedSubcategory, setSelectedSubcategory] = useState("all");
-  
+  const [quickFilters, setQuickFilters] = useState<QuickFilters>({
+    verifiedOnly: false,
+    underFifty: false,
+    underHundred: false,
+    city: null,
+  });
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [page, setPage] = useState(1);
+
+  // Reset pagination when filters change
+  useEffect(() => { setPage(1); }, [selectedSubcategory, searchTerm, priceRange, sortBy, quickFilters]);
+
   const { data: products = [], isLoading } = useProducts(
-    category ? { category: category.name } : undefined
+    category ? { category: category.name } : undefined,
   );
   const catName = category ? (language === "en" ? category.nameEn : category.name) : "";
 
-  // Count products per subcategory
+  // KYC verification map for the verifiedOnly filter (lazy)
+  const ownerIds = useMemo(() => Array.from(new Set(products.map((p) => p.owner_id))), [products]);
+  const { data: verifiedSet } = useQuery({
+    queryKey: ["category-kyc", ownerIds.sort().join(",")],
+    enabled: quickFilters.verifiedOnly && ownerIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, kyc_status")
+        .in("id", ownerIds);
+      return new Set((data || []).filter((r: any) => r.kyc_status === "approved").map((r: any) => r.id));
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Per-subcategory counts (always over the unfiltered set)
   const subcategoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     products.forEach((p) => {
-      if (p.subcategory) {
-        counts[p.subcategory] = (counts[p.subcategory] || 0) + 1;
-      }
+      if (p.subcategory) counts[p.subcategory] = (counts[p.subcategory] || 0) + 1;
     });
     return counts;
   }, [products]);
 
-  // Filter and sort products
+  const topCity = useMemo(() => {
+    const counts: Record<string, number> = {};
+    products.forEach((p) => {
+      if (p.location_city) counts[p.location_city] = (counts[p.location_city] || 0) + 1;
+    });
+    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    return entries[0]?.[0] || null;
+  }, [products]);
+
+  const newThisWeek = useMemo(() => {
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return products.filter((p) => new Date(p.created_at).getTime() >= cutoff).length;
+  }, [products]);
+
+  // Apply filters
   const filteredProducts = useMemo(() => {
+    const expanded = searchTerm.trim().length >= 2 ? expandSearchTerms(searchTerm) : [];
     let result = products.filter((p) => {
       const price = p.daily_price_owner;
-      const matchesPrice = price >= priceRange[0] && price <= priceRange[1];
-      const matchesSub = selectedSubcategory === "all" || p.subcategory === selectedSubcategory;
-      return matchesPrice && matchesSub;
+      if (price < priceRange[0] || price > priceRange[1]) return false;
+      if (selectedSubcategory !== "all" && p.subcategory !== selectedSubcategory) return false;
+      if (quickFilters.underFifty && price > 50) return false;
+      if (quickFilters.underHundred && price > 100) return false;
+      if (quickFilters.city && quickFilters.city !== "near" && p.location_city !== quickFilters.city) return false;
+      if (quickFilters.verifiedOnly && verifiedSet && !verifiedSet.has(p.owner_id)) return false;
+      if (expanded.length) {
+        const hay = `${p.title} ${p.description ?? ""}`.toLowerCase();
+        const ok = expanded.some((term) => hay.includes(term.toLowerCase()));
+        if (!ok) return false;
+      }
+      return true;
     });
 
-    if (sortBy === "price_asc") {
-      result = [...result].sort((a, b) => a.daily_price_owner - b.daily_price_owner);
-    } else if (sortBy === "price_desc") {
-      result = [...result].sort((a, b) => b.daily_price_owner - a.daily_price_owner);
-    }
+    if (sortBy === "price_asc") result = [...result].sort((a, b) => a.daily_price_owner - b.daily_price_owner);
+    else if (sortBy === "price_desc") result = [...result].sort((a, b) => b.daily_price_owner - a.daily_price_owner);
+    else if (sortBy === "newest") result = [...result].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     return result;
-  }, [products, priceRange, sortBy, selectedSubcategory]);
+  }, [products, priceRange, selectedSubcategory, sortBy, quickFilters, verifiedSet, searchTerm]);
 
-  // Redirect legacy slug to new one (after all hooks)
-  if (slug === "echipamente-agricole") {
-    return <Navigate to="/categorie/utilaje" replace />;
-  }
+  // Discovery rails (only when no filters active)
+  const hasActiveFilters =
+    selectedSubcategory !== "all" || searchTerm.trim().length > 0 ||
+    priceRange[0] !== 0 || priceRange[1] !== 1000 ||
+    quickFilters.verifiedOnly || quickFilters.underFifty || quickFilters.underHundred || quickFilters.city !== null;
+
+  const trending = useMemo(() => products.slice(0, 8), [products]);
+  const newArrivals = useMemo(() => {
+    const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
+    return products.filter((p) => new Date(p.created_at).getTime() >= cutoff).slice(0, 8);
+  }, [products]);
+  const nearby = useMemo(() => {
+    if (!topCity) return [];
+    return products.filter((p) => p.location_city === topCity).slice(0, 8);
+  }, [products, topCity]);
+
+  const activeCount =
+    (selectedSubcategory !== "all" ? 1 : 0) +
+    (searchTerm.trim() ? 1 : 0) +
+    (priceRange[0] !== 0 || priceRange[1] !== 1000 ? 1 : 0) +
+    (quickFilters.verifiedOnly ? 1 : 0) +
+    (quickFilters.underFifty || quickFilters.underHundred ? 1 : 0) +
+    (quickFilters.city ? 1 : 0);
+
+  const resetAll = () => {
+    setSelectedSubcategory("all");
+    setSearchTerm("");
+    setPriceRange([0, 1000]);
+    setSortBy("relevance");
+    setQuickFilters({ verifiedOnly: false, underFifty: false, underHundred: false, city: null });
+  };
+
+  // Legacy slug redirect
+  if (slug === "echipamente-agricole") return <Navigate to="/categorie/utilaje" replace />;
 
   if (!category) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
         <main className="container py-16 text-center">
-          <h1 className="font-heading text-2xl font-bold text-foreground">
-            {copy.categoryDetail.categoryNotFound}
-          </h1>
+          <h1 className="font-heading text-2xl font-bold text-foreground">{copy.categoryDetail.categoryNotFound}</h1>
           <Button asChild className="mt-4">
             <Link to="/categorii">{copy.categoryDetail.backToCategories}</Link>
           </Button>
@@ -80,154 +166,156 @@ const CategoryDetail = () => {
     );
   }
 
-  // Use high-res version for the full-width banner
+  // Hi-res banner
   const rawImage = category.subcategories[0]?.image || "";
   const bannerImage = rawImage.includes("unsplash.com")
     ? rawImage.replace(/w=\d+/, "w=1920").replace(/q=\d+/, "q=85")
     : rawImage;
 
+  const visible = filteredProducts.slice(0, page * PAGE_SIZE);
+  const canLoadMore = visible.length < filteredProducts.length;
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero Banner */}
-      <div className="relative h-[300px] w-full overflow-hidden">
-        <img
-          src={bannerImage}
-          alt={catName}
-          className="absolute inset-0 h-full w-full object-cover"
+      <CategoryHero
+        name={catName}
+        bannerImage={bannerImage}
+        total={products.length}
+        newThisWeek={newThisWeek}
+        topCity={topCity}
+      />
+
+      {/* Sentinel used by sticky filter bar to detect engagement */}
+      <div id="category-sentinel" />
+
+      <main className="container py-6 md:py-8 space-y-6">
+        {/* Search bar */}
+        <CategorySearchBar
+          categoryName={catName}
+          value={searchTerm}
+          onChange={setSearchTerm}
         />
-        <div className="absolute inset-0 bg-black/50" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
-          <Link
-            to="/categorii"
-            className="mb-4 inline-flex items-center text-sm text-white/80 transition-colors hover:text-white"
-          >
-            <ChevronLeft className="mr-1 h-4 w-4" />
-            {copy.categoryDetail.backToCategories}
-          </Link>
-          <h1 className="font-heading text-3xl font-bold text-white md:text-4xl drop-shadow-lg">
-            {catName}
-          </h1>
-          <p className="mt-2 text-white/90 text-sm md:text-base">
-            {copy.categoryDetail.subcategoriesAvailable(category.subcategories.length)}
-            {!isLoading && products.length > 0 && ` • ${copy.categoryDetail.listings(products.length)}`}
-          </p>
-        </div>
-      </div>
 
-      <main className="w-full max-w-7xl mx-auto py-8 px-[10px] md:px-6 lg:px-8">
+        {/* Subcategory pills */}
+        <SubcategoryPills
+          subcategories={category.subcategories}
+          counts={subcategoryCounts}
+          total={products.length}
+          selected={selectedSubcategory}
+          onSelect={setSelectedSubcategory}
+        />
 
-        <div>
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="font-heading text-xl font-semibold text-foreground">
-              {copy.categoryDetail.listingsInCategory}
+        {/* Sticky filter bar */}
+        <StickyFilterBar
+          filters={quickFilters}
+          onChange={setQuickFilters}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          viewMode={viewMode}
+          onViewChange={setViewMode}
+          onOpenMobileFilters={() => setMobileFiltersOpen(true)}
+          activeCount={activeCount}
+          resultCount={filteredProducts.length}
+        />
+
+        {/* Discovery rails (browse mode only) */}
+        {!hasActiveFilters && !isLoading && products.length > 0 && (
+          <DiscoveryRails trending={trending} newArrivals={newArrivals} nearby={nearby} />
+        )}
+
+        {/* Results header (only in filter mode) */}
+        {hasActiveFilters && (
+          <div className="flex items-center justify-between motion-safe:animate-fade-in-up">
+            <h2 className="font-heading text-lg md:text-xl font-semibold text-foreground">
+              {t(`${filteredProducts.length} rezultate`, `${filteredProducts.length} results`)}
             </h2>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <Select value={selectedSubcategory} onValueChange={setSelectedSubcategory}>
-                <SelectTrigger className="h-9 w-auto min-w-[160px] text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{language === "en" ? "All subcategories" : "Toate subcategoriile"}</SelectItem>
-                  {category.subcategories.map((sub) => {
-                    const subName = language === "en" && sub.nameEn ? sub.nameEn : sub.name;
-                    const count = subcategoryCounts[sub.name] || 0;
-                    return (
-                      <SelectItem key={sub.id} value={sub.name}>
-                        {subName} ({count})
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-9 text-sm font-normal gap-1">
-                    {priceRange[0] === 0 && priceRange[1] === 1000
-                      ? (language === "en" ? "Price range" : "Interval preț")
-                      : `${priceRange[0]} - ${priceRange[1]} RON`}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64" align="start">
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium">{language === "en" ? "Price range" : "Interval preț"}</p>
-                    <Slider
-                      value={priceRange}
-                      onValueChange={(value) => setPriceRange(value as [number, number])}
-                      max={1000}
-                      min={0}
-                      step={10}
-                      className="w-full"
-                    />
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{priceRange[0]} RON</span>
-                      <span>{priceRange[1]} RON</span>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="h-9 w-auto min-w-[130px] text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="relevance">{language === "en" ? "Relevance" : "Relevanță"}</SelectItem>
-                  <SelectItem value="price_asc">{language === "en" ? "Price ascending" : "Preț crescător"}</SelectItem>
-                  <SelectItem value="price_desc">{language === "en" ? "Price descending" : "Preț descrescător"}</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <div className="flex items-center rounded-md border border-input">
-                <Button
-                  variant={viewMode === "gallery" ? "default" : "ghost"}
-                  size="sm"
-                  className="h-9 w-9 p-0 rounded-r-none"
-                  onClick={() => setViewMode("gallery")}
-                >
-                  <Grid3X3 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "list" ? "default" : "ghost"}
-                  size="sm"
-                  className="h-9 w-9 p-0 rounded-l-none"
-                  onClick={() => setViewMode("list")}
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            <button
+              onClick={resetAll}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {t("Resetează", "Reset")}
+            </button>
           </div>
+        )}
 
-          {isLoading && (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          )}
+        {/* Loading skeletons */}
+        {isLoading && (
+          <div className="grid gap-4 md:gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <ProductCardSkeleton key={i} delay={i * 50} />
+            ))}
+          </div>
+        )}
 
-          {!isLoading && filteredProducts.length === 0 && (
-            <div className="py-8 text-center rounded-xl bg-muted/30">
-              <p className="text-muted-foreground">
-                {copy.categoryDetail.noListings}
-              </p>
-              <Button asChild className="mt-4">
-                <Link to="/adauga-anunt">{copy.categoryDetail.addFirstListing}</Link>
-              </Button>
-            </div>
-          )}
+        {/* Empty */}
+        {!isLoading && filteredProducts.length === 0 && (
+          <EmptyCategoryState onResetFilters={resetAll} hasActiveFilters={hasActiveFilters} />
+        )}
 
-          {!isLoading && filteredProducts.length > 0 && (
-            <div className={viewMode === "gallery" ? "grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4" : "flex flex-col gap-4"}>
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} viewMode={viewMode} />
+        {/* Filtered grid */}
+        {!isLoading && hasActiveFilters && filteredProducts.length > 0 && (
+          <>
+            <div
+              className={
+                viewMode === "gallery"
+                  ? "grid gap-4 md:gap-6 grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+                  : "flex flex-col gap-4"
+              }
+            >
+              {visible.map((product, i) => (
+                <div
+                  key={product.id}
+                  className="motion-safe:animate-fade-in-up"
+                  style={{ animationDelay: `${Math.min(i * 30, 300)}ms` }}
+                >
+                  <ProductCard product={product} viewMode={viewMode} />
+                </div>
               ))}
             </div>
-          )}
-        </div>
+            {canLoadMore && (
+              <div className="flex justify-center pt-2">
+                <Button
+                  variant="outline"
+                  className="rounded-full px-8 h-11"
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  {t("Încarcă mai multe", "Load more")}
+                </Button>
+              </div>
+            )}
+          </>
+        )}
       </main>
+
+      {/* Floating mobile filter button */}
+      <button
+        onClick={() => setMobileFiltersOpen(true)}
+        className="md:hidden fixed bottom-24 right-4 z-40 inline-flex items-center gap-2 rounded-full bg-foreground text-background px-4 h-12 shadow-lg active:scale-95 transition-transform"
+        aria-label={t("Filtre", "Filters")}
+      >
+        <Filter className="h-4 w-4" />
+        <span className="text-sm font-medium">{t("Filtre", "Filters")}</span>
+        {activeCount > 0 && (
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary text-primary-foreground px-1.5 text-[10px] font-bold">
+            {activeCount}
+          </span>
+        )}
+      </button>
+
+      <MobileFilterSheet
+        open={mobileFiltersOpen}
+        onOpenChange={setMobileFiltersOpen}
+        priceRange={priceRange}
+        onPriceChange={setPriceRange}
+        filters={quickFilters}
+        onFiltersChange={setQuickFilters}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        resultCount={filteredProducts.length}
+        onReset={resetAll}
+      />
 
       <Footer />
     </div>

@@ -83,11 +83,31 @@ export default {
           "0%, 100%": { transform: "translateX(-20%)" },
           "50%": { transform: "translateX(20%)" },
         },
+        "ken-burns": {
+          "0%": { transform: "scale(1) translate(0,0)" },
+          "100%": { transform: "scale(1.06) translate(-1.5%, -1%)" },
+        },
+        "ring-pulse": {
+          "0%": { boxShadow: "0 0 0 0 hsl(var(--primary) / 0.45)" },
+          "100%": { boxShadow: "0 0 0 10px hsl(var(--primary) / 0)" },
+        },
+        "shimmer-pass": {
+          "0%": { backgroundPosition: "-400px 0" },
+          "100%": { backgroundPosition: "400px 0" },
+        },
+        "fade-in-up": {
+          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "blob-drift": "blob-drift 5s ease-in-out infinite",
+        "ken-burns": "ken-burns 18s ease-in-out infinite alternate",
+        "ring-pulse": "ring-pulse 0.6s ease-out",
+        "shimmer-pass": "shimmer-pass 1.4s ease-in-out infinite",
+        "fade-in-up": "fade-in-up 0.4s ease-out both",
       },
     },
   },
