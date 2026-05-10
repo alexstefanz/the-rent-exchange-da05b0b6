@@ -133,6 +133,7 @@ export function ChatPanel({
           if (newMsg.sender_id !== user?.id) {
             markConversationRead(conversationId);
           }
+          queryClient.invalidateQueries({ queryKey: ["conversations"] });
         }
       )
       .on(
