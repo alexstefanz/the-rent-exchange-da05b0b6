@@ -1,15 +1,16 @@
 import { useState } from "react";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { ro, enUS } from "date-fns/locale";
-import { ArrowLeft, ChevronDown, ChevronUp, Shield, Info, CreditCard } from "lucide-react";
+import { ArrowLeft, ArrowRight, CreditCard, Info, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
 import LoginDialog from "@/components/checkout/LoginDialog";
 import TermsDialog from "@/components/checkout/TermsDialog";
-import ProgressIndicator from "@/components/booking/ProgressIndicator";
-import ReassuranceMessage from "@/components/trust/ReassuranceMessage";
+import PremiumStepper from "@/components/checkout/PremiumStepper";
+import PremiumBookingSummary from "@/components/checkout/PremiumBookingSummary";
+import OptionalMessageCard from "@/components/checkout/OptionalMessageCard";
+import WhatHappensNext from "@/components/checkout/WhatHappensNext";
+import PaymentTrustStrip from "@/components/checkout/PaymentTrustStrip";
+import StickyCheckoutBar from "@/components/checkout/StickyCheckoutBar";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -41,10 +42,9 @@ const Checkout = () => {
   const location = useLocation();
   const state = location.state as CheckoutState;
   const copy = useUxCopy();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const { user } = useAuth();
   const kyc = useKycGate();
-  const dateLocale = language === "ro" ? ro : enUS;
 
   const [currentStep, setCurrentStep] = useState(1);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -66,7 +66,11 @@ const Checkout = () => {
 
   const { product, startDate, endDate, rentalDays, totalPrice } = state;
 
-  const handleNextStep1 = () => { if (!user) { setShowLoginDialog(true); } else { setCurrentStep(2); } };
+  const handleContinueToPayment = () => {
+    if (!user) { setShowLoginDialog(true); return; }
+    setCurrentStep(2);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
   const handleLoginSuccess = () => { setShowLoginDialog(false); setCurrentStep(2); };
 
   const handleStripeCheckout = async () => {
@@ -112,147 +116,166 @@ const Checkout = () => {
   };
 
   const steps = [
-    copy.booking.steps.message,
-    copy.checkout.payment,
+    t("Confirmă rezervarea", "Confirm booking"),
+    t("Plată securizată", "Secure payment"),
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
-          <button onClick={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : navigate(-1)} className="w-10 h-10 rounded-full hover:bg-muted flex items-center justify-center transition-colors">
+    <div className="min-h-screen bg-background pb-28 md:pb-0">
+      <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-xl">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+          <button
+            onClick={() => (currentStep > 1 ? setCurrentStep(currentStep - 1) : navigate(-1))}
+            className="w-10 h-10 rounded-full hover:bg-muted flex items-center justify-center transition-colors"
+            aria-label={t("Înapoi", "Back")}
+          >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h1 className="font-heading text-xl md:text-2xl font-semibold">{copy.checkout.title}</h1>
+          <h1 className="font-heading text-base md:text-xl font-semibold flex-1 truncate">
+            {t("Finalizează rezervarea", "Complete your booking")}
+          </h1>
+        </div>
+        <div className="border-t border-border/60 bg-card/40">
+          <div className="max-w-5xl mx-auto px-4 py-3">
+            <PremiumStepper currentStep={currentStep} steps={steps} />
+          </div>
         </div>
       </header>
 
-      <div className="border-b border-border bg-card/50 py-4">
-        <div className="max-w-4xl mx-auto px-4">
-          <ProgressIndicator currentStep={currentStep} steps={steps} totalSteps={2} />
-        </div>
-      </div>
-
-      <main className="max-w-4xl mx-auto px-4 py-6 md:py-8">
+      <main className="max-w-5xl mx-auto px-4 py-6 md:py-8">
         {user && !kyc.isVerified && !kyc.loading && (
-          <div className="mb-6">
+          <div className="mb-5 animate-fade-in">
             <KycGateBanner reason="book" />
           </div>
         )}
-        <PhoneRequiredGate className="mb-6" />
+        <PhoneRequiredGate className="mb-5" />
         <PhoneRequiredDialog open={phoneGate.dialogOpen} onOpenChange={phoneGate.setDialogOpen} />
-        <div className="grid lg:grid-cols-2 gap-8">
-          <div className="space-y-4">
-            {/* Step 1 - Message to owner */}
-            <div className="bg-card rounded-xl border border-border overflow-hidden">
-              <button onClick={() => setCurrentStep(1)} className={`w-full px-6 py-4 flex items-center justify-between text-left ${currentStep !== 1 && currentStep > 1 ? 'opacity-60' : ''}`}>
-                <div className="flex items-center gap-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>{currentStep > 1 ? '✓' : '1'}</div>
-                  <h2 className="font-semibold text-lg">{copy.checkout.messageToOwner}</h2>
+
+        <div className="grid lg:grid-cols-[1fr_380px] gap-6 lg:gap-8 items-start">
+          {/* Left column — content */}
+          <div className="space-y-4 min-w-0 order-2 lg:order-1">
+            {currentStep === 1 ? (
+              <>
+                <div className="animate-fade-in" style={{ animationDelay: "0ms" }}>
+                  <OptionalMessageCard value={messageToOwner} onChange={setMessageToOwner} />
                 </div>
-                {currentStep === 1 ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
-              </button>
-              {currentStep === 1 && (
-                <div className="px-6 pb-6">
-                  <p className="text-muted-foreground text-sm mb-4">{copy.checkout.messageDesc}</p>
-                  <Textarea placeholder={copy.booking.messagePlaceholder} value={messageToOwner} onChange={(e) => setMessageToOwner(e.target.value)} className="min-h-[100px]" />
-                  <div className="flex justify-end mt-4">
-                    <Button onClick={handleNextStep1} className="px-8">{copy.common.continue}</Button>
+                <div className="animate-fade-in" style={{ animationDelay: "60ms" }}>
+                  <WhatHappensNext />
+                </div>
+                <div
+                  className="animate-fade-in rounded-2xl border border-primary/20 bg-primary/5 p-4 flex items-start gap-3"
+                  style={{ animationDelay: "120ms" }}
+                >
+                  <Shield className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <div className="text-sm">
+                    <div className="font-semibold text-foreground">
+                      {t("Anulare gratuită până la 48h înainte", "Free cancellation up to 48h before")}
+                    </div>
+                    <div className="text-muted-foreground text-xs mt-0.5">
+                      {t(
+                        "Rambursare integrală dacă anulezi înainte de termen.",
+                        "Full refund if you cancel before the deadline."
+                      )}
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* Step 2 - Pay with Stripe */}
-            <div className="bg-card rounded-xl border border-border overflow-hidden">
-              <button onClick={() => currentStep >= 2 && setCurrentStep(2)} className={`w-full px-6 py-4 flex items-center justify-between text-left ${currentStep < 2 ? 'opacity-60' : ''}`} disabled={currentStep < 2}>
-                <div className="flex items-center gap-3">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm font-semibold ${currentStep === 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>2</div>
-                  <h2 className="font-semibold text-lg">{copy.checkout.payment}</h2>
+                <div className="hidden md:flex justify-end pt-2">
+                  <Button
+                    size="lg"
+                    onClick={handleContinueToPayment}
+                    className="h-12 px-6 shadow-lg shadow-primary/20"
+                  >
+                    {t("Continuă către plată", "Continue to payment")}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                 </div>
-                {currentStep === 2 && <ChevronUp className="h-5 w-5 text-muted-foreground" />}
-              </button>
-              {currentStep === 2 && (
-                <div className="px-6 pb-6">
-                  <ReassuranceMessage type="payment" className="mb-4" />
+              </>
+            ) : (
+              <>
+                <div className="bg-card rounded-2xl border border-border p-5 space-y-4 animate-fade-in">
+                  <div>
+                    <h2 className="font-semibold text-lg text-foreground">
+                      {t("Plată securizată", "Secure payment")}
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {t(
+                        "Suma este blocată pe card și debitată doar după predarea produsului.",
+                        "The amount is held on your card and charged only after handover."
+                      )}
+                    </p>
+                  </div>
+                  <PaymentTrustStrip />
+                </div>
 
-                  {/* Summary */}
-                  <div className="space-y-3 text-sm mb-6">
-                    <div className="flex justify-between"><span className="text-muted-foreground">{copy.checkout.product}</span><span className="font-medium">{product.title}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">{copy.checkout.period}</span><span className="font-medium">{format(new Date(startDate), "d MMM", { locale: dateLocale })} - {format(new Date(endDate), "d MMM yyyy", { locale: dateLocale })}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">{copy.checkout.duration}</span><span className="font-medium">{rentalDays} {copy.checkout.days}</span></div>
-                    <Separator className="my-3" />
-                    <div className="flex justify-between text-base font-semibold"><span>{copy.checkout.totalToPay}</span><span className="text-primary">{totalPrice} RON</span></div>
+                <div className="bg-card rounded-2xl border border-border p-5 animate-fade-in" style={{ animationDelay: "60ms" }}>
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                    <Shield className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
+                    <p className="text-sm text-emerald-900">
+                      {t(
+                        "Plata este protejată prin Stripe. Banii ajung la proprietar doar după predarea produsului.",
+                        "Your payment is protected by Stripe. Funds reach the owner only after handover."
+                      )}
+                    </p>
                   </div>
 
-                  <p className="text-xs text-muted-foreground mb-4">
-                    {copy.checkout.termsNotice} <span className="text-primary hover:underline cursor-pointer" onClick={() => setShowTermsDialog(true)}>{copy.checkout.termsLink}</span> {copy.checkout.and} <span className="text-primary hover:underline cursor-pointer">{copy.checkout.privacyLink}</span>.
+                  <p className="text-xs text-muted-foreground mt-4">
+                    {copy.checkout.termsNotice}{" "}
+                    <button type="button" className="text-primary hover:underline" onClick={() => setShowTermsDialog(true)}>
+                      {copy.checkout.termsLink}
+                    </button>{" "}
+                    {copy.checkout.and}{" "}
+                    <button type="button" className="text-primary hover:underline">
+                      {copy.checkout.privacyLink}
+                    </button>.
                   </p>
-
-                  <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg text-sm text-muted-foreground mb-4 flex items-start gap-2">
-                    <Shield className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                    <span>
-                      {language === "ro"
-                        ? "Suma va fi blocată temporar pe cardul tău și debitată doar după finalizarea perioadei de închiriere."
-                        : "The amount will be temporarily held on your card and charged only after the rental period ends."}
-                    </span>
-                  </div>
 
                   <Button
                     onClick={handleStripeCheckout}
-                    className="w-full h-12"
+                    className="w-full h-12 mt-4 text-base font-semibold shadow-lg shadow-primary/20"
                     size="lg"
                     disabled={isSubmitting || !phoneGate.hasValidPhone}
                   >
                     <CreditCard className="mr-2 h-5 w-5" />
                     {isSubmitting
-                      ? (language === "ro" ? "Se procesează..." : "Processing...")
-                      : language === "ro"
-                        ? `Rezervă — ${totalPrice} RON`
-                        : `Reserve — ${totalPrice} RON`}
+                      ? t("Se procesează...", "Processing...")
+                      : t(`Plătește ${totalPrice} RON`, `Pay ${totalPrice} RON`)}
                   </Button>
 
                   <p className="mt-3 text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
                     <Info className="h-3 w-3" />
-                    {language === "ro"
-                      ? "Vei fi redirecționat către pagina securizată Stripe"
-                      : "You will be redirected to the secure Stripe page"}
+                    {t("Vei fi redirecționat către pagina securizată Stripe", "You will be redirected to the secure Stripe page")}
                   </p>
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
 
-          {/* Right Column */}
-          <div className="lg:order-first">
-            <div className="sticky top-6 bg-card rounded-xl border border-border p-6">
-              <div className="flex gap-4">
-                <img src={product.images[0]} alt={product.title} className="w-24 h-24 rounded-lg object-cover flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-medium text-foreground truncate">{product.title}</h3>
-                  <p className="text-sm text-muted-foreground mt-1">{product.location}</p>
-                </div>
-              </div>
-              <Separator className="my-4" />
-              <h4 className="font-semibold mb-3">{copy.booking.priceBreakdown.subtotal}</h4>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">{rentalDays} {copy.checkout.days}</span><span>{totalPrice} RON</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">{copy.booking.priceBreakdown.serviceFee}</span><span>0 RON</span></div>
-              </div>
-              <Separator className="my-4" />
-              <div className="flex justify-between font-semibold"><span>{copy.booking.priceBreakdown.total}</span><span>{totalPrice} RON</span></div>
-              <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
-                <div className="flex justify-between text-muted-foreground"><span>{copy.checkout.checkIn}</span><span className="font-medium text-foreground">{format(new Date(startDate), "d MMMM yyyy", { locale: dateLocale })}</span></div>
-                <div className="flex justify-between text-muted-foreground mt-1"><span>{copy.checkout.checkOut}</span><span className="font-medium text-foreground">{format(new Date(endDate), "d MMMM yyyy", { locale: dateLocale })}</span></div>
-              </div>
-              <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-                <Shield className="h-4 w-4 text-primary" />
-                <span>{copy.booking.freeCancellation}</span>
-              </div>
+          {/* Right column — sticky summary */}
+          <aside className="order-1 lg:order-2">
+            <div className="lg:sticky lg:top-32">
+              <PremiumBookingSummary
+                product={product}
+                startDate={new Date(startDate)}
+                endDate={new Date(endDate)}
+                rentalDays={rentalDays}
+                totalPrice={totalPrice}
+              />
             </div>
-          </div>
+          </aside>
         </div>
       </main>
+
+      <StickyCheckoutBar
+        total={totalPrice}
+        ctaLabel={
+          currentStep === 1
+            ? t("Continuă", "Continue")
+            : t(`Plătește ${totalPrice} RON`, `Pay ${totalPrice} RON`)
+        }
+        onClick={currentStep === 1 ? handleContinueToPayment : handleStripeCheckout}
+        loading={isSubmitting}
+        disabled={currentStep === 2 && !phoneGate.hasValidPhone}
+      />
 
       <LoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} onLoginSuccess={handleLoginSuccess} />
       <TermsDialog open={showTermsDialog} onOpenChange={setShowTermsDialog} onAccept={handleStripeCheckout} isSubmitting={isSubmitting} />
