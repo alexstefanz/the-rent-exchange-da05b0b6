@@ -20,10 +20,9 @@ import NextActionCard from "./NextActionCard";
 import PickupArrangementCard from "./PickupArrangementCard";
 import { useRentalRealtime } from "@/hooks/useRentalRealtime";
 import LeaveReviewDialog, { type LeaveReviewRental } from "./LeaveReviewDialog";
-import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import CancellationStateCard from "@/components/rentals/CancellationStateCard";
+import PostHandoverActionsCard from "@/components/rentals/PostHandoverActionsCard";
+import OpenDisputeDialog from "./OpenDisputeDialog";
 
 interface Rental {
   id: string;
@@ -36,18 +35,21 @@ interface Rental {
   end_date: string;
   end_date_raw: string;
   subtotal: number;
+  daily_price: number;
+  platform_fee: number;
   status: string;
   payment_status?: string;
   handover_confirmed_at?: string | null;
   return_confirmed_at?: string | null;
   dispute_status?: string | null;
+  early_return_status?: string | null;
   location: string;
 }
 
 const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
   const { data, error } = await supabase
     .from("rentals")
-    .select("id, product_id, start_date, end_date, subtotal, status, payment_status, handover_confirmed_at, return_confirmed_at, dispute_status, created_at, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
+    .select("id, product_id, start_date, end_date, subtotal, daily_price, platform_fee, status, payment_status, handover_confirmed_at, return_confirmed_at, dispute_status, early_return_status, created_at, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
     .eq("renter_id", userId)
     .or("status.in.(confirmed,active,completed),and(status.eq.pending,payment_status.in.(authorized,paid))")
     .order("created_at", { ascending: false });
@@ -65,11 +67,14 @@ const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
     end_date: format(new Date(r.end_date), "dd MMM yyyy"),
     end_date_raw: r.end_date,
     subtotal: r.subtotal,
+    daily_price: Number(r.daily_price) || 0,
+    platform_fee: Number(r.platform_fee) || 0,
     status: r.status,
     payment_status: r.payment_status,
     handover_confirmed_at: r.handover_confirmed_at,
     return_confirmed_at: r.return_confirmed_at,
     dispute_status: r.dispute_status,
+    early_return_status: r.early_return_status,
     location: r.products?.location_city || "",
   }));
 };
@@ -81,6 +86,7 @@ const RentalsTab = () => {
   const queryClient = useQueryClient();
   const [inspectionRental, setInspectionRental] = useState<{ rental: Rental; phase: InspectionPhase } | null>(null);
   const [reviewRental, setReviewRental] = useState<LeaveReviewRental | null>(null);
+  const [disputeRental, setDisputeRental] = useState<Rental | null>(null);
 
   useRentalRealtime(user?.id, "renter", [["my-rentals", user?.id], ["my-renter-checkin-inspections", user?.id]]);
 
@@ -108,9 +114,9 @@ const RentalsTab = () => {
       queryClient.invalidateQueries({ queryKey: ["my-requests"] });
       const amount = data?.refunded_amount ?? 0;
       const tier = data?.tier;
-      if (tier === "FULL_REFUND") {
+      if (tier === "FREE") {
         toast.success(copy.dashboard.cancelFullRefundSuccess);
-      } else if (tier === "PARTIAL_50") {
+      } else if (tier === "FIRST_DAY_FORFEIT" || tier === "LIMITED") {
         toast.success(`${copy.dashboard.cancelPartialRefundSuccess} (${amount} RON)`);
       } else {
         toast.success(copy.dashboard.cancelNoRefundSuccess);
@@ -218,37 +224,21 @@ const RentalsTab = () => {
                   <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
                     <span className="font-semibold text-primary">{rental.subtotal} RON</span>
                     <div className="flex flex-wrap gap-2">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                            disabled={cancelPaidMutation.isPending}
-                          >
-                            <XCircle className="mr-1 h-4 w-4" />
-                            {copy.dashboard.cancelRequest}
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>{copy.dashboard.cancelPaidTitle}</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              {copy.dashboard.cancelPaidConfirm}
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>{copy.dashboard.keepRequest}</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => cancelPaidMutation.mutate(rental)}>
-                              {copy.dashboard.confirmCancel}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
                       <Button variant="outline" size="sm" onClick={() => handleContactOwner(rental)}>
                         {copy.dashboard.contactOwner}
                       </Button>
                     </div>
+                  </div>
+                  <div className="mt-3">
+                    <CancellationStateCard
+                      startDate={rental.end_date_raw /* fallback */ && (rental as any).start_date_raw ? (rental as any).start_date_raw : rental.start_date}
+                      subtotal={rental.subtotal}
+                      dailyPrice={rental.daily_price}
+                      platformFee={rental.platform_fee}
+                      handoverConfirmedAt={null}
+                      isCancelling={cancelPaidMutation.isPending}
+                      onCancel={async () => { await cancelPaidMutation.mutateAsync(rental); }}
+                    />
                   </div>
                 </div>
               </div>
