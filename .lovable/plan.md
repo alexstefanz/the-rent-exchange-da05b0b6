@@ -1,122 +1,37 @@
-## Premium Notification Center
+## Probleme identificate pe `/categorie/:slug`
 
-Restructurăm complet componenta `NotificationBell` și pagina `/notificari` într-un sistem unificat, premium, realtime, mobile-first.
+Am verificat datele și codul din `src/pages/CategoryDetail.tsx` + `src/components/category/StickyFilterBar.tsx`.
 
-### Componente noi (în `src/components/notifications/`)
+### 1. Filtru oraș (ex: „Iași") returnează 0 rezultate
+În baza de date `products.location_city` este salvat fără diacritice și cu majuscule inconsistente (`"Iasi"`, `"iasi"`), dar chip-urile din `StickyFilterBar` trimit valori cu diacritice (`"Iași"`, `"Cluj-Napoca"` etc.). Comparația `p.location_city !== quickFilters.city` este strictă, deci nu prinde nimic.
 
-```text
-NotificationBell.tsx          # trigger (bell + animated badge)
-NotificationCenter.tsx        # shared container (header + filters + body)
-NotificationGroup.tsx         # grupare temporală (Astăzi / Ieri / Săptămâna)
-NotificationCard.tsx          # card premium per item
-NotificationIcon.tsx          # icon contextual + halo color tag
-NotificationActions.tsx       # CTA-uri rapide (Acceptă / Chat / Plată / Ticket)
-NotificationFilters.tsx       # chips: Toate · Rezervări · Mesaje · Plăți · Suport · Sistem
-NotificationSettingsSheet.tsx # mini panel: push / email / sms / quiet hours
-NotificationEmpty.tsx         # empty state premium cu sugestii
-NotificationSkeleton.tsx      # shimmer loading
-```
+**Fix:** normalizare la comparație — `stripDiacritics(value).toLowerCase()` pe ambele părți. Aceeași logică va fi folosită și pentru `MobileFilterSheet`.
 
-### Comportament desktop
+### 2. Sortarea nu pare să funcționeze
+Sortarea (`sortBy`) este aplicată corect în `filteredProducts`, dar grid-ul filtrat este randat **doar** când `hasActiveFilters === true`. În mod browse (fără filtre) se afișează doar `DiscoveryRails`, care nu țin cont de `sortBy`. Deci utilizatorul schimbă „Sortare" și nu vede nicio diferență.
 
-- Trigger Bell rămâne în Navbar.
-- Click → `Popover` 420px lățime, `max-h-[640px]`, `rounded-2xl`, `shadow-xl`, animație `animate-scale-in`.
-- Conținutul folosește `NotificationCenter` (același cod ca pe mobil).
-- Footer fix: „Vezi toate" + „Setări" (deschide `NotificationSettingsSheet`).
+**Fix:** 
+- Includem `sortBy !== "relevance"` și schimbarea `viewMode` în logica „mod filtru activ", SAU
+- Mai bine: afișăm întotdeauna grid-ul principal cu produse (sortat + în viewMode-ul ales). `DiscoveryRails` rămân vizibile deasupra doar când nu există filtre, ca secțiune de descoperire.
 
-### Comportament mobile
+Voi alege a doua variantă (mai clară): jos rămâne mereu grila completă a categoriei, sortarea și view mode au efect imediat.
 
-- Click → `Sheet side="bottom"` cu `h-[100dvh]`, drag handle sus, header sticky, listă scrollabilă cu `overscroll-contain`.
-- Inspirat din Airbnb inbox (full-screen, sticky filter bar).
+### 3. Grid / List view toggle nu funcționează
+Aceeași cauză ca sortarea: `viewMode` este folosit doar în blocul randat când `hasActiveFilters`. Va fi rezolvat odată cu #2 (grila principală e mereu vizibilă, deci toggle-ul are efect).
 
-### Header premium (shared)
+---
 
-```text
-┌──────────────────────────────────────┐
-│ Notificări                    ⚙  ✓  │
-│ Ai 2 notificări noi                  │
-│ [Toate] [Rezervări] [Mesaje] [Plăți] │
-└──────────────────────────────────────┘
-```
+## Modificări tehnice (doar frontend)
 
-- Titlu bold + subtitlu live („Ai N notificări noi" / „Ești la zi").
-- Buton ⚙ deschide settings sheet, ✓ marchează toate citite (apare doar dacă există unread).
-- Chips de filtru orizontale, scrollabile, cu count per categorie.
+**`src/pages/CategoryDetail.tsx`**
+- Adaug helper `normalizeCity(s)` (strip diacritics + lowercase) și folosesc în filtrul `quickFilters.city`.
+- Refactor randare:
+  - `DiscoveryRails` se afișează deasupra doar când `!hasActiveFilters && products.length > 0`.
+  - Sub el, randez **întotdeauna** „Toate produsele din {categorie}" cu grid-ul `filteredProducts` în `viewMode`-ul curent (paginat cu „Încarcă mai multe").
+  - `EmptyCategoryState` apare doar când `filteredProducts.length === 0` (cu sau fără filtre).
+- Header de rezultate (`{N} rezultate` + `Resetează`) afișat și în mod browse, dar fără butonul Reset când nu sunt filtre.
 
-### Notification Card
+**`src/components/category/StickyFilterBar.tsx`**
+- Marcaj vizual „active" pe chip-ul de oraș folosește aceeași normalizare (ca să se evidențieze chiar dacă valoarea internă e deja normalizată).
 
-- Layout: `[icon halo 40px] [titlu bold + descriere muted + timestamp + CTA-uri] [pulse dot unread]`.
-- `rounded-xl`, `p-3`, hover `bg-muted/40`, unread `bg-primary/[0.04]` + bară laterală 2px primary.
-- Typography: titlu `text-sm font-semibold`, descriere `text-xs text-muted-foreground line-clamp-2`, timestamp `text-[11px] text-muted-foreground/70`.
-- Categoric color halo (background icon):
-  - Rezervări: emerald
-  - Mesaje: blue
-  - Plăți: violet
-  - Suport: amber
-  - Sistem: slate
-  - Acțiune urgentă: red cu badge „Acțiune"
-- Mapping `type → category` într-un util nou `notificationCategory.ts` (map exhaustiv pe baza valorilor existente: `message`, `rental_request`, `rental_confirmation`, `reservation`, `view`, `review`, `kyc_*`, `payment_*`, `ticket_*` etc.).
-
-### Quick actions contextuale
-
-În `NotificationActions` mapăm `type` → 1-2 butoane mici (`size="sm"`, `variant="outline"`) afișate în interiorul cardului:
-
-- `rental_request` (la owner) → „Vezi cererea" → `/rezervari`
-- `rental_confirmation` → „Discută cu proprietarul" → conversation API
-- `message` → „Răspunde" → `/mesaje?conv=...`
-- `payment_*` → „Vezi plata" → `/castiguri`
-- `ticket_*` → „Deschide ticket" → `/suport`
-- `inspection_pending` → „Completează proces verbal"
-
-### Timeline grouping
-
-`NotificationGroup` împarte vizual lista pe baza `created_at`:
-
-- Astăzi
-- Ieri
-- Săptămâna aceasta
-- Mai vechi
-
-Separator: label uppercase `text-[11px] tracking-wider text-muted-foreground` cu linie subțire.
-
-### Realtime UX
-
-- Hook nou `useNotificationsRealtime` (TanStack Query + Supabase Realtime channel pe `notifications` filtrat după `user_id`).
-- La INSERT nou:
-  - `queryClient.setQueryData` pentru optimistic prepend
-  - card intră cu `animate-fade-in slide-in-top`
-  - badge bell pulsează (`animate-pulse` 1.5s, apoi static)
-  - opțional sunet subtil dezactivabil din settings (nu implementăm sunetul în această iterație, lăsăm hook-ul pregătit)
-- Counter-ul din badge folosește `useCountUp` (deja există) pentru tranziție smooth.
-
-### Empty state
-
-- Ilustrație Lucide `BellOff` într-un cerc primary/10, titlu „Ești la zi", subtext „Te anunțăm imediat ce se întâmplă ceva important", + 2 sugestii (link-uri): „Explorează produse" / „Adaugă un anunț".
-
-### Settings Sheet
-
-Sheet lateral (desktop) / bottom (mobile) cu 4 toggle-uri: Push, Email, SMS, Quiet hours (interval picker 22:00-08:00). Persistăm în `profiles` extending coloanele existente dacă lipsesc — în această iterație mapăm doar `sms_notifications_enabled` (există) + adăugăm preferințe locale în `localStorage` ca fallback pentru push/email/quiet hours, urmând ca migrarea să fie făcută separat când persistăm pe server.
-
-### Pagina `/notificari`
-
-Refacem `NotificationsPage` să folosească `NotificationCenter` cu prop `variant="page"`: layout container, max-w-2xl, hero header mai mare, fără sheet wrapping. Refolosește exact aceleași cards/groups/filters → zero duplicare.
-
-### Micro-interacțiuni
-
-- Hover: `transition-all duration-200`, slight `bg-muted/40`.
-- Mark-as-read: pulse dot dispare cu `scale-out` 200ms, bara laterală fade.
-- Swipe-to-dismiss (mobile): folosim `framer-motion` `drag="x"` pe card, threshold 80px → `markAsRead` (fără delete, deja nu avem delete pe API).
-- Skeleton: 5 carduri shimmer la prima încărcare.
-
-### Files to edit
-
-- `src/components/layout/NotificationBell.tsx` → reescris (subțire, doar trigger + Popover/Sheet).
-- `src/pages/NotificationsPage.tsx` → folosește `NotificationCenter variant="page"`.
-- `src/features/profile/notificationsApi.ts` → adăugăm helper `groupByDay` și `categorize(type)`.
-- `src/hooks/queries/useNotifications.ts` (nou) → React Query + realtime.
-
-### Out of scope (rămâne pentru altă iterație)
-
-- Persistarea preferințelor push/email/quiet hours pe server (necesită migrare).
-- Push notifications efective (web push subscription).
-- Sunet de notificare.
+Nu se modifică queries, RLS sau API-uri.
