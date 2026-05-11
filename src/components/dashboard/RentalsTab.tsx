@@ -17,6 +17,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
 import { toast } from "sonner";
 import NextActionCard from "./NextActionCard";
+import PickupArrangementCard from "./PickupArrangementCard";
 import { useRentalRealtime } from "@/hooks/useRentalRealtime";
 import LeaveReviewDialog, { type LeaveReviewRental } from "./LeaveReviewDialog";
 import {
@@ -283,6 +284,11 @@ const RentalsTab = () => {
                   <div className="mt-4 pt-3 border-t border-border/50">
                     <RentalTimeline rental={tlRental} />
                   </div>
+                  {rental.status === "confirmed" && !rental.handover_confirmed_at && rental.owner_id && (
+                    <div className="mt-3">
+                      <PickupArrangementCard rentalId={rental.id} ownerId={rental.owner_id} />
+                    </div>
+                  )}
                   <div className="mt-3">
                     <NextActionCard
                       rental={{ id: rental.id, product_id: rental.product_id, product_title: rental.product_title, start_date: rental.end_date_raw, end_date: rental.end_date_raw, status: rental.status, payment_status: rental.payment_status, handover_confirmed_at: rental.handover_confirmed_at, return_confirmed_at: rental.return_confirmed_at }}
