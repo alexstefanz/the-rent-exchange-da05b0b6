@@ -2359,6 +2359,14 @@ export type Database = {
         Args: { p_group: string }
         Returns: string
       }
+      propose_pickup: {
+        Args: {
+          _pickup_place: string
+          _pickup_time: string
+          _rental_id: string
+        }
+        Returns: Json
+      }
       purge_expired_deleted_products: { Args: never; Returns: number }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
