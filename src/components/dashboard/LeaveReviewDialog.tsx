@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useUxCopy } from "@/hooks/useUxCopy";
 import { supabase } from "@/integrations/supabase/client";
 import { createProductReview } from "@/features/products/productReviewsApi";
 import { createUserReview } from "@/features/profile/reviewsApi";
@@ -74,6 +75,7 @@ export default function LeaveReviewDialog({
 }: Props) {
   const { user } = useAuth();
   const { language } = useLanguage();
+  const copy = useUxCopy();
   const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(true);
@@ -204,6 +206,25 @@ export default function LeaveReviewDialog({
 
   const bothDone = productReviewExists && userReviewExists;
 
+  const snoozeKey = rental ? `leaveReviewSnooze:${rental.id}` : null;
+  const handleSnooze = (days = 1) => {
+    if (!snoozeKey) return;
+    const until = Date.now() + days * 24 * 60 * 60 * 1000;
+    try {
+      localStorage.setItem(snoozeKey, String(until));
+    } catch {}
+    toast.success(copy.timeline.review.snoozedToast);
+    onOpenChange(false);
+  };
+  const handleSkip = () => {
+    if (!snoozeKey) return;
+    try {
+      // far-future snooze acts as a skip for this rental
+      localStorage.setItem(snoozeKey, String(Date.now() + 365 * 24 * 60 * 60 * 1000));
+    } catch {}
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
@@ -317,10 +338,15 @@ export default function LeaveReviewDialog({
         )}
 
         {!loading && !bothDone && (
-          <DialogFooter>
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
-              {t("Anulează", "Cancel")}
-            </Button>
+          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-between">
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={handleSkip} disabled={submitting}>
+                {copy.timeline.review.skip}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleSnooze(1)} disabled={submitting}>
+                {copy.timeline.review.snooze}
+              </Button>
+            </div>
             <Button onClick={handleSubmit} disabled={!canSubmit}>
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t("Trimite review", "Submit review")}
