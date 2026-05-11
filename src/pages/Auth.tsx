@@ -185,9 +185,20 @@ const Auth = () => {
     setIsLoading(false);
     if (error) {
       let message = error.message;
-      if (error.message.includes("already registered")) message = copy.auth.accountExists;
-      else if (isWeakPasswordError(error.message)) message = copy.auth.passwordTooWeak;
+      const alreadyRegistered =
+        error.message?.includes("already registered") ||
+        (error as any)?.name === "UserAlreadyExists";
+      if (alreadyRegistered) {
+        message = `${copy.auth.accountExists}. Autentifică-te sau folosește „Am uitat parola”.`;
+        toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
+        // Switch to login tab and prefill email so users can log in immediately
+        setActiveTab("login");
+        loginForm.setValue("email", data.email);
+        return;
+      }
+      if (isWeakPasswordError(error.message)) message = copy.auth.passwordTooWeak;
       toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
+      return;
     } else {
       // Update profile with business data after signup
       if (accountType === "business") {
