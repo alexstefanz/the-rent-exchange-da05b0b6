@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { computeCancellation } from "../_shared/cancellationPolicy.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -82,7 +83,7 @@ serve(async (req) => {
     // Load rental + product
     const { data: rental, error: rErr } = await admin
       .from("rentals")
-      .select("id, renter_id, owner_id, product_id, status, payment_status, payment_intent_id, subtotal, start_date, end_date, handover_confirmed_at, products(title)")
+      .select("id, renter_id, owner_id, product_id, status, payment_status, payment_intent_id, subtotal, daily_price, platform_fee, start_date, end_date, handover_confirmed_at, products(title)")
       .eq("id", rentalId)
       .maybeSingle();
     if (rErr || !rental) {
@@ -104,43 +105,34 @@ serve(async (req) => {
       });
     }
     if (rental.handover_confirmed_at) {
-      return new Response(JSON.stringify({ error: "already_handed_over" }), {
+      return new Response(JSON.stringify({
+        error: "HANDOVER_DONE_USE_EARLY_RETURN",
+        message: "Rezervarea a fost predată. Folosește returnarea anticipată sau deschide o dispută.",
+      }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Compute hours until start
-    const now = new Date();
-    const start = new Date(`${rental.start_date}T00:00:00`);
-    const hoursUntilStart = (start.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-    // Decide refund tier
-    // Tier "FULL_REFUND": >=48h before start, hold not yet captured
-    // Tier "PARTIAL_50":  0 <= hoursUntilStart < 48, hold not yet captured
-    // Tier "NO_REFUND":   hoursUntilStart < 0 (after start) or already paid/captured
-    let tier: "FULL_REFUND" | "PARTIAL_50" | "NO_REFUND";
-    if (rental.payment_status === "paid") {
-      tier = "NO_REFUND";
-    } else if (hoursUntilStart >= 48) {
-      tier = "FULL_REFUND";
-    } else if (hoursUntilStart >= 0) {
-      tier = "PARTIAL_50";
-    } else {
-      tier = "NO_REFUND";
-    }
-
-    const subtotal = Number(rental.subtotal); // RON
-    const subtotalMinor = Math.round(subtotal * 100); // bani
-    const partialMinor = Math.round(subtotalMinor * 0.5);
-    const refundedAmount = tier === "FULL_REFUND" ? subtotal : tier === "PARTIAL_50" ? subtotal / 2 : 0;
+    // Decide refund tier from shared policy
+    const outcome = computeCancellation({
+      startDate: rental.start_date as string,
+      subtotal: Number(rental.subtotal),
+      dailyPrice: Number(rental.daily_price),
+      platformFee: Number(rental.platform_fee || 0),
+      handoverConfirmedAt: rental.handover_confirmed_at as string | null,
+    });
+    const tier = outcome.tier;
+    const refundedAmount = outcome.refundAmount;
+    const ownerCompensation = outcome.ownerCompensation;
+    const subtotal = Number(rental.subtotal);
 
     // Apply Stripe action
     let stripeAction = "none";
     let stripeError: string | null = null;
     if (rental.payment_intent_id) {
       try {
-        if (tier === "FULL_REFUND") {
+        if (tier === "FREE") {
           const pi = await stripe.paymentIntents.retrieve(rental.payment_intent_id);
           if (pi.status === "requires_capture") {
             await stripe.paymentIntents.cancel(rental.payment_intent_id);
@@ -152,22 +144,33 @@ serve(async (req) => {
             });
             stripeAction = "full_refund";
           }
-        } else if (tier === "PARTIAL_50") {
+        } else if (tier === "FIRST_DAY_FORFEIT" || tier === "LIMITED") {
+          const captureMinor = Math.round(ownerCompensation * 100);
           const pi = await stripe.paymentIntents.retrieve(rental.payment_intent_id);
           if (pi.status === "requires_capture") {
-            // Capture 50% — Stripe automatically voids the rest of the hold
-            await stripe.paymentIntents.capture(rental.payment_intent_id, {
-              amount_to_capture: partialMinor,
-            });
-            stripeAction = "partial_capture_50";
+            if (captureMinor <= 0) {
+              await stripe.paymentIntents.cancel(rental.payment_intent_id);
+              stripeAction = "cancelled_hold";
+            } else {
+              // Capture only the owner compensation; Stripe voids the rest of the hold
+              await stripe.paymentIntents.capture(rental.payment_intent_id, {
+                amount_to_capture: captureMinor,
+              });
+              stripeAction = `partial_capture_${captureMinor}`;
+            }
           } else if (pi.status === "succeeded") {
-            // Already captured fully — issue partial refund of 50%
-            await stripe.refunds.create({
-              payment_intent: rental.payment_intent_id,
-              amount: partialMinor,
-              reason: "requested_by_customer",
-            });
-            stripeAction = "partial_refund_50";
+            // Already captured fully — issue partial refund of refundedAmount
+            const refundMinor = Math.round(refundedAmount * 100);
+            if (refundMinor > 0) {
+              await stripe.refunds.create({
+                payment_intent: rental.payment_intent_id,
+                amount: refundMinor,
+                reason: "requested_by_customer",
+              });
+              stripeAction = `partial_refund_${refundMinor}`;
+            } else {
+              stripeAction = "no_refund_due";
+            }
           }
         }
       } catch (e) {
@@ -181,11 +184,15 @@ serve(async (req) => {
       status: "cancelled",
       cancellation_reason: `renter_cancelled_${tier.toLowerCase()}`,
       cancelled_at: new Date().toISOString(),
+      cancellation_tier: tier,
+      cancelled_by: "renter",
+      refund_amount: refundedAmount,
+      owner_compensation: ownerCompensation,
     };
-    if (tier === "FULL_REFUND") {
+    if (tier === "FREE") {
       updates.payment_status = "refunded";
       updates.refunded_at = new Date().toISOString();
-    } else if (tier === "PARTIAL_50") {
+    } else if (tier === "FIRST_DAY_FORFEIT" || tier === "LIMITED") {
       updates.payment_status = "partially_refunded";
       updates.refunded_at = new Date().toISOString();
     }
@@ -246,16 +253,24 @@ serve(async (req) => {
       }
     }
 
-    // Notify owner (non-blocking)
+    // Notify both parties via the orchestrator (non-blocking)
     admin.functions
-      .invoke("send-cancellation-notification", { body: { rental_id: rentalId } })
-      .catch((e) => console.error("send-cancellation-notification error:", e));
+      .invoke("notify-rental-event", {
+        body: {
+          rental_id: rentalId,
+          event_key: "cancellation_confirmed",
+          actor_id: userId,
+          extra: { tier, refundAmount: refundedAmount, ownerCompensation },
+        },
+      })
+      .catch((e) => console.error("notify cancellation_confirmed error:", e));
 
     return new Response(
       JSON.stringify({
         ok: true,
         tier,
         refunded_amount: refundedAmount,
+        owner_compensation: ownerCompensation,
         stripe_action: stripeAction,
         stripe_error: stripeError,
       }),
