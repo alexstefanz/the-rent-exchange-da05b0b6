@@ -268,6 +268,7 @@ const RentalsTab = () => {
                 end_date: rental.end_date_raw,
                 handover_confirmed_at: rental.handover_confirmed_at,
                 return_confirmed_at: rental.return_confirmed_at,
+                dispute_status: (rental.dispute_status as any) ?? "none",
               };
               const step = getTimelineStep(tlRental).current;
               return (
@@ -293,7 +294,7 @@ const RentalsTab = () => {
                   )}
                   <div className="mt-3">
                     <NextActionCard
-                      rental={{ id: rental.id, product_id: rental.product_id, product_title: rental.product_title, start_date: rental.end_date_raw, end_date: rental.end_date_raw, status: rental.status, payment_status: rental.payment_status, handover_confirmed_at: rental.handover_confirmed_at, return_confirmed_at: rental.return_confirmed_at }}
+                      rental={{ id: rental.id, product_id: rental.product_id, product_title: rental.product_title, start_date: rental.end_date_raw, end_date: rental.end_date_raw, status: rental.status, payment_status: rental.payment_status, handover_confirmed_at: rental.handover_confirmed_at, return_confirmed_at: rental.return_confirmed_at, dispute_status: (rental.dispute_status as any) ?? "none" }}
                       step={step}
                       role="renter"
                       onPrimary={() => setInspectionRental({ rental, phase: step >= 6 ? "checkin" : "checkout" })}
