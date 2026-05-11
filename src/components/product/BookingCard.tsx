@@ -71,12 +71,8 @@ const BookingCard = ({
 
   const totalPrice = useMemo(() => {
     if (rentalDays === 0) return 0;
-    const months = Math.floor(rentalDays / 30);
-    const afterMonths = rentalDays % 30;
-    const weeks = Math.floor(afterMonths / 7);
-    const extraDays = afterMonths % 7;
-    return months * priceMonth + weeks * priceWeek + extraDays * clientPrice;
-  }, [rentalDays, clientPrice, priceWeek, priceMonth]);
+    return rentalDays * clientPrice;
+  }, [rentalDays, clientPrice]);
 
   const priceBreakdown = useMemo(() => {
     if (rentalDays === 0) return { months: 0, weeks: 0, days: 0 };
@@ -124,9 +120,6 @@ const BookingCard = ({
         <div className="flex items-baseline gap-1">
           <span className="font-heading text-xl font-bold text-primary">{clientPrice} RON</span>
           <span className="text-xs text-muted-foreground">{copy.common.perDay}</span>
-        </div>
-        <div className="text-xs text-muted-foreground">
-          {priceWeek} RON / {copy.productDetail.week} · {priceMonth} RON / {copy.productDetail.month}
         </div>
       </div>
 
