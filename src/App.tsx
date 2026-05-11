@@ -176,6 +176,8 @@ const App = () => (
                 <Route path="/admin/approvals" element={<AdminApprovals />} />
                 <Route path="/admin/test-emails" element={<AdminTestEmails />} />
                 <Route path="/admin/sms-logs" element={<AdminSmsLogs />} />
+                <Route path="/a/:token" element={<ShortLinkRedirect />} />
+                <Route path="/setari/notificari" element={<NotificationPreferences />} />
                 
                 {/* Integration tests */}
                 <Route path="/minicrm-test" element={<MiniCrmTest />} />
