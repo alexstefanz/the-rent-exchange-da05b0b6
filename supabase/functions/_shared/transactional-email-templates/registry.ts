@@ -34,6 +34,16 @@ import { template as withdrawalProcessed } from './withdrawal-processed.tsx'
 import { template as withdrawalRejected } from './withdrawal-rejected.tsx'
 import { template as payoutReceived } from './payout-received.tsx'
 import { template as accountBanned } from './account-banned.tsx'
+import { template as pickupScheduled } from './pickup-scheduled.tsx'
+import { template as pvPending } from './pv-pending.tsx'
+import { template as pvOtherDone } from './pv-other-done.tsx'
+import { template as handoverConfirmed } from './handover-confirmed.tsx'
+import { template as returnReminder } from './return-reminder.tsx'
+import { template as returnInProgress } from './return-in-progress.tsx'
+import { template as rentalCompletedOwner } from './rental-completed-owner.tsx'
+import { template as rentalCompletedRenter } from './rental-completed-renter.tsx'
+import { template as reviewReminder } from './review-reminder.tsx'
+import { template as disputeOpened } from './dispute-opened.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'welcome': welcomeEmail,
@@ -61,4 +71,14 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'withdrawal-rejected': withdrawalRejected,
   'payout-received': payoutReceived,
   'account-banned': accountBanned,
+  'pickup-scheduled': pickupScheduled,
+  'pv-pending': pvPending,
+  'pv-other-done': pvOtherDone,
+  'handover-confirmed': handoverConfirmed,
+  'return-reminder': returnReminder,
+  'return-in-progress': returnInProgress,
+  'rental-completed-owner': rentalCompletedOwner,
+  'rental-completed-renter': rentalCompletedRenter,
+  'review-reminder': reviewReminder,
+  'dispute-opened': disputeOpened,
 }
