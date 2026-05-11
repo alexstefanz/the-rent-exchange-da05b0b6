@@ -1,18 +1,29 @@
-## Modificări
+## Problem
 
-### 1. `src/components/product/OwnerTrustCard.tsx`
-Elimină blocul `{!isOwnProduct && (<div className="mt-5 flex gap-2">...)}` (liniile 80-90) — scoate butoanele "Trimite mesaj" și "Vezi profil". Elimină și prop-urile/importurile devenite inutile (`onStartChat`, `Link`, `Button`).
+Pe pagina de produs, dacă utilizatorul dă click pe o singură zi în calendar, butonul de rezervare rămâne dezactivat ("Verifică datele") și nu se poate face rezervarea de 1 zi.
 
-### 2. `src/pages/ProductDetail.tsx`
-- Linia 328: șterge `{!isOwnProduct && <QuickQuestionsChips onAsk={handleQuickQuestion} />}`.
-- Linia 26: șterge importul `QuickQuestionsChips`.
-- Șterge prop-ul `onStartChat={...}` transmis către `<OwnerTrustCard />` (linia 319+).
-- Curăță `handleQuickQuestion` și `handleStartChat` dacă nu mai sunt folosite în altă parte (verific înainte).
+**Cauza:** Calendar-ul (`PremiumBookingCard.tsx`) e folosit în `mode="single"`. Logica din `handleDateSelect` (`src/pages/ProductDetail.tsx`, linia 140) setează doar `startDate` la primul click și așteaptă un al doilea click pentru `endDate`. Butonul "Rezervă acum" e activ doar când există **și** `startDate` **și** `endDate` (linia 118 din `PremiumBookingCard.tsx`).
 
-### 3. `src/components/product/QuickQuestionsChips.tsx`
-Șterge fișierul (nu mai e referit).
+În plus, react-day-picker în `mode="single"` deselectează când dai click pe aceeași zi a doua oară, deci ramura `date.getTime() === startDate.getTime()` (linia 143) practic nu se declanșează — `onSelect` primește `undefined` și funcția iese imediat.
 
-## Verificare
-- Pagina produs nu mai afișează butoanele "Trimite mesaj" / "Vezi profil" în card-ul proprietarului și nici card-ul "Întrebări rapide".
-- Restul card-ului (avatar, statistici, rating, KYC) rămâne identic.
-- Mobile sticky bar (`MobileStickyBookingBar` cu `onAsk`) — verific dacă mai are nevoie de butonul "Întreabă" sau îl elimin pentru consistență.
+## Soluție propusă
+
+Modific `handleDateSelect` în `src/pages/ProductDetail.tsx` astfel încât:
+
+1. **Primul click pe o zi** → setează `startDate = date` **și** `endDate = date` (rezervare implicită de 1 zi). Butonul "Rezervă acum" devine activ instant.
+2. **Al doilea click pe altă zi** (când `startDate === endDate`) → extinde intervalul:
+   - dacă noua dată e după `startDate` și nu există zile rezervate în interval → `setEndDate(date)`
+   - dacă noua dată e înainte de `startDate` → `setStartDate(date)` și `endDate` rămâne ca capăt
+   - dacă există conflict cu zile rezervate → toast existent
+3. **Al treilea click** (când avem deja un interval >1 zi) → resetează: `startDate = date`, `endDate = date` (din nou rezervare 1 zi).
+
+`clearDates` și restul logicii (preț, breakdown, validare booked) rămân neschimbate. Breakdown-ul afișează deja corect "1 zile × X RON" când start = end (vezi `computeRentalPrice` apelat la linia 38 din `PremiumBookingCard.tsx`).
+
+## Fișier modificat
+
+- `src/pages/ProductDetail.tsx` — rescriu funcția `handleDateSelect` (liniile 140-152). Nicio altă modificare.
+
+## Ce nu se schimbă
+
+- `PremiumBookingCard.tsx` rămâne cu `mode="single"` și aceeași condiție pe buton (`disabled={!startDate || !endDate}`) — se va activa natural pentru că ambele sunt setate de la primul click.
+- Logica de prețuri, RPC-ul `get_booked_dates`, validarea conflictelor în interval.

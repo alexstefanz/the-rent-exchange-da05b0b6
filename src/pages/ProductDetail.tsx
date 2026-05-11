@@ -139,16 +139,27 @@ const ProductDetail = () => {
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!date || isDateBooked(date, bookedDates)) return;
-    if (!startDate || (startDate && endDate)) { setStartDate(date); setEndDate(undefined); }
-    else if (date.getTime() === startDate.getTime()) { setEndDate(date); }
-    else if (isBefore(date, startDate)) { setStartDate(date); }
-    else {
-      if (hasBookedDateInRange(startDate, date, bookedDates)) {
+    // No selection yet, or already a multi-day range → start fresh as a 1-day booking
+    if (!startDate || !endDate || startDate.getTime() !== endDate.getTime()) {
+      setStartDate(date);
+      setEndDate(date);
+      return;
+    }
+    // We have a 1-day booking (start === end). Second click extends or moves the range.
+    if (date.getTime() === startDate.getTime()) return;
+    if (isBefore(date, startDate)) {
+      if (hasBookedDateInRange(date, startDate, bookedDates)) {
         toast({ title: t("Perioadă indisponibilă", "Period unavailable"), description: t("Există zile rezervate în interval.", "Booked days in range."), variant: "destructive" });
         return;
       }
-      setEndDate(date);
+      setStartDate(date);
+      return;
     }
+    if (hasBookedDateInRange(startDate, date, bookedDates)) {
+      toast({ title: t("Perioadă indisponibilă", "Period unavailable"), description: t("Există zile rezervate în interval.", "Booked days in range."), variant: "destructive" });
+      return;
+    }
+    setEndDate(date);
   };
   const clearDates = () => { setStartDate(undefined); setEndDate(undefined); };
   const rentalDays = useMemo(() => (startDate && endDate) ? differenceInDays(endDate, startDate) + 1 : 0, [startDate, endDate]);
