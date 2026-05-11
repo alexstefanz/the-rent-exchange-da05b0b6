@@ -2438,6 +2438,7 @@ export type Database = {
         Args: { p_rental_id: string }
         Returns: string
       }
+      get_owner_listings_stats: { Args: { p_owner: string }; Returns: Json }
       get_owner_rentals: {
         Args: { owner_uuid: string }
         Returns: {
