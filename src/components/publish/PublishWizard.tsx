@@ -1079,20 +1079,10 @@ const Step5Pricing = ({
             </span>
             <span className="text-xs text-muted-foreground group-open:hidden">{data.blocked_dates.length} zile</span>
           </summary>
-          <div className="mt-3">
-            <Calendar
-              mode="multiple"
-              selected={data.blocked_dates.map((d) => new Date(d))}
-              onSelect={(dates) =>
-                update(
-                  "blocked_dates",
-                  (dates || []).map((d) => d.toISOString().slice(0, 10)),
-                )
-              }
-              className="p-3 pointer-events-auto"
-              disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
-            />
-          </div>
+          <BlockedDatesPicker
+            value={data.blocked_dates}
+            onChange={(v) => update("blocked_dates", v)}
+          />
         </details>
       </div>
     </div>
