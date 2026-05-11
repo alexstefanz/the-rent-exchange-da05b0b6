@@ -15,6 +15,10 @@ import { NotificationSettingsSheet } from "./NotificationSettingsSheet";
 
 function mapLink(link: string, type?: string) {
   if (type === "kyc_approved") return "/owner/new-product";
+  if (type === "new_message" || (type ?? "").includes("message")) {
+    if (link && link.startsWith("/mesaje")) return link;
+    return "/mesaje";
+  }
   if (link.includes("?tab=lendings")) return "/anunturi";
   if (link.includes("?tab=rentals")) return "/rezervari";
   if (link.includes("#anunturi") || link === "/profile#anunturi") return "/anunturi";
@@ -66,8 +70,9 @@ export function NotificationCenter({ variant = "popover", onClose }: Props) {
   }, [notifications, filter]);
 
   const handleSelect = (n: Notification) => {
-    if (n.link || n.type === "kyc_approved") {
-      navigate(mapLink(n.link || "", n.type));
+    const target = mapLink(n.link || "", n.type);
+    if (target) {
+      navigate(target);
       onClose?.();
     }
   };
