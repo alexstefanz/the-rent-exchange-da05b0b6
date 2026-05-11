@@ -677,6 +677,72 @@ export type Database = {
           },
         ]
       }
+      notification_audit_log: {
+        Row: {
+          channel: string
+          created_at: string
+          error: string | null
+          event_key: string
+          id: string
+          payload: Json | null
+          provider_id: string | null
+          rental_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          error?: string | null
+          event_key: string
+          id?: string
+          payload?: Json | null
+          provider_id?: string | null
+          rental_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          error?: string | null
+          event_key?: string
+          id?: string
+          payload?: Json | null
+          provider_id?: string | null
+          rental_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_preferences: {
+        Row: {
+          email_marketing: boolean
+          email_transactional: boolean
+          sms_marketing: boolean
+          sms_transactional: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          email_marketing?: boolean
+          email_transactional?: boolean
+          sms_marketing?: boolean
+          sms_transactional?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          email_marketing?: boolean
+          email_transactional?: boolean
+          sms_marketing?: boolean
+          sms_transactional?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1426,6 +1492,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      secure_action_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          purpose: string
+          redirect_path: string
+          rental_id: string | null
+          token: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          purpose: string
+          redirect_path: string
+          rental_id?: string | null
+          token: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          purpose?: string
+          redirect_path?: string
+          rental_id?: string | null
+          token?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       sms_logs: {
         Row: {
