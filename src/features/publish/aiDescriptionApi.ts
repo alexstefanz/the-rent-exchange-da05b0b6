@@ -21,5 +21,3 @@ export const generateProductDescription = async (
   if (!data?.description) throw new Error(data?.error || "Răspuns AI gol");
   return data.description;
 };
-
-*** End Patch
