@@ -1,46 +1,38 @@
-## Probleme identificate
+## Problemă
 
-### 1. Notificările de tip „ticket” deschid doar `/suport` (nu ticketul concret)
-Trigger-ele DB `notify_user_ticket_created`, `notify_user_ticket_message` și `notify_user_ticket_resolved` salvează `link = '/suport'`, fără id-ul ticketului. Pagina `/suport` deschide ticketul doar dacă URL-ul are `?open=<ticket_id>`.
+Când dai click pe o notificare de tip `new_message` (ex: „Mesaj nou de la Alex Test"), nu se deschide conversația respectivă în chat. Link-ul salvat în DB este corect (`/mesaje?conv=<id>`), dar UI-ul nu reacționează în două situații cheie.
 
-### 2. Tab-ul „Mesaje” din `/notificari` este gol
-Funcția edge `send-message-notification` trimite **doar email**, nu inserează nimic în tabela `notifications`. Așadar nu există notificări cu tip `*message*` în DB → filtrul „Mesaje” afișează empty state.
+## Cauze identificate
 
----
+1. **`Messages.tsx`** — `useEffect`-ul care selectează conversația din `?conv=` are condiția `!selectedConversation`. Dacă utilizatorul are deja o conversație deschisă (sau dă click pe altă notificare cât e în `/mesaje`), parametrul nou din URL este ignorat și conversația nu se schimbă.
 
-## Soluție
+2. **`NotificationCenter.tsx` → `mapLink`** — păstrează corect `/mesaje?conv=...`, dar nu există un caz explicit pentru tipul `new_message`. Dacă vreodată sosește o notificare fără `link` (sau cu link generic `/mesaje`), nu se deschide nicio conversație.
 
-### A. Migrare DB — link-uri ticket cu context
-Migrare nouă care recreează cele 3 funcții trigger, păstrând semantica, dar setând:
-- `link = '/suport?open=' || NEW.id` (ticket creat / rezolvat)
-- `link = '/suport?open=' || v_ticket_id` (răspuns admin)
+3. **`MessagesTab.tsx`** (varianta din `/profile`) — nu citește deloc `?conv=` din URL, deci dacă notificarea trimite spre `/profile?...` nu va selecta conversația. (Verific dacă mai e folosită; dacă da, primește același tratament.)
 
-Astfel notificările existente rămân pe `/suport`, iar cele noi vor sări direct la ticket (pagina `/suport` deja știe să consume `?open=<id>`).
+## Modificări propuse (doar frontend)
 
-### B. Funcția edge `send-message-notification` — inserare în `notifications`
-Înainte de a trimite emailul, se va executa un `INSERT` în `notifications`:
-- `type: 'new_message'`
-- `title_ro: 'Mesaj nou de la {sender}'`, `title_en: 'New message from {sender}'`
-- `description_ro/en`: preview (max 140 caractere)
-- `link: '/mesaje?conv=<conversation_id>'`
+### `src/pages/Messages.tsx`
+- Schimb `useEffect`-ul ca să reacționeze de fiecare dată când se schimbă `?conv=`:
+  - dependency: `[searchParams, conversations, user?.id]`
+  - condiție nouă: dacă `convId` există și diferă de `selectedConversation?.id`, caută în `conversations` și selectează-o + setează tab-ul corect (`rezervari` / `de-inchiriat`).
+  - pe mobil: setarea conversației selectate va deschide automat fullscreen chat (deja gestionat).
 
-Categorizatorul existent (`src/lib/notificationCategory.ts`) deja mapează `new_message` → categoria „message”, deci tab-ul „Mesaje” se va popula automat.
+### `src/components/notifications/NotificationCenter.tsx`
+- În `mapLink`, adaug fallback explicit pentru `type === "new_message"`:
+  - dacă `link` deja conține `/mesaje`, îl returnez ca atare;
+  - altfel returnez `/mesaje` (mai bine decât nimic).
+- În `handleSelect`, închid popover-ul și apelez `navigate(...)` chiar dacă suntem deja pe `/mesaje` — React Router va actualiza `searchParams` și noul `useEffect` din Messages va prelua conv-ul.
 
-### C. Frontend — `mapLink` în `NotificationCenter.tsx`
-Mică ajustare să nu rescrie link-uri de tip suport/mesaje (deja corecte). Garantăm că:
-- `/suport?open=...` rămâne intact
-- `/mesaje?conv=...` rămâne intact
+### `src/components/profile/MessagesTab.tsx` (dacă e încă folosit într-o rută activă)
+- Adaug un `useEffect` similar care citește `?conv=` din URL și selectează conversația, ca să funcționeze și când notificarea e deschisă din `/profile`.
 
-(Logica existentă deja face fall-through pe `return link`, deci nu sunt necesare schimbări dacă păstrăm query string-urile.)
+## Ce NU se schimbă
+- Trigger-ele DB și edge function `send-message-notification` rămân la fel — link-ul salvat este deja corect.
+- Nu modific business logic, doar comportamentul de navigare/selecție în UI.
 
----
-
-## Fișiere modificate
-
-| Fișier | Acțiune |
-|---|---|
-| `supabase/migrations/<timestamp>_ticket_notification_links.sql` | Recreează cele 3 funcții trigger cu link contextual |
-| `supabase/functions/send-message-notification/index.ts` | Adaugă INSERT în `notifications` înainte de email |
-
-## Notă
-Notificările vechi rămân cu link-ul generic `/suport` — comportament neschimbat retroactiv. Doar evenimentele noi vor avea link-ul direct la ticket. (Putem rula opțional un UPDATE one-shot pentru ele dacă dorești.)
+## Verificare
+1. Click pe notificare „Mesaj nou" din popover Navbar → se deschide conversația corectă.
+2. Click pe altă notificare în timp ce ești deja în `/mesaje` cu o conversație deschisă → comută pe noua conversație.
+3. Click pe notificare din pagina `/notificari` → navighează la `/mesaje?conv=...` și deschide chat-ul.
+4. Mobil: click pe notificare → se deschide direct chat-ul fullscreen.

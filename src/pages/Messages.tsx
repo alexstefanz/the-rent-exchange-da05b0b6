@@ -43,7 +43,7 @@ export default function Messages() {
 
   useEffect(() => {
     const convId = searchParams.get("conv");
-    if (convId && conversations.length > 0 && !selectedConversation) {
+    if (convId && conversations.length > 0 && convId !== selectedConversation?.id) {
       const found = conversations.find((c) => c.id === convId);
       if (found) {
         const correctTab = found.buyer_id === user?.id ? "rezervari" : "de-inchiriat";
@@ -51,7 +51,7 @@ export default function Messages() {
         setSelectedConversation(found);
       }
     }
-  }, [searchParams, conversations, selectedConversation, user?.id]);
+  }, [searchParams, conversations, selectedConversation?.id, user?.id]);
 
   const handleSelect = (conv: Conversation) => setSelectedConversation(conv);
   const handleBack = () => {
