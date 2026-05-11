@@ -12,19 +12,19 @@ export const SUPPORT_FAQ: SupportFaqEntry[] = [
       en: "How do I cancel a reservation?",
     },
     answer: {
-      ro: "Mergi la **Rezervările mele** → alege rezervarea → apasă **Anulează**. Anulare gratuită cu cel puțin 48h înainte de începerea închirierii (rambursare 100%). Sub 48h se rambursează 50%. După ce începe perioada nu se mai acordă rambursare.",
-      en: "Go to **My Rentals** → pick the reservation → tap **Cancel**. Free cancellation at least 48h before the rental starts (100% refund). Under 48h, 50% is refunded. No refund once the rental period has started.",
+      ro: "Mergi la **Rezervările mele** → alege rezervarea → apasă **Anulează**. Reguli: **prima oră după rezervare** sau **cu 48h+ înainte de start** = rambursare 100%. Sub 48h = 50%. După începerea perioadei = fără rambursare. Excepție: dacă produsul nu corespunde descrierii, anunță-ne în 30 min de la preluare cu poze pentru rambursare integrală.",
+      en: "Go to **My Rentals** → pick the reservation → tap **Cancel**. Rules: **within the first hour** of booking or **48h+ before start** = 100% refund. Under 48h = 50%. After start = no refund. Exception: if the item doesn't match the listing, report it within 30 min of pickup with photos for a full refund.",
     },
   },
   {
     id: "refund",
     question: {
-      ro: "Când primesc banii înapoi?",
-      en: "When do I get my money back?",
+      ro: "Când primesc banii? (chiriaș & proprietar)",
+      en: "When do I get my money? (renter & owner)",
     },
     answer: {
-      ro: "Pentru rezervările anulate înainte de confirmare nu se reține nimic — autorizarea cardului expiră în 1-7 zile. Pentru returnări complete, banii revin în 5-10 zile lucrătoare în contul de pe care s-a făcut plata.",
-      en: "For reservations cancelled before confirmation nothing is charged — the card hold expires in 1-7 days. For full refunds, the amount returns in 5-10 business days to the original card.",
+      ro: "**Chiriaș:** dacă rezervarea e anulată înainte de confirmare nu se reține nimic — autorizarea cardului expiră în 1-7 zile. La rambursări complete banii revin în 5-10 zile lucrătoare pe cardul de plată.\n\n**Proprietar:** după finalizarea închirierii (PV de returnare confirmat), suma intră în **portofelul** tău din Rentli. De acolo poți cere retragere oricând din **Câștigurile mele** — virarea se face în 1-3 zile lucrătoare.",
+      en: "**Renter:** if cancelled before confirmation nothing is charged — the card hold expires in 1-7 days. Full refunds return in 5-10 business days to the original card.\n\n**Owner:** after the rental is finalised (return PV confirmed), the amount lands in your Rentli **wallet**. Request a payout anytime from **My Earnings** — bank transfer takes 1-3 business days.",
     },
   },
   {
@@ -34,19 +34,19 @@ export const SUPPORT_FAQ: SupportFaqEntry[] = [
       en: "How does the security deposit work?",
     },
     answer: {
-      ro: "Garanția nu e încasată — e doar **pre-autorizată** pe card. Dacă produsul revine în starea inițială, blocajul se eliberează automat. Dacă există daune, se rețin doar costurile dovedite cu poze și factură.",
-      en: "The deposit isn't charged — it's only **pre-authorized** on your card. If the item is returned in original condition, the hold is released automatically. Damages are deducted only with photo proof and invoice.",
+      ro: "La checkout, Stripe face o **autorizare (hold)** pe card pentru întreaga sumă (chirie + garanție). Banii NU sunt încasați imediat — sunt doar blocați. La confirmarea predării se capturează chiria, iar garanția rămâne blocată până la returnare. Dacă produsul revine în stare bună, blocajul se eliberează automat în câteva zile. În caz de daune, se rețin doar costurile dovedite cu poze și factură (prin dispută).",
+      en: "At checkout, Stripe places an **authorization (hold)** on your card for the full amount (rent + deposit). Money is NOT captured yet — only frozen. On pickup confirmation the rent is captured; the deposit stays held until return. If the item comes back in good condition, the hold releases automatically within a few days. For damages, only documented costs (photos + invoice) are deducted via the dispute flow.",
     },
   },
   {
     id: "handover",
     question: {
-      ro: "Cum confirm predarea sau returnarea?",
-      en: "How do I confirm pickup or return?",
+      ro: "Cum funcționează predarea și returnarea (PV digital)?",
+      en: "How do pickup and return work (digital PV)?",
     },
     answer: {
-      ro: "Atât proprietarul cât și chiriașul trebuie să facă **10 poze** la predare și 10 la returnare, direct din aplicație. Apoi apasă **Confirmă predarea/returnarea** pentru a debloca următoarea fază.",
-      en: "Both owner and renter must take **10 photos** at pickup and 10 at return, directly in the app. Then tap **Confirm pickup/return** to unlock the next phase.",
+      ro: "După confirmarea plății, proprietarul propune **locul și ora predării** din dashboard, iar chiriașul confirmă. La întâlnire, ambele părți completează **procesul verbal digital (PV)** direct în aplicație: **10 poze obligatorii** + observații. Același flux se repetă la returnare. Când ambii au semnat PV-ul, statusul trece automat la următoarea etapă (activ → finalizat). Primești notificare in-app, email și SMS la fiecare pas.",
+      en: "After payment is confirmed, the owner proposes the **pickup time & place** from the dashboard, and the renter confirms. At the meeting, both parties fill in the **digital handover protocol (PV)** in the app: **10 mandatory photos** + notes. The same flow repeats at return. Once both have signed the PV, status moves automatically (active → completed). You get in-app, email and SMS notifications at every step.",
     },
   },
   {
@@ -58,6 +58,39 @@ export const SUPPORT_FAQ: SupportFaqEntry[] = [
     answer: {
       ro: "Rentli percepe **5%** din valoarea închirierii, suportat de proprietar. **Primele 3 închirieri sunt gratuite** pentru fiecare utilizator nou. Chiriașii nu plătesc niciun comision suplimentar.",
       en: "Rentli charges **5%** of the rental value, paid by the owner. **The first 3 rentals are free** for every new user. Renters pay no additional fees.",
+    },
+  },
+  {
+    id: "request",
+    question: {
+      ro: "Cum răspund la o cerere de închiriere?",
+      en: "How do I respond to a rental request?",
+    },
+    answer: {
+      ro: "Când primești o cerere, ai **24 de ore** să o accepți sau să o refuzi din **Închirierile mele** (sau direct din linkul primit pe SMS/email). Dacă nu răspunzi în acest interval, cererea expiră automat și autorizarea cardului chiriașului se eliberează. După acceptare, chiriașul finalizează plata și treceți împreună la programarea predării.",
+      en: "When a request comes in, you have **24 hours** to accept or decline from **My Rentals** (or directly via the link in the SMS/email). If you don't respond, the request auto-expires and the renter's card hold is released. After you accept, the renter completes payment and you both move on to scheduling the pickup.",
+    },
+  },
+  {
+    id: "pv_dispute",
+    question: {
+      ro: "Ce fac dacă cealaltă parte nu completează procesul verbal?",
+      en: "What if the other party doesn't complete the handover protocol?",
+    },
+    answer: {
+      ro: "Dacă PV-ul rămâne blocat (cealaltă parte nu semnează predarea sau returnarea), poți **deschide o dispută** din pagina rezervării → **Deschide dispută**. Echipa Rentli intervine, analizează pozele și conversația din chat și decide următorul pas (deblocare PV, capturare/eliberare garanție, rambursare parțială etc.).",
+      en: "If the PV stays stuck (the other party won't sign pickup or return), you can **open a dispute** from the rental page → **Open dispute**. The Rentli team steps in, reviews photos and chat history, and decides the next step (unblock PV, capture/release deposit, partial refund, etc.).",
+    },
+  },
+  {
+    id: "contact_rules",
+    question: {
+      ro: "De ce nu pot trimite număr de telefon sau email în chat?",
+      en: "Why can't I send a phone number or email in chat?",
+    },
+    answer: {
+      ro: "Pentru siguranța ta și acoperirea ofertei Rentli (garanție, dispute, rambursări), comunicarea trebuie să rămână **100% pe platformă**. Datele de contact directe (telefon, email, link-uri) sunt blocate automat în chat și anunțuri. După confirmarea unei rezervări active, contactul direct se deblochează automat în antetul conversației.",
+      en: "For your safety and to keep Rentli's coverage active (deposit, disputes, refunds), all communication must stay **100% on-platform**. Direct contact details (phone, email, links) are auto-blocked in chat and listings. Once you have an active confirmed booking, direct contact unlocks automatically in the conversation header.",
     },
   },
 ];
