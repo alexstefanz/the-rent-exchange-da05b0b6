@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, MapPin, Search, Camera, AlertCircle, Receipt, ChevronDown, CheckCircle2, Clock } from "lucide-react";
+import { Calendar, MapPin, Search, Receipt, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import StatusBadge from "./StatusBadge";
@@ -9,20 +9,18 @@ import { useUxCopy } from "@/hooks/useUxCopy";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import RentalTimeline, { getTimelineStep } from "./RentalTimeline";
 import type { InspectionPhase } from "@/features/rentals/inspectionApi";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
 import { toast } from "sonner";
-import NextActionCard from "./NextActionCard";
-import PickupArrangementCard from "./PickupArrangementCard";
+import MainActionCard from "./MainActionCard";
+import SecondaryActionsMenu from "./SecondaryActionsMenu";
 import { useRentalRealtime } from "@/hooks/useRentalRealtime";
 import LeaveReviewDialog, { type LeaveReviewRental } from "./LeaveReviewDialog";
-import CancellationStateCard from "@/components/rentals/CancellationStateCard";
-import PostHandoverActionsCard from "@/components/rentals/PostHandoverActionsCard";
 import OpenDisputeDialog from "./OpenDisputeDialog";
+import EarlyReturnRequestDialog from "@/components/rentals/EarlyReturnRequestDialog";
 
 interface Rental {
   id: string;
@@ -90,20 +88,16 @@ const RentalsTab = () => {
   const [reviewRental, setReviewRental] = useState<LeaveReviewRental | null>(null);
   const [disputeRental, setDisputeRental] = useState<Rental | null>(null);
 
-  useRentalRealtime(user?.id, "renter", [["my-rentals", user?.id], ["my-renter-checkin-inspections", user?.id]]);
+  useRentalRealtime(user?.id, "renter", [["my-rentals", user?.id], ["pv-progress"]]);
 
   const handleContactOwner = async (rental: Rental) => {
     if (!rental.id) return;
     const convId = await getOrCreateRentalConversation(rental.id);
-    if (convId) {
-      navigate(`/mesaje?conv=${convId}`);
-    }
+    if (convId) navigate(`/mesaje?conv=${convId}`);
   };
 
   const cancelPaidMutation = useMutation({
     mutationFn: async (rental: Rental) => {
-      // Edge function handles tier decision (full / 50% / none),
-      // Stripe action (cancel hold / partial capture / refund) and notifications.
       const { data, error } = await supabase.functions.invoke("cancel-rental-by-renter", {
         body: { rental_id: rental.id },
       });
@@ -113,20 +107,13 @@ const RentalsTab = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["my-rentals"] });
-      queryClient.invalidateQueries({ queryKey: ["my-requests"] });
-      const amount = data?.refunded_amount ?? 0;
       const tier = data?.tier;
-      if (tier === "FREE") {
-        toast.success(copy.dashboard.cancelFullRefundSuccess);
-      } else if (tier === "FIRST_DAY_FORFEIT" || tier === "LIMITED") {
-        toast.success(`${copy.dashboard.cancelPartialRefundSuccess} (${amount} RON)`);
-      } else {
-        toast.success(copy.dashboard.cancelNoRefundSuccess);
-      }
+      if (tier === "FREE") toast.success(copy.dashboard.cancelFullRefundSuccess);
+      else if (tier === "FIRST_DAY_FORFEIT" || tier === "LIMITED")
+        toast.success(`${copy.dashboard.cancelPartialRefundSuccess} (${data?.refunded_amount ?? 0} RON)`);
+      else toast.success(copy.dashboard.cancelNoRefundSuccess);
     },
-    onError: () => {
-      toast.error(copy.dashboard.cancelPaidError);
-    },
+    onError: () => toast.error(copy.dashboard.cancelPaidError),
   });
 
   const { data: rentals = [], isLoading } = useQuery({
@@ -134,37 +121,6 @@ const RentalsTab = () => {
     queryFn: () => fetchMyRentals(user!.id),
     enabled: !!user?.id,
   });
-
-  // Find rentals with renter checkin inspection already uploaded
-  const rentalIds = rentals.map(r => r.id);
-  const { data: renterCheckinIds = new Set<string>() } = useQuery({
-    queryKey: ["my-renter-checkin-inspections", user?.id, rentalIds],
-    queryFn: async () => {
-      if (!user?.id || rentalIds.length === 0) return new Set<string>();
-      const { data, error } = await supabase
-        .from("rental_inspections")
-        .select("rental_id")
-        .in("rental_id", rentalIds)
-        .eq("phase", "checkin")
-        .eq("role", "renter")
-        .eq("user_id", user.id);
-      if (error) return new Set<string>();
-      return new Set((data || []).map((r: any) => r.rental_id as string));
-    },
-    enabled: !!user?.id && rentalIds.length > 0,
-  });
-
-  const activeRentals = rentals.filter(r => r.status === "confirmed" || r.status === "active");
-  // completed rentals where renter hasn't yet documented hand-back stay actionable
-  const completedAwaitingCheckin = rentals.filter(
-    r => r.status === "completed" && !renterCheckinIds.has(r.id)
-  );
-  const completedRentals = rentals.filter(
-    r => r.status === "completed" && renterCheckinIds.has(r.id)
-  );
-  const awaitingOwnerRentals = rentals.filter(
-    r => r.status === "pending" && (r.payment_status === "authorized" || r.payment_status === "paid")
-  );
 
   if (isLoading) {
     return (
@@ -193,288 +149,126 @@ const RentalsTab = () => {
   }
 
   return (
-    <div className="space-y-8">
-      {awaitingOwnerRentals.length > 0 && (
-        <section>
-          <div className="mb-4 flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
-            <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-            <div>
-              <p className="font-medium text-foreground">Plata a fost autorizată</p>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Suma este blocată în siguranță. Așteptăm răspunsul proprietarului în maxim 24h.
-              </p>
+    <div className="space-y-4">
+      {rentals.map((rental) => {
+        const tlRental = {
+          status: rental.status,
+          payment_status: rental.payment_status,
+          start_date: rental.start_date_raw,
+          end_date: rental.end_date_raw,
+          handover_confirmed_at: rental.handover_confirmed_at,
+          return_confirmed_at: rental.return_confirmed_at,
+          dispute_status: (rental.dispute_status as any) ?? "none",
+        };
+        const { current: step, cancelled } = getTimelineStep(tlRental);
+        const inspectionPhase: InspectionPhase = step >= 5 ? "checkin" : "checkout";
+
+        return (
+          <article key={rental.id} className="rounded-2xl border border-border bg-card p-4 sm:p-5 shadow-sm transition-shadow hover:shadow-md">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <img
+                src={rental.product_image}
+                alt={rental.product_title}
+                className="w-full sm:w-20 h-32 sm:h-20 rounded-xl object-cover"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <Link to={`/produs/${rental.product_id}`} className="font-heading text-base font-semibold text-foreground hover:text-primary transition-colors line-clamp-1">
+                    {rental.product_title}
+                  </Link>
+                  <StatusBadge status={rental.status as any} />
+                </div>
+                <p className="mt-1 text-sm text-muted-foreground">{copy.dashboard.owner}: {rental.owner_name}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{rental.start_date} – {rental.end_date}</span>
+                  {rental.location && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{rental.location}</span>}
+                  <span className="font-semibold text-primary ml-auto">{rental.subtotal} RON</span>
+                </div>
+              </div>
             </div>
-          </div>
-          <h3 className="mb-4 font-heading text-lg font-semibold text-foreground flex items-center gap-2">
-            <Clock className="h-5 w-5 text-primary" />
-            În așteptarea proprietarului
-          </h3>
-          <div className="space-y-4">
-            {awaitingOwnerRentals.map((rental) => (
-              <div key={rental.id} className="flex flex-col sm:flex-row gap-4 rounded-xl border border-primary/30 bg-primary/5 p-4">
-                <img src={rental.product_image} alt={rental.product_title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover" />
-                <div className="flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <Link to={`/produs/${rental.product_id}`} className="font-medium text-foreground hover:text-primary transition-colors">{rental.product_title}</Link>
-                    <StatusBadge status="pending" />
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">Proprietar: {rental.owner_name}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{rental.start_date} - {rental.end_date}</span>
-                    {rental.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{rental.location}</span>}
-                  </div>
-                  <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
-                    <span className="font-semibold text-primary">{rental.subtotal} RON</span>
-                    <div className="flex flex-wrap gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleContactOwner(rental)}>
-                        {copy.dashboard.contactOwner}
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <CancellationStateCard
-                      startDate={rental.start_date_raw}
-                      subtotal={rental.subtotal}
-                      dailyPrice={rental.daily_price}
-                      platformFee={rental.platform_fee}
-                      handoverConfirmedAt={null}
-                      isCancelling={cancelPaidMutation.isPending}
-                      onCancel={async () => { await cancelPaidMutation.mutateAsync(rental); }}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
-      {activeRentals.length > 0 && (
-        <section>
-          <h3 className="mb-4 font-heading text-lg font-semibold text-foreground">{copy.dashboard.upcomingRentals}</h3>
-          <div className="space-y-4">
-            {activeRentals.map((rental) => {
-              const tlRental = {
-                status: rental.status,
-                payment_status: rental.payment_status,
-                end_date: rental.end_date_raw,
-                handover_confirmed_at: rental.handover_confirmed_at,
-                return_confirmed_at: rental.return_confirmed_at,
-                dispute_status: (rental.dispute_status as any) ?? "none",
-              };
-              const step = getTimelineStep(tlRental).current;
-              return (
-              <div key={rental.id} className="flex flex-col sm:flex-row gap-4 rounded-xl border border-border bg-card p-4 transition-shadow hover:shadow-md">
-                <img src={rental.product_image} alt={rental.product_title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover" />
-                <div className="flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <Link to={`/produs/${rental.product_id}`} className="font-medium text-foreground hover:text-primary transition-colors">{rental.product_title}</Link>
-                    <StatusBadge status={rental.status as any} />
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">{copy.dashboard.owner}: {rental.owner_name}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{rental.start_date} - {rental.end_date}</span>
-                    {rental.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{rental.location}</span>}
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-border/50">
-                    <RentalTimeline rental={tlRental} />
-                  </div>
-                  {rental.status === "confirmed" && !rental.handover_confirmed_at && rental.owner_id && (
-                    <div className="mt-3">
-                      <PickupArrangementCard rentalId={rental.id} ownerId={rental.owner_id} />
-                    </div>
-                  )}
-                  <div className="mt-3">
-                    <NextActionCard
-                      rental={{ id: rental.id, product_id: rental.product_id, product_title: rental.product_title, start_date: rental.end_date_raw, end_date: rental.end_date_raw, status: rental.status, payment_status: rental.payment_status, handover_confirmed_at: rental.handover_confirmed_at, return_confirmed_at: rental.return_confirmed_at, dispute_status: (rental.dispute_status as any) ?? "none" }}
-                      step={step}
-                      role="renter"
-                      onPrimary={() => setInspectionRental({ rental, phase: step >= 6 ? "checkin" : "checkout" })}
-                      onChat={() => handleContactOwner(rental)}
-                      onLeaveReview={() =>
-                        setReviewRental({
-                          id: rental.id,
-                          product_id: rental.product_id,
-                          product_title: rental.product_title,
-                          counterparty_id: rental.owner_id,
-                          counterparty_name: rental.owner_name,
-                        })
-                      }
-                    />
-                  </div>
-                  <Collapsible>
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="mt-2 h-7 px-2 text-xs">
-                        <Receipt className="h-3.5 w-3.5 mr-1" />
-                        Status plată
-                        <ChevronDown className="h-3.5 w-3.5 ml-1" />
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="mt-2">
-                      <RentalPaymentStatus rentalId={rental.id} mode="user" />
-                    </CollapsibleContent>
-                  </Collapsible>
-                  {step === 6 && (
-                    <div className="mt-3 flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
-                      <AlertCircle className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                      <p className="text-xs text-foreground">{copy.timeline.returnReminder}</p>
-                    </div>
-                  )}
-                  <div className="mt-3">
-                    {rental.handover_confirmed_at ? (
-                      <PostHandoverActionsCard
-                        rentalId={rental.id}
-                        earlyReturnStatus={rental.early_return_status ?? undefined}
-                        onChat={() => handleContactOwner(rental)}
-                        onOpenDispute={() => setDisputeRental(rental)}
-                        onEarlyReturnRequested={() => queryClient.invalidateQueries({ queryKey: ["my-rentals"] })}
-                      />
-                    ) : (
-                      <CancellationStateCard
-                        startDate={rental.start_date_raw}
-                        subtotal={rental.subtotal}
-                        dailyPrice={rental.daily_price}
-                        platformFee={rental.platform_fee}
-                        handoverConfirmedAt={rental.handover_confirmed_at}
-                        isCancelling={cancelPaidMutation.isPending}
-                        onCancel={async () => { await cancelPaidMutation.mutateAsync(rental); }}
-                      />
-                    )}
-                  </div>
-                  <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
-                    <span className="font-semibold text-primary">{rental.subtotal} RON</span>
-                    <div className="flex gap-2">
-                      {rental.status === "confirmed" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setInspectionRental({ rental, phase: "checkout" })}
-                        >
-                          <Camera className="h-4 w-4 mr-1" />
-                          📷 {copy.inspection.pickup}
-                        </Button>
-                      )}
-                      {rental.status === "active" && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setInspectionRental({ rental, phase: "checkin" })}
-                        >
-                          <Camera className="h-4 w-4 mr-1" />
-                          📷 {copy.inspection.confirmHandedBack}
-                        </Button>
-                      )}
-                      <Button variant="outline" size="sm" onClick={() => handleContactOwner(rental)}>
-                        {copy.dashboard.contactOwner}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {completedAwaitingCheckin.length > 0 && (
-        <section>
-          <div className="mb-4 flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
-            <Camera className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-            <div>
-              <p className="font-medium text-foreground">Confirmă cu poză starea în care ai predat produsul</p>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Închirierea s-a încheiat. Adaugă poze ca dovadă vizuală că l-ai returnat în starea convenită.
-              </p>
+            {/* Timeline */}
+            <div className="mt-5">
+              <RentalTimeline rental={tlRental} />
             </div>
-          </div>
-          <h3 className="mb-4 font-heading text-lg font-semibold text-foreground flex items-center gap-2">
-            <Camera className="h-5 w-5 text-primary" />
-            De confirmat predarea
-          </h3>
-          <div className="space-y-4">
-            {completedAwaitingCheckin.map((rental) => (
-              <div key={rental.id} className="flex flex-col sm:flex-row gap-4 rounded-xl border border-primary/30 bg-card p-4 transition-shadow hover:shadow-md">
-                <img src={rental.product_image} alt={rental.product_title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover" />
-                <div className="flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <Link to={`/produs/${rental.product_id}`} className="font-medium text-foreground hover:text-primary transition-colors">{rental.product_title}</Link>
-                    <StatusBadge status={rental.status as any} />
-                  </div>
-                  <p className="mt-1 text-sm text-muted-foreground">{copy.dashboard.owner}: {rental.owner_name}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{rental.start_date} - {rental.end_date}</span>
-                    {rental.location && <span className="flex items-center gap-1"><MapPin className="h-4 w-4" />{rental.location}</span>}
-                  </div>
-                  <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
-                    <span className="font-semibold text-primary">{rental.subtotal} RON</span>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => setInspectionRental({ rental, phase: "checkin" })}
-                      >
-                        <Camera className="h-4 w-4 mr-1" />
-                        📷 {copy.inspection.confirmHandedBack}
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleContactOwner(rental)}>
-                        {copy.dashboard.contactOwner}
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
-      {completedRentals.length > 0 && (
-        <section>
-          <h3 className="mb-4 font-heading text-lg font-semibold text-foreground">{copy.dashboard.rentalHistory}</h3>
-          <div className="space-y-4">
-            {completedRentals.map((rental) => (
-              <div key={rental.id} className="flex flex-col sm:flex-row gap-4 rounded-xl border border-border bg-card p-4 opacity-75">
-                <img src={rental.product_image} alt={rental.product_title} className="w-full sm:w-24 h-32 sm:h-24 rounded-lg object-cover" />
-                <div className="flex-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="font-medium text-foreground">{rental.product_title}</span>
-                    <StatusBadge status={rental.status as any} />
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1"><Calendar className="h-4 w-4" />{rental.start_date} - {rental.end_date}</span>
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-border/50">
-                    <RentalTimeline rental={{
-                      status: rental.status,
-                      payment_status: rental.payment_status,
-                      end_date: rental.end_date_raw,
-                      handover_confirmed_at: rental.handover_confirmed_at,
-                      return_confirmed_at: rental.return_confirmed_at,
-                    }} />
-                  </div>
-                  <Collapsible>
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="mt-2 h-7 px-2 text-xs">
-                        <Receipt className="h-3.5 w-3.5 mr-1" />
-                        Status plată
-                        <ChevronDown className="h-3.5 w-3.5 ml-1" />
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="mt-2">
-                      <RentalPaymentStatus rentalId={rental.id} mode="user" />
-                    </CollapsibleContent>
-                  </Collapsible>
-                  <div className="mt-3">
-                    <span className="font-semibold text-muted-foreground">{rental.subtotal} RON</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+            {/* Main action */}
+            <div className="mt-4">
+              <MainActionCard
+                rental={{
+                  id: rental.id,
+                  product_id: rental.product_id,
+                  product_title: rental.product_title,
+                  start_date: rental.start_date_raw,
+                  end_date: rental.end_date_raw,
+                  status: rental.status,
+                  payment_status: rental.payment_status,
+                  handover_confirmed_at: rental.handover_confirmed_at,
+                  return_confirmed_at: rental.return_confirmed_at,
+                  dispute_status: (rental.dispute_status as any) ?? "none",
+                }}
+                step={step}
+                cancelled={cancelled}
+                role="renter"
+                onStartInspection={() => setInspectionRental({ rental, phase: inspectionPhase })}
+                onChat={() => handleContactOwner(rental)}
+                onLeaveReview={() =>
+                  setReviewRental({
+                    id: rental.id,
+                    product_id: rental.product_id,
+                    product_title: rental.product_title,
+                    counterparty_id: rental.owner_id,
+                    counterparty_name: rental.owner_name,
+                  })
+                }
+                secondaryActions={
+                  <SecondaryActionsMenu
+                    onCancel={
+                      !rental.handover_confirmed_at && rental.status !== "completed" && rental.status !== "cancelled"
+                        ? () => cancelPaidMutation.mutate(rental)
+                        : undefined
+                    }
+                    onEarlyReturn={
+                      rental.handover_confirmed_at && rental.status === "active" && rental.early_return_status === "none"
+                        ? () => document.getElementById(`early-return-${rental.id}`)?.click()
+                        : undefined
+                    }
+                    onReportIssue={step >= 3 && step <= 5 ? () => setDisputeRental(rental) : undefined}
+                  />
+                }
+              />
+            </div>
 
-      {/* Inspection Dialog */}
+            {/* Hidden trigger for early return dialog (composed via menu) */}
+            {rental.handover_confirmed_at && rental.status === "active" && rental.early_return_status === "none" && (
+              <div className="hidden">
+                <EarlyReturnRequestDialog
+                  rentalId={rental.id}
+                  onSuccess={() => queryClient.invalidateQueries({ queryKey: ["my-rentals"] })}
+                  trigger={<button id={`early-return-${rental.id}`} type="button" />}
+                />
+              </div>
+            )}
+
+            {/* Payment status (collapsed) */}
+            <Collapsible className="mt-3">
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground">
+                  <Receipt className="h-3.5 w-3.5 mr-1" />
+                  Status plată
+                  <ChevronDown className="h-3.5 w-3.5 ml-1" />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <RentalPaymentStatus rentalId={rental.id} mode="user" />
+              </CollapsibleContent>
+            </Collapsible>
+          </article>
+        );
+      })}
+
+      {/* Dialogs */}
       {inspectionRental && (
         <InspectionDialog
           open={!!inspectionRental}
@@ -490,7 +284,7 @@ const RentalsTab = () => {
           open={!!disputeRental}
           onOpenChange={(open) => !open && setDisputeRental(null)}
           rentalId={disputeRental.id}
-          phase="return"
+          phase={disputeRental.handover_confirmed_at ? "return" : "handover"}
         />
       )}
       <LeaveReviewDialog
