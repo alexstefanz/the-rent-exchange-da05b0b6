@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
+import type { DateRange } from "react-day-picker";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -1079,20 +1080,10 @@ const Step5Pricing = ({
             </span>
             <span className="text-xs text-muted-foreground group-open:hidden">{data.blocked_dates.length} zile</span>
           </summary>
-          <div className="mt-3">
-            <Calendar
-              mode="multiple"
-              selected={data.blocked_dates.map((d) => new Date(d))}
-              onSelect={(dates) =>
-                update(
-                  "blocked_dates",
-                  (dates || []).map((d) => d.toISOString().slice(0, 10)),
-                )
-              }
-              className="p-3 pointer-events-auto"
-              disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
-            />
-          </div>
+          <BlockedDatesPicker
+            value={data.blocked_dates}
+            onChange={(v) => update("blocked_dates", v)}
+          />
         </details>
       </div>
     </div>
@@ -1240,3 +1231,149 @@ const StepHeader = ({
     <p className="text-sm text-muted-foreground sm:text-base">{subtitle}</p>
   </div>
 );
+
+// ---------- Blocked dates picker ----------
+const fmtLocal = (d: Date) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+const parseLocal = (s: string) => {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+};
+const expandRange = (start: Date, end: Date): string[] => {
+  const out: string[] = [];
+  const a = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const b = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  const cur = a <= b ? a : b;
+  const stop = a <= b ? b : a;
+  while (cur <= stop) {
+    out.push(fmtLocal(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+  return out;
+};
+
+const BlockedDatesPicker = ({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (v: string[]) => void;
+}) => {
+  const [mode, setMode] = useState<"single" | "range">("single");
+  const [range, setRange] = useState<DateRange | undefined>();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const sorted = [...value].sort();
+  const selectedDates = sorted.map(parseLocal);
+
+  const addRange = () => {
+    if (!range?.from || !range?.to) return;
+    const merged = Array.from(new Set([...value, ...expandRange(range.from, range.to)]));
+    onChange(merged.sort());
+    setRange(undefined);
+  };
+
+  const removeOne = (s: string) => onChange(value.filter((d) => d !== s));
+  const clearAll = () => onChange([]);
+
+  return (
+    <div className="mt-3 space-y-3">
+      <div className="inline-flex rounded-full border border-border bg-muted/40 p-1">
+        <button
+          type="button"
+          onClick={() => {
+            setMode("single");
+            setRange(undefined);
+          }}
+          className={cn(
+            "rounded-full px-4 py-1.5 text-xs font-semibold transition-colors",
+            mode === "single" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground",
+          )}
+        >
+          Zile individuale
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("range")}
+          className={cn(
+            "rounded-full px-4 py-1.5 text-xs font-semibold transition-colors",
+            mode === "range" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground",
+          )}
+        >
+          Interval
+        </button>
+      </div>
+
+      {mode === "single" ? (
+        <Calendar
+          mode="multiple"
+          selected={selectedDates}
+          onSelect={(dates) => onChange((dates || []).map(fmtLocal).sort())}
+          className="p-3 pointer-events-auto"
+          disabled={(d) => d < today}
+        />
+      ) : (
+        <div className="space-y-3">
+          <Calendar
+            mode="range"
+            selected={range}
+            onSelect={setRange}
+            numberOfMonths={1}
+            className="p-3 pointer-events-auto"
+            disabled={(d) => d < today}
+          />
+          {range?.from && range?.to && (
+            <Button type="button" onClick={addRange} className="w-full sm:w-auto">
+              <Plus className="mr-2 h-4 w-4" />
+              Adaugă {expandRange(range.from, range.to).length} zile blocate
+            </Button>
+          )}
+        </div>
+      )}
+
+      {value.length > 0 && (
+        <div className="space-y-2 border-t border-border pt-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-foreground">
+              {value.length} {value.length === 1 ? "zi blocată" : "zile blocate"}
+            </p>
+            <button
+              type="button"
+              onClick={clearAll}
+              className="text-xs font-medium text-muted-foreground hover:text-destructive"
+            >
+              Șterge tot
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {sorted.map((s) => {
+              const d = parseLocal(s);
+              const label = `${d.getDate()} ${d.toLocaleDateString("ro-RO", { month: "short" })}`;
+              return (
+                <span
+                  key={s}
+                  className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+                >
+                  {label}
+                  <button
+                    type="button"
+                    onClick={() => removeOne(s)}
+                    className="rounded-full p-0.5 hover:bg-primary/20"
+                    aria-label={`Elimină ${label}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
