@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, MapPin, Search, Camera, AlertCircle, Receipt, ChevronDown, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { Calendar, MapPin, Search, Camera, AlertCircle, Receipt, ChevronDown, CheckCircle2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import StatusBadge from "./StatusBadge";
@@ -320,6 +320,27 @@ const RentalsTab = () => {
                       <p className="text-xs text-foreground">{copy.timeline.returnReminder}</p>
                     </div>
                   )}
+                  <div className="mt-3">
+                    {rental.handover_confirmed_at ? (
+                      <PostHandoverActionsCard
+                        rentalId={rental.id}
+                        earlyReturnStatus={rental.early_return_status ?? undefined}
+                        onChat={() => handleContactOwner(rental)}
+                        onOpenDispute={() => setDisputeRental(rental)}
+                        onEarlyReturnRequested={() => queryClient.invalidateQueries({ queryKey: ["my-rentals"] })}
+                      />
+                    ) : (
+                      <CancellationStateCard
+                        startDate={rental.start_date_raw}
+                        subtotal={rental.subtotal}
+                        dailyPrice={rental.daily_price}
+                        platformFee={rental.platform_fee}
+                        handoverConfirmedAt={rental.handover_confirmed_at}
+                        isCancelling={cancelPaidMutation.isPending}
+                        onCancel={async () => { await cancelPaidMutation.mutateAsync(rental); }}
+                      />
+                    )}
+                  </div>
                   <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
                     <span className="font-semibold text-primary">{rental.subtotal} RON</span>
                     <div className="flex gap-2">
@@ -462,6 +483,14 @@ const RentalsTab = () => {
           phase={inspectionRental.phase}
           role="renter"
           productTitle={inspectionRental.rental.product_title}
+        />
+      )}
+      {disputeRental && (
+        <OpenDisputeDialog
+          open={!!disputeRental}
+          onOpenChange={(open) => !open && setDisputeRental(null)}
+          rentalId={disputeRental.id}
+          phase="return"
         />
       )}
       <LeaveReviewDialog
