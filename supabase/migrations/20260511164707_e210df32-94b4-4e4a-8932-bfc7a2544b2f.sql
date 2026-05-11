@@ -1,0 +1,1 @@
+ALTER TABLE public.rental_inspections ADD COLUMN IF NOT EXISTS metadata jsonb;
