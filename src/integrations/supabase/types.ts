@@ -1409,6 +1409,7 @@ export type Database = {
           declaration_accepted: boolean
           id: string
           locked_at: string | null
+          metadata: Json | null
           notes: string | null
           phase: string
           photos: string[]
@@ -1422,6 +1423,7 @@ export type Database = {
           declaration_accepted?: boolean
           id?: string
           locked_at?: string | null
+          metadata?: Json | null
           notes?: string | null
           phase: string
           photos?: string[]
@@ -1435,6 +1437,7 @@ export type Database = {
           declaration_accepted?: boolean
           id?: string
           locked_at?: string | null
+          metadata?: Json | null
           notes?: string | null
           phase?: string
           photos?: string[]
