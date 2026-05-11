@@ -280,6 +280,7 @@ const RentalsOutTab = () => {
                           handover_confirmed_at: rental.handover_confirmed_at,
                           return_confirmed_at: rental.return_confirmed_at,
                           refunded_at: rental.refunded_at,
+                          dispute_status: (rental.dispute_status as any) ?? "none",
                         }} />
                       </div>
                       {rental.status === "confirmed" && !rental.handover_confirmed_at && (
@@ -311,6 +312,7 @@ const RentalsOutTab = () => {
                                 payment_status: rental.payment_status,
                                 handover_confirmed_at: rental.handover_confirmed_at,
                                 return_confirmed_at: rental.return_confirmed_at,
+                                dispute_status: (rental.dispute_status as any) ?? "none",
                               }}
                               step={step}
                               cancelled={cancelled}
