@@ -33,7 +33,7 @@ export const approveProduct = async (productId: string): Promise<void> => {
   try {
     const { data: prod } = await supabase
       .from('products')
-      .select('title, slug, owner_id')
+      .select('title, slug, owner_id, images')
       .eq('id', productId)
       .single();
     if (prod?.owner_id) {
@@ -52,6 +52,8 @@ export const approveProduct = async (productId: string): Promise<void> => {
             templateData: {
               name: profile.full_name || undefined,
               productTitle: prod.title,
+              productImage: Array.isArray((prod as any).images) ? (prod as any).images[0] : undefined,
+              productId: prod.slug || productId,
             },
           },
         });
