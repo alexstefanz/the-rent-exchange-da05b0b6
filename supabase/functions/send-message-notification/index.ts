@@ -126,6 +126,25 @@ Deno.serve(async (req) => {
     const senderName = escapeHtml(senderRes.data?.full_name || "Cineva");
     const productTitle = escapeHtml(productRes.data?.title || "un produs");
 
+    // Insert in-app notification (so it shows up in /notificari "Mesaje" tab)
+    try {
+      const senderNameRaw = senderRes.data?.full_name || "Cineva";
+      const productTitleRaw = productRes.data?.title || "un produs";
+      const preview =
+        message_content.length > 140 ? message_content.substring(0, 140) + "…" : message_content;
+      await supabase.from("notifications").insert({
+        user_id: recipientId,
+        type: "new_message",
+        title_ro: `Mesaj nou de la ${senderNameRaw}`,
+        title_en: `New message from ${senderNameRaw}`,
+        description_ro: `${productTitleRaw}: ${preview}`,
+        description_en: `${productTitleRaw}: ${preview}`,
+        link: `/mesaje?conv=${conversation_id}`,
+      });
+    } catch (e) {
+      console.error("Notification insert error:", e);
+    }
+
     // Get recipient email with fallback
     let recipientEmail = recipientRes.data?.email || null;
     if (!recipientEmail) {
