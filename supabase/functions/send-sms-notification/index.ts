@@ -145,6 +145,13 @@ Deno.serve(async (req) => {
       "rental_rejected",
       "rental_cancelled",
       "return_reminder",
+      "pickup_scheduled",
+      "pv_pending",
+      "pv_other_done",
+      "return_in_progress",
+      "rental_completed",
+      "dispute_opened",
+      "review_reminder",
     ];
     if (!templateKey || !allowedTemplates.includes(templateKey)) {
       return jsonResponse({ error: "Invalid templateKey" }, 400);
