@@ -91,6 +91,7 @@ const AdminApprovals = lazy(() => import("./pages/admin/AdminApprovals"));
 const AdminTestEmails = lazy(() => import("./pages/admin/AdminTestEmails"));
 const AdminNotifications = lazy(() => import("./pages/admin/AdminNotifications"));
 const AdminSmsLogs = lazy(() => import("./pages/admin/AdminSmsLogs"));
+const AdminNotificationAudit = lazy(() => import("./pages/admin/AdminNotificationAudit"));
 const AdminWithdrawals = lazy(() => import("./pages/admin/AdminWithdrawals"));
 
 const queryClient = new QueryClient();
@@ -176,6 +177,7 @@ const App = () => (
                 <Route path="/admin/approvals" element={<AdminApprovals />} />
                 <Route path="/admin/test-emails" element={<AdminTestEmails />} />
                 <Route path="/admin/sms-logs" element={<AdminSmsLogs />} />
+                <Route path="/admin/notification-audit" element={<AdminNotificationAudit />} />
                 <Route path="/a/:token" element={<ShortLinkRedirect />} />
                 <Route path="/setari/notificari" element={<NotificationPreferences />} />
                 
