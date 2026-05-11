@@ -28,7 +28,8 @@ export const approveProduct = async (productId: string): Promise<void> => {
     .eq('id', productId);
   if (error) throw new Error(error.message);
 
-  // Notify owner: email + in-app notification (non-blocking)
+  // Notify owner: in-app notification is created by DB trigger
+  // (notify_user_product_approved). Send transactional email here.
   try {
     const { data: prod } = await supabase
       .from('products')
@@ -36,19 +37,6 @@ export const approveProduct = async (productId: string): Promise<void> => {
       .eq('id', productId)
       .single();
     if (prod?.owner_id) {
-      const link = `/produs/${prod.slug ?? productId}`;
-
-      // In-app notification
-      await supabase.from('notifications').insert({
-        user_id: prod.owner_id,
-        type: 'product_published',
-        title_ro: 'Anunțul tău a fost aprobat',
-        title_en: 'Your listing has been approved',
-        description_ro: `Anunțul „${prod.title}" este acum vizibil pe platformă.`,
-        description_en: `The listing "${prod.title}" is now visible on the platform.`,
-        link,
-      });
-
       // Transactional email
       const { data: profile } = await supabase
         .from('profiles')

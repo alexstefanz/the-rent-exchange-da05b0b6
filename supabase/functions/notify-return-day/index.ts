@@ -74,6 +74,38 @@ Deno.serve(async (req) => {
       } catch (e) {
         console.error("[notify-return-day] SMS invoke failed:", e);
       }
+
+      // Email to renter (respect notification_preferences)
+      try {
+        const { data: prefs } = await supabase
+          .from("notification_preferences")
+          .select("email_transactional")
+          .eq("user_id", r.renter_id)
+          .maybeSingle();
+        if (prefs?.email_transactional !== false) {
+          const { data: renterProfile } = await supabase
+            .from("profiles")
+            .select("email, full_name")
+            .eq("id", r.renter_id)
+            .maybeSingle();
+          if (renterProfile?.email) {
+            await supabase.functions.invoke("send-transactional-email", {
+              body: {
+                templateName: "return-reminder",
+                recipientEmail: renterProfile.email,
+                idempotencyKey: `return-reminder-${r.id}-${today}`,
+                templateData: {
+                  name: renterProfile.full_name || undefined,
+                  productTitle,
+                  endDate: r.end_date,
+                },
+              },
+            });
+          }
+        }
+      } catch (e) {
+        console.error("[notify-return-day] email invoke failed:", e);
+      }
     }
 
     return new Response(JSON.stringify({ processed: rentals?.length || 0, notified }), {

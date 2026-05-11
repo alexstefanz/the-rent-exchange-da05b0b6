@@ -163,62 +163,52 @@ Deno.serve(async (req) => {
       }).catch((e: unknown) => console.error("Notification insert error:", e));
     }
 
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    if (resendApiKey) {
-      const emailPromises: Promise<unknown>[] = [];
+    // Branded transactional emails (respect notification_preferences)
+    const startDateStr = new Date(rental.start_date).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric' });
+    const endDateStr = new Date(rental.end_date).toLocaleDateString('ro-RO', { day: '2-digit', month: 'short', year: 'numeric' });
+    const productTitleRaw = productRes.data?.title || "produsul";
+    const renterNameRaw = renterRes.data?.full_name || "Chiriașul";
+    const ownerNameRaw = ownerRes.data?.full_name || "Proprietarul";
 
-      // Email to owner
-      if (ownerEmail) {
-        const ownerHtml = buildEmailTemplate({
-          title: "O cerere a fost anulată",
-          greeting: `<strong>${renterName}</strong> a anulat cererea de închiriere pentru <strong>${productTitle}</strong>.`,
-          rows,
-          ctaText: "Vezi anunțurile tale",
-          ctaLink: "/profile?tab=lendings",
-          footerText: "Produsul tău este din nou disponibil pentru alte cereri.",
+    const sendIfAllowed = async (
+      userId: string,
+      email: string | null,
+      templateName: string,
+      idempotencyKey: string,
+      templateData: Record<string, unknown>,
+    ) => {
+      if (!email) return;
+      try {
+        const { data: prefs } = await supabase
+          .from("notification_preferences")
+          .select("email_transactional")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (prefs?.email_transactional === false) return;
+        await supabase.functions.invoke("send-transactional-email", {
+          body: { templateName, recipientEmail: email, idempotencyKey, templateData },
         });
-
-        emailPromises.push(
-          fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              from: "Rentli <noreply@rentli.ro>",
-              to: [ownerEmail],
-              subject: `Cerere anulată - ${productTitle}`,
-              html: ownerHtml,
-            }),
-          }).catch((e) => console.error("Owner email error:", e))
-        );
+      } catch (e) {
+        console.error(`[send-cancellation-notification] ${templateName} failed:`, e);
       }
+    };
 
-      // Email to renter (confirmation)
-      if (renterEmail) {
-        const renterHtml = buildEmailTemplate({
-          title: "Cererea ta a fost anulată",
-          greeting: `Ai anulat cererea de închiriere pentru <strong>${productTitle}</strong> de la <strong>${ownerName}</strong>.`,
-          rows,
-          ctaText: "Caută alte produse",
-          ctaLink: "/search",
-          footerText: "Poți căuta alte produse similare pe platformă.",
-        });
-
-        emailPromises.push(
-          fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              from: "Rentli <noreply@rentli.ro>",
-              to: [renterEmail],
-              subject: `Confirmare anulare - ${productTitle}`,
-              html: renterHtml,
-            }),
-          }).catch((e) => console.error("Renter email error:", e))
-        );
-      }
-
-      await Promise.all(emailPromises);
-    }
+    await Promise.all([
+      sendIfAllowed(rental.owner_id, ownerEmail, "cancellation-owner", `cancel-owner-${rental.id}`, {
+        name: ownerRes.data?.full_name || undefined,
+        renterName: renterNameRaw,
+        productTitle: productTitleRaw,
+        startDate: startDateStr,
+        endDate: endDateStr,
+      }),
+      sendIfAllowed(rental.renter_id, renterEmail, "cancellation-renter", `cancel-renter-${rental.id}`, {
+        name: renterRes.data?.full_name || undefined,
+        ownerName: ownerNameRaw,
+        productTitle: productTitleRaw,
+        startDate: startDateStr,
+        endDate: endDateStr,
+      }),
+    ]);
 
     // SMS to owner (cancellation by renter) — best-effort
     if (rental.owner_id) {

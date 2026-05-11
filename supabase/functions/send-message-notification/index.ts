@@ -159,40 +159,34 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Send email
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    if (resendApiKey && recipientEmail) {
-      const preview = escapeHtml(message_content.length > 100 ? message_content.substring(0, 100) + "..." : message_content);
-
-      const html = buildEmailTemplate({
-        title: "Ai primit un mesaj nou 💬",
-        greeting: `<strong>${senderName}</strong> ți-a trimis un mesaj referitor la <strong>${productTitle}</strong>.`,
-        rows: [
-          { label: "👤 De la", value: senderName },
-          { label: "📦 Produs", value: productTitle },
-          { label: "💬 Mesaj", value: preview },
-        ],
-        ctaText: "Citește mesajul",
-        ctaLink: "/profile?tab=messages",
-        footerText: "Răspunde rapid pentru o experiență mai bună.",
-      });
-
+    // Send branded transactional email (respect notification_preferences)
+    if (recipientEmail) {
       try {
-        await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${resendApiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from: "Rentli <noreply@rentli.ro>",
-            to: [recipientEmail],
-            subject: `Mesaj nou de la ${senderName} - ${productTitle}`,
-            html,
-          }),
-        });
+        const { data: prefs } = await supabase
+          .from("notification_preferences")
+          .select("email_transactional")
+          .eq("user_id", recipientId)
+          .maybeSingle();
+        if (prefs?.email_transactional !== false) {
+          const preview = message_content.length > 140
+            ? message_content.substring(0, 140) + "…"
+            : message_content;
+          await supabase.functions.invoke("send-transactional-email", {
+            body: {
+              templateName: "new-message",
+              recipientEmail,
+              idempotencyKey: `new-message-${conversation_id}-${Date.now()}`,
+              templateData: {
+                name: recipientRes.data?.full_name || undefined,
+                senderName: senderRes.data?.full_name || "Cineva",
+                productTitle: productRes.data?.title || "un produs",
+                messagePreview: preview,
+              },
+            },
+          });
+        }
       } catch (e) {
-        console.error("Email error:", e);
+        console.error("[send-message-notification] email invoke failed:", e);
       }
     }
 
