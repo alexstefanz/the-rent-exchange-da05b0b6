@@ -254,6 +254,8 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
   const { t } = useLanguage();
   const { data, isLoading } = useAccountDashboard();
   const { data: isAdmin } = useIsAdmin(user?.id);
+  const { data: adminSummary } = useAdminNotificationSummary();
+  const adminUnread = isAdmin ? adminSummary?.unread_total ?? 0 : 0;
 
   const [showBalance, setShowBalance] = useState(
     () => typeof window !== "undefined" && localStorage.getItem("show_balance") !== "false",
