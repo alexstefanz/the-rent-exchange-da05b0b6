@@ -14,12 +14,23 @@ type TemplateKey =
   | "rental_accepted"
   | "rental_rejected"
   | "rental_cancelled"
-  | "return_reminder";
+  | "return_reminder"
+  | "pickup_scheduled"
+  | "pv_pending"
+  | "pv_other_done"
+  | "return_in_progress"
+  | "rental_completed"
+  | "dispute_opened"
+  | "review_reminder";
 
 type TemplateVars = {
   productTitle?: string;
   renterName?: string;
   ownerName?: string;
+  link?: string;
+  pickupDate?: string;
+  pickupLocation?: string;
+  otherPartyName?: string;
 };
 
 /**
@@ -30,6 +41,10 @@ function renderTemplate(key: TemplateKey, v: TemplateVars): string {
   const title = stripDiacritics(v.productTitle || "produsul").slice(0, 40);
   const renter = stripDiacritics(v.renterName || "Un utilizator").slice(0, 30);
   const owner = stripDiacritics(v.ownerName || "proprietarul").slice(0, 30);
+  const other = stripDiacritics(v.otherPartyName || "Cealalta parte").slice(0, 30);
+  const link = v.link || `${PLATFORM_URL}/rezervari`;
+  const when = stripDiacritics(v.pickupDate || "").slice(0, 30);
+  const place = stripDiacritics(v.pickupLocation || "").slice(0, 40);
 
   switch (key) {
     case "rental_request_owner":
@@ -42,6 +57,20 @@ function renderTemplate(key: TemplateKey, v: TemplateVars): string {
       return `Rentli: rezervarea pt "${title}" a fost anulata. Detalii: ${PLATFORM_URL}/rezervari`;
     case "return_reminder":
       return `Rentli: returneaza azi "${title}". Contacteaza ${owner} pt predare.`;
+    case "pickup_scheduled":
+      return `Rentli: predare "${title}"${when ? ` pe ${when}` : ""}${place ? ` la ${place}` : ""}. Detalii: ${link}`;
+    case "pv_pending":
+      return `Rentli: completeaza procesul verbal pt "${title}". Link: ${link}`;
+    case "pv_other_done":
+      return `Rentli: ${other} a completat PV pt "${title}". Verifica: ${link}`;
+    case "return_in_progress":
+      return `Rentli: returnare "${title}" - completeaza PV. Link: ${link}`;
+    case "rental_completed":
+      return `Rentli: inchirierea "${title}" a fost finalizata. Detalii: ${link}`;
+    case "dispute_opened":
+      return `Rentli: disputa deschisa pt "${title}". Suport: ${link}`;
+    case "review_reminder":
+      return `Rentli: lasa un review pt "${title}". ${link}`;
   }
 }
 
