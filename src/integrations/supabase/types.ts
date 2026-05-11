@@ -1866,6 +1866,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      confirm_pickup: { Args: { _rental_id: string }; Returns: Json }
       create_user_notification: {
         Args: {
           p_description_en?: string
@@ -2350,9 +2351,21 @@ export type Database = {
         Returns: number
       }
       normalize_full_name: { Args: { input_name: string }; Returns: string }
+      open_rental_dispute: {
+        Args: { _phase: string; _reason: string; _rental_id: string }
+        Returns: undefined
+      }
       pick_admin_for_ticket_category: {
         Args: { p_group: string }
         Returns: string
+      }
+      propose_pickup: {
+        Args: {
+          _pickup_place: string
+          _pickup_time: string
+          _rental_id: string
+        }
+        Returns: Json
       }
       purge_expired_deleted_products: { Args: never; Returns: number }
       read_email_batch: {
@@ -2362,6 +2375,10 @@ export type Database = {
           msg_id: number
           read_ct: number
         }[]
+      }
+      resolve_rental_dispute: {
+        Args: { _rental_id: string }
+        Returns: undefined
       }
       search_products:
         | {

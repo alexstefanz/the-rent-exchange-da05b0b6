@@ -24,6 +24,7 @@ import { AcceptedRentalDialog } from "./AcceptedRentalDialog";
 import { InspectionDialog } from "./InspectionDialog";
 import LeaveReviewDialog, { type LeaveReviewRental } from "./LeaveReviewDialog";
 import RentalTimeline, { getTimelineStep } from "./RentalTimeline";
+import PickupArrangementCard from "./PickupArrangementCard";
 import NextActionCard from "./NextActionCard";
 import { useRentalRealtime } from "@/hooks/useRentalRealtime";
 import { useNavigate } from "react-router-dom";
@@ -281,6 +282,11 @@ const RentalsOutTab = () => {
                           refunded_at: rental.refunded_at,
                         }} />
                       </div>
+                      {rental.status === "confirmed" && !rental.handover_confirmed_at && (
+                        <div className="mt-3">
+                          <PickupArrangementCard rentalId={rental.id} ownerId={user?.id || null} />
+                        </div>
+                      )}
                       {(() => {
                         const { current: step, cancelled } = getTimelineStep({
                           status: rental.status,

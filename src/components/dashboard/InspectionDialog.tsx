@@ -27,10 +27,13 @@ import {
   INSPECTION_CHECKLIST_KEYS,
   emptyChecklist,
   countChecked,
+  MIN_INSPECTION_PHOTOS,
 } from "@/features/rentals/inspectionApi";
 import { useAuth } from "@/contexts/AuthContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import { Lock, ShieldAlert } from "lucide-react";
+import { confirmHandover, confirmReturn, openRentalDispute } from "@/features/rentals/ownerRentalsApi";
 
 function InspectionImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
   const isBlob = src.startsWith("blob:");
@@ -54,6 +57,8 @@ interface InspectionDialogProps {
   phase: InspectionPhase;
   role: InspectionRole;
   productTitle: string;
+  /** Called after the second party submits and confirms — parent should refresh. */
+  onConfirmed?: () => void;
 }
 
 const MAX_PHOTOS = 10;
@@ -86,6 +91,7 @@ export function InspectionDialog({
   phase,
   role,
   productTitle,
+  onConfirmed,
 }: InspectionDialogProps) {
   const { user } = useAuth();
   const copy = useUxCopy();
@@ -94,8 +100,12 @@ export function InspectionDialog({
   const [photos, setPhotos] = useState<string[]>([]);
   const [notes, setNotes] = useState("");
   const [checklist, setChecklist] = useState<InspectionChecklist>(() => emptyChecklist());
+  const [declarationAccepted, setDeclarationAccepted] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [disputeMode, setDisputeMode] = useState(false);
+  const [disputeReason, setDisputeReason] = useState("");
 
   const { data: existingInspections = [], isLoading } = useQuery({
     queryKey: ["inspections", rentalId],
@@ -119,7 +129,8 @@ export function InspectionDialog({
   const trimmedNotes = notes.trim();
   const notesValid = trimmedNotes.length >= 20;
   const checklistValid = allChecked || notesValid;
-  const canSubmit = photos.length > 0 && checklistValid && !isSubmitting && !isUploading;
+  const photosValid = photos.length >= MIN_INSPECTION_PHOTOS;
+  const canSubmit = photosValid && checklistValid && declarationAccepted && !isSubmitting && !isUploading;
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -150,33 +161,81 @@ export function InspectionDialog({
   };
 
   const handleSubmit = async () => {
-    if (photos.length === 0) {
-      toast.error("Adauga cel putin o poza");
+    if (!photosValid) {
+      toast.error(`Adaugă minim ${MIN_INSPECTION_PHOTOS} poze`);
       return;
     }
     if (!checklistValid) {
       toast.error(copy.inspection.checklist.notesRequired);
       return;
     }
+    if (!declarationAccepted) {
+      toast.error("Trebuie să accepți declarația de predare");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      await createInspection(rentalId, phase, role, photos, notes || undefined, checklist);
+      await createInspection(rentalId, phase, role, photos, notes || undefined, checklist, declarationAccepted);
       toast.success("Inspectia a fost salvata cu succes!");
       queryClient.invalidateQueries({ queryKey: ["inspections", rentalId] });
       setPhotos([]);
       setNotes("");
       setChecklist(emptyChecklist());
+      setDeclarationAccepted(false);
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error("Eroare la salvarea inspectiei");
+      toast.error((err as Error).message || "Eroare la salvarea inspectiei");
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleConfirmGate = async () => {
+    setIsConfirming(true);
+    try {
+      if (phase === "checkout") {
+        await confirmHandover(rentalId);
+        toast.success("Predarea a fost confirmată!");
+      } else {
+        await confirmReturn(rentalId);
+        toast.success("Returnarea a fost confirmată — plata se eliberează către proprietar.");
+      }
+      queryClient.invalidateQueries({ queryKey: ["inspections", rentalId] });
+      queryClient.invalidateQueries({ queryKey: ["my-rentals"] });
+      queryClient.invalidateQueries({ queryKey: ["owner-rentals"] });
+      onConfirmed?.();
+      onOpenChange(false);
+    } catch (err) {
+      toast.error((err as Error).message || "Eroare la confirmare");
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
+  const handleOpenDispute = async () => {
+    if (disputeReason.trim().length < 20) {
+      toast.error("Descrie problema în minim 20 de caractere");
+      return;
+    }
+    setIsConfirming(true);
+    try {
+      await openRentalDispute(rentalId, phase === "checkout" ? "handover" : "return", disputeReason.trim());
+      toast.success("Disputa a fost deschisă. Suportul Rentli intervine în maxim 24h.");
+      queryClient.invalidateQueries({ queryKey: ["my-rentals"] });
+      queryClient.invalidateQueries({ queryKey: ["owner-rentals"] });
+      onOpenChange(false);
+    } catch (err) {
+      toast.error((err as Error).message || "Eroare la deschiderea disputei");
+    } finally {
+      setIsConfirming(false);
+    }
+  };
+
   const otherRoleLabel = role === "owner" ? "Chirias" : "Proprietar";
+  const isLocked = !!myExisting?.locked_at;
+  const bothPartiesDone = !!myExisting && !!otherParty;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -197,9 +256,16 @@ export function InspectionDialog({
           </div>
         ) : myExisting ? (
           <div className="space-y-4">
-            <div className="flex items-center gap-2 text-green-600">
-              <CheckCircle2 className="h-5 w-5" />
-              <span className="font-medium">Ai completat inspectia ({roleLabels[role]})</span>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-green-600">
+                <CheckCircle2 className="h-5 w-5" />
+                <span className="font-medium">Ai completat PV-ul ({roleLabels[role]})</span>
+              </div>
+              {isLocked && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2 py-0.5 text-[11px] font-medium text-foreground">
+                  <Lock className="h-3 w-3" /> PV blocat
+                </span>
+              )}
             </div>
             <div className="grid grid-cols-3 gap-2">
               {myExisting.photos.map((url, i) => (
@@ -233,6 +299,42 @@ export function InspectionDialog({
                 />
                 {otherParty.notes && (
                   <p className="text-sm text-muted-foreground">{otherParty.notes}</p>
+                )}
+                {bothPartiesDone && !isLocked && (
+                  <p className="text-xs text-muted-foreground">Ambele PV-uri sunt în curs de blocare automată...</p>
+                )}
+                {bothPartiesDone && (
+                  disputeMode ? (
+                    <div className="space-y-2 border-t pt-3">
+                      <Label className="text-sm font-medium text-destructive">Descrie problema (min 20 caractere)</Label>
+                      <Textarea
+                        value={disputeReason}
+                        onChange={(e) => setDisputeReason(e.target.value)}
+                        placeholder="Ex: Produsul prezintă o zgârietură nouă pe partea dreaptă, vizibilă în pozele 2 și 3."
+                        rows={3}
+                      />
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setDisputeMode(false)} disabled={isConfirming}>
+                          Renunță
+                        </Button>
+                        <Button variant="destructive" size="sm" onClick={handleOpenDispute} disabled={isConfirming}>
+                          {isConfirming ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ShieldAlert className="h-4 w-4 mr-1" />}
+                          Trimite spre suport
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 border-t pt-3">
+                      <Button onClick={handleConfirmGate} disabled={isConfirming} className="bg-emerald-600 hover:bg-emerald-700">
+                        {isConfirming ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+                        {phase === "checkout" ? "Confirm primirea" : "Confirm returnarea"}
+                      </Button>
+                      <Button variant="outline" onClick={() => setDisputeMode(true)} disabled={isConfirming}>
+                        <ShieldAlert className="h-4 w-4 mr-1" />
+                        Semnalează probleme
+                      </Button>
+                    </div>
+                  )
                 )}
               </div>
             ) : (
@@ -302,10 +404,15 @@ export function InspectionDialog({
               ) : (
                 <>
                   <ImagePlus className="mr-2 h-4 w-4" />
-                  Adauga poze ({photos.length}/{MAX_PHOTOS})
+                  Adaugă poze ({photos.length}/{MAX_PHOTOS} · min {MIN_INSPECTION_PHOTOS})
                 </>
               )}
             </Button>
+            {!photosValid && (
+              <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+                Mai adaugă {MIN_INSPECTION_PHOTOS - photos.length} {MIN_INSPECTION_PHOTOS - photos.length === 1 ? "poză" : "poze"} pentru a putea trimite PV-ul.
+              </p>
+            )}
 
             <div className="rounded-lg border bg-card p-3 space-y-3">
               <div className="flex items-center gap-2">
@@ -346,6 +453,24 @@ export function InspectionDialog({
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
             />
+
+            <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 p-3">
+              <Checkbox
+                id="pv-declaration"
+                checked={declarationAccepted}
+                onCheckedChange={(v) => setDeclarationAccepted(v === true)}
+                className="mt-0.5"
+              />
+              <Label htmlFor="pv-declaration" className="text-sm leading-snug cursor-pointer">
+                {phase === "checkout" && role === "owner"
+                  ? "Declar pe propria răspundere că produsul este predat în starea descrisă mai sus și că pozele sunt autentice."
+                  : phase === "checkout" && role === "renter"
+                  ? "Declar că am primit produsul în starea descrisă mai sus și că pozele sunt autentice."
+                  : phase === "checkin" && role === "renter"
+                  ? "Declar că am returnat produsul în starea descrisă mai sus și că pozele sunt autentice."
+                  : "Declar că am primit produsul returnat în starea descrisă mai sus și că pozele sunt autentice."}
+              </Label>
+            </div>
           </div>
         )}
 
