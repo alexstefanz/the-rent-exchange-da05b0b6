@@ -35,6 +35,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAccountDashboard } from "@/hooks/useAccountDashboard";
 import { useIsAdmin } from "@/hooks/queries/useAdminStats";
+import { useAdminNotificationSummary } from "@/hooks/queries/useAdminNotifications";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { cn } from "@/lib/utils";
 
