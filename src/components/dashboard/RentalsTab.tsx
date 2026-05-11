@@ -32,6 +32,7 @@ interface Rental {
   owner_id: string | null;
   owner_name: string;
   start_date: string;
+  start_date_raw: string;
   end_date: string;
   end_date_raw: string;
   subtotal: number;
@@ -64,6 +65,7 @@ const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
     owner_id: r.products?.owner_id || null,
     owner_name: r.products?.profiles?.full_name || "Utilizator",
     start_date: format(new Date(r.start_date), "dd MMM yyyy"),
+    start_date_raw: r.start_date,
     end_date: format(new Date(r.end_date), "dd MMM yyyy"),
     end_date_raw: r.end_date,
     subtotal: r.subtotal,
@@ -231,7 +233,7 @@ const RentalsTab = () => {
                   </div>
                   <div className="mt-3">
                     <CancellationStateCard
-                      startDate={rental.end_date_raw /* fallback */ && (rental as any).start_date_raw ? (rental as any).start_date_raw : rental.start_date}
+                      startDate={rental.start_date_raw}
                       subtotal={rental.subtotal}
                       dailyPrice={rental.daily_price}
                       platformFee={rental.platform_fee}
