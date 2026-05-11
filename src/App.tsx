@@ -35,7 +35,6 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Profile = lazy(() => import("./pages/Profile"));
-const Owner = lazy(() => import("./pages/Owner"));
 const NewProduct = lazy(() => import("./pages/NewProduct"));
 const EditProduct = lazy(() => import("./pages/EditProduct"));
 const Messages = lazy(() => import("./pages/Messages"));
@@ -125,7 +124,7 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/contul-meu" element={<AccountDetailsPage />} />
-                <Route path="/owner" element={<Owner />} />
+                <Route path="/owner" element={<Navigate to="/anunturi" replace />} />
                 <Route path="/owner/new-product" element={<NewProduct />} />
                 <Route path="/owner/edit-product/:id" element={<EditProduct />} />
                 <Route path="/mesaje" element={<Messages />} />
