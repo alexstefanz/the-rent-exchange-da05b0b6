@@ -33,6 +33,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
 import PayoutStatusBadge from "./PayoutStatusBadge";
 import { supabase } from "@/integrations/supabase/client";
+import EarlyReturnResponseCard from "@/components/rentals/EarlyReturnResponseCard";
 
 const statusLabels: Record<string, { ro: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { ro: "În așteptare", variant: "secondary" },
@@ -287,6 +288,12 @@ const RentalsOutTab = () => {
                         <div className="mt-3">
                           <PickupArrangementCard rentalId={rental.id} ownerId={user?.id || null} />
                         </div>
+                      )}
+                      {(rental.status === "active" || rental.handover_confirmed_at) && (
+                        <EarlyReturnResponseCard
+                          rentalId={rental.id}
+                          productTitle={rental.product_title}
+                        />
                       )}
                       {(() => {
                         const { current: step, cancelled } = getTimelineStep({
