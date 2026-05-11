@@ -141,12 +141,9 @@ const ProductDetail = () => {
   const handleDateSelect = (date: Date | undefined) => {
     if (!date || isDateBooked(date, bookedDates)) return;
     if (!startDate || (startDate && endDate)) { setStartDate(date); setEndDate(undefined); }
+    else if (date.getTime() === startDate.getTime()) { setEndDate(date); }
     else if (isBefore(date, startDate)) { setStartDate(date); }
     else {
-      if (differenceInDays(date, startDate) < 1) {
-        toast({ title: t("Perioadă prea scurtă", "Period too short"), description: t("Produsul se închiriază minim 2 zile.", "Min 2 days."), variant: "destructive" });
-        return;
-      }
       if (hasBookedDateInRange(startDate, date, bookedDates)) {
         toast({ title: t("Perioadă indisponibilă", "Period unavailable"), description: t("Există zile rezervate în interval.", "Booked days in range."), variant: "destructive" });
         return;
