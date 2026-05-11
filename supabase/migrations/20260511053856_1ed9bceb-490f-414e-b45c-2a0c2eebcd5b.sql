@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.notify_rental_event_async(uuid, text, uuid, jsonb) FROM PUBLIC, anon, authenticated;
