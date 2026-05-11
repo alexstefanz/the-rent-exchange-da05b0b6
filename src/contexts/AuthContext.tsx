@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signUp = async (email: string, password: string, fullName?: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -82,6 +82,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         },
       },
     });
+    // Supabase obfuscates "user already exists" to prevent email enumeration:
+    // it returns success with an empty identities array and no email is sent.
+    // Detect this case and surface a clear error to the UI.
+    const identities = (data?.user as any)?.identities;
+    if (!error && Array.isArray(identities) && identities.length === 0) {
+      return {
+        error: {
+          message: "User already registered",
+          name: "UserAlreadyExists",
+        } as any,
+      };
+    }
     return { error };
   };
 
