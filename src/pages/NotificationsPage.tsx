@@ -5,14 +5,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import NotificationsTab from "@/components/profile/NotificationsTab";
 import { Button } from "@/components/ui/button";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
 
 const NotificationsPage = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const { language } = useLanguage();
-  const t = (ro: string, en: string) => language === "ro" ? ro : en;
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth", { replace: true });
@@ -29,13 +28,19 @@ const NotificationsPage = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      <main className="flex-1 container py-8 pt-24 lg:pt-8">
-        <Button variant="ghost" size="sm" className="mb-4" onClick={() => navigate("/profile")}>
+      <main className="flex-1 container max-w-2xl py-8 pt-24 lg:pt-8">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mb-4 -ml-2"
+          onClick={() => navigate("/profile")}
+        >
           <ArrowLeft className="h-4 w-4 mr-1" />
           {t("Înapoi la Contul Meu", "Back to My Account")}
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight mb-6">{t("Notificări", "Notifications")}</h1>
-        <NotificationsTab />
+        <div className="rounded-2xl border border-border/70 bg-card shadow-sm overflow-hidden">
+          <NotificationCenter variant="page" />
+        </div>
       </main>
       <Footer />
     </div>
