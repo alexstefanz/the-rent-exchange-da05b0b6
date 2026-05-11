@@ -115,6 +115,14 @@ export async function proposePickup(rentalId: string, time: string, place: strin
 export async function confirmPickupArrangement(rentalId: string) {
   const { data, error } = await supabase.rpc("confirm_pickup", { _rental_id: rentalId });
   if (error) throw error;
+  // Fire pickup_scheduled notification (email + sms + in-app to both parties)
+  supabase.functions.invoke("notify-rental-event", {
+    body: { rental_id: rentalId, event_key: "pickup_scheduled" },
+  }).catch((e) => console.warn("notify pickup_scheduled failed", e));
+  // And the PV pending CTA so both parties know they must complete the inspection
+  supabase.functions.invoke("notify-rental-event", {
+    body: { rental_id: rentalId, event_key: "pv_pickup_pending" },
+  }).catch((e) => console.warn("notify pv_pickup_pending failed", e));
   return data;
 }
 
@@ -126,4 +134,13 @@ export async function openRentalDispute(rentalId: string, phase: "handover" | "r
     _reason: reason,
   });
   if (error) throw error;
+  const { data: { user } } = await supabase.auth.getUser();
+  supabase.functions.invoke("notify-rental-event", {
+    body: {
+      rental_id: rentalId,
+      event_key: "dispute_opened",
+      actor_id: user?.id,
+      extra: { reason, phase, actorName: user?.user_metadata?.full_name },
+    },
+  }).catch((e) => console.warn("notify dispute_opened failed", e));
 }
