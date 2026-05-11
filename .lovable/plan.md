@@ -1,104 +1,127 @@
+## Obiectiv
 
-# Rental flow end-to-end + Proces verbal blocking
+Notifică ambele părți (in-app + email + SMS) la fiecare etapă critică a unei închirieri Rentli, cu link-uri securizate, audit log, retry safety și preferințe per utilizator (cu notificări obligatorii pentru siguranță/PV).
 
-## Goal
-Make the digital PV (handover + return) a **mandatory, in-timeline, blocking** step that protects both parties, with clear next-action cards, gating, dispute path, and notifications. Reuse existing 7-step `RentalTimeline`, `InspectionDialog`, `rental_inspections`, `NextActionCard`, `useNotifications`. No payment/Stripe contract changes.
+## Ce există deja
 
-## Status mapping (kept compatible with current DB)
-We keep current `rentals.status` values and **derive** the richer states from columns instead of renaming:
+- Email infra: `send-transactional-email` + 25 template-uri React Email (rental-accepted, rental-rejected, rental-request-owner/renter etc.) prin pgmq.
+- SMS infra: `send-sms-notification` (smsalert.mobi, normalizează RO, GSM-7) cu template-uri pentru: request_owner, accepted, rejected, cancelled, return_reminder.
+- Orchestrator parțial: `send-rental-notification` (cerere nouă) și `send-pickup-reminders` (cron 12h).
+- Tabela `notifications` (in-app realtime).
 
-| Spec status | Derived from |
+## Ce lipsește
+
+1. **Orchestrator centralizat** pentru toate evenimentele de rental — momentan logica e împrăștiată.
+2. **Template-uri email noi** pentru: pickup_scheduled, pv_pending (predare/returnare), pv_completed_by_party, handover_confirmed, active_rental_summary, return_in_progress, rental_completed_owner, rental_completed_renter, review_reminder, dispute_opened.
+3. **Template-uri SMS noi** pentru: pickup_scheduled, pv_pending, pv_other_party_done, return_in_progress, rental_completed, dispute_opened, review_reminder.
+4. **Audit log** centralizat pentru fiecare notificare (canal, status, timestamp, eroare).
+5. **Preferințe utilizator** (email/SMS opt-out) cu override pentru notificări critice.
+6. **Link-uri securizate** scurte cu expirare pentru SMS (deep-link către /rezervari/:id sau /pv/:rentalId/:phase).
+7. **Triggers** la nivel DB / RPC pentru tranzițiile de status care nu au orchestrare.
+
+## Plan tehnic
+
+### 1. Bază de date (migrare)
+
+- `notification_audit_log` — coloane: `id`, `rental_id`, `user_id`, `event_key`, `channel` (in_app/email/sms), `status` (pending/sent/delivered/failed), `provider_id`, `error`, `payload jsonb`, `created_at`. RLS: utilizatorul vede doar propriile linii; admin vede tot.
+- `notification_preferences` — coloane: `user_id`, `email_marketing bool default true`, `sms_marketing bool default true`, `email_transactional bool default true` (read-only în UI; doar admin), `sms_transactional bool default true`. Critical events (pv_pending, dispute, handover) ignoră flag-urile.
+- `secure_action_tokens` — `token (text pk)`, `rental_id`, `user_id`, `purpose` (pv_pickup, pv_return, accept_request, view_rental), `expires_at`, `used_at`. Generate la trimitere SMS.
+
+### 2. Edge function nouă: `notify-rental-event`
+
+Single entry point. Acceptă body:
+```
+{ rental_id, event_key, actor_id?, extra? }
+```
+Event keys (matricea din cerere):
+`request_created`, `request_accepted`, `request_rejected`, `pickup_scheduled`, `pv_pickup_pending`, `pv_pickup_completed_by_party`, `handover_confirmed`, `active_rental_started`, `return_reminder_24h`, `return_in_progress`, `pv_return_pending`, `pv_return_completed_by_party`, `rental_completed`, `review_reminder`, `dispute_opened`.
+
+Pentru fiecare event:
+1. Determină destinatarii (owner/renter/ambele) și canalele (din matrice).
+2. Verifică `notification_preferences` (skip email/SMS dacă opt-out și event NU e critic).
+3. Generează token securizat dacă SMS-ul are deep link.
+4. În paralel:
+   - Insert în `notifications` (in-app, realtime).
+   - Invocă `send-transactional-email` cu template + `idempotencyKey = ${rental_id}-${event_key}-${user_id}`.
+   - Invocă `send-sms-notification` cu template SMS + link scurt.
+5. Scrie audit log per canal.
+6. Idempotency: skip dacă există deja audit cu același (rental_id, event_key, user_id, channel) și status final.
+
+### 3. Template-uri noi
+
+**Email (React Email)** — fiecare cu card produs, perioadă, status, CTA mare, suport, footer:
+- `pickup-scheduled.tsx` (ambele părți)
+- `pv-pickup-pending.tsx` (ambele)
+- `pv-completed-by-other.tsx` (cealaltă parte)
+- `handover-confirmed.tsx` (ambele)
+- `active-rental-summary.tsx` (ambele)
+- `return-reminder-24h.tsx` (ambele)
+- `return-in-progress.tsx` (ambele)
+- `pv-return-pending.tsx` (ambele)
+- `rental-completed-owner.tsx` (sumar câștiguri + CTA wallet/review)
+- `rental-completed-renter.tsx` (sumar plată + CTA review)
+- `review-reminder.tsx` (ambele, separate)
+- `dispute-opened.tsx` (ambele + admin)
+
+Toate înregistrate în `_shared/transactional-email-templates/registry.ts`. Folosesc `_components.tsx` existent pentru consistență vizuală (logo Rentli, primary #F59E0B, Plus Jakarta Sans).
+
+**SMS** — extind `send-sms-notification` cu noi `TemplateKey`:
+- `pickup_scheduled`: "Rentli: predare [produs] [data] [ora] la [loc]. Detalii: [link]"
+- `pv_pending`: "Rentli: completeaza procesul verbal pentru [produs]. Link: [link]"
+- `pv_other_done`: "Rentli: [Nume] a completat PV-ul. Verifica: [link]"
+- `return_in_progress`: "Rentli: returnare [produs] - completeaza PV. Link: [link]"
+- `rental_completed`: "Rentli: inchirierea [produs] s-a finalizat. Detalii: [link]"
+- `dispute_opened`: "Rentli: disputa deschisa pentru [produs]. Suport: [link]"
+- `review_reminder`: "Rentli: lasa un review pentru [produs]. [link]"
+
+Link-urile sunt scurte: `https://rentli.ro/a/[token8]` → resolver edge function `resolve-action-token` care validează token-ul, marchează `used_at` și redirecționează.
+
+### 4. Edge function nouă: `resolve-action-token`
+
+GET `/resolve-action-token?t=XXXX` → validează expirare/folosire, redirect 302 către URL-ul real (`/rezervari/:id`, `/inspections/:id` etc.) cu auth-required guard în frontend.
+
+### 5. Triggere — unde apelăm `notify-rental-event`
+
+| Event | Trigger point |
 |---|---|
-| `request_sent` | `status=pending` |
-| `approved` | `status=confirmed` AND no `pickup_agreed_at` |
-| `handover_pending` | `status=confirmed` AND `pickup_agreed_at` set, no `handover_confirmed_at` |
-| `received_confirmed` | `handover_confirmed_at` set (transient — flips to active_rental same step) |
-| `active_rental` | `status=active` |
-| `return_pending` | `status=active` AND end_date past, no `return_confirmed_at` |
-| `completed` | `status=completed` |
-| `cancelled` | `status=cancelled` |
-| `dispute_review` | new column `dispute_status='open'` (any phase) |
+| request_created | `verify-stripe-payment` / `send-rental-notification` (existent → înlocuit cu apel către orchestrator) |
+| request_accepted/rejected | `respond-rental-request` |
+| pickup_scheduled | RPC `confirm_pickup` (DB trigger sau invocare după RPC) |
+| pv_pickup_pending | trigger pe `rentals.status` → `handover_pending` |
+| pv_completed_by_party | trigger pe insert în `rental_inspections` |
+| handover_confirmed | trigger status `active_rental` |
+| active_rental_started | identic, email separat |
+| return_reminder_24h | extinde `send-pickup-reminders` (deja cron) cu logica de returnare |
+| return_in_progress | trigger status `return_pending` |
+| pv_return_completed_by_party | trigger insert inspection phase=return |
+| rental_completed | trigger status `completed` |
+| review_reminder | cron nou `review-reminders-cron` (la 24h și 72h dacă nu există review) |
+| dispute_opened | RPC `open_rental_dispute` |
 
-New columns needed (single migration):
-- `rentals.pickup_agreed_at timestamptz` + `pickup_location text` + `pickup_time timestamptz` (set when both parties confirm meeting in chat via a dedicated card).
-- `rentals.dispute_status text` (`none|open|resolved`, default `none`) + `dispute_opened_at`, `dispute_phase` (`handover|return`), `dispute_reason text`.
-- `rental_inspections`: add `locked_at timestamptz` (set when both parties confirmed that phase — prevents edits/deletes via RLS).
-- Tighten RLS: deny UPDATE/DELETE on `rental_inspections` once `locked_at IS NOT NULL`.
+DB triggers vor folosi `pg_net.http_post` către `notify-rental-event` (pattern existent în proiect).
 
-Server-side validation triggers (no CHECK on time):
-- Trigger on `rentals` UPDATE: forbid setting `handover_confirmed_at` unless both `owner` + `renter` `checkout` inspections exist with `photos_count >= 3`. Forbid setting `return_confirmed_at` unless both `checkin` inspections exist with `photos_count >= 3`. Bypass for service_role / admins.
-- Trigger to auto-lock matching inspections (set `locked_at = now()`) when both parties' inspections of a phase are present.
+### 6. UI — preferințe notificări
 
-## Frontend changes
+Pagina nouă `/setari/notificari` (sau în `/setari` existent) cu toggle-uri:
+- Email marketing
+- SMS marketing
+- Email tranzacțional non-critic
+- SMS tranzacțional non-critic
 
-### 1. `RentalTimeline.tsx`
-Keep 7 steps, but compute richer sub-states for the **current step badge** and color (e.g. step 3 highlights "PV în așteptare", step 6 shows "Returnare în desfășurare"). Add a small `dispute_review` overlay (red ring + "În verificare" label) on whichever step is active when `dispute_status='open'`.
+Notă vizibilă: "Notificările critice (proces verbal, dispute, siguranță) nu pot fi dezactivate."
 
-### 2. New `PickupArrangementCard.tsx` (between approved → handover_pending)
-Shown when `status=confirmed` and `pickup_agreed_at` is null. Two CTAs:
-- "Discută în chat" → opens conversation
-- "Confirmă predarea organizată" → opens small sheet with date/time + place inputs; both parties must press Confirm. We store proposals in a tiny new `rental_pickup_proposals` table OR (simpler) a single `pickup_proposal jsonb` on `rentals` with `{proposed_by, time, place, owner_confirmed_at, renter_confirmed_at}`. When both confirmed → set `pickup_agreed_at`. **Blocks step 4 until done.**
+### 7. Admin — audit log viewer
 
-### 3. `NextActionCard.tsx` (extend, do not rewrite)
-Add new variants per derived status:
-- `handover_pending` (owner): "Completează PV-ul de predare (min 3 poze, checklist)" → opens `InspectionDialog` (phase=`checkout`, role=`owner`).
-- `handover_pending` (renter, after owner): "Verifică și confirmă primirea" → opens `InspectionDialog` (phase=`checkout`, role=`renter`) with a "Semnalează probleme" link → opens `OpenDisputeDialog`.
-- `return_pending` (renter first): "Completează PV-ul de returnare".
-- `return_pending` (owner, after renter): "Verifică produsul returnat" + "Semnalează probleme".
-- `dispute_review`: red card "Rezervarea este în verificare" + "Vezi tichetul".
-Each card shows a checklist progress (`Poze 2/3 · Checklist 4/6`) so the user knows exactly what's missing. Pulse animation only on the active step (already done).
+Tab nou în Admin ERP `/admin/notificari` cu listă filtrabilă din `notification_audit_log` (rental, user, event, canal, status, eroare). Util pentru debug deliverability.
 
-### 4. `InspectionDialog.tsx` — make it production-grade PV
-- **Min 3 photos** (not 1). Disable submit otherwise; show clear counter `Poze X/3 minim`.
-- Add an explicit "Declar că produsul este predat în starea descrisă" checkbox required to submit.
-- After submit, if I'm the **second** party, render a green "Confirm primirea / returnarea" button that calls `confirmHandover` / `confirmReturn` server-side (which will only succeed if the trigger conditions are met), and a secondary outline "Semnalează probleme" button.
-- Once `locked_at` is set, render read-only with a small "PV blocat" badge.
-- Capture device/timestamp metadata in `rental_inspections` (extend `notes` → add a `metadata jsonb` column with `userAgent`, `viewport`, `submittedAt`).
+## Out of scope (acum)
 
-### 5. New `OpenDisputeDialog.tsx`
-Reason textarea (min 20 chars) + photos already uploaded auto-attached. On submit:
-- Sets `rentals.dispute_status='open'`, `dispute_phase`, `dispute_reason`.
-- Calls existing ops-tickets API to create a TCK with linked rental + product + last inspections.
-- Sends notifications to both parties and admins.
+- Webhook delivery confirmations de la SMSAlert (status=delivered/failed) — adăugăm doar dacă API-ul suportă; altfel rămâne `sent`.
+- Push notifications (mobile) — viitor.
+- Internaționalizare SMS (rămâne RO fără diacritice).
 
-### 6. `confirmHandover` / `confirmReturn` (`ownerRentalsApi.ts`)
-Wrap in try/catch around the new trigger error (`PV_INCOMPLETE`) and surface a toast: "Nu poți confirma predarea înainte ca ambele părți să completeze procesul verbal".
+## Întrebări înainte de implementare
 
-### 7. Reminders
-`supabase/functions/notify-return-day` already exists — verify it triggers 24h before `end_date`. Add a new daily cron entry that emits a "Pregătește predarea" notification when `pickup_agreed_at` is within 12h. Use existing `send-general-notification` + `send-rental-notification` paths; no new email templates required (reuse generic).
-
-### 8. Notifications
-Add types in `notificationCategory.ts`: `pv_handover_required`, `pv_handover_completed`, `pv_return_required`, `pv_return_completed`, `dispute_opened`. Routed to category `reservation` (or new `dispute` red category for the last one).
-
-### 9. Review prompt (already exists)
-After `completed`, the existing `LeaveReviewDialog` is shown via NextActionCard step 7. Add "Amintește-mi mai târziu" (snooze 24h via localStorage) + "Skip" (also persisted). Review remains accessible from rental history.
-
-## Files to create
-- `src/components/dashboard/PickupArrangementCard.tsx`
-- `src/components/dashboard/OpenDisputeDialog.tsx`
-- `src/components/dashboard/PvProgressBadge.tsx` (small "Poze 2/3 · Checklist 4/6")
-- `supabase/migrations/<ts>_pv_handover_gate.sql` (columns + triggers + RLS lock)
-
-## Files to edit
-- `src/features/rentals/inspectionApi.ts` — min photos = 3, declaration field, metadata.
-- `src/components/dashboard/InspectionDialog.tsx` — declaration checkbox, locked state, dispute button, second-party confirm CTA.
-- `src/features/rentals/ownerRentalsApi.ts` — handle PV_INCOMPLETE error, add `agreePickup`, `openDispute` helpers.
-- `src/components/dashboard/NextActionCard.tsx` — new variants + PV progress.
-- `src/components/dashboard/RentalTimeline.tsx` — dispute overlay.
-- `src/data/uxCopy.ts` — new RO/EN strings for PV gates, dispute, pickup arrangement.
-- `src/lib/notificationCategory.ts` — new types.
-- `src/hooks/useRentalRealtime.ts` — subscribe to `rental_inspections` + `rentals` updates so timeline + cards refresh instantly.
-
-## Out of scope
-- No Stripe flow change (capture still happens on `confirmReturn`; if dispute opens, capture is simply deferred until dispute resolves — admins resolve via existing `AdminReservations`).
-- No new email templates (reuse `send-general-notification`).
-- No category/messaging redesign (uses existing chat/timeline).
-
-## Acceptance
-1. Owner cannot confirm handover before owner PV (3+ photos, checklist, declaration) AND renter PV exist — server returns PV_INCOMPLETE.
-2. Renter sees "Verifică și confirmă primirea" only after owner submitted his PV; can either confirm or open dispute.
-3. After both PVs are saved, both rows become read-only (`locked_at` set), enforced by RLS.
-4. Same gating for return PV.
-5. `dispute_review` displays a red overlay on timeline + locks `confirmReturn` until admin resolves (`dispute_status='resolved'`).
-6. Pickup arrangement card blocks transition to step 4 until both confirm time + place.
-7. Notifications + 24h reminder fire for both PV phases.
+1. Confirm că folosim **același provider SMS** (smsalert.mobi) deja configurat — sau vrei să evaluăm Twilio pentru delivery receipts?
+2. Pentru link-urile scurte din SMS: vrei să folosim domeniul `rentli.ro/a/...` (necesită route în React app + edge function resolver) sau un subdomeniu dedicat (ex. `l.rentli.ro`)?
+3. Review reminder: trimitere o singură dată (24h după finalizare) sau două (24h + 72h)?
