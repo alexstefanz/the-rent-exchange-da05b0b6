@@ -68,8 +68,9 @@ const RentalTimeline = ({ rental, className }: Props) => {
       <div className="flex items-start">
         {STEPS.map((s, idx) => {
           const stepNum = idx + 1;
-          const isPast = stepNum < current && !cancelled;
-          const isActive = stepNum === current && !cancelled;
+          const completedAll = current === STEPS.length && !cancelled;
+          const isPast = !cancelled && (stepNum < current || completedAll);
+          const isActive = stepNum === current && !cancelled && !completedAll;
           const isCancel = cancelled && stepNum === current;
           const isFuture = stepNum > current;
           const Icon = isCancel ? X : isPast ? Check : s.icon;
@@ -92,7 +93,7 @@ const RentalTimeline = ({ rental, className }: Props) => {
                 </div>
                 <div className={cn(
                   "h-[2px] flex-1 transition-all duration-700",
-                  idx === STEPS.length - 1 ? "opacity-0" : isPast ? "bg-emerald-500" : "bg-border",
+                  idx === STEPS.length - 1 ? "opacity-0" : (isPast && stepNum < current) || completedAll ? "bg-emerald-500" : "bg-border",
                 )} />
               </div>
               <span className={cn(
