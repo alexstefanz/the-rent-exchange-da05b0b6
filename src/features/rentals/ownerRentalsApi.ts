@@ -22,6 +22,8 @@ export interface OwnerRental {
   handover_confirmed_at?: string | null;
   return_confirmed_at?: string | null;
   refunded_at?: string | null;
+  dispute_status?: string | null;
+  pickup_agreed_at?: string | null;
 }
 
 export async function getOwnerRentals(ownerId: string): Promise<OwnerRental[]> {
