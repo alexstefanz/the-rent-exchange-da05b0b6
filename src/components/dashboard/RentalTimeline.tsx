@@ -1,4 +1,4 @@
-import { Check, X, Send, ThumbsUp, Truck, ClipboardCheck, Package, RotateCcw, CheckCircle2 } from "lucide-react";
+import { Check, X, Send, ThumbsUp, Truck, ClipboardCheck, Package, RotateCcw, CheckCircle2, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUxCopy } from "@/hooks/useUxCopy";
 
@@ -11,6 +11,7 @@ export interface RentalForTimeline {
   return_confirmed_at?: string | null;
   refunded_at?: string | null;
   cancelled_at?: string | null;
+  dispute_status?: "none" | "open" | "resolved" | null;
 }
 
 function isLastDayOrPast(endDate?: string | null): boolean {
@@ -137,6 +138,7 @@ interface RentalTimelineProps {
 const RentalTimeline = ({ rental, compact = false, className }: RentalTimelineProps) => {
   const copy = useUxCopy();
   const { current, cancelled } = getTimelineStep(rental);
+  const isDisputed = rental.dispute_status === "open";
 
   const allSteps = [
     copy.timeline.requestSent,
@@ -152,6 +154,21 @@ const RentalTimeline = ({ rental, compact = false, className }: RentalTimelinePr
 
   return (
     <div className={cn("w-full", className)}>
+      {isDisputed && (
+        <div className="mb-3 flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 animate-fade-in">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+            <ShieldAlert className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-destructive">
+              {copy.timeline.dispute.bannerTitle}
+            </p>
+            <p className="text-xs text-destructive/80">
+              {copy.timeline.dispute.bannerDesc}
+            </p>
+          </div>
+        </div>
+      )}
       {/* Desktop / md+ horizontal */}
       <div className="hidden md:flex items-start justify-between gap-1">
         {steps.map((label, idx) => {
