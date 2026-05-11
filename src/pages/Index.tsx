@@ -45,9 +45,9 @@ const Index = () => {
 
       <HeroDynamic />
 
-      <SocialProofLive />
-
       <TrustBarPremium />
+
+      <SocialProofLive />
 
       <section className="pt-16 pb-10">
         <div className="container">
