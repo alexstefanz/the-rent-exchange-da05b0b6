@@ -29,7 +29,7 @@ const SocialProofLive = () => {
   const title = language === "en" && cur.product_title_en ? cur.product_title_en : cur.product_title;
 
   return (
-    <section className="py-3">
+    <section className="py-6">
       <div className="container">
         <div className="mx-auto max-w-2xl flex items-center justify-center gap-2 rounded-full bg-emerald-50 border border-emerald-200/60 px-4 py-2 text-sm">
           <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
