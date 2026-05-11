@@ -403,7 +403,7 @@ const Auth = () => {
       </Link>
       
       <Card className="w-full max-w-md">
-        <Tabs defaultValue="login" className="w-full">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "register")} className="w-full">
           <CardHeader className="space-y-1 pb-4">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">{copy.auth.login}</TabsTrigger>
