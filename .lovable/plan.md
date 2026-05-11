@@ -1,31 +1,18 @@
-## Obiectiv
-Permite rezervarea pentru o singură zi (până acum minimul era 2 zile).
-
-## Context
-Validarea minimă "2 zile" există doar în frontend, în 3 locuri. Backend-ul (Stripe checkout, RPC-uri, edge functions) nu impune un minim, așa că modificarea e strict frontend.
-
 ## Modificări
 
-### 1. `src/pages/ProductDetail.tsx` (linia 146-149)
-Schimbă condiția `differenceInDays(date, startDate) < 1` în `< 0` astfel încât selectarea aceleiași date ca start + end să producă 1 zi de închiriere. Actualizează textul toast-ului (sau elimină-l, devine doar pentru date inversate — care oricum sunt deja gestionate de `isBefore`).
+### 1. `src/components/product/OwnerTrustCard.tsx`
+Elimină blocul `{!isOwnProduct && (<div className="mt-5 flex gap-2">...)}` (liniile 80-90) — scoate butoanele "Trimite mesaj" și "Vezi profil". Elimină și prop-urile/importurile devenite inutile (`onStartChat`, `Link`, `Button`).
 
-### 2. `src/components/product/BookingCard.tsx` (linia 55-58)
-Aceeași modificare: `< 1` → `< 0`, scoate mesajul "minim 2 zile".
+### 2. `src/pages/ProductDetail.tsx`
+- Linia 328: șterge `{!isOwnProduct && <QuickQuestionsChips onAsk={handleQuickQuestion} />}`.
+- Linia 26: șterge importul `QuickQuestionsChips`.
+- Șterge prop-ul `onStartChat={...}` transmis către `<OwnerTrustCard />` (linia 319+).
+- Curăță `handleQuickQuestion` și `handleStartChat` dacă nu mai sunt folosite în altă parte (verific înainte).
 
-### 3. Calendar — selectare aceeași zi
-În ambele fișiere, branch-ul curent `if (!startDate || (startDate && endDate)) { setStartDate(date); setEndDate(undefined); }` resetează când re-clichezi pe aceeași zi. Adaugă o ramură explicită: dacă `startDate` e setat, `!endDate` și data e egală cu `startDate`, setează `endDate = startDate` (rezervare 1 zi).
-
-### 4. Texte uxCopy / publish
-- `src/components/publish/LivePreviewCard.tsx` (linia 90): condiția `data.min_rental_days > 1` rămâne corectă (afișează doar dacă owner-ul cere min > 1 zi).
-- `PublishWizard` deja permite `min_rental_days = 1` ca default — nicio modificare.
-
-## Detalii tehnice
-- `rentalDays = differenceInDays(end, start) + 1` rămâne valid: `start === end` → 1 zi.
-- `computeRentalPrice(1, ...)` în `src/lib/rentalPricing.ts` deja calculează corect 1 × tarif zilnic.
-- `useBookedDates` / RPC `get_booked_dates` nu necesită modificări.
-- Nicio migrație DB necesară.
+### 3. `src/components/product/QuickQuestionsChips.tsx`
+Șterge fișierul (nu mai e referit).
 
 ## Verificare
-- Pe pagina produs: click pe o zi liberă → click din nou pe aceeași zi → afișează 1 zi, preț = tarif zilnic, butonul Rezervă activ.
-- Click start apoi end pe zi diferită → comportament neschimbat.
-- Checkout-ul primește corect 1 zi și creează sesiunea Stripe.
+- Pagina produs nu mai afișează butoanele "Trimite mesaj" / "Vezi profil" în card-ul proprietarului și nici card-ul "Întrebări rapide".
+- Restul card-ului (avatar, statistici, rating, KYC) rămâne identic.
+- Mobile sticky bar (`MobileStickyBookingBar` cu `onAsk`) — verific dacă mai are nevoie de butonul "Întreabă" sau îl elimin pentru consistență.

@@ -23,7 +23,6 @@ import ProductReviewsSection from "@/components/product/ProductReviewsSection";
 import PremiumBookingCard from "@/components/product/PremiumBookingCard";
 import MobileStickyBookingBar from "@/components/product/MobileStickyBookingBar";
 import OwnerTrustCard from "@/components/product/OwnerTrustCard";
-import QuickQuestionsChips from "@/components/product/QuickQuestionsChips";
 import ProductInfoAccordion from "@/components/product/ProductInfoAccordion";
 import RentalProtection from "@/components/product/RentalProtection";
 import HowItWorksMini from "@/components/product/HowItWorksMini";
@@ -321,11 +320,8 @@ const ProductDetail = () => {
               ownerName={ownerName}
               ownerAvatar={owner?.avatar_url}
               isOwnProduct={isOwnProduct}
-              onStartChat={handleStartChat}
               stats={extendedStats}
             />
-
-            {!isOwnProduct && <QuickQuestionsChips onAsk={handleQuickQuestion} />}
 
             <ProductInfoAccordion
               description={displayDescription}

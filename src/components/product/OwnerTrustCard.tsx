@@ -1,6 +1,4 @@
-import { Link } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Star, ShieldCheck, MessageCircle, Calendar, Clock, TrendingUp } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ProductExtendedStats } from "@/hooks/queries/useProductExtendedStats";
@@ -10,7 +8,7 @@ interface Props {
   ownerName: string;
   ownerAvatar?: string | null;
   isOwnProduct?: boolean;
-  onStartChat: () => void;
+  onStartChat?: () => void;
   stats?: ProductExtendedStats;
   isLoading?: boolean;
 }
@@ -27,7 +25,7 @@ const Stat = ({ icon: Icon, value, label }: { icon: any; value: string; label: s
   </div>
 );
 
-const OwnerTrustCard = ({ ownerId, ownerName, ownerAvatar, isOwnProduct, onStartChat, stats, isLoading }: Props) => {
+const OwnerTrustCard = ({ ownerName, ownerAvatar, stats }: Props) => {
   const { t, language } = useLanguage();
 
   const memberSince = stats?.owner_member_since ? new Date(stats.owner_member_since).getFullYear().toString() : "—";
@@ -76,18 +74,6 @@ const OwnerTrustCard = ({ ownerId, ownerName, ownerAvatar, isOwnProduct, onStart
         <Stat icon={MessageCircle} value={respRate} label={t("rată răspuns", "response rate")} />
         <Stat icon={Calendar} value={memberSince} label={t("din", "since")} />
       </div>
-
-      {!isOwnProduct && (
-        <div className="mt-5 flex gap-2">
-          <Button onClick={onStartChat} className="flex-1">
-            <MessageCircle className="h-4 w-4 mr-2" />
-            {t("Trimite mesaj", "Send message")}
-          </Button>
-          <Button asChild variant="outline">
-            <Link to={`/utilizator/${ownerId}`}>{t("Vezi profil", "View profile")}</Link>
-          </Button>
-        </div>
-      )}
     </div>
   );
 };
