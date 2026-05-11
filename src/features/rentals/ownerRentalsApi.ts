@@ -47,7 +47,7 @@ export async function confirmHandover(rentalId: string) {
     .from("rentals")
     .update({ handover_confirmed_at: now, status: "active" })
     .eq("id", rentalId);
-  if (error) throw error;
+  if (error) throw mapPvError(error);
 }
 
 export async function confirmReturn(rentalId: string) {
@@ -75,5 +75,53 @@ export async function confirmReturn(rentalId: string) {
       completed_at: now,
     })
     .eq("id", rentalId);
+  if (error) throw mapPvError(error);
+}
+
+function mapPvError(error: unknown): Error {
+  const msg = (error as any)?.message || "";
+  if (msg.includes("PV_INCOMPLETE_HANDOVER")) {
+    return new Error("Nu poți confirma predarea înainte ca ambele părți să completeze procesul verbal (min 3 poze fiecare).");
+  }
+  if (msg.includes("PV_INCOMPLETE_RETURN")) {
+    return new Error("Nu poți confirma returnarea înainte ca ambele părți să completeze procesul verbal (min 3 poze fiecare).");
+  }
+  if (msg.includes("PICKUP_NOT_AGREED")) {
+    return new Error("Trebuie să confirmați împreună locul și ora predării înainte de a continua.");
+  }
+  if (msg.includes("PV_DISPUTE_OPEN")) {
+    return new Error("Rezervarea este în verificare. Suportul trebuie să rezolve disputa înainte de a continua.");
+  }
+  if (msg.includes("PV_LOCKED")) {
+    return new Error("Procesul verbal a fost blocat după confirmarea ambelor părți și nu mai poate fi modificat.");
+  }
+  return error instanceof Error ? error : new Error(String(error));
+}
+
+/** One party proposes meeting time + place. */
+export async function proposePickup(rentalId: string, time: string, place: string) {
+  const { data, error } = await supabase.rpc("propose_pickup", {
+    _rental_id: rentalId,
+    _pickup_time: time,
+    _pickup_place: place,
+  });
+  if (error) throw error;
+  return data;
+}
+
+/** The other party confirms — when both agreed, pickup_agreed_at is set server-side. */
+export async function confirmPickupArrangement(rentalId: string) {
+  const { data, error } = await supabase.rpc("confirm_pickup", { _rental_id: rentalId });
+  if (error) throw error;
+  return data;
+}
+
+/** Open a dispute on either handover or return. */
+export async function openRentalDispute(rentalId: string, phase: "handover" | "return", reason: string) {
+  const { error } = await supabase.rpc("open_rental_dispute", {
+    _rental_id: rentalId,
+    _phase: phase,
+    _reason: reason,
+  });
   if (error) throw error;
 }
