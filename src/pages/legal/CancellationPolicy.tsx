@@ -151,7 +151,8 @@ const sectionsEn = [
     title: "Cancellation policy for renters",
     content: (
       <div className="space-y-4">
-        <p>Renters can cancel a booking at any time. Refund eligibility depends on when the cancellation is made relative to the booking start time:</p>
+        <p>Renters can cancel a booking <strong>only before the item is handed over</strong> (handover PV signed). After handover, cancellation is no longer available — only <em>early return</em>, opening a dispute, or contacting support.</p>
+        <p>Refund eligibility depends on when the cancellation is made relative to the booking start time:</p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border border-border rounded-lg">
             <thead>
@@ -162,25 +163,26 @@ const sectionsEn = [
             </thead>
             <tbody>
               <tr className="border-b border-border">
-                <td className="p-3">Within 1 hour of booking</td>
-                <td className="p-3 text-green-600 font-medium">Full refund</td>
-              </tr>
-              <tr className="border-b border-border">
                 <td className="p-3">48 hours or more before start</td>
-                <td className="p-3 text-green-600 font-medium">Full refund</td>
+                <td className="p-3 text-green-600 font-medium">Full refund (subtotal + platform fee)</td>
               </tr>
               <tr className="border-b border-border">
-                <td className="p-3">Less than 48 hours before start</td>
-                <td className="p-3 text-amber-600 font-medium">50% refund</td>
+                <td className="p-3">Between 24h and 48h before start</td>
+                <td className="p-3 text-amber-600 font-medium">Refund = subtotal − 1 day (owner compensation)</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="p-3">Less than 24h before start</td>
+                <td className="p-3 text-amber-600 font-medium">Refund = subtotal − 1 day − platform fee</td>
               </tr>
               <tr>
-                <td className="p-3">After the rental period has started</td>
-                <td className="p-3 text-destructive font-medium">No refund</td>
+                <td className="p-3">After the item is handed over (handover PV signed)</td>
+                <td className="p-3 text-destructive font-medium">Cancellation locked — use early return or dispute</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <p className="text-sm"><strong>Exception:</strong> a full refund is granted if the item does not match the description or has major defects. The renter must notify the owner and the platform within 30 minutes of pickup, providing evidence (photos, videos, detailed description of the issues).</p>
+        <p className="text-sm"><strong>Exception:</strong> a full refund is granted if the item does not match the description or has major defects. The renter must notify the owner and the platform within 30 minutes of pickup, providing evidence (photos, videos, detailed description).</p>
+        <p className="text-sm"><strong>Early return:</strong> after handover, you may ask the owner to accept an early return. The decision (and any partial refund) is at the owner's discretion. If declined, the rental continues as planned.</p>
       </div>
     ),
   },
