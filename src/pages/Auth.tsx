@@ -34,6 +34,7 @@ const Auth = () => {
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isResendingOtp, setIsResendingOtp] = useState(false);
   const [accountType, setAccountType] = useState<"individual" | "business">("individual");
+  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const copy = useUxCopy();
 
   const isResetMode = isPasswordRecovery || searchParams.get("reset") === "true";
@@ -185,9 +186,20 @@ const Auth = () => {
     setIsLoading(false);
     if (error) {
       let message = error.message;
-      if (error.message.includes("already registered")) message = copy.auth.accountExists;
-      else if (isWeakPasswordError(error.message)) message = copy.auth.passwordTooWeak;
+      const alreadyRegistered =
+        error.message?.includes("already registered") ||
+        (error as any)?.name === "UserAlreadyExists";
+      if (alreadyRegistered) {
+        message = `${copy.auth.accountExists}. Autentifică-te sau folosește „Am uitat parola”.`;
+        toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
+        // Switch to login tab and prefill email so users can log in immediately
+        setActiveTab("login");
+        loginForm.setValue("email", data.email);
+        return;
+      }
+      if (isWeakPasswordError(error.message)) message = copy.auth.passwordTooWeak;
       toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
+      return;
     } else {
       // Update profile with business data after signup
       if (accountType === "business") {
@@ -391,7 +403,7 @@ const Auth = () => {
       </Link>
       
       <Card className="w-full max-w-md">
-        <Tabs defaultValue="login" className="w-full">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "login" | "register")} className="w-full">
           <CardHeader className="space-y-1 pb-4">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">{copy.auth.login}</TabsTrigger>
