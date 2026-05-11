@@ -14,7 +14,7 @@ export interface RentalForTimeline {
   dispute_status?: "none" | "open" | "resolved" | null;
 }
 
-function startOfDay(d: Date) { const x = new Date(d); x.setHours(0,0,0,0); return x; }
+function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 function isLastDayOrPast(endDate?: string | null) {
   if (!endDate) return false;
   return startOfDay(new Date(endDate)).getTime() <= startOfDay(new Date()).getTime();
@@ -46,12 +46,12 @@ export function getTimelineStep(rental: RentalForTimeline): { current: number; c
 }
 
 const STEPS = [
-  { icon: Send,        ro: "Cerere trimisă",   en: "Request sent" },
-  { icon: ThumbsUp,    ro: "Cerere aprobată",  en: "Approved" },
-  { icon: Truck,       ro: "Predare produs",   en: "Hand-over" },
-  { icon: Package,     ro: "Produs în folosire", en: "In use" },
-  { icon: RotateCcw,   ro: "Returnare produs", en: "Return" },
-  { icon: CheckCircle2,ro: "Finalizat",        en: "Completed" },
+  { icon: Send, ro: "Cerere trimisă", en: "Request sent" },
+  { icon: ThumbsUp, ro: "Cerere aprobată", en: "Approved" },
+  { icon: Truck, ro: "Predare produs", en: "Hand-over" },
+  { icon: Package, ro: "Produs în folosire", en: "In use" },
+  { icon: RotateCcw, ro: "Returnare produs", en: "Return" },
+  { icon: CheckCircle2, ro: "Finalizat", en: "Completed" },
 ] as const;
 
 interface Props {
@@ -65,44 +65,38 @@ const RentalTimeline = ({ rental, className }: Props) => {
 
   return (
     <div className={cn("w-full", className)}>
-      <div className="flex items-stretch gap-1 overflow-x-auto pb-1 sm:gap-0 sm:overflow-visible">
+      <div className="flex items-start">
         {STEPS.map((s, idx) => {
           const stepNum = idx + 1;
           const isPast = stepNum < current && !cancelled;
           const isActive = stepNum === current && !cancelled;
           const isCancel = cancelled && stepNum === current;
-          const isFuture = stepNum > current || (cancelled && stepNum > current);
+          const isFuture = stepNum > current;
           const Icon = isCancel ? X : isPast ? Check : s.icon;
 
-          const dotClass = cn(
-            "relative z-10 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full border-2 transition-all duration-300",
-            isPast && "bg-emerald-500 border-emerald-500 text-white",
-            isActive && "bg-[#F98715] border-[#F98715] text-white shadow-[0_0_0_6px_hsl(var(--primary)/0.15)] animate-[pulse_2.4s_ease-in-out_infinite]",
-            isCancel && "bg-rose-500 border-rose-500 text-white",
-            isFuture && "bg-muted border-border text-muted-foreground",
-          );
-
-          const lineClass = cn(
-            "h-[2px] flex-1 self-center transition-all duration-700",
-            isPast ? "bg-emerald-500" : "bg-border",
-          );
-
           return (
-            <div key={s.ro} className="flex flex-1 min-w-[64px] sm:min-w-0 flex-col items-center">
+            <div key={s.ro} className="flex flex-1 flex-col items-center min-w-0">
               <div className="flex w-full items-center">
-                {idx > 0 && <div className={lineClass} />}
-                <div className={dotClass}>
+                <div className={cn(
+                  "h-[2px] flex-1 transition-all duration-700",
+                  idx === 0 ? "opacity-0" : isPast || isActive ? "bg-emerald-500" : "bg-border",
+                )} />
+                <div className={cn(
+                  "relative z-10 flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300",
+                  isPast && "bg-emerald-500 border-emerald-500 text-white",
+                  isActive && "bg-[#F98715] border-[#F98715] text-white shadow-[0_0_0_6px_hsl(var(--primary)/0.15)] animate-[pulse_2.4s_ease-in-out_infinite]",
+                  isCancel && "bg-rose-500 border-rose-500 text-white",
+                  isFuture && "bg-muted border-border text-muted-foreground",
+                )}>
                   <Icon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
                 </div>
-                {idx < STEPS.length - 1 && (
-                  <div className={cn(
-                    "h-[2px] flex-1 self-center transition-all duration-700",
-                    stepNum < current && !cancelled ? "bg-emerald-500" : "bg-border",
-                  )} />
-                )}
+                <div className={cn(
+                  "h-[2px] flex-1 transition-all duration-700",
+                  idx === STEPS.length - 1 ? "opacity-0" : isPast ? "bg-emerald-500" : "bg-border",
+                )} />
               </div>
               <span className={cn(
-                "mt-2 text-[10px] sm:text-[11px] text-center leading-tight px-0.5",
+                "mt-2 text-[10px] sm:text-[11px] text-center leading-tight px-0.5 truncate w-full",
                 isActive ? "text-[#F98715] font-semibold" : isPast ? "text-emerald-700" : "text-muted-foreground",
               )}>
                 {language === "ro" ? s.ro : s.en}
