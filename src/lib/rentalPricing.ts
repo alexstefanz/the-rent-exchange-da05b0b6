@@ -20,11 +20,6 @@ export function computeRentalPrice(
   if (!rentalDays || rentalDays <= 0) {
     return { months: 0, weeks: 0, days: 0, total: 0 };
   }
-  const months = Math.floor(rentalDays / 30);
-  const remainder = rentalDays % 30;
-  const weeks = Math.floor(remainder / 7);
-  const days = remainder % 7;
-  const total =
-    months * priceMonth + weeks * priceWeek + days * clientPrice;
-  return { months, weeks, days, total: Math.round(total * 100) / 100 };
+  const total = rentalDays * clientPrice;
+  return { months: 0, weeks: 0, days: rentalDays, total: Math.round(total * 100) / 100 };
 }
