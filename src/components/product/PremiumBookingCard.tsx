@@ -97,7 +97,6 @@ const PremiumBookingCard = ({
             <span className="font-medium">{format(endDate, "d MMM yyyy", { locale: dateLocale })}</span>
           </div>
           <Separator className="my-2.5" />
-          <div className="flex justify-between"><span className="text-muted-foreground text-xs">{rentalDays} {t("zile", "days")} × {clientPrice} RON</span><span className="font-medium">{totalPrice} RON</span></div>
           <div className="flex justify-between mt-2.5 font-semibold text-base"><span>{t("Total", "Total")}</span><span className="text-primary">{totalPrice} RON</span></div>
         </div>
       )}
