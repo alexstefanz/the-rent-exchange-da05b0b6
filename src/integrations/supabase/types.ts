@@ -1359,11 +1359,49 @@ export type Database = {
           },
         ]
       }
+      rental_status_history: {
+        Row: {
+          actor_id: string | null
+          actor_role: string | null
+          created_at: string
+          from_status: string | null
+          id: string
+          metadata: Json | null
+          reason: string | null
+          rental_id: string
+          to_status: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_role?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+          rental_id: string
+          to_status: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_role?: string | null
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+          rental_id?: string
+          to_status?: string
+        }
+        Relationships: []
+      }
       rentals: {
         Row: {
           authorized_at: string | null
           cancellation_reason: string | null
+          cancellation_tier: string | null
           cancelled_at: string | null
+          cancelled_by: string | null
           captured_at: string | null
           completed_at: string | null
           confirmed_at: string | null
@@ -1374,9 +1412,16 @@ export type Database = {
           dispute_phase: string | null
           dispute_reason: string | null
           dispute_status: string
+          early_return_decided_at: string | null
+          early_return_owner_response: string | null
+          early_return_reason: string | null
+          early_return_refund_amount: number | null
+          early_return_requested_at: string | null
+          early_return_status: string
           end_date: string
           handover_confirmed_at: string | null
           id: string
+          owner_compensation: number | null
           owner_id: string | null
           owner_payout: number
           paid_at: string | null
@@ -1392,6 +1437,7 @@ export type Database = {
           platform_fee_percent: number
           product_id: string | null
           public_id: string
+          refund_amount: number | null
           refunded_at: string | null
           rental_days: number
           renter_id: string | null
@@ -1404,7 +1450,9 @@ export type Database = {
         Insert: {
           authorized_at?: string | null
           cancellation_reason?: string | null
+          cancellation_tier?: string | null
           cancelled_at?: string | null
+          cancelled_by?: string | null
           captured_at?: string | null
           completed_at?: string | null
           confirmed_at?: string | null
@@ -1415,9 +1463,16 @@ export type Database = {
           dispute_phase?: string | null
           dispute_reason?: string | null
           dispute_status?: string
+          early_return_decided_at?: string | null
+          early_return_owner_response?: string | null
+          early_return_reason?: string | null
+          early_return_refund_amount?: number | null
+          early_return_requested_at?: string | null
+          early_return_status?: string
           end_date: string
           handover_confirmed_at?: string | null
           id?: string
+          owner_compensation?: number | null
           owner_id?: string | null
           owner_payout: number
           paid_at?: string | null
@@ -1433,6 +1488,7 @@ export type Database = {
           platform_fee_percent?: number
           product_id?: string | null
           public_id?: string
+          refund_amount?: number | null
           refunded_at?: string | null
           rental_days: number
           renter_id?: string | null
@@ -1445,7 +1501,9 @@ export type Database = {
         Update: {
           authorized_at?: string | null
           cancellation_reason?: string | null
+          cancellation_tier?: string | null
           cancelled_at?: string | null
+          cancelled_by?: string | null
           captured_at?: string | null
           completed_at?: string | null
           confirmed_at?: string | null
@@ -1456,9 +1514,16 @@ export type Database = {
           dispute_phase?: string | null
           dispute_reason?: string | null
           dispute_status?: string
+          early_return_decided_at?: string | null
+          early_return_owner_response?: string | null
+          early_return_reason?: string | null
+          early_return_refund_amount?: number | null
+          early_return_requested_at?: string | null
+          early_return_status?: string
           end_date?: string
           handover_confirmed_at?: string | null
           id?: string
+          owner_compensation?: number | null
           owner_id?: string | null
           owner_payout?: number
           paid_at?: string | null
@@ -1474,6 +1539,7 @@ export type Database = {
           platform_fee_percent?: number
           product_id?: string | null
           public_id?: string
+          refund_amount?: number | null
           refunded_at?: string | null
           rental_days?: number
           renter_id?: string | null
