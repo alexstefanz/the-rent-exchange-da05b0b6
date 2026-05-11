@@ -96,7 +96,7 @@ const NextActionCard = ({
       switch (step) {
         case 1: return { icon: <Hourglass className="h-5 w-5" />, ...r.pendingPayment, accent };
         case 2: return { icon: <ShieldCheck className="h-5 w-5" />, ...r.awaitingOwner, accent };
-        case 3: return { icon: <Truck className="h-5 w-5" />, ...r.approvedPrePickup, accent };
+        case 3: return { icon: <Truck className="h-5 w-5" />, ...r.approvedPrePickup, onCta: onPrimary, accent };
         case 4: return { icon: <ClipboardCheck className="h-5 w-5" />, ...r.confirmReceipt, onCta: onPrimary, accent };
         case 5: return { icon: <Package className="h-5 w-5" />, ...r.inUse, accent };
         case 6: return { icon: <RotateCcw className="h-5 w-5" />, ...r.returnDay, accent };
