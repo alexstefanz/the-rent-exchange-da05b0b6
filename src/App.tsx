@@ -35,7 +35,6 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Profile = lazy(() => import("./pages/Profile"));
-const Owner = lazy(() => import("./pages/Owner"));
 const NewProduct = lazy(() => import("./pages/NewProduct"));
 const EditProduct = lazy(() => import("./pages/EditProduct"));
 const Messages = lazy(() => import("./pages/Messages"));
