@@ -31,6 +31,8 @@ const MessagesTab = () => {
   const [activeTab, setActiveTab] = useState("rezervari");
 
   const handleSelect = (conv: Conversation) => {
+    const correctTab = conv.buyer_id === user?.id ? "rezervari" : "de-inchiriat";
+    setActiveTab(correctTab);
     setSelectedConversation(conv);
   };
 

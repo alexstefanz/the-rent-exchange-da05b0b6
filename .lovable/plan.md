@@ -1,15 +1,11 @@
 ## Problema
-Pe homepage, `TrustBarPremium` (bara cu "utilizatori verificați / rating / plăți securizate / suport") folosește `-mt-8` ca să se suprapună elegant peste hero. Între timp, `SocialProofLive` (pilula verde "X închiriat în Y · acum Zh") a fost inserată între hero și TrustBar, deci marginea negativă trage bara USP peste pilula live → overlap vizibil.
 
-## Soluția
-Inversez ordinea celor două secțiuni în `src/pages/Index.tsx`: las `TrustBarPremium` imediat după hero (își păstrează efectul de overlap peste imagine, așa cum a fost gândit), iar `SocialProofLive` se mută dedesubt, cu spațiere proprie, ca pilulă autonomă vizibilă.
+Când proprietarul apasă "Discută cu chiriașul" și ajunge pe `/mesaje?conv=...`, pagina ar trebui să selecteze automat tab-ul **De Închiriat**. Momentan rămâne pe **Rezervări** din cauza unui typo: pagina setează cheia `"de_inchiriat"` (underscore), dar componenta `ConversationList` folosește `"de-inchiriat"` (cratimă), deci `Tabs` nu recunoaște valoarea.
 
-## Modificări
+## Soluție
 
-**`src/pages/Index.tsx`**
-- Mut `<SocialProofLive />` din poziția curentă (sub `HeroDynamic`) după `<TrustBarPremium />`.
+**`src/pages/Messages.tsx`** (linia 49): înlocuiește `"de_inchiriat"` cu `"de-inchiriat"` pentru a se potrivi cu `TabsTrigger` din `ConversationList`.
 
-**`src/components/home/SocialProofLive.tsx`**
-- Cresc puțin padding-ul vertical (`py-3` → `py-6`) ca pilula să respire între bara USP și grila de categorii.
+**`src/components/profile/MessagesTab.tsx`**: adaugă același efect de sincronizare a tab-ului pe baza `searchParams.get("conv")` (sau a conversației selectate) — în prezent nu folosește URL-ul, dar pentru consistență când e folosit ca tab în profil, vom selecta tab-ul corect (`rezervari` dacă utilizatorul e `buyer`, `de-inchiriat` dacă e `owner`) automat la deschiderea unei conversații.
 
-Nicio modificare de logică, stil de pilulă, sau bara USP în sine.
+Nicio modificare de logică business sau de stil.

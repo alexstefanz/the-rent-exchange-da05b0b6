@@ -46,7 +46,7 @@ export default function Messages() {
     if (convId && conversations.length > 0 && !selectedConversation) {
       const found = conversations.find((c) => c.id === convId);
       if (found) {
-        const correctTab = found.buyer_id === user?.id ? "rezervari" : "de_inchiriat";
+        const correctTab = found.buyer_id === user?.id ? "rezervari" : "de-inchiriat";
         setActiveTab(correctTab);
         setSelectedConversation(found);
       }
