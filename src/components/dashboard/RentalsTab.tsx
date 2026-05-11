@@ -40,13 +40,14 @@ interface Rental {
   payment_status?: string;
   handover_confirmed_at?: string | null;
   return_confirmed_at?: string | null;
+  dispute_status?: string | null;
   location: string;
 }
 
 const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
   const { data, error } = await supabase
     .from("rentals")
-    .select("id, product_id, start_date, end_date, subtotal, status, payment_status, handover_confirmed_at, return_confirmed_at, created_at, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
+    .select("id, product_id, start_date, end_date, subtotal, status, payment_status, handover_confirmed_at, return_confirmed_at, dispute_status, created_at, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
     .eq("renter_id", userId)
     .or("status.in.(confirmed,active,completed),and(status.eq.pending,payment_status.in.(authorized,paid))")
     .order("created_at", { ascending: false });
@@ -68,6 +69,7 @@ const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
     payment_status: r.payment_status,
     handover_confirmed_at: r.handover_confirmed_at,
     return_confirmed_at: r.return_confirmed_at,
+    dispute_status: r.dispute_status,
     location: r.products?.location_city || "",
   }));
 };
@@ -266,6 +268,7 @@ const RentalsTab = () => {
                 end_date: rental.end_date_raw,
                 handover_confirmed_at: rental.handover_confirmed_at,
                 return_confirmed_at: rental.return_confirmed_at,
+                dispute_status: (rental.dispute_status as any) ?? "none",
               };
               const step = getTimelineStep(tlRental).current;
               return (
@@ -291,7 +294,7 @@ const RentalsTab = () => {
                   )}
                   <div className="mt-3">
                     <NextActionCard
-                      rental={{ id: rental.id, product_id: rental.product_id, product_title: rental.product_title, start_date: rental.end_date_raw, end_date: rental.end_date_raw, status: rental.status, payment_status: rental.payment_status, handover_confirmed_at: rental.handover_confirmed_at, return_confirmed_at: rental.return_confirmed_at }}
+                      rental={{ id: rental.id, product_id: rental.product_id, product_title: rental.product_title, start_date: rental.end_date_raw, end_date: rental.end_date_raw, status: rental.status, payment_status: rental.payment_status, handover_confirmed_at: rental.handover_confirmed_at, return_confirmed_at: rental.return_confirmed_at, dispute_status: (rental.dispute_status as any) ?? "none" }}
                       step={step}
                       role="renter"
                       onPrimary={() => setInspectionRental({ rental, phase: step >= 6 ? "checkin" : "checkout" })}

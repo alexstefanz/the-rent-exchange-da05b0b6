@@ -1247,7 +1247,9 @@ export type Database = {
         Row: {
           checklist: Json
           created_at: string
+          declaration_accepted: boolean
           id: string
+          locked_at: string | null
           notes: string | null
           phase: string
           photos: string[]
@@ -1258,7 +1260,9 @@ export type Database = {
         Insert: {
           checklist?: Json
           created_at?: string
+          declaration_accepted?: boolean
           id?: string
+          locked_at?: string | null
           notes?: string | null
           phase: string
           photos?: string[]
@@ -1269,7 +1273,9 @@ export type Database = {
         Update: {
           checklist?: Json
           created_at?: string
+          declaration_accepted?: boolean
           id?: string
+          locked_at?: string | null
           notes?: string | null
           phase?: string
           photos?: string[]
@@ -1297,6 +1303,11 @@ export type Database = {
           confirmed_at: string | null
           created_at: string | null
           daily_price: number
+          dispute_opened_at: string | null
+          dispute_opened_by: string | null
+          dispute_phase: string | null
+          dispute_reason: string | null
+          dispute_status: string
           end_date: string
           handover_confirmed_at: string | null
           id: string
@@ -1306,6 +1317,11 @@ export type Database = {
           payment_intent_id: string | null
           payment_method: string | null
           payment_status: string
+          pickup_agreed_at: string | null
+          pickup_location: string | null
+          pickup_proposal: Json | null
+          pickup_reminder_sent_at: string | null
+          pickup_time: string | null
           platform_fee: number
           platform_fee_percent: number
           product_id: string | null
@@ -1328,6 +1344,11 @@ export type Database = {
           confirmed_at?: string | null
           created_at?: string | null
           daily_price: number
+          dispute_opened_at?: string | null
+          dispute_opened_by?: string | null
+          dispute_phase?: string | null
+          dispute_reason?: string | null
+          dispute_status?: string
           end_date: string
           handover_confirmed_at?: string | null
           id?: string
@@ -1337,6 +1358,11 @@ export type Database = {
           payment_intent_id?: string | null
           payment_method?: string | null
           payment_status?: string
+          pickup_agreed_at?: string | null
+          pickup_location?: string | null
+          pickup_proposal?: Json | null
+          pickup_reminder_sent_at?: string | null
+          pickup_time?: string | null
           platform_fee: number
           platform_fee_percent?: number
           product_id?: string | null
@@ -1359,6 +1385,11 @@ export type Database = {
           confirmed_at?: string | null
           created_at?: string | null
           daily_price?: number
+          dispute_opened_at?: string | null
+          dispute_opened_by?: string | null
+          dispute_phase?: string | null
+          dispute_reason?: string | null
+          dispute_status?: string
           end_date?: string
           handover_confirmed_at?: string | null
           id?: string
@@ -1368,6 +1399,11 @@ export type Database = {
           payment_intent_id?: string | null
           payment_method?: string | null
           payment_status?: string
+          pickup_agreed_at?: string | null
+          pickup_location?: string | null
+          pickup_proposal?: Json | null
+          pickup_reminder_sent_at?: string | null
+          pickup_time?: string | null
           platform_fee?: number
           platform_fee_percent?: number
           product_id?: string | null
@@ -2149,12 +2185,14 @@ export type Database = {
         Returns: {
           created_at: string
           daily_price: number
+          dispute_status: string
           end_date: string
           handover_confirmed_at: string
           id: string
           owner_payout: number
           payment_method: string
           payment_status: string
+          pickup_agreed_at: string
           platform_fee: number
           product_id: string
           product_image: string
