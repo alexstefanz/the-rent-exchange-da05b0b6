@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Upload, Loader2, ImagePlus } from "lucide-react";
+import { X, Upload, Loader2, ImagePlus, GripVertical } from "lucide-react";
 import { uploadProductImage, deleteProductImage } from "@/features/products/imageApi";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -75,6 +75,34 @@ const ImageUpload = ({ userId, images, onChange, maxImages = 5 }: ImageUploadPro
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { t } = useLanguage();
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const touchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchActiveRef = useRef(false);
+
+  const reorder = (from: number, to: number) => {
+    if (from === to || from < 0 || to < 0 || from >= images.length || to >= images.length) return;
+    const next = images.slice();
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    const coverChanged = from === 0 || to === 0;
+    onChange(next);
+    if (coverChanged) {
+      toast({
+        title: t("Ordine actualizată", "Order updated"),
+        description: t("Coperta anunțului a fost schimbată", "Cover image was changed"),
+      });
+    }
+  };
+
+  const findIndexFromPoint = (x: number, y: number): number | null => {
+    const el = document.elementFromPoint(x, y) as HTMLElement | null;
+    if (!el) return null;
+    const card = el.closest<HTMLElement>("[data-image-index]");
+    if (!card) return null;
+    const idx = Number(card.dataset.imageIndex);
+    return Number.isNaN(idx) ? null : idx;
+  };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -190,16 +218,100 @@ const ImageUpload = ({ userId, images, onChange, maxImages = 5 }: ImageUploadPro
           {images.map((url, index) => (
             <div
               key={url}
-              className="relative group aspect-square rounded-lg overflow-hidden border bg-muted"
+              data-image-index={index}
+              draggable
+              onDragStart={(e) => {
+                setDraggedIndex(index);
+                e.dataTransfer.effectAllowed = "move";
+                try { e.dataTransfer.setData("text/plain", String(index)); } catch {}
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                if (dragOverIndex !== index) setDragOverIndex(index);
+              }}
+              onDragLeave={() => {
+                if (dragOverIndex === index) setDragOverIndex(null);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (draggedIndex !== null) reorder(draggedIndex, index);
+                setDraggedIndex(null);
+                setDragOverIndex(null);
+              }}
+              onDragEnd={() => {
+                setDraggedIndex(null);
+                setDragOverIndex(null);
+              }}
+              onTouchStart={(e) => {
+                const touch = e.touches[0];
+                if (!touch) return;
+                touchActiveRef.current = false;
+                if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
+                touchTimerRef.current = setTimeout(() => {
+                  touchActiveRef.current = true;
+                  setDraggedIndex(index);
+                  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+                    try { (navigator as any).vibrate?.(15); } catch {}
+                  }
+                }, 300);
+              }}
+              onTouchMove={(e) => {
+                if (!touchActiveRef.current) {
+                  if (touchTimerRef.current) {
+                    clearTimeout(touchTimerRef.current);
+                    touchTimerRef.current = null;
+                  }
+                  return;
+                }
+                e.preventDefault();
+                const touch = e.touches[0];
+                if (!touch) return;
+                const over = findIndexFromPoint(touch.clientX, touch.clientY);
+                setDragOverIndex(over);
+              }}
+              onTouchEnd={() => {
+                if (touchTimerRef.current) {
+                  clearTimeout(touchTimerRef.current);
+                  touchTimerRef.current = null;
+                }
+                if (touchActiveRef.current && draggedIndex !== null && dragOverIndex !== null) {
+                  reorder(draggedIndex, dragOverIndex);
+                }
+                touchActiveRef.current = false;
+                setDraggedIndex(null);
+                setDragOverIndex(null);
+              }}
+              onTouchCancel={() => {
+                if (touchTimerRef.current) {
+                  clearTimeout(touchTimerRef.current);
+                  touchTimerRef.current = null;
+                }
+                touchActiveRef.current = false;
+                setDraggedIndex(null);
+                setDragOverIndex(null);
+              }}
+              className={`relative group aspect-square rounded-lg overflow-hidden border bg-muted cursor-grab active:cursor-grabbing transition-all ${
+                draggedIndex === index ? "opacity-40 scale-95" : ""
+              } ${
+                dragOverIndex === index && draggedIndex !== index
+                  ? "ring-2 ring-primary ring-offset-2"
+                  : ""
+              }`}
             >
               <img
                 src={url}
                 alt={`Product image ${index + 1}`}
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover pointer-events-none select-none"
+                draggable={false}
               />
+              <div className="absolute top-2 left-2 p-1.5 bg-background/80 backdrop-blur-sm rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                <GripVertical className="h-4 w-4 text-foreground" />
+              </div>
               <button
                 type="button"
                 onClick={() => handleRemoveImage(index)}
+                onMouseDown={(e) => e.stopPropagation()}
                 className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <X className="h-4 w-4" />
