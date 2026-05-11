@@ -37,12 +37,12 @@ export default function PickupArrangementCard({ rentalId, ownerId }: Props) {
     queryKey: ["pickup-proposal", rentalId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("rentals")
+        .from("rentals" as any)
         .select("pickup_proposal, pickup_agreed_at, owner_id, renter_id")
         .eq("id", rentalId)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      return data as any;
     },
     refetchInterval: 8000,
   });
