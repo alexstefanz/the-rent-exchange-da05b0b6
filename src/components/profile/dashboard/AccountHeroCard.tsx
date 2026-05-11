@@ -1,10 +1,13 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ShieldCheck, Star, Package, Calendar, ArrowRight, ExternalLink } from "lucide-react";
+import { ShieldCheck, Star, Package, Calendar, ArrowRight, ExternalLink, Bell } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useIsAdmin } from "@/hooks/queries/useAdminStats";
+import { useAdminNotifications, useAdminNotificationSummary } from "@/hooks/queries/useAdminNotifications";
 import type { AccountDashboardData } from "@/hooks/useAccountDashboard";
 
 interface Props {
@@ -14,6 +17,12 @@ interface Props {
 export function AccountHeroCard({ data }: Props) {
   const { t, language } = useLanguage();
   const { profile, trust, health } = data;
+  const { user } = useAuth();
+  const { data: isAdmin } = useIsAdmin(user?.id);
+  // Subscribe to realtime invalidation
+  useAdminNotifications();
+  const { data: adminSummary } = useAdminNotificationSummary();
+  const adminUnread = isAdmin ? adminSummary?.unread_total ?? 0 : 0;
 
   const initials = (profile?.full_name || profile?.email || "U")
     .split(" ")
@@ -38,6 +47,36 @@ export function AccountHeroCard({ data }: Props) {
     >
       {/* subtle gradient backdrop */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
+      {/* Admin notifications badge — top right */}
+      {isAdmin && adminUnread > 0 && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: "spring", stiffness: 260, damping: 18, delay: 0.15 }}
+          className="absolute top-4 right-4 z-10"
+        >
+          <Link
+            to="/admin/notifications"
+            className="group inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground pl-3 pr-4 py-2 shadow-lg shadow-primary/30 hover:bg-[#F98715] transition-all hover:scale-105"
+          >
+            <span className="relative flex h-6 w-6 items-center justify-center rounded-full bg-white/20">
+              <Bell className="h-3.5 w-3.5" />
+              <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-primary" />
+              </span>
+            </span>
+            <span className="text-sm font-semibold">
+              <span className="font-bold tabular-nums">{adminUnread}</span>{" "}
+              {t(
+                adminUnread === 1 ? "notificare admin" : "notificări admin",
+                adminUnread === 1 ? "admin alert" : "admin alerts"
+              )}
+            </span>
+            <ArrowRight className="h-4 w-4 opacity-80 group-hover:translate-x-0.5 transition-transform" />
+          </Link>
+        </motion.div>
+      )}
       <div className="relative p-6 sm:p-8 flex flex-col lg:flex-row gap-6 lg:items-center">
         {/* Avatar + identity */}
         <div className="flex items-start gap-4 lg:items-center">
