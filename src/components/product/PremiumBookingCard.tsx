@@ -55,13 +55,6 @@ const PremiumBookingCard = ({
         </div>
       </div>
 
-      {/* Trust strip */}
-      <div className="mx-5 mb-3 grid grid-cols-3 gap-2 rounded-xl bg-primary/5 p-2.5 text-[11px] font-medium text-foreground">
-        <div className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5 text-primary" />{t("Plată sigură", "Secure")}</div>
-        <div className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5 text-primary" /><span className="truncate">{responseLabel}</span></div>
-        <div className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />{ownerVerified ? t("Verificat", "Verified") : t("Activ", "Active")}</div>
-      </div>
-
       {/* Calendar */}
       <div className="px-5 pb-3">
         <div className="flex items-center justify-between mb-2">
