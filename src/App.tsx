@@ -124,7 +124,7 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/contul-meu" element={<AccountDetailsPage />} />
-                <Route path="/owner" element={<Owner />} />
+                <Route path="/owner" element={<Navigate to="/anunturi" replace />} />
                 <Route path="/owner/new-product" element={<NewProduct />} />
                 <Route path="/owner/edit-product/:id" element={<EditProduct />} />
                 <Route path="/mesaje" element={<Messages />} />
