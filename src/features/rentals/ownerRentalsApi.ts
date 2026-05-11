@@ -83,13 +83,10 @@ export async function confirmReturn(rentalId: string) {
 function mapPvError(error: unknown): Error {
   const msg = (error as any)?.message || "";
   if (msg.includes("PV_INCOMPLETE_HANDOVER")) {
-    return new Error("Nu poți confirma predarea înainte ca ambele părți să completeze procesul verbal (min 3 poze fiecare).");
+    return new Error("Așteptăm ca ambele părți să completeze procesul verbal de predare (minim 3 poze fiecare).");
   }
   if (msg.includes("PV_INCOMPLETE_RETURN")) {
-    return new Error("Nu poți confirma returnarea înainte ca ambele părți să completeze procesul verbal (min 3 poze fiecare).");
-  }
-  if (msg.includes("PICKUP_NOT_AGREED")) {
-    return new Error("Trebuie să confirmați împreună locul și ora predării înainte de a continua.");
+    return new Error("Așteptăm ca ambele părți să completeze procesul verbal de retur (minim 3 poze fiecare).");
   }
   if (msg.includes("PV_DISPUTE_OPEN")) {
     return new Error("Rezervarea este în verificare. Suportul trebuie să rezolve disputa înainte de a continua.");
