@@ -23,6 +23,13 @@ import { Filter } from "lucide-react";
 
 const PAGE_SIZE = 24;
 
+const normalizeCity = (s: string | null | undefined) =>
+  (s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
 const CategoryDetail = () => {
   const { slug } = useParams();
   const category = getCategoryBySlug(slug || "");
@@ -99,7 +106,7 @@ const CategoryDetail = () => {
       if (selectedSubcategory !== "all" && p.subcategory !== selectedSubcategory) return false;
       if (quickFilters.underFifty && price > 50) return false;
       if (quickFilters.underHundred && price > 100) return false;
-      if (quickFilters.city && quickFilters.city !== "near" && p.location_city !== quickFilters.city) return false;
+      if (quickFilters.city && quickFilters.city !== "near" && normalizeCity(p.location_city) !== normalizeCity(quickFilters.city)) return false;
       if (quickFilters.verifiedOnly && verifiedSet && !verifiedSet.has(p.owner_id)) return false;
       if (expanded.length) {
         const hay = `${p.title} ${p.description ?? ""}`.toLowerCase();
@@ -254,9 +261,16 @@ const CategoryDetail = () => {
           <EmptyCategoryState onResetFilters={resetAll} hasActiveFilters={hasActiveFilters} />
         )}
 
-        {/* Filtered grid */}
-        {!isLoading && hasActiveFilters && filteredProducts.length > 0 && (
+        {/* Main products grid (always shown so sort + view toggle have effect) */}
+        {!isLoading && filteredProducts.length > 0 && (
           <>
+            {!hasActiveFilters && (
+              <div className="flex items-center justify-between motion-safe:animate-fade-in-up">
+                <h2 className="font-heading text-lg md:text-xl font-semibold text-foreground">
+                  {t(`Toate produsele (${filteredProducts.length})`, `All products (${filteredProducts.length})`)}
+                </h2>
+              </div>
+            )}
             <div
               className={
                 viewMode === "gallery"
