@@ -1079,6 +1079,51 @@ export type Database = {
           },
         ]
       }
+      product_drafts: {
+        Row: {
+          created_at: string
+          id: string
+          owner_id: string
+          payload: Json
+          product_id: string | null
+          step: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_id: string
+          payload?: Json
+          product_id?: string | null
+          step?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_id?: string
+          payload?: Json
+          product_id?: string | null
+          step?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_drafts_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_drafts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_reviews: {
         Row: {
           comment: string | null
@@ -1139,11 +1184,19 @@ export type Database = {
           admin_edited_by: string | null
           admin_flagged: boolean
           approval_status: string
+          available_immediately: boolean
+          blocked_dates: string[]
           category: string | null
+          condition: string | null
           created_at: string | null
           daily_price_owner: number
           deleted_at: string | null
           deleted_by: string | null
+          delivery_available: boolean
+          delivery_fee: number | null
+          delivery_radius_km: number | null
+          deposit_type: string | null
+          deposit_value: number | null
           description: string | null
           description_en: string | null
           flag_reason: string | null
@@ -1153,24 +1206,40 @@ export type Database = {
           is_active: boolean
           location_city: string | null
           location_country: string | null
+          min_rental_days: number | null
+          min_rental_preset: string | null
           owner_id: string
           pickup_address: string | null
+          pickup_available: boolean
+          pickup_lat: number | null
+          pickup_lng: number | null
           platform_fee_percent: number
+          quality_score: number
+          serial_number: string | null
           slug: string | null
           subcategory: string | null
           title: string
           title_en: string | null
+          usage_rules: string[]
         }
         Insert: {
           admin_edited_at?: string | null
           admin_edited_by?: string | null
           admin_flagged?: boolean
           approval_status?: string
+          available_immediately?: boolean
+          blocked_dates?: string[]
           category?: string | null
+          condition?: string | null
           created_at?: string | null
           daily_price_owner: number
           deleted_at?: string | null
           deleted_by?: string | null
+          delivery_available?: boolean
+          delivery_fee?: number | null
+          delivery_radius_km?: number | null
+          deposit_type?: string | null
+          deposit_value?: number | null
           description?: string | null
           description_en?: string | null
           flag_reason?: string | null
@@ -1180,24 +1249,40 @@ export type Database = {
           is_active?: boolean
           location_city?: string | null
           location_country?: string | null
+          min_rental_days?: number | null
+          min_rental_preset?: string | null
           owner_id: string
           pickup_address?: string | null
+          pickup_available?: boolean
+          pickup_lat?: number | null
+          pickup_lng?: number | null
           platform_fee_percent?: number
+          quality_score?: number
+          serial_number?: string | null
           slug?: string | null
           subcategory?: string | null
           title: string
           title_en?: string | null
+          usage_rules?: string[]
         }
         Update: {
           admin_edited_at?: string | null
           admin_edited_by?: string | null
           admin_flagged?: boolean
           approval_status?: string
+          available_immediately?: boolean
+          blocked_dates?: string[]
           category?: string | null
+          condition?: string | null
           created_at?: string | null
           daily_price_owner?: number
           deleted_at?: string | null
           deleted_by?: string | null
+          delivery_available?: boolean
+          delivery_fee?: number | null
+          delivery_radius_km?: number | null
+          deposit_type?: string | null
+          deposit_value?: number | null
           description?: string | null
           description_en?: string | null
           flag_reason?: string | null
@@ -1207,13 +1292,21 @@ export type Database = {
           is_active?: boolean
           location_city?: string | null
           location_country?: string | null
+          min_rental_days?: number | null
+          min_rental_preset?: string | null
           owner_id?: string
           pickup_address?: string | null
+          pickup_available?: boolean
+          pickup_lat?: number | null
+          pickup_lng?: number | null
           platform_fee_percent?: number
+          quality_score?: number
+          serial_number?: string | null
           slug?: string | null
           subcategory?: string | null
           title?: string
           title_en?: string | null
+          usage_rules?: string[]
         }
         Relationships: [
           {
@@ -2437,6 +2530,15 @@ export type Database = {
           id: string
         }[]
       }
+      get_similar_pricing: {
+        Args: { p_category: string; p_subcategory?: string }
+        Returns: {
+          p25: number
+          p50: number
+          p75: number
+          sample_size: number
+        }[]
+      }
       get_support_analytics: {
         Args: { p_from?: string; p_to?: string }
         Returns: Json
@@ -2605,11 +2707,19 @@ export type Database = {
               admin_edited_by: string | null
               admin_flagged: boolean
               approval_status: string
+              available_immediately: boolean
+              blocked_dates: string[]
               category: string | null
+              condition: string | null
               created_at: string | null
               daily_price_owner: number
               deleted_at: string | null
               deleted_by: string | null
+              delivery_available: boolean
+              delivery_fee: number | null
+              delivery_radius_km: number | null
+              deposit_type: string | null
+              deposit_value: number | null
               description: string | null
               description_en: string | null
               flag_reason: string | null
@@ -2619,13 +2729,21 @@ export type Database = {
               is_active: boolean
               location_city: string | null
               location_country: string | null
+              min_rental_days: number | null
+              min_rental_preset: string | null
               owner_id: string
               pickup_address: string | null
+              pickup_available: boolean
+              pickup_lat: number | null
+              pickup_lng: number | null
               platform_fee_percent: number
+              quality_score: number
+              serial_number: string | null
               slug: string | null
               subcategory: string | null
               title: string
               title_en: string | null
+              usage_rules: string[]
             }[]
             SetofOptions: {
               from: "*"
@@ -2647,11 +2765,19 @@ export type Database = {
               admin_edited_by: string | null
               admin_flagged: boolean
               approval_status: string
+              available_immediately: boolean
+              blocked_dates: string[]
               category: string | null
+              condition: string | null
               created_at: string | null
               daily_price_owner: number
               deleted_at: string | null
               deleted_by: string | null
+              delivery_available: boolean
+              delivery_fee: number | null
+              delivery_radius_km: number | null
+              deposit_type: string | null
+              deposit_value: number | null
               description: string | null
               description_en: string | null
               flag_reason: string | null
@@ -2661,13 +2787,21 @@ export type Database = {
               is_active: boolean
               location_city: string | null
               location_country: string | null
+              min_rental_days: number | null
+              min_rental_preset: string | null
               owner_id: string
               pickup_address: string | null
+              pickup_available: boolean
+              pickup_lat: number | null
+              pickup_lng: number | null
               platform_fee_percent: number
+              quality_score: number
+              serial_number: string | null
               slug: string | null
               subcategory: string | null
               title: string
               title_en: string | null
+              usage_rules: string[]
             }[]
             SetofOptions: {
               from: "*"
