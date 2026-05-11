@@ -310,9 +310,14 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
           {getInitialsFrom(displayName, displayEmail)}
         </AvatarFallback>
       </Avatar>
-      {hasActivity && (
+      {isAdmin && adminUnread > 0 ? (
+        <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
+          <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+          <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-background" />
+        </span>
+      ) : hasActivity ? (
         <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background animate-pulse" />
-      )}
+      ) : null}
     </Button>
   );
 
