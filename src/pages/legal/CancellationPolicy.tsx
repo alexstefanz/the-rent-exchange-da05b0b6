@@ -8,7 +8,8 @@ const sectionsRo = [
     title: "Politica de anulare pentru chiriași",
     content: (
       <div className="space-y-4">
-        <p>Chiriașii pot anula o rezervare în orice moment. Eligibilitatea pentru rambursare depinde de momentul anulării raportat la ora de start a rezervării:</p>
+        <p>Chiriașii pot anula o rezervare <strong>doar înainte de predarea produsului</strong> (semnarea procesului verbal de predare). După predare, anularea nu mai este posibilă — există doar opțiunea de <em>returnare anticipată</em>, deschiderea unei dispute sau contactarea echipei de suport.</p>
+        <p>Eligibilitatea pentru rambursare depinde de momentul anulării raportat la ora de start a rezervării:</p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border border-border rounded-lg">
             <thead>
@@ -19,25 +20,26 @@ const sectionsRo = [
             </thead>
             <tbody>
               <tr className="border-b border-border">
-                <td className="p-3">În prima oră de la efectuarea rezervării</td>
-                <td className="p-3 text-green-600 font-medium">Rambursare integrală</td>
-              </tr>
-              <tr className="border-b border-border">
                 <td className="p-3">Cu 48 de ore sau mai mult înainte de începere</td>
-                <td className="p-3 text-green-600 font-medium">Rambursare integrală</td>
+                <td className="p-3 text-green-600 font-medium">Rambursare integrală (subtotal + comision platformă)</td>
               </tr>
               <tr className="border-b border-border">
-                <td className="p-3">Cu mai puțin de 48 de ore înainte</td>
-                <td className="p-3 text-amber-600 font-medium">Rambursare 50%</td>
+                <td className="p-3">Între 24h și 48h înainte de începere</td>
+                <td className="p-3 text-amber-600 font-medium">Rambursare = subtotal − 1 zi (compensație proprietar)</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="p-3">Cu mai puțin de 24h înainte de începere</td>
+                <td className="p-3 text-amber-600 font-medium">Rambursare = subtotal − 1 zi − comisionul platformei</td>
               </tr>
               <tr>
-                <td className="p-3">După începerea perioadei de închiriere</td>
-                <td className="p-3 text-destructive font-medium">Fără rambursare</td>
+                <td className="p-3">După predarea produsului (semnarea PV de predare)</td>
+                <td className="p-3 text-destructive font-medium">Anulare blocată — folosește returnarea anticipată sau dispută</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <p className="text-sm"><strong>Excepție:</strong> se acordă rambursare integrală dacă bunul nu corespunde descrierii sau prezintă defecte majore. Chiriașul trebuie să notifice proprietarul și platforma în maximum 30 de minute de la preluare, furnizând dovezi (fotografii, videoclipuri, descriere detaliată a problemelor).</p>
+        <p className="text-sm"><strong>Excepție:</strong> se acordă rambursare integrală dacă bunul nu corespunde descrierii sau prezintă defecte majore. Chiriașul trebuie să notifice proprietarul și platforma în maximum 30 de minute de la preluare, furnizând dovezi (fotografii, video, descriere detaliată).</p>
+        <p className="text-sm"><strong>Returnare anticipată:</strong> după predare, poți cere proprietarului să accepte returnarea înainte de termen. Decizia (și o eventuală rambursare parțială) aparține proprietarului. Dacă refuză, închirierea continuă normal.</p>
       </div>
     ),
   },
