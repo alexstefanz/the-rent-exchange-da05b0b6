@@ -113,12 +113,6 @@ const PremiumBookingCard = ({
           <Sparkles className="h-4 w-4 mr-2" />
           {startDate && endDate ? t("Rezervă acum", "Reserve now") : t("Verifică datele", "Check dates")}
         </Button>
-        {!isOwnProduct && (
-          <Button variant="outline" className="w-full" onClick={onAsk}>
-            <MessageCircle className="h-4 w-4 mr-2" />
-            {t("Întreabă proprietarul", "Ask the owner")}
-          </Button>
-        )}
         <p className="text-center text-xs text-muted-foreground pt-1">
           {t("Nu se încasează nimic acum. Suma e blocată sigur.", "Nothing charged yet. Funds held safely.")}
         </p>
