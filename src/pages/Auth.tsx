@@ -34,6 +34,7 @@ const Auth = () => {
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isResendingOtp, setIsResendingOtp] = useState(false);
   const [accountType, setAccountType] = useState<"individual" | "business">("individual");
+  const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const copy = useUxCopy();
 
   const isResetMode = isPasswordRecovery || searchParams.get("reset") === "true";
