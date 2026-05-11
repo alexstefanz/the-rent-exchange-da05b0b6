@@ -23,6 +23,22 @@ export interface Product {
   is_active: boolean;
   approval_status?: string;
   created_at: string;
+  // Premium publish fields
+  condition?: string | null;
+  deposit_type?: string | null;
+  deposit_value?: number | null;
+  min_rental_days?: number | null;
+  min_rental_preset?: string | null;
+  delivery_available?: boolean | null;
+  delivery_fee?: number | null;
+  delivery_radius_km?: number | null;
+  pickup_available?: boolean | null;
+  pickup_lat?: number | null;
+  pickup_lng?: number | null;
+  usage_rules?: string[] | null;
+  available_immediately?: boolean | null;
+  blocked_dates?: string[] | null;
+  quality_score?: number | null;
 }
 
 export interface ProductFilters {
@@ -134,20 +150,38 @@ export const getOwnerProductCount = async (ownerId: string): Promise<number> => 
   return count || 0;
 };
 
+export interface PublishProductInput {
+  title: string;
+  description?: string;
+  daily_price_owner: number;
+  category?: string;
+  subcategory?: string;
+  location_city?: string;
+  location_country?: string;
+  pickup_address?: string;
+  pickup_lat?: number | null;
+  pickup_lng?: number | null;
+  pickup_available?: boolean;
+  delivery_available?: boolean;
+  delivery_fee?: number | null;
+  delivery_radius_km?: number | null;
+  images?: string[];
+  included_items?: string[];
+  usage_rules?: string[];
+  condition?: string | null;
+  deposit_type?: string;
+  deposit_value?: number | null;
+  min_rental_days?: number;
+  min_rental_preset?: string | null;
+  available_immediately?: boolean;
+  blocked_dates?: string[];
+  quality_score?: number;
+  serial_number?: string | null;
+}
+
 export const createProduct = async (
-  data: {
-    title: string;
-    description?: string;
-    daily_price_owner: number;
-    category?: string;
-    subcategory?: string;
-    location_city?: string;
-    location_country?: string;
-    pickup_address?: string;
-    images?: string[];
-    included_items?: string[];
-  },
-  ownerId: string
+  data: PublishProductInput,
+  ownerId: string,
 ): Promise<Product> => {
   // Count existing products to determine fee
   const existingCount = await getOwnerProductCount(ownerId);
@@ -164,8 +198,24 @@ export const createProduct = async (
     location_city: data.location_city || null,
     location_country: data.location_country || "Romania",
     pickup_address: data.pickup_address || null,
+    pickup_lat: data.pickup_lat ?? null,
+    pickup_lng: data.pickup_lng ?? null,
+    pickup_available: data.pickup_available ?? true,
+    delivery_available: data.delivery_available ?? false,
+    delivery_fee: data.delivery_fee ?? null,
+    delivery_radius_km: data.delivery_radius_km ?? null,
     images: data.images || [],
     included_items: data.included_items || [],
+    usage_rules: data.usage_rules || [],
+    condition: data.condition ?? null,
+    deposit_type: data.deposit_type ?? "none",
+    deposit_value: data.deposit_value ?? null,
+    min_rental_days: data.min_rental_days ?? 1,
+    min_rental_preset: data.min_rental_preset ?? null,
+    available_immediately: data.available_immediately ?? true,
+    blocked_dates: data.blocked_dates || [],
+    quality_score: data.quality_score ?? 0,
+    serial_number: data.serial_number ?? null,
     is_active: false,
     approval_status: 'pending',
   };
@@ -190,20 +240,8 @@ export const createProduct = async (
 
 export const updateProduct = async (
   id: string,
-  data: {
-    title?: string;
-    description?: string;
-    daily_price_owner?: number;
-    category?: string;
-    subcategory?: string;
-    location_city?: string;
-    location_country?: string;
-    pickup_address?: string;
-    images?: string[];
-    included_items?: string[];
-    is_active?: boolean;
-  },
-  ownerId: string
+  data: Partial<PublishProductInput> & { is_active?: boolean },
+  ownerId: string,
 ): Promise<Product> => {
   const { data: product, error } = await supabase
     .from("products")
