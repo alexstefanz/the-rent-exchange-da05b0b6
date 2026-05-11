@@ -1,29 +1,31 @@
-## Problem
+## Obiectiv
 
-Pe pagina de produs, dacă utilizatorul dă click pe o singură zi în calendar, butonul de rezervare rămâne dezactivat ("Verifică datele") și nu se poate face rezervarea de 1 zi.
+Calculul totalului trebuie să fie pur zilnic: `rentalDays × clientPrice`. Fără reduceri pentru săptămâni / luni.
 
-**Cauza:** Calendar-ul (`PremiumBookingCard.tsx`) e folosit în `mode="single"`. Logica din `handleDateSelect` (`src/pages/ProductDetail.tsx`, linia 140) setează doar `startDate` la primul click și așteaptă un al doilea click pentru `endDate`. Butonul "Rezervă acum" e activ doar când există **și** `startDate` **și** `endDate` (linia 118 din `PremiumBookingCard.tsx`).
+## Modificări
 
-În plus, react-day-picker în `mode="single"` deselectează când dai click pe aceeași zi a doua oară, deci ramura `date.getTime() === startDate.getTime()` (linia 143) practic nu se declanșează — `onSelect` primește `undefined` și funcția iese imediat.
+### 1. `src/lib/rentalPricing.ts`
+Simplifică `computeRentalPrice` să returneze doar zile + total:
+- `total = rentalDays × clientPrice`
+- `months = 0`, `weeks = 0`, `days = rentalDays` (păstrează câmpurile pentru compatibilitate cu UI-ul existent care le citește)
 
-## Soluție propusă
+### 2. `src/components/product/PremiumBookingCard.tsx`
+În breakdown-ul afișat sub calendar:
+- Elimină rândurile `breakdown.months × 30 zile × priceMonth` și `breakdown.weeks × 7 zile × priceWeek`
+- Păstrează un singur rând: `{rentalDays} zile × {clientPrice} RON = {total} RON`
+- `Total` rămâne afișat la fel (acum egal cu `15 × 120 = 1800 RON`)
 
-Modific `handleDateSelect` în `src/pages/ProductDetail.tsx` astfel încât:
+### 3. `src/components/product/BookingCard.tsx` (varianta secundară)
+- Înlocuiește calculul inline `months * priceMonth + weeks * priceWeek + extraDays * clientPrice` cu `rentalDays * clientPrice`
+- Elimină linia `{priceWeek} RON / săpt · {priceMonth} RON / lună` de sub preț (nu mai e relevantă)
 
-1. **Primul click pe o zi** → setează `startDate = date` **și** `endDate = date` (rezervare implicită de 1 zi). Butonul "Rezervă acum" devine activ instant.
-2. **Al doilea click pe altă zi** (când `startDate === endDate`) → extinde intervalul:
-   - dacă noua dată e după `startDate` și nu există zile rezervate în interval → `setEndDate(date)`
-   - dacă noua dată e înainte de `startDate` → `setStartDate(date)` și `endDate` rămâne ca capăt
-   - dacă există conflict cu zile rezervate → toast existent
-3. **Al treilea click** (când avem deja un interval >1 zi) → resetează: `startDate = date`, `endDate = date` (din nou rezervare 1 zi).
+### 4. `src/pages/ProductDetail.tsx`
+- `priceWeek` și `priceMonth` nu mai sunt folosite în calcul, dar sunt încă pasate către componente. Le pot lăsa (zero impact) sau le pot elimina împreună cu propsurile aferente. **Recomand să le elimin** din `PremiumBookingCard`, `BookingCard`, `MobileStickyBookingBar` props pentru curățenie.
 
-`clearDates` și restul logicii (preț, breakdown, validare booked) rămân neschimbate. Breakdown-ul afișează deja corect "1 zile × X RON" când start = end (vezi `computeRentalPrice` apelat la linia 38 din `PremiumBookingCard.tsx`).
+### 5. Checkout (`Checkout.tsx`, `PremiumBookingSummary.tsx`)
+Niciun calcul propriu — primește `totalPrice` din state-ul navigării. Va reflecta automat noua valoare. Linia `{product.price} RON × {rentalDays} zile` deja reflectă corect noul model.
 
-## Fișier modificat
-
-- `src/pages/ProductDetail.tsx` — rescriu funcția `handleDateSelect` (liniile 140-152). Nicio altă modificare.
-
-## Ce nu se schimbă
-
-- `PremiumBookingCard.tsx` rămâne cu `mode="single"` și aceeași condiție pe buton (`disabled={!startDate || !endDate}`) — se va activa natural pentru că ambele sunt setate de la primul click.
-- Logica de prețuri, RPC-ul `get_booked_dates`, validarea conflictelor în interval.
+## Verificare
+- 15 zile × 120 RON = **1800 RON** afișat în breakdown, total card produs și pe pagina de checkout.
+- 1 zi × 120 RON = 120 RON.
+- 30 zile × 120 RON = 3600 RON (fără mai vechiul discount lunar).
