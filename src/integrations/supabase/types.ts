@@ -2488,6 +2488,15 @@ export type Database = {
         Returns: number
       }
       normalize_full_name: { Args: { input_name: string }; Returns: string }
+      notify_rental_event_async: {
+        Args: {
+          _actor_id?: string
+          _event_key: string
+          _extra?: Json
+          _rental_id: string
+        }
+        Returns: undefined
+      }
       open_rental_dispute: {
         Args: { _phase: string; _reason: string; _rental_id: string }
         Returns: undefined

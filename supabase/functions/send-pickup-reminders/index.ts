@@ -38,32 +38,12 @@ Deno.serve(async (req) => {
 
     let sent = 0;
     for (const r of rentals ?? []) {
-      const productTitle = (r as any).products?.title ?? "produsul";
-      const place = (r as any).pickup_location ?? "locul agreat";
-      const time = new Date(r.pickup_agreed_at as string).toLocaleString(
-        "ro-RO",
-        { dateStyle: "short", timeStyle: "short" },
-      );
-
-      const baseRows = [r.owner_id, r.renter_id]
-        .filter((id): id is string => !!id)
-        .map((uid) => ({
-          user_id: uid,
-          type: "pickup_reminder",
-          title_ro: `Predare în ~12h: ${productTitle}`,
-          title_en: `Hand-over in ~12h: ${productTitle}`,
-          description_ro: `Întâlnire programată ${time}, la ${place}. Pregătește procesul verbal de predare.`,
-          description_en: `Meeting scheduled ${time} at ${place}. Get the hand-over inspection ready.`,
-          link: `/inchirieri`,
-        }));
-
-      if (baseRows.length === 0) continue;
-
-      const { error: insertErr } = await supabase
-        .from("notifications")
-        .insert(baseRows);
-      if (insertErr) {
-        console.error("notif insert failed", r.id, insertErr.message);
+      // Delegate to the orchestrator → handles in-app + email + SMS for both parties.
+      const { error: invokeErr } = await supabase.functions.invoke("notify-rental-event", {
+        body: { rental_id: r.id, event_key: "pv_pickup_pending" },
+      });
+      if (invokeErr) {
+        console.error("notify-rental-event failed", r.id, invokeErr.message);
         continue;
       }
 
