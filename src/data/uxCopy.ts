@@ -155,6 +155,18 @@ const createUxCopy = () => ({
       contactOwner: { ro: "Discută cu proprietarul", en: "Chat with the owner" },
       contactRenter: { ro: "Discută cu chiriașul", en: "Chat with the renter" },
       reportIssue: { ro: "Ai o problemă?", en: "Got an issue?" },
+      reportIssueCta: { ro: "Semnalează o problemă", en: "Report a problem" },
+      pvProgress: {
+        photos: { ro: (n: number, min: number) => `Poze ${n}/${min}`, en: (n: number, min: number) => `Photos ${n}/${min}` },
+        checklist: { ro: (n: number, total: number) => `Checklist ${n}/${total}`, en: (n: number, total: number) => `Checklist ${n}/${total}` },
+        complete: { ro: "PV complet", en: "Inspection complete" },
+        waitingOther: { ro: "Aștepți cealaltă parte", en: "Waiting for the other party" },
+      },
+      disputeReview: {
+        title: { ro: "Dispută în analiză", en: "Dispute under review" },
+        desc: { ro: "Echipa Rentli analizează cazul. Plata este blocată până la rezoluție. Răspundem în maxim 24h cu pașii următori.", en: "The Rentli team is reviewing this case. The payment is held until resolution. We reply within 24h with next steps." },
+        cta: { ro: "Vezi tichetul de suport", en: "View support ticket" },
+      },
       keepOnPlatform: { ro: "Pentru siguranță și suport mai rapid, recomandăm comunicarea exclusiv prin platformă.", en: "For safety and faster support, we recommend communicating exclusively through the platform." },
       // Renter
       renter: {
@@ -233,6 +245,27 @@ const createUxCopy = () => ({
         handover: { ro: "Procesul verbal de predare a fost salvat. Închirierea trece în starea „În folosire”.", en: "The hand-over report was saved. The rental moved to ‘In use’." },
         return: { ro: "Procesul verbal de retur a fost salvat. Închirierea s-a finalizat.", en: "The return report was saved. The rental is now completed." },
       },
+    },
+    dispute: {
+      open: { ro: "Deschide dispută", en: "Open dispute" },
+      title: { ro: "Semnalează o problemă", en: "Report a problem" },
+      desc: { ro: "Descrie clar ce s-a întâmplat. Echipa Rentli analizează în maxim 24h și mediază între părți. Plata rămâne blocată până la rezoluție.", en: "Describe clearly what happened. The Rentli team reviews within 24h and mediates between the parties. The payment is held until resolution." },
+      phaseHandover: { ro: "Problemă la predare", en: "Issue at hand-over" },
+      phaseReturn: { ro: "Problemă la retur", en: "Issue at return" },
+      reasonLabel: { ro: "Detalii (minim 30 caractere)", en: "Details (min. 30 characters)" },
+      reasonPlaceholder: { ro: "Ex: produsul a sosit cu o zgârietură mare pe carcasă, neprezentă în pozele anunțului...", en: "E.g.: the item arrived with a large scratch on the casing, not visible in the listing photos..." },
+      submit: { ro: "Trimite cererea", en: "Submit request" },
+      submitting: { ro: "Se trimite...", en: "Submitting..." },
+      success: { ro: "Disputa a fost deschisă. Suportul te contactează în maxim 24h.", en: "Dispute opened. Support will contact you within 24h." },
+      error: { ro: "Nu am putut deschide disputa. Încearcă din nou sau contactează suportul.", en: "Could not open the dispute. Try again or contact support." },
+      cancel: { ro: "Anulează", en: "Cancel" },
+      bannerTitle: { ro: "Dispută în curs", en: "Dispute in progress" },
+      bannerDesc: { ro: "Plata este blocată până la rezoluție. Suportul preia cazul.", en: "Payment is held until resolution. Support is handling the case." },
+    },
+    review: {
+      snooze: { ro: "Mai târziu", en: "Later" },
+      skip: { ro: "Sari peste", en: "Skip" },
+      snoozedToast: { ro: "Te reamintim mâine.", en: "We'll remind you tomorrow." },
     },
   },
   inspection: {
