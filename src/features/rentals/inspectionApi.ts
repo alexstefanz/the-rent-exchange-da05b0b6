@@ -86,6 +86,9 @@ export async function getInspectionSignedUrl(reference: string): Promise<string 
 export type InspectionPhase = "checkout" | "checkin";
 export type InspectionRole = "owner" | "renter";
 
+/** Minimum photos required by the digital PV (proces verbal). */
+export const MIN_INSPECTION_PHOTOS = 3;
+
 export const INSPECTION_CHECKLIST_KEYS = [
   "functional",
   "no_defects",
@@ -127,6 +130,9 @@ export interface Inspection {
   notes: string | null;
   checklist: InspectionChecklist;
   created_at: string;
+  locked_at?: string | null;
+  declaration_accepted?: boolean;
+  metadata?: Record<string, unknown> | null;
 }
 
 export async function createInspection(
@@ -135,10 +141,25 @@ export async function createInspection(
   role: InspectionRole,
   photos: string[],
   notes: string | undefined,
-  checklist: InspectionChecklist
+  checklist: InspectionChecklist,
+  declarationAccepted: boolean
 ): Promise<Inspection> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Nu ești autentificat");
+
+  if (photos.length < MIN_INSPECTION_PHOTOS) {
+    throw new Error(`Adaugă minim ${MIN_INSPECTION_PHOTOS} poze`);
+  }
+  if (!declarationAccepted) {
+    throw new Error("Trebuie să accepți declarația de predare");
+  }
+
+  const metadata = {
+    userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+    viewport: typeof window !== "undefined" ? `${window.innerWidth}x${window.innerHeight}` : null,
+    submittedAt: new Date().toISOString(),
+    photoCount: photos.length,
+  };
 
   const { data, error } = await supabase
     .from("rental_inspections")
@@ -150,6 +171,8 @@ export async function createInspection(
       photos,
       notes: notes || null,
       checklist: checklist as unknown as any,
+      declaration_accepted: declarationAccepted,
+      metadata: metadata as any,
     })
     .select()
     .single();
