@@ -97,15 +97,7 @@ const PremiumBookingCard = ({
             <span className="font-medium">{format(endDate, "d MMM yyyy", { locale: dateLocale })}</span>
           </div>
           <Separator className="my-2.5" />
-          {breakdown.months > 0 && (
-            <div className="flex justify-between"><span className="text-muted-foreground text-xs">{breakdown.months} × 30 {t("zile", "days")} × {priceMonth} RON</span><span className="font-medium">{breakdown.months * priceMonth} RON</span></div>
-          )}
-          {breakdown.weeks > 0 && (
-            <div className="flex justify-between mt-1"><span className="text-muted-foreground text-xs">{breakdown.weeks} × 7 {t("zile", "days")} × {priceWeek} RON</span><span className="font-medium">{breakdown.weeks * priceWeek} RON</span></div>
-          )}
-          {breakdown.days > 0 && (
-            <div className="flex justify-between mt-1"><span className="text-muted-foreground text-xs">{breakdown.days} {t("zile", "days")} × {clientPrice} RON</span><span className="font-medium">{Math.round(breakdown.days * clientPrice * 100) / 100} RON</span></div>
-          )}
+          <div className="flex justify-between"><span className="text-muted-foreground text-xs">{rentalDays} {t("zile", "days")} × {clientPrice} RON</span><span className="font-medium">{totalPrice} RON</span></div>
           <div className="flex justify-between mt-2.5 font-semibold text-base"><span>{t("Total", "Total")}</span><span className="text-primary">{totalPrice} RON</span></div>
         </div>
       )}
