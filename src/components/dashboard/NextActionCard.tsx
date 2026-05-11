@@ -1,12 +1,14 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Hourglass, ShieldCheck, Truck, ClipboardCheck, Package, RotateCcw, CheckCircle2, MessageCircle, ArrowRight, Star,
+  Hourglass, ShieldCheck, Truck, ClipboardCheck, Package, RotateCcw, CheckCircle2, MessageCircle, ArrowRight, Star, AlertTriangle, ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { cn } from "@/lib/utils";
 import SupportFromRentalButton from "./SupportFromRentalButton";
+import OpenDisputeDialog from "./OpenDisputeDialog";
+import PvProgressBadge, { type PvProgress } from "./PvProgressBadge";
 
 type Role = "renter" | "owner";
 
@@ -21,6 +23,7 @@ interface RentalLike {
   payment_status?: string | null;
   handover_confirmed_at?: string | null;
   return_confirmed_at?: string | null;
+  dispute_status?: "none" | "open" | "resolved" | null;
 }
 
 interface Props {
@@ -30,20 +33,26 @@ interface Props {
   role: Role;
   /** Whether the renter has already submitted the check-in (handover) inspection. */
   renterCheckinSubmitted?: boolean;
+  /** Optional live PV progress to show as inline badge. */
+  pvProgress?: PvProgress | null;
   onPrimary?: () => void;
   onChat?: () => void;
   onLeaveReview?: () => void;
 }
 
 const NextActionCard = ({
-  rental, step, cancelled, role, renterCheckinSubmitted,
+  rental, step, cancelled, role, renterCheckinSubmitted, pvProgress,
   onPrimary, onChat, onLeaveReview,
 }: Props) => {
   const copy = useUxCopy();
   const t = copy.timeline.nextAction;
   const navigate = useNavigate();
+  const [disputeOpen, setDisputeOpen] = useState(false);
 
   if (cancelled) return null;
+
+  // Dispute overrides everything else when active.
+  const isDisputed = rental.dispute_status === "open";
 
   type Variant = {
     icon: ReactNode;
@@ -55,8 +64,21 @@ const NextActionCard = ({
   };
 
   const handleChat = onChat ?? (() => navigate("/mesaje"));
+  const disputePhase: "handover" | "return" =
+    rental.handover_confirmed_at ? "return" : "handover";
+  const showReportIssue = !isDisputed && step >= 3 && step <= 6;
 
   const buildVariant = (): Variant | null => {
+    if (isDisputed) {
+      return {
+        icon: <ShieldAlert className="h-5 w-5" />,
+        title: t.disputeReview.title,
+        desc: t.disputeReview.desc,
+        cta: t.disputeReview.cta,
+        onCta: () => navigate("/suport"),
+        accent: "from-rose-50 to-rose-100/60 border-rose-300 text-rose-700",
+      };
+    }
     const c = role === "renter" ? t.renter : t.owner;
     const accentByStep: Record<number, string> = {
       1: "from-amber-50 to-amber-100/60 border-amber-200 text-amber-700",
@@ -101,6 +123,7 @@ const NextActionCard = ({
   if (!v) return null;
 
   return (
+    <>
     <div
       className={cn(
         "rounded-2xl border bg-gradient-to-br p-4 sm:p-5 animate-fade-in",
@@ -112,7 +135,12 @@ const NextActionCard = ({
           {v.icon}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] uppercase tracking-wider font-semibold opacity-80">{t.title}</p>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <p className="text-[11px] uppercase tracking-wider font-semibold opacity-80">{t.title}</p>
+            {pvProgress && !isDisputed && (step === 3 || step === 4 || step === 6) && (
+              <PvProgressBadge progress={pvProgress} />
+            )}
+          </div>
           <h4 className="mt-0.5 font-heading text-base sm:text-lg font-semibold text-foreground">
             {v.title}
           </h4>
@@ -136,6 +164,17 @@ const NextActionCard = ({
               productTitle={rental.product_title}
               className="bg-white/70 border border-border/50"
             />
+            {showReportIssue && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setDisputeOpen(true)}
+                className="bg-white/70 border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive"
+              >
+                <AlertTriangle className="h-4 w-4 mr-1" />
+                {t.reportIssueCta}
+              </Button>
+            )}
             {step === 7 && onLeaveReview && (
               <Button variant="outline" size="sm" onClick={onLeaveReview} className="bg-white/70">
                 <Star className="h-4 w-4 mr-1" />
@@ -148,6 +187,13 @@ const NextActionCard = ({
         </div>
       </div>
     </div>
+    <OpenDisputeDialog
+      open={disputeOpen}
+      onOpenChange={setDisputeOpen}
+      rentalId={rental.id}
+      phase={disputePhase}
+    />
+    </>
   );
 };
 
