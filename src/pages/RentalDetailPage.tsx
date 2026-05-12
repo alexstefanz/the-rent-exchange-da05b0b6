@@ -63,6 +63,11 @@ const RentalDetailPage = () => {
         { event: "*", schema: "public", table: "rental_pv_documents", filter: `rental_id=eq.${rental.id}` },
         () => queryClient.invalidateQueries({ queryKey: ["rental-detail", publicId] }),
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rental_inspections", filter: `rental_id=eq.${rental.id}` },
+        () => queryClient.invalidateQueries({ queryKey: ["rental-detail", publicId] }),
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);

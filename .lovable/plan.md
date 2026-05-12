@@ -1,31 +1,43 @@
-## Countdown până la returnare în header-ul rezervării
+## Real-time pentru pașii unei închirieri
 
-În `src/pages/RentalDetailPage.tsx`, lângă textul existent `19 mai 2026 – 19 mai 2026 · 1 zile`, adaug un badge live cu countdown până la `rental.end_date` (data de returnare stabilită de comun acord).
+### Cauza identificată
 
-### Comportament
+Pagina `RentalDetailPage.tsx` este deja abonată corect via `supabase.channel(...)` la modificări pe tabelele `rentals` și `rental_pv_documents`. Problema e la nivel de bază de date: aceste tabele **nu sunt incluse în publication-ul `supabase_realtime`**, așa că Postgres nu trimite evenimentele. Doar `rental_inspections` e inclus.
 
-- **Înainte de start** (`now < start_date`): badge gri/neutru — `Începe în 3z 4h` (RO) / `Starts in 3d 4h` (EN).
-- **În timpul închirierii** (`start_date ≤ now < end_date`): badge primary (#F59E0B/10) cu icon `Clock` — `Returnare în 2z 5h 12m` / `Return in 2d 5h 12m`.
-- **Ultimele 24h**: badge devine roșu (`bg-destructive/10 text-destructive`) — `Returnare în 5h 12m`.
-- **După `end_date`** dacă încă nu s-a făcut returnarea: badge roșu — `Întârziere: 1z 2h` / `Overdue: 1d 2h`.
-- **Dacă PV returnare e semnat de ambele părți** (`returnDoneEarly === true`) sau `rental.status === "completed"` / `cancelled`: nu se afișează badge.
+Verificat:
+```
+SELECT tablename FROM pg_publication_tables WHERE pubname='supabase_realtime';
+→ doar rental_inspections
+```
 
-### Implementare tehnică
+### Fix (migrație SQL)
 
-1. Component nou inline (sau mic helper) `ReturnCountdownBadge` în același fișier (sau `src/components/rentals/ReturnCountdownBadge.tsx`):
-   - Props: `startDate: string`, `endDate: string`, `hidden: boolean`.
-   - `useState` cu `now = Date.now()`, `useEffect` cu `setInterval(..., 60_000)` (refresh la 1 minut — suficient pentru d/h/m).
-   - Calculează diff și formatează `Xz Yh Zm` (omite componente zero, max 3 unități).
-2. Inserat după `{rental.rental_days} {t("zile", "days")}` în linia 196, separat printr-un `·` sau pe linie nouă pe mobil:
-   ```tsx
-   <span className="ml-2 inline-flex">
-     <ReturnCountdownBadge startDate={rental.start_date} endDate={rental.end_date} hidden={returnDoneEarly || rental.status === "completed" || rental.status === "cancelled"} />
-   </span>
-   ```
-3. Folosesc `Clock` din lucide-react (deja importat) și `cn` pentru variante de culoare.
-4. Texte bilingve via `t()` din `useLanguage` (deja folosit în pagină).
+Adaug în publication tabelele lipsă și setez `REPLICA IDENTITY FULL` pe ele (necesar ca payload-ul UPDATE să conțină valorile vechi/noi pentru filtrele RLS):
+
+```sql
+ALTER TABLE public.rentals REPLICA IDENTITY FULL;
+ALTER TABLE public.rental_pv_documents REPLICA IDENTITY FULL;
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.rentals;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.rental_pv_documents;
+```
+
+### Hardening minor în UI (opțional, în același pas)
+
+În `RentalDetailPage.tsx`, extind subscription-ul existent pentru a invalida și pe evenimente din `rental_inspections` filtrate pe `rental_id` — asta acoperă și cazul când un PV este completat printr-un flux de inspecție:
+
+```ts
+.on("postgres_changes",
+  { event: "*", schema: "public", table: "rental_inspections", filter: `rental_id=eq.${rental.id}` },
+  () => queryClient.invalidateQueries({ queryKey: ["rental-detail", publicId] }),
+)
+```
+
+### Rezultat
+
+După migrație, când chiriașul semnează PV Returnare, cardul "PV Returnare" pentru proprietar se deblochează automat fără refresh, iar timeline-ul (Cerere → Confirmat → Plată → Semnături → Predat → Returnare → Finalizat) avansează live pentru ambele părți.
 
 ### Out of scope
 
-- Nu modific timeline, PV cards, business logic sau email-uri.
-- Nu modific lista `/rezervari` sau `/inchirieri` — countdown apare doar pe pagina de detaliu.
+- Niciun refactor de hook-uri sau extragere de logică.
+- Nu modific RLS, edge functions sau email-urile.
