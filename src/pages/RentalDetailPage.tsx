@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail } from "lucide-react";
 import { format } from "date-fns";
@@ -20,6 +20,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 
 const RentalDetailPage = () => {
   const { publicId } = useParams<{ publicId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const { language } = useLanguage();
   const navigate = useNavigate();
@@ -80,6 +81,19 @@ const RentalDetailPage = () => {
 
   const showHandoverPv = step >= 3 && step <= 5 && rental.payment_status && (rental.payment_status === "authorized" || rental.payment_status === "paid" || rental.payment_status === "captured");
   const showReturnPv = step >= 5;
+
+  // Deep-link: ?pv=handover|return auto-opens dialog when allowed
+  useEffect(() => {
+    const pv = searchParams.get("pv");
+    if (pv === "handover" && showHandoverPv) setPvOpen("handover");
+    else if (pv === "return" && showReturnPv) setPvOpen("return");
+    if (pv) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("pv");
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showHandoverPv, showReturnPv]);
 
   async function handleChat() {
     const convId = await getOrCreateRentalConversation(rental.id);
