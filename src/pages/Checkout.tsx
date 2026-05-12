@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { ArrowLeft, ArrowRight, CreditCard, Info, Shield, FlaskConical } from "lucide-react";
+import { ArrowLeft, ArrowRight, Send, Info, Shield, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LoginDialog from "@/components/checkout/LoginDialog";
 import TermsDialog from "@/components/checkout/TermsDialog";
@@ -14,7 +14,7 @@ import StickyCheckoutBar from "@/components/checkout/StickyCheckoutBar";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { createRentalWithStripeCheckout, createRentalWithStripeTestCheckout } from "@/features/rentals/rentalsApi";
+import { createRentalRequest, createRentalWithStripeTestCheckout } from "@/features/rentals/rentalsApi";
 import { toast } from "sonner";
 import { useKycGate } from "@/hooks/queries/useKycGate";
 import KycGateBanner from "@/components/kyc/KycGateBanner";
@@ -75,19 +75,19 @@ const Checkout = () => {
   };
   const handleLoginSuccess = () => { setShowLoginDialog(false); setCurrentStep(2); };
 
-  const handleStripeCheckout = async () => {
+  const handleSendRequest = async () => {
     if (isSubmitting) return;
     if (user && !kyc.isVerified) {
       toast.error(language === "ro"
-        ? "Trebuie să-ți verifici identitatea înainte de a plăti."
-        : "You must verify your identity before paying.");
+        ? "Trebuie să-ți verifici identitatea înainte de a trimite cererea."
+        : "You must verify your identity before sending a request.");
       navigate("/verificare");
       return;
     }
     if (!phoneGate.requirePhone()) return;
     setIsSubmitting(true);
     try {
-      const stripeUrl = await createRentalWithStripeCheckout({
+      const rental = await createRentalRequest({
         productId: product.id,
         ownerId: product.ownerId,
         startDate: format(new Date(startDate), "yyyy-MM-dd"),
@@ -99,9 +99,15 @@ const Checkout = () => {
         paymentMethod: "stripe",
         messageToOwner: messageToOwner || undefined,
       });
-      window.location.href = stripeUrl;
+      toast.success(language === "ro"
+        ? "Cererea a fost trimisă! Vei fi notificat când proprietarul răspunde."
+        : "Request sent! You'll be notified when the owner responds.");
+      const target = (rental as any)?.public_id
+        ? `/rezervari/${(rental as any).public_id}`
+        : "/rezervari";
+      navigate(target, { replace: true });
     } catch (e: any) {
-      console.error("Stripe checkout error:", e);
+      console.error("Send request error:", e);
       if (e?.code === "KYC_REQUIRED" || (typeof e?.message === "string" && e.message.includes("KYC_REQUIRED"))) {
         toast.error(language === "ro"
           ? "Verificare identitate necesară. Te redirecționăm."
@@ -111,8 +117,8 @@ const Checkout = () => {
         return;
       }
       toast.error(e?.message || (language === "ro"
-        ? "Eroare la inițierea plății. Încearcă din nou."
-        : "Error initiating payment. Please try again."));
+        ? "Eroare la trimiterea cererii. Încearcă din nou."
+        : "Error sending the request. Please try again."));
       setIsSubmitting(false);
     }
   };
@@ -147,8 +153,8 @@ const Checkout = () => {
   };
 
   const steps = [
-    t("Confirmă rezervarea", "Confirm booking"),
-    t("Plată securizată", "Secure payment"),
+    t("Confirmă detaliile", "Confirm details"),
+    t("Trimite cererea", "Send request"),
   ];
 
   return (
