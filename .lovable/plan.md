@@ -1,58 +1,34 @@
-## Banii rămân "Blocat" după finalizare — cauza & fix
+## Goal
 
-### Diagnostic
+Mesajul opțional pe care chiriașul îl scrie în checkout (imaginea 1) NU mai apare ca primul mesaj în conversația din chat. În schimb, apare ca o bulă de chat în cardul cererii de închiriere afișat proprietarului în "Cereri de închiriere" (imaginea 2).
 
-**RNT-000061**: `status=completed`, `payment_status=authorized`, `completed_at` setat, dar `captured_at=null`. Plata Stripe **nu a fost capturată** — de aceea `useEarnings` o clasifică drept `held` (Blocat).
+## Modificări
 
-**RNT-000045**: `status=early_return_requested` — încă așteaptă decizia proprietarului asupra cererii de returnare anticipată. Comportament corect, nu e bug. Va deveni "Disponibil" când e finalizată.
+### 1. Bază de date (migrație)
 
-**Cauza tehnică**: Trigger-ul DB `tg_pv_return_progress` (pe `rental_pv_documents`) marchează automat închirierea drept `completed` când proprietarul semnează PV Returnare — **dar nu apelează funcția de captură Stripe**. Singurele locuri care capturează sunt:
-- butonul manual `confirmReturn` (necules de fluxul actual bazat pe PV trigger)
-- cron-ul `process-rental-captures` (filtrează `end_date <= today`, deci nu prinde închirierile finalizate înainte de termen)
+- Adaugă coloana `message_to_owner TEXT` pe `public.rentals` (nullable).
+- Actualizează funcția RPC `get_owner_rentals` să returneze și `message_to_owner` (alături de câmpurile existente).
 
-### Fix
+### 2. Backend / API
 
-#### 1. Trigger DB nou — auto-capture la trecerea în `completed`
+`src/features/rentals/rentalsApi.ts` — `createRentalRequest`:
+- Salvează `params.messageToOwner` direct în coloana nouă `rentals.message_to_owner` la inserare (în `createRental`).
+- Elimină blocul care creează conversația și inserează primul mesaj în `messages` din mesajul opțional. Conversația rămâne să fie creată automat doar la nevoie (nu pre-populată cu acest text).
 
-Adaug un trigger `AFTER UPDATE ON public.rentals` care, când `status` trece în `'completed'` și `payment_status='authorized'` și `payment_intent_id IS NOT NULL`, apelează prin `pg_net.http_post` funcția edge `capture-rental-payment` cu `{ rental_id }`. Edge function-ul deja acceptă apeluri cu anon key (path-ul folosit de cron) — așa că autentificarea e rezolvată.
+`src/features/rentals/ownerRentalsApi.ts`:
+- Adaugă `message_to_owner: string | null` în interface-ul `OwnerRental`.
 
-```sql
-CREATE OR REPLACE FUNCTION public.tg_rental_auto_capture()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
-BEGIN
-  IF NEW.status = 'completed'
-     AND OLD.status IS DISTINCT FROM NEW.status
-     AND NEW.payment_status = 'authorized'
-     AND NEW.payment_intent_id IS NOT NULL THEN
-    PERFORM net.http_post(
-      url := '<SUPABASE_URL>/functions/v1/capture-rental-payment',
-      headers := jsonb_build_object(
-        'Content-Type','application/json',
-        'Authorization','Bearer <ANON_KEY>'
-      ),
-      body := jsonb_build_object('rental_id', NEW.id)
-    );
-  END IF;
-  RETURN NEW;
-END $$;
+### 3. UI — bula de chat în card
 
-CREATE TRIGGER trg_rental_auto_capture
-AFTER UPDATE ON public.rentals
-FOR EACH ROW EXECUTE FUNCTION public.tg_rental_auto_capture();
-```
-
-(URL și anon key sunt setate ca settings în BD sau hardcodate — folosesc valorile reale ale proiectului în migrație.)
-
-#### 2. Backfill RNT-000061
-
-După instalarea trigger-ului, apelez manual `capture-rental-payment` cu `rental_id` corespunzător pentru a captura plata blocată acum și a o muta în "Disponibil".
-
-#### 3. (Eventual) același trigger acoperă și viitor
-
-Orice cale prin care `status` ajunge `completed` (PV trigger, buton manual, decizie early-return acceptată, acțiune admin) va declanșa captura automat, fără a depinde de cron sau de UI.
+`src/components/dashboard/RentalsOutTab.tsx`, în maparea `pendingRentals`:
+- Sub blocul cu Perioadă/Zile/Câștig și deasupra butoanelor Acceptă/Refuză, dacă `rental.message_to_owner` există, afișează o bulă de chat:
+  - container `rounded-2xl rounded-tl-sm bg-background border border-border px-3 py-2`
+  - mic header cu `MessageSquare` (lucide) + "Mesaj de la chiriaș" în `text-xs text-muted-foreground`
+  - textul mesajului `text-sm text-foreground whitespace-pre-wrap`
+  - folosește tokenii din design system (`bg-background`, `border-border`, `text-foreground`, `text-muted-foreground`), conform regulilor proiectului.
 
 ### Out of scope
 
-- Nu modific RLS, fluxul de PV semnare, sau logica `useEarnings`.
-- RNT-000045 nu necesită intervenție — utilizatorul trebuie doar să accepte/respingă cererea de early-return.
-- Cron-ul existent `process-rental-captures` rămâne ca fallback pentru închirierile care ajung la `end_date` fără semnare PV.
+- Nu schimbăm fluxul existent pentru cereri deja create (date istorice rămân în `messages`; pentru cele vechi bula nu va apărea — comportament acceptabil).
+- Fără modificări la `OptionalMessageCard` din checkout, fără modificări la edge functions.
+- Fără realtime nou — cardul oricum se reîmprospătează la primirea cererii.
