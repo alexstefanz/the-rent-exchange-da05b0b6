@@ -354,4 +354,79 @@ function PvRow({ label, ownerSignedAt, renterSignedAt, onOpen }: { label: string
   );
 }
 
+function PvPanel({
+  label, phase, role, ownerSignedAt, renterSignedAt, onOpen, t,
+}: {
+  label: string;
+  phase: "handover" | "return";
+  role: "owner" | "renter";
+  ownerSignedAt: string | null;
+  renterSignedAt: string | null;
+  onOpen: () => void;
+  t: (r: string, e: string) => string;
+}) {
+  const ownerOk = !!ownerSignedAt;
+  const renterOk = !!renterSignedAt;
+  const both = ownerOk && renterOk;
+  const firstSigner: "owner" | "renter" = phase === "handover" ? "owner" : "renter";
+  const mySigned = role === "owner" ? ownerOk : renterOk;
+  const otherSigned = role === "owner" ? renterOk : ownerOk;
+  const isMyTurn = !mySigned && (role === firstSigner || otherSigned);
+  const isLocked = !mySigned && !isMyTurn;
+
+  let statusLabel = "";
+  let statusTone = "text-muted-foreground";
+  let StatusIcon: any = Clock;
+  if (both) { statusLabel = t("Finalizat — ambele semnaturi aplicate", "Completed — both signatures applied"); statusTone = "text-emerald-700"; StatusIcon = CheckCircle2; }
+  else if (isMyTurn) { statusLabel = t("Randul tau — completeaza si semneaza", "Your turn — fill in and sign"); statusTone = "text-[#F98715] font-semibold"; StatusIcon = FileSignature; }
+  else if (isLocked) {
+    statusLabel = role === "owner"
+      ? t("Asteptam chiriasul", "Waiting for the renter")
+      : t("Asteptam proprietarul", "Waiting for the owner");
+    statusTone = "text-amber-700";
+    StatusIcon = Lock;
+  } else if (mySigned && !otherSigned) {
+    statusLabel = role === "owner"
+      ? t("Ai semnat — asteptam chiriasul", "You signed — waiting for the renter")
+      : t("Ai semnat — asteptam proprietarul", "You signed — waiting for the owner");
+    statusTone = "text-emerald-700";
+    StatusIcon = CheckCircle2;
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-background p-4 flex flex-col gap-3">
+      <div className="flex items-start justify-between gap-3">
+        <p className="font-semibold text-sm flex items-center gap-2">
+          <FileSignature className="h-4 w-4 text-primary" />
+          {label}
+        </p>
+      </div>
+      <div className={`flex items-center gap-2 text-xs ${statusTone}`}>
+        <StatusIcon className="h-3.5 w-3.5" />
+        <span>{statusLabel}</span>
+      </div>
+      <div className="flex flex-wrap gap-2 text-[11px]">
+        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border ${ownerOk ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-border bg-muted text-muted-foreground"}`}>
+          {ownerOk ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+          Proprietar
+        </span>
+        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border ${renterOk ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-border bg-muted text-muted-foreground"}`}>
+          {renterOk ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+          Chirias
+        </span>
+      </div>
+      <Button
+        size="sm"
+        variant={both ? "outline" : "default"}
+        onClick={onOpen}
+        disabled={isLocked}
+        className="w-full sm:w-auto sm:self-end"
+      >
+        {isLocked ? <Lock className="h-4 w-4 mr-2" /> : <FileSignature className="h-4 w-4 mr-2" />}
+        {both ? t("Vezi PV", "View PV") : isLocked ? t("Blocat", "Locked") : t("Deschide", "Open")}
+      </Button>
+    </div>
+  );
+}
+
 export default RentalDetailPage;
