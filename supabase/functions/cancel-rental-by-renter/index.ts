@@ -205,8 +205,34 @@ serve(async (req) => {
       console.error("Update rental error:", uErr);
     }
 
-    // If Stripe action failed (or unknown PI state), open admin ticket as a safety net
-    if (stripeError || stripeAction === "none") {
+    // If Stripe action failed (or unknown PI state), open admin ticket as a safety net.
+    // Skip ticket creation entirely when there is no payment intent (test rentals / no funds to move).
+    if (stripeError || (rental.payment_intent_id && stripeAction === "none")) {
+      // Idempotency: reuse an existing active automatic cancellation ticket if any.
+      const { data: existing } = await admin
+        .from("ops_tickets")
+        .select("id, public_id")
+        .eq("reservation_id", rental.id)
+        .eq("requester_user_id", userId)
+        .eq("category_type", "REFUND_REQUEST")
+        .contains("tags", ["renter-cancel"])
+        .in("status", ["NEW", "OPEN", "IN_PROGRESS"])
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (existing?.id) {
+        // Append an internal note instead of creating a duplicate.
+        await admin.from("ops_ticket_messages").insert({
+          ticket_id: existing.id,
+          author_type: "SYSTEM",
+          author_id: null,
+          is_internal: true,
+          message_text:
+            `Anulare repetată pentru aceeași rezervare. Tier=${tier}, stripe_action=${stripeAction}` +
+            (stripeError ? `, stripe_error=${stripeError}` : "") + ".",
+        });
+      } else {
       const productTitle = (rental as any).products?.title || "Produs";
       const description =
         `Anulare automată a eșuat sau necesită intervenție manuală.\n\n` +
@@ -219,7 +245,7 @@ serve(async (req) => {
         `• Stripe action: ${stripeAction}\n` +
         (stripeError ? `• Stripe error: ${stripeError}\n` : "");
 
-      const { data: ticket } = await admin
+      const { data: ticket, error: tInsErr } = await admin
         .from("ops_tickets")
         .insert({
           title: `Anulare chiriaș — verificare manuală (${productTitle})`,
@@ -239,6 +265,10 @@ serve(async (req) => {
         .select("id")
         .single();
 
+      if (tInsErr) {
+        // Likely the unique partial index caught a race; ignore silently.
+        console.warn("ops_tickets insert skipped (likely duplicate):", tInsErr.message);
+      }
       if (ticket) {
         const stripeLink = rental.payment_intent_id
           ? `https://dashboard.stripe.com/payments/${rental.payment_intent_id}`
@@ -250,6 +280,7 @@ serve(async (req) => {
           is_internal: true,
           message_text: `Acțiune necesară pe ${stripeLink}. Tier așteptat: ${tier} (${refundedAmount} RON refund).`,
         });
+      }
       }
     }
 

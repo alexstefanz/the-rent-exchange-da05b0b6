@@ -82,6 +82,27 @@ Deno.serve(async (req) => {
     const productTitle = (rental as any).products?.title || "Produs";
     const piId = rental.payment_intent_id || "—";
 
+    // Idempotency: if an active ticket already exists for this rental + renter,
+    // return it instead of creating a duplicate.
+    const { data: existing } = await admin
+      .from("ops_tickets")
+      .select("id, public_id")
+      .eq("reservation_id", rental.id)
+      .eq("requester_user_id", userId)
+      .eq("category_type", "REFUND_REQUEST")
+      .contains("tags", ["renter-cancel"])
+      .in("status", ["NEW", "OPEN", "IN_PROGRESS"])
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (existing?.id) {
+      return new Response(
+        JSON.stringify({ ok: true, ticket_id: existing.id, public_id: existing.public_id, deduplicated: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const description =
       `Chiriașul a anulat cererea pentru "${productTitle}" înainte ca proprietarul să răspundă.\n\n` +
       `Trebuie eliberat hold-ul Stripe (refund / cancel pe payment intent).\n\n` +
