@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star } from "lucide-react";
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import Navbar from "@/components/layout/Navbar";
@@ -15,10 +15,12 @@ import StatusBadge from "@/components/dashboard/StatusBadge";
 import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
 import { getRentalFullDetail } from "@/features/rentals/rentalDetailPageApi";
 import PvSignatureDialog from "@/components/rentals/PvSignatureDialog";
+import LeaveReviewDialog from "@/components/dashboard/LeaveReviewDialog";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import { payForConfirmedRental } from "@/features/rentals/rentalsApi";
 import { toast } from "sonner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { supabase } from "@/integrations/supabase/client";
 
 const RentalDetailPage = () => {
   const { publicId } = useParams<{ publicId: string }>();
@@ -29,6 +31,8 @@ const RentalDetailPage = () => {
   const t = (r: string, e: string) => (language === "ro" ? r : e);
   const [pvOpen, setPvOpen] = useState<null | "handover" | "return">(null);
   const [paying, setPaying] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth", { replace: true });
@@ -39,6 +43,27 @@ const RentalDetailPage = () => {
     queryFn: () => getRentalFullDetail(publicId!),
     enabled: !!publicId && !!user?.id,
   });
+
+  // Realtime: refetch rental detail on rentals + rental_pv_documents changes.
+  useEffect(() => {
+    if (!rental?.id || !publicId) return;
+    const channel = supabase
+      .channel(`rental-detail-rt-${rental.id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "rentals", filter: `id=eq.${rental.id}` },
+        () => queryClient.invalidateQueries({ queryKey: ["rental-detail", publicId] }),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rental_pv_documents", filter: `rental_id=eq.${rental.id}` },
+        () => queryClient.invalidateQueries({ queryKey: ["rental-detail", publicId] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [rental?.id, publicId, queryClient]);
 
   const isOwnerEarly = rental?.owner_id === user?.id;
   const tlRentalEarly = rental ? {
@@ -176,8 +201,8 @@ const RentalDetailPage = () => {
           <RentalTimeline rental={tlRental} />
         </section>
 
-        {/* Chat CTA — visible after payment is authorized */}
-        {isPaidEarly && (
+        {/* Chat CTA — visible after payment is authorized; replaced by Review CTA when completed */}
+        {isPaidEarly && rental.status !== "completed" && (
           <section className="rounded-2xl border border-border bg-card p-4 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center">
@@ -199,6 +224,32 @@ const RentalDetailPage = () => {
               {isOwner
                 ? t("Discuta cu Chiriasul", "Chat with Renter")
                 : t("Discuta cu Proprietarul", "Chat with Owner")}
+            </Button>
+          </section>
+        )}
+
+        {/* Review CTA — visible after rental is completed */}
+        {rental.status === "completed" && (
+          <section className="rounded-2xl border border-border bg-card p-4 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center">
+                <Star className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">
+                  {t("Lasă un review", "Leave a review")}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {t(
+                    "Părerea ta ajută comunitatea Rentli să rămână de încredere.",
+                    "Your feedback keeps the Rentli community trustworthy.",
+                  )}
+                </p>
+              </div>
+            </div>
+            <Button onClick={() => setReviewOpen(true)} className="shrink-0">
+              <Star className="h-4 w-4 mr-2" />
+              {t("Lasă un review", "Leave a review")}
             </Button>
           </section>
         )}
@@ -362,6 +413,19 @@ const RentalDetailPage = () => {
           onSigned={() => refetch()}
         />
       )}
+
+      <LeaveReviewDialog
+        open={reviewOpen}
+        onOpenChange={setReviewOpen}
+        rental={{
+          id: rental.id,
+          product_id: rental.product_id,
+          product_title: rental.product_title || "",
+          counterparty_id: isOwner ? rental.renter_id : rental.owner_id,
+          counterparty_name: (isOwner ? rental.renter_name : rental.owner_name) || "",
+        }}
+        currentUserRole={isOwner ? "owner" : "renter"}
+      />
     </div>
   );
 };
