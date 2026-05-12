@@ -123,8 +123,8 @@ export async function createRentalRequest(params: CreateRentalParams) {
     .catch((e) => console.warn("send-rental-notification failed (non-blocking):", e));
   // 4) SMS to owner via the unified notify-rental-event (event: request_received).
   supabase.functions.invoke("notify-rental-event", {
-    body: { rental_id: rental.id, event_key: "request_received" },
-  }).catch((e) => console.warn("notify-rental-event request_received failed (non-blocking):", e));
+    body: { rental_id: rental.id, event_key: "request_created" },
+  }).catch((e) => console.warn("notify-rental-event request_created failed (non-blocking):", e));
 
   return rental;
 }
