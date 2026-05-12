@@ -20,7 +20,7 @@ interface Props {
   onSuccess: () => void;
 }
 
-const MIN_AMOUNT = 50;
+const MIN_AMOUNT = 2;
 
 const maskIban = (iban: string) => {
   const c = iban.replace(/\s/g, "");
