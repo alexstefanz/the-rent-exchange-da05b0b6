@@ -223,8 +223,15 @@ Deno.serve(async (req) => {
         rows.push({ label: "💬 Comentariu", value: escapeHtml(comment) });
       }
 
+      const titleRo = product_title
+        ? `Ai primit un review pentru "${product_title}"`
+        : "Ai primit un review nou";
+      const titleEn = product_title
+        ? `You received a review for "${product_title}"`
+        : "You received a new review";
+
       const html = buildEmailTemplate({
-        title: "Ai primit o recenzie nouă! ⭐",
+        title: `${titleRo} ⭐`,
         greeting: `${greetingName}<br>Cineva ți-a lăsat o recenzie pe platforma Rentli.`,
         rows,
         ctaText: "Vezi recenzia",
@@ -232,14 +239,14 @@ Deno.serve(async (req) => {
         footerText: "Recenziile ajută comunitatea să funcționeze mai bine.",
       });
 
-      await sendEmail(resendApiKey, email, `Ai primit o recenzie nouă - ${stars}`, html);
+      await sendEmail(resendApiKey, email, `${titleRo} - ${stars}`, html);
 
       // Also insert a notification
       await supabaseAdmin.from("notifications").insert({
         user_id: recipient_user_id,
         type: "review_received",
-        title_ro: "Ai primit o recenzie nouă",
-        title_en: "You received a new review",
+        title_ro: titleRo,
+        title_en: titleEn,
         description_ro: `${reviewerDisplay} ți-a lăsat o recenzie de ${rating} stele.${product_title ? ` Produs: ${product_title}` : ""}`,
         description_en: `${reviewerDisplay} left you a ${rating}-star review.${product_title ? ` Product: ${product_title}` : ""}`,
         link: "/recenzii",
