@@ -172,7 +172,7 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
           disabled={disabled || sending}
           placeholder={t("Scrie un mesaj...", "Write a message...")}
           className={cn(
-            "min-h-[40px] max-h-[140px] resize-none rounded-2xl border-border/60 bg-muted/40 focus-visible:ring-1 focus-visible:ring-primary/40 px-4 py-2.5 text-sm"
+            "min-h-[40px] max-h-[140px] resize-none rounded-2xl border-border/60 bg-muted/40 focus-visible:ring-1 focus-visible:ring-primary/40 px-4 py-2.5 text-base md:text-sm"
           )}
         />
         <Button
