@@ -40,6 +40,34 @@ const RentalDetailPage = () => {
     enabled: !!publicId && !!user?.id,
   });
 
+  const isOwnerEarly = rental?.owner_id === user?.id;
+  const tlRentalEarly = rental ? {
+    status: rental.status,
+    payment_status: rental.payment_status,
+    start_date: rental.start_date,
+    end_date: rental.end_date,
+    handover_confirmed_at: rental.handover_confirmed_at,
+    return_confirmed_at: rental.return_confirmed_at,
+    handover_pv_signed: !!(rental.handover_pv_owner_signed_at && rental.handover_pv_renter_signed_at),
+  } : null;
+  const stepEarly = tlRentalEarly ? getTimelineStep(tlRentalEarly).current : 0;
+  const showHandoverPvEarly = !!rental && stepEarly >= 3 && stepEarly <= 5 && (rental.payment_status === "authorized" || rental.payment_status === "paid" || rental.payment_status === "captured");
+  const showReturnPvEarly = stepEarly >= 5;
+
+  // Deep-link: ?pv=handover|return auto-opens dialog when allowed
+  useEffect(() => {
+    if (!rental) return;
+    const pv = searchParams.get("pv");
+    if (pv === "handover" && showHandoverPvEarly) setPvOpen("handover");
+    else if (pv === "return" && showReturnPvEarly) setPvOpen("return");
+    if (pv) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("pv");
+      setSearchParams(next, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rental?.id, showHandoverPvEarly, showReturnPvEarly]);
+
   if (isLoading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -82,21 +110,8 @@ const RentalDetailPage = () => {
     ? { name: rental.renter_name, email: rental.renter_email, phone: rental.renter_phone, label: t("Chirias", "Renter") }
     : { name: rental.owner_name, email: rental.owner_email, phone: rental.owner_phone, label: t("Proprietar", "Owner") };
 
-  const showHandoverPv = step >= 3 && step <= 5 && rental.payment_status && (rental.payment_status === "authorized" || rental.payment_status === "paid" || rental.payment_status === "captured");
-  const showReturnPv = step >= 5;
-
-  // Deep-link: ?pv=handover|return auto-opens dialog when allowed
-  useEffect(() => {
-    const pv = searchParams.get("pv");
-    if (pv === "handover" && showHandoverPv) setPvOpen("handover");
-    else if (pv === "return" && showReturnPv) setPvOpen("return");
-    if (pv) {
-      const next = new URLSearchParams(searchParams);
-      next.delete("pv");
-      setSearchParams(next, { replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showHandoverPv, showReturnPv]);
+  const showHandoverPv = showHandoverPvEarly;
+  const showReturnPv = showReturnPvEarly;
 
   async function handleChat() {
     const convId = await getOrCreateRentalConversation(rental.id);
