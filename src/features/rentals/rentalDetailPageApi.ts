@@ -59,11 +59,18 @@ export interface PvDocument {
   phase: "handover" | "return";
   pdf_path: string | null;
   photos: string[];
+  photos_meta: PvPhotoMeta[];
   owner_signature_data: string | null;
   renter_signature_data: string | null;
   owner_signed_at: string | null;
   renter_signed_at: string | null;
   generated_at: string | null;
+}
+
+export interface PvPhotoMeta {
+  path: string;
+  role: "owner" | "renter";
+  uploaded_at: string;
 }
 
 export async function getPvDocument(rentalId: string, phase: "handover" | "return"): Promise<PvDocument | null> {
@@ -74,7 +81,14 @@ export async function getPvDocument(rentalId: string, phase: "handover" | "retur
     .eq("phase", phase)
     .maybeSingle();
   if (error) throw error;
-  return data as any;
+  if (!data) return null;
+  const d: any = data;
+  // Normalize: ensure photos_meta exists; backfill from photos if needed
+  const meta: PvPhotoMeta[] = Array.isArray(d.photos_meta) ? d.photos_meta : [];
+  if (meta.length === 0 && Array.isArray(d.photos) && d.photos.length > 0) {
+    for (const p of d.photos) meta.push({ path: p, role: "owner", uploaded_at: new Date().toISOString() });
+  }
+  return { ...d, photos_meta: meta } as PvDocument;
 }
 
 export async function upsertPvPhotos(rentalId: string, phase: "handover" | "return", photos: string[]) {
@@ -85,6 +99,37 @@ export async function upsertPvPhotos(rentalId: string, phase: "handover" | "retu
       { onConflict: "rental_id,phase" },
     );
   if (error) throw error;
+}
+
+/** Add a photo for the given uploader. Creates the PV row if missing. */
+export async function addPvPhoto(args: { rentalId: string; phase: "handover" | "return"; role: "owner" | "renter"; path: string }) {
+  const existing = await getPvDocument(args.rentalId, args.phase);
+  const meta: PvPhotoMeta[] = existing?.photos_meta ?? [];
+  meta.push({ path: args.path, role: args.role, uploaded_at: new Date().toISOString() });
+  const photos = meta.map((m) => m.path);
+  const { error } = await supabase
+    .from("rental_pv_documents")
+    .upsert(
+      { rental_id: args.rentalId, phase: args.phase, photos, photos_meta: meta as any },
+      { onConflict: "rental_id,phase" },
+    );
+  if (error) throw error;
+}
+
+/** Remove a photo (only the uploader's own; caller enforces). Also deletes from storage. */
+export async function removePvPhoto(args: { rentalId: string; phase: "handover" | "return"; path: string }) {
+  const existing = await getPvDocument(args.rentalId, args.phase);
+  if (!existing) return;
+  const meta = (existing.photos_meta || []).filter((m) => m.path !== args.path);
+  const photos = meta.map((m) => m.path);
+  const { error } = await supabase
+    .from("rental_pv_documents")
+    .update({ photos, photos_meta: meta as any })
+    .eq("rental_id", args.rentalId)
+    .eq("phase", args.phase);
+  if (error) throw error;
+  // Best-effort storage cleanup
+  try { await supabase.storage.from("rental-pvs").remove([args.path]); } catch { /* noop */ }
 }
 
 export async function savePvSignatureAndPdf(args: {

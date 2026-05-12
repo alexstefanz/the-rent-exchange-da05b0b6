@@ -1465,6 +1465,7 @@ export type Database = {
           pdf_path: string | null
           phase: string
           photos: string[]
+          photos_meta: Json
           rental_id: string
           renter_signature_data: string | null
           renter_signed_at: string | null
@@ -1479,6 +1480,7 @@ export type Database = {
           pdf_path?: string | null
           phase: string
           photos?: string[]
+          photos_meta?: Json
           rental_id: string
           renter_signature_data?: string | null
           renter_signed_at?: string | null
@@ -1493,6 +1495,7 @@ export type Database = {
           pdf_path?: string | null
           phase?: string
           photos?: string[]
+          photos_meta?: Json
           rental_id?: string
           renter_signature_data?: string | null
           renter_signed_at?: string | null

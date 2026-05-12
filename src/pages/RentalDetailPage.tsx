@@ -49,6 +49,8 @@ const RentalDetailPage = () => {
     handover_confirmed_at: rental.handover_confirmed_at,
     return_confirmed_at: rental.return_confirmed_at,
     handover_pv_signed: !!(rental.handover_pv_owner_signed_at && rental.handover_pv_renter_signed_at),
+    return_pv_renter_signed: !!rental.return_pv_renter_signed_at,
+    return_pv_owner_signed: !!rental.return_pv_owner_signed_at,
   } : null;
   const stepEarly = tlRentalEarly ? getTimelineStep(tlRentalEarly).current : 0;
   const showHandoverPvEarly = !!rental && stepEarly >= 3 && stepEarly <= 5 && (rental.payment_status === "authorized" || rental.payment_status === "paid" || rental.payment_status === "captured");
@@ -103,6 +105,8 @@ const RentalDetailPage = () => {
     handover_confirmed_at: rental.handover_confirmed_at,
     return_confirmed_at: rental.return_confirmed_at,
     handover_pv_signed: !!(rental.handover_pv_owner_signed_at && rental.handover_pv_renter_signed_at),
+    return_pv_renter_signed: !!rental.return_pv_renter_signed_at,
+    return_pv_owner_signed: !!rental.return_pv_owner_signed_at,
   };
   const { current: step, cancelled } = getTimelineStep(tlRental);
 
