@@ -49,7 +49,7 @@ const StickyProductHeader = ({ title, clientPrice, rating, reviewCount, triggerR
               </span>
             )}
             <span>·</span>
-            <span>{t("Anulare gratuită 48h", "Free cancellation 48h")}</span>
+            <span>{t("Anulare gratuită 24h", "Free cancellation 24h")}</span>
           </div>
         </div>
         <div className="flex items-center gap-4 shrink-0">
