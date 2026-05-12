@@ -126,11 +126,8 @@ export function InspectionDialog({
   const checklistItems = copy.inspection.checklist.items as Record<InspectionChecklistKey, string>;
   const checkedCount = countChecked(checklist);
   const allChecked = checkedCount === INSPECTION_CHECKLIST_KEYS.length;
-  const trimmedNotes = notes.trim();
-  const notesValid = trimmedNotes.length >= 20;
-  const checklistValid = allChecked || notesValid;
   const photosValid = photos.length >= MIN_INSPECTION_PHOTOS;
-  const canSubmit = photosValid && checklistValid && declarationAccepted && !isSubmitting && !isUploading;
+  const canSubmit = photosValid && declarationAccepted && !isSubmitting && !isUploading;
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -163,10 +160,6 @@ export function InspectionDialog({
   const handleSubmit = async () => {
     if (!photosValid) {
       toast.error(`Adaugă minim ${MIN_INSPECTION_PHOTOS} poze`);
-      return;
-    }
-    if (!checklistValid) {
-      toast.error(copy.inspection.checklist.notesRequired);
       return;
     }
     if (!declarationAccepted) {
@@ -441,14 +434,14 @@ export function InspectionDialog({
                 ))}
               </div>
               {!allChecked && (
-                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
-                  {copy.inspection.checklist.notesRequired}
+                <p className="text-xs text-muted-foreground">
+                  {copy.inspection.checklist.helper}
                 </p>
               )}
             </div>
 
             <Textarea
-              placeholder="Observatii (optional daca toate sunt bifate; obligatorii altfel - ex: zgarietura pe coltul stang)"
+              placeholder="Observații (opțional) — ex: zgârietură pe colțul stâng"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
