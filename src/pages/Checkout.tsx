@@ -255,6 +255,31 @@ const Checkout = () => {
                       : t(`Plătește ${totalPrice} RON`, `Pay ${totalPrice} RON`)}
                   </Button>
 
+                  {isAdmin && (
+                    <div className="mt-3 rounded-xl border border-dashed border-yellow-400 bg-yellow-50/60 p-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-yellow-800 mb-2 flex items-center gap-1">
+                        <FlaskConical className="h-3.5 w-3.5" />
+                        {t("Mod admin — testare", "Admin — testing mode")}
+                      </p>
+                      <Button
+                        onClick={handleStripeTestCheckout}
+                        variant="outline"
+                        className="w-full h-10 text-sm border-yellow-500 text-yellow-900 hover:bg-yellow-100"
+                        size="sm"
+                        disabled={isSubmitting}
+                      >
+                        <FlaskConical className="mr-2 h-4 w-4" />
+                        {t("Plătește cu card de test (4242)", "Pay with test card (4242)")}
+                      </Button>
+                      <p className="mt-2 text-[10px] text-yellow-800/80 leading-snug">
+                        {t(
+                          "Nu se debitează bani reali. Rezervarea va fi marcată „Test" în dashboard.",
+                          "No real money is charged. Booking will be flagged as „Test" in the dashboard."
+                        )}
+                      </p>
+                    </div>
+                  )}
+
                   <p className="mt-3 text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
                     <Info className="h-3 w-3" />
                     {t("Vei fi redirecționat către pagina securizată Stripe", "You will be redirected to the secure Stripe page")}
