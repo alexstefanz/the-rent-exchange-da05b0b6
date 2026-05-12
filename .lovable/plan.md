@@ -1,35 +1,26 @@
-## Cauza
+## Plan
 
-Pe iOS Safari, când un input/textarea are font-size sub 16px, browser-ul face automat zoom la focus. După deschiderea tastaturii, `100dvh` se micșorează corect, dar pagina rămâne zoom-ată și apar "spații" (de fapt: scroll offset + viewport zoom-at peste layout-ul recalculat). Textarea-ul din `MessageInput.tsx` și `ChatDialog.tsx` folosește `text-sm` (14px), deci e cauza zoom-ului.
+Voi ajusta layout-ul chat-ului mobil astfel încât bara de scriere să stea jos, ca în aplicațiile de chat, fără să fie împinsă în mijlocul ecranului când se deschide tastatura.
 
-În plus, înălțimea wrapper-ului mobil (`h-[100dvh]`) nu se ajustează la `visualViewport` când tastatura virtuală e deschisă pe iOS mai vechi — ceea ce poate lăsa input-ul să "plutească" în mijloc cu spațiu sub el.
+### Modificări propuse
 
-## Modificări
+1. **`src/pages/Messages.tsx`**
+   - Înlocuiesc folosirea directă a `visualViewport.height` ca înălțime totală a chat-ului, deoarece pe iOS/SwiftKey poate muta întregul layout sus și lasă spații mari.
+   - Pentru mobil, containerul chat-ului va fi `position: fixed` pe tot viewport-ul (`inset-0`), cu `height: 100dvh` și `overflow-hidden`.
+   - Adaug un CSS custom property pentru spațiul ocupat de tastatură (`--keyboard-inset`) calculat din diferența dintre `window.innerHeight` și `visualViewport.height + visualViewport.offsetTop`.
+   - Acest spațiu va fi folosit doar ca padding jos, nu ca înălțime a întregului chat.
 
-### 1. `src/components/messaging/MessageInput.tsx`
-- Schimbă clasa textarea de la `text-sm` la `text-base md:text-sm` (16px pe mobil, 14px pe desktop). Asta previne zoom-ul iOS la focus.
+2. **`src/components/messaging/ChatPanel.tsx`**
+   - Fac panoul mobil să aibă `min-h-0`, `overflow-hidden` și structură stabilă: header sus, lista de mesaje flexibilă, input jos.
+   - Aplic `padding-bottom: var(--keyboard-inset, 0px)` pe wrapper-ul chat-ului, astfel încât input-ul să rămână lipit de tastatură, nu să sară sus.
+   - Păstrez comportamentul desktop neschimbat.
 
-### 2. `src/components/messaging/ChatDialog.tsx`
-- Aceeași corectare pe textarea (16px pe mobil).
+3. **`src/components/messaging/MessageInput.tsx`**
+   - Fixez input bar-ul ca zonă de jos a chat-ului: `shrink-0`, safe-area support (`env(safe-area-inset-bottom)`) și fără margini/padding care pot crea spațiu inutil.
+   - Păstrez fontul de 16px pe mobil pentru a preveni zoom-ul iOS.
 
-### 3. `src/pages/Messages.tsx` — wrapper chat mobil
-- Înlocuiește `h-[100dvh]` cu o combinație care urmărește `visualViewport`:
-  - Adaug un mic hook/efect care setează `--app-height` (pe element) la `window.visualViewport?.height` și ascultă `resize`/`scroll` pe `visualViewport`.
-  - Wrapper devine `style={{ height: 'var(--app-height, 100dvh)' }}` cu `overflow-hidden`.
-- Asigură `overscroll-behavior: contain` și `touch-action: pan-y` pe containerul de mesaje pentru a evita rubber-band.
+### Rezultat așteptat
 
-### 4. `src/components/messaging/ChatPanel.tsx` (verificare)
-- Confirm că lista de mesaje folosește `flex-1 min-h-0 overflow-y-auto` (necesar ca flex-ul să nu depășească wrapper-ul). Dacă nu, ajustez.
-
-## Out of scope
-
-- Nu modific viewport meta din `index.html` (nu adaug `maximum-scale=1` — strică accesibilitatea).
-- Nu modific layout-ul desktop al chat-ului.
-- Nu schimb logica de mesaje, atașamente, realtime.
-
-## Fișiere
-
-- Editat: `src/components/messaging/MessageInput.tsx`
-- Editat: `src/components/messaging/ChatDialog.tsx`
-- Editat: `src/pages/Messages.tsx`
-- Posibil editat: `src/components/messaging/ChatPanel.tsx` (doar dacă lipsește `min-h-0` pe scroller)
+- Când tastatura este închisă: chat-ul ocupă normal ecranul, input-ul este jos.
+- Când tastatura este deschisă: input-ul rămâne imediat deasupra tastaturii, iar lista de mesaje se micșorează/scrollează normal.
+- Nu mai apare spațiul alb mare de sub input și input-ul nu mai este împins sus peste ecran.

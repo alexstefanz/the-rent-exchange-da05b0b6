@@ -24,34 +24,43 @@ function useIsDesktop() {
   return isDesktop;
 }
 
-function useVisualViewportHeight() {
-  const [h, setH] = useState<number | null>(null);
+/**
+ * Tracks the keyboard inset (space taken at the bottom by the on-screen keyboard)
+ * and writes it to a CSS variable on <html>. Layout stays fixed at 100dvh; only
+ * the bottom padding grows so the input bar sits right above the keyboard.
+ */
+function useKeyboardInset(active: boolean) {
   useEffect(() => {
+    if (!active) return;
     const vv = window.visualViewport;
     if (!vv) return;
-    const update = () => setH(vv.height);
+    const root = document.documentElement;
+    const update = () => {
+      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      root.style.setProperty("--keyboard-inset", `${Math.round(inset)}px`);
+    };
     update();
     vv.addEventListener("resize", update);
     vv.addEventListener("scroll", update);
     return () => {
       vv.removeEventListener("resize", update);
       vv.removeEventListener("scroll", update);
+      root.style.setProperty("--keyboard-inset", "0px");
     };
-  }, []);
-  return h;
+  }, [active]);
 }
 
 export default function Messages() {
   const { user, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const vvh = useVisualViewportHeight();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const isDesktop = useIsDesktop();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [activeTab, setActiveTab] = useState("rezervari");
   const [mobileInfoOpen, setMobileInfoOpen] = useState(false);
+  useKeyboardInset(!isDesktop && !!selectedConversation);
 
   if (!authLoading && !user) {
     navigate("/auth", { replace: true });
@@ -96,8 +105,8 @@ export default function Messages() {
     return (
       <>
         <div
-          className="flex flex-col overflow-hidden"
-          style={{ height: vvh ? `${vvh}px` : "100dvh" }}
+          className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-background"
+          style={{ height: "100dvh", paddingBottom: "var(--keyboard-inset, 0px)" }}
         >
           <ChatPanel
             conversationId={selectedConversation.id}
