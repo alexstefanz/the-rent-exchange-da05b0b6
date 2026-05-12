@@ -44,7 +44,29 @@ serve(async (req) => {
       });
     }
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
+    // Determine whether this rental was paid with the TEST card (admin) or LIVE.
+    // We look up the rental by the stored payment_method = `stripe:${session_id}`
+    // BEFORE talking to Stripe, so we pick the right secret key.
+    const supabaseAdminEarly = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const { data: rentalLookup } = await supabaseAdminEarly
+      .from("rentals")
+      .select("id, is_test_payment")
+      .eq("payment_method", `stripe:${session_id}`)
+      .maybeSingle();
+    const isTest = !!rentalLookup?.is_test_payment;
+    const stripeKey = isTest
+      ? Deno.env.get("STRIPE_TEST_SECRET_KEY")
+      : Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      return new Response(
+        JSON.stringify({ error: isTest ? "STRIPE_TEST_SECRET_KEY not configured" : "STRIPE_SECRET_KEY not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2025-08-27.basil",
     });
 

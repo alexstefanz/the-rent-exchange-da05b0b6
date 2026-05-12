@@ -122,3 +122,41 @@ export async function createRentalWithStripeCheckout(params: CreateRentalParams)
 
   return data.url;
 }
+
+/**
+ * ADMIN ONLY — Creates a rental and initiates a Stripe Checkout session in TEST mode.
+ * The rental is marked is_test_payment=true and uses sk_test_ key. No real money moves.
+ */
+export async function createRentalWithStripeTestCheckout(params: CreateRentalParams): Promise<string> {
+  const rental = await createRental(params);
+
+  const cleanupOrphanRental = async () => {
+    try {
+      await supabase
+        .from("rentals")
+        .update({ status: "cancelled", cancellation_reason: "test_checkout_init_failed" })
+        .eq("id", rental.id)
+        .eq("status", "pending");
+    } catch (cleanupErr) {
+      console.error("Cleanup of orphan TEST rental failed (non-blocking):", cleanupErr);
+    }
+  };
+
+  const { data, error } = await supabase.functions.invoke("create-test-checkout-session", {
+    body: { rental_id: rental.id, message_to_owner: params.messageToOwner ?? null },
+  });
+
+  if (error) {
+    await cleanupOrphanRental();
+    throw error;
+  }
+  if (data?.error) {
+    await cleanupOrphanRental();
+    throw new Error(data.error);
+  }
+  if (!data?.url) {
+    await cleanupOrphanRental();
+    throw new Error("Nu s-a putut crea sesiunea de test");
+  }
+  return data.url;
+}

@@ -1517,6 +1517,7 @@ export type Database = {
           end_date: string
           handover_confirmed_at: string | null
           id: string
+          is_test_payment: boolean
           owner_compensation: number | null
           owner_id: string | null
           owner_payout: number
@@ -1568,6 +1569,7 @@ export type Database = {
           end_date: string
           handover_confirmed_at?: string | null
           id?: string
+          is_test_payment?: boolean
           owner_compensation?: number | null
           owner_id?: string | null
           owner_payout: number
@@ -1619,6 +1621,7 @@ export type Database = {
           end_date?: string
           handover_confirmed_at?: string | null
           id?: string
+          is_test_payment?: boolean
           owner_compensation?: number | null
           owner_id?: string | null
           owner_payout?: number
