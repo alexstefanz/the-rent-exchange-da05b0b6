@@ -65,7 +65,7 @@ export const sections = [
     content: (
       <div className="space-y-3">
         <p><strong>Selectarea bunului:</strong> Chiriașii pot alege un bun din ofertele disponibile pe platformă, în funcție de nevoile și preferințele lor.</p>
-        <p><strong>Anularea rezervării:</strong> Anularea gratuită este posibilă cu cel puțin 48 de ore înainte de începerea perioadei de închiriere. Pentru detalii complete, consultați <Link to="/politica-anulare" className="text-primary hover:underline">politica de anulare</Link>.</p>
+        <p><strong>Anularea rezervării:</strong> Anularea gratuită este posibilă cu cel puțin 24 de ore înainte de începerea perioadei de închiriere. Pentru detalii complete, consultați <Link to="/politica-anulare" className="text-primary hover:underline">politica de anulare</Link>.</p>
         <p><strong>Activități interzise:</strong> Chiriașul nu are voie să utilizeze bunul pentru activități ilegale, sportive extreme sau orice altă întrebuințare care depășește scopul declarat al închirierii.</p>
         <p><strong>Restituirea bunului:</strong> Chiriașul este obligat să returneze bunul în aceeași stare în care l-a primit, la data și ora stabilite. Întârzierile sau deteriorările atrag aplicarea de penalități.</p>
         <p><strong>Deteriorarea sau pierderea bunului:</strong> În cazul deteriorării sau pierderii bunului, chiriașul este responsabil pentru costurile de reparare sau înlocuire. Proprietarul trebuie să notifice platforma și să furnizeze dovezi.</p>
@@ -251,7 +251,7 @@ const sectionsEn = [
     content: (
       <div className="space-y-3">
         <p><strong>Item selection:</strong> Renters can choose an item from the offers available on the platform, depending on their needs and preferences.</p>
-        <p><strong>Booking cancellation:</strong> Free cancellation is possible at least 48 hours before the start of the rental period. For full details, see the <Link to="/politica-anulare" className="text-primary hover:underline">cancellation policy</Link>.</p>
+        <p><strong>Booking cancellation:</strong> Free cancellation is possible at least 24 hours before the start of the rental period. For full details, see the <Link to="/politica-anulare" className="text-primary hover:underline">cancellation policy</Link>.</p>
         <p><strong>Prohibited activities:</strong> The renter may not use the item for illegal activities, extreme sports or any other use beyond the declared purpose of the rental.</p>
         <p><strong>Returning the item:</strong> The renter is required to return the item in the same condition in which it was received, on the date and time agreed. Delays or damages incur penalties.</p>
         <p><strong>Damage or loss:</strong> In case of damage or loss of the item, the renter is responsible for repair or replacement costs. The owner must notify the platform and provide evidence.</p>

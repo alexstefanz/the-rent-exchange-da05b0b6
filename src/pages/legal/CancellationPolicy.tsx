@@ -20,12 +20,8 @@ const sectionsRo = [
             </thead>
             <tbody>
               <tr className="border-b border-border">
-                <td className="p-3">Cu 48 de ore sau mai mult înainte de începere</td>
+                <td className="p-3">Cu 24 de ore sau mai mult înainte de începere</td>
                 <td className="p-3 text-green-600 font-medium">Rambursare integrală (subtotal + comision platformă)</td>
-              </tr>
-              <tr className="border-b border-border">
-                <td className="p-3">Între 24h și 48h înainte de începere</td>
-                <td className="p-3 text-amber-600 font-medium">Rambursare = subtotal − 1 zi (compensație proprietar)</td>
               </tr>
               <tr className="border-b border-border">
                 <td className="p-3">Cu mai puțin de 24h înainte de începere</td>
@@ -48,7 +44,7 @@ const sectionsRo = [
     title: "Circumstanțe excepționale (forță majoră) — chiriași",
     content: (
       <div className="space-y-3">
-        <p>În situații neprevăzute, chiriașii pot solicita rambursare integrală chiar și cu mai puțin de 48 de ore înainte. Situații acceptate:</p>
+        <p>În situații neprevăzute, chiriașii pot solicita rambursare integrală chiar și cu mai puțin de 24 de ore înainte. Situații acceptate:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>Probleme medicale grave (accident, spitalizare, boală gravă)</li>
           <li>Dezastre naturale care afectează zona de preluare sau destinația</li>
@@ -163,12 +159,8 @@ const sectionsEn = [
             </thead>
             <tbody>
               <tr className="border-b border-border">
-                <td className="p-3">48 hours or more before start</td>
+                <td className="p-3">24 hours or more before start</td>
                 <td className="p-3 text-green-600 font-medium">Full refund (subtotal + platform fee)</td>
-              </tr>
-              <tr className="border-b border-border">
-                <td className="p-3">Between 24h and 48h before start</td>
-                <td className="p-3 text-amber-600 font-medium">Refund = subtotal − 1 day (owner compensation)</td>
               </tr>
               <tr className="border-b border-border">
                 <td className="p-3">Less than 24h before start</td>
@@ -191,7 +183,7 @@ const sectionsEn = [
     title: "Exceptional circumstances (force majeure) — renters",
     content: (
       <div className="space-y-3">
-        <p>In unforeseen situations, renters may request a full refund even with less than 48 hours notice. Accepted situations:</p>
+        <p>In unforeseen situations, renters may request a full refund even with less than 24 hours notice. Accepted situations:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>Serious medical issues (accident, hospitalization, severe illness)</li>
           <li>Natural disasters affecting the pickup area or destination</li>

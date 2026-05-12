@@ -5,7 +5,6 @@
 
 export type CancellationTier =
   | "FREE"
-  | "FIRST_DAY_FORFEIT"
   | "LIMITED"
   | "LOCKED"; // post-handover: cancellation no longer allowed
 
@@ -56,24 +55,11 @@ export function computeCancellation(input: CancellationInput): CancellationOutco
     };
   }
 
-  if (hoursUntilStart >= 48) {
+  if (hoursUntilStart >= 24) {
     return {
       tier: "FREE",
       refundAmount: round2(subtotal + fee),
       ownerCompensation: 0,
-      platformRetention: 0,
-      hoursUntilStart,
-    };
-  }
-
-  if (hoursUntilStart >= 24) {
-    // First day forfeited
-    const ownerComp = Math.min(daily, subtotal);
-    const refund = round2(subtotal - ownerComp + fee);
-    return {
-      tier: "FIRST_DAY_FORFEIT",
-      refundAmount: round2(refund),
-      ownerCompensation: round2(ownerComp),
       platformRetention: 0,
       hoursUntilStart,
     };
@@ -92,12 +78,6 @@ export function computeCancellation(input: CancellationInput): CancellationOutco
 }
 
 export function freeCancellationDeadline(startDate: string | Date): Date {
-  const start =
-    startDate instanceof Date ? startDate : new Date(`${startDate}T00:00:00`);
-  return new Date(start.getTime() - 48 * 3_600_000);
-}
-
-export function limitedCancellationDeadline(startDate: string | Date): Date {
   const start =
     startDate instanceof Date ? startDate : new Date(`${startDate}T00:00:00`);
   return new Date(start.getTime() - 24 * 3_600_000);

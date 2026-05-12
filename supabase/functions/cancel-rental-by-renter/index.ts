@@ -25,8 +25,8 @@ function checkRateLimit(key: string, maxRequests = 5, windowSec = 60): boolean {
 
 /**
  * Renter-initiated cancellation with automatic refund tier:
- *  - >=48h before start  => void hold => 100% refund
- *  - <48h, before start  => capture 50% => owner gets half, renter refunded 50%
+ *  - >=24h before start  => void hold => 100% refund
+ *  - <24h, before start  => capture first day for owner, refund the rest (platform fee retained)
  *  - after start         => no refund (must capture full and let lifecycle continue)
  *  - after handover/captured => no refund
  */
@@ -144,7 +144,7 @@ serve(async (req) => {
             });
             stripeAction = "full_refund";
           }
-        } else if (tier === "FIRST_DAY_FORFEIT" || tier === "LIMITED") {
+        } else if (tier === "LIMITED") {
           const captureMinor = Math.round(ownerCompensation * 100);
           const pi = await stripe.paymentIntents.retrieve(rental.payment_intent_id);
           if (pi.status === "requires_capture") {
@@ -192,7 +192,7 @@ serve(async (req) => {
     if (tier === "FREE") {
       updates.payment_status = "refunded";
       updates.refunded_at = new Date().toISOString();
-    } else if (tier === "FIRST_DAY_FORFEIT" || tier === "LIMITED") {
+    } else if (tier === "LIMITED") {
       updates.payment_status = "partially_refunded";
       updates.refunded_at = new Date().toISOString();
     }
