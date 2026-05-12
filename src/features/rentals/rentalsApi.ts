@@ -93,28 +93,23 @@ export async function createRentalRequest(params: CreateRentalParams) {
   // 2) Insert the first message (custom or auto) so the owner sees context.
   if (conversationId) {
     const { data: { user } } = await supabase.auth.getUser();
-    const { data: existingMsgs } = await supabase
-      .from("messages")
-      .select("id")
-      .eq("conversation_id", conversationId)
-      .limit(1);
-    if ((!existingMsgs || existingMsgs.length === 0) && user) {
-      const fmt = (d: string) => {
-        try {
-          return new Date(d).toLocaleDateString("ro-RO", { day: "numeric", month: "short", year: "numeric" });
-        } catch { return d; }
-      };
-      const customMsg = (params.messageToOwner || "").trim();
-      const content = customMsg || (
-        `Bună! Am trimis o cerere de închiriere pentru perioada ` +
-        `${fmt(params.startDate)} – ${fmt(params.endDate)} (${params.rentalDays} zile). ` +
-        `Aștept confirmarea ta. Mulțumesc!`
-      );
-      await supabase.from("messages").insert({
-        conversation_id: conversationId,
-        sender_id: user.id,
-        content,
-      });
+    // Only post a chat message if the renter explicitly typed one in the
+    // booking form. The generic auto-message is intentionally suppressed —
+    // it now happens only after the renter completes payment.
+    const customMsg = (params.messageToOwner || "").trim();
+    if (customMsg && user) {
+      const { data: existingMsgs } = await supabase
+        .from("messages")
+        .select("id")
+        .eq("conversation_id", conversationId)
+        .limit(1);
+      if (!existingMsgs || existingMsgs.length === 0) {
+        await supabase.from("messages").insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          content: customMsg,
+        });
+      }
     }
   }
 
