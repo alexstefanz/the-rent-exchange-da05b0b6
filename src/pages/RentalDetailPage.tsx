@@ -19,6 +19,7 @@ import PvSignatureDialog from "@/components/rentals/PvSignatureDialog";
 import ReturnCountdownBadge from "@/components/rentals/ReturnCountdownBadge";
 import LeaveReviewDialog from "@/components/dashboard/LeaveReviewDialog";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
+import { ChatDialog } from "@/components/messaging/ChatDialog";
 import { payForConfirmedRental } from "@/features/rentals/rentalsApi";
 import { useIsAdmin } from "@/hooks/queries/useAdminStats";
 import { toast } from "sonner";
@@ -36,6 +37,8 @@ const RentalDetailPage = () => {
   const [paying, setPaying] = useState(false);
   const [payingTest, setPayingTest] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [chatConvId, setChatConvId] = useState<string | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
   const queryClient = useQueryClient();
   const { data: isAdmin } = useIsAdmin(user?.id);
 
@@ -160,7 +163,12 @@ const RentalDetailPage = () => {
 
   async function handleChat() {
     const convId = await getOrCreateRentalConversation(rental.id);
-    if (convId) navigate(`/mesaje?conv=${convId}`);
+    if (convId) {
+      setChatConvId(convId);
+      setChatOpen(true);
+    } else {
+      toast.error(t("Nu am putut deschide conversația.", "Could not open conversation."));
+    }
   }
 
   const isRejected = rental.status === "rejected" || (rental.status === "cancelled" && !!rental.rejection_reason);
@@ -505,6 +513,17 @@ const RentalDetailPage = () => {
         }}
         currentUserRole={isOwner ? "owner" : "renter"}
       />
+
+      {chatConvId && (
+        <ChatDialog
+          open={chatOpen}
+          onOpenChange={setChatOpen}
+          conversationId={chatConvId}
+          otherUserName={counterparty.name}
+          otherUserAvatar={null}
+          productTitle={rental.product_title || ""}
+        />
+      )}
     </div>
   );
 };
