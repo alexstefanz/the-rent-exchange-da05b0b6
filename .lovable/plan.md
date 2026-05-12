@@ -1,35 +1,32 @@
-## Obiectiv
+## Probleme
 
-Iconița flotantă de suport (căști portocalii) apare peste butonul de send pe mobil când utilizatorul este în chat (pagina `/mesaje`). Trebuie ascunsă pe mobil pe paginile de chat, atât pentru useri obișnuiți cât și pentru admini.
+1. **Status "Blocat" rămâne chiar după finalizare** — în `useEarnings.ts`, statusul tranzacției se calculează doar din `payment_status`. Dacă plata a fost făcută cu hold și rezervarea s-a încheiat (`rentals.status === "completed"`), `payment_status` rămâne `authorized`, deci tranzacția apare ca "Blocat".
+
+2. **Drawer-ul de detalii nu afișează cu cine s-a făcut tranzacția** — `EarningsTransaction` are `renterId` dar nu fetch-uie numele/avatarul chiriașului.
+
+3. **Butonul "Vezi rezervarea" duce la 404** — link-ul e `/rezervare/${publicId}`, dar ruta corectă pentru owner e `/inchirieri/:publicId` (în `App.tsx` există `/inchirieri/:publicId` și `/rezervari/:publicId`, nu `/rezervare/...`).
 
 ## Modificări
 
-1. **`src/components/support/SupportChatWidget.tsx`** — adaugă verificare:
-   - dacă `pathname.startsWith("/mesaje")`, nu randa butonul flotant (`return null` sau `className="hidden lg:block"` doar pe FAB, păstrând comportamentul desktop intact). Panoul deschis rămâne disponibil pe desktop.
+### 1. `src/hooks/useEarnings.ts`
+- La calcul status: dacă `r.status === "completed"`, marchează tranzacția ca `available` (chiar dacă `payment_status` rămâne `authorized` în date legacy).
+- Fetch suplimentar pentru profilurile chiriașilor: după ce rezultă lista de rentals, ia un `select` din `profiles` pentru toate `renter_id` distincte și populează `renterName` (și `renterAvatar` opțional) în `EarningsTransaction`.
+- Extinde interfața `EarningsTransaction` cu `renterAvatar: string | null`.
 
-2. **`src/components/admin/AdminSupportWidget.tsx`** — aceeași logică:
-   - importă `useLocation` din `react-router-dom`.
-   - dacă `pathname.startsWith("/mesaje")` și e mobil (`lg:hidden`), ascunde FAB-ul. Pe desktop rămâne vizibil (nu se suprapune peste send acolo).
+### 2. `src/components/earnings/TransactionDetailDrawer.tsx`
+- Adaugă o secțiune nouă "Chiriaș" / "Renter" în drawer cu avatar + nume + link către profil public (`/utilizator/${renterId}` sau ce există) — verific ruta de profil utilizator în `App.tsx` înainte.
+- Schimbă `Link to={`/rezervare/${tx.rentalPublicId}`}` în `Link to={`/inchirieri/${tx.rentalPublicId}`}` (perspectiva owner).
 
-## Implementare concretă
-
-În ambele componente, pe wrapper-ul butonului flotant (FAB) se adaugă `lg:flex hidden` când suntem pe `/mesaje`, altfel comportament normal. Cel mai simplu:
-
-```tsx
-const isOnChatPage = pathname.startsWith("/mesaje");
-// pe FAB:
-className={cn("fixed ...", isOnChatPage && "hidden lg:flex")}
-```
-
-Panoul deschis (`isOpen`) nu este afectat.
+### 3. (Opțional, dacă există) Pagina de detalii rezervare
+- Confirmă că `/inchirieri/:publicId` funcționează cu `public_id` (RNT-XXXXXX). Dacă nu, ajustez.
 
 ## Out of scope
 
-- Nu modific layout-ul paginii de mesaje.
-- Nu schimb poziția FAB-ului pe alte rute.
-- Nu schimb comportamentul desktop.
+- Nu modific logica de payout/escrow în backend.
+- Nu schimb badge-urile de status în alte locuri.
+- Nu modific lista de tranzacții (table-ul), doar dacă badge-ul se actualizează automat din noul status.
 
 ## Fișiere
 
-- Editat: `src/components/support/SupportChatWidget.tsx`
-- Editat: `src/components/admin/AdminSupportWidget.tsx`
+- Editat: `src/hooks/useEarnings.ts`
+- Editat: `src/components/earnings/TransactionDetailDrawer.tsx`
