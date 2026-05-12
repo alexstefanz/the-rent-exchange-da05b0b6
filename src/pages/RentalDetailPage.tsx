@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical } from "lucide-react";
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import Navbar from "@/components/layout/Navbar";
@@ -18,6 +18,7 @@ import PvSignatureDialog from "@/components/rentals/PvSignatureDialog";
 import LeaveReviewDialog from "@/components/dashboard/LeaveReviewDialog";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import { payForConfirmedRental } from "@/features/rentals/rentalsApi";
+import { useIsAdmin } from "@/hooks/queries/useAdminStats";
 import { toast } from "sonner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,8 +32,10 @@ const RentalDetailPage = () => {
   const t = (r: string, e: string) => (language === "ro" ? r : e);
   const [pvOpen, setPvOpen] = useState<null | "handover" | "return">(null);
   const [paying, setPaying] = useState(false);
+  const [payingTest, setPayingTest] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { data: isAdmin } = useIsAdmin(user?.id);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth", { replace: true });
@@ -318,6 +321,49 @@ const RentalDetailPage = () => {
                 {t(`Plătește ${rental.subtotal} RON`, `Pay ${rental.subtotal} RON`)}
               </Button>
             </div>
+            {isAdmin && (
+              <div className="mt-4 rounded-xl border border-dashed border-yellow-400 bg-yellow-50/60 p-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-yellow-800 mb-2 flex items-center gap-1">
+                  <FlaskConical className="h-3.5 w-3.5" />
+                  {t("Mod admin — testare", "Admin — testing mode")}
+                </p>
+                <Button
+                  onClick={async () => {
+                    if (payingTest) return;
+                    setPayingTest(true);
+                    try {
+                      const { data, error } = await supabase.functions.invoke("create-test-checkout-session", {
+                        body: { rental_id: rental.id },
+                      });
+                      if (error) throw error;
+                      if (data?.error) throw new Error(data.error);
+                      if (!data?.url) throw new Error("Nu s-a putut crea sesiunea de test");
+                      toast.info(language === "ro"
+                        ? "Mod TEST: folosește cardul 4242 4242 4242 4242, orice CVC, dată viitoare."
+                        : "TEST mode: use card 4242 4242 4242 4242, any CVC, future date.");
+                      setTimeout(() => { window.location.href = data.url; }, 400);
+                    } catch (e: any) {
+                      console.error("TEST checkout error:", e);
+                      toast.error(e?.message || "Eroare la inițierea plății de test.");
+                      setPayingTest(false);
+                    }
+                  }}
+                  variant="outline"
+                  className="w-full h-10 text-sm border-yellow-500 text-yellow-900 hover:bg-yellow-100"
+                  size="sm"
+                  disabled={payingTest}
+                >
+                  {payingTest ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FlaskConical className="mr-2 h-4 w-4" />}
+                  {t("Plătește cu card de test (4242)", "Pay with test card (4242)")}
+                </Button>
+                <p className="mt-2 text-[10px] text-yellow-800/80 leading-snug">
+                  {t(
+                    'Nu se debitează bani reali. Rezervarea va fi marcată „Test" în dashboard.',
+                    'No real money is charged. Booking will be flagged as „Test" in the dashboard.'
+                  )}
+                </p>
+              </div>
+            )}
           </section>
         )}
 
