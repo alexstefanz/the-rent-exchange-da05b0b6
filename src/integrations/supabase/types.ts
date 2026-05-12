@@ -2518,7 +2518,9 @@ export type Database = {
           product_id: string
           product_image: string
           product_title: string
+          public_id: string
           refunded_at: string
+          rejection_reason: string
           rental_days: number
           renter_avatar: string
           renter_id: string
