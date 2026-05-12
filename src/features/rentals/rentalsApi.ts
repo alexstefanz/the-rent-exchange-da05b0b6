@@ -139,9 +139,15 @@ export async function payForConfirmedRental(rentalId: string): Promise<string> {
   });
   if (error) {
     const msg = (error as any)?.message || "";
-    if (msg.includes("KYC_REQUIRED") || (error as any)?.context?.error === "KYC_REQUIRED") {
+    const ctxErr = (error as any)?.context?.error;
+    if (msg.includes("KYC_REQUIRED") || ctxErr === "KYC_REQUIRED") {
       const e = new Error("KYC_REQUIRED");
       (e as any).code = "KYC_REQUIRED";
+      throw e;
+    }
+    if (msg.includes("MIN_AMOUNT") || ctxErr === "MIN_AMOUNT") {
+      const e = new Error("Suma totală este sub minimul acceptat de procesatorul de plată (2 RON). Cere proprietarului să actualizeze prețul anunțului.");
+      (e as any).code = "MIN_AMOUNT";
       throw e;
     }
     throw error;
@@ -150,6 +156,11 @@ export async function payForConfirmedRental(rentalId: string): Promise<string> {
     if (data.error === "KYC_REQUIRED") {
       const e = new Error("KYC_REQUIRED");
       (e as any).code = "KYC_REQUIRED";
+      throw e;
+    }
+    if (data.error === "MIN_AMOUNT") {
+      const e = new Error(data.message || "Suma totală este sub minimul acceptat (2 RON).");
+      (e as any).code = "MIN_AMOUNT";
       throw e;
     }
     throw new Error(data.error);
