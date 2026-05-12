@@ -14,11 +14,10 @@ import StickyCheckoutBar from "@/components/checkout/StickyCheckoutBar";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { createRentalRequest, createRentalWithStripeTestCheckout } from "@/features/rentals/rentalsApi";
+import { createRentalRequest } from "@/features/rentals/rentalsApi";
 import { toast } from "sonner";
 import { useKycGate } from "@/hooks/queries/useKycGate";
 import KycGateBanner from "@/components/kyc/KycGateBanner";
-import { useIsAdmin } from "@/hooks/queries/useAdminStats";
 import { PhoneRequiredGate, PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
 
 interface CheckoutState {
