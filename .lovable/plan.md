@@ -1,35 +1,31 @@
-## Politica nouă
+## Scop
+În lista de conversații (`/mesaje`), mesajele necitite trebuie să fie evident diferite: primele în listă, cu text bold și un mic accent de culoare (primary).
 
-- **Anulare gratuită cu cel puțin 24h înainte de start** → rambursare integrală (subtotal + taxă platformă).
-- **Sub 24h, înainte de predare** → prima zi rămâne la proprietar și taxa platformei e nerambursabilă (tier `LIMITED`, neschimbat ca formulă).
-- **După predarea produsului (PV semnat)** → anularea rămâne blocată (`LOCKED`).
-- Tier-ul intermediar `FIRST_DAY_FORFEIT` (48h–24h, prima zi pierdută) **se elimină**.
+## Stare curentă
+`src/components/messaging/ConversationList.tsx` deja împarte lista în două secțiuni: „Necitite" și „Citite", iar necititele apar primele. Lipsește însă diferențierea vizuală — titlul produsului și numele utilizatorului nu sunt bold, fundalul e neutru, iar accentul de culoare lipsește. În screenshot apare doar antetul „CITITE" pentru că nu există conversații necitite în tab-ul curent.
 
-## Modificări
+## Modificări (un singur fișier: `src/components/messaging/ConversationList.tsx`)
 
-1. **Logica partajată** (`src/lib/cancellationPolicy.ts` + `supabase/functions/_shared/cancellationPolicy.ts`)
-   - Pragul `FREE` devine `>= 24h` (nu 48h).
-   - Se elimină ramura `FIRST_DAY_FORFEIT`. Sub 24h se aplică direct `LIMITED`.
-   - `freeCancellationDeadline` returnează start − 24h. Eliminăm `limitedCancellationDeadline` (nu mai are sens un al doilea prag).
+1. În `renderItem`, adaugă o variabilă `isUnread = (conv.unread_count || 0) > 0`.
 
-2. **Componente rezervare**
-   - `src/components/rentals/CancellationStateCard.tsx`: scoatem cazul/stilul `FIRST_DAY_FORFEIT` și textul „Refund limitat începe …”.
-   - `src/components/dashboard/RentalsTab.tsx`: scoatem referința la `FIRST_DAY_FORFEIT`.
-   - `supabase/functions/cancel-rental-by-renter/index.ts`: actualizăm comentariile și ramurile care tratează `FIRST_DAY_FORFEIT`.
+2. Pe `<button>` adaugă, când `isUnread`:
+   - `bg-primary/5` (subtle tint)
+   - `border-l-2 border-primary` (accent vertical stânga)
+   - menține `bg-muted` pentru selectat (selected wins)
 
-3. **Texte UI (toate „48h” → „24h”, eliminăm referințe la 50%/24h–48h)**
-   - `src/data/uxCopy.ts`: `freeCancellation`, `ctaConfirm` (politica), `productDetail.freeCancellation`, `faq3A`, `benefit5Desc`.
-   - `src/data/supportFaq.ts`: răspuns „Cum anulez”.
-   - `src/components/product/FreeCancellationNotice.tsx`.
-   - `src/components/product/StickyProductHeader.tsx` („Anulare gratuită 24h”).
-   - `src/components/checkout/PremiumBookingSummary.tsx`.
-   - `src/pages/FAQ.tsx`.
+3. Titlu produs (linia 73): când `isUnread` → `font-bold text-foreground`; altfel rămâne `font-medium`.
 
-4. **Pagini legale**
-   - `src/pages/legal/CancellationPolicy.tsx` (RO + EN): tabel cu doar 2 rânduri (≥24h = integrală; <24h = subtotal − 1 zi − comision) + LOCKED. Excepțiile pentru forță majoră rămân.
-   - `src/pages/legal/TermsAndConditions.tsx`: „48 hours” → „24 hours”.
+4. Nume utilizator (linia 90): când `isUnread` → `text-foreground font-medium`; altfel rămâne `text-muted-foreground`.
 
-5. **Centru de asistență (DB)**
-   - Articolul seed din migrarea veche menționează „48h+/24-48h/<24h”. Se rescrie prin migrare nouă (`UPDATE` pe articolul respectiv) pentru consistență.
+5. Timestamp (linia 78): când `isUnread` → `text-primary font-semibold`; altfel rămâne `text-muted-foreground`.
 
-Nu se modifică modelul de plată (hold/capture Stripe), doar pragul și textele.
+6. Badge contor (linia 104): schimbă `variant="default"` ca să folosească `bg-primary text-primary-foreground` (default deja face asta — dar verifică). Păstrează.
+
+7. Sortare în interiorul fiecărei secțiuni: sortează `unread` și `read` descrescător după `last_message?.created_at` (sau `updated_at`) ca să fie mereu cele mai recente sus.
+
+8. Antetul secțiunii „Necitite" (linia 155): schimbă culoarea din `text-muted-foreground` în `text-primary` pentru micul accent vizual.
+
+## Note
+- Folosim doar token-urile design system (`primary`, `foreground`, `muted-foreground`) — fără culori hardcodate.
+- Nicio modificare backend / API; doar prezentare.
+- Nu se atinge logica de marcare ca citit (rămâne ca în `ChatPanel`).
