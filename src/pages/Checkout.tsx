@@ -162,23 +162,6 @@ const Checkout = () => {
                 <div className="animate-fade-in" style={{ animationDelay: "60ms" }}>
                   <WhatHappensNext />
                 </div>
-                <div
-                  className="animate-fade-in rounded-2xl border border-primary/20 bg-primary/5 p-4 flex items-start gap-3"
-                  style={{ animationDelay: "120ms" }}
-                >
-                  <Shield className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                  <div className="text-sm">
-                    <div className="font-semibold text-foreground">
-                      {t("Anulare gratuită până la 48h înainte", "Free cancellation up to 48h before")}
-                    </div>
-                    <div className="text-muted-foreground text-xs mt-0.5">
-                      {t(
-                        "Rambursare integrală dacă anulezi înainte de termen.",
-                        "Full refund if you cancel before the deadline."
-                      )}
-                    </div>
-                  </div>
-                </div>
                 <div className="hidden md:flex justify-end pt-2">
                   <Button
                     size="lg"
