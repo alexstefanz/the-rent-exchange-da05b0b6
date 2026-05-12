@@ -273,8 +273,8 @@ const Checkout = () => {
                       </Button>
                       <p className="mt-2 text-[10px] text-yellow-800/80 leading-snug">
                         {t(
-                          "Nu se debitează bani reali. Rezervarea va fi marcată „Test" în dashboard.",
-                          "No real money is charged. Booking will be flagged as „Test" in the dashboard."
+                          'Nu se debitează bani reali. Rezervarea va fi marcată „Test" în dashboard.',
+                          'No real money is charged. Booking will be flagged as „Test" in the dashboard.'
                         )}
                       </p>
                     </div>
