@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Loader2, Eraser, FileSignature, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import {
   getPvDocument,
   upsertPvPhotos,
@@ -147,6 +148,20 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
         const path = await uploadPvPdf(blob, rental.id, phase);
         await savePvSignatureAndPdf({ rentalId: rental.id, phase, role, signatureDataUrl: dataUrl, pdfPath: path });
       }
+
+      // Notify the other party (in-app + email + SMS via existing function)
+      try {
+        const event_key = phase === "handover" ? "pv_pickup_completed_by_party" : "pv_return_completed_by_party";
+        await supabase.functions.invoke("notify-rental-event", {
+          body: {
+            rental_id: rental.id,
+            event_key,
+            actor_id: user?.id,
+            extra: { actorName: role === "owner" ? rental.owner_name : rental.renter_name, phase },
+          },
+        });
+      } catch (e) { /* non-blocking */ }
+
       toast.success("Semnatura inregistrata");
       onSigned?.();
       onOpenChange(false);
