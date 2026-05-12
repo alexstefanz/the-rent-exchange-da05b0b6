@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, MapPin, Search, Receipt, ChevronDown, Loader2 } from "lucide-react";
+import { Calendar, MapPin, Search, Receipt, ChevronDown, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import StatusBadge from "./StatusBadge";
@@ -24,6 +24,7 @@ import EarlyReturnRequestDialog from "@/components/rentals/EarlyReturnRequestDia
 
 interface Rental {
   id: string;
+  public_id: string | null;
   product_id: string | null;
   product_title: string;
   product_image: string;
@@ -48,7 +49,7 @@ interface Rental {
 const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
   const { data, error } = await supabase
     .from("rentals")
-    .select("id, product_id, start_date, end_date, subtotal, daily_price, platform_fee, status, payment_status, handover_confirmed_at, return_confirmed_at, dispute_status, early_return_status, created_at, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
+    .select("id, public_id, product_id, start_date, end_date, subtotal, daily_price, platform_fee, status, payment_status, handover_confirmed_at, return_confirmed_at, dispute_status, early_return_status, created_at, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
     .eq("renter_id", userId)
     .or("status.in.(confirmed,active,completed),and(status.eq.pending,payment_status.in.(authorized,paid))")
     .order("created_at", { ascending: false });
@@ -57,6 +58,7 @@ const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
 
   return (data || []).map((r: any) => ({
     id: r.id,
+    public_id: r.public_id,
     product_id: r.product_id,
     product_title: r.products?.title || "Produs șters",
     product_image: r.products?.images?.[0] || "/placeholder.svg",
@@ -185,6 +187,11 @@ const RentalsTab = () => {
                   {rental.location && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{rental.location}</span>}
                   <span className="font-semibold text-primary ml-auto">{rental.subtotal} RON</span>
                 </div>
+                {rental.public_id && (
+                  <Link to={`/rezervari/${rental.public_id}`} className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                    <ExternalLink className="h-3 w-3" />Vezi detalii inchiriere · {rental.public_id}
+                  </Link>
+                )}
               </div>
             </div>
 

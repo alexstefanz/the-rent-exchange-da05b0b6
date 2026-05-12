@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Package, Plus, Check, X, Loader2, Calendar, MapPin, Receipt, ChevronDown, TrendingUp, Inbox } from "lucide-react";
+import { Package, Plus, Check, X, Loader2, Calendar, MapPin, Receipt, ChevronDown, TrendingUp, Inbox, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -219,6 +219,11 @@ const RentalsOutTab = () => {
                         <span className="font-semibold text-primary ml-auto">Câștig: {rental.owner_payout} RON</span>
                       </div>
                       <div className="mt-2"><PayoutStatusBadge paymentStatus={rental.payment_status} rentalStatus={rental.status} amount={rental.owner_payout} /></div>
+                      {rental.public_id && (
+                        <Link to={`/inchirieri/${rental.public_id}`} className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                          <ExternalLink className="h-3 w-3" />Vezi detalii · {rental.public_id}
+                        </Link>
+                      )}
                     </div>
                   </div>
 
