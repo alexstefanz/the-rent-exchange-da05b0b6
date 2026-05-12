@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { ArrowLeft, ArrowRight, Send, Info, Shield, FlaskConical } from "lucide-react";
+import { ArrowLeft, ArrowRight, Send, Info, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LoginDialog from "@/components/checkout/LoginDialog";
 import TermsDialog from "@/components/checkout/TermsDialog";
@@ -46,7 +46,6 @@ const Checkout = () => {
   const { language, t } = useLanguage();
   const { user } = useAuth();
   const kyc = useKycGate();
-  const { data: isAdmin } = useIsAdmin(user?.id);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -119,35 +118,6 @@ const Checkout = () => {
       toast.error(e?.message || (language === "ro"
         ? "Eroare la trimiterea cererii. Încearcă din nou."
         : "Error sending the request. Please try again."));
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleStripeTestCheckout = async () => {
-    if (isSubmitting) return;
-    if (!user) { setShowLoginDialog(true); return; }
-    if (!phoneGate.requirePhone()) return;
-    setIsSubmitting(true);
-    try {
-      const stripeUrl = await createRentalWithStripeTestCheckout({
-        productId: product.id,
-        ownerId: product.ownerId,
-        startDate: format(new Date(startDate), "yyyy-MM-dd"),
-        endDate: format(new Date(endDate), "yyyy-MM-dd"),
-        rentalDays,
-        dailyPrice: product.price,
-        subtotal: totalPrice,
-        platformFeePercent: product.platformFeePercent,
-        paymentMethod: "stripe",
-        messageToOwner: messageToOwner || undefined,
-      });
-      toast.info(language === "ro"
-        ? "Mod TEST: folosește cardul 4242 4242 4242 4242, orice CVC, dată viitoare."
-        : "TEST mode: use card 4242 4242 4242 4242, any CVC, future date.");
-      setTimeout(() => { window.location.href = stripeUrl; }, 400);
-    } catch (e: any) {
-      console.error("Stripe TEST checkout error:", e);
-      toast.error(e?.message || "Eroare la inițierea plății de test.");
       setIsSubmitting(false);
     }
   };
@@ -260,31 +230,6 @@ const Checkout = () => {
                       ? t("Se trimite...", "Sending...")
                       : t("Trimite cererea", "Send request")}
                   </Button>
-
-                  {isAdmin && (
-                    <div className="mt-3 rounded-xl border border-dashed border-yellow-400 bg-yellow-50/60 p-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-yellow-800 mb-2 flex items-center gap-1">
-                        <FlaskConical className="h-3.5 w-3.5" />
-                        {t("Mod admin — testare", "Admin — testing mode")}
-                      </p>
-                      <Button
-                        onClick={handleStripeTestCheckout}
-                        variant="outline"
-                        className="w-full h-10 text-sm border-yellow-500 text-yellow-900 hover:bg-yellow-100"
-                        size="sm"
-                        disabled={isSubmitting}
-                      >
-                        <FlaskConical className="mr-2 h-4 w-4" />
-                        {t("Plătește cu card de test (4242)", "Pay with test card (4242)")}
-                      </Button>
-                      <p className="mt-2 text-[10px] text-yellow-800/80 leading-snug">
-                        {t(
-                          'Nu se debitează bani reali. Rezervarea va fi marcată „Test" în dashboard.',
-                          'No real money is charged. Booking will be flagged as „Test" in the dashboard.'
-                        )}
-                      </p>
-                    </div>
-                  )}
 
                   <p className="mt-3 text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
                     <Info className="h-3 w-3" />
