@@ -7,7 +7,7 @@ const WhatHappensNext = () => {
     {
       icon: CheckCircle2,
       title: t("Proprietarul confirmă rezervarea", "Owner confirms the booking"),
-      desc: t("Răspuns în maxim 24 ore", "Response within 24 hours"),
+      desc: t("De obicei răspunde rapid", "Usually replies quickly"),
     },
     {
       icon: MessageCircle,
