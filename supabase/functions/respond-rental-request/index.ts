@@ -209,6 +209,7 @@ Deno.serve(async (req) => {
     const productTitle = escapeHtml(product?.title || "Produs");
     const ownerName = escapeHtml(owner?.full_name || "Proprietarul");
     const productLink = product?.slug ? `/produs/${product.slug}` : "/rezervari";
+    const rentalLink = rental.public_id ? `/rezervari/${rental.public_id}` : "/rezervari";
 
     const rows = [
       { label: "📦 Produs", value: productTitle },
@@ -221,11 +222,11 @@ Deno.serve(async (req) => {
       await supabaseAdmin.from("notifications").insert({
         user_id: rental.renter_id,
         type: "rental_confirmation",
-        title_ro: "Cererea ta a fost acceptată! 🎉",
-        title_en: "Your request was accepted! 🎉",
-        description_ro: `${ownerName} a acceptat cererea ta pentru "${productTitle}". Poți discuta detaliile de predare.`,
-        description_en: `${ownerName} accepted your request for "${productTitle}". You can discuss pickup details.`,
-        link: productLink,
+        title_ro: "Cererea ta a fost acceptată! Plătește acum 💳",
+        title_en: "Your request was accepted! Pay now 💳",
+        description_ro: `${ownerName} a acceptat cererea ta pentru "${productTitle}". Plătește acum pentru a confirma rezervarea.`,
+        description_en: `${ownerName} accepted your request for "${productTitle}". Pay now to confirm the booking.`,
+        link: rentalLink,
       });
 
       await supabaseAdmin
@@ -259,14 +260,14 @@ Deno.serve(async (req) => {
         let renterSubject: string;
 
         if (action === "accept") {
-          renterSubject = `Cererea ta a fost acceptată - ${productTitle}`;
+          renterSubject = `Cererea ta a fost acceptată - plătește acum ${productTitle}`;
           renterHtml = buildEmailTemplate({
-            title: "Cererea ta a fost acceptată! 🎉",
-            greeting: `<strong>${ownerName}</strong> a acceptat cererea ta pentru <strong>${productTitle}</strong>. Poți discuta detaliile de predare.`,
+            title: "Cererea ta a fost acceptată! Plătește acum 💳",
+            greeting: `<strong>${ownerName}</strong> a acceptat cererea ta pentru <strong>${productTitle}</strong>. Plătește acum pentru a confirma rezervarea — suma este blocată pe card și debitată doar după predarea produsului.`,
             rows,
-            ctaText: "Discută detaliile",
-            ctaLink: "/profile?tab=rentals",
-            footerText: "Contactează proprietarul pentru a stabili detaliile de predare.",
+            ctaText: "Plătește acum",
+            ctaLink: rentalLink,
+            footerText: "Cardul nu este debitat acum. Banii ajung la proprietar doar după predarea produsului.",
           });
         } else {
           renterSubject = `Cererea ta a fost refuzată - ${productTitle}`;
