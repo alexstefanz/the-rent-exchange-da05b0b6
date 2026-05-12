@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import Navbar from "@/components/layout/Navbar";
@@ -173,6 +173,40 @@ const RentalDetailPage = () => {
           <RentalTimeline rental={tlRental} />
         </section>
 
+        {/* PV (Procese verbale) — full width under the timeline */}
+        {(showHandoverPv || showReturnPv) && (
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
+            <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+              <FileSignature className="h-4 w-4 text-primary" />
+              {t("Procese verbale", "Handover documents")}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {showHandoverPv && (
+                <PvPanel
+                  label={t("PV Predare", "Handover PV")}
+                  phase="handover"
+                  role={role}
+                  ownerSignedAt={rental.handover_pv_owner_signed_at}
+                  renterSignedAt={rental.handover_pv_renter_signed_at}
+                  onOpen={() => setPvOpen("handover")}
+                  t={t}
+                />
+              )}
+              {showReturnPv && (
+                <PvPanel
+                  label={t("PV Returnare", "Return PV")}
+                  phase="return"
+                  role={role}
+                  ownerSignedAt={rental.return_pv_owner_signed_at}
+                  renterSignedAt={rental.return_pv_renter_signed_at}
+                  onOpen={() => setPvOpen("return")}
+                  t={t}
+                />
+              )}
+            </div>
+          </section>
+        )}
+
         {/* Rejection reason */}
         {isRejected && rental.rejection_reason && (
           <section className="rounded-2xl border border-rose-200 bg-rose-50 p-4 mb-6">
@@ -249,31 +283,6 @@ const RentalDetailPage = () => {
               </Button>
             </section>
 
-            {/* PV section */}
-            {(showHandoverPv || showReturnPv) && (
-              <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-                <h3 className="font-heading font-semibold mb-3 flex items-center gap-2"><FileSignature className="h-4 w-4 text-primary" />{t("Procese verbale", "Handover documents")}</h3>
-                <div className="space-y-3">
-                  {showHandoverPv && (
-                    <PvRow
-                      label={t("PV Predare", "Handover PV")}
-                      ownerSignedAt={rental.handover_pv_owner_signed_at}
-                      renterSignedAt={rental.handover_pv_renter_signed_at}
-                      onOpen={() => setPvOpen("handover")}
-                    />
-                  )}
-                  {showReturnPv && (
-                    <PvRow
-                      label={t("PV Returnare", "Return PV")}
-                      ownerSignedAt={rental.return_pv_owner_signed_at}
-                      renterSignedAt={rental.return_pv_renter_signed_at}
-                      onOpen={() => setPvOpen("return")}
-                    />
-                  )}
-                </div>
-              </section>
-            )}
-
             {/* Payment status */}
             <Collapsible className="rounded-2xl border border-border bg-card shadow-sm">
               <CollapsibleTrigger asChild>
@@ -340,6 +349,81 @@ function PvRow({ label, ownerSignedAt, renterSignedAt, onOpen }: { label: string
       </div>
       <Button size="sm" variant={both ? "outline" : "default"} onClick={onOpen}>
         <FileSignature className="h-4 w-4 mr-2" />{both ? "Vezi PV" : "Deschide"}
+      </Button>
+    </div>
+  );
+}
+
+function PvPanel({
+  label, phase, role, ownerSignedAt, renterSignedAt, onOpen, t,
+}: {
+  label: string;
+  phase: "handover" | "return";
+  role: "owner" | "renter";
+  ownerSignedAt: string | null;
+  renterSignedAt: string | null;
+  onOpen: () => void;
+  t: (r: string, e: string) => string;
+}) {
+  const ownerOk = !!ownerSignedAt;
+  const renterOk = !!renterSignedAt;
+  const both = ownerOk && renterOk;
+  const firstSigner: "owner" | "renter" = phase === "handover" ? "owner" : "renter";
+  const mySigned = role === "owner" ? ownerOk : renterOk;
+  const otherSigned = role === "owner" ? renterOk : ownerOk;
+  const isMyTurn = !mySigned && (role === firstSigner || otherSigned);
+  const isLocked = !mySigned && !isMyTurn;
+
+  let statusLabel = "";
+  let statusTone = "text-muted-foreground";
+  let StatusIcon: any = Clock;
+  if (both) { statusLabel = t("Finalizat — ambele semnaturi aplicate", "Completed — both signatures applied"); statusTone = "text-emerald-700"; StatusIcon = CheckCircle2; }
+  else if (isMyTurn) { statusLabel = t("Randul tau — completeaza si semneaza", "Your turn — fill in and sign"); statusTone = "text-[#F98715] font-semibold"; StatusIcon = FileSignature; }
+  else if (isLocked) {
+    statusLabel = role === "owner"
+      ? t("Asteptam chiriasul", "Waiting for the renter")
+      : t("Asteptam proprietarul", "Waiting for the owner");
+    statusTone = "text-amber-700";
+    StatusIcon = Lock;
+  } else if (mySigned && !otherSigned) {
+    statusLabel = role === "owner"
+      ? t("Ai semnat — asteptam chiriasul", "You signed — waiting for the renter")
+      : t("Ai semnat — asteptam proprietarul", "You signed — waiting for the owner");
+    statusTone = "text-emerald-700";
+    StatusIcon = CheckCircle2;
+  }
+
+  return (
+    <div className="rounded-xl border border-border bg-background p-4 flex flex-col gap-3">
+      <div className="flex items-start justify-between gap-3">
+        <p className="font-semibold text-sm flex items-center gap-2">
+          <FileSignature className="h-4 w-4 text-primary" />
+          {label}
+        </p>
+      </div>
+      <div className={`flex items-center gap-2 text-xs ${statusTone}`}>
+        <StatusIcon className="h-3.5 w-3.5" />
+        <span>{statusLabel}</span>
+      </div>
+      <div className="flex flex-wrap gap-2 text-[11px]">
+        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border ${ownerOk ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-border bg-muted text-muted-foreground"}`}>
+          {ownerOk ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+          Proprietar
+        </span>
+        <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 border ${renterOk ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-border bg-muted text-muted-foreground"}`}>
+          {renterOk ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+          Chirias
+        </span>
+      </div>
+      <Button
+        size="sm"
+        variant={both ? "outline" : "default"}
+        onClick={onOpen}
+        disabled={isLocked}
+        className="w-full sm:w-auto sm:self-end"
+      >
+        {isLocked ? <Lock className="h-4 w-4 mr-2" /> : <FileSignature className="h-4 w-4 mr-2" />}
+        {both ? t("Vezi PV", "View PV") : isLocked ? t("Blocat", "Locked") : t("Deschide", "Open")}
       </Button>
     </div>
   );

@@ -3,7 +3,7 @@ import SignatureCanvas from "react-signature-canvas";
 import { jsPDF } from "jspdf";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Eraser, FileSignature, Camera, X, ChevronLeft, ChevronRight, ImagePlus } from "lucide-react";
+import { Loader2, Eraser, FileSignature, Camera, X, ChevronLeft, ChevronRight, ImagePlus, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,7 +55,15 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   const renterPhotos = photosMeta.filter((m) => m.role === "renter");
   const otherSigned = role === "owner" ? !!pv?.renter_signed_at : !!pv?.owner_signed_at;
   const mySigned = role === "owner" ? !!pv?.owner_signed_at : !!pv?.renter_signed_at;
-  const canSign = photos.length >= MIN_PHOTOS && !mySigned;
+  // Sequential flow: handover → owner first, then renter; return → renter first, then owner.
+  const firstSigner: "owner" | "renter" = phase === "handover" ? "owner" : "renter";
+  const isFirstSigner = role === firstSigner;
+  const isMyTurn = !mySigned && (isFirstSigner || otherSigned);
+  const isLockedWaiting = !mySigned && !isMyTurn;
+  const canSign = photos.length >= MIN_PHOTOS && isMyTurn;
+  const waitingLabel = phase === "handover"
+    ? "Asteapta proprietarul sa completeze si sa semneze PV-ul de Predare. Vei putea adauga propriile fotografii si semna imediat dupa."
+    : "Asteapta chiriasul sa initieze returnarea si sa semneze PV-ul. Dupa aceea vei putea adauga fotografii si semna.";
 
   async function handleAddPhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -216,14 +224,24 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
                   Min. {MIN_PHOTOS} foto. Recomandat: vedere de ansamblu, accesorii, eventuale defecte.
                 </p>
               </div>
-              <label className={mySigned ? "pointer-events-none opacity-50" : "cursor-pointer"}>
-                <input type="file" accept="image/*" multiple className="hidden" onChange={handleAddPhotos} disabled={uploading || mySigned} />
+              <label className={(mySigned || !isMyTurn) ? "pointer-events-none opacity-50" : "cursor-pointer"}>
+                <input type="file" accept="image/*" multiple className="hidden" onChange={handleAddPhotos} disabled={uploading || mySigned || !isMyTurn} />
                 <span className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-[#F98715] transition-colors px-4 py-2 text-sm font-semibold shadow-sm">
                   {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
                   Adauga fotografii
                 </span>
               </label>
             </section>
+
+            {isLockedWaiting && (
+              <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
+                <Lock className="h-5 w-5 text-amber-700 mt-0.5 shrink-0" />
+                <div className="text-sm text-amber-900">
+                  <p className="font-semibold mb-1">Randul nu este al tau inca</p>
+                  <p className="text-xs">{waitingLabel}</p>
+                </div>
+              </section>
+            )}
 
             {/* Owner gallery */}
             <PhotoGallery
@@ -260,7 +278,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
             </section>
 
             {/* Signature pad */}
-            {!mySigned && (
+            {!mySigned && isMyTurn && (
               <section>
                 <h4 className="font-semibold text-sm mb-2">Semnatura ta ({role === "owner" ? "Proprietar" : "Chirias"})</h4>
                 <div className="rounded-lg border border-border bg-card overflow-hidden">
@@ -292,7 +310,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Inchide</Button>
-          {!mySigned && (
+          {!mySigned && isMyTurn && (
             <Button onClick={handleSign} disabled={!canSign || signing}>
               {signing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileSignature className="h-4 w-4 mr-2" />}
               Semneaza
