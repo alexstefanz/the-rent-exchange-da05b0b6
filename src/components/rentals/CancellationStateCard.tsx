@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
-import { ShieldCheck, AlertTriangle, AlertOctagon, Lock, Loader2 } from "lucide-react";
+import { ShieldCheck, AlertOctagon, Lock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
