@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { format, differenceInDays, isBefore } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
-import { Calendar as CalendarIcon, Shield, Clock, CheckCircle2, MessageCircle, Sparkles } from "lucide-react";
+import { Calendar as CalendarIcon, Shield, Clock, CheckCircle2, MessageCircle, CalendarCheck } from "lucide-react";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -115,7 +115,7 @@ const PremiumBookingCard = ({
           disabled={!startDate || !endDate || isOwnProduct}
           onClick={onReserve}
         >
-          <Sparkles className="h-4 w-4 mr-2" />
+          <CalendarCheck className="h-4 w-4 mr-2" />
           {startDate && endDate ? t("Rezervă acum", "Reserve now") : t("Verifică datele", "Check dates")}
         </Button>
         <p className="text-center text-xs text-muted-foreground pt-1">
