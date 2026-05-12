@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import Navbar from "@/components/layout/Navbar";
@@ -173,6 +173,40 @@ const RentalDetailPage = () => {
           <RentalTimeline rental={tlRental} />
         </section>
 
+        {/* PV (Procese verbale) — full width under the timeline */}
+        {(showHandoverPv || showReturnPv) && (
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
+            <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+              <FileSignature className="h-4 w-4 text-primary" />
+              {t("Procese verbale", "Handover documents")}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {showHandoverPv && (
+                <PvPanel
+                  label={t("PV Predare", "Handover PV")}
+                  phase="handover"
+                  role={role}
+                  ownerSignedAt={rental.handover_pv_owner_signed_at}
+                  renterSignedAt={rental.handover_pv_renter_signed_at}
+                  onOpen={() => setPvOpen("handover")}
+                  t={t}
+                />
+              )}
+              {showReturnPv && (
+                <PvPanel
+                  label={t("PV Returnare", "Return PV")}
+                  phase="return"
+                  role={role}
+                  ownerSignedAt={rental.return_pv_owner_signed_at}
+                  renterSignedAt={rental.return_pv_renter_signed_at}
+                  onOpen={() => setPvOpen("return")}
+                  t={t}
+                />
+              )}
+            </div>
+          </section>
+        )}
+
         {/* Rejection reason */}
         {isRejected && rental.rejection_reason && (
           <section className="rounded-2xl border border-rose-200 bg-rose-50 p-4 mb-6">
@@ -248,31 +282,6 @@ const RentalDetailPage = () => {
                 <MessageSquare className="h-4 w-4 mr-2" />{t("Trimite mesaj", "Send message")}
               </Button>
             </section>
-
-            {/* PV section */}
-            {(showHandoverPv || showReturnPv) && (
-              <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-                <h3 className="font-heading font-semibold mb-3 flex items-center gap-2"><FileSignature className="h-4 w-4 text-primary" />{t("Procese verbale", "Handover documents")}</h3>
-                <div className="space-y-3">
-                  {showHandoverPv && (
-                    <PvRow
-                      label={t("PV Predare", "Handover PV")}
-                      ownerSignedAt={rental.handover_pv_owner_signed_at}
-                      renterSignedAt={rental.handover_pv_renter_signed_at}
-                      onOpen={() => setPvOpen("handover")}
-                    />
-                  )}
-                  {showReturnPv && (
-                    <PvRow
-                      label={t("PV Returnare", "Return PV")}
-                      ownerSignedAt={rental.return_pv_owner_signed_at}
-                      renterSignedAt={rental.return_pv_renter_signed_at}
-                      onOpen={() => setPvOpen("return")}
-                    />
-                  )}
-                </div>
-              </section>
-            )}
 
             {/* Payment status */}
             <Collapsible className="rounded-2xl border border-border bg-card shadow-sm">
