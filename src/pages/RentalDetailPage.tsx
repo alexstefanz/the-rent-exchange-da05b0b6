@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard } from "lucide-react";
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import Navbar from "@/components/layout/Navbar";
@@ -16,6 +16,8 @@ import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
 import { getRentalFullDetail } from "@/features/rentals/rentalDetailPageApi";
 import PvSignatureDialog from "@/components/rentals/PvSignatureDialog";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
+import { payForConfirmedRental } from "@/features/rentals/rentalsApi";
+import { toast } from "sonner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const RentalDetailPage = () => {
@@ -26,6 +28,7 @@ const RentalDetailPage = () => {
   const navigate = useNavigate();
   const t = (r: string, e: string) => (language === "ro" ? r : e);
   const [pvOpen, setPvOpen] = useState<null | "handover" | "return">(null);
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth", { replace: true });
@@ -101,6 +104,25 @@ const RentalDetailPage = () => {
   }
 
   const isRejected = rental.status === "rejected" || (rental.status === "cancelled" && !!rental.rejection_reason);
+  const needsPayment = !isOwner && rental.status === "confirmed" && rental.payment_status === "pending";
+
+  async function handlePay() {
+    if (paying) return;
+    setPaying(true);
+    try {
+      const url = await payForConfirmedRental(rental.id);
+      window.location.href = url;
+    } catch (e: any) {
+      console.error("payForConfirmedRental error:", e);
+      if (e?.code === "KYC_REQUIRED") {
+        toast.error(t("Verificare identitate necesară.", "Identity verification required."));
+        navigate("/verificare");
+      } else {
+        toast.error(e?.message || t("Eroare la inițierea plății.", "Error initiating payment."));
+      }
+      setPaying(false);
+    }
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -137,6 +159,29 @@ const RentalDetailPage = () => {
           <section className="rounded-2xl border border-rose-200 bg-rose-50 p-4 mb-6">
             <h3 className="font-semibold text-rose-900 mb-1">{t("Cerere refuzata", "Request rejected")}</h3>
             <p className="text-sm text-rose-800 whitespace-pre-wrap">{rental.rejection_reason}</p>
+          </section>
+        )}
+
+        {/* Pay-now CTA: owner accepted, renter hasn't paid yet */}
+        {needsPayment && (
+          <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1">
+                <h3 className="font-heading text-lg font-semibold text-foreground">
+                  {t("Proprietarul a acceptat cererea", "The owner accepted your request")}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {t(
+                    "Plătește acum pentru a confirma rezervarea. Suma este blocată pe card și debitată doar după predarea produsului.",
+                    "Pay now to confirm the booking. The amount is held on your card and charged only after handover."
+                  )}
+                </p>
+              </div>
+              <Button size="lg" onClick={handlePay} disabled={paying} className="shadow-lg shadow-primary/20">
+                {paying ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CreditCard className="h-4 w-4 mr-2" />}
+                {t(`Plătește ${rental.subtotal} RON`, `Pay ${rental.subtotal} RON`)}
+              </Button>
+            </div>
           </section>
         )}
 

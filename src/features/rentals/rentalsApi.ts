@@ -71,6 +71,94 @@ export async function createRental(params: CreateRentalParams) {
 }
 
 /**
+ * NEW FLOW: creates the rental as a request only (no Stripe).
+ * - Owner is notified immediately (in-app + email + SMS).
+ * - A dedicated rental chat thread is created with the optional message.
+ * - The renter pays only AFTER the owner accepts (see {@link payForConfirmedRental}).
+ */
+export async function createRentalRequest(params: CreateRentalParams) {
+  const rental = await createRental(params);
+
+  // 1) Create / get the dedicated rental conversation thread.
+  let conversationId: string | null = null;
+  try {
+    const { data, error } = await supabase.rpc("get_or_create_rental_conversation", {
+      p_rental_id: rental.id,
+    });
+    if (!error && data) conversationId = data as string;
+  } catch (e) {
+    console.warn("Rental conversation init failed (non-blocking):", e);
+  }
+
+  // 2) Insert the first message (custom or auto) so the owner sees context.
+  if (conversationId) {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: existingMsgs } = await supabase
+      .from("messages")
+      .select("id")
+      .eq("conversation_id", conversationId)
+      .limit(1);
+    if ((!existingMsgs || existingMsgs.length === 0) && user) {
+      const fmt = (d: string) => {
+        try {
+          return new Date(d).toLocaleDateString("ro-RO", { day: "numeric", month: "short", year: "numeric" });
+        } catch { return d; }
+      };
+      const customMsg = (params.messageToOwner || "").trim();
+      const content = customMsg || (
+        `Bună! Am trimis o cerere de închiriere pentru perioada ` +
+        `${fmt(params.startDate)} – ${fmt(params.endDate)} (${params.rentalDays} zile). ` +
+        `Aștept confirmarea ta. Mulțumesc!`
+      );
+      await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        content,
+      });
+    }
+  }
+
+  // 3) Notify the owner (in-app + email).
+  supabase.functions.invoke("send-rental-notification", { body: { rental_id: rental.id } })
+    .catch((e) => console.warn("send-rental-notification failed (non-blocking):", e));
+  // 4) SMS to owner via the unified notify-rental-event (event: request_received).
+  supabase.functions.invoke("notify-rental-event", {
+    body: { rental_id: rental.id, event_key: "request_received" },
+  }).catch((e) => console.warn("notify-rental-event request_received failed (non-blocking):", e));
+
+  return rental;
+}
+
+/**
+ * NEW FLOW: renter clicks "Plătește" on a rental that the owner already accepted.
+ * Calls the existing create-checkout-session edge function and returns the Stripe URL.
+ */
+export async function payForConfirmedRental(rentalId: string): Promise<string> {
+  const { data, error } = await supabase.functions.invoke("create-checkout-session", {
+    body: { rental_id: rentalId },
+  });
+  if (error) {
+    const msg = (error as any)?.message || "";
+    if (msg.includes("KYC_REQUIRED") || (error as any)?.context?.error === "KYC_REQUIRED") {
+      const e = new Error("KYC_REQUIRED");
+      (e as any).code = "KYC_REQUIRED";
+      throw e;
+    }
+    throw error;
+  }
+  if (data?.error) {
+    if (data.error === "KYC_REQUIRED") {
+      const e = new Error("KYC_REQUIRED");
+      (e as any).code = "KYC_REQUIRED";
+      throw e;
+    }
+    throw new Error(data.error);
+  }
+  if (!data?.url) throw new Error("Nu s-a putut crea sesiunea de plată");
+  return data.url;
+}
+
+/**
  * Creates a rental and then initiates a Stripe Checkout session.
  * Returns the Stripe Checkout URL for redirect.
  */
