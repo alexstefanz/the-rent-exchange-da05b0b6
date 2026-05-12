@@ -41,7 +41,8 @@ export function TransactionCard({ data }: { data: TransactionCardData }) {
   const { language, t } = useLanguage();
   const locale = language === "ro" ? ro : enUS;
   const variant = statusVariant(data.status);
-  const link = data.role === "owner" ? "/inchirieri" : "/rezervari";
+  const base = data.role === "owner" ? "/inchirieri" : "/rezervari";
+  const link = data.publicId ? `${base}/${data.publicId}` : base;
 
   return (
     <div className="mx-4 my-3 rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
