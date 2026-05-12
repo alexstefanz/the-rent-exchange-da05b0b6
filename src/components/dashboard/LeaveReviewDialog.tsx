@@ -176,7 +176,8 @@ export default function LeaveReviewDialog({
           await createUserReview(
             rental.counterparty_id,
             userRating,
-            userComment.trim() || undefined
+            userComment.trim() || undefined,
+            rental.product_title
           );
           userOk = true;
         } catch (e: any) {
