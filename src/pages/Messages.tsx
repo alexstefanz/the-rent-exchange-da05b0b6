@@ -45,6 +45,7 @@ export default function Messages() {
   const { user, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const vvh = useVisualViewportHeight();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const isDesktop = useIsDesktop();
