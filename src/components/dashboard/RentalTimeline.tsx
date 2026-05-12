@@ -16,6 +16,10 @@ export interface RentalForTimeline {
   handover_pv_signed?: boolean;
   /** True when the return has been initiated (renter clicked "Initiaza returnarea"). */
   return_initiated?: boolean;
+  /** True when renter signed the return PV. Promotes timeline to step 6 (Returnare). */
+  return_pv_renter_signed?: boolean;
+  /** True when owner signed the return PV. Promotes timeline to step 7 (Finalizat). */
+  return_pv_owner_signed?: boolean;
 }
 
 function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
@@ -32,7 +36,9 @@ function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); re
  */
 export function getTimelineStep(rental: RentalForTimeline): { current: number; cancelled: boolean } {
   if (rental.status === "cancelled") return { current: 2, cancelled: true };
+  if (rental.return_pv_owner_signed) return { current: 7, cancelled: false };
   if (rental.status === "completed" || rental.return_confirmed_at) return { current: 7, cancelled: false };
+  if (rental.return_pv_renter_signed) return { current: 6, cancelled: false };
   if (rental.handover_confirmed_at || rental.status === "active") {
     if (rental.return_initiated) return { current: 6, cancelled: false };
     return { current: 5, cancelled: false };
