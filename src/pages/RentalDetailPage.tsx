@@ -86,6 +86,9 @@ const RentalDetailPage = () => {
   const showHandoverPvEarly = isPaidEarly && stepEarly >= 3;
   const showReturnPvEarly = isPaidEarly && stepEarly >= 3;
   const handoverDoneEarly = !!(rental?.handover_pv_owner_signed_at && rental?.handover_pv_renter_signed_at);
+  const returnDoneEarly = !!(rental?.return_pv_owner_signed_at && rental?.return_pv_renter_signed_at);
+  const handoverIsCurrent = isPaidEarly && !handoverDoneEarly;
+  const returnIsCurrent = handoverDoneEarly && !returnDoneEarly;
 
   // Deep-link: ?pv=handover|return auto-opens dialog when allowed
   useEffect(() => {
@@ -275,6 +278,7 @@ const RentalDetailPage = () => {
                   onOpen={() => setPvOpen("handover")}
                   t={t}
                   notStarted={false}
+                  isCurrentStep={handoverIsCurrent}
                 />
               )}
               {showReturnPv && (
@@ -287,6 +291,7 @@ const RentalDetailPage = () => {
                   onOpen={() => setPvOpen("return")}
                   t={t}
                   notStarted={!handoverDoneEarly}
+                  isCurrentStep={returnIsCurrent}
                 />
               )}
             </div>
