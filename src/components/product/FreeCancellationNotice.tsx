@@ -16,8 +16,8 @@ const FreeCancellationNotice = () => {
           </p>
           <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
             {language === "ro"
-              ? "Anulare gratuită cu 48h înainte de start. Între 48h și 24h, prima zi devine nerambursabilă. Sub 24h, prima zi și taxa platformei nu se rambursează. După predarea produsului, rezervarea nu mai poate fi anulată — există returnare anticipată sau dispută. Vezi"
-              : "Free cancellation up to 48h before start. Between 48h and 24h, the first day becomes non-refundable. Under 24h, the first day and platform fee are non-refundable. After handover, cancellation is no longer possible — only early return or dispute. See the"}{" "}
+              ? "Anulare gratuită cu 24h înainte de start. Sub 24h, prima zi și taxa platformei nu se rambursează. După predarea produsului, rezervarea nu mai poate fi anulată — există returnare anticipată sau dispută. Vezi"
+              : "Free cancellation up to 24h before start. Under 24h, the first day and platform fee are non-refundable. After handover, cancellation is no longer possible — only early return or dispute. See the"}{" "}
             <Link to="/politica-anulare" className="text-primary hover:underline font-medium">
               {language === "ro" ? "politica de anulare" : "cancellation policy"}
             </Link>{" "}
