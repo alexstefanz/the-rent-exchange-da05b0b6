@@ -1,31 +1,22 @@
 ## Scop
-În lista de conversații (`/mesaje`), mesajele necitite trebuie să fie evident diferite: primele în listă, cu text bold și un mic accent de culoare (primary).
+La PV (Proces-verbal de predare/primire), permite salvarea inspecției chiar dacă utilizatorul nu bifează toate punctele și fără să fie obligat să scrie observații.
 
 ## Stare curentă
-`src/components/messaging/ConversationList.tsx` deja împarte lista în două secțiuni: „Necitite" și „Citite", iar necititele apar primele. Lipsește însă diferențierea vizuală — titlul produsului și numele utilizatorului nu sunt bold, fundalul e neutru, iar accentul de culoare lipsește. În screenshot apare doar antetul „CITITE" pentru că nu există conversații necitite în tab-ul curent.
+În `src/components/dashboard/InspectionDialog.tsx`:
+- `checklistValid = allChecked || notesValid` — dacă lipsește o bifă, observațiile (min 20 caractere) devin obligatorii.
+- La submit, dacă `!checklistValid`, se afișează toast `notesRequired` și se blochează salvarea.
+- Sub checklist apare avertismentul galben „Observațiile sunt obligatorii când există puncte nebifate".
 
-## Modificări (un singur fișier: `src/components/messaging/ConversationList.tsx`)
+Fotografiile (10 buc.) și acceptarea declarației rămân singurele cerințe reale.
 
-1. În `renderItem`, adaugă o variabilă `isUnread = (conv.unread_count || 0) > 0`.
+## Modificări (un singur fișier: `src/components/dashboard/InspectionDialog.tsx`)
 
-2. Pe `<button>` adaugă, când `isUnread`:
-   - `bg-primary/5` (subtle tint)
-   - `border-l-2 border-primary` (accent vertical stânga)
-   - menține `bg-muted` pentru selectat (selected wins)
-
-3. Titlu produs (linia 73): când `isUnread` → `font-bold text-foreground`; altfel rămâne `font-medium`.
-
-4. Nume utilizator (linia 90): când `isUnread` → `text-foreground font-medium`; altfel rămâne `text-muted-foreground`.
-
-5. Timestamp (linia 78): când `isUnread` → `text-primary font-semibold`; altfel rămâne `text-muted-foreground`.
-
-6. Badge contor (linia 104): schimbă `variant="default"` ca să folosească `bg-primary text-primary-foreground` (default deja face asta — dar verifică). Păstrează.
-
-7. Sortare în interiorul fiecărei secțiuni: sortează `unread` și `read` descrescător după `last_message?.created_at` (sau `updated_at`) ca să fie mereu cele mai recente sus.
-
-8. Antetul secțiunii „Necitite" (linia 155): schimbă culoarea din `text-muted-foreground` în `text-primary` pentru micul accent vizual.
+1. Elimină constrângerea: `checklistValid` devine mereu `true` (sau scoate-o complet din `canSubmit`).
+2. Scoate blocul `if (!checklistValid) { toast.error(...); return; }` din handler-ul de submit.
+3. Înlocuiește avertismentul galben afișat când `!allChecked` cu un mesaj informativ neutru (text muted), opțional, gen „Observații (opțional) — descrie eventualele probleme la punctele nebifate". Nu mai e blocant.
+4. Placeholder-ul textarea pentru observații rămâne neschimbat („optional dacă toate sunt bifate…") — dacă vrea, putem simplifica la „Observații (opțional)".
 
 ## Note
-- Folosim doar token-urile design system (`primary`, `foreground`, `muted-foreground`) — fără culori hardcodate.
-- Nicio modificare backend / API; doar prezentare.
-- Nu se atinge logica de marcare ca citit (rămâne ca în `ChatPanel`).
+- Fotografiile și declarația rămân obligatorii (logica de validare a lor neatinsă).
+- Niciun edge function / DB modificat — `createInspection` acceptă deja checklist parțial.
+- Bilingv: dacă schimbăm textul avertismentului, actualizăm doar string-ul din componentă (nu uxCopy, pentru a păstra `notesRequired` pentru alte utilizări dacă există — dar pot fi orfane; verificăm).
