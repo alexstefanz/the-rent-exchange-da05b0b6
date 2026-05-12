@@ -1,22 +1,22 @@
-## Scop
-La PV (Proces-verbal de predare/primire), permite salvarea inspecției chiar dacă utilizatorul nu bifează toate punctele și fără să fie obligat să scrie observații.
+## Plan
 
-## Stare curentă
-În `src/components/dashboard/InspectionDialog.tsx`:
-- `checklistValid = allChecked || notesValid` — dacă lipsește o bifă, observațiile (min 20 caractere) devin obligatorii.
-- La submit, dacă `!checklistValid`, se afișează toast `notesRequired` și se blochează salvarea.
-- Sub checklist apare avertismentul galben „Observațiile sunt obligatorii când există puncte nebifate".
+1. **Fac anularea idempotentă pentru tichetele automate**
+   - În `cancel-rental-by-renter`, înainte de `insert` în `ops_tickets`, caut un tichet existent pentru aceeași rezervare, același utilizator, aceeași categorie `REFUND_REQUEST` și același motiv/tag automat (`renter-cancel`, `stripe-fallback`, tier).
+   - Dacă există un tichet încă activ (`NEW`, `OPEN`, `IN_PROGRESS` / status neînchis), nu mai creez unul nou; adaug cel mult o notă internă pe tichetul existent sau returnez referința lui în răspuns.
 
-Fotografiile (10 buc.) și acceptarea declarației rămân singurele cerințe reale.
+2. **Aplic aceeași protecție și pe funcția separată de ticket de anulare**
+   - În `create-renter-cancellation-ticket`, caut mai întâi un tichet existent pentru aceeași rezervare + motiv (`renter-cancel`, `stripe-hold`).
+   - Dacă există, returnez tichetul existent în loc să creez altul.
 
-## Modificări (un singur fișier: `src/components/dashboard/InspectionDialog.tsx`)
+3. **Adaug protecție la nivel de bază de date împotriva curselor rapide**
+   - Creez un index unic parțial pe `ops_tickets` pentru tichetele automate de anulare active, pe combinația: `reservation_id`, `requester_user_id`, `category_type` și tagul relevant.
+   - Indexul se aplică doar pentru tichetele active și doar pentru tagurile automate de anulare, ca să nu blocheze tichetele manuale legitime.
 
-1. Elimină constrângerea: `checklistValid` devine mereu `true` (sau scoate-o complet din `canSubmit`).
-2. Scoate blocul `if (!checklistValid) { toast.error(...); return; }` din handler-ul de submit.
-3. Înlocuiește avertismentul galben afișat când `!allChecked` cu un mesaj informativ neutru (text muted), opțional, gen „Observații (opțional) — descrie eventualele probleme la punctele nebifate". Nu mai e blocant.
-4. Placeholder-ul textarea pentru observații rămâne neschimbat („optional dacă toate sunt bifate…") — dacă vrea, putem simplifica la „Observații (opțional)".
+4. **Curăț duplicatele existente din test**
+   - Închid duplicatele pentru aceeași rezervare/motiv, păstrând cel mai vechi tichet activ și marcând restul ca rezolvate/închise cu o notă internă de deduplicare.
 
-## Note
-- Fotografiile și declarația rămân obligatorii (logica de validare a lor neatinsă).
-- Niciun edge function / DB modificat — `createInspection` acceptă deja checklist parțial.
-- Bilingv: dacă schimbăm textul avertismentului, actualizăm doar string-ul din componentă (nu uxCopy, pentru a păstra `notesRequired` pentru alte utilizări dacă există — dar pot fi orfane; verificăm).
+## Detalii tehnice
+
+- Nu schimb fluxul de Stripe/refund.
+- Nu schimb interfața de anulare.
+- Logica va fi defensivă: codul evită duplicatele, iar indexul DB previne duplicatele create de click-uri rapide sau requesturi paralele.
