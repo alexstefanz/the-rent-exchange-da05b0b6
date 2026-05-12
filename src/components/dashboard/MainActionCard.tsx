@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowRight, Camera, Check, CheckCircle2, ClipboardCheck, Hourglass, Lock,
-  MessageCircle, MoreHorizontal, Package, RotateCcw, ShieldAlert, ShieldCheck, Truck,
+  MessageCircle, MoreHorizontal, Package, RotateCcw, ShieldAlert, ShieldCheck, Truck, CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -41,6 +41,9 @@ interface Props {
   onRejectRequest?: () => void;
   /** Open chat (both roles) */
   onChat?: () => void;
+  /** Renter-only: pay for a confirmed rental (step 2, payment_status=pending) */
+  onPay?: () => void;
+  isPaying?: boolean;
   /** Step 6: leave review */
   onLeaveReview?: () => void;
   /** Optional secondary actions menu (anchor passed by parent) */
@@ -55,7 +58,7 @@ function t(language: string, ro: string, en: string) {
 const MainActionCard = ({
   rental, step, cancelled, role,
   onStartInspection, onConfirmHandover, onConfirmReturn,
-  onAcceptRequest, onRejectRequest, onChat, onLeaveReview,
+  onAcceptRequest, onRejectRequest, onChat, onPay, isPaying, onLeaveReview,
   secondaryActions, isConfirming,
 }: Props) => {
   const { language } = useLanguage();
@@ -65,6 +68,8 @@ const MainActionCard = ({
   const isDisputed = rental.dispute_status === "open";
   const isCancelled = !!cancelled;
   const handleChat = onChat ?? (() => navigate("/mesaje"));
+  const paymentMade = rental.payment_status === "authorized" || rental.payment_status === "paid" || rental.payment_status === "captured";
+  const showChatButton = paymentMade || isDisputed;
 
   // ---------- Build the variant ----------
   let icon = <Hourglass className="h-5 w-5" />;
@@ -182,6 +187,15 @@ const MainActionCard = ({
         primaryAction = onAcceptRequest;
         secondaryReject = onRejectRequest;
       }
+    } else if (rental.status === "confirmed" && rental.payment_status === "pending") {
+      icon = <CreditCard className="h-5 w-5" />;
+      title = t(language, "Proprietarul a acceptat cererea", "The owner accepted your request");
+      desc = t(language, "Finalizează plata pentru a rezerva produsul. Suma este blocată pe card și debitată doar după predare.", "Complete the payment to reserve the item. The amount is held on your card and charged only after handover.");
+      if (onPay) {
+        primaryLabel = t(language, "Plătește acum", "Pay now");
+        primaryIcon = <CreditCard className="ml-1 h-4 w-4" />;
+        primaryAction = onPay;
+      }
     } else {
       title = t(language, "Așteaptă răspunsul proprietarului", "Waiting for owner");
       desc = t(language, "Plata este blocată în siguranță. Proprietarul răspunde în maxim 24h.", "Payment is securely held. The owner replies within 24h.");
@@ -253,10 +267,12 @@ const MainActionCard = ({
                 </Button>
               )
             )}
-            <Button variant="outline" size="sm" onClick={handleChat} className="bg-white/70">
-              <MessageCircle className="h-4 w-4 mr-1" />
-              {t(language, "Deschide chat", "Open chat")}
-            </Button>
+            {showChatButton && (
+              <Button variant="outline" size="sm" onClick={handleChat} className="bg-white/70">
+                <MessageCircle className="h-4 w-4 mr-1" />
+                {t(language, "Deschide chat", "Open chat")}
+              </Button>
+            )}
             {secondaryReject && (
               <Button variant="ghost" size="sm" onClick={secondaryReject} className="text-destructive hover:text-destructive">
                 {t(language, "Refuză", "Reject")}
