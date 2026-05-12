@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, MapPin, Search, Receipt, ChevronDown, Loader2, ExternalLink, CreditCard } from "lucide-react";
+import { Calendar, MapPin, Search, Receipt, ChevronDown, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import StatusBadge from "./StatusBadge";
