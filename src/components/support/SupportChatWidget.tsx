@@ -546,7 +546,7 @@ const SupportChatWidget = () => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-20 lg:bottom-6 right-4 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-all duration-200 flex items-center justify-center hover:scale-105 active:scale-95"
+          className={`fixed bottom-20 lg:bottom-6 right-4 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-all duration-200 items-center justify-center hover:scale-105 active:scale-95 ${pathname.startsWith("/mesaje") ? "hidden lg:flex" : "flex"}`}
           aria-label={t("Suport", "Support")}
         >
           <Headphones className="h-6 w-6" />
