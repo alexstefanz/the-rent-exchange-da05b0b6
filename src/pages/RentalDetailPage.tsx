@@ -14,6 +14,7 @@ import RentalTimeline, { getTimelineStep } from "@/components/dashboard/RentalTi
 import StatusBadge from "@/components/dashboard/StatusBadge";
 import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
 import { getRentalFullDetail } from "@/features/rentals/rentalDetailPageApi";
+import MutualCancellationCard from "@/components/rentals/MutualCancellationCard";
 import PvSignatureDialog from "@/components/rentals/PvSignatureDialog";
 import ReturnCountdownBadge from "@/components/rentals/ReturnCountdownBadge";
 import LeaveReviewDialog from "@/components/dashboard/LeaveReviewDialog";
