@@ -53,8 +53,11 @@ const RentalDetailPage = () => {
     return_pv_owner_signed: !!rental.return_pv_owner_signed_at,
   } : null;
   const stepEarly = tlRentalEarly ? getTimelineStep(tlRentalEarly).current : 0;
-  const showHandoverPvEarly = !!rental && stepEarly >= 3 && stepEarly <= 5 && (rental.payment_status === "authorized" || rental.payment_status === "paid" || rental.payment_status === "captured");
-  const showReturnPvEarly = stepEarly >= 5;
+  const isPaidEarly = !!rental && (rental.payment_status === "authorized" || rental.payment_status === "paid" || rental.payment_status === "captured");
+  // Both PVs are always visible once the rental is paid; activation/locking is handled inside the panels.
+  const showHandoverPvEarly = isPaidEarly && stepEarly >= 3;
+  const showReturnPvEarly = isPaidEarly && stepEarly >= 3;
+  const handoverDoneEarly = !!(rental?.handover_pv_owner_signed_at && rental?.handover_pv_renter_signed_at);
 
   // Deep-link: ?pv=handover|return auto-opens dialog when allowed
   useEffect(() => {
@@ -190,6 +193,7 @@ const RentalDetailPage = () => {
                   renterSignedAt={rental.handover_pv_renter_signed_at}
                   onOpen={() => setPvOpen("handover")}
                   t={t}
+                  notStarted={false}
                 />
               )}
               {showReturnPv && (
@@ -201,6 +205,7 @@ const RentalDetailPage = () => {
                   renterSignedAt={rental.return_pv_renter_signed_at}
                   onOpen={() => setPvOpen("return")}
                   t={t}
+                  notStarted={!handoverDoneEarly}
                 />
               )}
             </div>
@@ -355,7 +360,7 @@ function PvRow({ label, ownerSignedAt, renterSignedAt, onOpen }: { label: string
 }
 
 function PvPanel({
-  label, phase, role, ownerSignedAt, renterSignedAt, onOpen, t,
+  label, phase, role, ownerSignedAt, renterSignedAt, onOpen, t, notStarted = false,
 }: {
   label: string;
   phase: "handover" | "return";
@@ -364,6 +369,7 @@ function PvPanel({
   renterSignedAt: string | null;
   onOpen: () => void;
   t: (r: string, e: string) => string;
+  notStarted?: boolean;
 }) {
   const ownerOk = !!ownerSignedAt;
   const renterOk = !!renterSignedAt;
@@ -371,14 +377,19 @@ function PvPanel({
   const firstSigner: "owner" | "renter" = phase === "handover" ? "owner" : "renter";
   const mySigned = role === "owner" ? ownerOk : renterOk;
   const otherSigned = role === "owner" ? renterOk : ownerOk;
-  const isMyTurn = !mySigned && (role === firstSigner || otherSigned);
-  const isLocked = !mySigned && !isMyTurn;
+  const isMyTurn = !notStarted && !mySigned && (role === firstSigner || otherSigned);
+  const isLocked = !both && !mySigned && !isMyTurn;
 
   let statusLabel = "";
   let statusTone = "text-muted-foreground";
   let StatusIcon: any = Clock;
   if (both) { statusLabel = t("Finalizat — ambele semnaturi aplicate", "Completed — both signatures applied"); statusTone = "text-emerald-700"; StatusIcon = CheckCircle2; }
   else if (isMyTurn) { statusLabel = t("Randul tau — completeaza si semneaza", "Your turn — fill in and sign"); statusTone = "text-[#F98715] font-semibold"; StatusIcon = FileSignature; }
+  else if (notStarted) {
+    statusLabel = t("Disponibil dupa predarea produsului", "Available after the product is handed over");
+    statusTone = "text-muted-foreground";
+    StatusIcon = Lock;
+  }
   else if (isLocked) {
     statusLabel = role === "owner"
       ? t("Asteptam chiriasul", "Waiting for the renter")
@@ -419,10 +430,10 @@ function PvPanel({
         size="sm"
         variant={both ? "outline" : "default"}
         onClick={onOpen}
-        disabled={isLocked}
+        disabled={isLocked && !both}
         className="w-full sm:w-auto sm:self-end"
       >
-        {isLocked ? <Lock className="h-4 w-4 mr-2" /> : <FileSignature className="h-4 w-4 mr-2" />}
+        {both ? <CheckCircle2 className="h-4 w-4 mr-2" /> : isLocked ? <Lock className="h-4 w-4 mr-2" /> : <FileSignature className="h-4 w-4 mr-2" />}
         {both ? t("Vezi PV", "View PV") : isLocked ? t("Blocat", "Locked") : t("Deschide", "Open")}
       </Button>
     </div>
