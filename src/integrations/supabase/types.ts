@@ -1553,6 +1553,12 @@ export type Database = {
       rentals: {
         Row: {
           authorized_at: string | null
+          cancel_request_created_at: string | null
+          cancel_request_initiator: string | null
+          cancel_request_reason: string | null
+          cancel_request_responded_at: string | null
+          cancel_request_response_note: string | null
+          cancel_request_status: string | null
           cancellation_reason: string | null
           cancellation_tier: string | null
           cancelled_at: string | null
@@ -1607,6 +1613,12 @@ export type Database = {
         }
         Insert: {
           authorized_at?: string | null
+          cancel_request_created_at?: string | null
+          cancel_request_initiator?: string | null
+          cancel_request_reason?: string | null
+          cancel_request_responded_at?: string | null
+          cancel_request_response_note?: string | null
+          cancel_request_status?: string | null
           cancellation_reason?: string | null
           cancellation_tier?: string | null
           cancelled_at?: string | null
@@ -1661,6 +1673,12 @@ export type Database = {
         }
         Update: {
           authorized_at?: string | null
+          cancel_request_created_at?: string | null
+          cancel_request_initiator?: string | null
+          cancel_request_reason?: string | null
+          cancel_request_responded_at?: string | null
+          cancel_request_response_note?: string | null
+          cancel_request_status?: string | null
           cancellation_reason?: string | null
           cancellation_tier?: string | null
           cancelled_at?: string | null
@@ -2817,9 +2835,17 @@ export type Database = {
           read_ct: number
         }[]
       }
+      request_mutual_cancellation: {
+        Args: { _reason: string; _rental_id: string }
+        Returns: Json
+      }
       resolve_rental_dispute: {
         Args: { _rental_id: string }
         Returns: undefined
+      }
+      respond_mutual_cancellation: {
+        Args: { _action: string; _note?: string; _rental_id: string }
+        Returns: Json
       }
       search_products:
         | {
