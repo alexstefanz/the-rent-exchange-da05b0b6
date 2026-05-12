@@ -74,7 +74,8 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "rental_rejected",
     inAppTitle: { ro: "Cererea a fost refuzată", en: "Request declined" },
     inAppDesc: (c) => ({ ro: `Cererea pentru "${c.product?.title}" a fost refuzată`, en: `Request for "${c.product?.title}" was declined` }),
-    link: () => `/search`,
+    link: (c) => `/rezervari/${c.rental.public_id}`,
+    smsPurpose: "view_rental",
   },
   pickup_scheduled: {
     recipients: "both", channels: ["in_app", "email", "sms"], critical: true,
