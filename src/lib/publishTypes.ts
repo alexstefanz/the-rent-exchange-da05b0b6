@@ -107,7 +107,7 @@ export const stepValidators = {
   step5: z.object({
     daily_price_owner: z
       .number({ invalid_type_error: "Introdu un preț valid" })
-      .min(1, "Prețul minim este 1 RON")
+      .min(2, "Prețul minim este 2 RON")
       .max(999999, "Preț prea mare"),
   }),
 };
