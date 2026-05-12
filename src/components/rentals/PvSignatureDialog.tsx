@@ -3,13 +3,14 @@ import SignatureCanvas from "react-signature-canvas";
 import { jsPDF } from "jspdf";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Eraser, FileSignature, Camera } from "lucide-react";
+import { Loader2, Eraser, FileSignature, Camera, X, ChevronLeft, ChevronRight, ImagePlus } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getPvDocument,
-  upsertPvPhotos,
+  addPvPhoto,
+  removePvPhoto,
   uploadPvPhoto,
   uploadPvPdf,
   savePvSignatureAndPdf,
@@ -37,6 +38,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [signing, setSigning] = useState(false);
+  const [lightbox, setLightbox] = useState<number | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -47,7 +49,10 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       .finally(() => setLoading(false));
   }, [open, rental.id, phase]);
 
-  const photos = pv?.photos || [];
+  const photosMeta = pv?.photos_meta || [];
+  const photos = photosMeta.map((m) => m.path);
+  const ownerPhotos = photosMeta.filter((m) => m.role === "owner");
+  const renterPhotos = photosMeta.filter((m) => m.role === "renter");
   const otherSigned = role === "owner" ? !!pv?.renter_signed_at : !!pv?.owner_signed_at;
   const mySigned = role === "owner" ? !!pv?.owner_signed_at : !!pv?.renter_signed_at;
   const canSign = photos.length >= MIN_PHOTOS && !mySigned;
@@ -57,13 +62,10 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
     if (files.length === 0) return;
     setUploading(true);
     try {
-      const newPaths: string[] = [];
       for (const f of files) {
         const path = await uploadPvPhoto(f, rental.id, phase);
-        newPaths.push(path);
+        await addPvPhoto({ rentalId: rental.id, phase, role, path });
       }
-      const merged = [...photos, ...newPaths];
-      await upsertPvPhotos(rental.id, phase, merged);
       const refreshed = await getPvDocument(rental.id, phase);
       setPv(refreshed);
       toast.success("Fotografii încărcate");
@@ -72,6 +74,16 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
     } finally {
       setUploading(false);
       e.target.value = "";
+    }
+  }
+
+  async function handleRemovePhoto(path: string) {
+    try {
+      await removePvPhoto({ rentalId: rental.id, phase, path });
+      const refreshed = await getPvDocument(rental.id, phase);
+      setPv(refreshed);
+    } catch (err: any) {
+      toast.error(err?.message || "Eroare la ștergere");
     }
   }
 
@@ -196,26 +208,47 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
           <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
         ) : (
           <div className="space-y-5">
-            {/* Photos */}
-            <section>
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="font-semibold text-sm">Fotografii ({photos.length})</h4>
-                <label className="cursor-pointer">
-                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleAddPhotos} disabled={uploading || mySigned} />
-                  <span className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                    {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Camera className="h-3 w-3" />}
-                    Adauga fotografii
-                  </span>
-                </label>
+            {/* Add photos CTA */}
+            <section className="rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm">Fotografii ({photos.length})</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Min. {MIN_PHOTOS} foto. Recomandat: vedere de ansamblu, accesorii, eventuale defecte.
+                </p>
               </div>
-              {photos.length === 0 ? (
-                <p className="text-xs text-muted-foreground rounded-lg bg-muted/40 p-3">Nicio fotografie incarcata. Necesar minim {MIN_PHOTOS}.</p>
-              ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                  {photos.map((p) => <PvPhoto key={p} path={p} />)}
-                </div>
-              )}
+              <label className={mySigned ? "pointer-events-none opacity-50" : "cursor-pointer"}>
+                <input type="file" accept="image/*" multiple className="hidden" onChange={handleAddPhotos} disabled={uploading || mySigned} />
+                <span className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-[#F98715] transition-colors px-4 py-2 text-sm font-semibold shadow-sm">
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+                  Adauga fotografii
+                </span>
+              </label>
             </section>
+
+            {/* Owner gallery */}
+            <PhotoGallery
+              title="Fotografii Proprietar"
+              accent="bg-sky-50 border-sky-200"
+              chip="bg-sky-100 text-sky-800"
+              photosMeta={ownerPhotos}
+              myRole={role}
+              role="owner"
+              canDelete={role === "owner" && !mySigned}
+              onRemove={handleRemovePhoto}
+              onOpen={(path) => setLightbox(photos.indexOf(path))}
+            />
+            {/* Renter gallery */}
+            <PhotoGallery
+              title="Fotografii Chirias"
+              accent="bg-amber-50 border-amber-200"
+              chip="bg-amber-100 text-amber-800"
+              photosMeta={renterPhotos}
+              myRole={role}
+              role="renter"
+              canDelete={role === "renter" && !mySigned}
+              onRemove={handleRemovePhoto}
+              onOpen={(path) => setLightbox(photos.indexOf(path))}
+            />
 
             {/* Status */}
             <section className="rounded-lg border border-border bg-muted/30 p-3 text-xs space-y-1">
@@ -267,18 +300,105 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
           )}
         </DialogFooter>
       </DialogContent>
+      {lightbox !== null && photos[lightbox] && (
+        <Lightbox
+          paths={photos}
+          index={lightbox}
+          onClose={() => setLightbox(null)}
+          onIndex={setLightbox}
+        />
+      )}
     </Dialog>
   );
 }
 
-function PvPhoto({ path }: { path: string }) {
+function PvPhoto({ path, onClick }: { path: string; onClick?: () => void }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     getPvFileSignedUrl(path).then(setUrl).catch(() => setUrl(null));
   }, [path]);
   return (
-    <div className="aspect-square rounded-md overflow-hidden bg-muted">
+    <button type="button" onClick={onClick} className="aspect-square rounded-md overflow-hidden bg-muted block w-full">
       {url ? <img src={url} alt="PV" className="w-full h-full object-cover" /> : <div className="w-full h-full animate-pulse bg-muted" />}
+    </button>
+  );
+}
+
+function PhotoGallery({
+  title, accent, chip, photosMeta, role, myRole, canDelete, onRemove, onOpen,
+}: {
+  title: string;
+  accent: string;
+  chip: string;
+  photosMeta: { path: string; role: "owner" | "renter"; uploaded_at: string }[];
+  role: "owner" | "renter";
+  myRole: "owner" | "renter";
+  canDelete: boolean;
+  onRemove: (path: string) => void;
+  onOpen: (path: string) => void;
+}) {
+  const isMine = role === myRole;
+  return (
+    <section className={`rounded-xl border ${accent} p-3`}>
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="font-semibold text-sm flex items-center gap-2">
+          {title}
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${chip}`}>{photosMeta.length}</span>
+          {isMine && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-foreground/10 text-foreground">Tu</span>}
+        </h4>
+      </div>
+      {photosMeta.length === 0 ? (
+        <p className="text-xs text-muted-foreground italic">Nicio fotografie inca.</p>
+      ) : (
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {photosMeta.map((m) => (
+            <div key={m.path} className="relative group">
+              <PvPhoto path={m.path} onClick={() => onOpen(m.path)} />
+              {canDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onRemove(m.path); }}
+                  className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                  aria-label="Sterge"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function Lightbox({ paths, index, onClose, onIndex }: { paths: string[]; index: number; onClose: () => void; onIndex: (i: number) => void }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    setUrl(null);
+    getPvFileSignedUrl(paths[index]).then(setUrl).catch(() => setUrl(null));
+  }, [paths, index]);
+  const prev = () => onIndex((index - 1 + paths.length) % paths.length);
+  const next = () => onIndex((index + 1) % paths.length);
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") next();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, paths.length]);
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center" onClick={onClose}>
+      <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="absolute top-4 right-4 text-white/80 hover:text-white"><X className="h-6 w-6" /></button>
+      <button onClick={(e) => { e.stopPropagation(); prev(); }} className="absolute left-4 text-white/80 hover:text-white"><ChevronLeft className="h-8 w-8" /></button>
+      <button onClick={(e) => { e.stopPropagation(); next(); }} className="absolute right-4 text-white/80 hover:text-white"><ChevronRight className="h-8 w-8" /></button>
+      <div className="max-h-[90vh] max-w-[90vw]" onClick={(e) => e.stopPropagation()}>
+        {url ? <img src={url} alt="PV" className="max-h-[90vh] max-w-[90vw] object-contain" /> : <Loader2 className="h-8 w-8 animate-spin text-white" />}
+      </div>
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/70 text-xs">{index + 1} / {paths.length}</div>
     </div>
   );
 }
