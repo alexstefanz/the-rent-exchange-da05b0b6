@@ -642,7 +642,8 @@ export type Database = {
           created_at: string
           id: string
           is_read: boolean
-          sender_id: string
+          message_type: string
+          sender_id: string | null
         }
         Insert: {
           content: string
@@ -650,7 +651,8 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean
-          sender_id: string
+          message_type?: string
+          sender_id?: string | null
         }
         Update: {
           content?: string
@@ -658,7 +660,8 @@ export type Database = {
           created_at?: string
           id?: string
           is_read?: boolean
-          sender_id?: string
+          message_type?: string
+          sender_id?: string | null
         }
         Relationships: [
           {
