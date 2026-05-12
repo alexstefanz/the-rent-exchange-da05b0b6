@@ -1,4 +1,4 @@
-import { Check, Send, ThumbsUp, Truck, Package, RotateCcw, CheckCircle2, X } from "lucide-react";
+import { Check, Send, ThumbsUp, CreditCard, FileSignature, Package, RotateCcw, CheckCircle2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -12,45 +12,49 @@ export interface RentalForTimeline {
   refunded_at?: string | null;
   cancelled_at?: string | null;
   dispute_status?: "none" | "open" | "resolved" | null;
+  /** True when both PVs of the handover phase are signed. */
+  handover_pv_signed?: boolean;
+  /** True when the return has been initiated (renter clicked "Initiaza returnarea"). */
+  return_initiated?: boolean;
 }
 
 function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
-function isLastDayOrPast(endDate?: string | null) {
-  if (!endDate) return false;
-  return startOfDay(new Date(endDate)).getTime() <= startOfDay(new Date()).getTime();
-}
 
 /**
- * Simplified 6-step rental timeline.
- * 1. Cerere trimisă        — pending, payment not authorized yet
- * 2. Cerere aprobată       — payment authorized OR confirmed before pickup window
- * 3. Predare produs        — confirmed/active before handover
- * 4. Produs în folosire    — handover_confirmed_at set, end_date not reached
- * 5. Returnare produs      — end_date reached, no return confirm yet
- * 6. Finalizat             — completed OR return_confirmed_at set
+ * 7-step rental timeline.
+ * 1. Cerere trimisă        — pending, owner has not responded yet
+ * 2. Confirmat             — owner accepted the request, payment not yet captured/authorized
+ * 3. Plată efectuată       — payment authorized (Stripe hold) OR paid
+ * 4. Semnături PV          — handover PV is being signed by both parties
+ * 5. Produs predat         — handover_confirmed_at set, item with renter
+ * 6. Returnare             — return phase started (end of period or early-return)
+ * 7. Finalizat             — completed OR return_confirmed_at set
  */
 export function getTimelineStep(rental: RentalForTimeline): { current: number; cancelled: boolean } {
   if (rental.status === "cancelled") return { current: 2, cancelled: true };
-  if (rental.status === "completed" || rental.return_confirmed_at) return { current: 6, cancelled: false };
+  if (rental.status === "completed" || rental.return_confirmed_at) return { current: 7, cancelled: false };
   if (rental.handover_confirmed_at || rental.status === "active") {
-    if (isLastDayOrPast(rental.end_date)) return { current: 5, cancelled: false };
-    return { current: 4, cancelled: false };
+    if (rental.return_initiated) return { current: 6, cancelled: false };
+    return { current: 5, cancelled: false };
   }
   if (rental.status === "confirmed") {
-    return { current: 3, cancelled: false };
+    if (rental.handover_pv_signed) return { current: 5, cancelled: false };
+    if (rental.payment_status === "authorized" || rental.payment_status === "paid") return { current: 4, cancelled: false };
+    return { current: 2, cancelled: false };
   }
   if (rental.payment_status === "authorized" || rental.payment_status === "paid") {
-    return { current: 2, cancelled: false };
+    return { current: 3, cancelled: false };
   }
   return { current: 1, cancelled: false };
 }
 
 const STEPS = [
   { icon: Send, ro: "Cerere trimisă", en: "Request sent" },
-  { icon: ThumbsUp, ro: "Cerere aprobată", en: "Approved" },
-  { icon: Truck, ro: "Predare produs", en: "Hand-over" },
-  { icon: Package, ro: "Produs în folosire", en: "In use" },
-  { icon: RotateCcw, ro: "Returnare produs", en: "Return" },
+  { icon: ThumbsUp, ro: "Confirmat", en: "Confirmed" },
+  { icon: CreditCard, ro: "Plată efectuată", en: "Payment done" },
+  { icon: FileSignature, ro: "Semnături PV", en: "PV signatures" },
+  { icon: Package, ro: "Produs predat", en: "Handed over" },
+  { icon: RotateCcw, ro: "Returnare", en: "Return" },
   { icon: CheckCircle2, ro: "Finalizat", en: "Completed" },
 ] as const;
 
