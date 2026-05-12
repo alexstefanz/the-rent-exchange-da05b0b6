@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { ArrowLeft, ArrowRight, CreditCard, Info, Shield } from "lucide-react";
+import { ArrowLeft, ArrowRight, CreditCard, Info, Shield, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LoginDialog from "@/components/checkout/LoginDialog";
 import TermsDialog from "@/components/checkout/TermsDialog";
@@ -14,10 +14,11 @@ import StickyCheckoutBar from "@/components/checkout/StickyCheckoutBar";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { createRentalWithStripeCheckout } from "@/features/rentals/rentalsApi";
+import { createRentalWithStripeCheckout, createRentalWithStripeTestCheckout } from "@/features/rentals/rentalsApi";
 import { toast } from "sonner";
 import { useKycGate } from "@/hooks/queries/useKycGate";
 import KycGateBanner from "@/components/kyc/KycGateBanner";
+import { useIsAdmin } from "@/hooks/queries/useAdminStats";
 import { PhoneRequiredGate, PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
 
 interface CheckoutState {
@@ -45,6 +46,7 @@ const Checkout = () => {
   const { language, t } = useLanguage();
   const { user } = useAuth();
   const kyc = useKycGate();
+  const { data: isAdmin } = useIsAdmin(user?.id);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -111,6 +113,35 @@ const Checkout = () => {
       toast.error(e?.message || (language === "ro"
         ? "Eroare la inițierea plății. Încearcă din nou."
         : "Error initiating payment. Please try again."));
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleStripeTestCheckout = async () => {
+    if (isSubmitting) return;
+    if (!user) { setShowLoginDialog(true); return; }
+    if (!phoneGate.requirePhone()) return;
+    setIsSubmitting(true);
+    try {
+      const stripeUrl = await createRentalWithStripeTestCheckout({
+        productId: product.id,
+        ownerId: product.ownerId,
+        startDate: format(new Date(startDate), "yyyy-MM-dd"),
+        endDate: format(new Date(endDate), "yyyy-MM-dd"),
+        rentalDays,
+        dailyPrice: product.price,
+        subtotal: totalPrice,
+        platformFeePercent: product.platformFeePercent,
+        paymentMethod: "stripe",
+        messageToOwner: messageToOwner || undefined,
+      });
+      toast.info(language === "ro"
+        ? "Mod TEST: folosește cardul 4242 4242 4242 4242, orice CVC, dată viitoare."
+        : "TEST mode: use card 4242 4242 4242 4242, any CVC, future date.");
+      setTimeout(() => { window.location.href = stripeUrl; }, 400);
+    } catch (e: any) {
+      console.error("Stripe TEST checkout error:", e);
+      toast.error(e?.message || "Eroare la inițierea plății de test.");
       setIsSubmitting(false);
     }
   };
