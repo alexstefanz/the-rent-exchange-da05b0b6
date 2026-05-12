@@ -513,6 +513,17 @@ const RentalDetailPage = () => {
         }}
         currentUserRole={isOwner ? "owner" : "renter"}
       />
+
+      {chatConvId && (
+        <ChatDialog
+          open={chatOpen}
+          onOpenChange={setChatOpen}
+          conversationId={chatConvId}
+          otherUserName={counterparty.name}
+          otherUserAvatar={null}
+          productTitle={rental.product_title || ""}
+        />
+      )}
     </div>
   );
 };
