@@ -39,7 +39,7 @@ const createUxCopy = () => ({
       serviceFee: { ro: "Taxă serviciu", en: "Service fee" },
       total: { ro: "Total", en: "Total" },
     },
-    freeCancellation: { ro: "Anulare gratuită cu 48h înainte de start", en: "Free cancellation up to 48h before start" },
+    freeCancellation: { ro: "Anulare gratuită cu 24h înainte de start", en: "Free cancellation up to 24h before start" },
   },
   trust: {
     verified: { ro: "Utilizator verificat", en: "Verified user" },
@@ -105,8 +105,8 @@ const createUxCopy = () => ({
     cancelRequest: { ro: "Anulează cererea", en: "Cancel request" },
     cancelPaidTitle: { ro: "Anulează cererea de închiriere", en: "Cancel rental request" },
     cancelPaidConfirm: {
-      ro: "Politica de anulare: rambursare integrală dacă anulezi cu cel puțin 48h înainte de start, 50% sub 48h, fără rambursare după ce începe închirierea. Suma se eliberează automat pe cardul folosit. Continui?",
-      en: "Cancellation policy: full refund if you cancel at least 48h before start, 50% under 48h, no refund after the rental period starts. The amount is released automatically to the card used. Continue?",
+      ro: "Politica de anulare: rambursare integrală dacă anulezi cu cel puțin 24h înainte de start. Sub 24h, prima zi și taxa platformei nu se rambursează. După începerea închirierii nu se mai acordă rambursare. Suma se eliberează automat pe cardul folosit. Continui?",
+      en: "Cancellation policy: full refund if you cancel at least 24h before start. Under 24h, the first day and platform fee are non-refundable. No refund after the rental period starts. The amount is released automatically to the card used. Continue?",
     },
     cancelPaidSuccess: {
       ro: "Cererea a fost anulată. Banii vor fi eliberați după verificarea echipei.",
@@ -291,7 +291,7 @@ const createUxCopy = () => ({
   },
   reassurance: {
     paymentProtected: { ro: "Plata ta este protejată. Suma se blochează temporar și se debitează doar după finalizarea închirierii.", en: "Your payment is protected. The amount is temporarily held and charged only after the rental period ends." },
-    freeCancellation: { ro: "Poți anula gratuit cu cel puțin 48h înainte de începere. Sub 48h se rambursează 50%.", en: "Cancel for free at least 48h before start. Under 48h, 50% is refunded." },
+    freeCancellation: { ro: "Poți anula gratuit cu cel puțin 24h înainte de începere. Sub 24h, prima zi și taxa platformei nu se rambursează.", en: "Cancel for free at least 24h before start. Under 24h, the first day and platform fee are non-refundable." },
     keepOnPlatform: { ro: "Ține conversația pe platformă pentru protecție.", en: "Keep conversations on the platform for protection." },
     secureTransaction: { ro: "Tranzacție securizată", en: "Secure transaction" },
   },
@@ -639,7 +639,7 @@ const createUxCopy = () => ({
     benefit4Title: { ro: "Suport dedicat", en: "Dedicated support" },
     benefit4Desc: { ro: "Echipa noastră este disponibilă pentru a te ajuta în orice situație, de la întrebări la dispute.", en: "Our team is available to help you in any situation, from questions to disputes." },
     benefit5Title: { ro: "Anulare flexibilă", en: "Flexible cancellation" },
-    benefit5Desc: { ro: "Poți anula gratuit cu cel puțin 48 de ore înainte de începerea închirierii. Sub 48h primești 50% înapoi.", en: "Cancel for free at least 48 hours before the rental starts. Under 48h you get 50% back." },
+    benefit5Desc: { ro: "Poți anula gratuit cu cel puțin 24 de ore înainte de începerea închirierii. Sub 24h, prima zi și taxa platformei nu se rambursează.", en: "Cancel for free at least 24 hours before the rental starts. Under 24h, the first day and platform fee are non-refundable." },
     benefit6Title: { ro: "Fără comision la listare", en: "No listing fees" },
     benefit6Desc: { ro: "Listează câte produse dorești fără niciun cost. Plătești doar un comision mic la tranzacție.", en: "List as many products as you want at no cost. You only pay a small transaction fee." },
     // FAQ section
@@ -650,7 +650,7 @@ const createUxCopy = () => ({
     faq2Q: { ro: "Ce se întâmplă dacă produsul este deteriorat?", en: "What happens if the product is damaged?" },
     faq2A: { ro: "Fiecare închiriere include o asigurare de bază. În caz de deteriorare, echipa noastră mediază situația și se aplică politica de despăgubire conform termenilor agreați.", en: "Every rental includes basic insurance. In case of damage, our team mediates the situation and the compensation policy applies according to the agreed terms." },
     faq3Q: { ro: "Pot anula o rezervare?", en: "Can I cancel a booking?" },
-    faq3A: { ro: "Da, poți anula gratuit cu cel puțin 48 de ore înainte de data de început. Sub 48h primești o rambursare de 50%, iar după ce începe perioada de închiriere nu se mai acordă rambursare. Detalii complete în politica de anulare.", en: "Yes, you can cancel for free at least 48 hours before the start date. Under 48h you receive a 50% refund, and after the rental period has started no refund is granted. Full details in the cancellation policy." },
+    faq3A: { ro: "Da, poți anula gratuit cu cel puțin 24 de ore înainte de data de început. Sub 24h, prima zi și taxa platformei sunt nerambursabile, iar după ce începe perioada de închiriere nu se mai acordă rambursare. Detalii complete în politica de anulare.", en: "Yes, you can cancel for free at least 24 hours before the start date. Under 24h, the first day and platform fee are non-refundable, and after the rental period has started no refund is granted. Full details in the cancellation policy." },
     faq4Q: { ro: "Cum îmi primesc banii ca proprietar?", en: "How do I receive my money as an owner?" },
     faq4A: { ro: "După finalizarea cu succes a închirierii, banii sunt transferați automat în contul tău bancar. Poți urmări toate tranzacțiile în secțiunea Câștiguri din profilul tău.", en: "After the successful completion of the rental, the money is automatically transferred to your bank account. You can track all transactions in the Earnings section of your profile." },
     faq5Q: { ro: "Este obligatorie verificarea identității?", en: "Is identity verification mandatory?" },
