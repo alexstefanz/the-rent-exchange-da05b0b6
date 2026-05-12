@@ -45,3 +45,13 @@ export const unbanUser = async (userId: string): Promise<void> => {
     .eq('id', userId);
   if (error) throw new Error(error.message);
 };
+
+export const adminDeleteUser = async (userId: string): Promise<void> => {
+  const { data, error } = await supabase.functions.invoke('admin-delete-user', {
+    body: { user_id: userId },
+  });
+  if (error) throw new Error(error.message);
+  if (data && (data as { error?: string }).error) {
+    throw new Error((data as { error: string }).error);
+  }
+};
