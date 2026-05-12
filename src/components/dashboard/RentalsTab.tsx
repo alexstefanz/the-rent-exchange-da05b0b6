@@ -233,6 +233,14 @@ const RentalsTab = () => {
                 role="renter"
                 onStartInspection={() => setInspectionRental({ rental, phase: inspectionPhase })}
                 onChat={() => handleContactOwner(rental)}
+                onPay={async () => {
+                  try {
+                    const url = await payForConfirmedRental(rental.id);
+                    window.location.href = url;
+                  } catch (e: any) {
+                    toast.error(e?.message || "Eroare la inițierea plății");
+                  }
+                }}
                 onLeaveReview={() =>
                   setReviewRental({
                     id: rental.id,
