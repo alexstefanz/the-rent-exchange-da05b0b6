@@ -1455,6 +1455,59 @@ export type Database = {
           },
         ]
       }
+      rental_pv_documents: {
+        Row: {
+          created_at: string
+          generated_at: string | null
+          id: string
+          owner_signature_data: string | null
+          owner_signed_at: string | null
+          pdf_path: string | null
+          phase: string
+          photos: string[]
+          rental_id: string
+          renter_signature_data: string | null
+          renter_signed_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          generated_at?: string | null
+          id?: string
+          owner_signature_data?: string | null
+          owner_signed_at?: string | null
+          pdf_path?: string | null
+          phase: string
+          photos?: string[]
+          rental_id: string
+          renter_signature_data?: string | null
+          renter_signed_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          generated_at?: string | null
+          id?: string
+          owner_signature_data?: string | null
+          owner_signed_at?: string | null
+          pdf_path?: string | null
+          phase?: string
+          photos?: string[]
+          rental_id?: string
+          renter_signature_data?: string | null
+          renter_signed_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rental_pv_documents_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rental_status_history: {
         Row: {
           actor_id: string | null
@@ -1536,6 +1589,7 @@ export type Database = {
           public_id: string
           refund_amount: number | null
           refunded_at: string | null
+          rejection_reason: string | null
           rental_days: number
           renter_id: string | null
           return_confirmed_at: string | null
@@ -1588,6 +1642,7 @@ export type Database = {
           public_id?: string
           refund_amount?: number | null
           refunded_at?: string | null
+          rejection_reason?: string | null
           rental_days: number
           renter_id?: string | null
           return_confirmed_at?: string | null
@@ -1640,6 +1695,7 @@ export type Database = {
           public_id?: string
           refund_amount?: number | null
           refunded_at?: string | null
+          rejection_reason?: string | null
           rental_days?: number
           renter_id?: string | null
           return_confirmed_at?: string | null
@@ -2528,6 +2584,10 @@ export type Database = {
           status: string
           subtotal: number
         }[]
+      }
+      get_rental_pv_signed_url: {
+        Args: { _phase: string; _rental_id: string }
+        Returns: string
       }
       get_rental_renter_info: {
         Args: { renter_ids: string[] }
