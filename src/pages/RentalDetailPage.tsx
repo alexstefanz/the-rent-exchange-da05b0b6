@@ -53,8 +53,11 @@ const RentalDetailPage = () => {
     return_pv_owner_signed: !!rental.return_pv_owner_signed_at,
   } : null;
   const stepEarly = tlRentalEarly ? getTimelineStep(tlRentalEarly).current : 0;
-  const showHandoverPvEarly = !!rental && stepEarly >= 3 && stepEarly <= 5 && (rental.payment_status === "authorized" || rental.payment_status === "paid" || rental.payment_status === "captured");
-  const showReturnPvEarly = stepEarly >= 5;
+  const isPaidEarly = !!rental && (rental.payment_status === "authorized" || rental.payment_status === "paid" || rental.payment_status === "captured");
+  // Both PVs are always visible once the rental is paid; activation/locking is handled inside the panels.
+  const showHandoverPvEarly = isPaidEarly && stepEarly >= 3;
+  const showReturnPvEarly = isPaidEarly && stepEarly >= 3;
+  const handoverDoneEarly = !!(rental?.handover_pv_owner_signed_at && rental?.handover_pv_renter_signed_at);
 
   // Deep-link: ?pv=handover|return auto-opens dialog when allowed
   useEffect(() => {
@@ -190,6 +193,7 @@ const RentalDetailPage = () => {
                   renterSignedAt={rental.handover_pv_renter_signed_at}
                   onOpen={() => setPvOpen("handover")}
                   t={t}
+                  notStarted={false}
                 />
               )}
               {showReturnPv && (
@@ -201,6 +205,7 @@ const RentalDetailPage = () => {
                   renterSignedAt={rental.return_pv_renter_signed_at}
                   onOpen={() => setPvOpen("return")}
                   t={t}
+                  notStarted={!handoverDoneEarly}
                 />
               )}
             </div>
