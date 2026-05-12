@@ -105,7 +105,7 @@ export function ConversationList({
               conv.unread_count ? "font-medium text-foreground" : "text-muted-foreground"
             }`}
           >
-            {conv.last_message.message_type === "system"
+            {(!conv.last_message.sender_id || conv.last_message.content?.startsWith("booking_confirmed|"))
               ? `🛎 ${t("Rezervare confirmată", "Booking confirmed")}`
               : `${conv.last_message.sender_id === userId ? t("Tu: ", "You: ") : ""}${conv.last_message.content}`}
           </p>
