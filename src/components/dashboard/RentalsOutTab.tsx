@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, Plus, Check, X, Loader2, Calendar, TrendingUp, Inbox } from "lucide-react";
+import { Package, Plus, Check, X, Loader2, Calendar, TrendingUp, Inbox, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -130,6 +130,17 @@ const RentalsOutTab = () => {
                       <div><span className="text-muted-foreground">Zile</span><p className="font-medium">{rental.rental_days}</p></div>
                       <div><span className="text-muted-foreground">Câștig</span><p className="font-medium text-primary">{rental.owner_payout} RON</p></div>
                     </div>
+                    {rental.message_to_owner && rental.message_to_owner.trim().length > 0 && (
+                      <div className="mt-3 rounded-2xl rounded-tl-sm bg-background border border-border px-3 py-2">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                          <MessageSquare className="h-3.5 w-3.5" />
+                          <span>Mesaj de la chiriaș</span>
+                        </div>
+                        <p className="text-sm text-foreground whitespace-pre-wrap break-words">
+                          {rental.message_to_owner}
+                        </p>
+                      </div>
+                    )}
                     <div className="flex gap-2 mt-4">
                       <Button size="sm" onClick={() => handleAccept(rental)} disabled={respondingId === rental.id} className="flex-1">
                         {respondingId === rental.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Check className="h-4 w-4 mr-1" />}

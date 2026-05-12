@@ -51,6 +51,7 @@ export async function createRental(params: CreateRentalParams) {
       payment_method: paymentMethod,
       status: "pending",
       payment_status: "pending",
+      message_to_owner: (params.messageToOwner || "").trim() || null,
     })
     .select()
     .single();
@@ -79,39 +80,9 @@ export async function createRental(params: CreateRentalParams) {
 export async function createRentalRequest(params: CreateRentalParams) {
   const rental = await createRental(params);
 
-  // 1) Create / get the dedicated rental conversation thread.
-  let conversationId: string | null = null;
-  try {
-    const { data, error } = await supabase.rpc("get_or_create_rental_conversation", {
-      p_rental_id: rental.id,
-    });
-    if (!error && data) conversationId = data as string;
-  } catch (e) {
-    console.warn("Rental conversation init failed (non-blocking):", e);
-  }
-
-  // 2) Insert the first message (custom or auto) so the owner sees context.
-  if (conversationId) {
-    const { data: { user } } = await supabase.auth.getUser();
-    // Only post a chat message if the renter explicitly typed one in the
-    // booking form. The generic auto-message is intentionally suppressed —
-    // it now happens only after the renter completes payment.
-    const customMsg = (params.messageToOwner || "").trim();
-    if (customMsg && user) {
-      const { data: existingMsgs } = await supabase
-        .from("messages")
-        .select("id")
-        .eq("conversation_id", conversationId)
-        .limit(1);
-      if (!existingMsgs || existingMsgs.length === 0) {
-        await supabase.from("messages").insert({
-          conversation_id: conversationId,
-          sender_id: user.id,
-          content: customMsg,
-        });
-      }
-    }
-  }
+  // The optional renter note is stored on the rental itself
+  // (rentals.message_to_owner) and shown as a chat-style bubble on the
+  // owner's request card — no longer auto-injected into the chat thread.
 
   // 3) Notify the owner (in-app + email).
   supabase.functions.invoke("send-rental-notification", { body: { rental_id: rental.id } })

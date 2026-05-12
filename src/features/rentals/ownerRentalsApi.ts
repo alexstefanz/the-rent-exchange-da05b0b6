@@ -26,6 +26,7 @@ export interface OwnerRental {
   dispute_status?: string | null;
   pickup_agreed_at?: string | null;
   rejection_reason?: string | null;
+  message_to_owner?: string | null;
 }
 
 export async function getOwnerRentals(ownerId: string): Promise<OwnerRental[]> {
