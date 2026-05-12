@@ -176,6 +176,33 @@ const RentalDetailPage = () => {
           <RentalTimeline rental={tlRental} />
         </section>
 
+        {/* Chat CTA — visible after payment is authorized */}
+        {isPaidEarly && (
+          <section className="rounded-2xl border border-border bg-card p-4 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center">
+                <MessageSquare className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm">
+                  {isOwner
+                    ? t("Discuta cu chiriasul", "Chat with the renter")
+                    : t("Discuta cu proprietarul", "Chat with the owner")}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {t("Coordonati predarea, locatia si detaliile direct in chat.", "Coordinate handover, location and details directly in chat.")}
+                </p>
+              </div>
+            </div>
+            <Button onClick={handleChat} className="shrink-0">
+              <MessageSquare className="h-4 w-4 mr-2" />
+              {isOwner
+                ? t("Discuta cu Chiriasul", "Chat with Renter")
+                : t("Discuta cu Proprietarul", "Chat with Owner")}
+            </Button>
+          </section>
+        )}
+
         {/* PV (Procese verbale) — full width under the timeline */}
         {(showHandoverPv || showReturnPv) && (
           <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
