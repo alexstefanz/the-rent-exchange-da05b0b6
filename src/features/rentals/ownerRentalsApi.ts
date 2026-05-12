@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface OwnerRental {
   id: string;
+  public_id: string | null;
   product_id: string | null;
   renter_id: string | null;
   start_date: string;
@@ -24,6 +25,7 @@ export interface OwnerRental {
   refunded_at?: string | null;
   dispute_status?: string | null;
   pickup_agreed_at?: string | null;
+  rejection_reason?: string | null;
 }
 
 export async function getOwnerRentals(ownerId: string): Promise<OwnerRental[]> {

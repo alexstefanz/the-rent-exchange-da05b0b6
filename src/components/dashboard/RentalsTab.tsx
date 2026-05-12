@@ -24,6 +24,7 @@ import EarlyReturnRequestDialog from "@/components/rentals/EarlyReturnRequestDia
 
 interface Rental {
   id: string;
+  public_id: string | null;
   product_id: string | null;
   product_title: string;
   product_image: string;
@@ -48,7 +49,7 @@ interface Rental {
 const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
   const { data, error } = await supabase
     .from("rentals")
-    .select("id, product_id, start_date, end_date, subtotal, daily_price, platform_fee, status, payment_status, handover_confirmed_at, return_confirmed_at, dispute_status, early_return_status, created_at, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
+    .select("id, public_id, product_id, start_date, end_date, subtotal, daily_price, platform_fee, status, payment_status, handover_confirmed_at, return_confirmed_at, dispute_status, early_return_status, created_at, products(title, images, location_city, owner_id, profiles:owner_id(full_name))")
     .eq("renter_id", userId)
     .or("status.in.(confirmed,active,completed),and(status.eq.pending,payment_status.in.(authorized,paid))")
     .order("created_at", { ascending: false });
@@ -57,6 +58,7 @@ const fetchMyRentals = async (userId: string): Promise<Rental[]> => {
 
   return (data || []).map((r: any) => ({
     id: r.id,
+    public_id: r.public_id,
     product_id: r.product_id,
     product_title: r.products?.title || "Produs șters",
     product_image: r.products?.images?.[0] || "/placeholder.svg",
