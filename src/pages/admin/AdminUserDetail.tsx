@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft, User, Mail, Phone, Calendar, Eye, Loader2,
   Shield, ShieldCheck, Ban, UserCheck, Package, ShoppingCart,
-  MessageCircle, Building2, AlertTriangle, Tags
+  MessageCircle, Building2, AlertTriangle, Tags, Trash2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,7 @@ import UserConversationsTab from "@/components/admin/user-detail/UserConversatio
 import UserActivityTab from "@/components/admin/user-detail/UserActivityTab";
 import AdminSpecializationsTab from "@/components/admin/user-detail/AdminSpecializationsTab";
 import { updateUserRole } from "@/features/admin/adminApi";
-import { banUser, unbanUser } from "@/features/admin/banApi";
+import { banUser, unbanUser, adminDeleteUser } from "@/features/admin/banApi";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -91,11 +91,15 @@ const useAdminUserDetail = (userId: string | undefined) => {
 const AdminUserDetail = () => {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const [updatingRole, setUpdatingRole] = useState(false);
   const [banDialog, setBanDialog] = useState(false);
   const [banReason, setBanReason] = useState("");
   const [banLoading, setBanLoading] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const { data: userDetail, isLoading } = useAdminUserDetail(id);
 
@@ -137,6 +141,21 @@ const AdminUserDetail = () => {
       invalidate();
     } catch { toast.error("Eroare la debanare"); }
     finally { setBanLoading(false); }
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    setDeleteLoading(true);
+    try {
+      await adminDeleteUser(id);
+      toast.success("Cont șters definitiv");
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      navigate('/admin/users');
+    } catch (e) {
+      toast.error("Eroare la ștergere: " + (e as Error).message);
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -367,6 +386,16 @@ const AdminUserDetail = () => {
                     <Ban className="h-4 w-4" /> Banează
                   </Button>
                 )}
+                <Separator />
+                <Button
+                  onClick={() => { setDeleteConfirm(""); setDeleteDialog(true); }}
+                  variant="destructive"
+                  size="sm"
+                  className="w-full gap-2"
+                  disabled={currentUser?.id === id}
+                >
+                  <Trash2 className="h-4 w-4" /> Șterge cont (testare)
+                </Button>
               </CardContent>
             </Card>
           </div>
@@ -466,6 +495,40 @@ const AdminUserDetail = () => {
             <Button variant="destructive" onClick={handleBan} disabled={!banReason.trim() || banLoading}>
               {banLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
               Banează
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Account Dialog */}
+      <Dialog open={deleteDialog} onOpenChange={(open) => { setDeleteDialog(open); if (!open) setDeleteConfirm(""); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive flex items-center gap-2">
+              <Trash2 className="h-5 w-5" /> Șterge contul definitiv
+            </DialogTitle>
+            <DialogDescription>
+              Această acțiune este <strong>ireversibilă</strong>. Va șterge contul „{userDetail.full_name || userDetail.email}",
+              toate produsele, rezervările, conversațiile, recenziile și activitatea asociată.
+              <br /><br />
+              Pentru confirmare, scrie <code className="bg-muted px-1.5 py-0.5 rounded">STERGE</code> mai jos.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            placeholder="STERGE"
+            value={deleteConfirm}
+            onChange={(e) => setDeleteConfirm(e.target.value)}
+            rows={1}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialog(false)}>Anulează</Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteConfirm.trim() !== "STERGE" || deleteLoading}
+            >
+              {deleteLoading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Șterge definitiv
             </Button>
           </DialogFooter>
         </DialogContent>
