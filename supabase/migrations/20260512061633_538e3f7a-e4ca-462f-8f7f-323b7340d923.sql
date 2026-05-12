@@ -1,0 +1,2 @@
+ALTER TABLE public.rentals ADD COLUMN IF NOT EXISTS is_test_payment BOOLEAN NOT NULL DEFAULT false;
+CREATE INDEX IF NOT EXISTS idx_rentals_is_test_payment ON public.rentals(is_test_payment) WHERE is_test_payment = true;
