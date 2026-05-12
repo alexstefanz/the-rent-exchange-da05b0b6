@@ -93,28 +93,23 @@ export async function createRentalRequest(params: CreateRentalParams) {
   // 2) Insert the first message (custom or auto) so the owner sees context.
   if (conversationId) {
     const { data: { user } } = await supabase.auth.getUser();
-    const { data: existingMsgs } = await supabase
-      .from("messages")
-      .select("id")
-      .eq("conversation_id", conversationId)
-      .limit(1);
-    if ((!existingMsgs || existingMsgs.length === 0) && user) {
-      const fmt = (d: string) => {
-        try {
-          return new Date(d).toLocaleDateString("ro-RO", { day: "numeric", month: "short", year: "numeric" });
-        } catch { return d; }
-      };
-      const customMsg = (params.messageToOwner || "").trim();
-      const content = customMsg || (
-        `Bună! Am trimis o cerere de închiriere pentru perioada ` +
-        `${fmt(params.startDate)} – ${fmt(params.endDate)} (${params.rentalDays} zile). ` +
-        `Aștept confirmarea ta. Mulțumesc!`
-      );
-      await supabase.from("messages").insert({
-        conversation_id: conversationId,
-        sender_id: user.id,
-        content,
-      });
+    // Only post a chat message if the renter explicitly typed one in the
+    // booking form. The generic auto-message is intentionally suppressed —
+    // it now happens only after the renter completes payment.
+    const customMsg = (params.messageToOwner || "").trim();
+    if (customMsg && user) {
+      const { data: existingMsgs } = await supabase
+        .from("messages")
+        .select("id")
+        .eq("conversation_id", conversationId)
+        .limit(1);
+      if (!existingMsgs || existingMsgs.length === 0) {
+        await supabase.from("messages").insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          content: customMsg,
+        });
+      }
     }
   }
 
@@ -139,9 +134,15 @@ export async function payForConfirmedRental(rentalId: string): Promise<string> {
   });
   if (error) {
     const msg = (error as any)?.message || "";
-    if (msg.includes("KYC_REQUIRED") || (error as any)?.context?.error === "KYC_REQUIRED") {
+    const ctxErr = (error as any)?.context?.error;
+    if (msg.includes("KYC_REQUIRED") || ctxErr === "KYC_REQUIRED") {
       const e = new Error("KYC_REQUIRED");
       (e as any).code = "KYC_REQUIRED";
+      throw e;
+    }
+    if (msg.includes("MIN_AMOUNT") || ctxErr === "MIN_AMOUNT") {
+      const e = new Error("Suma totală este sub minimul acceptat de procesatorul de plată (2 RON). Cere proprietarului să actualizeze prețul anunțului.");
+      (e as any).code = "MIN_AMOUNT";
       throw e;
     }
     throw error;
@@ -150,6 +151,11 @@ export async function payForConfirmedRental(rentalId: string): Promise<string> {
     if (data.error === "KYC_REQUIRED") {
       const e = new Error("KYC_REQUIRED");
       (e as any).code = "KYC_REQUIRED";
+      throw e;
+    }
+    if (data.error === "MIN_AMOUNT") {
+      const e = new Error(data.message || "Suma totală este sub minimul acceptat (2 RON).");
+      (e as any).code = "MIN_AMOUNT";
       throw e;
     }
     throw new Error(data.error);

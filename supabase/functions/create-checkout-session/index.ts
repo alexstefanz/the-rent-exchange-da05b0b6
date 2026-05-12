@@ -110,6 +110,25 @@ serve(async (req) => {
       });
     }
 
+    // Stripe RON minimum charge is 2 RON. Block lower amounts up-front so we
+    // surface a friendly error instead of a generic 500 from Stripe.
+    const subtotalRon = Number(rental.subtotal) || 0;
+    if (subtotalRon < 2) {
+      return new Response(
+        JSON.stringify({
+          error: "MIN_AMOUNT",
+          min_amount: 2,
+          currency: "RON",
+          message:
+            "Suma totală este sub minimul acceptat de procesatorul de plată (2 RON).",
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
       apiVersion: "2025-08-27.basil",
     });

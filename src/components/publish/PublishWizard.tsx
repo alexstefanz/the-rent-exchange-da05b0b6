@@ -916,7 +916,7 @@ const Step5Pricing = ({
           <div className="mt-2 flex items-center gap-2">
             <Input
               type="number"
-              min={1}
+              min={2}
               value={data.daily_price_owner ?? ""}
               onChange={(e) =>
                 update("daily_price_owner", e.target.value === "" ? null : Number(e.target.value))
