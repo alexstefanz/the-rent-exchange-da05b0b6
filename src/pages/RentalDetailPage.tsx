@@ -441,6 +441,20 @@ const RentalDetailPage = () => {
                 <RentalPaymentStatus rentalId={rental.id} mode="user" />
               </CollapsibleContent>
             </Collapsible>
+
+            {/* Mutual cancellation — visible until owner signs handover PV */}
+            {user?.id && rental.status !== "cancelled" && rental.status !== "completed" && rental.status !== "rejected" && !rental.handover_pv_owner_signed_at && (
+              <MutualCancellationCard
+                rentalId={rental.id}
+                cancelRequestStatus={rental.cancel_request_status}
+                cancelRequestInitiator={rental.cancel_request_initiator}
+                cancelRequestReason={rental.cancel_request_reason}
+                initiatorName={rental.cancel_request_initiator === rental.owner_id ? rental.owner_name : rental.renter_name}
+                counterpartyName={isOwner ? rental.renter_name : rental.owner_name}
+                currentUserId={user.id}
+                onChanged={() => refetch()}
+              />
+            )}
           </div>
 
           {/* Right: pricing */}
