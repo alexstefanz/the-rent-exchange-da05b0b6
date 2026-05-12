@@ -197,6 +197,19 @@ const Auth = () => {
         loginForm.setValue("email", data.email);
         return;
       }
+      const isRateLimit =
+        (error as any)?.code === "over_email_send_rate_limit" ||
+        (error as any)?.status === 429 ||
+        /rate limit/i.test(error.message || "");
+      if (isRateLimit) {
+        toast({
+          title: "Prea multe încercări",
+          description:
+            "Au fost prea multe încercări de înregistrare de pe această rețea. Te rugăm să aștepți câteva minute și să încerci din nou, sau folosește autentificarea cu Google.",
+          variant: "destructive",
+        });
+        return;
+      }
       if (isWeakPasswordError(error.message)) message = copy.auth.passwordTooWeak;
       toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
       return;
@@ -260,7 +273,17 @@ const Auth = () => {
     });
     setIsResendingOtp(false);
     if (error) {
-      toast({ title: "Eroare", description: "Nu am putut retrimite codul. Încearcă mai târziu.", variant: "destructive" });
+      const isRateLimit =
+        (error as any)?.code === "over_email_send_rate_limit" ||
+        (error as any)?.status === 429 ||
+        /rate limit/i.test(error.message || "");
+      toast({
+        title: isRateLimit ? "Prea multe încercări" : "Eroare",
+        description: isRateLimit
+          ? "Te rugăm să aștepți 1-2 minute înainte să retrimiți codul."
+          : "Nu am putut retrimite codul. Încearcă mai târziu.",
+        variant: "destructive",
+      });
     } else {
       toast({ title: "Cod retrimis", description: `Am trimis un nou cod pe ${otpEmail}` });
       setOtpCode("");
