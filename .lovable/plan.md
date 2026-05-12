@@ -1,49 +1,39 @@
-## Problema
+## Context
 
-Erorile „Prea multe încercări" la signup și reset parolă (vezi screenshots) provin de la limita SMTP internă a Lovable Cloud / Supabase:
+Emailurile către `@primaconstruct.ro` ajung cu întârziere (5–60 min uneori). Sistemul nostru le trimite în 2–6 secunde (verificat în `email_send_log`), deci delay-ul e pe serverul lor de mail (greylisting / antispam corporate). Domeniul `notify.rentli.ro` este **verificat și activ**.
 
-```
-error_code: over_email_send_rate_limit
-status: 429
-path: /signup și /recover
-```
+Îți pregătesc două lucruri, livrate ca răspuns în chat (fără modificări de cod):
 
-Limita serverului SMTP intern al Supabase este de **~2-4 emailuri / oră / proiect** (partajată între toți userii). Pe Rentli, cu volumul actual de signup-uri și reseturi, aceasta este atinsă constant.
+## 1. Raport DNS detaliat pentru `notify.rentli.ro`
 
-În plus, Supabase aplică:
-- ~1 reset / 60 sec per email pe `/recover`
-- Blocare la signup repetat al aceluiași email
+Voi rula verificări `dig` din sandbox pentru:
+- **SPF** (TXT pe `notify.rentli.ro`) — verific că include serverele de trimitere
+- **DKIM** — verific selectorii activi și cheile publice
+- **DMARC** (TXT pe `_dmarc.rentli.ro` și `_dmarc.notify.rentli.ro`) — politica și aliniere
+- **MX** pe `notify.rentli.ro`
+- **NS delegation** către `ns3.lovable.cloud` / `ns4.lovable.cloud`
+- **PTR (reverse DNS)** pe IP-urile de trimitere
+- **MX pentru primaconstruct.ro** + ce provider folosesc (Microsoft 365, Google, on-prem etc.) — util pentru a ști exact cui se trimite cererea de whitelist
 
-## Soluția
+Rezultatul îl prezint ca un tabel scurt cu status (✅ / ⚠️ / ❌) și recomandări concrete dacă găsesc ceva nealiniat.
 
-Mutăm trimiterea emailurilor de auth de pe SMTP-ul intern Supabase pe **Resend**, prin domeniul deja verificat `rentli.ro`. Proiectul folosește deja Resend pentru emailurile tranzacționale (`send-transactional-email`, `send-password-changed-notification` etc.), deci infrastructura există.
+## 2. Șablon de email în română pentru IT-ul primaconstruct.ro
 
-Concret, vom configura un **auth email hook** — o edge function (`auth-email-hook`) pe care Supabase o apelează în loc să trimită singur emailul. Funcția randează template-ul brandat și îl trimite prin Resend.
+Un mesaj profesional, gata de trimis, care:
+- Se prezintă (Rentli, marketplace de închirieri P2P)
+- Explică problema observată (delay 5–60 min la livrare, fără bounce)
+- Furnizează datele tehnice de care are nevoie IT-ul lor:
+  - Domeniu expeditor: `notify.rentli.ro`
+  - Adresă From: `noreply@rentli.ro`
+  - SPF / DKIM / DMARC records (completate din raportul de la pasul 1)
+  - IP-uri de trimitere (din MX/SPF lookup)
+- Cere explicit: whitelist domeniu + IP-uri în filtrul antispam (Defender / Barracuda / etc.) și dezactivare greylisting pentru `rentli.ro`
+- Include o variantă scurtă în engleză la final (pentru cazul în care IT-ul folosește engleză)
 
-## Pași de implementare
+## Livrare
 
-1. **Scaffold template-uri auth email** — generează:
-   - `supabase/functions/auth-email-hook/index.ts` (hook-ul Supabase)
-   - `supabase/functions/_shared/email-templates/*.tsx` (6 template-uri React Email: signup, magic-link, recovery, invite, email-change, reauthentication)
+Răspund într-un singur mesaj cu:
+1. Tabelul DNS + concluzii
+2. Șablonul de email (RO + EN) într-un bloc copy-paste
 
-2. **Brand template-urile** — culorile Rentli (#F59E0B, #FCFAF8), font Plus Jakarta Sans, body alb, layout consistent cu emailurile tranzacționale existente.
-
-3. **Deploy `auth-email-hook`** — devine activ automat după verificare DNS (deja făcută pentru `rentli.ro`).
-
-4. **Verificare** — test signup + reset parolă din UI; verificare că emailurile vin de la `noreply@rentli.ro` și nu mai apare 429 în logs.
-
-## Ce NU se schimbă
-
-- UI-ul (LoginDialog, Auth.tsx, mesajele de eroare existente)
-- Logica de signup/signIn din `AuthContext.tsx`
-- Emailurile tranzacționale existente (rentals, notifications, etc.) — funcționează deja perfect prin Resend
-- Rate-limit-ul per-cont (1 reset/60s) rămâne — e o protecție anti-abuz utilă
-
-## Limite noi (după implementare)
-
-- Resend free: 100 emailuri/zi, 3000/lună
-- Resend pro ($20/lună): 50.000/lună, 10/sec — recomandat pentru producție Rentli
-
-## Observație despre erori UI
-
-Mesajul al treilea („Eroare — Nu s-a putut trimite cererea") este probabil o eroare generică pentru același 429. După fix va dispărea natural; dacă vrei, ulterior pot îmbunătăți mesajul să spună explicit „Așteaptă X minute" în loc de generic.
+Nicio modificare în cod sau în baza de date.
