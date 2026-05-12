@@ -193,25 +193,6 @@ const RentalsTab = () => {
                     <ExternalLink className="h-3 w-3" />Vezi detalii inchiriere · {rental.public_id}
                   </Link>
                 )}
-                {rental.status === "confirmed" && rental.payment_status === "pending" && (
-                  <div className="mt-3">
-                    <Button
-                      size="sm"
-                      className="shadow-sm"
-                      onClick={async () => {
-                        try {
-                          const url = await payForConfirmedRental(rental.id);
-                          window.location.href = url;
-                        } catch (e: any) {
-                          toast.error(e?.message || "Eroare la inițierea plății");
-                        }
-                      }}
-                    >
-                      <CreditCard className="h-4 w-4 mr-1.5" />
-                      Plătește {rental.subtotal} RON
-                    </Button>
-                  </div>
-                )}
                 {rental.public_id && (step === 3 || step === 4 || step === 5) && (rental.payment_status === "authorized" || rental.payment_status === "paid" || rental.payment_status === "captured") && (
                   <div className="mt-2 flex flex-wrap gap-2">
                     <Link to={`/rezervari/${rental.public_id}?pv=handover`} className="inline-flex items-center gap-1 rounded-lg border border-border px-2.5 py-1 text-xs font-medium hover:bg-muted">
