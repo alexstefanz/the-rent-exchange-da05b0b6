@@ -19,6 +19,7 @@ import { ChatHeader } from "@/components/messaging/ChatHeader";
 import { RentalStageStepper } from "@/components/messaging/RentalStageStepper";
 import { TransactionCard } from "@/components/messaging/TransactionCard";
 import { MessageBubble } from "@/components/messaging/MessageBubble";
+import { SystemMessageBubble } from "@/components/messaging/SystemMessageBubble";
 import { MessageInput } from "@/components/messaging/MessageInput";
 import { TypingIndicator } from "@/components/messaging/TypingIndicator";
 import { DateSeparator } from "@/components/messaging/DateSeparator";
@@ -268,6 +269,8 @@ export function ChatPanel({
             {renderItems.map((it) =>
               it.kind === "date" ? (
                 <DateSeparator key={it.key} date={it.date} />
+              ) : it.msg.message_type === "system" ? (
+                <SystemMessageBubble key={it.key} message={it.msg} />
               ) : (
                 <MessageBubble
                   key={it.key}

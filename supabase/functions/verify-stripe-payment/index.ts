@@ -172,62 +172,80 @@ serve(async (req) => {
       }
 
       if (conversationId) {
-        // Idempotent: only insert a message if the conversation has none yet.
-        const { data: existingMsgs } = await supabaseAdmin
+        // 1) Insert a system "booking confirmed" notification (idempotent).
+        const { data: existingSystem } = await supabaseAdmin
           .from("messages")
           .select("id")
           .eq("conversation_id", conversationId)
+          .eq("message_type", "system")
           .limit(1);
 
-        if (!existingMsgs || existingMsgs.length === 0) {
-          let content: string;
-          if (messageToOwner) {
-            content = messageToOwner;
-          } else {
-            // Auto-generate a rental context message so the owner sees what was booked.
-            const productTitle = rental.products?.title || "produsul tău";
-            const days = rental.rental_days as number;
-            const dayLabel = days === 1 ? "zi" : "zile";
-            const fmt = (d: string) => {
-              try {
-                return new Date(d).toLocaleDateString("ro-RO", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                });
-              } catch {
-                return d;
-              }
-            };
-            content =
-              `Bună! Tocmai am rezervat „${productTitle}" pentru perioada ` +
-              `${fmt(rental.start_date)} – ${fmt(rental.end_date)} (${days} ${dayLabel}, ` +
-              `total ${rental.subtotal} RON). Aștept confirmarea ta. Mulțumesc!`;
-          }
+        if (!existingSystem || existingSystem.length === 0) {
+          const productTitle = rental.products?.title || "produsul tău";
+          const days = rental.rental_days as number;
+          const dayLabel = days === 1 ? "zi" : "zile";
+          const fmt = (d: string) => {
+            try {
+              return new Date(d).toLocaleDateString("ro-RO", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              });
+            } catch {
+              return d;
+            }
+          };
+          // Pipe-separated payload parsed by the frontend SystemMessageBubble.
+          const systemContent =
+            `booking_confirmed|${productTitle}|${fmt(rental.start_date)}|${fmt(rental.end_date)}|${days} ${dayLabel}|${rental.subtotal} RON`;
 
           await supabaseAdmin.from("messages").insert({
             conversation_id: conversationId,
-            sender_id: rental.renter_id,
-            content,
+            sender_id: null,
+            content: systemContent,
+            message_type: "system",
           });
 
-          // Bump conversation timestamp so it sorts to the top for the owner.
           await supabaseAdmin
             .from("conversations")
             .update({ updated_at: new Date().toISOString() })
             .eq("id", conversationId);
+        }
 
-          // Fire-and-forget message notification (email + push) to the owner.
-          try {
-            await supabaseAdmin.functions.invoke("send-message-notification", {
-              body: {
-                conversation_id: conversationId,
-                sender_id: rental.renter_id,
-                message_content: content,
-              },
+        // 2) If the renter typed an optional message at checkout, post it as a normal user message (idempotent).
+        if (messageToOwner) {
+          const { data: existingUserMsg } = await supabaseAdmin
+            .from("messages")
+            .select("id")
+            .eq("conversation_id", conversationId)
+            .eq("message_type", "user")
+            .eq("sender_id", rental.renter_id)
+            .limit(1);
+
+          if (!existingUserMsg || existingUserMsg.length === 0) {
+            await supabaseAdmin.from("messages").insert({
+              conversation_id: conversationId,
+              sender_id: rental.renter_id,
+              content: messageToOwner,
+              message_type: "user",
             });
-          } catch (msgNotifyErr) {
-            console.error("Message notification error (non-blocking):", msgNotifyErr);
+
+            await supabaseAdmin
+              .from("conversations")
+              .update({ updated_at: new Date().toISOString() })
+              .eq("id", conversationId);
+
+            try {
+              await supabaseAdmin.functions.invoke("send-message-notification", {
+                body: {
+                  conversation_id: conversationId,
+                  sender_id: rental.renter_id,
+                  message_content: messageToOwner,
+                },
+              });
+            } catch (msgNotifyErr) {
+              console.error("Message notification error (non-blocking):", msgNotifyErr);
+            }
           }
         }
       }
