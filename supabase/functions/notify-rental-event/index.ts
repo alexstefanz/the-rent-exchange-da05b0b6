@@ -56,7 +56,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "rental_request_owner",
     inAppTitle: { ro: "Cerere nouă de închiriere", en: "New rental request" },
     inAppDesc: (c) => ({ ro: `Cerere pentru "${c.product?.title}"`, en: `Request for "${c.product?.title}"` }),
-    link: (c) => `/rezervari?rental_id=${c.rental.id}`,
+    link: (c) => `/rezervari/${c.rental.public_id}`,
     smsPurpose: "view_rental",
   },
   request_accepted: {
@@ -65,7 +65,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "rental_accepted",
     inAppTitle: { ro: "Cererea a fost acceptată", en: "Request accepted" },
     inAppDesc: (c) => ({ ro: `Cererea pentru "${c.product?.title}" a fost acceptată`, en: `Request for "${c.product?.title}" was accepted` }),
-    link: (c) => `/rezervari?rental_id=${c.rental.id}`,
+    link: (c) => `/rezervari/${c.rental.public_id}`,
     smsPurpose: "view_rental",
   },
   request_rejected: {
@@ -82,7 +82,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "pickup_scheduled",
     inAppTitle: { ro: "Predarea a fost stabilită", en: "Pickup scheduled" },
     inAppDesc: (c) => ({ ro: `Predarea pentru "${c.product?.title}" e confirmată`, en: `Pickup for "${c.product?.title}" confirmed` }),
-    link: (c) => `/rezervari?rental_id=${c.rental.id}`,
+    link: (c) => `/rezervari/${c.rental.public_id}`,
     smsPurpose: "view_rental",
   },
   pv_pickup_pending: {
@@ -91,7 +91,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "pv_pending",
     inAppTitle: { ro: "Completează procesul verbal de predare", en: "Complete pickup inspection" },
     inAppDesc: (c) => ({ ro: `PV-ul de predare pentru "${c.product?.title}" e obligatoriu`, en: `Pickup inspection for "${c.product?.title}" is mandatory` }),
-    link: (c) => `/rezervari?rental_id=${c.rental.id}&pv=1`,
+    link: (c) => `/rezervari/${c.rental.public_id}?pv=handover`,
     smsPurpose: "pv_pickup",
   },
   pv_pickup_completed_by_party: {
@@ -100,7 +100,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "pv_other_done",
     inAppTitle: { ro: "PV de predare completat parțial", en: "Pickup PV partially complete" },
     inAppDesc: (c) => ({ ro: `${c.extra.actorName ?? "Cealaltă parte"} a completat PV-ul. Verifică-l.`, en: `${c.extra.actorName ?? "The other party"} completed the PV. Review it.` }),
-    link: (c) => `/rezervari?rental_id=${c.rental.id}&pv=1`,
+    link: (c) => `/rezervari/${c.rental.public_id}?pv=handover`,
     smsPurpose: "pv_pickup",
   },
   handover_confirmed: {
@@ -108,13 +108,13 @@ const EVENTS: Record<EventKey, EventConfig> = {
     emailTemplate: { both: "handover-confirmed" },
     inAppTitle: { ro: "Predarea a fost confirmată", en: "Handover confirmed" },
     inAppDesc: (c) => ({ ro: `Închirierea "${c.product?.title}" e activă`, en: `Rental "${c.product?.title}" is active` }),
-    link: (c) => `/rezervari?rental_id=${c.rental.id}`,
+    link: (c) => `/rezervari/${c.rental.public_id}`,
   },
   active_rental_started: {
     recipients: "both", channels: ["in_app"], critical: false,
     inAppTitle: { ro: "Închiriere activă", en: "Rental active" },
     inAppDesc: (c) => ({ ro: `Folosește produsul "${c.product?.title}" până pe ${c.rental.end_date}`, en: `Use "${c.product?.title}" until ${c.rental.end_date}` }),
-    link: (c) => `/rezervari?rental_id=${c.rental.id}`,
+    link: (c) => `/rezervari/${c.rental.public_id}`,
   },
   return_reminder_24h: {
     recipients: "both", channels: ["in_app", "email", "sms"], critical: false,
@@ -122,7 +122,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "return_reminder",
     inAppTitle: { ro: "Reminder returnare", en: "Return reminder" },
     inAppDesc: (c) => ({ ro: `Returnarea pentru "${c.product?.title}" se apropie`, en: `Return for "${c.product?.title}" approaching` }),
-    link: (c) => `/rezervari?rental_id=${c.rental.id}`,
+    link: (c) => `/rezervari/${c.rental.public_id}`,
     smsPurpose: "view_rental",
   },
   return_in_progress: {
@@ -131,7 +131,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "return_in_progress",
     inAppTitle: { ro: "Returnare în curs", en: "Return in progress" },
     inAppDesc: (c) => ({ ro: `Completează PV-ul de returnare pentru "${c.product?.title}"`, en: `Complete return PV for "${c.product?.title}"` }),
-    link: (c) => `/rezervari?rental_id=${c.rental.id}&pv=1`,
+    link: (c) => `/rezervari/${c.rental.public_id}?pv=handover`,
     smsPurpose: "pv_return",
   },
   pv_return_pending: {
@@ -140,7 +140,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "pv_pending",
     inAppTitle: { ro: "PV de returnare necesar", en: "Return PV required" },
     inAppDesc: (c) => ({ ro: `Completează PV-ul de returnare pentru "${c.product?.title}"`, en: `Complete return PV for "${c.product?.title}"` }),
-    link: (c) => `/rezervari?rental_id=${c.rental.id}&pv=1`,
+    link: (c) => `/rezervari/${c.rental.public_id}?pv=handover`,
     smsPurpose: "pv_return",
   },
   pv_return_completed_by_party: {
@@ -149,7 +149,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "pv_other_done",
     inAppTitle: { ro: "PV de returnare completat parțial", en: "Return PV partially complete" },
     inAppDesc: (c) => ({ ro: `${c.extra.actorName ?? "Cealaltă parte"} a completat PV-ul de returnare`, en: `${c.extra.actorName ?? "The other party"} completed the return PV` }),
-    link: (c) => `/rezervari?rental_id=${c.rental.id}&pv=1`,
+    link: (c) => `/rezervari/${c.rental.public_id}?pv=handover`,
     smsPurpose: "pv_return",
   },
   rental_completed: {
@@ -158,7 +158,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "rental_completed",
     inAppTitle: { ro: "Închiriere finalizată", en: "Rental completed" },
     inAppDesc: (c) => ({ ro: `Închirierea pentru "${c.product?.title}" a fost finalizată`, en: `Rental for "${c.product?.title}" is complete` }),
-    link: (c) => `/rezervari?rental_id=${c.rental.id}`,
+    link: (c) => `/rezervari/${c.rental.public_id}`,
     smsPurpose: "view_rental",
   },
   review_reminder: {
@@ -167,7 +167,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "review_reminder",
     inAppTitle: { ro: "Lasă un review", en: "Leave a review" },
     inAppDesc: (c) => ({ ro: `Lasă un review pentru "${c.product?.title}"`, en: `Leave a review for "${c.product?.title}"` }),
-    link: (c) => `/rezervari?rental_id=${c.rental.id}&review=1`,
+    link: (c) => `/rezervari/${c.rental.public_id}?review=1`,
   },
   dispute_opened: {
     recipients: "both", channels: ["in_app", "email", "sms"], critical: true,
@@ -175,7 +175,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "dispute_opened",
     inAppTitle: { ro: "Dispută deschisă", en: "Dispute opened" },
     inAppDesc: (c) => ({ ro: `O dispută a fost deschisă pe "${c.product?.title}"`, en: `A dispute was opened on "${c.product?.title}"` }),
-    link: (c) => `/rezervari?rental_id=${c.rental.id}`,
+    link: (c) => `/rezervari/${c.rental.public_id}`,
     smsPurpose: "view_rental",
   },
 };
