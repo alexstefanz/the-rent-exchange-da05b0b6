@@ -41,12 +41,6 @@ const BookingConfirmation = ({
     }
   };
 
-  const steps = [
-    { icon: MessageCircle, title: copy.checkout.requestSent, description: copy.checkout.requestSentDesc, completed: true },
-    { icon: Clock, title: copy.checkout.waitingResponse, description: copy.checkout.waitingResponseDesc(ownerName), completed: false, current: true },
-    { icon: CheckCircle, title: copy.checkout.confirmationStep, description: copy.checkout.confirmationDesc, completed: false },
-  ];
-
   return (
     <div className="flex flex-col items-center text-center py-8 px-4">
       <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 animate-fade-up">
@@ -75,28 +69,6 @@ const BookingConfirmation = ({
         <div className="mt-3 pt-3 border-t border-border flex justify-between">
           <span className="text-muted-foreground">{copy.checkout.totalLabel}:</span>
           <span className="font-bold text-primary">{totalPrice} RON</span>
-        </div>
-      </div>
-
-      <div className="mt-8 w-full max-w-md animate-fade-up" style={{ animationDelay: "0.25s" }}>
-        <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
-          {copy.booking.whatNext}
-        </h3>
-        <div className="space-y-4">
-          {steps.map((step, index) => {
-            const Icon = step.icon;
-            return (
-              <div key={index} className={`flex items-start gap-4 rounded-lg p-3 ${step.current ? "bg-primary/5 border border-primary/20" : ""}`}>
-                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${step.completed ? "bg-emerald-100 text-emerald-600" : step.current ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div className="text-left">
-                  <h4 className={`font-medium ${step.current ? "text-primary" : "text-foreground"}`}>{step.title}</h4>
-                  <p className="text-sm text-muted-foreground">{step.description}</p>
-                </div>
-              </div>
-            );
-          })}
         </div>
       </div>
 
