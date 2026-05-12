@@ -62,7 +62,7 @@ const RentalsOutTab = () => {
     try {
       await respondToRental(rental.id, "accept");
       queryClient.invalidateQueries({ queryKey: ["ownerRentals"] });
-      setAcceptedRental(rental);
+      toast.success("Cerere acceptată. Așteptăm plata chiriașului.");
     } catch (e) { toast.error("Eroare la acceptarea cererii"); console.error(e); }
     finally { setRespondingId(null); }
   };
