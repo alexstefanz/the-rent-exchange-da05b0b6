@@ -1,57 +1,36 @@
-## Obiectiv
-Permite adminilor să facă plăți de test reale (card 4242) prin Stripe în modul test, fără bani reali, marcând clar rezervarea ca „plată de test" în dashboard.
+# Fix: "email rate limit exceeded" la înregistrare
 
-## Cum va funcționa pentru admin
-1. În pagina de Checkout, dacă utilizatorul logat are rolul `admin`, apare un buton suplimentar discret: **„Plătește cu card de test (Admin)"** lângă butonul normal de plată.
-2. Butonul deschide o sesiune Stripe Checkout în **modul test** (folosind o cheie sk_test_ separată). Adminul folosește `4242 4242 4242 4242`, orice CVV, dată viitoare.
-3. La succes, rezervarea este marcată ca plătită + `is_test_payment = true`.
-4. În toate locurile unde apare rezervarea (Dashboard, Rezervări, Admin), apare o etichetă galbenă mică **„🧪 Card de test"** lângă status.
+## Diagnostic
 
-## Pași de implementare
+Eroarea **`429 over_email_send_rate_limit`** vine direct din serviciul implicit de email al Supabase Auth (limitat la ~3-4 emailuri/oră pentru întregul proiect — folosit doar pentru dev).
 
-### 1. Secret nou
-- Cer adminul să adauge `STRIPE_TEST_SECRET_KEY` (cheia `sk_test_...` din Stripe Dashboard → Developers → API keys → Test mode).
-- Cheia live existentă rămâne neatinsă.
+Verificări efectuate:
+- ✅ Domeniul `rentli.ro` este **verificat și activ** în Lovable Emails
+- ✅ Funcția `auth-email-hook` există în cod (`supabase/functions/auth-email-hook/index.ts`)
+- ❌ **Funcția `auth-email-hook` nu are niciun log** → Supabase Auth nu o apelează deloc
+- ❌ Hook-ul nu este activat la nivel de proiect, deci Supabase folosește serviciul default (rate-limited)
 
-### 2. Bază de date (migrație)
-- Adaugă coloană `is_test_payment BOOLEAN NOT NULL DEFAULT false` pe `rentals`.
-- Expune câmpul în RPC-urile `get_admin_rentals` și în query-urile de listare rezervări.
+Practic, deși ai templates branded, Supabase Auth nu le folosește pentru că hook-ul nu este înregistrat/activ. La fiecare signup folosește pipeline-ul lui implicit, care s-a saturat azi.
 
-### 3. Edge function nouă: `create-test-checkout-session`
-- Identică cu `create-checkout-session`, cu diferențele:
-  - Verifică explicit că `user.id` are rolul `admin` în `user_roles` (refuz altfel).
-  - Folosește `STRIPE_TEST_SECRET_KEY` în loc de `STRIPE_SECRET_KEY`.
-  - Sare peste verificarea KYC (test admin).
-  - Adaugă `metadata.is_test = "true"` în session și payment_intent.
-  - După creare session, setează `is_test_payment = true` pe rental.
-- `verify_jwt = true` (default) ca să citim user-ul.
+## Plan de remediere
 
-### 4. Verify/capture
-- `verify-stripe-payment` și `capture-rental-payment`: când rental.is_test_payment = true, folosesc `STRIPE_TEST_SECRET_KEY`. Altfel, cheia live (comportament actual).
-- Aceeași logică pentru `cancel-rental-by-renter` și orice flow care face refund.
+1. **Re-deploy `auth-email-hook`** — forțează re-înregistrarea la Supabase Auth ca să fie activat ca handler oficial de emailuri auth (signup confirmation, password reset, magic link, email change).
 
-### 5. Frontend — Checkout
-- În `Checkout.tsx`, detectez rolul admin (hook existent / `has_role`). Dacă e admin, afișez buton secundar cu icoană beaker: **„Card de test (admin)"**, care apelează noua edge function.
-- Toast informativ: „Mod test — nu se debitează bani reali. Folosește cardul 4242 4242 4242 4242."
+2. **Verificare după deploy:**
+   - Trimit un signup de test cu un email nou
+   - Verific în logs că `auth-email-hook` primește invocații (200 OK)
+   - Verific că emailul ajunge prin `noreply@rentli.ro` (nu prin Supabase default)
+   - Confirm că rate limit-ul dispare (Lovable Emails nu are limita asta)
 
-### 6. Badge „Card de test" în UI
-Apare oriunde se afișează status rezervare:
-- `src/components/dashboard/StatusBadge.tsx` (sau direct în card)
-- Dashboard renter (`RentalsPage`), owner (`RentalsOutPage`)
-- Admin: `AdminReservations`, `AdminDashboard` (Ultimele Rezervări)
-- Email/notificări: nemodificate (rămân normale)
-
-Stil badge: `bg-yellow-100 text-yellow-800 border-yellow-300`, text: „🧪 Test".
-
-### 7. Filtrare admin
-- În `AdminReservations`, adaug un filtru rapid „Doar test / Doar real / Toate" pentru a putea exclude testele din rapoarte.
-
-## Detalii tehnice
-- Fără webhook nou — folosim flow-ul existent verify+capture, doar cu cheia corespunzătoare.
-- Fără modificări la calcul comision sau payouts (testele nu generează payout, dar acest lucru poate fi prevenit în `process-rental-captures` filtrând `is_test_payment = false` la generarea `owner_payouts`).
-- Logăm fiecare folosire a butonului test în `user_activity_logs` cu acțiunea `admin_test_payment`.
+3. **Status follow-up automat** — Cloud → Emails reconciliază starea după deploy. Dacă activarea rămâne blocată după ~1 minut, raportez și tratez (ex: `setup_email_infra` pentru re-provision dacă lipsește vreo migrare).
 
 ## Out of scope
-- Nu adăugăm UI public pentru utilizatori non-admin.
-- Nu modificăm fluxul live de plată.
-- Nu schimbăm KYC-ul în producție.
+
+- Nu modificăm templates de email (sunt deja branded)
+- Nu schimbăm domeniul `rentli.ro` 
+- Nu atingem fluxul de checkout / Stripe Test Mode (separat)
+- Nu adăugăm rate limiting custom (politica internă)
+
+## Notă pentru cont blocat
+
+Contul `oana.ciuhureanu@primaconstruct.ro` a rămas în `auth.users` ca **neconfirmat** (signup-ul a creat user-ul dar emailul nu a plecat). După fix, cel mai simplu este să-l ștergi din admin (sau îl șterg eu) și Oana să încerce din nou — sau pot retrimite manual emailul de confirmare.
