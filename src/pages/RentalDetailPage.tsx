@@ -86,6 +86,9 @@ const RentalDetailPage = () => {
   const showHandoverPvEarly = isPaidEarly && stepEarly >= 3;
   const showReturnPvEarly = isPaidEarly && stepEarly >= 3;
   const handoverDoneEarly = !!(rental?.handover_pv_owner_signed_at && rental?.handover_pv_renter_signed_at);
+  const returnDoneEarly = !!(rental?.return_pv_owner_signed_at && rental?.return_pv_renter_signed_at);
+  const handoverIsCurrent = isPaidEarly && !handoverDoneEarly;
+  const returnIsCurrent = handoverDoneEarly && !returnDoneEarly;
 
   // Deep-link: ?pv=handover|return auto-opens dialog when allowed
   useEffect(() => {
@@ -275,6 +278,7 @@ const RentalDetailPage = () => {
                   onOpen={() => setPvOpen("handover")}
                   t={t}
                   notStarted={false}
+                  isCurrentStep={handoverIsCurrent}
                 />
               )}
               {showReturnPv && (
@@ -287,6 +291,7 @@ const RentalDetailPage = () => {
                   onOpen={() => setPvOpen("return")}
                   t={t}
                   notStarted={!handoverDoneEarly}
+                  isCurrentStep={returnIsCurrent}
                 />
               )}
             </div>
@@ -497,7 +502,7 @@ function PvRow({ label, ownerSignedAt, renterSignedAt, onOpen }: { label: string
 }
 
 function PvPanel({
-  label, phase, role, ownerSignedAt, renterSignedAt, onOpen, t, notStarted = false,
+  label, phase, role, ownerSignedAt, renterSignedAt, onOpen, t, notStarted = false, isCurrentStep = false,
 }: {
   label: string;
   phase: "handover" | "return";
@@ -507,6 +512,7 @@ function PvPanel({
   onOpen: () => void;
   t: (r: string, e: string) => string;
   notStarted?: boolean;
+  isCurrentStep?: boolean;
 }) {
   const ownerOk = !!ownerSignedAt;
   const renterOk = !!renterSignedAt;
@@ -528,11 +534,28 @@ function PvPanel({
     StatusIcon = Lock;
   }
   else if (isLocked) {
-    statusLabel = role === "owner"
-      ? t("Asteptam chiriasul", "Waiting for the renter")
-      : t("Asteptam proprietarul", "Waiting for the owner");
-    statusTone = "text-amber-700";
-    StatusIcon = Lock;
+    if (isCurrentStep) {
+      // Pasul curent dar e tura celeilalte parti — mesaj direcționat
+      if (phase === "handover") {
+        statusLabel = t(
+          "Proprietarul trebuie sa completeze si sa semneze PV Predare. Vei putea semna imediat dupa.",
+          "Owner must complete and sign the Handover PV first. You'll be able to sign right after.",
+        );
+      } else {
+        statusLabel = t(
+          "Chiriasul trebuie sa completeze si sa semneze PV Returnare. Vei putea semna imediat dupa.",
+          "Renter must complete and sign the Return PV first. You'll be able to sign right after.",
+        );
+      }
+      statusTone = "text-[#F98715] font-medium";
+      StatusIcon = Clock;
+    } else {
+      statusLabel = role === "owner"
+        ? t("Asteptam chiriasul", "Waiting for the renter")
+        : t("Asteptam proprietarul", "Waiting for the owner");
+      statusTone = "text-amber-700";
+      StatusIcon = Lock;
+    }
   } else if (mySigned && !otherSigned) {
     statusLabel = role === "owner"
       ? t("Ai semnat — asteptam chiriasul", "You signed — waiting for the renter")
@@ -541,13 +564,25 @@ function PvPanel({
     StatusIcon = CheckCircle2;
   }
 
+  const highlight = isCurrentStep && !both;
   return (
-    <div className="rounded-xl border border-border bg-background p-4 flex flex-col gap-3">
+    <div
+      className={
+        highlight
+          ? "rounded-xl border-2 border-primary bg-primary/5 ring-2 ring-primary/15 shadow-sm p-4 flex flex-col gap-3"
+          : "rounded-xl border border-border bg-background p-4 flex flex-col gap-3"
+      }
+    >
       <div className="flex items-start justify-between gap-3">
         <p className="font-semibold text-sm flex items-center gap-2">
           <FileSignature className="h-4 w-4 text-primary" />
           {label}
         </p>
+        {highlight && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 shrink-0">
+            {t("Pasul urmator", "Next step")}
+          </span>
+        )}
       </div>
       <div className={`flex items-center gap-2 text-xs ${statusTone}`}>
         <StatusIcon className="h-3.5 w-3.5" />
