@@ -1,41 +1,66 @@
-## Obiectiv
-Simplifică paginile `/rezervari` (chiriaș) și `/inchirieri` (proprietar) astfel încât să afișeze **doar carduri de produse într-un grid**. Click pe card → navighează la pagina detaliată a închirierii (`/rezervari/RNT-XXXXXX` sau `/inchirieri/RNT-XXXXXX`), unde rămân toate funcționalitățile actuale (timeline, plată, PV, chat, etc).
+## Imbunatatiri Proces Verbal & Timeline Returnare
 
-## Schimbări
+### 1. Dialog PV (`PvSignatureDialog.tsx`) — buton fotografii vizibil + galerie editabila
 
-### 1. `src/components/dashboard/RentalsTab.tsx` (chiriaș – `/rezervari`)
-Înlocuire completă a randării:
-- Elimină articolele mari cu `RentalTimeline`, `MainActionCard`, `SecondaryActionsMenu`, `Collapsible`, dialogurile de inspecție/dispute/review/early-return.
-- Păstrează `fetchMyRentals`, `useQuery`, `useRentalRealtime`, empty state.
-- Render: grid responsiv (`grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4`) cu carduri compacte.
+**Buton "Adauga fotografii":**
+- Inlocuieste link-ul subtil portocaliu cu un buton primary plin (variant `default`, marime `sm`), aliniat la dreapta, cu icon Camera. Devine actiunea evidenta a sectiunii.
+- Adauga sub el un mesaj scurt de hint: "Min. 2 foto. Recomandat: produs general, accesorii, eventuale defecte."
 
-Card (link `<Link to={/rezervari/${public_id}}>`):
-- Imagine produs (aspect-square, `object-cover`, `rounded-xl`)
-- Titlu produs (1 linie, `line-clamp-1`, `font-semibold`)
-- Sub-rând: perioadă scurtă (`d MMM – d MMM`)
-- `StatusBadge` în colțul imaginii (overlay top-right)
-- Preț total mic în footer card
-- Hover: `shadow-md`, scale subtle
+**Separare fotografii pe rol (owner / renter):**
+- Galeria se imparte in 2 sub-sectiuni clare:
+  - "Fotografii Proprietar (n)" — fundal subtil + badge
+  - "Fotografii Chirias (n)"  — fundal subtil + badge
+- Fiecare miniatura afiseaza un mic chip in colt cu rolul si data uploadului.
 
-Fallback dacă `public_id` lipsește: link către `/produs/{product_id}`.
+**Stergere & reincarcare (galerie editabila):**
+- Pe fiecare miniatura proprie (uploaded de tine), buton X (hover/tap) care sterge fotografia: scoate path-ul din BD si din storage. Nu poti sterge fotografiile celuilalt.
+- Stergerea/uploadul sunt permise atata timp cat **propria semnatura nu este aplicata inca** (`mySigned === false`). Dupa semnare, doar vizualizare.
+- Click pe miniatura -> lightbox fullscreen cu navigare stanga/dreapta intre toate fotografiile.
 
-### 2. `src/components/dashboard/RentalsOutTab.tsx` (proprietar – `/inchirieri`)
-- **Păstrează** secțiunea „Cereri de închiriere" (pending) cu butoanele Acceptă/Refuză și dialog de refuz – aceste cereri nu au încă o pagină de detaliu „închiriere activă" și acțiunea e critică.
-- **Păstrează** stats bar (Cereri noi / Active / Câștig luna).
-- **Înlocuiește** secțiunea „Închirieri active & istoric" cu același grid de carduri produse, fiecare link către `/inchirieri/{public_id}`.
-- Elimină din această secțiune: `RentalTimeline`, `MainActionCard`, `SecondaryActionsMenu`, `Collapsible` payment status, dialogurile (Inspection / Review / Accepted) – devin nefolosite și se șterg împreună cu state-urile asociate.
-- Handler-ele `handleConfirmHandover` / `handleConfirmReturn` se elimină (acțiunile rămân pe pagina de detaliu existentă).
+**Validare semnare:**
+- Conditia minim 2 foto se calculeaza pe **totalul ambelor sectiuni** (cum e si acum), nu per rol.
 
-### 3. Card reutilizabil
-Adaugă `src/components/dashboard/RentalProductCard.tsx`:
-- Props: `image`, `title`, `startDate`, `endDate`, `status`, `amount`, `amountLabel` (ex. „Total" / „Câștig"), `to` (URL).
-- Folosit de ambele tab-uri pentru consistență vizuală.
+### 2. Tracking per-uploader in baza de date
 
-## Comportament
-- Layout grid responsiv: 2 coloane mobile, 3 tablet, 4 desktop.
-- Click oriunde pe card → navigare către pagina de detaliu (deja existentă, cu toate acțiunile).
-- Pagina de detaliu (`RentalDetailPage`) rămâne nemodificată – este sursa unică pentru timeline, plată, PV, chat, dispute.
+Migrare noua:
+- Adauga coloana `photos_meta jsonb not null default '[]'::jsonb` pe `rental_pv_documents`. Format: `[{ "path": "...", "role": "owner"|"renter", "uploaded_at": "iso" }]`.
+- Backfill: pentru randuri existente, populez `photos_meta` din `photos` marcand toate ca `role = owner` (fallback rezonabil pentru istoricul scurt; alternativ atribuim dupa cine a semnat primul). 
+- Pastrez coloana `photos text[]` sincronizata (o derivam din `photos_meta`) pentru compatibilitate cu generarea PDF si alte locuri care o citesc.
+- Update RLS: existent ramane (acelasi rental_id, party access).
 
-## În afara scopului
-- Fără modificări la `RentalDetailPage`, edge functions, RLS, schema DB.
-- Fără modificări la fluxul de plată sau notificări.
+API (`rentalDetailPageApi.ts`):
+- `upsertPvPhotos` devine `addPvPhoto({ rentalId, phase, role, path })` si `removePvPhoto({ rentalId, phase, path })` — actualizeaza `photos_meta` si `photos` atomic.
+- Deletion sterge si fisierul din bucket-ul `rental-pvs`.
+
+### 3. Timeline (`RentalTimeline.tsx`) — pasii Returnare & Finalizat din PV
+
+Adaug in `RentalForTimeline`:
+- `return_pv_renter_signed?: boolean`
+- `return_pv_owner_signed?: boolean`
+
+Logica `getTimelineStep` actualizata (peste cea existenta):
+- Daca `return_pv_owner_signed` -> step 7 (Finalizat).
+- Daca `return_pv_renter_signed` -> step 6 (Returnare deblocat).
+- Restul cazurilor (return_initiated, handover, etc.) raman cum sunt.
+
+In `RentalDetailPage.tsx` populez aceste flag-uri din `rental.return_pv_owner_signed_at` / `rental.return_pv_renter_signed_at` in obiectul `tlRental`.
+
+### 4. Auto-finalizare la semnatura proprietarului (Returnare)
+
+Cand proprietarul semneaza PV-ul de returnare:
+- Trigger DB pe `rental_pv_documents` (after update, when `phase = 'return'` AND `owner_signed_at` becomes not null):
+  - Setez pe `rentals`: `return_confirmed_at = now()`, `status = 'completed'`, `completed_at = now()` (daca nu sunt deja).
+  - Pastrez logica existenta de capture/payout (declansata deja prin alte triggere/edge functions pe `return_confirmed_at`/`status='completed'` — verific si nu duplic).
+- Similar, pe semnarea renter-ului PV de returnare, setez `early_return_status = 'initiated'` daca nu e deja, ca step-ul 6 sa fie consistent si pentru clientii fara realtime.
+
+### Out of scope
+- Nu modific fluxul de plata, capture sau payout.
+- Nu schimb generarea PDF-ului (foloseste in continuare `photos`).
+- Nu ating PV de Predare logic — doar UI-ul (buton + separare + stergere) este partajat prin acelasi dialog.
+
+### Fisiere atinse
+- `src/components/rentals/PvSignatureDialog.tsx` (UI buton, sectiuni per rol, stergere, lightbox)
+- `src/features/rentals/rentalDetailPageApi.ts` (add/remove photo, types `PvDocument.photos_meta`)
+- `src/components/dashboard/RentalTimeline.tsx` (flags noi + reguli)
+- `src/pages/RentalDetailPage.tsx` (populez flag-urile noi)
+- Migrare noua: coloana `photos_meta` + trigger auto-finalizare returnare
