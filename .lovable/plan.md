@@ -1,19 +1,17 @@
-## Problemă
-În cardul cu calendar (`PremiumBookingCard.tsx`), ultima zi din intervalul selectat are o formă diferită (mai rotunjită) față de celelalte zile, din cauza claselor implicite `day_range_end` din `react-day-picker`.
+## Observație
 
-## Modificare
-Un singur fișier: **`src/components/product/PremiumBookingCard.tsx`**
+Am verificat fluxul pe `/produs/xbox-one-x`: după selectarea unei singure zile, cardul setează corect `Început = Sfârșit` și totalul pentru 1 zi. Problema observată este că utilizatorul logat pare să fie proprietarul produsului, iar `PremiumBookingCard` dezactivează/nu permite rezervarea când `isOwnProduct` este true. Din UI nu este clar de ce nu se poate continua.
 
-În componenta `<CalendarComponent>`, extind `classNames` ca să forțez același border-radius (10px) pe toate stările zilelor selectate:
+## Plan
 
-```ts
-classNames={{
-  day_selected: "!bg-[#FA8729] !text-white !rounded-[10px] !opacity-100",
-  day_range_start: "!rounded-[10px]",
-  day_range_end: "!rounded-[10px]",
-  day_range_middle: "!rounded-[10px] !bg-[#FA8729] !text-white",
-}}
-```
+1. **Clarific blocarea pentru propriul produs**
+   - În `PremiumBookingCard.tsx`, când produsul este al utilizatorului curent, afișez butonul ca stare dedicată, de tip „Nu poți rezerva propriul produs”, în loc să pară că rezervarea pe o singură zi nu funcționează.
+   - Butonul rămâne dezactivat doar în acest caz.
 
-## Rezultat
-Toate zilele selectate (start, mijloc, end) au identic colțuri rotunjite 10px.
+2. **Păstrez rezervarea pe o singură zi activă pentru ceilalți utilizatori**
+   - Dacă `startDate` și `endDate` sunt aceeași zi, butonul rămâne activ și textul rămâne „Rezervă acum”.
+   - Nu schimb calculul de preț sau logica de checkout, deoarece acestea deja calculează corect `rentalDays = 1`.
+
+3. **Verific după modificare**
+   - Testez vizual selectarea unei singure zile în card.
+   - Confirm că pentru produs propriu apare mesajul corect, iar pentru cazul normal butonul indică rezervarea activă.

@@ -116,10 +116,16 @@ const PremiumBookingCard = ({
           onClick={onReserve}
         >
           <CalendarCheck className="h-4 w-4 mr-2" />
-          {startDate && endDate ? t("Rezervă acum", "Reserve now") : t("Verifică datele", "Check dates")}
+          {isOwnProduct
+            ? t("Nu poți rezerva propriul anunț", "You can't book your own listing")
+            : startDate && endDate
+              ? t("Rezervă acum", "Reserve now")
+              : t("Verifică datele", "Check dates")}
         </Button>
         <p className="text-center text-xs text-muted-foreground pt-1">
-          {t("Nu se încasează nimic acum. Suma e blocată sigur.", "Nothing charged yet. Funds held safely.")}
+          {isOwnProduct
+            ? t("Acesta este anunțul tău.", "This is your own listing.")
+            : t("Nu se încasează nimic acum. Suma e blocată sigur.", "Nothing charged yet. Funds held safely.")}
         </p>
       </div>
     </div>
