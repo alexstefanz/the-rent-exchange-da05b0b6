@@ -2585,6 +2585,54 @@ export type Database = {
           subtotal: number
         }[]
       }
+      get_rental_full_detail: {
+        Args: { _public_id: string }
+        Returns: {
+          cancelled_at: string
+          completed_at: string
+          created_at: string
+          daily_price: number
+          dispute_status: string
+          early_return_status: string
+          end_date: string
+          handover_confirmed_at: string
+          handover_pv_generated_at: string
+          handover_pv_owner_signed_at: string
+          handover_pv_renter_signed_at: string
+          id: string
+          is_test_payment: boolean
+          owner_email: string
+          owner_id: string
+          owner_name: string
+          owner_payout: number
+          owner_phone: string
+          payment_status: string
+          pickup_location: string
+          pickup_time: string
+          platform_fee: number
+          product_category: string
+          product_deposit_value: number
+          product_id: string
+          product_image: string
+          product_included_items: string[]
+          product_location_city: string
+          product_title: string
+          public_id: string
+          rejection_reason: string
+          rental_days: number
+          renter_email: string
+          renter_id: string
+          renter_name: string
+          renter_phone: string
+          return_confirmed_at: string
+          return_pv_generated_at: string
+          return_pv_owner_signed_at: string
+          return_pv_renter_signed_at: string
+          start_date: string
+          status: string
+          subtotal: number
+        }[]
+      }
       get_rental_pv_signed_url: {
         Args: { _phase: string; _rental_id: string }
         Returns: string
