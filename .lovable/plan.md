@@ -1,43 +1,58 @@
-## Real-time pentru pașii unei închirieri
+## Banii rămân "Blocat" după finalizare — cauza & fix
 
-### Cauza identificată
+### Diagnostic
 
-Pagina `RentalDetailPage.tsx` este deja abonată corect via `supabase.channel(...)` la modificări pe tabelele `rentals` și `rental_pv_documents`. Problema e la nivel de bază de date: aceste tabele **nu sunt incluse în publication-ul `supabase_realtime`**, așa că Postgres nu trimite evenimentele. Doar `rental_inspections` e inclus.
+**RNT-000061**: `status=completed`, `payment_status=authorized`, `completed_at` setat, dar `captured_at=null`. Plata Stripe **nu a fost capturată** — de aceea `useEarnings` o clasifică drept `held` (Blocat).
 
-Verificat:
-```
-SELECT tablename FROM pg_publication_tables WHERE pubname='supabase_realtime';
-→ doar rental_inspections
-```
+**RNT-000045**: `status=early_return_requested` — încă așteaptă decizia proprietarului asupra cererii de returnare anticipată. Comportament corect, nu e bug. Va deveni "Disponibil" când e finalizată.
 
-### Fix (migrație SQL)
+**Cauza tehnică**: Trigger-ul DB `tg_pv_return_progress` (pe `rental_pv_documents`) marchează automat închirierea drept `completed` când proprietarul semnează PV Returnare — **dar nu apelează funcția de captură Stripe**. Singurele locuri care capturează sunt:
+- butonul manual `confirmReturn` (necules de fluxul actual bazat pe PV trigger)
+- cron-ul `process-rental-captures` (filtrează `end_date <= today`, deci nu prinde închirierile finalizate înainte de termen)
 
-Adaug în publication tabelele lipsă și setez `REPLICA IDENTITY FULL` pe ele (necesar ca payload-ul UPDATE să conțină valorile vechi/noi pentru filtrele RLS):
+### Fix
+
+#### 1. Trigger DB nou — auto-capture la trecerea în `completed`
+
+Adaug un trigger `AFTER UPDATE ON public.rentals` care, când `status` trece în `'completed'` și `payment_status='authorized'` și `payment_intent_id IS NOT NULL`, apelează prin `pg_net.http_post` funcția edge `capture-rental-payment` cu `{ rental_id }`. Edge function-ul deja acceptă apeluri cu anon key (path-ul folosit de cron) — așa că autentificarea e rezolvată.
 
 ```sql
-ALTER TABLE public.rentals REPLICA IDENTITY FULL;
-ALTER TABLE public.rental_pv_documents REPLICA IDENTITY FULL;
+CREATE OR REPLACE FUNCTION public.tg_rental_auto_capture()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF NEW.status = 'completed'
+     AND OLD.status IS DISTINCT FROM NEW.status
+     AND NEW.payment_status = 'authorized'
+     AND NEW.payment_intent_id IS NOT NULL THEN
+    PERFORM net.http_post(
+      url := '<SUPABASE_URL>/functions/v1/capture-rental-payment',
+      headers := jsonb_build_object(
+        'Content-Type','application/json',
+        'Authorization','Bearer <ANON_KEY>'
+      ),
+      body := jsonb_build_object('rental_id', NEW.id)
+    );
+  END IF;
+  RETURN NEW;
+END $$;
 
-ALTER PUBLICATION supabase_realtime ADD TABLE public.rentals;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.rental_pv_documents;
+CREATE TRIGGER trg_rental_auto_capture
+AFTER UPDATE ON public.rentals
+FOR EACH ROW EXECUTE FUNCTION public.tg_rental_auto_capture();
 ```
 
-### Hardening minor în UI (opțional, în același pas)
+(URL și anon key sunt setate ca settings în BD sau hardcodate — folosesc valorile reale ale proiectului în migrație.)
 
-În `RentalDetailPage.tsx`, extind subscription-ul existent pentru a invalida și pe evenimente din `rental_inspections` filtrate pe `rental_id` — asta acoperă și cazul când un PV este completat printr-un flux de inspecție:
+#### 2. Backfill RNT-000061
 
-```ts
-.on("postgres_changes",
-  { event: "*", schema: "public", table: "rental_inspections", filter: `rental_id=eq.${rental.id}` },
-  () => queryClient.invalidateQueries({ queryKey: ["rental-detail", publicId] }),
-)
-```
+După instalarea trigger-ului, apelez manual `capture-rental-payment` cu `rental_id` corespunzător pentru a captura plata blocată acum și a o muta în "Disponibil".
 
-### Rezultat
+#### 3. (Eventual) același trigger acoperă și viitor
 
-După migrație, când chiriașul semnează PV Returnare, cardul "PV Returnare" pentru proprietar se deblochează automat fără refresh, iar timeline-ul (Cerere → Confirmat → Plată → Semnături → Predat → Returnare → Finalizat) avansează live pentru ambele părți.
+Orice cale prin care `status` ajunge `completed` (PV trigger, buton manual, decizie early-return acceptată, acțiune admin) va declanșa captura automat, fără a depinde de cron sau de UI.
 
 ### Out of scope
 
-- Niciun refactor de hook-uri sau extragere de logică.
-- Nu modific RLS, edge functions sau email-urile.
+- Nu modific RLS, fluxul de PV semnare, sau logica `useEarnings`.
+- RNT-000045 nu necesită intervenție — utilizatorul trebuie doar să accepte/respingă cererea de early-return.
+- Cron-ul existent `process-rental-captures` rămâne ca fallback pentru închirierile care ajung la `end_date` fără semnare PV.
