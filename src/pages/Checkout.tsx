@@ -205,7 +205,7 @@ const Checkout = () => {
                     onClick={handleContinueToPayment}
                     className="h-12 px-6 shadow-lg shadow-primary/20"
                   >
-                    {t("Continuă către plată", "Continue to payment")}
+                    {t("Continuă", "Continue")}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
