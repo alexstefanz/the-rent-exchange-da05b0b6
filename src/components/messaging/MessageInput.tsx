@@ -108,7 +108,10 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
   };
 
   return (
-    <div className="border-t bg-background/95 backdrop-blur-sm">
+    <div
+      className="border-t bg-background/95 backdrop-blur-sm shrink-0"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       {pending.length > 0 && (
         <div className="flex gap-2 px-4 pt-3 overflow-x-auto">
           {pending.map((p, i) => (
