@@ -23,12 +23,13 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.replace("Bearer ", "") || "";
     
-    // Check if it's anon key (cron) or user token
+    // Check if it's anon key (cron) or service role (DB trigger) or user token
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     let isAuthorized = false;
-    
-    if (token === anonKey) {
-      // Called from cron via pg_net — authorized
+
+    if (token && (token === anonKey || token === serviceKey)) {
+      // Called from cron or DB trigger via pg_net — authorized
       isAuthorized = true;
     } else if (token) {
       const supabase = createClient(Deno.env.get("SUPABASE_URL")!, anonKey);
