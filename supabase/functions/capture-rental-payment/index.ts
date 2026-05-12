@@ -48,10 +48,6 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { rental_id } = body;
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
-      apiVersion: "2025-08-27.basil",
-    });
-
     // Third authorization path: owner of the specific rental
     if (!isAuthorized && token && rental_id) {
       const supabase = createClient(Deno.env.get("SUPABASE_URL")!, anonKey);
@@ -77,7 +73,7 @@ serve(async (req) => {
 
     // If a specific rental_id is provided, capture just that one
     if (rental_id) {
-      const result = await captureRental(supabaseAdmin, stripe, rental_id);
+      const result = await captureRental(supabaseAdmin, rental_id);
       return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: result.error ? 400 : 200,
@@ -89,7 +85,7 @@ serve(async (req) => {
     
     const { data: rentals, error: fetchError } = await supabaseAdmin
       .from("rentals")
-      .select("id, payment_intent_id, end_date, owner_id, owner_payout, subtotal, platform_fee, product_id")
+      .select("id, payment_intent_id, end_date, owner_id, owner_payout, subtotal, platform_fee, product_id, is_test_payment")
       .eq("payment_status", "authorized")
       .lte("end_date", today)
       .not("payment_intent_id", "is", null);
@@ -107,7 +103,7 @@ serve(async (req) => {
     const results = [];
     for (const rental of (rentals || [])) {
       try {
-        const result = await captureRental(supabaseAdmin, stripe, rental.id, rental);
+        const result = await captureRental(supabaseAdmin, rental.id, rental);
         results.push(result);
       } catch (e) {
         console.error(`Error capturing rental ${rental.id}:`, e);
@@ -130,7 +126,6 @@ serve(async (req) => {
 
 async function captureRental(
   supabaseAdmin: ReturnType<typeof createClient>,
-  stripe: Stripe,
   rentalId: string,
   preloadedRental?: Record<string, unknown>,
 ) {
@@ -139,7 +134,7 @@ async function captureRental(
   if (!rental) {
     const { data, error } = await supabaseAdmin
       .from("rentals")
-      .select("id, payment_intent_id, end_date, owner_id, owner_payout, subtotal, platform_fee, product_id")
+      .select("id, payment_intent_id, end_date, owner_id, owner_payout, subtotal, platform_fee, product_id, is_test_payment")
       .eq("id", rentalId)
       .single();
     if (error || !data) return { rental_id: rentalId, error: "Rental not found" };
@@ -149,6 +144,15 @@ async function captureRental(
   if (!rental.payment_intent_id) {
     return { rental_id: rentalId, error: "No payment_intent_id" };
   }
+
+  const isTest = !!rental.is_test_payment;
+  const stripeKey = isTest
+    ? Deno.env.get("STRIPE_TEST_SECRET_KEY")
+    : Deno.env.get("STRIPE_SECRET_KEY");
+  if (!stripeKey) {
+    return { rental_id: rentalId, error: isTest ? "STRIPE_TEST_SECRET_KEY missing" : "STRIPE_SECRET_KEY missing" };
+  }
+  const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
   // Capture the payment intent
   try {
@@ -177,6 +181,13 @@ async function captureRental(
       paid_at: now,
     })
     .eq("id", rentalId);
+
+  // Skip transactions/payouts/emails for TEST payments — they would pollute
+  // the owner's real balance and trigger real notifications.
+  if (isTest) {
+    console.log(`[capture-rental-payment] TEST rental ${rentalId} captured — skipping transactions and payout email`);
+    return { rental_id: rentalId, success: true, captured_at: now, is_test: true };
+  }
 
   // Create transaction records
   // Platform fee transaction
