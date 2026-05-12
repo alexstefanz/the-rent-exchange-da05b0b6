@@ -9,7 +9,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { computeCancellation, freeCancellationDeadline, limitedCancellationDeadline } from "@/lib/cancellationPolicy";
+import { computeCancellation, freeCancellationDeadline } from "@/lib/cancellationPolicy";
 
 interface Props {
   startDate: string;
@@ -29,12 +29,6 @@ const TIER_STYLES = {
     bg: "bg-emerald-50 border-emerald-200",
     text: "text-emerald-900",
     iconColor: "text-emerald-600",
-  },
-  FIRST_DAY_FORFEIT: {
-    icon: AlertTriangle,
-    bg: "bg-amber-50 border-amber-200",
-    text: "text-amber-900",
-    iconColor: "text-amber-600",
   },
   LIMITED: {
     icon: AlertOctagon,
@@ -70,7 +64,6 @@ const CancellationStateCard = ({
   const Icon = style.icon;
 
   const freeDeadline = freeCancellationDeadline(startDate);
-  const limitedDeadline = limitedCancellationDeadline(startDate);
   const fmt = (d: Date) => format(d, "d MMM yyyy, HH:mm", { locale });
 
   let title = "";
@@ -80,12 +73,6 @@ const CancellationStateCard = ({
     description = t(
       `Poți anula gratuit până la ${fmt(freeDeadline)}. Vei primi ${outcome.refundAmount} RON înapoi.`,
       `You can cancel for free until ${fmt(freeDeadline)}. You'll receive ${outcome.refundAmount} RON back.`,
-    );
-  } else if (outcome.tier === "FIRST_DAY_FORFEIT") {
-    title = t("Prima zi devine nerambursabilă", "First day becomes non-refundable");
-    description = t(
-      `Anulând acum, prima zi (${outcome.ownerCompensation} RON) merge la proprietar. Vei primi ${outcome.refundAmount} RON înapoi din ${subtotal} RON.`,
-      `If you cancel now, the first day (${outcome.ownerCompensation} RON) goes to the owner. You'll receive ${outcome.refundAmount} RON back of ${subtotal} RON.`,
     );
   } else if (outcome.tier === "LIMITED") {
     title = t("Refund limitat", "Limited refund");
@@ -112,12 +99,6 @@ const CancellationStateCard = ({
         <div className="flex-1 min-w-0">
           <p className={`font-semibold text-sm ${style.text}`}>{title}</p>
           <p className={`mt-1 text-xs leading-relaxed ${style.text} opacity-90`}>{description}</p>
-          {outcome.tier === "FIRST_DAY_FORFEIT" && (
-            <p className="mt-1 text-[11px] text-amber-700">
-              {t(`Refund limitat începe ${fmt(limitedDeadline)}`, `Limited refund starts ${fmt(limitedDeadline)}`)}
-            </p>
-          )}
-
           {showAction && (
             <div className="mt-3">
               <AlertDialog onOpenChange={(open) => !open && setAccepted(false)}>
