@@ -131,7 +131,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "return_in_progress",
     inAppTitle: { ro: "Returnare în curs", en: "Return in progress" },
     inAppDesc: (c) => ({ ro: `Completează PV-ul de returnare pentru "${c.product?.title}"`, en: `Complete return PV for "${c.product?.title}"` }),
-    link: (c) => `/rezervari/${c.rental.public_id}?pv=handover`,
+    link: (c) => `/rezervari/${c.rental.public_id}?pv=return`,
     smsPurpose: "pv_return",
   },
   pv_return_pending: {
@@ -140,7 +140,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "pv_pending",
     inAppTitle: { ro: "PV de returnare necesar", en: "Return PV required" },
     inAppDesc: (c) => ({ ro: `Completează PV-ul de returnare pentru "${c.product?.title}"`, en: `Complete return PV for "${c.product?.title}"` }),
-    link: (c) => `/rezervari/${c.rental.public_id}?pv=handover`,
+    link: (c) => `/rezervari/${c.rental.public_id}?pv=return`,
     smsPurpose: "pv_return",
   },
   pv_return_completed_by_party: {
@@ -149,7 +149,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "pv_other_done",
     inAppTitle: { ro: "PV de returnare completat parțial", en: "Return PV partially complete" },
     inAppDesc: (c) => ({ ro: `${c.extra.actorName ?? "Cealaltă parte"} a completat PV-ul de returnare`, en: `${c.extra.actorName ?? "The other party"} completed the return PV` }),
-    link: (c) => `/rezervari/${c.rental.public_id}?pv=handover`,
+    link: (c) => `/rezervari/${c.rental.public_id}?pv=return`,
     smsPurpose: "pv_return",
   },
   rental_completed: {
