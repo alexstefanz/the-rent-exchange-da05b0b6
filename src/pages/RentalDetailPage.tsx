@@ -453,7 +453,7 @@ const RentalDetailPage = () => {
                 initiatorName={rental.cancel_request_initiator === rental.owner_id ? rental.owner_name : rental.renter_name}
                 counterpartyName={isOwner ? rental.renter_name : rental.owner_name}
                 currentUserId={user.id}
-                onChanged={() => refetch()}
+                onChanged={async () => { await refetch(); }}
               />
             )}
           </div>
