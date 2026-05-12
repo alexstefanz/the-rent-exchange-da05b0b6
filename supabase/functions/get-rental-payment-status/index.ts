@@ -108,7 +108,10 @@ serve(async (req) => {
 
     if (rental.payment_intent_id) {
       try {
-        const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+        const stripeKey = rental.is_test_payment
+          ? (Deno.env.get("STRIPE_TEST_SECRET_KEY") || "")
+          : (Deno.env.get("STRIPE_SECRET_KEY") || "");
+        const stripe = new Stripe(stripeKey, {
           apiVersion: "2025-08-27.basil",
         });
         const pi = await stripe.paymentIntents.retrieve(rental.payment_intent_id, {
