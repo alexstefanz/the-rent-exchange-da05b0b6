@@ -5,7 +5,7 @@ const PaymentTrustStrip = () => {
   const { t } = useLanguage();
   const items = [
     { icon: Lock, title: t("Plată securizată Stripe", "Secure Stripe payment"), desc: t("Criptare bancară end-to-end", "End-to-end bank encryption") },
-    { icon: Wallet, title: t("Bani eliberați după predare", "Funds released after handover"), desc: t("Sumă ținută în escrow", "Amount held in escrow") },
+    { icon: Wallet, title: t("Bani eliberați după predare", "Funds released after handover"), desc: t("Suma este ținută în custodie", "Amount held in escrow") },
     { icon: FileCheck2, title: t("Proces verbal digital", "Digital handover report"), desc: t("Inclus la fiecare închiriere", "Included with every rental") },
   ];
   return (
