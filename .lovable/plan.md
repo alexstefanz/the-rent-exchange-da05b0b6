@@ -1,28 +1,49 @@
-## Ce se schimbă
+## Problema
 
-Cardul galben „Mod admin — testare" cu butonul „Plătește cu card de test (4242)" e momentan pe `/checkout`, la pasul de trimitere a cererii. La acel pas însă nu se face nicio plată reală — cererea doar se trimite proprietarului. Plata propriu-zisă apare în `RentalDetailPage`, după ce proprietarul acceptă (cardul „Proprietarul a acceptat cererea" cu butonul „Plătește X RON"). Acolo trebuie mutat și cardul de test.
+Erorile „Prea multe încercări" la signup și reset parolă (vezi screenshots) provin de la limita SMTP internă a Lovable Cloud / Supabase:
 
-## Modificări
+```
+error_code: over_email_send_rate_limit
+status: 429
+path: /signup și /recover
+```
 
-**1. `src/pages/Checkout.tsx`**
-- Șterg blocul `{isAdmin && (...)}` cu cardul galben de testare (liniile ~264–287).
-- Șterg handler-ul `handleStripeTestCheckout` și import-ul `createRentalWithStripeTestCheckout` care nu mai sunt folosite.
-- Curăț import-urile rămase neutilizate (`FlaskConical`, `useIsAdmin` dacă nu mai e folosit altundeva în fișier).
+Limita serverului SMTP intern al Supabase este de **~2-4 emailuri / oră / proiect** (partajată între toți userii). Pe Rentli, cu volumul actual de signup-uri și reseturi, aceasta este atinsă constant.
 
-**2. `src/pages/RentalDetailPage.tsx`**
-- Adaug `useIsAdmin` pentru utilizatorul curent.
-- În secțiunea `needsPayment` (cardul „Proprietarul a acceptat cererea"), adaug sub butonul „Plătește X RON" un sub-card galben identic vizual cu cel actual din checkout, vizibil doar dacă `isAdmin` e true.
-- Butonul de test apelează edge function-ul existent `create-test-checkout-session` direct cu `rental.id` (rental-ul există deja, nu se mai creează unul nou) și redirectează la URL-ul Stripe returnat. Marchez `is_test_payment` rămâne setat de edge function ca până acum.
-- Afișez aceeași notă „Nu se debitează bani reali. Rezervarea va fi marcată „Test"...".
+În plus, Supabase aplică:
+- ~1 reset / 60 sec per email pe `/recover`
+- Blocare la signup repetat al aceluiași email
 
-## Detalii tehnice
+## Soluția
 
-- Funcția `createRentalWithStripeTestCheckout` din `rentalsApi.ts` creează un rental nou + sesiune. În noul flux rental-ul există deja, deci în `RentalDetailPage` voi invoca direct `supabase.functions.invoke("create-test-checkout-session", { body: { rental_id: rental.id } })`, păstrând fallback-ul de eroare.
-- Butonul de test e ascuns dacă `rental.payment_status` nu mai e `pending` (folosim deja flag-ul `needsPayment`, deci e suficient să fie sub el).
-- Nu schimb edge function-ul `create-test-checkout-session` — semnătura cu `rental_id` rămâne aceeași.
+Mutăm trimiterea emailurilor de auth de pe SMTP-ul intern Supabase pe **Resend**, prin domeniul deja verificat `rentli.ro`. Proiectul folosește deja Resend pentru emailurile tranzacționale (`send-transactional-email`, `send-password-changed-notification` etc.), deci infrastructura există.
+
+Concret, vom configura un **auth email hook** — o edge function (`auth-email-hook`) pe care Supabase o apelează în loc să trimită singur emailul. Funcția randează template-ul brandat și îl trimite prin Resend.
+
+## Pași de implementare
+
+1. **Scaffold template-uri auth email** — generează:
+   - `supabase/functions/auth-email-hook/index.ts` (hook-ul Supabase)
+   - `supabase/functions/_shared/email-templates/*.tsx` (6 template-uri React Email: signup, magic-link, recovery, invite, email-change, reauthentication)
+
+2. **Brand template-urile** — culorile Rentli (#F59E0B, #FCFAF8), font Plus Jakarta Sans, body alb, layout consistent cu emailurile tranzacționale existente.
+
+3. **Deploy `auth-email-hook`** — devine activ automat după verificare DNS (deja făcută pentru `rentli.ro`).
+
+4. **Verificare** — test signup + reset parolă din UI; verificare că emailurile vin de la `noreply@rentli.ro` și nu mai apare 429 în logs.
 
 ## Ce NU se schimbă
 
-- Logica de plată reală (`payForConfirmedRental`).
-- Edge functions Stripe.
-- Fluxul cererii pentru utilizatori non-admin.
+- UI-ul (LoginDialog, Auth.tsx, mesajele de eroare existente)
+- Logica de signup/signIn din `AuthContext.tsx`
+- Emailurile tranzacționale existente (rentals, notifications, etc.) — funcționează deja perfect prin Resend
+- Rate-limit-ul per-cont (1 reset/60s) rămâne — e o protecție anti-abuz utilă
+
+## Limite noi (după implementare)
+
+- Resend free: 100 emailuri/zi, 3000/lună
+- Resend pro ($20/lună): 50.000/lună, 10/sec — recomandat pentru producție Rentli
+
+## Observație despre erori UI
+
+Mesajul al treilea („Eroare — Nu s-a putut trimite cererea") este probabil o eroare generică pentru același 429. După fix va dispărea natural; dacă vrei, ulterior pot îmbunătăți mesajul să spună explicit „Așteaptă X minute" în loc de generic.
