@@ -401,23 +401,13 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
               tone="success"
               onClick={() => handleNav("/castiguri")}
             />
-            {urgentActions > 0 ? (
-              <StatusCard
-                icon={AlertTriangle}
-                label={t("acțiuni urgente", "urgent actions")}
-                value={urgentActions}
-                highlight
-                tone="warning"
-                onClick={() => handleNav("/inchirieri")}
-              />
-            ) : (
-              <StatusCard
-                icon={Package}
-                label={t("anunțurile mele", "my listings")}
-                value={t("Vezi", "View")}
-                onClick={() => handleNav("/owner")}
-              />
-            )}
+            <StatusCard
+              icon={Package}
+              label={t("închirieri active", "active rentals")}
+              value={signals?.activeRentalsAsOwner || 0}
+              highlight={(signals?.activeRentalsAsOwner || 0) > 0}
+              onClick={() => handleNav("/inchirieri")}
+            />
           </>
         )}
       </div>
