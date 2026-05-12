@@ -15,6 +15,7 @@ import StatusBadge from "@/components/dashboard/StatusBadge";
 import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
 import { getRentalFullDetail } from "@/features/rentals/rentalDetailPageApi";
 import PvSignatureDialog from "@/components/rentals/PvSignatureDialog";
+import ReturnCountdownBadge from "@/components/rentals/ReturnCountdownBadge";
 import LeaveReviewDialog from "@/components/dashboard/LeaveReviewDialog";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import { payForConfirmedRental } from "@/features/rentals/rentalsApi";
@@ -192,8 +193,15 @@ const RentalDetailPage = () => {
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mt-1">
               {t("Inchiriere", "Rental")} — {rental.product_title}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {format(new Date(rental.start_date), "d MMM yyyy", { locale: roLocale })} – {format(new Date(rental.end_date), "d MMM yyyy", { locale: roLocale })} · {rental.rental_days} {t("zile", "days")}
+            <p className="text-sm text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span>
+                {format(new Date(rental.start_date), "d MMM yyyy", { locale: roLocale })} – {format(new Date(rental.end_date), "d MMM yyyy", { locale: roLocale })} · {rental.rental_days} {t("zile", "days")}
+              </span>
+              <ReturnCountdownBadge
+                startDate={rental.start_date}
+                endDate={rental.end_date}
+                hidden={returnDoneEarly || rental.status === "completed" || rental.status === "cancelled"}
+              />
             </p>
           </div>
           <div className="flex flex-col items-end gap-2">
