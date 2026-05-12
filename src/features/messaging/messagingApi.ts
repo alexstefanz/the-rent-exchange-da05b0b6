@@ -29,11 +29,12 @@ export interface Conversation {
 export interface Message {
   id: string;
   conversation_id: string;
-  sender_id: string;
+  sender_id: string | null;
   content: string;
   is_read: boolean;
   created_at: string;
   attachments?: AttachmentRow[];
+  message_type?: 'user' | 'system';
 }
 
 export async function getOrCreateConversation(productId: string, ownerId: string): Promise<Conversation | null> {
