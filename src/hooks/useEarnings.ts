@@ -12,6 +12,7 @@ export interface EarningsTransaction {
   productImage: string | null;
   renterId: string | null;
   renterName: string | null;
+  renterAvatar: string | null;
   startDate: string | null;
   endDate: string | null;
   subtotal: number;
@@ -118,6 +119,18 @@ export const useEarnings = () => {
         ["authorized", "paid", "captured"].includes(r.payment_status)
       );
 
+      const renterIds = [...new Set((list as any[]).map((r) => r.renter_id).filter(Boolean))];
+      const renterMap = new Map<string, { name: string | null; avatar: string | null }>();
+      if (renterIds.length > 0) {
+        const { data: renters } = await supabase
+          .from("profiles")
+          .select("id, full_name, avatar_url")
+          .in("id", renterIds);
+        (renters || []).forEach((p: any) =>
+          renterMap.set(p.id, { name: p.full_name || null, avatar: p.avatar_url || null })
+        );
+      }
+
       const now = new Date();
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       let totalAllTime = 0;
@@ -133,6 +146,7 @@ export const useEarnings = () => {
 
         let status: TxStatus = "pending";
         if (r.status === "cancelled") status = "cancelled";
+        else if (r.status === "completed") status = "available";
         else if (r.payment_status === "captured" || r.payment_status === "paid") status = "available";
         else if (r.payment_status === "authorized") status = "held";
 
@@ -143,7 +157,8 @@ export const useEarnings = () => {
           productTitle: r.products?.title || "Produs",
           productImage: r.products?.images?.[0] || null,
           renterId: r.renter_id,
-          renterName: null,
+          renterName: renterMap.get(r.renter_id)?.name ?? null,
+          renterAvatar: renterMap.get(r.renter_id)?.avatar ?? null,
           startDate: r.start_date,
           endDate: r.end_date,
           subtotal: Number(r.subtotal) || 0,
