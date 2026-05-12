@@ -44,13 +44,30 @@ export interface RentalFullDetail {
   return_pv_generated_at: string | null;
   return_pv_owner_signed_at: string | null;
   return_pv_renter_signed_at: string | null;
+  cancel_request_status?: string | null;
+  cancel_request_initiator?: string | null;
+  cancel_request_reason?: string | null;
+  cancel_request_created_at?: string | null;
+  cancel_request_responded_at?: string | null;
+  cancel_request_response_note?: string | null;
 }
 
 export async function getRentalFullDetail(publicId: string): Promise<RentalFullDetail | null> {
   const { data, error } = await supabase.rpc("get_rental_full_detail", { _public_id: publicId });
   if (error) throw error;
   const row = (data as any[])?.[0];
-  return row ? (row as RentalFullDetail) : null;
+  if (!row) return null;
+  // Augment with cancel_request_* fields (not part of the RPC payload)
+  try {
+    const { data: c } = await supabase
+      .from("rentals")
+      .select("cancel_request_status, cancel_request_initiator, cancel_request_reason, cancel_request_created_at, cancel_request_responded_at, cancel_request_response_note")
+      .eq("id", (row as any).id)
+      .maybeSingle();
+    return { ...(row as RentalFullDetail), ...(c || {}) } as RentalFullDetail;
+  } catch {
+    return row as RentalFullDetail;
+  }
 }
 
 export interface PvDocument {

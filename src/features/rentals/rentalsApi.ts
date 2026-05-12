@@ -135,6 +135,47 @@ export async function payForConfirmedRental(rentalId: string): Promise<string> {
   return data.url;
 }
 
+/** Mutual cancellation: either party initiates a request with a reason. */
+export async function requestMutualCancellation(rentalId: string, reason: string) {
+  const { data, error } = await supabase.rpc("request_mutual_cancellation", {
+    _rental_id: rentalId,
+    _reason: reason,
+  });
+  if (error) throw error;
+  // Notify the other party (best-effort)
+  supabase.functions.invoke("notify-rental-event", {
+    body: { rental_id: rentalId, event_key: "mutual_cancel_requested" },
+  }).catch((e) => console.warn("notify mutual_cancel_requested failed", e));
+  return data;
+}
+
+/** Mutual cancellation: respond to a pending request (approve / reject / withdraw). */
+export async function respondMutualCancellation(
+  rentalId: string,
+  action: "approve" | "reject" | "withdraw",
+  note?: string,
+) {
+  const { data, error } = await supabase.rpc("respond_mutual_cancellation", {
+    _rental_id: rentalId,
+    _action: action,
+    _note: note ?? null,
+  });
+  if (error) throw error;
+  if (action === "approve") {
+    const { data: fnData, error: fnErr } = await supabase.functions.invoke("mutual-cancel-rental", {
+      body: { rental_id: rentalId },
+    });
+    if (fnErr) throw fnErr;
+    if ((fnData as any)?.error) throw new Error((fnData as any).error);
+  } else {
+    // Notify initiator on reject/withdraw (best-effort)
+    supabase.functions.invoke("notify-rental-event", {
+      body: { rental_id: rentalId, event_key: action === "reject" ? "mutual_cancel_rejected" : "mutual_cancel_withdrawn" },
+    }).catch(() => { /* noop */ });
+  }
+  return data;
+}
+
 /**
  * Creates a rental and then initiates a Stripe Checkout session.
  * Returns the Stripe Checkout URL for redirect.
