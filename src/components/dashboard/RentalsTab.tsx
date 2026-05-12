@@ -109,7 +109,7 @@ const RentalsTab = () => {
       queryClient.invalidateQueries({ queryKey: ["my-rentals"] });
       const tier = data?.tier;
       if (tier === "FREE") toast.success(copy.dashboard.cancelFullRefundSuccess);
-      else if (tier === "FIRST_DAY_FORFEIT" || tier === "LIMITED")
+      else if (tier === "LIMITED")
         toast.success(`${copy.dashboard.cancelPartialRefundSuccess} (${data?.refunded_amount ?? 0} RON)`);
       else toast.success(copy.dashboard.cancelNoRefundSuccess);
     },
