@@ -310,7 +310,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Inchide</Button>
-          {!mySigned && (
+          {!mySigned && isMyTurn && (
             <Button onClick={handleSign} disabled={!canSign || signing}>
               {signing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileSignature className="h-4 w-4 mr-2" />}
               Semneaza
