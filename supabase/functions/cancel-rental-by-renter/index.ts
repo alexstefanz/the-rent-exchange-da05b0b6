@@ -39,7 +39,8 @@ serve(async (req) => {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const STRIPE_KEY = Deno.env.get("STRIPE_SECRET_KEY")!;
+    const STRIPE_LIVE_KEY = Deno.env.get("STRIPE_SECRET_KEY")!;
+    const STRIPE_TEST_KEY = Deno.env.get("STRIPE_TEST_SECRET_KEY") || "";
 
     // Auth
     const authHeader = req.headers.get("Authorization") || "";
@@ -78,12 +79,11 @@ serve(async (req) => {
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
-    const stripe = new Stripe(STRIPE_KEY, { apiVersion: "2025-08-27.basil" });
 
     // Load rental + product
     const { data: rental, error: rErr } = await admin
       .from("rentals")
-      .select("id, renter_id, owner_id, product_id, status, payment_status, payment_intent_id, subtotal, daily_price, platform_fee, start_date, end_date, handover_confirmed_at, products(title)")
+      .select("id, renter_id, owner_id, product_id, status, payment_status, payment_intent_id, subtotal, daily_price, platform_fee, start_date, end_date, handover_confirmed_at, is_test_payment, products(title)")
       .eq("id", rentalId)
       .maybeSingle();
     if (rErr || !rental) {
@@ -98,6 +98,10 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const stripe = new Stripe(
+      rental.is_test_payment ? (STRIPE_TEST_KEY || STRIPE_LIVE_KEY) : STRIPE_LIVE_KEY,
+      { apiVersion: "2025-08-27.basil" },
+    );
     if (rental.status === "cancelled" || rental.status === "completed") {
       return new Response(JSON.stringify({ error: "rental_not_cancellable", status: rental.status }), {
         status: 400,
