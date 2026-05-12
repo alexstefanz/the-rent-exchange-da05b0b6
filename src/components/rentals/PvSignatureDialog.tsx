@@ -3,7 +3,7 @@ import SignatureCanvas from "react-signature-canvas";
 import { jsPDF } from "jspdf";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Eraser, FileSignature, Camera, X, ChevronLeft, ChevronRight, ImagePlus } from "lucide-react";
+import { Loader2, Eraser, FileSignature, Camera, X, ChevronLeft, ChevronRight, ImagePlus, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,7 +55,15 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   const renterPhotos = photosMeta.filter((m) => m.role === "renter");
   const otherSigned = role === "owner" ? !!pv?.renter_signed_at : !!pv?.owner_signed_at;
   const mySigned = role === "owner" ? !!pv?.owner_signed_at : !!pv?.renter_signed_at;
-  const canSign = photos.length >= MIN_PHOTOS && !mySigned;
+  // Sequential flow: handover → owner first, then renter; return → renter first, then owner.
+  const firstSigner: "owner" | "renter" = phase === "handover" ? "owner" : "renter";
+  const isFirstSigner = role === firstSigner;
+  const isMyTurn = !mySigned && (isFirstSigner || otherSigned);
+  const isLockedWaiting = !mySigned && !isMyTurn;
+  const canSign = photos.length >= MIN_PHOTOS && isMyTurn;
+  const waitingLabel = phase === "handover"
+    ? "Asteapta proprietarul sa completeze si sa semneze PV-ul de Predare. Vei putea adauga propriile fotografii si semna imediat dupa."
+    : "Asteapta chiriasul sa initieze returnarea si sa semneze PV-ul. Dupa aceea vei putea adauga fotografii si semna.";
 
   async function handleAddPhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
