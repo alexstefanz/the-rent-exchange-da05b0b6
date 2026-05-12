@@ -24,10 +24,28 @@ function useIsDesktop() {
   return isDesktop;
 }
 
+function useVisualViewportHeight() {
+  const [h, setH] = useState<number | null>(null);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => setH(vv.height);
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
+  return h;
+}
+
 export default function Messages() {
   const { user, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const vvh = useVisualViewportHeight();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const isDesktop = useIsDesktop();
@@ -77,7 +95,10 @@ export default function Messages() {
   if (!isDesktop && selectedConversation) {
     return (
       <>
-        <div className="h-[100dvh] flex flex-col">
+        <div
+          className="flex flex-col overflow-hidden"
+          style={{ height: vvh ? `${vvh}px` : "100dvh" }}
+        >
           <ChatPanel
             conversationId={selectedConversation.id}
             otherUserName={selectedConversation.other_user?.full_name || null}

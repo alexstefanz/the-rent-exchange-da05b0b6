@@ -172,6 +172,7 @@ export function ChatDialog({
             onKeyPress={handleKeyPress}
             maxLength={MAX_MESSAGE_LENGTH}
             disabled={sending}
+            className="text-base md:text-sm"
           />
           <Button 
             size="icon" 
