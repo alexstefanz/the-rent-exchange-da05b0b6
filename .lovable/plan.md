@@ -1,36 +1,35 @@
-# Fix: "email rate limit exceeded" la înregistrare
+## Concluzie diagnostic
 
-## Diagnostic
+Eroarea de pe `rentli.ro` este confirmată în logurile Auth ca `over_email_send_rate_limit` pe `/signup`, din aceleași IP-uri, înainte ca emailul să ajungă în sistemul de trimitere branded.
 
-Eroarea **`429 over_email_send_rate_limit`** vine direct din serviciul implicit de email al Supabase Auth (limitat la ~3-4 emailuri/oră pentru întregul proiect — folosit doar pentru dev).
-
-Verificări efectuate:
-- ✅ Domeniul `rentli.ro` este **verificat și activ** în Lovable Emails
-- ✅ Funcția `auth-email-hook` există în cod (`supabase/functions/auth-email-hook/index.ts`)
-- ❌ **Funcția `auth-email-hook` nu are niciun log** → Supabase Auth nu o apelează deloc
-- ❌ Hook-ul nu este activat la nivel de proiect, deci Supabase folosește serviciul default (rate-limited)
-
-Practic, deși ai templates branded, Supabase Auth nu le folosește pentru că hook-ul nu este înregistrat/activ. La fiecare signup folosește pipeline-ul lui implicit, care s-a saturat azi.
+Emailurile Rentli funcționează corect:
+- domeniul `notify.rentli.ro` este verificat;
+- emailurile recente de signup au fost trimise cu succes;
+- adresele afectate nu apar în logul de trimitere email, pentru că request-ul este blocat mai devreme de Auth.
 
 ## Plan de remediere
 
-1. **Re-deploy `auth-email-hook`** — forțează re-înregistrarea la Supabase Auth ca să fie activat ca handler oficial de emailuri auth (signup confirmation, password reset, magic link, email change).
+1. **Deblocare imediată pentru test**
+   - Oprește retry-urile repetate de pe același IP pentru aproximativ o oră.
+   - Testează signup-ul de pe altă rețea/IP, de exemplu hotspot mobil.
+   - Pentru Oana, poate folosi temporar Google login, care deja apare funcțional în loguri.
 
-2. **Verificare după deploy:**
-   - Trimit un signup de test cu un email nou
-   - Verific în logs că `auth-email-hook` primește invocații (200 OK)
-   - Verific că emailul ajunge prin `noreply@rentli.ro` (nu prin Supabase default)
-   - Confirm că rate limit-ul dispare (Lovable Emails nu are limita asta)
+2. **Ajustare configurație Auth pentru producție**
+   - Verific setările disponibile în Lovable Cloud pentru limita de email/signup.
+   - Dacă setarea este expusă, cresc limita de email-uri Auth pe oră la o valoare potrivită pentru producție/testare live.
+   - Păstrez confirmarea emailului activă; nu activez auto-confirm și nu slăbesc verificarea conturilor.
 
-3. **Status follow-up automat** — Cloud → Emails reconciliază starea după deploy. Dacă activarea rămâne blocată după ~1 minut, raportez și tratez (ex: `setup_email_infra` pentru re-provision dacă lipsește vreo migrare).
+3. **Protecție UX în aplicație**
+   - În pagina de înregistrare, transform eroarea generică `email rate limit exceeded` într-un mesaj clar în română: „Prea multe încercări de înregistrare de pe această rețea. Te rugăm să încerci peste câteva minute sau de pe altă rețea.”
+   - Dezactivez butonul după submit și previn click-uri/retry-uri rapide care consumă limita inutil.
 
-## Out of scope
+4. **Verificare post-fix**
+   - Testez un signup nou pe `rentli.ro`.
+   - Confirm că apare emailul de signup în log cu status `sent`.
+   - Confirm că nu mai apare eroarea 429 pentru testul valid.
 
-- Nu modificăm templates de email (sunt deja branded)
-- Nu schimbăm domeniul `rentli.ro` 
-- Nu atingem fluxul de checkout / Stripe Test Mode (separat)
-- Nu adăugăm rate limiting custom (politica internă)
+## Ce nu fac
 
-## Notă pentru cont blocat
-
-Contul `oana.ciuhureanu@primaconstruct.ro` a rămas în `auth.users` ca **neconfirmat** (signup-ul a creat user-ul dar emailul nu a plecat). După fix, cel mai simplu este să-l ștergi din admin (sau îl șterg eu) și Oana să încerce din nou — sau pot retrimite manual emailul de confirmare.
+- Nu dezactivez confirmarea emailului.
+- Nu adaug rate limiting custom în backend.
+- Nu schimb providerul de email și nu ating sistemul actual de emailuri branded, pentru că acesta funcționează.
