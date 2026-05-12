@@ -224,14 +224,24 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
                   Min. {MIN_PHOTOS} foto. Recomandat: vedere de ansamblu, accesorii, eventuale defecte.
                 </p>
               </div>
-              <label className={mySigned ? "pointer-events-none opacity-50" : "cursor-pointer"}>
-                <input type="file" accept="image/*" multiple className="hidden" onChange={handleAddPhotos} disabled={uploading || mySigned} />
+              <label className={(mySigned || !isMyTurn) ? "pointer-events-none opacity-50" : "cursor-pointer"}>
+                <input type="file" accept="image/*" multiple className="hidden" onChange={handleAddPhotos} disabled={uploading || mySigned || !isMyTurn} />
                 <span className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-[#F98715] transition-colors px-4 py-2 text-sm font-semibold shadow-sm">
                   {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
                   Adauga fotografii
                 </span>
               </label>
             </section>
+
+            {isLockedWaiting && (
+              <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
+                <Lock className="h-5 w-5 text-amber-700 mt-0.5 shrink-0" />
+                <div className="text-sm text-amber-900">
+                  <p className="font-semibold mb-1">Randul nu este al tau inca</p>
+                  <p className="text-xs">{waitingLabel}</p>
+                </div>
+              </section>
+            )}
 
             {/* Owner gallery */}
             <PhotoGallery
@@ -268,7 +278,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
             </section>
 
             {/* Signature pad */}
-            {!mySigned && (
+            {!mySigned && isMyTurn && (
               <section>
                 <h4 className="font-semibold text-sm mb-2">Semnatura ta ({role === "owner" ? "Proprietar" : "Chirias"})</h4>
                 <div className="rounded-lg border border-border bg-card overflow-hidden">
