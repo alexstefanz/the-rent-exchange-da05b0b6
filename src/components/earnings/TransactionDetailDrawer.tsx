@@ -1,6 +1,6 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Copy, ExternalLink, ImageOff } from "lucide-react";
+import { Copy, ExternalLink, ImageOff, User as UserIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -81,6 +81,24 @@ const TransactionDetailDrawer = ({ tx, open, onOpenChange }: Props) => {
             <p className="text-xs font-medium uppercase text-muted-foreground mb-2">
               {t("Rezervare", "Booking")}
             </p>
+            {tx.renterId && (
+              <div className="flex items-center justify-between gap-3 py-2.5 border-b">
+                <span className="text-xs text-muted-foreground">{t("Chiriaș", "Renter")}</span>
+                <Link
+                  to={`/utilizator/${tx.renterId}`}
+                  className="flex items-center gap-2 hover:text-primary"
+                >
+                  {tx.renterAvatar ? (
+                    <img src={tx.renterAvatar} alt="" className="h-6 w-6 rounded-full object-cover" />
+                  ) : (
+                    <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center">
+                      <UserIcon className="h-3 w-3 text-muted-foreground" />
+                    </div>
+                  )}
+                  <span className="text-sm font-medium">{tx.renterName || t("Utilizator", "User")}</span>
+                </Link>
+              </div>
+            )}
             <Row label={t("Perioada", "Period")} value={`${fmt(tx.startDate)} – ${fmt(tx.endDate)}`} />
             <Row label={t("Data tranzacției", "Transaction date")} value={fmt(tx.date)} />
             {tx.rentalPublicId && (
@@ -102,7 +120,7 @@ const TransactionDetailDrawer = ({ tx, open, onOpenChange }: Props) => {
 
           {tx.rentalPublicId && (
             <Button asChild variant="outline" className="w-full">
-              <Link to={`/rezervare/${tx.rentalPublicId}`}>
+              <Link to={`/inchirieri/${tx.rentalPublicId}`}>
                 <ExternalLink className="h-4 w-4 mr-2" />
                 {t("Vezi rezervarea", "View booking")}
               </Link>
