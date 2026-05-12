@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Calendar, MapPin, Search, Receipt, ChevronDown, Loader2 } from "lucide-react";
+import { Calendar, MapPin, Search, Receipt, ChevronDown, Loader2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import StatusBadge from "./StatusBadge";
@@ -187,6 +187,11 @@ const RentalsTab = () => {
                   {rental.location && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{rental.location}</span>}
                   <span className="font-semibold text-primary ml-auto">{rental.subtotal} RON</span>
                 </div>
+                {rental.public_id && (
+                  <Link to={`/rezervari/${rental.public_id}`} className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline">
+                    <ExternalLink className="h-3 w-3" />Vezi detalii inchiriere · {rental.public_id}
+                  </Link>
+                )}
               </div>
             </div>
 
