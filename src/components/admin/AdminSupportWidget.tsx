@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
 import { Headphones, X, ArrowLeft, Send, Loader2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +30,7 @@ interface TicketWithUnread extends OpsTicket {
 
 export default function AdminSupportWidget() {
   const { user } = useAuth();
-  
+  const { pathname } = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [tickets, setTickets] = useState<TicketWithUnread[]>([]);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
@@ -198,7 +199,7 @@ export default function AdminSupportWidget() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-20 lg:bottom-6 right-4 z-50 h-14 w-14 rounded-full shadow-lg transition-all duration-200 flex items-center justify-center hover:scale-105 active:scale-95 border-2"
+          className={`fixed bottom-20 lg:bottom-6 right-4 z-50 h-14 w-14 rounded-full shadow-lg transition-all duration-200 items-center justify-center hover:scale-105 active:scale-95 border-2 ${pathname.startsWith("/mesaje") ? "hidden lg:flex" : "flex"}`}
           style={{
             backgroundColor: "white",
             borderColor: "#F98715",
