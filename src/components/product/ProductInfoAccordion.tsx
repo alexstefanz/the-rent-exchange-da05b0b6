@@ -23,16 +23,18 @@ const ProductInfoAccordion = ({ description, includedItems }: Props) => {
           </AccordionContent>
         </AccordionItem>
 
-        <AccordionItem value="included" className="border-b">
-          <AccordionTrigger className="px-5 py-4 hover:no-underline font-heading text-base font-semibold">
-            {t("Ce e inclus", "What's included")}
-          </AccordionTrigger>
-          <AccordionContent className="px-5 pb-4">
-            <div className="-mx-5 -mb-4">
-              <ProductIncludes items={includedItems} />
-            </div>
-          </AccordionContent>
-        </AccordionItem>
+        {includedItems && includedItems.length > 0 && (
+          <AccordionItem value="included" className="border-b">
+            <AccordionTrigger className="px-5 py-4 hover:no-underline font-heading text-base font-semibold">
+              {t("Ce e inclus", "What's included")}
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-4">
+              <div className="-mx-5 -mb-4">
+                <ProductIncludes items={includedItems} />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        )}
 
         <AccordionItem value="rules" className="border-b-0">
           <AccordionTrigger className="px-5 py-4 hover:no-underline font-heading text-base font-semibold">
