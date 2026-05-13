@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import LegalPageLayout from "./LegalPageLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-const sectionsRo = [
+export const sectionsRo = [
   {
     id: "informatii-colectate",
     title: "Ce informații colectăm",
@@ -134,7 +134,7 @@ const sectionsRo = [
   },
 ];
 
-const sectionsEn = [
+export const sectionsEn = [
   {
     id: "informatii-colectate",
     title: "What information we collect",

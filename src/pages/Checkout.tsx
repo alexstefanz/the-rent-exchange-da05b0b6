@@ -5,6 +5,7 @@ import { ArrowLeft, ArrowRight, Send, Info, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LoginDialog from "@/components/checkout/LoginDialog";
 import TermsDialog from "@/components/checkout/TermsDialog";
+import PrivacyDialog from "@/components/checkout/PrivacyDialog";
 import PremiumStepper from "@/components/checkout/PremiumStepper";
 import PremiumBookingSummary from "@/components/checkout/PremiumBookingSummary";
 import OptionalMessageCard from "@/components/checkout/OptionalMessageCard";
@@ -52,6 +53,7 @@ const Checkout = () => {
   const [messageToOwner, setMessageToOwner] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
+  const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
 
   if (!state) {
     return (
@@ -213,7 +215,7 @@ const Checkout = () => {
                       {copy.checkout.termsLink}
                     </button>{" "}
                     {copy.checkout.and}{" "}
-                    <button type="button" className="text-primary hover:underline">
+                    <button type="button" className="text-primary hover:underline" onClick={() => setShowPrivacyDialog(true)}>
                       {copy.checkout.privacyLink}
                     </button>.
                   </p>
@@ -268,6 +270,7 @@ const Checkout = () => {
 
       <LoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} onLoginSuccess={handleLoginSuccess} />
       <TermsDialog open={showTermsDialog} onOpenChange={setShowTermsDialog} onAccept={handleSendRequest} isSubmitting={isSubmitting} />
+      <PrivacyDialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog} />
     </div>
   );
 };
