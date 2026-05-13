@@ -102,7 +102,7 @@ const PremiumBookingSummary = ({ product, startDate, endDate, rentalDays, totalP
           </div>
           <div className="flex items-center gap-2 text-foreground/80">
             <Lock className="h-3.5 w-3.5 text-emerald-600" />
-            <span>{t("Anulare gratuită până la 48h înainte", "Free cancellation up to 48h before")}</span>
+            <span>{t("Anulare gratuită până la 24h înainte", "Free cancellation up to 24h before")}</span>
           </div>
         </div>
       </div>
