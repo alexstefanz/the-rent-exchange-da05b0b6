@@ -134,7 +134,7 @@ export const sectionsRo = [
   },
 ];
 
-const sectionsEn = [
+export const sectionsEn = [
   {
     id: "informatii-colectate",
     title: "What information we collect",
