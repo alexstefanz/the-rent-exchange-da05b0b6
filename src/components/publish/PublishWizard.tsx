@@ -967,50 +967,6 @@ const Step5Pricing = ({
           )}
         </div>
 
-        {/* Deposit */}
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <Label className="text-sm font-semibold">Garanție</Label>
-          <p className="mb-3 text-xs text-muted-foreground">
-            Suma blocată pe cardul clientului în caz de daune. Nu se plătește efectiv decât în caz de reclamație.
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            {(["none", "fixed", "percent"] as DepositType[]).map((t) => {
-              const active = data.deposit_type === t;
-              const labels = { none: "Fără", fixed: "Sumă fixă", percent: "% din preț" };
-              return (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => update("deposit_type", t)}
-                  className={cn(
-                    "rounded-xl border-2 px-3 py-3 text-sm font-medium transition-colors",
-                    active
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-border bg-card text-foreground hover:border-primary/40",
-                  )}
-                >
-                  {labels[t]}
-                </button>
-              );
-            })}
-          </div>
-          {data.deposit_type !== "none" && (
-            <div className="mt-3">
-              <Input
-                type="number"
-                min={0}
-                value={data.deposit_value ?? ""}
-                onChange={(e) => update("deposit_value", e.target.value === "" ? null : Number(e.target.value))}
-                placeholder={data.deposit_type === "percent" ? "Ex: 50" : "Ex: 200"}
-                className="h-11"
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
-                {data.deposit_type === "percent" ? "Procent din valoarea totală" : "Sumă fixă în RON"}
-              </p>
-            </div>
-          )}
-        </div>
-
         {/* Min rental */}
         <div className="rounded-2xl border border-border bg-card p-5">
           <Label className="text-sm font-semibold">Durată minimă închiriere</Label>
@@ -1165,17 +1121,6 @@ const Step6Review = ({
         <ReviewRow
           label="Preț"
           value={`${owner} RON/zi · client ${calculateClientPrice(owner, feePercent)} RON`}
-          onEdit={() => onJump(5)}
-        />
-        <ReviewRow
-          label="Garanție"
-          value={
-            data.deposit_type === "none"
-              ? "Fără"
-              : data.deposit_type === "fixed"
-                ? `${data.deposit_value} RON`
-                : `${data.deposit_value}%`
-          }
           onEdit={() => onJump(5)}
         />
         <ReviewRow
