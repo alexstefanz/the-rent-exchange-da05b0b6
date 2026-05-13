@@ -4,7 +4,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 const WhyRentli = () => {
   const { t } = useLanguage();
   const items = [
-    { icon: Wallet, title: t("Mai ieftin decât cumpărarea", "Cheaper than buying"), desc: t("Plătești doar perioada de care ai nevoie.", "Pay only for the period you need.") },
+    { icon: Wallet, title: t("Folosești fără să cumperi", "Use without buying"), desc: t("Plătești doar perioada de care ai nevoie.", "Pay only for the period you need.") },
     { icon: ShieldCheck, title: t("Produse verificate", "Verified items"), desc: t("Anunțuri aprobate manual de echipa noastră.", "Listings manually reviewed by our team.") },
     { icon: FileText, title: t("Proces verbal digital", "Digital handover record"), desc: t("Foto check-in/out pentru fiecare închiriere.", "Photo check-in/out for every rental.") },
     { icon: CreditCard, title: t("Plăți securizate", "Secure payments"), desc: t("Hold & capture prin Stripe, fonduri protejate.", "Hold & capture via Stripe, funds protected.") },
