@@ -854,7 +854,7 @@ const Step5Pricing = ({
     <div>
       <StepHeader
         eyebrow="Pasul 5 din 6"
-        title="Preț, garanție și disponibilitate"
+        title="Preț chirie"
         subtitle="Setează cât vrei să primești pe zi. Comisionul platformei se adaugă automat clientului."
       />
 
