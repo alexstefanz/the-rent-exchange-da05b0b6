@@ -10,10 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Mail, Building2, User } from "lucide-react";
+import { Loader2, Mail, Building2, User, Eye, EyeOff } from "lucide-react";
 import logoImage from "@/assets/rentli_logo.webp";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
@@ -35,6 +36,11 @@ const Auth = () => {
   const [isResendingOtp, setIsResendingOtp] = useState(false);
   const [accountType, setAccountType] = useState<"individual" | "business">("individual");
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("rentli_remember_me") === "1";
+  });
   const copy = useUxCopy();
 
   const isResetMode = isPasswordRecovery || searchParams.get("reset") === "true";
@@ -140,7 +146,10 @@ const Auth = () => {
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: {
+      email: typeof window !== "undefined" ? localStorage.getItem("rentli_remembered_email") || "" : "",
+      password: "",
+    },
   });
 
   const registerForm = useForm<RegisterFormData>({
@@ -168,6 +177,13 @@ const Auth = () => {
         variant: "destructive",
       });
     } else {
+      if (rememberMe) {
+        localStorage.setItem("rentli_remember_me", "1");
+        localStorage.setItem("rentli_remembered_email", data.email);
+      } else {
+        localStorage.removeItem("rentli_remember_me");
+        localStorage.removeItem("rentli_remembered_email");
+      }
       toast({ title: copy.auth.loginSuccess, description: copy.auth.welcomeBackToast });
       navigate("/", { replace: true });
     }
@@ -451,9 +467,33 @@ const Auth = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="login-password">{copy.auth.password}</Label>
-                  <Input id="login-password" type="password" placeholder="••••••••" {...loginForm.register("password")} />
+                  <div className="relative">
+                    <Input
+                      id="login-password"
+                      type={showLoginPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="pr-10"
+                      {...loginForm.register("password")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label={showLoginPassword ? "Ascunde parola" : "Arată parola"}
+                      tabIndex={-1}
+                    >
+                      {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   {loginForm.formState.errors.password && <p className="text-sm text-destructive">{loginForm.formState.errors.password.message}</p>}
-                  <div className="flex justify-end">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+                      <Checkbox
+                        checked={rememberMe}
+                        onCheckedChange={(c) => setRememberMe(c === true)}
+                      />
+                      Ține-mă minte
+                    </label>
                     <Button type="button" variant="link" className="px-0 h-auto text-sm text-muted-foreground hover:text-primary" onClick={() => setShowResetDialog(true)}>
                       {copy.auth.forgotPassword}
                     </Button>
