@@ -7,15 +7,9 @@ interface ProductIncludesProps {
 
 const ProductIncludes = ({ items }: ProductIncludesProps) => {
   const copy = useUxCopy();
-  
-  const defaultItems = [
-    copy.productIncludes.item1,
-    copy.productIncludes.item2,
-    copy.productIncludes.item3,
-    copy.productIncludes.item4,
-  ];
 
-  const displayItems = items && items.length > 0 ? items : defaultItems;
+  if (!items || items.length === 0) return null;
+  const displayItems = items;
 
   return (
     <div className="rounded-xl border border-border bg-card p-6">

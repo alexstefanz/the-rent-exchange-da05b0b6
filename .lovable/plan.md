@@ -1,9 +1,12 @@
-## Adăugare „N zile × X RON" în card-ul de rezervare
+## Problem
+On product page, the "Ce e inclus" accordion always shows 4 default items (from `uxCopy.productIncludes`) when the owner left `included_items` empty. Should be hidden entirely.
 
-În `src/components/product/PremiumBookingCard.tsx`, în secțiunea Breakdown (deasupra rândului „Total"), adaug o linie nouă cu formatul `{rentalDays} {zile/days} × {clientPrice} RON`, stilizată identic cu celelalte rânduri (text muted la stânga, valoare la dreapta), exact ca în screenshot.
+## Changes
 
-### Modificare
-- Inserez un nou `div.flex.justify-between` între rândul „Sfârșit" și `Separator`, folosind `rentalDays` și `clientPrice` care sunt deja calculate în component.
-- Plural RO: `zi` pentru 1, altfel `zile`. EN: `day`/`days`.
+1. `src/components/product/ProductIncludes.tsx`
+   - Remove the `defaultItems` fallback. If `items` is empty/undefined, return `null`.
 
-Nu schimb nimic la calculul `totalPrice` (rămâne din `computeRentalPrice` cu tarife săptămână/lună).
+2. `src/components/product/ProductInfoAccordion.tsx`
+   - Conditionally render the entire `included` AccordionItem only when `includedItems?.length > 0`.
+
+No other consumers of `ProductIncludes` need changes (only used here).
