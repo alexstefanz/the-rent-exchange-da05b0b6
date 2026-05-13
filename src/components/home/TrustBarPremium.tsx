@@ -51,8 +51,8 @@ const TrustBarPremium = () => {
     },
     {
       icon: Headphones,
-      value: t("Suport 7/7", "7-day support"),
-      label: t("răspuns sub 1 oră", "reply under 1 hour"),
+      value: t("Suport Dedicat", "Dedicated Support"),
+      label: t("Echipă reală 7 zile pe săptămână", "Real team 7 days a week"),
       tone: "text-blue-500",
     },
   ];
