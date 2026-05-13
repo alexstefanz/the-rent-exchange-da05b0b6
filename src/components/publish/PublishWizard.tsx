@@ -803,57 +803,6 @@ const Step4Location = ({
           </p>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <Truck className="mt-0.5 h-5 w-5 text-primary" />
-              <div>
-                <p className="text-sm font-semibold text-foreground">Oferi și livrare?</p>
-                <p className="text-xs text-muted-foreground">Crește vizibilitatea cu badge dedicat.</p>
-              </div>
-            </div>
-            <Switch
-              checked={data.delivery_available}
-              onCheckedChange={(v) => update("delivery_available", v)}
-            />
-          </div>
-
-          {data.delivery_available && (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Cost livrare (RON)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={data.delivery_fee ?? ""}
-                  onChange={(e) =>
-                    update("delivery_fee", e.target.value === "" ? null : Number(e.target.value))
-                  }
-                  placeholder="20"
-                  className="h-11"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Rază (km)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={data.delivery_radius_km ?? ""}
-                  onChange={(e) =>
-                    update("delivery_radius_km", e.target.value === "" ? null : Number(e.target.value))
-                  }
-                  placeholder="15"
-                  className="h-11"
-                />
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-4 text-xs text-muted-foreground">
-          <MapPin className="mr-1 inline h-3.5 w-3.5 text-primary" />
-          Pinul exact pe hartă va fi setat automat după publicare pe baza adresei. Poți rafina ulterior din pagina anunțului.
-        </div>
       </div>
     </div>
   );
@@ -967,80 +916,6 @@ const Step5Pricing = ({
           )}
         </div>
 
-        {/* Min rental */}
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <Label className="text-sm font-semibold">Durată minimă închiriere</Label>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {(Object.keys(PRESET_LABELS) as MinRentalPreset[]).map((p) => {
-              const active = data.min_rental_preset === p;
-              return (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => {
-                    update("min_rental_preset", p);
-                    if (p !== "custom") update("min_rental_days", PRESET_DAYS[p]);
-                  }}
-                  className={cn(
-                    "rounded-full border px-4 py-2 text-sm transition-colors",
-                    active
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background text-foreground hover:border-primary/40",
-                  )}
-                >
-                  {PRESET_LABELS[p]}
-                </button>
-              );
-            })}
-          </div>
-          {data.min_rental_preset === "custom" && (
-            <div className="mt-3 flex items-center gap-2">
-              <Input
-                type="number"
-                min={1}
-                max={365}
-                value={data.min_rental_days}
-                onChange={(e) => update("min_rental_days", Math.max(1, Number(e.target.value) || 1))}
-                className="h-11 w-32"
-              />
-              <span className="text-sm text-muted-foreground">zile</span>
-            </div>
-          )}
-        </div>
-
-        {/* Availability */}
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <Zap className="mt-0.5 h-5 w-5 text-primary" />
-              <div>
-                <p className="text-sm font-semibold text-foreground">Disponibil imediat</p>
-                <p className="text-xs text-muted-foreground">
-                  Anunțul primește badge ⚡ și apare prioritar în căutări.
-                </p>
-              </div>
-            </div>
-            <Switch
-              checked={data.available_immediately}
-              onCheckedChange={(v) => update("available_immediately", v)}
-            />
-          </div>
-        </div>
-
-        {/* Blocked dates */}
-        <details className="group rounded-2xl border border-border bg-card p-5">
-          <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-foreground">
-            <span className="flex items-center gap-2">
-              <CalendarIcon className="h-4 w-4 text-primary" />
-              Blochează zile indisponibile (opțional)
-            </span>
-            <span className="text-xs text-muted-foreground group-open:hidden">{data.blocked_dates.length} zile</span>
-          </summary>
-          <BlockedDatesPicker
-            value={data.blocked_dates}
-            onChange={(v) => update("blocked_dates", v)}
-          />
-        </details>
       </div>
     </div>
   );
