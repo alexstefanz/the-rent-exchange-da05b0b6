@@ -37,6 +37,12 @@ const Auth = () => {
   const [accountType, setAccountType] = useState<"individual" | "business">("individual");
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showRegisterConfirm, setShowRegisterConfirm] = useState(false);
+  const [rememberMeRegister, setRememberMeRegister] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("rentli_remember_me") === "1";
+  });
   const [rememberMe, setRememberMe] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("rentli_remember_me") === "1";
@@ -248,6 +254,13 @@ const Auth = () => {
       }
       setOtpEmail(data.email);
       setShowOtpVerification(true);
+      if (rememberMeRegister) {
+        localStorage.setItem("rentli_remember_me", "1");
+        localStorage.setItem("rentli_remembered_email", data.email);
+      } else {
+        localStorage.removeItem("rentli_remember_me");
+        localStorage.removeItem("rentli_remembered_email");
+      }
     }
   };
 
@@ -570,15 +583,56 @@ const Auth = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="register-password">{copy.auth.password}</Label>
-                  <Input id="register-password" type="password" placeholder="••••••••" {...registerForm.register("password")} />
+                  <div className="relative">
+                    <Input
+                      id="register-password"
+                      type={showRegisterPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="pr-10"
+                      {...registerForm.register("password")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegisterPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label={showRegisterPassword ? "Ascunde parola" : "Arată parola"}
+                      tabIndex={-1}
+                    >
+                      {showRegisterPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   <p className="text-xs text-muted-foreground">{copy.auth.passwordRequirements}</p>
                   {registerForm.formState.errors.password && <p className="text-sm text-destructive">{registerForm.formState.errors.password.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="register-confirm">{copy.auth.confirmPassword}</Label>
-                  <Input id="register-confirm" type="password" placeholder="••••••••" {...registerForm.register("confirmPassword")} />
+                  <div className="relative">
+                    <Input
+                      id="register-confirm"
+                      type={showRegisterConfirm ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="pr-10"
+                      {...registerForm.register("confirmPassword")}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegisterConfirm((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      aria-label={showRegisterConfirm ? "Ascunde parola" : "Arată parola"}
+                      tabIndex={-1}
+                    >
+                      {showRegisterConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   {registerForm.formState.errors.confirmPassword && <p className="text-sm text-destructive">{registerForm.formState.errors.confirmPassword.message}</p>}
                 </div>
+                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+                  <Checkbox
+                    checked={rememberMeRegister}
+                    onCheckedChange={(c) => setRememberMeRegister(c === true)}
+                  />
+                  Ține-mă minte
+                </label>
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{copy.auth.creatingAccount}</> : copy.auth.register}
                 </Button>
