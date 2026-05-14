@@ -4,6 +4,8 @@ import { Package, Plus, Check, X, Loader2, Calendar, TrendingUp, Inbox, MessageS
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useAuth } from "@/contexts/AuthContext";
 import { getOwnerRentals, respondToRental, type OwnerRental } from "@/features/rentals/ownerRentalsApi";
@@ -34,6 +36,7 @@ const RentalsOutTab = () => {
   const [rejectDialogRental, setRejectDialogRental] = useState<OwnerRental | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [cancelDialogRental, setCancelDialogRental] = useState<OwnerRental | null>(null);
+  const [cancelSubject, setCancelSubject] = useState("");
   const [cancelReason, setCancelReason] = useState("");
 
   const pendingRentals = rentals.filter(r => r.status === "pending");
@@ -76,16 +79,21 @@ const RentalsOutTab = () => {
 
   const handleRequestCancel = async () => {
     if (!cancelDialogRental) return;
+    if (!cancelSubject.trim() || cancelSubject.trim().length < 3) {
+      toast.error("Subiectul e prea scurt (minim 3 caractere)");
+      return;
+    }
     if (!cancelReason.trim() || cancelReason.trim().length < 5) {
       toast.error("Te rugăm să adaugi un motiv (minim 5 caractere)");
       return;
     }
     setRespondingId(cancelDialogRental.id);
     try {
-      await requestMutualCancellation(cancelDialogRental.id, cancelReason.trim());
-      toast.success("Cererea de anulare a fost trimisă chiriașului");
+      await requestMutualCancellation(cancelDialogRental.id, cancelSubject.trim(), cancelReason.trim());
+      toast.success("Cererea de anulare a fost trimisă către admin pentru revizuire");
       queryClient.invalidateQueries({ queryKey: ["ownerRentals"] });
       setCancelDialogRental(null);
+      setCancelSubject("");
       setCancelReason("");
     } catch (e: any) {
       toast.error(e?.message || "Eroare la trimiterea cererii de anulare");
