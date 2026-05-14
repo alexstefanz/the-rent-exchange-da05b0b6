@@ -2876,12 +2876,10 @@ export type Database = {
           read_ct: number
         }[]
       }
-      request_mutual_cancellation:
-        | { Args: { _reason: string; _rental_id: string }; Returns: Json }
-        | {
-            Args: { _reason: string; _rental_id: string; _subject?: string }
-            Returns: Json
-          }
+      request_mutual_cancellation: {
+        Args: { _reason: string; _rental_id: string; _subject: string }
+        Returns: Json
+      }
       resolve_rental_dispute: {
         Args: { _rental_id: string }
         Returns: undefined
