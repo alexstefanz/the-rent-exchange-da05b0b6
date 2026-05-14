@@ -358,6 +358,13 @@ const AdminApprovals = () => {
         )}
       </div>
 
+          </TabsContent>
+          <TabsContent value="cancellations">
+            <AdminCancellationRequestsPanel />
+          </TabsContent>
+        </Tabs>
+      </div>
+
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
         <DialogContent>
           <DialogHeader>
