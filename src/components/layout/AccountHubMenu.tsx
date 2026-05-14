@@ -397,6 +397,12 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
               highlight={(signals?.activeRentalsAsOwner || 0) > 0}
               onClick={() => handleNav("/inchirieri")}
             />
+            <StatusCard
+              icon={FileText}
+              label={t("produsele mele", "my products")}
+              value={t("Vezi", "View")}
+              onClick={() => handleNav("/anunturi")}
+            />
           </>
         )}
       </div>
@@ -486,12 +492,6 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
         to="/contul-meu"
         icon={User}
         label={t("Contul meu", "My Account")}
-        onNav={handleNav}
-      />
-      <NavRow
-        to="/owner"
-        icon={FileText}
-        label={t("Produsele mele", "My Products")}
         onNav={handleNav}
       />
       <NavRow
