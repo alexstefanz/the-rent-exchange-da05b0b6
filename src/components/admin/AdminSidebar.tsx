@@ -15,7 +15,8 @@ import {
   Mail,
   Bell,
   MessageSquare,
-  Banknote
+  Banknote,
+  Flag
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAdminNotificationSummary } from "@/hooks/queries/useAdminNotifications";
@@ -38,7 +39,8 @@ type BadgeKey =
   | "open_tickets"
   | "pending_withdrawals"
   | "pending_kyc"
-  | "pending_approvals_total";
+  | "pending_approvals_total"
+  | "pending_reports";
 
 const menuItems: Array<{
   title: string;
@@ -57,6 +59,7 @@ const menuItems: Array<{
   { title: "Categorii", url: "/admin/categories", icon: FolderTree },
   { title: "Financiar", url: "/admin/finances", icon: Wallet },
   { title: "Retrageri", url: "/admin/withdrawals", icon: Banknote, badgeKey: "pending_withdrawals" },
+  { title: "Reports", url: "/admin/reports", icon: Flag, badgeKey: "pending_reports" },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Utilizatori", url: "/admin/users", icon: Users },
   { title: "Verificări KYC", url: "/admin/kyc", icon: ShieldCheck, badgeKey: "pending_kyc" },

@@ -6,6 +6,7 @@ import {
   Clock,
   ShieldCheck,
   Banknote,
+  Flag,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -115,6 +116,12 @@ const AdminDashboard = () => {
                 value={formatCurrency(stats?.total_withdrawn || 0)}
                 icon={<Banknote className="h-4 w-4" />}
                 onClick={() => navigate('/admin/finances')}
+              />
+              <StatsCard
+                title="Rapoarte Deschise"
+                value={summary?.pending_reports || 0}
+                icon={<Flag className="h-4 w-4" />}
+                onClick={() => navigate('/admin/reports')}
               />
             </>
           )}
