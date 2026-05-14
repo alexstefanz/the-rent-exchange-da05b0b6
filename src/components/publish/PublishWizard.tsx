@@ -57,6 +57,16 @@ import PublishStepper, { type StepDef } from "./PublishStepper";
 import PublishTopBar from "./PublishTopBar";
 import PublishFooter from "./PublishFooter";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const STEPS: StepDef[] = [
   { id: 1, label: "Categorie", shortLabel: "Categorie" },
@@ -127,6 +137,12 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   const [draftId, setDraftId] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [pendingDraft, setPendingDraft] = useState<{
+    id: string;
+    payload: PublishFormData;
+    step: number;
+    updated_at: string;
+  } | null>(null);
 
   // load fee
   useEffect(() => {
@@ -143,13 +159,23 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   useEffect(() => {
     if (!user || mode === "edit") return;
     getActiveDraft(user.id, null).then((d) => {
-      if (d) {
-        setDraftId(d.id);
-        // only restore if user hasn't started typing
-        setData((prev) => (prev.title || prev.images.length ? prev : { ...emptyPublishForm(), ...d.payload }));
-        setStep(d.step || 1);
-        setMaxReached(d.step || 1);
+      if (!d) return;
+      const payload = d.payload as PublishFormData;
+      const isEmpty =
+        !payload?.title &&
+        !payload?.category &&
+        (!payload?.images || payload.images.length === 0);
+      if (isEmpty) {
+        // silently discard empty/ghost drafts
+        deleteDraft(d.id).catch(() => {});
+        return;
       }
+      setPendingDraft({
+        id: d.id,
+        payload,
+        step: d.step || 1,
+        updated_at: d.updated_at,
+      });
     });
   }, [user, mode]);
 
@@ -157,6 +183,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (!user || mode === "edit") return;
+    if (pendingDraft) return; // wait for user's choice
     if (!data.title && !data.category && data.images.length === 0) return;
     setSaveStatus("saving");
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -169,7 +196,27 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [data, step, user, mode, draftId]);
+  }, [data, step, user, mode, draftId, pendingDraft]);
+
+  const handleContinueDraft = () => {
+    if (!pendingDraft) return;
+    setDraftId(pendingDraft.id);
+    setData({ ...emptyPublishForm(), ...pendingDraft.payload });
+    setStep(pendingDraft.step || 1);
+    setMaxReached(pendingDraft.step || 1);
+    setPendingDraft(null);
+  };
+
+  const handleStartFresh = async () => {
+    if (!pendingDraft) return;
+    try {
+      await deleteDraft(pendingDraft.id);
+    } catch {
+      // non-blocking
+    }
+    setDraftId(null);
+    setPendingDraft(null);
+  };
 
   const update = <K extends keyof PublishFormData>(key: K, value: PublishFormData[K]) => {
     setData((d) => ({ ...d, [key]: value }));
@@ -357,6 +404,42 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         isLoading={isPublishing}
         isFinal={step === STEPS.length}
       />
+
+      <AlertDialog open={!!pendingDraft}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ai un anunț nesalvat</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>Am găsit un draft început anterior. Vrei să continui de unde ai rămas sau să începi un anunț nou?</p>
+                {pendingDraft && (
+                  <div className="rounded-lg border border-border bg-muted/40 p-3 text-foreground">
+                    <p className="font-semibold">
+                      {pendingDraft.payload.title?.trim() || "Anunț fără titlu"}
+                    </p>
+                    {pendingDraft.payload.category && (
+                      <p className="text-xs text-muted-foreground">{pendingDraft.payload.category}</p>
+                    )}
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Ultima modificare:{" "}
+                      {new Date(pendingDraft.updated_at).toLocaleString("ro-RO", {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleStartFresh}>Începe anunț nou</AlertDialogCancel>
+            <AlertDialogAction onClick={handleContinueDraft}>Continuă draftul</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
