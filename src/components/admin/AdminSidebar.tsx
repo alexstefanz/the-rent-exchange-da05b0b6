@@ -49,7 +49,7 @@ const menuItems: Array<{
   { title: "Notificări", url: "/admin/notifications", icon: Bell, badgeKey: "unread_total" },
   { title: "Rezervări", url: "/admin/reservations", icon: CalendarCheck },
   { title: "Produse", url: "/admin/products", icon: Package },
-  { title: "Confirmări", url: "/admin/approvals", icon: ClipboardCheck, badgeKey: "pending_products" },
+  { title: "Confirmări / Anulări", url: "/admin/approvals", icon: ClipboardCheck, badgeKey: "pending_products" },
   { title: "Tickete", url: "/admin/tickets", icon: TicketCheck, badgeKey: "open_tickets" },
   { title: "Analytics Suport", url: "/admin/tickets/analytics", icon: BarChart3 },
   { title: "Conversații", url: "/admin/conversations", icon: MessageCircle },
