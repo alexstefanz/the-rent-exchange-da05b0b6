@@ -1057,8 +1057,12 @@ const Step6Review = ({
           onEdit={() => onJump(5)}
         />
         <ReviewRow
-          label="Durată minimă"
-          value={`${data.min_rental_days} ${data.min_rental_days === 1 ? "zi" : "zile"}`}
+          label="Durată închiriere"
+          value={
+            data.max_rental_days != null
+              ? `${data.min_rental_days || 1} – ${data.max_rental_days} zile`
+              : `min. ${data.min_rental_days || 1} ${(data.min_rental_days || 1) === 1 ? "zi" : "zile"}`
+          }
           onEdit={() => onJump(5)}
         />
 
