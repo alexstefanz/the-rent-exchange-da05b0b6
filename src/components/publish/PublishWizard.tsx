@@ -406,10 +406,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       />
 
       <AlertDialog open={!!pendingDraft}>
-        <AlertDialogContent
-          onEscapeKeyDown={(e) => e.preventDefault()}
-          onPointerDownOutside={(e) => e.preventDefault()}
-        >
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Ai un anunț nesalvat</AlertDialogTitle>
             <AlertDialogDescription asChild>
