@@ -66,6 +66,8 @@ const AdminApprovals = () => {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [imageIndices, setImageIndices] = useState<Record<string, number>>({});
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") === "cancellations" ? "cancellations" : "products";
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin-pending-products", searchQuery],
