@@ -1553,12 +1553,15 @@ export type Database = {
       rentals: {
         Row: {
           authorized_at: string | null
+          cancel_request_admin_id: string | null
+          cancel_request_admin_note: string | null
           cancel_request_created_at: string | null
           cancel_request_initiator: string | null
           cancel_request_reason: string | null
           cancel_request_responded_at: string | null
           cancel_request_response_note: string | null
           cancel_request_status: string | null
+          cancel_request_subject: string | null
           cancellation_reason: string | null
           cancellation_tier: string | null
           cancelled_at: string | null
@@ -1613,12 +1616,15 @@ export type Database = {
         }
         Insert: {
           authorized_at?: string | null
+          cancel_request_admin_id?: string | null
+          cancel_request_admin_note?: string | null
           cancel_request_created_at?: string | null
           cancel_request_initiator?: string | null
           cancel_request_reason?: string | null
           cancel_request_responded_at?: string | null
           cancel_request_response_note?: string | null
           cancel_request_status?: string | null
+          cancel_request_subject?: string | null
           cancellation_reason?: string | null
           cancellation_tier?: string | null
           cancelled_at?: string | null
@@ -1673,12 +1679,15 @@ export type Database = {
         }
         Update: {
           authorized_at?: string | null
+          cancel_request_admin_id?: string | null
+          cancel_request_admin_note?: string | null
           cancel_request_created_at?: string | null
           cancel_request_initiator?: string | null
           cancel_request_reason?: string | null
           cancel_request_responded_at?: string | null
           cancel_request_response_note?: string | null
           cancel_request_status?: string | null
+          cancel_request_subject?: string | null
           cancellation_reason?: string | null
           cancellation_tier?: string | null
           cancelled_at?: string | null
@@ -2249,6 +2258,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_respond_cancellation: {
+        Args: { _action: string; _note?: string; _rental_id: string }
+        Returns: Json
+      }
       confirm_pickup: { Args: { _rental_id: string }; Returns: Json }
       create_user_notification: {
         Args: {
@@ -2779,6 +2792,34 @@ export type Database = {
         Args: { p_article_id: string; p_helpful: boolean }
         Returns: undefined
       }
+      list_pending_cancellation_requests: {
+        Args: never
+        Returns: {
+          cancel_request_created_at: string
+          cancel_request_reason: string
+          cancel_request_subject: string
+          end_date: string
+          initiator_id: string
+          initiator_role: string
+          owner_email: string
+          owner_id: string
+          owner_name: string
+          payment_status: string
+          platform_fee: number
+          product_id: string
+          product_image: string
+          product_title: string
+          rental_id: string
+          rental_public_id: string
+          renter_email: string
+          renter_id: string
+          renter_name: string
+          start_date: string
+          status: string
+          subtotal: number
+          total_days: number
+        }[]
+      }
       mark_conversation_read: {
         Args: { p_conversation_id: string }
         Returns: undefined
@@ -2835,10 +2876,12 @@ export type Database = {
           read_ct: number
         }[]
       }
-      request_mutual_cancellation: {
-        Args: { _reason: string; _rental_id: string }
-        Returns: Json
-      }
+      request_mutual_cancellation:
+        | { Args: { _reason: string; _rental_id: string }; Returns: Json }
+        | {
+            Args: { _reason: string; _rental_id: string; _subject?: string }
+            Returns: Json
+          }
       resolve_rental_dispute: {
         Args: { _rental_id: string }
         Returns: undefined
@@ -2975,6 +3018,10 @@ export type Database = {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       unaccent: { Args: { "": string }; Returns: string }
+      withdraw_cancellation_request: {
+        Args: { _rental_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
