@@ -79,7 +79,7 @@ const createUxCopy = () => ({
   },
   dashboard: {
     myRentals: { ro: "Închirierile mele", en: "My Rentals" },
-    myListings: { ro: "Anunțurile mele", en: "My Listings" },
+    myListings: { ro: "Produsele mele", en: "My Products" },
     borrowing: { ro: "Am împrumutat", en: "Borrowed" },
     lending: { ro: "Am dat cu împrumut", en: "Lent out" },
     upcomingRentals: { ro: "Rezervări viitoare", en: "Upcoming rentals" },
