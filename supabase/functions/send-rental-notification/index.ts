@@ -140,6 +140,22 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Resolve (or create) the rental conversation so the owner notification can deep-link to chat.
+    let ownerLink = `/inchirieri?rental_id=${rental.id}`;
+    try {
+      const { data: convId, error: convErr } = await supabaseAdmin.rpc(
+        "get_or_create_rental_conversation",
+        { p_rental_id: rental.id }
+      );
+      if (!convErr && convId) {
+        ownerLink = `/mesaje?conv=${convId}`;
+      } else if (convErr) {
+        console.error("[send-rental-notification] get_or_create_rental_conversation error:", convErr);
+      }
+    } catch (e) {
+      console.error("[send-rental-notification] conversation RPC threw:", e);
+    }
+
     // Insert notifications (in-app)
     await supabaseAdmin.from("notifications").insert([
       {
@@ -147,9 +163,9 @@ Deno.serve(async (req) => {
         type: "rental_request",
         title_ro: `Plată primită — începe chatul`,
         title_en: `Payment received — start the chat`,
-        description_ro: `${renter?.full_name || "Un utilizator"} a făcut plata pentru închirierea produsului „${product?.title}". Începeți discuția pe chat. După ce ați stabilit data și ora predării produsului, completați procesele verbale. Este nevoie de câteva poze înainte din partea ambelor părți pentru a ne asigura că produsul se predă și se întoarce la fel.`,
-        description_en: `${renter?.full_name || "A user"} paid for renting "${product?.title}". Start the chat. Once you've agreed on the pickup date and time, fill in the handover protocols. A few photos beforehand from both sides are needed to make sure the item is handed over and returned in the same condition.`,
-        link: `/inchirieri?rental_id=${rental.id}`,
+        description_ro: `${renter?.full_name || "Un utilizator"} a efectuat plata pentru produsul „${product?.title || "—"}". Începeți discuția pe chat.`,
+        description_en: `${renter?.full_name || "A user"} paid for "${product?.title || "—"}". Start the chat.`,
+        link: ownerLink,
       },
       {
         user_id: rental.renter_id,

@@ -1,34 +1,36 @@
-## Ce se schimbă
+## Schimbări la notificarea „Plată primită — începe chatul"
 
-După ce chiriașul plătește, proprietarul primește o notificare în aplicație + un email cu mesajul:
+### 1. Scurtare text descriere (doar notificarea in-app)
 
-> **„[Nume chiriaș] a făcut plata pentru închirierea produsului „[Produs]". Începeți discuția pe chat. După ce ați stabilit data și ora predării produsului, completați procesele verbale. Este nevoie de câteva poze înainte din partea ambelor părți pentru a ne asigura că produsul se predă și se întoarce la fel."**
+În `supabase/functions/send-rental-notification/index.ts`, înlocuiesc descrierea lungă a notificării `rental_request` (proprietar) cu varianta cerută:
 
-Procesele verbale rămân deblocate la fel ca acum — după ce proprietarul apasă **Acceptă cererea** (≡ acceptă termenii). Nu adăugăm un pas separat.
+- RO: `{renterName} a efectuat plata pentru produsul „{productTitle}". Începeți discuția pe chat.`
+- EN: `{renterName} paid for "{productTitle}". Start the chat.`
 
-## Modificări tehnice
+Emailul `rental-request-owner` rămâne neschimbat (păstrează mesajul lung despre PV și poze).
 
-1. **`supabase/functions/send-rental-notification/index.ts`**
-   - Schimb titlul + descrierea notificării `rental_request` pentru owner:
-     - `title_ro`: „Plată primită — începe chatul"
-     - `title_en`: „Payment received — start the chat"
-     - `description_ro`: textul de mai sus (cu numele chiriașului și produsul interpolate)
-     - `description_en`: traducere echivalentă
-   - Link rămâne către `/inchirieri?rental_id=...` (de unde owner deschide chatul + acceptă cererea).
-   - Notificarea pentru chiriaș (`rental_confirmation`) rămâne neschimbată.
+### 2. Link direct către conversația rentalului
 
-2. **`supabase/functions/_shared/transactional-email-templates/rental-request-owner.tsx`**
-   - Rescriu copy-ul: subiect → „Plată primită pentru [Produs] — începe chatul"
-   - Body: paragraful complet cu mențiunea chat-ului, stabilirii datei/orei și cerinței celor câteva poze înainte din partea ambelor părți pentru PV.
-   - Păstrez butonul CTA „Deschide chatul" (link către pagina rentalului) + secțiunea cu detaliile rezervării (produs, perioadă, preț).
-   - Sanitizare cu `escapeHtml` pe toate valorile dinamice (există deja).
+În aceeași edge function, după inserarea rental-ului, apelez RPC-ul existent `get_or_create_rental_conversation` ca să obțin `conversation_id` și setez `link` pe notificarea proprietarului la `/mesaje?conv=<id>` (în loc de `/inchirieri?rental_id=...`). Astfel butonul deschide direct chatul cu chiriașul.
 
-3. **Deploy** funcțiile `send-rental-notification` (nu necesită — citește template-uri prin `send-transactional-email`) și redeploy `send-transactional-email` ca să preia template-ul actualizat din registry.
+Dacă RPC-ul eșuează (defensiv), revin la linkul curent `/inchirieri?rental_id=...`.
 
-## Ce nu se schimbă
+### 3. Buton „Deschide chatul" pe card-ul de notificare
 
-- Fluxul Stripe / `verify-stripe-payment` (rămâne identic — el deja apelează `send-rental-notification`).
-- Crearea conversației după plată (deja se face automat în `verify-stripe-payment`).
-- Logica de deblocare PV (rămâne legată de acceptarea cererii de către owner).
-- Notificările / mail-urile pentru chiriaș.
-- Schema bazei de date.
+În `src/components/notifications/NotificationCard.tsx`, în `getQuickAction` schimb eticheta pentru `rental_request`:
+
+- RO: `Deschide chatul`
+- EN: `Open chat`
+
+Click-ul folosește mecanismul existent (`onSelect` → navighează la `notification.link`), care acum va duce direct la `/mesaje?conv=<id>`.
+
+### Ce NU se schimbă
+
+- Conținutul emailului către proprietar.
+- Notificarea/emailul către chiriaș.
+- Logica PV / acceptarea cererii / Stripe.
+
+### Detalii tehnice
+
+- Redeploy: `send-rental-notification`.
+- Notificările deja existente nu sunt re-scrise; doar cele noi vor avea textul scurt și linkul către chat.

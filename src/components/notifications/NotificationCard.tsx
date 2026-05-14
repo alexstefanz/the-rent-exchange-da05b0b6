@@ -17,7 +17,7 @@ interface Props {
 function getQuickAction(type: string, language: string): { label: string } | null {
   const t = (type || "").toLowerCase();
   const lang = (ro: string, en: string) => (language === "ro" ? ro : en);
-  if (t === "rental_request") return { label: lang("Vezi cererea", "View request") };
+  if (t === "rental_request") return { label: lang("Deschide chatul", "Open chat") };
   if (t === "rental_confirmation") return { label: lang("Vezi rezervarea", "View booking") };
   if (t.includes("message")) return { label: lang("Răspunde", "Reply") };
   if (t.includes("payment") || t.includes("payout") || t.includes("withdraw"))
