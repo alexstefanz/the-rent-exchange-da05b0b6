@@ -1263,6 +1263,7 @@ export type Database = {
           is_active: boolean
           location_city: string | null
           location_country: string | null
+          max_rental_days: number | null
           min_rental_days: number | null
           min_rental_preset: string | null
           owner_id: string
@@ -1306,6 +1307,7 @@ export type Database = {
           is_active?: boolean
           location_city?: string | null
           location_country?: string | null
+          max_rental_days?: number | null
           min_rental_days?: number | null
           min_rental_preset?: string | null
           owner_id: string
@@ -1349,6 +1351,7 @@ export type Database = {
           is_active?: boolean
           location_city?: string | null
           location_country?: string | null
+          max_rental_days?: number | null
           min_rental_days?: number | null
           min_rental_preset?: string | null
           owner_id?: string
@@ -3057,6 +3060,7 @@ export type Database = {
               is_active: boolean
               location_city: string | null
               location_country: string | null
+              max_rental_days: number | null
               min_rental_days: number | null
               min_rental_preset: string | null
               owner_id: string
@@ -3115,6 +3119,7 @@ export type Database = {
               is_active: boolean
               location_city: string | null
               location_country: string | null
+              max_rental_days: number | null
               min_rental_days: number | null
               min_rental_preset: string | null
               owner_id: string
