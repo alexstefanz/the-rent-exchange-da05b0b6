@@ -1,21 +1,27 @@
-## Două modificări mici
+## Înlocuire termen "escrow" cu "depozit în garanție"
 
-### 1. Scoatem temporar "Durata de închiriere" din wizardul de publicare
+Pe pagina **Cum funcționează** (și unde apare în uxCopy în context de rezervare), textul "escrow" sună prea tehnic/străin. Îl înlocuim cu formula românească **"depozit în garanție"** / **"sistem de depozit în garanție"**, păstrând paralela engleză cu "escrow" doar pe versiunea EN.
 
-În `src/components/publish/PublishWizard.tsx`:
-- În `Step5Pricing` elimin blocul `Rental duration limits` (cardul cu "Durata de închiriere", `min_rental_days` / `max_rental_days`).
-- În `validateStep`, elimin verificarea `s === 4 && data.max_rental_days != null && ...`.
-- În `Step6Review`, elimin `ReviewRow` pentru "Durată închiriere".
-- **Păstrez** câmpurile `min_rental_days` / `max_rental_days` în `PublishFormData`, în payload-ul de save și în defaults (`min_rental_days: 1`, `max_rental_days: null`) — astfel datele existente rămân intacte și putem reactiva UI-ul în viitor fără migrări.
+### Modificări (doar text, în `src/data/uxCopy.ts`)
 
-### 2. `LocationCard` — adresa exactă, fără disclaimer
+Secțiunea bento "Plăți protejate" de pe `/cum-functioneaza`:
+- `escrowPill` → RO: **"DEPOZIT ÎN GARANȚIE ACTIV"** / EN: "ESCROW ACTIVE"
+- `escrowBigDesc` → RO: **"Serviciu integrat de depozit în garanție. Banii sunt eliberați doar când produsul este predat în bune condiții, conform PV-ului semnat digital de ambele părți."** / EN nemodificat
+- `escrowAmountLabel` → RO: **"Sumă în depozit"** / EN nemodificat
+- `escrowSecuredBadge` → RO: rămâne "SECURIZAT"
+- `escrowStage1/2/3` → rămân ("Pre-autorizat" / "În derulare" / "Eliberat la final")
 
-În `src/components/product/LocationCard.tsx`:
-- Afișez adresa completă: `{address || city}` (folosim `pickup_address` din produs, deja transmis ca prop `address`).
-- Elimin rândul cu `Lock` + textul "Adresa exactă apare după rezervarea confirmată." (și varianta EN).
-- Folosesc `address` (cu fallback la `city`) și pentru query-ul iframe-ului Google Maps, pentru a pinui adresa exactă.
-- Dacă `address` lipsește, fallback grațios pe `city` (ca acum).
+Secțiunea generică "Plata în siguranță" (folosită în alte locuri, dacă apare):
+- `escrowTitle` → RO: **"Depozit în garanție"** / EN: "Secure escrow payment"
+- `escrowSubtitle` → RO: **"Modelul nostru de hold & capture (depozit în garanție) protejează ambele părți la fiecare rezervare."**
 
-### Out of scope
-- Fără modificări la DB, RLS, RPC sau la `pickup_address` (deja există și e populat din wizard).
-- Fără modificări la flow-ul de gated contact / pickup pentru chiriași — schimbarea e doar la afișarea publică din `LocationCard`.
+Pas tenant:
+- `tenantStep2Desc` → RO: **"Primești o notificare imediat ce proprietarul aprobă cererea. Plata rămâne în depozit (escrow), nu este debitată încă."**
+
+### Ce NU se schimbă
+- Cheile/identifierii din cod (`escrowPill`, `escrowBigDesc` etc.) — doar valorile RO.
+- Versiunile EN păstrează "escrow" (termen consacrat internațional).
+- Comentariul `// Escrow section` din uxCopy poate rămâne (nu e vizibil).
+- Bannerul mare păstrează titlul scurt **"Plăți protejate end-to-end."** (mai lizibil decât "Depozit în garanție end-to-end").
+
+Confirmi și implementez?
