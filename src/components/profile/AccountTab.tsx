@@ -908,7 +908,7 @@ const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: an
     if (!fullName || fullName.length < 3) {
       toast({
         title: t("Nume incomplet", "Name missing"),
-        description: t("Completează mai întâi „Numele complet" în secțiunea Profil.", "Please fill in your full name in the Profile section first."),
+        description: t("Completează mai întâi numele complet în secțiunea Profil.", "Please fill in your full name in the Profile section first."),
         variant: "destructive",
       });
       return;
