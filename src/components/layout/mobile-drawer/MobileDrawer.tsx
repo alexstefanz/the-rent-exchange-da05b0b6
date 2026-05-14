@@ -105,20 +105,23 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
     touchStart.current = null;
   };
 
-  const activityItems: DrawerNavItem[] = [
-    { to: "/mesaje", label: t("Mesaje", "Messages"), icon: MessageCircle, badge: unreadMessages },
-    { to: "/rezervari", label: t("Rezervări", "Bookings"), icon: CalendarCheck, badge: activeRentals },
-    { to: "/inchirieri", label: t("Închirieri", "Lendings"), icon: Package },
+  const renterItems: DrawerNavItem[] = [
+    { to: "/rezervari", label: t("Închirierile mele", "My rentals"), icon: CalendarCheck, badge: activeRentals },
     { to: "/favorite", label: t("Favorite", "Favorites"), icon: Heart },
-    { to: "/recenzii", label: t("Recenzii", "Reviews"), icon: Star },
+    { to: "/mesaje", label: t("Mesaje", "Messages"), icon: MessageCircle, badge: unreadMessages },
     { to: "/activitate", label: t("Activitate", "Activity"), icon: Activity },
+  ];
+
+  const ownerItems: DrawerNavItem[] = [
+    { to: "/anunturi", label: t("Anunțurile mele", "My listings"), icon: FileText },
+    { to: "/inchirieri", label: t("Cereri primite", "Bookings received"), icon: Package },
+    { to: "/castiguri", label: t("Câștiguri & retrageri", "Earnings & payouts"), icon: Wallet },
+    { to: "/recenzii", label: t("Recenzii", "Reviews"), icon: Star },
   ];
 
   const accountItems: DrawerNavItem[] = [
     { to: "/contul-meu", label: t("Contul meu", "My Account"), icon: User },
-    { to: "/anunturi", label: t("Produsele mele", "My Products"), icon: FileText },
     { to: "/verificare", label: t("Verificare KYC", "KYC Verification"), icon: Shield },
-    { to: "/castiguri", label: t("Plăți & Retrageri", "Payments & Withdrawals"), icon: Wallet },
   ];
 
   const supportItems: DrawerNavItem[] = [
@@ -231,8 +234,18 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
               {user && (
                 <div className="animate-fade-in" style={stagger(4)}>
                   <DrawerNavGroup
-                    title={t("Activitate", "Activity")}
-                    items={activityItems}
+                    title={t("Ca chiriaș", "As renter")}
+                    items={renterItems}
+                    onNavigate={onClose}
+                  />
+                </div>
+              )}
+
+              {user && (
+                <div className="animate-fade-in" style={stagger(4)}>
+                  <DrawerNavGroup
+                    title={t("Ca proprietar", "As owner")}
+                    items={ownerItems}
                     onNavigate={onClose}
                   />
                 </div>

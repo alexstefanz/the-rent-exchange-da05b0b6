@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, ArrowLeft, Package } from "lucide-react";
+import { Loader2, ArrowLeft, Package, Store } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from "@/components/layout/Navbar";
@@ -39,9 +39,13 @@ const RentalsOutPage = () => {
             <Package className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{t("Închirieri", "Lendings")}</h1>
+            <div className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
+              <Store className="h-3 w-3" />
+              {t("Ca proprietar", "As owner")}
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight">{t("Cereri primite", "Bookings received")}</h1>
             <p className="text-muted-foreground mt-1">
-              {t("Produsele tale închiriate și cererile primite", "Your rented-out products and incoming requests")}
+              {t("Rezervări pentru anunțurile tale", "Bookings on your listings")}
             </p>
           </div>
         </div>
