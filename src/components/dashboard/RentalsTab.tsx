@@ -39,11 +39,21 @@ interface MyRental {
 const fetchMyRentals = async (userId: string): Promise<MyRental[]> => {
   const { data, error } = await supabase
     .from("rentals")
-    .select("id, public_id, product_id, owner_id, start_date, end_date, rental_days, subtotal, status, payment_status, handover_confirmed_at, return_confirmed_at, message_to_owner, created_at, products(title, images), owner:profiles!rentals_owner_id_fkey(full_name)")
+    .select("id, public_id, product_id, owner_id, start_date, end_date, rental_days, subtotal, status, payment_status, handover_confirmed_at, return_confirmed_at, message_to_owner, created_at, products(title, images)")
     .eq("renter_id", userId)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
+
+  const ownerIds = Array.from(new Set((data || []).map((r: any) => r.owner_id).filter(Boolean)));
+  let ownerMap: Record<string, string> = {};
+  if (ownerIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", ownerIds);
+    ownerMap = Object.fromEntries((profiles || []).map((p: any) => [p.id, p.full_name || "Proprietar"]));
+  }
 
   return (data || []).map((r: any) => ({
     id: r.id,
@@ -52,7 +62,7 @@ const fetchMyRentals = async (userId: string): Promise<MyRental[]> => {
     owner_id: r.owner_id,
     product_title: r.products?.title || "Produs șters",
     product_image: r.products?.images?.[0] || "/placeholder.svg",
-    owner_name: r.owner?.full_name || "Proprietar",
+    owner_name: (r.owner_id && ownerMap[r.owner_id]) || "Proprietar",
     start_date: r.start_date,
     end_date: r.end_date,
     rental_days: r.rental_days,
