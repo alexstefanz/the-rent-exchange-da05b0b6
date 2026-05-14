@@ -170,7 +170,7 @@ export function NotificationCenter({ variant = "popover", onClose }: Props) {
           <Link
             to="/notificari"
             onClick={onClose}
-            className="flex items-center justify-center gap-1.5 w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-[hsl(var(--primary-hover))] transition-colors"
+            className="flex items-center justify-center gap-1.5 w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
           >
             {t("Vezi toate notificările", "View all notifications")}
             <ArrowRight className="h-4 w-4" />
