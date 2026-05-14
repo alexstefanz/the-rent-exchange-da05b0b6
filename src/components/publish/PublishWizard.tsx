@@ -224,20 +224,22 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   const validateStep = (s: number): boolean => {
     const validators: Record<number, () => any> = {
       1: () => stepValidators.step1.safeParse({ category: data.category }),
-      2: () =>
-        stepValidators.step2.safeParse({
+      2: () => {
+        const detailsRes = stepValidators.step2.safeParse({
           title: data.title,
           description: data.description,
           condition: data.condition,
-        }),
-      3: () => stepValidators.step3.safeParse({ images: data.images }),
-      4: () =>
+        });
+        if (!detailsRes.success) return detailsRes;
+        return stepValidators.step3.safeParse({ images: data.images });
+      },
+      3: () =>
         stepValidators.step4.safeParse({
           location_county: data.location_county,
           location_city: data.location_city,
         }),
-      5: () => stepValidators.step5.safeParse({ daily_price_owner: data.daily_price_owner }),
-      6: () => ({ success: true }),
+      4: () => stepValidators.step5.safeParse({ daily_price_owner: data.daily_price_owner }),
+      5: () => ({ success: true }),
     };
     const result = validators[s]();
     if (!result.success) {
@@ -250,7 +252,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       if (firstMsg) toast({ title: "Verifică datele", description: firstMsg, variant: "destructive" });
       return false;
     }
-    if (s === 5 && data.max_rental_days != null && data.max_rental_days < (data.min_rental_days || 1)) {
+    if (s === 4 && data.max_rental_days != null && data.max_rental_days < (data.min_rental_days || 1)) {
       setErrors({ max_rental_days: "Maximul trebuie să fie ≥ minimul" });
       toast({
         title: "Verifică datele",
@@ -264,7 +266,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   };
 
   const goNext = () => {
-    if (step === 6) {
+    if (step === 5) {
       handlePublish();
       return;
     }
