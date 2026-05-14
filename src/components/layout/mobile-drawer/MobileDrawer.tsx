@@ -234,8 +234,18 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
               {user && (
                 <div className="animate-fade-in" style={stagger(4)}>
                   <DrawerNavGroup
-                    title={t("Activitate", "Activity")}
-                    items={activityItems}
+                    title={t("Ca chiriaș", "As renter")}
+                    items={renterItems}
+                    onNavigate={onClose}
+                  />
+                </div>
+              )}
+
+              {user && (
+                <div className="animate-fade-in" style={stagger(4)}>
+                  <DrawerNavGroup
+                    title={t("Ca proprietar", "As owner")}
+                    items={ownerItems}
                     onNavigate={onClose}
                   />
                 </div>
