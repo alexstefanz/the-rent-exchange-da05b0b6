@@ -555,11 +555,13 @@ const Step2Details = ({
   update,
   errors,
   feePercent: _fee,
+  userId,
 }: {
   data: PublishFormData;
   update: <K extends keyof PublishFormData>(k: K, v: PublishFormData[K]) => void;
   errors: Record<string, string>;
   feePercent: number;
+  userId: string;
 }) => {
   const [genLoading, setGenLoading] = useState(false);
   const { toast } = useToast();
@@ -593,12 +595,37 @@ const Step2Details = ({
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 2 din 6"
-        title="Spune-ne despre produsul tău"
-        subtitle="Un titlu clar și o descriere detaliată cresc considerabil rata de rezervare."
+        eyebrow="Pasul 2 din 5"
+        title="Fotografii & detalii"
+        subtitle="Adaugă întâi pozele (6+ recomandat) — apoi completează titlul și descrierea."
       />
 
       <div className="mt-6 space-y-6">
+        {/* Photos */}
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold">
+            Fotografii <span className="font-normal text-muted-foreground">(prima poză devine coperta)</span>
+          </Label>
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <ImageUpload userId={userId} images={data.images} onChange={(imgs) => update("images", imgs)} maxImages={10} />
+          </div>
+          {errors.images && <p className="text-sm text-destructive">{errors.images}</p>}
+          <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-4">
+            <div className="flex items-start gap-3">
+              <ImageIcon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <p className="font-medium text-foreground">Sfaturi pentru poze bune:</p>
+                <ul className="list-disc space-y-0.5 pl-4">
+                  <li>Lumină naturală, fără bliț</li>
+                  <li>Fundal curat, neutru</li>
+                  <li>Arată produsul din 3-4 unghiuri + detalii</li>
+                  <li>Include accesoriile incluse</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Title */}
         <div className="space-y-2">
           <Label htmlFor="title" className="text-sm font-semibold">
