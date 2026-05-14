@@ -201,8 +201,11 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
     if (!pendingDraft) return;
     setDraftId(pendingDraft.id);
     setData({ ...emptyPublishForm(), ...pendingDraft.payload });
-    setStep(pendingDraft.step || 1);
-    setMaxReached(pendingDraft.step || 1);
+    // Remap legacy draft step (6-step wizard) to new 5-step wizard
+    const legacyMap: Record<number, number> = { 1: 1, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5 };
+    const remapped = legacyMap[pendingDraft.step] ?? Math.min(pendingDraft.step || 1, 5);
+    setStep(remapped);
+    setMaxReached(remapped);
     setPendingDraft(null);
   };
 
