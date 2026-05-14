@@ -1,26 +1,35 @@
-## Redesign carduri "Cereri de închiriere"
+## Redesign tab "Rezervări" (renter side, /rezervari)
 
-În `src/components/dashboard/RentalsOutTab.tsx`, secțiunea premium cu cererile noi/confirmate fără PV:
+Aplic aceeași structură ca pe `/inchirieri`, adaptată pentru perspectiva chiriașului.
 
-### Layout
-- Wrapper actual (stack vertical) → grid responsiv: `grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4`
-- Fiecare card devine mai compact, vertical, ca să încapă 3 pe rând pe desktop
+### Fișiere modificate
+- `src/components/dashboard/RentalsTab.tsx` (rescriere conform structurii din `RentalsOutTab.tsx`)
 
-### Imagine produs
-- Adăugare bandă imagine în partea de sus a fiecărui card: `aspect-[16/10]` cu `object-cover`, colțuri rotunjite sus
-- Sursă: `rental.products.images[0]` (deja disponibil în query) cu fallback `/placeholder.svg`
-- Badge status (`Cerere nouă` / `Confirmată`) suprapus dreapta-sus peste imagine
-- "pentru [Nume produs]" rămâne ca titlu sub imagine
+### 1. Lărgire query
+`fetchMyRentals` se extinde să aducă toate rezervările chiriașului (inclusiv `cancelled`, `rejected`, pending fără plată) — necesare pentru stats + istoric. Câmpuri noi: `owner_id`, `payment_status`, `handover_confirmed_at`, `owner_payout`, `return_confirmed_at`, plus numele proprietarului via join `profiles!owner_id(full_name)`.
 
-### Conținut card (rearanjat pentru lățime mai mică)
-- Header: "CERERE DE LA / Nume chiriaș" (compact)
-- Titlu produs (link)
-- Cele 3 mini-tile (Perioadă / Zile / Câștig) → grid 3 coloane rămâne, dar cu padding redus și text mai mic (`text-xs`)
-- Butoane Acceptă/Refuză: stack vertical pe cardul îngust (`flex-col`), full-width
-- "Vezi detalii" + "Solicită anularea cererii" rămân full-width în partea de jos
+### 2. Stats summary (4 carduri)
+Grid `grid-cols-2 lg:grid-cols-4`:
+- **În așteptare** (`Inbox`) — `status === pending` (așteaptă răspunsul proprietarului)
+- **Active** (`Package`) — `confirmed` + `active`
+- **Anulate** (`XCircle`, muted) — `cancelled` + `rejected`
+- **Cheltuit luna asta** (`TrendingUp`, primary) — sumă `subtotal` pentru rezervări `completed` finalizate luna curentă
 
-### Restul paginii
-- Stats summary (4 carduri) — neschimbat
-- Accordion istoric — neschimbat
+### 3. Carduri premium "Rezervările mele" — grid 3 pe rând cu imagine
+Wrapper `grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4`. Conține rezervările `pending` + `confirmed`/`active` fără `handover_confirmed_at`.
 
-Fișier modificat: `src/components/dashboard/RentalsOutTab.tsx`
+Fiecare card:
+- Imagine produs `aspect-[16/10]` în partea de sus + badge status suprapus
+- "REZERVARE LA / Nume proprietar"
+- "pentru [Nume produs]"
+- Mini-tile-uri (Perioadă / Zile / Total plătit)
+- Buton principal "Vezi detalii" → `/rezervari/{public_id}`
+- Buton secundar "Solicită anularea cererii" (folosind `requestMutualCancellation` deja existent), vizibil pentru `confirmed`/`active` fără handover
+
+### 4. Accordion istoric (fără imagini)
+Toate celelalte (completed, cancelled, rejected, active cu handover deja confirmat) într-un `<Accordion>` cu listă: nume produs, proprietar, perioadă, total, `StatusBadge`, buton "Vezi mai mult".
+
+### Out of scope
+- Fără modificări de business logic
+- Fără atingere `RentalProductCard` (nu mai e folosit aici după refactor)
+- Pagina `/rezervari/{id}` rămâne cum e
