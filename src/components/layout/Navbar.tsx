@@ -43,7 +43,6 @@ import { useConversations } from "@/hooks/queries/useConversations";
 import { useIsAdmin } from "@/hooks/queries/useAdminStats";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import LanguageSwitcher from "./LanguageSwitcher";
 import NotificationBell from "./NotificationBell";
 import MobileBottomNav from "./MobileBottomNav";
 import { AccountHubMenu } from "./AccountHubMenu";
@@ -170,15 +169,30 @@ const Navbar = () => {
           </nav>
 
           <div className="flex items-center gap-2">
-            {/* Language Switcher - Desktop */}
-            <div className="hidden lg:flex">
-              <LanguageSwitcher />
-            </div>
-
             {loading ? (
               <div className="h-9 w-24 animate-pulse bg-muted rounded-lg" />
             ) : user ? (
               <>
+                {/* Chat - Desktop */}
+                <Button variant="ghost" size="sm" className="hidden lg:flex relative gap-2" asChild>
+                  <Link to="/mesaje" aria-label="Chat">
+                    <MessageCircle className="h-4 w-4" />
+                    <span>Chat</span>
+                    {unreadMessagesCount > 0 && (
+                      <span className="ml-1 inline-flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                        {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
+                      </span>
+                    )}
+                  </Link>
+                </Button>
+
+                {/* Favorites - Desktop */}
+                <Button variant="ghost" size="icon" className="hidden lg:flex" asChild>
+                  <Link to="/favorite" aria-label={t("Favorite", "Favorites")}>
+                    <Heart className="h-5 w-5" />
+                  </Link>
+                </Button>
+
                 {/* Notification Bell - Desktop */}
                 <div className="hidden lg:flex">
                   <NotificationBell />
@@ -197,7 +211,7 @@ const Navbar = () => {
             <Button size="sm" className="hidden lg:flex" asChild>
               <Link to="/owner/new-product">
                 <Plus className="h-4 w-4" />
-                {t("Adaugă", "Add")}
+                {t("Adaugă anunț nou", "Add listing")}
               </Link>
             </Button>
             
