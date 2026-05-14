@@ -174,7 +174,21 @@ export function ChatPanel({
     if (!content.trim() && uploaded.length === 0) return;
     // For text-only just send. For attachments, ensure there's at least a placeholder content.
     const finalContent = content.trim() || "📎";
-    const sent = await sendMessage(conversationId, finalContent);
+    let sent;
+    try {
+      sent = await sendMessage(conversationId, finalContent);
+    } catch (e: any) {
+      if (e?.message === "PROFANITY_BLOCKED") {
+        toast.error(
+          t(
+            "Mesajul conține limbaj licențios. Încălcările repetate pot duce la suspendarea contului.",
+            "Message contains offensive language. Repeated violations can lead to account suspension."
+          )
+        );
+        throw e;
+      }
+      throw e;
+    }
     if (sent) {
       let attachments: AttachmentRow[] = [];
       if (uploaded.length > 0) {
