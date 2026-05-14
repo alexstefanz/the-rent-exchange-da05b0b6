@@ -1,4 +1,4 @@
-import { Send, CheckCircle2, Package, Wrench, Undo2, Wallet, ShieldCheck, Headphones, BadgePercent, UserCheck, Tag, Check } from "lucide-react";
+import { Send, CheckCircle2, Package, Wrench, Undo2, Wallet, ShieldCheck, Headphones, UserCheck, Tag, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
