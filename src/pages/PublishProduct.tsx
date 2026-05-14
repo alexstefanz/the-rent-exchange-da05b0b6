@@ -5,6 +5,9 @@ import PublishWizard from "@/components/publish/PublishWizard";
 import { useAuth } from "@/contexts/AuthContext";
 import { useKycGate } from "@/hooks/queries/useKycGate";
 import KycGateBanner from "@/components/kyc/KycGateBanner";
+import { useIsBanned } from "@/hooks/useIsBanned";
+import { BannedBanner } from "@/components/common/BannedBanner";
+import { Button } from "@/components/ui/button";
 import { getProductById, type Product } from "@/features/products/productsApi";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,6 +20,7 @@ const PublishProductPage = ({ mode }: Props) => {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
   const kyc = useKycGate();
+  const { isBanned } = useIsBanned();
   const { toast } = useToast();
   const [product, setProduct] = useState<Product | null>(null);
   const [loadingProduct, setLoadingProduct] = useState(mode === "edit");
@@ -51,6 +55,23 @@ const PublishProductPage = ({ mode }: Props) => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (user && isBanned) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-12 space-y-4">
+        <BannedBanner
+          context={
+            mode === "create"
+              ? "Nu poți publica anunțuri noi cât timp contul este suspendat."
+              : "Nu poți edita anunțuri cât timp contul este suspendat."
+          }
+        />
+        <Button variant="outline" onClick={() => navigate("/")}>
+          Înapoi la pagina principală
+        </Button>
       </div>
     );
   }
