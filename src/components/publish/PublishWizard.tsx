@@ -921,7 +921,7 @@ const Step4Location = ({
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 4 din 6"
+        eyebrow="Pasul 3 din 5"
         title="Unde se află produsul?"
         subtitle="Adresa exactă este vizibilă doar după ce o rezervare e confirmată."
       />
@@ -1033,7 +1033,7 @@ const Step5Pricing = ({
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 5 din 6"
+        eyebrow="Pasul 4 din 5"
         title="Preț chirie"
         subtitle="Setează cât vrei să primești pe zi. Comisionul platformei se adaugă automat clientului."
       />
@@ -1182,7 +1182,7 @@ const Step6Review = ({
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 6 din 6"
+        eyebrow="Pasul 5 din 5"
         title={mode === "edit" ? "Verifică modificările" : "Aproape gata!"}
         subtitle={
           mode === "edit"
