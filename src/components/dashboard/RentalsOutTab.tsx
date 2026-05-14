@@ -4,6 +4,8 @@ import { Package, Plus, Check, X, Loader2, Calendar, TrendingUp, Inbox, MessageS
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useAuth } from "@/contexts/AuthContext";
 import { getOwnerRentals, respondToRental, type OwnerRental } from "@/features/rentals/ownerRentalsApi";
@@ -34,6 +36,7 @@ const RentalsOutTab = () => {
   const [rejectDialogRental, setRejectDialogRental] = useState<OwnerRental | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [cancelDialogRental, setCancelDialogRental] = useState<OwnerRental | null>(null);
+  const [cancelSubject, setCancelSubject] = useState("");
   const [cancelReason, setCancelReason] = useState("");
 
   const pendingRentals = rentals.filter(r => r.status === "pending");
@@ -76,16 +79,21 @@ const RentalsOutTab = () => {
 
   const handleRequestCancel = async () => {
     if (!cancelDialogRental) return;
+    if (!cancelSubject.trim() || cancelSubject.trim().length < 3) {
+      toast.error("Subiectul e prea scurt (minim 3 caractere)");
+      return;
+    }
     if (!cancelReason.trim() || cancelReason.trim().length < 5) {
       toast.error("Te rugăm să adaugi un motiv (minim 5 caractere)");
       return;
     }
     setRespondingId(cancelDialogRental.id);
     try {
-      await requestMutualCancellation(cancelDialogRental.id, cancelReason.trim());
-      toast.success("Cererea de anulare a fost trimisă chiriașului");
+      await requestMutualCancellation(cancelDialogRental.id, cancelSubject.trim(), cancelReason.trim());
+      toast.success("Cererea de anulare a fost trimisă către admin pentru revizuire");
       queryClient.invalidateQueries({ queryKey: ["ownerRentals"] });
       setCancelDialogRental(null);
+      setCancelSubject("");
       setCancelReason("");
     } catch (e: any) {
       toast.error(e?.message || "Eroare la trimiterea cererii de anulare");
@@ -347,15 +355,33 @@ const RentalsOutTab = () => {
           <DialogHeader>
             <DialogTitle>Solicită anularea cererii</DialogTitle>
             <DialogDescription>
-              Trimitem o cerere de anulare către chiriaș pentru „{cancelDialogRental?.product_title}". Dacă acceptă, banii (inclusiv comisionul) îi sunt rambursați integral.
+              Cererea va fi revizuită de un admin. La aprobare, banii (inclusiv comisionul) sunt rambursați integral chiriașului pentru „{cancelDialogRental?.product_title}".
             </DialogDescription>
           </DialogHeader>
-          <Textarea
-            placeholder="Motivul anulării (obligatoriu)"
-            value={cancelReason}
-            onChange={(e) => setCancelReason(e.target.value)}
-            rows={3}
-          />
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="cancel-subject-owner">Subiect</Label>
+              <Input
+                id="cancel-subject-owner"
+                placeholder="Ex: Indisponibilitate produs"
+                value={cancelSubject}
+                onChange={(e) => setCancelSubject(e.target.value)}
+                maxLength={120}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="cancel-reason-owner">Motivul anulării</Label>
+              <Textarea
+                id="cancel-reason-owner"
+                placeholder="Descrie pe scurt motivul (min. 5 caractere)"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                rows={3}
+                className="mt-1"
+              />
+            </div>
+          </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setCancelDialogRental(null)}>Renunță</Button>
             <Button

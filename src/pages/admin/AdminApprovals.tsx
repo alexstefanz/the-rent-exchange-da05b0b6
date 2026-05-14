@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { approveProduct, rejectProduct } from "@/features/admin/adminProductsApi";
 import AdminLayout from "@/components/admin/AdminLayout";
+import AdminCancellationRequestsPanel from "@/components/admin/AdminCancellationRequestsPanel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -119,7 +121,13 @@ const AdminApprovals = () => {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-foreground">Confirmări Anunțuri</h1>
+        <h1 className="text-2xl font-bold text-foreground">Confirmări / Anulări</h1>
+        <Tabs defaultValue="products" className="space-y-4">
+          <TabsList>
+            <TabsTrigger value="products">Anunțuri</TabsTrigger>
+            <TabsTrigger value="cancellations">Anulări rezervări</TabsTrigger>
+          </TabsList>
+          <TabsContent value="products" className="space-y-6">
         <div className="flex items-center gap-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -348,6 +356,11 @@ const AdminApprovals = () => {
             })}
           </div>
         )}
+          </TabsContent>
+          <TabsContent value="cancellations">
+            <AdminCancellationRequestsPanel />
+          </TabsContent>
+        </Tabs>
       </div>
 
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
