@@ -135,27 +135,39 @@ export async function payForConfirmedRental(rentalId: string): Promise<string> {
   return data.url;
 }
 
-/** Mutual cancellation: either party initiates a request with a reason. */
-export async function requestMutualCancellation(rentalId: string, reason: string) {
+/** Cancellation request: user submits subject + reason; admin reviews. */
+export async function requestMutualCancellation(rentalId: string, subject: string, reason: string) {
   const { data, error } = await supabase.rpc("request_mutual_cancellation", {
     _rental_id: rentalId,
     _reason: reason,
+    _subject: subject,
   });
   if (error) throw error;
-  // Notify the other party (best-effort)
   supabase.functions.invoke("notify-rental-event", {
-    body: { rental_id: rentalId, event_key: "mutual_cancel_requested" },
-  }).catch((e) => console.warn("notify mutual_cancel_requested failed", e));
+    body: { rental_id: rentalId, event_key: "cancel_request_submitted" },
+  }).catch((e) => console.warn("notify cancel_request_submitted failed", e));
   return data;
 }
 
-/** Mutual cancellation: respond to a pending request (approve / reject / withdraw). */
-export async function respondMutualCancellation(
+/** Initiator withdraws their pending cancellation request. */
+export async function withdrawCancellationRequest(rentalId: string) {
+  const { data, error } = await supabase.rpc("withdraw_cancellation_request", {
+    _rental_id: rentalId,
+  });
+  if (error) throw error;
+  supabase.functions.invoke("notify-rental-event", {
+    body: { rental_id: rentalId, event_key: "cancel_request_withdrawn" },
+  }).catch(() => {});
+  return data;
+}
+
+/** Admin reviews a pending cancellation request: approve (refund) or reject. */
+export async function adminRespondCancellation(
   rentalId: string,
-  action: "approve" | "reject" | "withdraw",
+  action: "approve" | "reject",
   note?: string,
 ) {
-  const { data, error } = await supabase.rpc("respond_mutual_cancellation", {
+  const { data, error } = await supabase.rpc("admin_respond_cancellation", {
     _rental_id: rentalId,
     _action: action,
     _note: note ?? null,
@@ -167,11 +179,13 @@ export async function respondMutualCancellation(
     });
     if (fnErr) throw fnErr;
     if ((fnData as any)?.error) throw new Error((fnData as any).error);
-  } else {
-    // Notify initiator on reject/withdraw (best-effort)
     supabase.functions.invoke("notify-rental-event", {
-      body: { rental_id: rentalId, event_key: action === "reject" ? "mutual_cancel_rejected" : "mutual_cancel_withdrawn" },
-    }).catch(() => { /* noop */ });
+      body: { rental_id: rentalId, event_key: "cancel_request_approved" },
+    }).catch(() => {});
+  } else {
+    supabase.functions.invoke("notify-rental-event", {
+      body: { rental_id: rentalId, event_key: "cancel_request_rejected" },
+    }).catch(() => {});
   }
   return data;
 }
