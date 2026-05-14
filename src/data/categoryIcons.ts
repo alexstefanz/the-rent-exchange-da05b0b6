@@ -9,14 +9,12 @@ import {
   Luggage,
   Truck,
   Shirt,
+  Forklift,
   Package,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import ExcavatorIcon from "@/components/icons/ExcavatorIcon";
 
-type CategoryIconComponent = LucideIcon | typeof ExcavatorIcon;
-
-export const categoryIcons: Record<number, CategoryIconComponent> = {
+export const categoryIcons: Record<number, LucideIcon> = {
   1: Wrench,        // Unelte
   2: PartyPopper,   // Evenimente
   3: Monitor,       // Electronice
@@ -27,10 +25,10 @@ export const categoryIcons: Record<number, CategoryIconComponent> = {
   8: Luggage,       // Travel
   9: Truck,         // Transport și Utilitare
   10: Shirt,        // Haine și Recuzită
-  11: ExcavatorIcon, // Utilaje (custom Excavator)
+  11: Forklift,     // Utilaje
   12: Package,      // Diverse
 };
 
-export const getCategoryIcon = (categoryId: number): CategoryIconComponent => {
+export const getCategoryIcon = (categoryId: number): LucideIcon => {
   return categoryIcons[categoryId] || Package;
 };
