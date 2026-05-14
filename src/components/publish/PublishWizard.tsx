@@ -255,15 +255,6 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       if (firstMsg) toast({ title: "Verifică datele", description: firstMsg, variant: "destructive" });
       return false;
     }
-    if (s === 4 && data.max_rental_days != null && data.max_rental_days < (data.min_rental_days || 1)) {
-      setErrors({ max_rental_days: "Maximul trebuie să fie ≥ minimul" });
-      toast({
-        title: "Verifică datele",
-        description: "Durata maximă trebuie să fie mai mare sau egală cu durata minimă.",
-        variant: "destructive",
-      });
-      return false;
-    }
     setErrors({});
     return true;
   };
