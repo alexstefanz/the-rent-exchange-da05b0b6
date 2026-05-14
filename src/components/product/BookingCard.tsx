@@ -13,6 +13,8 @@ import { toast } from "@/hooks/use-toast";
 import { useKycGate } from "@/hooks/queries/useKycGate";
 import { useAuth } from "@/contexts/AuthContext";
 import KycGateBanner from "@/components/kyc/KycGateBanner";
+import { useIsBanned } from "@/hooks/useIsBanned";
+import { Ban } from "lucide-react";
 
 interface BookingCardProps {
   productId: string;
@@ -37,6 +39,7 @@ const BookingCard = ({
   const { language } = useLanguage();
   const { user } = useAuth();
   const kyc = useKycGate();
+  const { isBanned } = useIsBanned();
   const dateLocale = language === "ro" ? ro : enUS;
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
@@ -93,7 +96,9 @@ const BookingCard = ({
 
   const needsKyc = !!user && !kyc.loading && !kyc.isVerified;
   const isPendingKyc = !!user && !kyc.loading && kyc.isPending;
-  const ctaLabel = needsKyc
+  const ctaLabel = isBanned
+    ? "Cont suspendat"
+    : needsKyc
     ? (isPendingKyc
         ? (language === "ro" ? "În așteptare verificare" : "Awaiting verification")
         : (language === "ro" ? "Verifică identitatea pentru a rezerva" : "Verify identity to book"))
@@ -172,10 +177,16 @@ const BookingCard = ({
         </div>
       )}
 
+        {isBanned && (
+          <div className="mb-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive flex items-start gap-2">
+            <Ban className="h-4 w-4 shrink-0 mt-0.5" strokeWidth={2.5} />
+            <span>Contul tău este suspendat și nu poate face rezervări noi.</span>
+          </div>
+        )}
         <Button
           className="w-full"
           size="lg"
-          disabled={!startDate || !endDate || needsKyc}
+          disabled={!startDate || !endDate || needsKyc || isBanned}
           onClick={handleBooking}
         >
           {ctaLabel}

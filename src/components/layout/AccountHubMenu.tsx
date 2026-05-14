@@ -37,6 +37,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAccountDashboard } from "@/hooks/useAccountDashboard";
 import { useIsAdmin } from "@/hooks/queries/useAdminStats";
 import { useAdminNotificationSummary } from "@/hooks/queries/useAdminNotifications";
+import { useIsBanned } from "@/hooks/useIsBanned";
+import { BannedBadge } from "@/components/common/BannedBadge";
+import { BannedBanner } from "@/components/common/BannedBanner";
 import { cn } from "@/lib/utils";
 
 /* ---------- helpers ---------- */
@@ -256,6 +259,7 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
   const { data, isLoading } = useAccountDashboard();
   const { data: isAdmin } = useIsAdmin(user?.id);
   const { data: adminSummary } = useAdminNotificationSummary();
+  const { isBanned } = useIsBanned();
   const adminUnread = isAdmin ? adminSummary?.unread_total ?? 0 : 0;
 
   const [showBalance, setShowBalance] = useState(
@@ -314,7 +318,9 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
         </AvatarFallback>
       </Avatar>
       <span className="text-sm font-medium">{t("Contul tău", "Your account")}</span>
-      {isAdmin && adminUnread > 0 ? (
+      {isBanned ? (
+        <BannedBadge className="absolute -top-0.5 -right-0.5" />
+      ) : isAdmin && adminUnread > 0 ? (
         <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
           <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
           <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-background" />
@@ -328,6 +334,7 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
   /* ----- shared content ----- */
   const TopZone = (
     <div className="shrink-0 p-3 pb-2 space-y-2">
+      {isBanned && <BannedBanner />}
       {isLoading || !profile ? (
         <div className="rounded-2xl bg-muted/40 p-4 animate-pulse">
           <div className="flex items-center gap-3">

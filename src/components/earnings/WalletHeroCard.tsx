@@ -4,6 +4,7 @@ import { Wallet, ArrowUpRight, TrendingUp, Lock, ShoppingBag } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useIsBanned } from "@/hooks/useIsBanned";
 
 interface Props {
   available: number;
@@ -30,10 +31,13 @@ const useCountUp = (target: number, ms = 800) => {
 
 export const WalletHeroCard = ({ available, thisMonth, hasMethod, onWithdraw }: Props) => {
   const { t } = useLanguage();
+  const { isBanned } = useIsBanned();
   const animated = useCountUp(available);
-  const disabled = available <= 0 || !hasMethod;
+  const disabled = available <= 0 || !hasMethod || isBanned;
 
-  const tooltipText = !hasMethod
+  const tooltipText = isBanned
+    ? t("Cont suspendat — retragerile sunt blocate. Contactează suportul.", "Account suspended — withdrawals are blocked. Contact support.")
+    : !hasMethod
     ? t("Adaugă o metodă de retragere mai întâi", "Add a withdrawal method first")
     : available <= 0
     ? t("Nu ai fonduri disponibile", "No funds available")

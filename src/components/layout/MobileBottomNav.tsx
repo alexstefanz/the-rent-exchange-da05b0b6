@@ -1,21 +1,23 @@
 import { Link, useLocation } from "react-router-dom";
-import { Search, Heart, Plus, MessageCircle, User } from "lucide-react";
+import { Search, Heart, Plus, MessageCircle, User, Ban } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useConversations } from "@/hooks/queries/useConversations";
+import { useIsBanned } from "@/hooks/useIsBanned";
 
 const MobileBottomNav = () => {
   const location = useLocation();
   const { t } = useLanguage();
   const { user } = useAuth();
   const { data: conversations } = useConversations(user?.id);
+  const { isBanned } = useIsBanned();
   const unreadCount = conversations?.reduce((sum: number, c: any) => sum + (c.unread_count || 0), 0) || 0;
 
-  const tabs = [
+  const tabs: Array<{ to: string; icon: any; label: string; highlight?: boolean; badge?: number; disabled?: boolean }> = [
     { to: "/cauta", icon: Search, label: t("Explorează", "Explore") },
     { to: "/favorite", icon: Heart, label: t("Favorite", "Favorites") },
-    { to: "/owner/new-product", icon: Plus, label: t("Adaugă", "Add"), highlight: true },
-    { to: "/mesaje", icon: MessageCircle, label: "Chat", badge: unreadCount },
+    { to: "/owner/new-product", icon: Plus, label: t("Adaugă", "Add"), highlight: true, disabled: isBanned },
+    { to: "/mesaje", icon: MessageCircle, label: "Chat", badge: unreadCount, disabled: isBanned },
     { to: "/profile#contul-meu", icon: User, label: t("Cont", "Account") },
   ];
 
@@ -31,32 +33,37 @@ const MobileBottomNav = () => {
       <div className="flex items-center justify-around h-16 px-4">
         {tabs.map((tab) => {
           const active = isActive(tab.to);
+          const isDisabled = (tab as any).disabled;
+          const Wrapper: any = isDisabled ? "button" : Link;
+          const wrapperProps: any = isDisabled
+            ? { type: "button", disabled: true, title: "Cont suspendat", onClick: (e: any) => e.preventDefault() }
+            : { to: tab.to };
           return (
-            <Link
+            <Wrapper
               key={tab.to}
-              to={tab.to}
+              {...wrapperProps}
               className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors relative ${
-                active ? "text-primary" : "text-muted-foreground"
+                isDisabled ? "opacity-40 cursor-not-allowed" : active ? "text-primary" : "text-muted-foreground"
               }`}
             >
               <div className="relative">
                 {tab.highlight ? (
-                  <div className="w-10 h-10 rounded-full bg-[#F98715] flex items-center justify-center -mt-3 shadow-md">
-                    <tab.icon className="h-6 w-6 text-white" />
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center -mt-3 shadow-md ${isDisabled ? "bg-muted" : "bg-[#F98715]"}`}>
+                    {isDisabled ? <Ban className="h-5 w-5 text-destructive" strokeWidth={2.5} /> : <tab.icon className="h-6 w-6 text-white" />}
                   </div>
                 ) : (
                   <>
                     <tab.icon className="h-5 w-5" />
-                    {typeof tab.badge === "number" && tab.badge > 0 && (
+                    {typeof (tab as any).badge === "number" && (tab as any).badge > 0 && !isDisabled && (
                       <span className="absolute -top-1.5 -right-2.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white shadow-sm">
-                        {tab.badge > 99 ? "99+" : tab.badge}
+                        {(tab as any).badge > 99 ? "99+" : (tab as any).badge}
                       </span>
                     )}
                   </>
                 )}
               </div>
               <span>{tab.label}</span>
-            </Link>
+            </Wrapper>
           );
         })}
       </div>
