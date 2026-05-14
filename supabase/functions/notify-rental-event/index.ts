@@ -26,7 +26,13 @@ type EventKey =
   | "pv_return_completed_by_party"
   | "rental_completed"
   | "review_reminder"
-  | "dispute_opened";
+  | "dispute_opened"
+  | "cancel_request_submitted"
+  | "cancel_request_withdrawn"
+  | "cancel_request_approved"
+  | "cancel_request_rejected"
+  | "cancellation_confirmed"
+  | "mutual_cancel_approved";
 
 interface EventConfig {
   recipients: Recipient;
@@ -178,6 +184,42 @@ const EVENTS: Record<EventKey, EventConfig> = {
     inAppDesc: (c) => ({ ro: `O dispută a fost deschisă pe "${c.product?.title}"`, en: `A dispute was opened on "${c.product?.title}"` }),
     link: (c) => `/rezervari/${c.rental.public_id}`,
     smsPurpose: "view_rental",
+  },
+  cancel_request_submitted: {
+    recipients: "both", channels: ["in_app"], critical: false,
+    inAppTitle: { ro: "Cerere de anulare trimisă", en: "Cancellation request submitted" },
+    inAppDesc: (c) => ({ ro: `Cererea de anulare pentru "${c.product?.title}" este în revizuire`, en: `Cancellation request for "${c.product?.title}" is under review` }),
+    link: (c) => `/rezervari/${c.rental.public_id}`,
+  },
+  cancel_request_withdrawn: {
+    recipients: "both", channels: ["in_app"], critical: false,
+    inAppTitle: { ro: "Cerere de anulare retrasă", en: "Cancellation request withdrawn" },
+    inAppDesc: (c) => ({ ro: `Cererea de anulare pentru "${c.product?.title}" a fost retrasă`, en: `Cancellation request for "${c.product?.title}" was withdrawn` }),
+    link: (c) => `/rezervari/${c.rental.public_id}`,
+  },
+  cancel_request_approved: {
+    recipients: "both", channels: ["in_app"], critical: true,
+    inAppTitle: { ro: "Anulare aprobată", en: "Cancellation approved" },
+    inAppDesc: (c) => ({ ro: `Anularea pentru "${c.product?.title}" a fost aprobată`, en: `Cancellation for "${c.product?.title}" was approved` }),
+    link: (c) => `/rezervari/${c.rental.public_id}`,
+  },
+  cancel_request_rejected: {
+    recipients: "both", channels: ["in_app"], critical: false,
+    inAppTitle: { ro: "Cerere de anulare respinsă", en: "Cancellation request rejected" },
+    inAppDesc: (c) => ({ ro: `Cererea de anulare pentru "${c.product?.title}" a fost respinsă`, en: `Cancellation request for "${c.product?.title}" was rejected` }),
+    link: (c) => `/rezervari/${c.rental.public_id}`,
+  },
+  cancellation_confirmed: {
+    recipients: "both", channels: ["in_app"], critical: true,
+    inAppTitle: { ro: "Rezervare anulată", en: "Reservation cancelled" },
+    inAppDesc: (c) => ({ ro: `Rezervarea pentru "${c.product?.title}" a fost anulată`, en: `Reservation for "${c.product?.title}" was cancelled` }),
+    link: (c) => `/rezervari/${c.rental.public_id}`,
+  },
+  mutual_cancel_approved: {
+    recipients: "both", channels: ["in_app"], critical: true,
+    inAppTitle: { ro: "Anulare confirmată", en: "Cancellation confirmed" },
+    inAppDesc: (c) => ({ ro: `Anularea pentru "${c.product?.title}" a fost confirmată`, en: `Cancellation for "${c.product?.title}" was confirmed` }),
+    link: (c) => `/rezervari/${c.rental.public_id}`,
   },
 };
 
