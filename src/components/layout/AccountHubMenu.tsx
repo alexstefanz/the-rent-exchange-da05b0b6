@@ -36,7 +36,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAccountDashboard } from "@/hooks/useAccountDashboard";
 import { useIsAdmin } from "@/hooks/queries/useAdminStats";
 import { useAdminNotificationSummary } from "@/hooks/queries/useAdminNotifications";
-import LanguageSwitcher from "./LanguageSwitcher";
 import { cn } from "@/lib/utils";
 
 /* ---------- helpers ---------- */
@@ -252,7 +251,7 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const { data, isLoading } = useAccountDashboard();
   const { data: isAdmin } = useIsAdmin(user?.id);
   const { data: adminSummary } = useAdminNotificationSummary();
@@ -303,16 +302,17 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
   const trigger = (
     <Button
       variant="ghost"
-      size="icon"
-      className="relative rounded-full h-10 w-10 p-0 hidden lg:flex"
+      size="sm"
+      className="relative hidden lg:flex items-center gap-2 rounded-full pl-1 pr-3 h-10"
       aria-label={t("Cont", "Account")}
     >
-      <Avatar className="h-9 w-9 border-2 border-primary/20 transition-all hover:border-primary">
+      <Avatar className="h-8 w-8 border-2 border-primary/20 transition-all hover:border-primary">
         <AvatarImage src={profile?.avatar_url || undefined} alt={displayName} />
-        <AvatarFallback className="bg-primary/10 text-primary font-medium">
+        <AvatarFallback className="bg-primary/10 text-primary font-medium text-xs">
           {getInitialsFrom(displayName, displayEmail)}
         </AvatarFallback>
       </Avatar>
+      <span className="text-sm font-medium">{t("Contul tău", "Your account")}</span>
       {isAdmin && adminUnread > 0 ? (
         <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
           <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
@@ -552,7 +552,34 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
 
   const FooterZone = (
     <div className="shrink-0 px-3 py-2 border-t border-border/60 flex items-center justify-between gap-2 bg-background">
-        <LanguageSwitcher />
+        <div className="inline-flex items-center rounded-lg border border-border/60 bg-muted/40 p-0.5">
+          <button
+            type="button"
+            onClick={() => setLanguage("ro")}
+            className={cn(
+              "px-2.5 py-1 text-xs font-semibold rounded-md transition-colors",
+              language === "ro"
+                ? "bg-primary/10 text-primary ring-1 ring-primary/30"
+                : "text-muted-foreground hover:bg-muted",
+            )}
+            aria-pressed={language === "ro"}
+          >
+            RO
+          </button>
+          <button
+            type="button"
+            onClick={() => setLanguage("en")}
+            className={cn(
+              "px-2.5 py-1 text-xs font-semibold rounded-md transition-colors",
+              language === "en"
+                ? "bg-primary/10 text-primary ring-1 ring-primary/30"
+                : "text-muted-foreground hover:bg-muted",
+            )}
+            aria-pressed={language === "en"}
+          >
+            EN
+          </button>
+        </div>
         <button
           onClick={() => {
             setOpen(false);
