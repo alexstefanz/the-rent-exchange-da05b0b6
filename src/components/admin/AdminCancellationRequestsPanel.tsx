@@ -215,7 +215,7 @@ const AdminCancellationRequestsPanel = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pending" className="space-y-4 mt-4">
+        <TabsContent value="pending" className="mt-4">
           {isLoading ? (
             <div className="flex justify-center py-12">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -227,11 +227,13 @@ const AdminCancellationRequestsPanel = () => {
               </CardContent>
             </Card>
           ) : (
-            requests.map((r) => renderCard(r))
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {requests.map((r) => renderCard(r))}
+            </div>
           )}
         </TabsContent>
 
-        <TabsContent value="archive" className="space-y-4 mt-4">
+        <TabsContent value="archive" className="mt-4">
           {isArchiveLoading ? (
             <div className="flex justify-center py-12">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
@@ -243,7 +245,9 @@ const AdminCancellationRequestsPanel = () => {
               </CardContent>
             </Card>
           ) : (
-            archive.map((r) => renderCard(r, { archived: r }))
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {archive.map((r) => renderCard(r, { archived: r }))}
+            </div>
           )}
         </TabsContent>
       </Tabs>
