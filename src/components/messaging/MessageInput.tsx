@@ -16,6 +16,8 @@ import {
 import { MAX_MESSAGE_LENGTH } from "@/features/messaging/messagingApi";
 import { cn } from "@/lib/utils";
 import { containsProfanity } from "@/lib/profanityFilter";
+import { useIsBanned } from "@/hooks/useIsBanned";
+import { Ban } from "lucide-react";
 
 interface Props {
   conversationId: string;
@@ -26,6 +28,8 @@ interface Props {
 
 export function MessageInput({ conversationId, disabled, onSend, onTyping }: Props) {
   const { t } = useLanguage();
+  const { isBanned } = useIsBanned();
+  const effectiveDisabled = disabled || isBanned;
   const [text, setText] = useState("");
   const [pending, setPending] = useState<PreparedAttachment[]>([]);
   const [sending, setSending] = useState(false);
@@ -122,6 +126,12 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
       className="border-t bg-background/95 backdrop-blur-sm shrink-0"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
+      {isBanned && (
+        <div className="px-4 pt-3 pb-1 flex items-center gap-2 text-sm text-destructive">
+          <Ban className="h-4 w-4" strokeWidth={2.5} />
+          <span className="font-medium">Cont suspendat — nu poți trimite mesaje.</span>
+        </div>
+      )}
       {pending.length > 0 && (
         <div className="flex gap-2 px-4 pt-3 overflow-x-auto">
           {pending.map((p, i) => (
@@ -168,7 +178,7 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
           variant="ghost"
           size="icon"
           onClick={() => fileInputRef.current?.click()}
-          disabled={disabled || sending || pending.length >= MAX_ATTACHMENTS_PER_MESSAGE}
+          disabled={effectiveDisabled || sending || pending.length >= MAX_ATTACHMENTS_PER_MESSAGE}
           className="shrink-0 rounded-full text-muted-foreground hover:text-primary"
         >
           <Paperclip className="h-5 w-5" />
@@ -182,8 +192,8 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
             onTyping?.();
           }}
           onKeyDown={handleKey}
-          disabled={disabled || sending}
-          placeholder={t("Scrie un mesaj...", "Write a message...")}
+          disabled={effectiveDisabled || sending}
+          placeholder={isBanned ? "Cont suspendat" : t("Scrie un mesaj...", "Write a message...")}
           className={cn(
             "min-h-[40px] max-h-[140px] resize-none rounded-2xl border-border/60 bg-muted/40 focus-visible:ring-1 focus-visible:ring-primary/40 px-4 py-2.5 text-base md:text-sm"
           )}
@@ -192,7 +202,7 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
           type="button"
           size="icon"
           onClick={handleSend}
-          disabled={disabled || sending || (!text.trim() && pending.length === 0)}
+          disabled={effectiveDisabled || sending || (!text.trim() && pending.length === 0)}
           className="shrink-0 rounded-full h-10 w-10"
         >
           {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
