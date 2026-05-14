@@ -564,6 +564,7 @@ const Step2Details = ({
   const [genLoading, setGenLoading] = useState(false);
   const { toast } = useToast();
   const [newItem, setNewItem] = useState("");
+  const [newRule, setNewRule] = useState("");
 
   const handleGenerate = async () => {
     if (!data.title || data.title.length < 5) {
