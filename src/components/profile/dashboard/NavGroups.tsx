@@ -154,7 +154,7 @@ export function NavGroups() {
                             {language === "ro" ? it.ro : it.en}
                           </span>
                           {hint && (
-                            <span className="block text-[11px] text-muted-foreground leading-tight mt-0.5">
+                            <span className="block text-muted-foreground leading-tight text-sm font-semibold text-black mt-0.5">
                               {hint}
                             </span>
                           )}

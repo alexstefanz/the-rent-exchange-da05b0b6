@@ -185,7 +185,7 @@ function StatusCard({
         ) : null}
       </div>
       <div className="mt-1.5 text-sm font-semibold text-foreground leading-tight">{value}</div>
-      <div className="text-[10.5px] text-muted-foreground leading-tight">{label}</div>
+      <div className="text-muted-foreground leading-tight text-sm font-semibold text-black">{label}</div>
     </button>
   );
 }
