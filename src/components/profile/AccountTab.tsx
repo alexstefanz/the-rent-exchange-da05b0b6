@@ -18,7 +18,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import {
   CheckCircle2, AlertCircle, Lock, CreditCard, Wallet, Shield, Trash2, User, Phone, Mail,
   MessageCircle, Camera, Loader2, LifeBuoy, Bell, ChevronDown, Star, Calendar, Sparkles,
-  ShieldCheck, KeyRound, Smartphone, History, Globe, BadgeCheck, ChevronRight,
+  ShieldCheck, KeyRound, Smartphone, History, Globe, BadgeCheck, ChevronRight, Landmark, Pencil, Plus, X,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -878,31 +878,158 @@ const SupportLink = ({ href, icon: Icon, title, description }: { href: string; i
 const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: any; onSaved: (iban: string, holder: string) => void }) => {
   const { t } = useLanguage();
   const { toast } = useToast();
-  const [iban, setIban] = useState((profile as any)?.iban || "");
-  const [holder, setHolder] = useState((profile as any)?.account_holder_name || "");
+  const savedIban = (profile as any)?.iban || "";
+  const savedHolder = (profile as any)?.account_holder_name || "";
+  const hasIban = !!savedIban;
+
+  const [editing, setEditing] = useState(!hasIban);
+  const [iban, setIban] = useState("");
+  const [holder, setHolder] = useState("");
   const [saving, setSaving] = useState(false);
-  const hasIban = !!(profile as any)?.iban;
+  const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const ibanRegex = /^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$/;
+
+  const maskIban = (raw: string) => {
+    const clean = raw.replace(/\s/g, "");
+    if (clean.length < 8) return clean;
+    return `${clean.slice(0, 4)} •••• •••• •••• ${clean.slice(-4)}`;
+  };
 
   const handleSave = async () => {
     if (!userId) return;
+    const cleanIban = iban.toUpperCase().replace(/\s/g, "");
+    if (!ibanRegex.test(cleanIban)) {
+      toast({ title: t("IBAN invalid", "Invalid IBAN"), description: t("Verifică formatul IBAN-ului.", "Check the IBAN format."), variant: "destructive" });
+      return;
+    }
+    if (!holder.trim() || holder.trim().length < 3) {
+      toast({ title: t("Titular invalid", "Invalid holder"), description: t("Introdu numele complet al titularului.", "Enter the account holder full name."), variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
-      const cleanIban = iban.toUpperCase().replace(/\s/g, "");
-      const { error } = await supabase.from("profiles").update({ iban: cleanIban, account_holder_name: holder } as any).eq("id", userId);
+      const { error } = await supabase.from("profiles").update({ iban: cleanIban, account_holder_name: holder.trim() } as any).eq("id", userId);
       if (error) throw error;
-      onSaved(cleanIban, holder);
+      onSaved(cleanIban, holder.trim());
+      setEditing(false);
+      setIban("");
+      setHolder("");
       toast({ title: t("Salvat", "Saved"), description: t("IBAN actualizat cu succes", "IBAN updated successfully") });
     } catch {
       toast({ title: t("Eroare", "Error"), description: t("Nu s-a putut salva IBAN-ul", "Could not save IBAN"), variant: "destructive" });
     } finally { setSaving(false); }
   };
 
-  return (
-    <div className="space-y-4">
-      {hasIban && (
+  const handleDelete = async () => {
+    if (!userId) return;
+    setDeleting(true);
+    try {
+      // Block delete when there's a pending withdrawal
+      const { data: pending, error: pendingErr } = await supabase
+        .from("withdrawal_requests" as any)
+        .select("id")
+        .eq("user_id", userId)
+        .eq("status", "pending")
+        .limit(1);
+      if (pendingErr) throw pendingErr;
+      if (pending && pending.length > 0) {
+        toast({
+          title: t("Cerere în așteptare", "Pending request"),
+          description: t(
+            "Ai o cerere de retragere în așteptare. Așteaptă procesarea ei înainte să ștergi IBAN-ul.",
+            "You have a pending withdrawal request. Wait for it to be processed before deleting your IBAN."
+          ),
+          variant: "destructive",
+        });
+        setConfirmOpen(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ iban: null, account_holder_name: null } as any)
+        .eq("id", userId);
+      if (error) throw error;
+      onSaved("", "");
+      setIban("");
+      setHolder("");
+      setEditing(true);
+      setConfirmOpen(false);
+      toast({ title: t("IBAN șters", "IBAN deleted"), description: t("Contul bancar a fost eliminat.", "Bank account removed.") });
+    } catch {
+      toast({ title: t("Eroare", "Error"), description: t("Nu s-a putut șterge IBAN-ul", "Could not delete IBAN"), variant: "destructive" });
+    } finally { setDeleting(false); }
+  };
+
+  // Saved view
+  if (hasIban && !editing) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-start sm:items-center gap-4 rounded-xl border bg-muted/30 p-4 flex-col sm:flex-row">
+          <div className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+            <Landmark className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-semibold">IBAN</span>
+              <Badge variant="secondary" className="text-[10px] h-5">{t("Implicit", "Default")}</Badge>
+            </div>
+            <p className="font-mono text-sm tracking-wide truncate">{maskIban(savedIban)}</p>
+            {savedHolder && <p className="text-xs text-muted-foreground mt-0.5 truncate">{savedHolder}</p>}
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button variant="outline" size="sm" onClick={() => { setIban(""); setHolder(""); setEditing(true); }} className="flex-1 sm:flex-none">
+              <Pencil className="h-3.5 w-3.5 mr-1.5" />
+              {t("Schimbă", "Change")}
+            </Button>
+            <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="flex-1 sm:flex-none text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30">
+                  <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                  {t("Șterge", "Delete")}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("Șterge IBAN-ul?", "Delete IBAN?")}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t(
+                      "După ștergere nu vei mai putea solicita retrageri până când adaugi un alt IBAN.",
+                      "After deletion you won't be able to request withdrawals until you add a new IBAN."
+                    )}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={deleting}>{t("Anulează", "Cancel")}</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={(e) => { e.preventDefault(); handleDelete(); }}
+                    disabled={deleting}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {deleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("Se șterge...", "Deleting...")}</> : t("Șterge IBAN", "Delete IBAN")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
         <div className="flex items-center gap-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">
           <CheckCircle2 className="h-4 w-4" />
           {t("IBAN configurat — ești gata să primești plăți.", "IBAN set — you're ready to receive payouts.")}
+        </div>
+      </div>
+    );
+  }
+
+  // Edit / add view
+  return (
+    <div className="space-y-4">
+      {hasIban && (
+        <div className="flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          {t("Introdu noul IBAN complet pentru a-l înlocui.", "Enter the full new IBAN to replace the existing one.")}
         </div>
       )}
       <div className="grid sm:grid-cols-2 gap-4">
@@ -922,9 +1049,17 @@ const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: an
           <Input id="account_holder" value={holder} onChange={(e) => setHolder(e.target.value)} placeholder="Ion Popescu" maxLength={100} />
         </div>
       </div>
-      <Button onClick={handleSave} disabled={saving || !iban} className="w-full sm:w-auto">
-        {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("Se salvează...", "Saving...")}</> : t("Salvează IBAN", "Save IBAN")}
-      </Button>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <Button onClick={handleSave} disabled={saving || !iban} className="w-full sm:w-auto">
+          {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("Se salvează...", "Saving...")}</> : (hasIban ? t("Salvează modificările", "Save changes") : t("Salvează IBAN", "Save IBAN"))}
+        </Button>
+        {hasIban && (
+          <Button variant="ghost" onClick={() => { setEditing(false); setIban(""); setHolder(""); }} disabled={saving} className="w-full sm:w-auto">
+            <X className="h-4 w-4 mr-1.5" />
+            {t("Anulează", "Cancel")}
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
