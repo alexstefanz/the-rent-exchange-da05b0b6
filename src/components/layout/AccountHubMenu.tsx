@@ -27,6 +27,10 @@ import {
   AlertTriangle,
   CheckCircle2,
   CreditCard,
+  ShoppingBag,
+  Heart,
+  PackageCheck,
+  Store,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -358,7 +362,7 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
           <>
             <StatusCard
               icon={CalendarCheck}
-              label={t("rezervări active", "active bookings")}
+              label={t("active (chiriaș)", "active (renter)")}
               value={totalActive}
               highlight={totalActive > 0}
               onClick={() => handleNav("/rezervari")}
@@ -392,14 +396,14 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
             />
             <StatusCard
               icon={Package}
-              label={t("închirieri active", "active rentals")}
+              label={t("cereri (proprietar)", "requests (owner)")}
               value={signals?.activeRentalsAsOwner || 0}
               highlight={(signals?.activeRentalsAsOwner || 0) > 0}
               onClick={() => handleNav("/inchirieri")}
             />
             <StatusCard
               icon={FileText}
-              label={t("produsele mele", "my products")}
+              label={t("anunțurile mele", "my listings")}
               value={t("Vezi", "View")}
               onClick={() => handleNav("/anunturi")}
             />
