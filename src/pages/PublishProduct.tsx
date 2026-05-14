@@ -20,7 +20,7 @@ const PublishProductPage = ({ mode }: Props) => {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
   const kyc = useKycGate();
-  const { isBanned, loading: banLoading } = useIsBanned();
+  const { isBanned } = useIsBanned();
   const { toast } = useToast();
   const [product, setProduct] = useState<Product | null>(null);
   const [loadingProduct, setLoadingProduct] = useState(mode === "edit");
@@ -51,7 +51,7 @@ const PublishProductPage = ({ mode }: Props) => {
     })();
   }, [mode, id, user, navigate, toast]);
 
-  if (authLoading || kyc.loading || loadingProduct || banLoading) {
+  if (authLoading || kyc.loading || loadingProduct) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
