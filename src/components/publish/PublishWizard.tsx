@@ -404,6 +404,45 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         isLoading={isPublishing}
         isFinal={step === STEPS.length}
       />
+
+      <AlertDialog open={!!pendingDraft}>
+        <AlertDialogContent
+          onEscapeKeyDown={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => e.preventDefault()}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ai un anunț nesalvat</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>Am găsit un draft început anterior. Vrei să continui de unde ai rămas sau să începi un anunț nou?</p>
+                {pendingDraft && (
+                  <div className="rounded-lg border border-border bg-muted/40 p-3 text-foreground">
+                    <p className="font-semibold">
+                      {pendingDraft.payload.title?.trim() || "Anunț fără titlu"}
+                    </p>
+                    {pendingDraft.payload.category && (
+                      <p className="text-xs text-muted-foreground">{pendingDraft.payload.category}</p>
+                    )}
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Ultima modificare:{" "}
+                      {new Date(pendingDraft.updated_at).toLocaleString("ro-RO", {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleStartFresh}>Începe anunț nou</AlertDialogCancel>
+            <AlertDialogAction onClick={handleContinueDraft}>Continuă draftul</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
