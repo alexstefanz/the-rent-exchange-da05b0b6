@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical, Wallet } from "lucide-react";
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import Navbar from "@/components/layout/Navbar";
@@ -20,7 +20,8 @@ import ReturnCountdownBadge from "@/components/rentals/ReturnCountdownBadge";
 import LeaveReviewDialog from "@/components/dashboard/LeaveReviewDialog";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import { ChatDialog } from "@/components/messaging/ChatDialog";
-import { payForConfirmedRental } from "@/features/rentals/rentalsApi";
+import { payForConfirmedRental, payRentalWithWallet } from "@/features/rentals/rentalsApi";
+import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { useIsAdmin } from "@/hooks/queries/useAdminStats";
 import { toast } from "sonner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -36,11 +37,13 @@ const RentalDetailPage = () => {
   const [pvOpen, setPvOpen] = useState<null | "handover" | "return">(null);
   const [paying, setPaying] = useState(false);
   const [payingTest, setPayingTest] = useState(false);
+  const [payingWallet, setPayingWallet] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [chatConvId, setChatConvId] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const queryClient = useQueryClient();
   const { data: isAdmin } = useIsAdmin(user?.id);
+  const { data: wallet, refetch: refetchWallet } = useWalletBalance();
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth", { replace: true });
@@ -189,6 +192,27 @@ const RentalDetailPage = () => {
         toast.error(e?.message || t("Eroare la inițierea plății.", "Error initiating payment."));
       }
       setPaying(false);
+    }
+  }
+
+  async function handlePayWithWallet() {
+    if (payingWallet) return;
+    setPayingWallet(true);
+    try {
+      await payRentalWithWallet(rental.id);
+      toast.success(t("Plată reușită din wallet!", "Paid from wallet!"));
+      await Promise.all([refetch(), refetchWallet()]);
+    } catch (e: any) {
+      console.error("payRentalWithWallet error:", e);
+      const msg = String(e?.message || "");
+      if (msg.includes("insufficient_wallet_balance")) {
+        toast.error(t("Sold insuficient în wallet.", "Insufficient wallet balance."));
+      } else if (msg.includes("already_paid")) {
+        toast.error(t("Rezervarea este deja plătită.", "Booking already paid."));
+      } else {
+        toast.error(t("Eroare la plata din wallet.", "Wallet payment error."));
+      }
+      setPayingWallet(false);
     }
   }
 
