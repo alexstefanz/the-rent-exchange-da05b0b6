@@ -629,7 +629,7 @@ const AccountTab = () => {
         </Section>
 
         {/* ============ PAYOUT (IBAN) ============ */}
-        <Section id="payout" icon={Wallet} title={t("Cum primești banii", "How you get paid")} description={t("Acest IBAN este folosit pentru retragerile din închirierile tale.", "This IBAN is used for withdrawals from your rentals.")}>
+        <Section id="payout" icon={Wallet} title={t("Cum primești banii", "How you get paid")} description={t("IBAN-ul trebuie să fie pe numele tău (titularul contului). Folosirea contului altei persoane nu este permisă și poate duce la suspendarea contului.", "The IBAN must be in your name (the account holder). Using someone else's account is not allowed and may result in account suspension.")}>
           <PayoutForm
             userId={user?.id}
             profile={profile}
@@ -878,13 +878,14 @@ const SupportLink = ({ href, icon: Icon, title, description }: { href: string; i
 const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: any; onSaved: (iban: string, holder: string) => void }) => {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const savedIban = (profile as any)?.iban || "";
   const savedHolder = (profile as any)?.account_holder_name || "";
+  const fullName = ((profile as any)?.full_name || "").trim();
   const hasIban = !!savedIban;
 
   const [editing, setEditing] = useState(!hasIban);
   const [iban, setIban] = useState("");
-  const [holder, setHolder] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -904,18 +905,21 @@ const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: an
       toast({ title: t("IBAN invalid", "Invalid IBAN"), description: t("Verifică formatul IBAN-ului.", "Check the IBAN format."), variant: "destructive" });
       return;
     }
-    if (!holder.trim() || holder.trim().length < 3) {
-      toast({ title: t("Titular invalid", "Invalid holder"), description: t("Introdu numele complet al titularului.", "Enter the account holder full name."), variant: "destructive" });
+    if (!fullName || fullName.length < 3) {
+      toast({
+        title: t("Nume incomplet", "Name missing"),
+        description: t("Completează mai întâi „Numele complet" în secțiunea Profil.", "Please fill in your full name in the Profile section first."),
+        variant: "destructive",
+      });
       return;
     }
     setSaving(true);
     try {
-      const { error } = await supabase.from("profiles").update({ iban: cleanIban, account_holder_name: holder.trim() } as any).eq("id", userId);
+      const { error } = await supabase.from("profiles").update({ iban: cleanIban, account_holder_name: fullName } as any).eq("id", userId);
       if (error) throw error;
-      onSaved(cleanIban, holder.trim());
+      onSaved(cleanIban, fullName);
       setEditing(false);
       setIban("");
-      setHolder("");
       toast({ title: t("Salvat", "Saved"), description: t("IBAN actualizat cu succes", "IBAN updated successfully") });
     } catch {
       toast({ title: t("Eroare", "Error"), description: t("Nu s-a putut salva IBAN-ul", "Could not save IBAN"), variant: "destructive" });
@@ -954,7 +958,6 @@ const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: an
       if (error) throw error;
       onSaved("", "");
       setIban("");
-      setHolder("");
       setEditing(true);
       setConfirmOpen(false);
       toast({ title: t("IBAN șters", "IBAN deleted"), description: t("Contul bancar a fost eliminat.", "Bank account removed.") });
@@ -980,7 +983,7 @@ const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: an
             {savedHolder && <p className="text-xs text-muted-foreground mt-0.5 truncate">{savedHolder}</p>}
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <Button variant="outline" size="sm" onClick={() => { setIban(""); setHolder(""); setEditing(true); }} className="flex-1 sm:flex-none">
+            <Button variant="outline" size="sm" onClick={() => { setIban(""); setEditing(true); }} className="flex-1 sm:flex-none">
               <Pencil className="h-3.5 w-3.5 mr-1.5" />
               {t("Schimbă", "Change")}
             </Button>
@@ -1026,35 +1029,44 @@ const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: an
   // Edit / add view
   return (
     <div className="space-y-4">
-      {hasIban && (
-        <div className="flex items-center gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
-          <AlertCircle className="h-4 w-4 shrink-0" />
-          {t("Introdu noul IBAN complet pentru a-l înlocui.", "Enter the full new IBAN to replace the existing one.")}
+      <div className="space-y-2">
+        <Label htmlFor="iban" className="text-sm">IBAN</Label>
+        <Input
+          id="iban"
+          value={formatIbanMask(iban)}
+          onChange={(e) => setIban(e.target.value.toUpperCase().replace(/\s/g, ""))}
+          placeholder="RO49 AAAA 1B31 0075 9384 0000"
+          maxLength={42}
+          className="font-mono tracking-wider"
+        />
+        <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+          <User className="h-3.5 w-3.5 shrink-0" />
+          {fullName ? (
+            <span className="truncate">
+              {t("Titular cont:", "Account holder:")} <span className="font-medium text-foreground">{fullName}</span>
+            </span>
+          ) : (
+            <button type="button" onClick={() => navigate("/contul-meu?section=profile")} className="text-primary hover:underline">
+              {t("Completează numele complet în Profil", "Fill in your full name in Profile")}
+            </button>
+          )}
         </div>
-      )}
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="iban" className="text-sm">IBAN</Label>
-          <Input
-            id="iban"
-            value={formatIbanMask(iban)}
-            onChange={(e) => setIban(e.target.value.toUpperCase().replace(/\s/g, ""))}
-            placeholder="RO49 AAAA 1B31 0075 9384 0000"
-            maxLength={42}
-            className="font-mono tracking-wider"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="account_holder" className="text-sm">{t("Titular cont", "Account holder")}</Label>
-          <Input id="account_holder" value={holder} onChange={(e) => setHolder(e.target.value)} placeholder="Ion Popescu" maxLength={100} />
-        </div>
+      </div>
+      <div className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 px-3 py-2.5 text-xs text-amber-800 dark:text-amber-300">
+        <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+        <span>
+          {t(
+            "IBAN-ul trebuie să aparțină titularului contului Rentli. Conturile pe numele altor persoane nu vor putea fi validate la plată.",
+            "The IBAN must belong to the Rentli account holder. Accounts in another person's name will not be validated for payouts."
+          )}
+        </span>
       </div>
       <div className="flex flex-col sm:flex-row gap-2">
         <Button onClick={handleSave} disabled={saving || !iban} className="w-full sm:w-auto">
           {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("Se salvează...", "Saving...")}</> : (hasIban ? t("Salvează modificările", "Save changes") : t("Salvează IBAN", "Save IBAN"))}
         </Button>
         {hasIban && (
-          <Button variant="ghost" onClick={() => { setEditing(false); setIban(""); setHolder(""); }} disabled={saving} className="w-full sm:w-auto">
+          <Button variant="ghost" onClick={() => { setEditing(false); setIban(""); }} disabled={saving} className="w-full sm:w-auto">
             <X className="h-4 w-4 mr-1.5" />
             {t("Anulează", "Cancel")}
           </Button>
