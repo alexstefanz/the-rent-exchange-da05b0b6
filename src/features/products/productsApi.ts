@@ -29,6 +29,7 @@ export interface Product {
   deposit_value?: number | null;
   min_rental_days?: number | null;
   min_rental_preset?: string | null;
+  max_rental_days?: number | null;
   delivery_available?: boolean | null;
   delivery_fee?: number | null;
   delivery_radius_km?: number | null;
