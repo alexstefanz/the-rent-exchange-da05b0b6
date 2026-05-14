@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { isDateBooked } from "@/hooks/queries/useBookedDates";
 import { computeRentalPrice } from "@/lib/rentalPricing";
+import { formatPriceShort } from "@/lib/utils";
 
 interface Props {
   clientPrice: number;
@@ -61,7 +62,7 @@ const PremiumBookingCard = ({
       {/* Price hero */}
       <div className="p-5 pb-3">
         <div className="flex items-baseline gap-1.5">
-          <span className="font-heading text-3xl font-bold text-foreground">{clientPrice}</span>
+          <span className="font-heading text-3xl font-bold text-foreground">{formatPriceShort(clientPrice)}</span>
           <span className="text-base font-semibold text-foreground">RON</span>
           <span className="text-muted-foreground text-sm">/ {t("zi", "day")}</span>
         </div>
@@ -123,11 +124,11 @@ const PremiumBookingCard = ({
           <Separator className="my-2.5" />
           <div className="flex justify-between">
             <span className="text-muted-foreground">
-              {rentalDays} {language === "en" ? (rentalDays === 1 ? "day" : "days") : (rentalDays === 1 ? "zi" : "zile")} × {clientPrice} RON
+              {rentalDays} {language === "en" ? (rentalDays === 1 ? "day" : "days") : (rentalDays === 1 ? "zi" : "zile")} × {formatPriceShort(clientPrice)} RON
             </span>
-            <span className="font-medium">{rentalDays * clientPrice} RON</span>
+            <span className="font-medium">{formatPriceShort(rentalDays * clientPrice)} RON</span>
           </div>
-          <div className="flex justify-between mt-2.5 font-semibold text-base"><span>{t("Total", "Total")}</span><span className="text-primary">{totalPrice} RON</span></div>
+          <div className="flex justify-between mt-2.5 font-semibold text-base"><span>{t("Total", "Total")}</span><span className="text-primary">{formatPriceShort(totalPrice)} RON</span></div>
         </div>
       )}
 
