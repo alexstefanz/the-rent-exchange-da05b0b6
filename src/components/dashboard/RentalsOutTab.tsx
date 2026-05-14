@@ -146,117 +146,128 @@ const RentalsOutTab = () => {
             Cereri de închiriere
             <Badge className="bg-primary text-primary-foreground">{pendingRentals.length + premiumActiveRentals.length}</Badge>
           </h3>
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {[...pendingRentals, ...premiumActiveRentals].map((rental) => {
               const isPending = rental.status === "pending";
               const canRequestCancel = !isPending && !rental.handover_confirmed_at;
               return (
                 <div
                   key={rental.id}
-                  className="relative overflow-hidden rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-primary/5 to-card p-5 sm:p-6 shadow-lg shadow-primary/10"
+                  className="relative flex flex-col overflow-hidden rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-primary/5 to-card shadow-lg shadow-primary/10"
                 >
-                  <div className="absolute top-4 right-4 flex items-center gap-2">
-                    {isPending ? (
-                      <Badge className="bg-primary text-primary-foreground animate-pulse">Cerere nouă</Badge>
-                    ) : (
-                      <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200">Confirmată</Badge>
+                  {/* Product image */}
+                  <div className="relative aspect-[16/10] overflow-hidden bg-muted">
+                    <img
+                      src={rental.product_image || "/placeholder.svg"}
+                      alt={rental.product_title}
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                    <div className="absolute top-3 right-3">
+                      {isPending ? (
+                        <Badge className="bg-primary text-primary-foreground animate-pulse shadow-md">Cerere nouă</Badge>
+                      ) : (
+                        <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-md">Confirmată</Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-1 flex-col p-4">
+                    <div className="flex items-start gap-2 mb-1">
+                      <Inbox className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+                          {isPending ? "Cerere de la" : "Rezervare cu"}
+                        </p>
+                        <p className="text-base font-semibold text-foreground truncate">
+                          {rental.renter_name || "Chiriaș"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <p className="text-sm font-medium text-foreground mt-1 line-clamp-1">
+                      pentru <span className="text-primary">{rental.product_title}</span>
+                    </p>
+
+                    <div className="grid grid-cols-3 gap-2 mt-4">
+                      <div className="rounded-lg bg-card/80 border border-border p-2">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-0.5">
+                          <Calendar className="h-3 w-3" /><span>Perioadă</span>
+                        </div>
+                        <p className="text-xs font-semibold text-foreground leading-tight">
+                          {format(new Date(rental.start_date), "d MMM", { locale: ro })}–{format(new Date(rental.end_date), "d MMM", { locale: ro })}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-card/80 border border-border p-2">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-0.5">
+                          <Clock className="h-3 w-3" /><span>Zile</span>
+                        </div>
+                        <p className="text-xs font-semibold text-foreground">{rental.rental_days}</p>
+                      </div>
+                      <div className="rounded-lg bg-primary/15 border border-primary/30 p-2">
+                        <div className="flex items-center gap-1 text-[10px] text-primary/80 mb-0.5">
+                          <TrendingUp className="h-3 w-3" /><span>Câștig</span>
+                        </div>
+                        <p className="text-sm font-bold text-primary leading-tight">{rental.owner_payout} RON</p>
+                      </div>
+                    </div>
+
+                    {rental.message_to_owner && rental.message_to_owner.trim().length > 0 && (
+                      <div className="mt-3 rounded-xl rounded-tl-sm bg-background border border-border px-3 py-2">
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-0.5">
+                          <MessageSquare className="h-3 w-3" />
+                          <span>Mesaj de la chiriaș</span>
+                        </div>
+                        <p className="text-xs text-foreground whitespace-pre-wrap break-words line-clamp-3">
+                          {rental.message_to_owner}
+                        </p>
+                      </div>
                     )}
+
+                    <div className="mt-auto pt-4">
+                      {isPending ? (
+                        <div className="flex flex-col gap-2">
+                          <Button
+                            onClick={() => handleAccept(rental)}
+                            disabled={respondingId === rental.id}
+                            className="w-full bg-gradient-to-r from-primary to-primary/90 shadow-md"
+                          >
+                            {respondingId === rental.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Check className="h-4 w-4 mr-1" />}
+                            Acceptă
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => setRejectDialogRental(rental)}
+                            disabled={respondingId === rental.id}
+                            className="w-full"
+                          >
+                            <X className="h-4 w-4 mr-1" />Refuză
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button asChild className="w-full">
+                          <Link to={rental.public_id ? `/inchirieri/${rental.public_id}` : `/produs/${rental.product_id}`}>
+                            Vezi detalii <ArrowRight className="h-4 w-4 ml-1" />
+                          </Link>
+                        </Button>
+                      )}
+
+                      {canRequestCancel && (
+                        <div className="mt-2 pt-2 border-t border-border/50 flex justify-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setCancelDialogRental(rental)}
+                            disabled={respondingId === rental.id}
+                            className="text-muted-foreground hover:text-destructive text-xs"
+                          >
+                            <Ban className="h-3.5 w-3.5 mr-1" />
+                            Solicită anularea cererii
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-
-                  <div className="flex items-start gap-2 mb-1 pr-24 sm:pr-28">
-                    <Inbox className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
-                        {isPending ? "Cerere de la" : "Rezervare confirmată cu"}
-                      </p>
-                      <p className="text-lg font-semibold text-foreground truncate">
-                        {rental.renter_name || "Chiriaș"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <p className="text-base font-medium text-foreground mt-2">
-                    pentru <span className="text-primary">{rental.product_title}</span>
-                  </p>
-
-                  <div className="grid grid-cols-3 gap-3 mt-5">
-                    <div className="rounded-xl bg-card/80 border border-border p-3">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                        <Calendar className="h-3.5 w-3.5" /><span>Perioadă</span>
-                      </div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {format(new Date(rental.start_date), "d MMM", { locale: ro })} – {format(new Date(rental.end_date), "d MMM", { locale: ro })}
-                      </p>
-                    </div>
-                    <div className="rounded-xl bg-card/80 border border-border p-3">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                        <Clock className="h-3.5 w-3.5" /><span>Zile</span>
-                      </div>
-                      <p className="text-sm font-semibold text-foreground">{rental.rental_days}</p>
-                    </div>
-                    <div className="rounded-xl bg-primary/15 border border-primary/30 p-3">
-                      <div className="flex items-center gap-1.5 text-xs text-primary/80 mb-1">
-                        <TrendingUp className="h-3.5 w-3.5" /><span>Câștig</span>
-                      </div>
-                      <p className="text-lg font-bold text-primary leading-tight">{rental.owner_payout} RON</p>
-                    </div>
-                  </div>
-
-                  {rental.message_to_owner && rental.message_to_owner.trim().length > 0 && (
-                    <div className="mt-4 rounded-2xl rounded-tl-sm bg-background border border-border px-3 py-2">
-                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                        <MessageSquare className="h-3.5 w-3.5" />
-                        <span>Mesaj de la chiriaș</span>
-                      </div>
-                      <p className="text-sm text-foreground whitespace-pre-wrap break-words">
-                        {rental.message_to_owner}
-                      </p>
-                    </div>
-                  )}
-
-                  {isPending ? (
-                    <div className="flex flex-col sm:flex-row gap-2 mt-5">
-                      <Button
-                        onClick={() => handleAccept(rental)}
-                        disabled={respondingId === rental.id}
-                        className="flex-1 bg-gradient-to-r from-primary to-primary/90 shadow-md"
-                      >
-                        {respondingId === rental.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Check className="h-4 w-4 mr-1" />}
-                        Acceptă
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => setRejectDialogRental(rental)}
-                        disabled={respondingId === rental.id}
-                        className="flex-1"
-                      >
-                        <X className="h-4 w-4 mr-1" />Refuză
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col sm:flex-row gap-2 mt-5">
-                      <Button asChild className="flex-1">
-                        <Link to={rental.public_id ? `/inchirieri/${rental.public_id}` : `/produs/${rental.product_id}`}>
-                          Vezi detalii <ArrowRight className="h-4 w-4 ml-1" />
-                        </Link>
-                      </Button>
-                    </div>
-                  )}
-
-                  {canRequestCancel && (
-                    <div className="mt-3 pt-3 border-t border-border/50 flex justify-center">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setCancelDialogRental(rental)}
-                        disabled={respondingId === rental.id}
-                        className="text-muted-foreground hover:text-destructive text-xs"
-                      >
-                        <Ban className="h-3.5 w-3.5 mr-1" />
-                        Solicită anularea cererii
-                      </Button>
-                    </div>
-                  )}
                 </div>
               );
             })}
