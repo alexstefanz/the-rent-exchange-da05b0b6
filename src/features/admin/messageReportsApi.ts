@@ -31,6 +31,7 @@ export interface MessageReportRow {
   author_name: string | null;
   author_email: string | null;
   reporter_name: string | null;
+  recent_messages?: { id: string; content: string; sender_id: string | null; created_at: string; is_hidden: boolean }[];
 }
 
 export async function listMessageReports(opts: {
@@ -42,7 +43,7 @@ export async function listMessageReports(opts: {
     .from("message_reports")
     .select(`
       id, public_id, category, reason, resolved, action_taken, admin_notes,
-      resolved_at, created_at, message_id, reporter_id,
+      resolved_at, created_at, message_id, reporter_id, conversation_id,
       message:messages!message_reports_message_id_fkey (
         id, content, created_at, is_hidden, conversation_id, sender_id
       )
@@ -80,20 +81,57 @@ export async function listMessageReports(opts: {
     reports = data || [];
   }
 
-  // Try to recover conversation_id from `reason` for conversation-level reports
-  // (current shape: "Conversation <uuid>")
-  const convoFromReason = (reason: string | null): string | null => {
-    if (!reason) return null;
-    const m = reason.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-    return m ? m[0] : null;
-  };
+  // Compute the effective conversation id per report (column → joined message → null)
+  const convoIdOf = (r: any): string | null =>
+    r.conversation_id ?? r.message?.conversation_id ?? null;
+
+  // Fetch the latest few messages for conversation-level reports (no specific message)
+  const convoOnlyIds = Array.from(
+    new Set(
+      reports
+        .filter((r: any) => !r.message_id && convoIdOf(r))
+        .map((r: any) => convoIdOf(r) as string)
+    )
+  );
+  const recentByConvo = new Map<string, MessageReportRow["recent_messages"]>();
+  if (convoOnlyIds.length) {
+    const { data: recents } = await supabase
+      .from("messages")
+      .select("id, content, sender_id, created_at, is_hidden, conversation_id")
+      .in("conversation_id", convoOnlyIds)
+      .order("created_at", { ascending: false })
+      .limit(convoOnlyIds.length * 5);
+    for (const row of recents || []) {
+      const arr = recentByConvo.get((row as any).conversation_id) ?? [];
+      if (arr.length < 5) {
+        arr.push({
+          id: (row as any).id,
+          content: (row as any).content,
+          sender_id: (row as any).sender_id,
+          created_at: (row as any).created_at,
+          is_hidden: (row as any).is_hidden,
+        });
+        recentByConvo.set((row as any).conversation_id, arr);
+      }
+    }
+    // Reverse to chronological order per convo
+    for (const [k, v] of recentByConvo) recentByConvo.set(k, [...(v || [])].reverse());
+  }
 
   // Hydrate profiles for reporters and message authors
   const reporterIds = Array.from(new Set(reports.map((r: any) => r.reporter_id).filter(Boolean)));
   const authorIds = Array.from(
     new Set(reports.map((r: any) => r.message?.sender_id).filter(Boolean))
   );
-  const allProfileIds = Array.from(new Set([...reporterIds, ...authorIds]));
+  const recentSenderIds = Array.from(
+    new Set(
+      Array.from(recentByConvo.values())
+        .flat()
+        .map((m) => m?.sender_id)
+        .filter(Boolean) as string[]
+    )
+  );
+  const allProfileIds = Array.from(new Set([...reporterIds, ...authorIds, ...recentSenderIds]));
 
   const { data: profiles } = allProfileIds.length
     ? await supabase.from("profiles").select("id, full_name, email").in("id", allProfileIds)
@@ -104,6 +142,7 @@ export async function listMessageReports(opts: {
     const m = r.message ?? null;
     const author = m?.sender_id ? profileMap.get(m.sender_id) : null;
     const reporter = profileMap.get(r.reporter_id);
+    const convoId = convoIdOf(r);
     return {
       id: r.id,
       public_id: r.public_id,
@@ -119,11 +158,12 @@ export async function listMessageReports(opts: {
       message_content: m?.content ?? null,
       message_created_at: m?.created_at ?? null,
       message_is_hidden: m?.is_hidden ?? null,
-      conversation_id: m?.conversation_id ?? convoFromReason(r.reason),
+      conversation_id: convoId,
       author_id: m?.sender_id ?? null,
       author_name: author?.full_name ?? null,
       author_email: author?.email ?? null,
       reporter_name: reporter?.full_name ?? null,
+      recent_messages: !r.message_id && convoId ? recentByConvo.get(convoId) ?? [] : undefined,
     } as MessageReportRow;
   });
 }

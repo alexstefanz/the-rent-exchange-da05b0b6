@@ -1,22 +1,42 @@
 ## Cauza
-În `src/features/admin/messageReportsApi.ts`, funcția `listMessageReports`:
-- Query-ul principal cu join `message:messages!...` se întoarce cu **status 200** și date corecte (am văzut în network: 2 rapoarte `RPT-000001`, `RPT-000002`).
-- Codul intră în fallback **doar dacă `error` există**. Dacă query-ul reușește, sare direct la `throw error;` (linie 120) cu `error` undefined → React Query stă blocat pe Skeleton (sau eroare silențioasă).
+Conversația `429bee57-...` chiar nu are niciun mesaj în DB (0 totale, 0 ascunse) — utilizatorul a deschis chat-ul și a apăsat "Raportează conversația" fără să existe vreun mesaj. Pagina admin funcționează corect, dar afișează "Niciun mesaj" pentru că nu există ce să afișeze.
 
-În plus, rapoartele actuale au `message_id = null` (sunt rapoarte la nivel de conversație, nu de mesaj), deci join-ul returnează `message: null` — trebuie să tratăm și acest caz.
+În plus, la nivel de schemă există o problemă structurală: rapoartele la nivel de conversație nu au `conversation_id` propriu — `InfoPanel.tsx:103` trimite `message_id: null` și injectează ID-ul în câmpul `reason` ca text (`"Conversation <uuid>"`). În admin recuperăm ID-ul cu regex pe `reason` (hack). Și când conversația are mesaje, nu vedem niciun context în panoul de raport.
 
 ## Soluție
 
-Rescriu `listMessageReports` să:
+### 1. Schemă DB (migration)
+- Adaug coloana `conversation_id uuid NULL REFERENCES conversations(id) ON DELETE SET NULL` în `message_reports`.
+- Index pe `(conversation_id)`.
+- Backfill: pentru rapoartele existente unde `conversation_id IS NULL`:
+  - dacă `message_id` există → ia `conversation_id` din `messages`;
+  - altfel extrage UUID din `reason` cu regex și setează.
+- RLS: păstrăm politicile actuale (admin RPC/role); doar adăugăm coloana în SELECT.
 
-1. **Folosească rezultatul query-ului principal** când reușește (mapând joined `message` → câmpurile flat ale `MessageReportRow`).
-2. Pentru rapoartele cu `message_id = null` (raport pe conversație), să folosească `reason` pentru a extrage `conversation_id` (formatul curent în DB: `"Conversation <uuid>"`) sau să afișeze pur și simplu cu `message_content = null`.
-3. Hidratarea autorului/reporter-ului (nume + email din `profiles`) — făcută cu un singur batch fetch, indiferent dacă query-ul principal reușește sau nu (joined query nu aducea profilurile oricum).
-4. Păstrez fallback-ul existent doar ca safety net dacă FK-ul lipsește.
+### 2. Frontend — inserare raport conversație
+- `src/lib/chatMedia.ts` → `reportMessage` primește și `conversationId?: string` și îl trece la insert.
+- `src/components/messaging/InfoPanel.tsx:103` → `reportMessage({ conversationId, reason: details })` în loc de hack-ul cu `Conversation ${id}` în `reason`.
 
-### Fișier modificat
-- `src/features/admin/messageReportsApi.ts` — rescriere `listMessageReports` cu retur corect pe success + hidratare profiluri.
+### 3. Admin — listare și afișare
+- `src/features/admin/messageReportsApi.ts`:
+  - Selectez direct `conversation_id` din `message_reports` (elimin regex-ul din `convoFromReason`).
+  - Pentru rapoartele fără `message_id`, fac un fetch separat al **ultimelor 5 mesaje** din `conversation_id` și le returnez ca `recent_messages`.
+- `src/pages/admin/AdminReports.tsx` (panoul detail):
+  - Dacă `message_content` este null și avem `conversation_id`, afișez secțiunea "Ultimele mesaje din conversație" (listă scurtă cu autor + conținut + ora) ca să avem context vizibil înainte să dăm click pe link-ul de conversație.
+  - Dacă conversația e goală, afișez explicit "Conversație raportată fără mesaje".
+
+### 4. Tipuri
+- Adaug `conversation_id` în interfața `MessageReportRow` și `recent_messages?: { id; content; sender_id; created_at }[]`.
+
+### Fișiere atinse
+- migration SQL nouă (ALTER TABLE + backfill + index)
+- `src/lib/chatMedia.ts`
+- `src/components/messaging/InfoPanel.tsx`
+- `src/features/admin/messageReportsApi.ts`
+- `src/pages/admin/AdminReports.tsx`
 
 ### Ce NU se atinge
-- UI-ul `AdminReports.tsx` (rămâne la fel).
-- Schema DB / RLS (datele vin corect, doar codul client le ignora).
+- `AdminConversationDetail.tsx` — funcționează corect; rămâne ca fallback prin link.
+- RLS pe `messages` — nu schimbăm; deja admin are acces.
+
+Rezultat: rapoartele de conversație au context vizibil direct în panoul de moderare; nu mai ajunge moderatorul pe o pagină goală fără să știe ce a raportat utilizatorul.

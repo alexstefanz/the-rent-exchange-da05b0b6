@@ -100,7 +100,7 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, classN
   };
 
   const handleReport = async () => {
-    const ok = await reportMessage({ reason: `Conversation ${conversationId}` });
+    const ok = await reportMessage({ conversationId });
     toast[ok ? "success" : "error"](
       ok
         ? t("Raportare trimisă", "Report submitted")
