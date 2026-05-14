@@ -8,6 +8,14 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import {
@@ -99,13 +107,30 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, classN
     );
   };
 
-  const handleReport = async () => {
-    const ok = await reportMessage({ conversationId });
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportCategory, setReportCategory] = useState<string>("inappropriate_language");
+  const [reportDetails, setReportDetails] = useState<string>("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+
+  const submitReport = async () => {
+    setReportSubmitting(true);
+    const ok = await reportMessage({
+      conversationId,
+      reportedUserId: peerId,
+      category: reportCategory,
+      reason: reportDetails.trim().slice(0, 500) || null,
+    });
+    setReportSubmitting(false);
     toast[ok ? "success" : "error"](
       ok
         ? t("Raportare trimisă", "Report submitted")
         : t("Eroare la raportare", "Report failed")
     );
+    if (ok) {
+      setReportOpen(false);
+      setReportDetails("");
+      setReportCategory("inappropriate_language");
+    }
   };
 
   const memberYear = memberSince ? new Date(memberSince).getFullYear() : null;
