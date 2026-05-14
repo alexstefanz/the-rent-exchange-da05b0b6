@@ -20,7 +20,7 @@ const Stat = ({ icon: Icon, value, label }: { icon: any; value: string; label: s
     </div>
     <div className="min-w-0">
       <div className="text-sm font-semibold text-foreground leading-tight">{value}</div>
-      <div className="text-[11px] text-muted-foreground leading-tight">{label}</div>
+      <div className="text-muted-foreground leading-tight text-sm font-semibold text-black">{label}</div>
     </div>
   </div>
 );
