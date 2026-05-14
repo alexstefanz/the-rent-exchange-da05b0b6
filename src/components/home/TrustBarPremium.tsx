@@ -71,10 +71,10 @@ const TrustBarPremium = () => {
                   <it.icon className={`h-4.5 w-4.5 md:h-5 md:w-5 ${it.tone}`} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="font-heading text-sm md:text-base font-bold text-foreground leading-tight truncate">
+                  <div className="font-heading text-[13px] md:text-base font-bold text-foreground leading-tight break-words">
                     {it.value}
                   </div>
-                  <div className="text-[11px] md:text-xs text-muted-foreground leading-tight line-clamp-2">
+                  <div className="text-[10px] md:text-xs text-muted-foreground leading-snug break-words">
                     {it.label}
                   </div>
                 </div>
