@@ -376,13 +376,12 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-8 md:px-6 lg:grid-cols-[1fr_360px]">
           <div className="min-w-0">
             {step === 1 && <Step1Category data={data} update={update} />}
-            {step === 2 && (
-              <Step2Details data={data} update={update} errors={errors} feePercent={feePercent} />
+            {step === 2 && user && (
+              <Step2Details data={data} update={update} errors={errors} feePercent={feePercent} userId={user.id} />
             )}
-            {step === 3 && user && <Step3Photos data={data} update={update} userId={user.id} errors={errors} />}
-            {step === 4 && <Step4Location data={data} update={update} errors={errors} />}
-            {step === 5 && <Step5Pricing data={data} update={update} feePercent={feePercent} freeListingsLeft={freeListingsLeft} errors={errors} />}
-            {step === 6 && <Step6Review data={data} feePercent={feePercent} onJump={jump} mode={mode} />}
+            {step === 3 && <Step4Location data={data} update={update} errors={errors} />}
+            {step === 4 && <Step5Pricing data={data} update={update} feePercent={feePercent} freeListingsLeft={freeListingsLeft} errors={errors} />}
+            {step === 5 && <Step6Review data={data} feePercent={feePercent} onJump={jump} mode={mode} />}
           </div>
 
           <aside className="hidden lg:block">
@@ -391,7 +390,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
                 Previzualizare live
               </p>
               <LivePreviewCard data={data} feePercent={feePercent} />
-              {step >= 3 && <QualityScoreCard data={data} />}
+              {step >= 2 && <QualityScoreCard data={data} />}
             </div>
           </aside>
         </div>
