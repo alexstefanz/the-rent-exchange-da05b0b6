@@ -1,20 +1,43 @@
-## Problem
+## Diagnosis
 
-The two pending cancellation requests exist in the database (`cancel_request_status = 'pending'`), but the admin "Anulări rezervări" tab shows an empty list because the RPC `list_pending_cancellation_requests` errors out:
+Currently in `src/hooks/useEarnings.ts`, the wallet shows funds as "În așteptare" while `payment_status === 'authorized'` (Stripe hold). However, several rentals exist where the rental is already finalized (`status === 'completed'`) but the payment_status is still `authorized` (Stripe capture didn't update the row, e.g. test payments or capture race). Those funds are stuck in "În așteptare" forever even though the rental is done.
 
-```
-ERROR: column r.total_days does not exist
-HINT: Perhaps you meant to reference the column "r.rental_days".
-```
-
-The `rentals` table uses `rental_days`, not `total_days`.
+Example from the database:
+- rental `70bf38…` — status `completed`, payment_status `authorized`, owner_payout 2.99 RON → currently sits in "În așteptare"
+- rental `46a65c…` — status `completed`, payment_status `authorized`, owner_payout 2.00 RON → same issue (this is the 2 RON visible in your screenshot)
 
 ## Fix
 
-Create a migration that recreates `public.list_pending_cancellation_requests()` with `r.rental_days` aliased as `total_days` (so the function signature and the frontend `PendingCancellationRequest.total_days` field stay unchanged — no client code edits needed).
+Move funds from "În așteptare" → "Disponibil" the moment a rental reaches `status = 'completed'`, regardless of `payment_status`. Pending should only count rentals that are still active/confirmed and haven't been finalized.
 
-All other fields, ordering, admin role check, and SECURITY DEFINER stay identical.
+Edit in `src/hooks/useEarnings.ts`:
 
-## Verification
+```text
+- if (r.payment_status === "authorized") pendingPayout += payout;
++ if (r.status !== "completed" && r.status !== "cancelled"
++     && r.payment_status === "authorized") {
++   pendingPayout += payout;
++ }
+```
 
-After the migration, calling the RPC will return the 2 pending rows; the admin panel will render them automatically (React Query already polls).
+And mirror in the per-row `status` mapping so completed always shows "available":
+
+```text
+let status: TxStatus = "pending";
+if (r.status === "cancelled") status = "cancelled";
+else if (r.status === "completed") status = "available";   // already first
+else if (r.payment_status === "captured" || r.payment_status === "paid") status = "available";
+else if (r.payment_status === "authorized") status = "held";
+```
+(no change needed here — already correct.)
+
+## Result
+
+- The 2 RON from the completed rental is instantly added to "Disponibil".
+- Any future rental marked as completed (return confirmed by both parties) immediately frees the owner payout into the available balance.
+- Active/confirmed rentals (still on Stripe hold) continue to show as "În așteptare", as expected.
+
+## Out of scope
+
+- No backend / Stripe changes — capture flow stays the same. The fix is purely how the wallet UI categorizes already-finalized rentals.
+- No automatic bank transfer — withdrawals remain manual via the existing "Retrage bani" flow.

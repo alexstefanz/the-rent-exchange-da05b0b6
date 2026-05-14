@@ -142,7 +142,13 @@ export const useEarnings = () => {
         const payout = Number(r.owner_payout) || 0;
         totalAllTime += payout;
         if (new Date(r.created_at) >= monthStart) totalThisMonth += payout;
-        if (r.payment_status === "authorized") pendingPayout += payout;
+        if (
+          r.status !== "completed" &&
+          r.status !== "cancelled" &&
+          r.payment_status === "authorized"
+        ) {
+          pendingPayout += payout;
+        }
 
         let status: TxStatus = "pending";
         if (r.status === "cancelled") status = "cancelled";
