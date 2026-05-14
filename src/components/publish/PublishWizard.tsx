@@ -742,6 +742,38 @@ const Step2Details = ({
           <Label className="text-sm font-semibold">
             Reguli de utilizare <span className="font-normal text-muted-foreground">(opțional)</span>
           </Label>
+          <div className="flex gap-2">
+            <Input
+              placeholder="Ex: Doar în interior, fără copii sub 12 ani"
+              value={newRule}
+              onChange={(e) => setNewRule(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  const t = newRule.trim();
+                  if (t && !data.usage_rules.includes(t)) {
+                    update("usage_rules", [...data.usage_rules, t]);
+                    setNewRule("");
+                  }
+                }
+              }}
+              className="h-11"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                const t = newRule.trim();
+                if (t && !data.usage_rules.includes(t)) {
+                  update("usage_rules", [...data.usage_rules, t]);
+                  setNewRule("");
+                }
+              }}
+              className="h-11"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {DEFAULT_USAGE_RULES.map((r) => {
               const active = data.usage_rules.includes(r);
@@ -767,6 +799,32 @@ const Step2Details = ({
               );
             })}
           </div>
+          {data.usage_rules.filter((r) => !DEFAULT_USAGE_RULES.includes(r)).length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              {data.usage_rules
+                .filter((r) => !DEFAULT_USAGE_RULES.includes(r))
+                .map((rule, i) => (
+                  <span
+                    key={`${rule}-${i}`}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-sm text-foreground"
+                  >
+                    {rule}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        update(
+                          "usage_rules",
+                          data.usage_rules.filter((x) => x !== rule),
+                        )
+                      }
+                      className="text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </span>
+                ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
