@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { CheckCheck, Settings2 } from "lucide-react";
+import { ArrowRight, CheckCheck, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -42,6 +42,12 @@ export function NotificationCenter({ variant = "popover", onClose }: Props) {
   const [filter, setFilter] = useState<FilterValue>("all");
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  // In dropdown/sheet variants, only show unread notifications.
+  const visibleNotifications = useMemo(
+    () => (variant === "page" ? notifications : notifications.filter((n) => !n.is_read)),
+    [notifications, variant],
+  );
+
   const counts = useMemo(() => {
     const c: Record<FilterValue, number> = {
       all: notifications.length,
@@ -52,12 +58,14 @@ export function NotificationCenter({ variant = "popover", onClose }: Props) {
       system: 0,
       urgent: 0,
     };
-    for (const n of notifications) {
+    const source = visibleNotifications;
+    c.all = source.length;
+    for (const n of source) {
       const cat = categorize(n.type);
       c[cat] = (c[cat] ?? 0) + 1;
     }
     return c;
-  }, [notifications]);
+  }, [notifications, visibleNotifications]);
 
   const unreadCount = useMemo(
     () => notifications.filter((n) => !n.is_read).length,
@@ -65,9 +73,9 @@ export function NotificationCenter({ variant = "popover", onClose }: Props) {
   );
 
   const filtered = useMemo(() => {
-    if (filter === "all") return notifications;
-    return notifications.filter((n) => categorize(n.type) === filter);
-  }, [notifications, filter]);
+    if (filter === "all") return visibleNotifications;
+    return visibleNotifications.filter((n) => categorize(n.type) === filter);
+  }, [visibleNotifications, filter]);
 
   const handleSelect = (n: Notification) => {
     const target = mapLink(n.link || "", n.type);
@@ -158,13 +166,14 @@ export function NotificationCenter({ variant = "popover", onClose }: Props) {
 
       {/* Footer */}
       {variant !== "page" && (
-        <div className="border-t border-border/70 shrink-0">
+        <div className="shrink-0 p-3 border-t border-border/70">
           <Link
             to="/notificari"
             onClick={onClose}
-            className="block w-full text-center text-xs font-semibold text-primary py-3 hover:bg-muted/50 transition-colors"
+            className="flex items-center justify-center gap-1.5 w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
           >
             {t("Vezi toate notificările", "View all notifications")}
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       )}
