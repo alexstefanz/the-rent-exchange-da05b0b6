@@ -44,7 +44,7 @@ export async function adminApproveCancellation(rentalId: string, note?: string) 
   // Load rental context for ticket
   const { data: rental } = await supabase
     .from("rentals")
-    .select("id, public_id, product_id, renter_id, owner_id, subtotal, platform_fee, payment_status, cancel_request_subject, cancel_request_reason, cancel_request_initiator_id")
+    .select("id, public_id, product_id, renter_id, owner_id, subtotal, platform_fee, payment_status, cancel_request_subject, cancel_request_reason, cancel_request_initiator")
     .eq("id", rentalId)
     .maybeSingle();
 
@@ -66,9 +66,9 @@ export async function adminApproveCancellation(rentalId: string, note?: string) 
   } catch { /* ignore */ }
 
   if (!ticketId && rental) {
-    const initiatorIsRenter = rental.cancel_request_initiator_id === rental.renter_id;
+    const initiatorIsRenter = rental.cancel_request_initiator === "renter";
     const initiatorLabel = initiatorIsRenter ? "chiriaș" : "proprietar";
-    const requesterId = rental.cancel_request_initiator_id || rental.renter_id;
+    const requesterId = initiatorIsRenter ? rental.renter_id : rental.owner_id;
     const subtotal = Number(rental.subtotal || 0);
     const fee = Number(rental.platform_fee || 0);
     const total = (subtotal + fee).toFixed(2);
