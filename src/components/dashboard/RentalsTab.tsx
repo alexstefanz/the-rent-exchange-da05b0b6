@@ -89,6 +89,7 @@ const RentalsTab = () => {
   });
 
   const [cancelDialogRental, setCancelDialogRental] = useState<MyRental | null>(null);
+  const [cancelSubject, setCancelSubject] = useState("");
   const [cancelReason, setCancelReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -109,16 +110,21 @@ const RentalsTab = () => {
 
   const handleRequestCancel = async () => {
     if (!cancelDialogRental) return;
+    if (!cancelSubject.trim() || cancelSubject.trim().length < 3) {
+      toast.error("Subiectul e prea scurt (minim 3 caractere)");
+      return;
+    }
     if (!cancelReason.trim() || cancelReason.trim().length < 5) {
       toast.error("Te rugăm să adaugi un motiv (minim 5 caractere)");
       return;
     }
     setSubmitting(true);
     try {
-      await requestMutualCancellation(cancelDialogRental.id, cancelReason.trim());
-      toast.success("Cererea de anulare a fost trimisă proprietarului");
+      await requestMutualCancellation(cancelDialogRental.id, cancelSubject.trim(), cancelReason.trim());
+      toast.success("Cererea de anulare a fost trimisă către admin pentru revizuire");
       queryClient.invalidateQueries({ queryKey: ["my-rentals"] });
       setCancelDialogRental(null);
+      setCancelSubject("");
       setCancelReason("");
     } catch (e: any) {
       toast.error(e?.message || "Eroare la trimiterea cererii de anulare");
