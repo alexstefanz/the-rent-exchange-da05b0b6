@@ -145,10 +145,10 @@ Deno.serve(async (req) => {
       {
         user_id: rental.owner_id,
         type: "rental_request",
-        title_ro: `Cerere nouă de închiriere`,
-        title_en: `New rental request`,
-        description_ro: `${renter?.full_name || "Un utilizator"} a plătit și dorește să închirieze "${product?.title}" pentru ${rental.rental_days} zile.`,
-        description_en: `${renter?.full_name || "A user"} paid and wants to rent "${product?.title}" for ${rental.rental_days} days.`,
+        title_ro: `Plată primită — începe chatul`,
+        title_en: `Payment received — start the chat`,
+        description_ro: `${renter?.full_name || "Un utilizator"} a făcut plata pentru închirierea produsului „${product?.title}". Începeți discuția pe chat. După ce ați stabilit data și ora predării produsului, completați procesele verbale. Este nevoie de câteva poze înainte din partea ambelor părți pentru a ne asigura că produsul se predă și se întoarce la fel.`,
+        description_en: `${renter?.full_name || "A user"} paid for renting "${product?.title}". Start the chat. Once you've agreed on the pickup date and time, fill in the handover protocols. A few photos beforehand from both sides are needed to make sure the item is handed over and returned in the same condition.`,
         link: `/inchirieri?rental_id=${rental.id}`,
       },
       {
