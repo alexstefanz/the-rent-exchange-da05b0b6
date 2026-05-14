@@ -1,8 +1,7 @@
-import { Search, Bell, PackageCheck, Star, ListPlus, Handshake, Wallet, Truck, Shield, UserCheck, ShieldCheck, Headphones, XCircle, BadgePercent, Send, CheckCircle2, Undo2, Lock } from "lucide-react";
+import { Send, CheckCircle2, Package, Wrench, Undo2, Wallet, ShieldCheck, Headphones, UserCheck, Tag, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import TrustBadges from "@/components/trust/TrustBadges";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
@@ -13,38 +12,27 @@ const HowItWorks = () => {
   const copy = useUxCopy();
   const p = copy.howItWorksPage;
 
-  const tenantSteps = [
-    { icon: Search, title: p.tenantStep1Title, desc: p.tenantStep1Desc },
-    { icon: Bell, title: p.tenantStep2Title, desc: p.tenantStep2Desc },
-    { icon: PackageCheck, title: p.tenantStep3Title, desc: p.tenantStep3Desc },
-    { icon: Star, title: p.tenantStep4Title, desc: p.tenantStep4Desc },
-  ];
-
-  const ownerSteps = [
-    { icon: ListPlus, title: p.ownerStep1Title, desc: p.ownerStep1Desc },
-    { icon: Handshake, title: p.ownerStep2Title, desc: p.ownerStep2Desc },
-    { icon: Truck, title: p.ownerStep3Title, desc: p.ownerStep3Desc },
-    { icon: Wallet, title: p.ownerStep4Title, desc: p.ownerStep4Desc },
-  ];
-
   const cycleSteps = [
     { icon: Send, title: p.cycleStep1Title, desc: p.cycleStep1Desc },
     { icon: CheckCircle2, title: p.cycleStep2Title, desc: p.cycleStep2Desc },
-    { icon: Truck, title: p.cycleStep3Title, desc: p.cycleStep3Desc },
-    { icon: PackageCheck, title: p.cycleStep4Title, desc: p.cycleStep4Desc },
+    { icon: Package, title: p.cycleStep3Title, desc: p.cycleStep3Desc },
+    { icon: Wrench, title: p.cycleStep4Title, desc: p.cycleStep4Desc },
     { icon: Undo2, title: p.cycleStep5Title, desc: p.cycleStep5Desc },
-    { icon: Star, title: p.cycleStep6Title, desc: p.cycleStep6Desc },
+    { icon: Wallet, title: p.cycleStep6Title, desc: p.cycleStep6Desc },
   ];
 
-  const escrowPoints = [p.escrowPoint1, p.escrowPoint2, p.escrowPoint3];
+  const stats = [
+    { value: p.statActiveUsersValue, label: p.statActiveUsersLabel },
+    { value: p.statRentalsValue, label: p.statRentalsLabel },
+    { value: p.statSatisfactionValue, label: p.statSatisfactionLabel },
+    { value: p.statResponseValue, label: p.statResponseLabel },
+  ];
 
-  const benefits = [
-    { icon: Shield, title: p.benefit1Title, desc: p.benefit1Desc },
-    { icon: UserCheck, title: p.benefit2Title, desc: p.benefit2Desc },
-    { icon: ShieldCheck, title: p.benefit3Title, desc: p.benefit3Desc },
-    { icon: Headphones, title: p.benefit4Title, desc: p.benefit4Desc },
-    { icon: XCircle, title: p.benefit5Title, desc: p.benefit5Desc },
-    { icon: BadgePercent, title: p.benefit6Title, desc: p.benefit6Desc },
+  const bentoCards = [
+    { icon: UserCheck, stat: p.bentoVerifiedStat, statLabel: p.bentoVerifiedStatLabel, title: p.bentoVerifiedTitle, desc: p.bentoVerifiedDesc },
+    { icon: ShieldCheck, stat: p.bentoInsuranceStat, statLabel: p.bentoInsuranceStatLabel, title: p.bentoInsuranceTitle, desc: p.bentoInsuranceDesc },
+    { icon: Headphones, stat: p.bentoSupportStat, statLabel: p.bentoSupportStatLabel, title: p.bentoSupportTitle, desc: p.bentoSupportDesc },
+    { icon: Tag, stat: p.bentoFeeStat, statLabel: p.bentoFeeStatLabel, title: p.bentoFeeTitle, desc: p.bentoFeeDesc },
   ];
 
   const faqs = [
@@ -57,21 +45,6 @@ const HowItWorks = () => {
     { q: p.faq7Q, a: p.faq7A },
     { q: p.faq8Q, a: p.faq8A },
   ];
-
-  const StepCard = ({ step, index }: { step: typeof tenantSteps[0]; index: number }) => (
-    <div className="group relative rounded-2xl bg-card p-6 shadow-card transition-all hover:shadow-card-hover">
-      <div className="mb-4 flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 font-heading text-sm font-bold text-primary">
-          {index + 1}
-        </div>
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 transition-colors group-hover:bg-primary/20">
-          <step.icon className="h-6 w-6 text-primary" />
-        </div>
-      </div>
-      <h3 className="mb-2 font-heading text-lg font-semibold text-foreground">{step.title}</h3>
-      <p className="text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -100,174 +73,247 @@ const HowItWorks = () => {
         </div>
       </section>
 
-      {/* Rental Lifecycle Timeline */}
-      <section className="py-16">
+      {/* Process Timeline (zigzag) */}
+      <section className="py-16 md:py-24">
         <div className="container">
-          <div className="mb-10 text-center">
-            <h2 className="font-heading text-2xl font-semibold text-foreground">{p.cycleTitle}</h2>
-            <p className="mx-auto mt-2 max-w-2xl text-muted-foreground">{p.cycleSubtitle}</p>
+          <div className="mb-12 text-center">
+            <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-primary">
+              {p.processBadge}
+            </span>
+            <h2 className="mt-4 font-heading text-3xl font-bold text-foreground md:text-4xl">{p.processTitle}</h2>
+            <p className="mx-auto mt-3 max-w-xl text-muted-foreground">{p.processSubtitle}</p>
           </div>
 
-          {/* Desktop: horizontal timeline */}
-          <div className="hidden md:flex items-start justify-between gap-1">
-            {cycleSteps.map((step, idx) => (
-              <div key={idx} className="flex-1 flex flex-col items-center min-w-0 px-1">
-                <div className="flex items-center w-full">
-                  <div className={cn("h-0.5 flex-1", idx === 0 ? "opacity-0" : "bg-primary/30")} />
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-heading text-sm font-bold shadow-card">
-                    {idx + 1}
+          {/* Desktop zigzag */}
+          <div className="relative mx-auto hidden max-w-4xl md:block">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-gradient-to-b from-primary/0 via-primary/60 to-primary/0"
+            />
+            <div className="space-y-14">
+              {cycleSteps.map((step, idx) => {
+                const left = idx % 2 === 0;
+                return (
+                  <div key={idx} className="relative grid grid-cols-2 items-center gap-12">
+                    {/* Center node */}
+                    <span
+                      aria-hidden
+                      className="absolute left-1/2 top-1/2 z-10 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-4 ring-background"
+                    />
+
+                    {/* Text side */}
+                    <div className={cn(left ? "text-right pr-6" : "col-start-2 text-left pl-6")}>
+                      <span className="inline-block rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+                        {`PAS · ${String(idx + 1).padStart(2, "0")}`}
+                      </span>
+                      <h3 className="mt-3 font-heading text-xl font-semibold text-foreground">{step.title}</h3>
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
+                    </div>
+
+                    {/* Icon side */}
+                    <div className={cn(left ? "col-start-2 pl-6" : "row-start-1 pr-6")}>
+                      <div className={cn("flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-card shadow-card", left ? "" : "ml-auto")}>
+                        <step.icon className="h-7 w-7 text-primary" />
+                      </div>
+                    </div>
                   </div>
-                  <div className={cn("h-0.5 flex-1", idx === cycleSteps.length - 1 ? "opacity-0" : "bg-primary/30")} />
-                </div>
-                <div className="mt-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10">
-                  <step.icon className="h-5 w-5 text-primary" />
-                </div>
-                <h3 className="mt-3 font-heading text-sm font-semibold text-foreground text-center">{step.title}</h3>
-                <p className="mt-1 text-xs leading-relaxed text-muted-foreground text-center">{step.desc}</p>
-              </div>
-            ))}
+                );
+              })}
+            </div>
           </div>
 
-          {/* Mobile: vertical timeline */}
-          <div className="md:hidden flex flex-col gap-4">
-            {cycleSteps.map((step, idx) => (
-              <div key={idx} className="flex gap-4 rounded-2xl bg-card p-4 shadow-card">
-                <div className="flex flex-col items-center">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-heading text-xs font-bold">
-                    {idx + 1}
-                  </div>
-                  {idx < cycleSteps.length - 1 && <div className="mt-2 h-full w-0.5 bg-primary/30" />}
-                </div>
-                <div className="flex-1 pb-2">
-                  <div className="mb-2 flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-primary/10">
-                      <step.icon className="h-4 w-4 text-primary" />
+          {/* Mobile vertical */}
+          <div className="relative md:hidden">
+            <div aria-hidden className="absolute left-5 top-2 h-[calc(100%-1rem)] w-px bg-primary/30" />
+            <div className="space-y-6">
+              {cycleSteps.map((step, idx) => (
+                <div key={idx} className="relative pl-14">
+                  <span
+                    aria-hidden
+                    className="absolute left-5 top-5 z-10 h-3 w-3 -translate-x-1/2 rounded-full bg-primary ring-4 ring-background"
+                  />
+                  <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
+                    <div className="mb-2 flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10">
+                        <step.icon className="h-5 w-5 text-primary" />
+                      </div>
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                        {`PAS · ${String(idx + 1).padStart(2, "0")}`}
+                      </span>
                     </div>
                     <h3 className="font-heading text-base font-semibold text-foreground">{step.title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
                   </div>
-                  <p className="text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Stats strip */}
+          <div className="mt-16 grid grid-cols-2 gap-6 border-t border-border pt-10 md:grid-cols-4">
+            {stats.map((s, i) => (
+              <div key={i} className="text-center">
+                <div className="font-heading text-3xl font-bold text-primary md:text-4xl">{s.value}</div>
+                <div className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why users choose us — bento */}
+      <section className="border-t border-border bg-secondary/30 py-16 md:py-24">
+        <div className="container">
+          <div className="mb-12 text-center">
+            <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-primary">
+              {p.whyBadge}
+            </span>
+            <h2 className="mt-4 font-heading text-3xl font-bold text-foreground md:text-5xl">{p.whyTitle}</h2>
+            <p className="mx-auto mt-3 max-w-xl text-muted-foreground">{p.whySubtitle}</p>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-3">
+            {/* Big escrow card */}
+            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1a1410] via-[#221913] to-[#2a1f17] p-8 lg:row-span-2 md:p-10">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 opacity-[0.07]"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(rgba(245,158,11,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(245,158,11,0.6) 1px, transparent 1px)",
+                  backgroundSize: "32px 32px",
+                }}
+              />
+              <div className="relative">
+                <span className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  {p.escrowPill}
+                </span>
+                <h3 className="mt-6 font-heading text-3xl font-bold leading-tight text-white md:text-4xl">
+                  {p.escrowBigTitle} <span className="text-primary">{p.escrowBigTitleAccent}</span>
+                </h3>
+                <p className="mt-4 max-w-md text-sm leading-relaxed text-white/70">{p.escrowBigDesc}</p>
+
+                {/* Mock status card */}
+                <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/15">
+                        <ShieldCheck className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <div className="text-[11px] uppercase tracking-wider text-white/50">{p.escrowAmountLabel}</div>
+                        <div className="font-heading text-lg font-bold text-white">{p.escrowAmount}</div>
+                      </div>
+                    </div>
+                    <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+                      {p.escrowSecuredBadge}
+                    </span>
+                  </div>
+                  <div className="mt-4">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                      <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-primary to-[#F98715]" />
+                    </div>
+                    <div className="mt-2 flex justify-between text-[10px] uppercase tracking-wider text-white/50">
+                      <span>{p.escrowStage1}</span>
+                      <span>{p.escrowStage2}</span>
+                      <span>{p.escrowStage3}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {["PSD2", "3DS2", "PCI-DSS", "GDPR"].map((tag) => (
+                    <span key={tag} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold text-white/70">
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
+            </div>
 
-      {/* For Tenants */}
-      <section className="border-t border-border py-16">
-        <div className="container">
-          <div className="mb-10 text-center">
-            <h2 className="font-heading text-2xl font-semibold text-foreground">{p.forTenants}</h2>
-            <p className="mt-2 text-muted-foreground">{p.forTenantsSubtitle}</p>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {tenantSteps.map((step, i) => (
-              <StepCard key={i} step={step} index={i} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* For Owners */}
-      <section className="border-y border-border bg-secondary/30 py-16">
-        <div className="container">
-          <div className="mb-10 text-center">
-            <h2 className="font-heading text-2xl font-semibold text-foreground">{p.forOwners}</h2>
-            <p className="mt-2 text-muted-foreground">{p.forOwnersSubtitle}</p>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {ownerSteps.map((step, i) => (
-              <StepCard key={i} step={step} index={i} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Escrow / Secure Payment */}
-      <section className="py-16">
-        <div className="container max-w-4xl">
-          <div className="rounded-2xl bg-card p-8 shadow-card md:p-10">
-            <div className="flex flex-col items-start gap-6 md:flex-row">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10">
-                <Lock className="h-7 w-7 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h2 className="font-heading text-2xl font-semibold text-foreground">{p.escrowTitle}</h2>
-                <p className="mt-2 text-muted-foreground">{p.escrowSubtitle}</p>
-                <ul className="mt-6 space-y-3">
-                  {escrowPoints.map((point, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10">
-                        <CheckCircle2 className="h-4 w-4 text-primary" />
-                      </div>
-                      <span className="text-sm leading-relaxed text-foreground">{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {/* 4 small cards */}
+            <div className="grid gap-5 sm:grid-cols-2 lg:col-span-2">
+              {bentoCards.map((c, i) => (
+                <div key={i} className="rounded-3xl border border-border bg-card p-6 shadow-card transition-shadow hover:shadow-card-hover">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
+                      <c.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div className="text-right">
+                      <div className="font-heading text-2xl font-bold text-primary leading-none">{c.stat}</div>
+                      <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{c.statLabel}</div>
+                    </div>
+                  </div>
+                  <h3 className="mt-8 font-heading text-lg font-semibold text-foreground">{c.title}</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{c.desc}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Why Rentli */}
-      <section className="border-t border-border py-16">
-        <div className="container">
-          <div className="mb-10 text-center">
-            <h2 className="font-heading text-2xl font-semibold text-foreground">{p.whyRentli}</h2>
-            <p className="mt-2 text-muted-foreground">{p.whyRentliSubtitle}</p>
-          </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {benefits.map((b, i) => (
-              <div key={i} className="rounded-2xl bg-card p-6 shadow-card">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
-                  <b.icon className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mb-2 font-heading text-lg font-semibold text-foreground">{b.title}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">{b.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Trust Badges */}
-      <section className="border-y border-border bg-secondary/30 py-10">
-        <div className="container">
-          <TrustBadges />
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="py-16">
+      {/* FAQ — redesigned */}
+      <section className="py-16 md:py-24">
         <div className="container max-w-3xl">
           <div className="mb-10 text-center">
-            <h2 className="font-heading text-2xl font-semibold text-foreground">{p.faqTitle}</h2>
-            <p className="mt-2 text-muted-foreground">{p.faqSubtitle}</p>
+            <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-primary">
+              {p.faqEyebrow}
+            </span>
+            <h2 className="mt-4 font-heading text-3xl font-bold text-foreground md:text-4xl">{p.faqTitle}</h2>
+            <p className="mt-3 text-muted-foreground">{p.faqSubtitle}</p>
           </div>
-          <Accordion type="single" collapsible className="w-full">
+          <Accordion type="single" collapsible className="w-full space-y-3">
             {faqs.map((faq, i) => (
-              <AccordionItem key={i} value={`faq-${i}`}>
-                <AccordionTrigger className="text-left font-heading text-base">{faq.q}</AccordionTrigger>
-                <AccordionContent className="text-muted-foreground leading-relaxed">{faq.a}</AccordionContent>
+              <AccordionItem
+                key={i}
+                value={`faq-${i}`}
+                className="rounded-2xl border border-border bg-card px-5 data-[state=open]:border-primary/30 data-[state=open]:bg-secondary/40"
+              >
+                <AccordionTrigger className="text-left font-heading text-base font-semibold hover:no-underline">
+                  {faq.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
+                  {faq.a}
+                </AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="border-t border-border bg-primary/5 py-16">
-        <div className="container text-center">
-          <h2 className="font-heading text-2xl font-semibold text-foreground md:text-3xl">{p.ctaTitle}</h2>
-          <p className="mx-auto mt-3 max-w-xl text-muted-foreground">{p.ctaSubtitle}</p>
-          <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-            <Button asChild size="lg">
-              <Link to="/cauta">{p.ctaRent}</Link>
-            </Button>
-            <Button asChild variant="outline" size="lg">
-              <Link to="/adauga-anunt">{p.ctaList}</Link>
-            </Button>
+      {/* CTA — gradient card */}
+      <section className="pb-20">
+        <div className="container">
+          <div className="relative mx-auto max-w-4xl overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-[#F98715] to-[#e8780f] p-10 text-center shadow-card md:p-14">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 opacity-20"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.4), transparent 40%), radial-gradient(circle at 80% 80%, rgba(255,255,255,0.3), transparent 40%)",
+              }}
+            />
+            <div className="relative">
+              <span className="inline-block rounded-full bg-white/20 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white">
+                {p.ctaEyebrow}
+              </span>
+              <h2 className="mt-4 font-heading text-3xl font-bold text-white md:text-5xl">{p.ctaTitle}</h2>
+              <p className="mx-auto mt-3 max-w-xl text-white/90">{p.ctaSubtitle}</p>
+              <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                <Button asChild size="lg" className="bg-background text-foreground hover:bg-background/90">
+                  <Link to="/cauta">{p.ctaRent}</Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white">
+                  <Link to="/adauga-anunt">{p.ctaList}</Link>
+                </Button>
+              </div>
+              <div className="mt-6 inline-flex items-center gap-2 text-xs text-white/85">
+                <Check className="h-4 w-4" />
+                {p.ctaFinePrint}
+              </div>
+            </div>
           </div>
         </div>
       </section>
