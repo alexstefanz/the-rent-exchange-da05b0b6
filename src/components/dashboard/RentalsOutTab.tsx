@@ -31,10 +31,17 @@ const RentalsOutTab = () => {
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [rejectDialogRental, setRejectDialogRental] = useState<OwnerRental | null>(null);
   const [rejectReason, setRejectReason] = useState("");
+  const [cancelDialogRental, setCancelDialogRental] = useState<OwnerRental | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
 
   const pendingRentals = rentals.filter(r => r.status === "pending");
-  const otherRentals = rentals.filter(r => r.status !== "pending");
+  const premiumActiveRentals = rentals.filter(
+    r => (r.status === "confirmed" || r.status === "active") && !r.handover_confirmed_at
+  );
+  const premiumIds = new Set([...pendingRentals, ...premiumActiveRentals].map(r => r.id));
+  const historyRentals = rentals.filter(r => !premiumIds.has(r.id));
   const activeRentals = rentals.filter(r => r.status === "confirmed" || r.status === "active");
+  const cancelledRentals = rentals.filter(r => r.status === "cancelled");
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
