@@ -289,6 +289,7 @@ export async function attachToMessage(messageId: string, attachmentIds: string[]
 export async function reportMessage(opts: {
   messageId?: string;
   attachmentId?: string;
+  conversationId?: string;
   reason?: string;
 }): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser();
@@ -296,6 +297,7 @@ export async function reportMessage(opts: {
   const { error } = await supabase.from("message_reports").insert({
     message_id: opts.messageId ?? null,
     attachment_id: opts.attachmentId ?? null,
+    conversation_id: opts.conversationId ?? null,
     reporter_id: user.id,
     reason: opts.reason ?? null,
   });
