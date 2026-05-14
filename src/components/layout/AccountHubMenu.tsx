@@ -511,7 +511,7 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
       <NavRow
         to="/owner"
         icon={FileText}
-        label={t("Anunțurile mele", "My Listings")}
+        label={t("Produsele mele", "My Products")}
         onNav={handleNav}
       />
       <NavRow

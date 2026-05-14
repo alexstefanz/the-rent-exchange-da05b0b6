@@ -19,6 +19,8 @@ import ListingCard from "@/components/listings/ListingCard";
 import ListingsEmptyState from "@/components/listings/ListingsEmptyState";
 import ListingAvailabilityDialog from "@/components/listings/ListingAvailabilityDialog";
 import type { ListingStatus } from "@/components/listings/ListingStatusBadge";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { deleteProduct, updateProduct, type Product } from "@/features/products/productsApi";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -144,12 +146,47 @@ const ListingsPage = () => {
 
         <ListingsHeader totalCount={stats?.total ?? products.length} />
 
-        {!hasNoProducts && stats && <ListingsStatsBar stats={stats} />}
+        {!hasNoProducts && stats && (
+          <ListingsStatsBar
+            stats={stats}
+            activeStatus={filters.status}
+            onSelectStatus={(s) => setFilters((f) => ({ ...f, status: s }))}
+            onOpenRentals={() => navigate("/inchirieri")}
+          />
+        )}
 
         {hasNoProducts ? (
           <ListingsEmptyState />
         ) : (
           <>
+            <Tabs
+              value={filters.status}
+              onValueChange={(v) => setFilters((f) => ({ ...f, status: v as ListingsFilters["status"] }))}
+            >
+              <TabsList className="h-auto flex-wrap gap-1 bg-muted/60 p-1">
+                <TabsTrigger value="all" className="gap-2">
+                  {t("Toate", "All")}
+                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">{stats?.total ?? products.length}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="active" className="gap-2">
+                  {t("Active", "Active")}
+                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">{stats?.active ?? 0}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="pending" className="gap-2">
+                  {t("În verificare", "In review")}
+                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">{stats?.pending ?? 0}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="hidden" className="gap-2">
+                  {t("Ascunse", "Hidden")}
+                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">{stats?.hidden ?? 0}</Badge>
+                </TabsTrigger>
+                <TabsTrigger value="rejected" className="gap-2">
+                  {t("Respinse", "Rejected")}
+                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">{stats?.rejected ?? 0}</Badge>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
             <ListingsFilterBar
               filters={filters}
               onChange={setFilters}

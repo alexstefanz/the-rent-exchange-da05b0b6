@@ -116,7 +116,7 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
 
   const accountItems: DrawerNavItem[] = [
     { to: "/contul-meu", label: t("Contul meu", "My Account"), icon: User },
-    { to: "/anunturi", label: t("Anunțurile mele", "My Listings"), icon: FileText },
+    { to: "/anunturi", label: t("Produsele mele", "My Products"), icon: FileText },
     { to: "/verificare", label: t("Verificare KYC", "KYC Verification"), icon: Shield },
     { to: "/castiguri", label: t("Plăți & Retrageri", "Payments & Withdrawals"), icon: Wallet },
   ];
