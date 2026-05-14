@@ -470,16 +470,6 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
         </div>
       )}
 
-      {/* Grouped nav */}
-      <SectionLabel>{t("Activitate", "Activity")}</SectionLabel>
-      <NavRow
-        to="/inchirieri"
-        icon={Package}
-        label={t("Închirieri", "Lendings")}
-        badge={signals?.activeRentalsAsOwner || undefined}
-        onNav={handleNav}
-      />
-
       <SectionLabel>{t("Cont", "Account")}</SectionLabel>
       <NavRow
         to="/contul-meu"
