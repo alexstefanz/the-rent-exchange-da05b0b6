@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { cn } from "@/lib/utils";
+import { cn, formatPriceShort } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { useKycGate } from "@/hooks/queries/useKycGate";
 import { useAuth } from "@/contexts/AuthContext";
