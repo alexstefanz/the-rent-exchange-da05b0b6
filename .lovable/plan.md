@@ -1,27 +1,37 @@
-## Înlocuire termen "escrow" cu "depozit în garanție"
+## Formatare preț pe pagina de produs (max 1 zecimală)
 
-Pe pagina **Cum funcționează** (și unde apare în uxCopy în context de rezervare), textul "escrow" sună prea tehnic/străin. Îl înlocuim cu formula românească **"depozit în garanție"** / **"sistem de depozit în garanție"**, păstrând paralela engleză cu "escrow" doar pe versiunea EN.
+În cardul de rezervare apar valori cu multe zecimale (ex: `3.1500000000000004 RON`) din cauza erorilor de virgulă mobilă în JS. Vrem afișare cu **maxim 1 zecimală**, iar dacă zecimala ar fi `0` (ex: `5.0`) afișăm fără ea (`5`).
 
-### Modificări (doar text, în `src/data/uxCopy.ts`)
+### Helper nou
+Adaug în `src/lib/utils.ts` o funcție:
 
-Secțiunea bento "Plăți protejate" de pe `/cum-functioneaza`:
-- `escrowPill` → RO: **"DEPOZIT ÎN GARANȚIE ACTIV"** / EN: "ESCROW ACTIVE"
-- `escrowBigDesc` → RO: **"Serviciu integrat de depozit în garanție. Banii sunt eliberați doar când produsul este predat în bune condiții, conform PV-ului semnat digital de ambele părți."** / EN nemodificat
-- `escrowAmountLabel` → RO: **"Sumă în depozit"** / EN nemodificat
-- `escrowSecuredBadge` → RO: rămâne "SECURIZAT"
-- `escrowStage1/2/3` → rămân ("Pre-autorizat" / "În derulare" / "Eliberat la final")
+```ts
+export function formatPriceShort(value: number): string {
+  if (!Number.isFinite(value)) return "0";
+  const rounded = Math.round(value * 10) / 10;       // max 1 zecimală
+  return rounded.toFixed(1).replace(/\.0$/, "");     // elimină ".0"
+}
+```
 
-Secțiunea generică "Plata în siguranță" (folosită în alte locuri, dacă apare):
-- `escrowTitle` → RO: **"Depozit în garanție"** / EN: "Secure escrow payment"
-- `escrowSubtitle` → RO: **"Modelul nostru de hold & capture (depozit în garanție) protejează ambele părți la fiecare rezervare."**
+Comportament:
+- `1.05` → `"1.1"`
+- `3.1500000000000004` → `"3.2"`
+- `5` → `"5"`
+- `5.0` → `"5"`
+- `12.4` → `"12.4"`
 
-Pas tenant:
-- `tenantStep2Desc` → RO: **"Primești o notificare imediat ce proprietarul aprobă cererea. Plata rămâne în depozit (escrow), nu este debitată încă."**
+### Locuri unde înlocuiesc afișarea
+1. `src/components/product/PremiumBookingCard.tsx`
+   - Linia ~126: `× {clientPrice} RON` → `× {formatPriceShort(clientPrice)} RON`
+   - Linia ~128: `{rentalDays * clientPrice} RON` → `{formatPriceShort(rentalDays * clientPrice)} RON`
+   - Linia ~130 (Total): `{totalPrice} RON` → `{formatPriceShort(totalPrice)} RON`
+   - Preț pe zi din header (dacă apare cu zecimale similare) — verific și aplic acolo.
+2. `src/components/product/BookingCard.tsx`
+   - Linia ~121: `{clientPrice} RON` → `{formatPriceShort(clientPrice)} RON`
+   - Linia ~164 (Total): `{totalPrice} RON` → `{formatPriceShort(totalPrice)} RON`
 
 ### Ce NU se schimbă
-- Cheile/identifierii din cod (`escrowPill`, `escrowBigDesc` etc.) — doar valorile RO.
-- Versiunile EN păstrează "escrow" (termen consacrat internațional).
-- Comentariul `// Escrow section` din uxCopy poate rămâne (nu e vizibil).
-- Bannerul mare păstrează titlul scurt **"Plăți protejate end-to-end."** (mai lizibil decât "Depozit în garanție end-to-end").
+- Logica de calcul a prețului rămâne neatinsă; doar reprezentarea vizuală.
+- Checkout-ul, facturile și e-mailurile (acolo se folosește deja formatarea cu 2 zecimale, conformă fiscal).
 
-Confirmi și implementez?
+Confirmi și aplic?
