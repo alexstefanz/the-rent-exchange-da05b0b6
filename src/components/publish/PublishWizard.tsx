@@ -70,11 +70,10 @@ import {
 
 const STEPS: StepDef[] = [
   { id: 1, label: "Categorie", shortLabel: "Categorie" },
-  { id: 2, label: "Detalii", shortLabel: "Detalii" },
-  { id: 3, label: "Fotografii", shortLabel: "Fotografii" },
-  { id: 4, label: "Locație", shortLabel: "Locație" },
-  { id: 5, label: "Preț & disponibilitate", shortLabel: "Preț" },
-  { id: 6, label: "Verificare & publicare", shortLabel: "Publică" },
+  { id: 2, label: "Fotografii & detalii", shortLabel: "Detalii" },
+  { id: 3, label: "Locație", shortLabel: "Locație" },
+  { id: 4, label: "Preț & disponibilitate", shortLabel: "Preț" },
+  { id: 5, label: "Verificare & publicare", shortLabel: "Publică" },
 ];
 
 interface Props {
@@ -202,8 +201,11 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
     if (!pendingDraft) return;
     setDraftId(pendingDraft.id);
     setData({ ...emptyPublishForm(), ...pendingDraft.payload });
-    setStep(pendingDraft.step || 1);
-    setMaxReached(pendingDraft.step || 1);
+    // Remap legacy draft step (6-step wizard) to new 5-step wizard
+    const legacyMap: Record<number, number> = { 1: 1, 2: 2, 3: 2, 4: 3, 5: 4, 6: 5 };
+    const remapped = legacyMap[pendingDraft.step] ?? Math.min(pendingDraft.step || 1, 5);
+    setStep(remapped);
+    setMaxReached(remapped);
     setPendingDraft(null);
   };
 
@@ -225,20 +227,22 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   const validateStep = (s: number): boolean => {
     const validators: Record<number, () => any> = {
       1: () => stepValidators.step1.safeParse({ category: data.category }),
-      2: () =>
-        stepValidators.step2.safeParse({
+      2: () => {
+        const detailsRes = stepValidators.step2.safeParse({
           title: data.title,
           description: data.description,
           condition: data.condition,
-        }),
-      3: () => stepValidators.step3.safeParse({ images: data.images }),
-      4: () =>
+        });
+        if (!detailsRes.success) return detailsRes;
+        return stepValidators.step3.safeParse({ images: data.images });
+      },
+      3: () =>
         stepValidators.step4.safeParse({
           location_county: data.location_county,
           location_city: data.location_city,
         }),
-      5: () => stepValidators.step5.safeParse({ daily_price_owner: data.daily_price_owner }),
-      6: () => ({ success: true }),
+      4: () => stepValidators.step5.safeParse({ daily_price_owner: data.daily_price_owner }),
+      5: () => ({ success: true }),
     };
     const result = validators[s]();
     if (!result.success) {
@@ -251,7 +255,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       if (firstMsg) toast({ title: "Verifică datele", description: firstMsg, variant: "destructive" });
       return false;
     }
-    if (s === 5 && data.max_rental_days != null && data.max_rental_days < (data.min_rental_days || 1)) {
+    if (s === 4 && data.max_rental_days != null && data.max_rental_days < (data.min_rental_days || 1)) {
       setErrors({ max_rental_days: "Maximul trebuie să fie ≥ minimul" });
       toast({
         title: "Verifică datele",
@@ -265,7 +269,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   };
 
   const goNext = () => {
-    if (step === 6) {
+    if (step === 5) {
       handlePublish();
       return;
     }
@@ -297,7 +301,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   const handlePublish = async () => {
     if (!user) return;
     // Validate critical steps
-    for (let s = 1; s <= 5; s++) {
+    for (let s = 1; s <= 4; s++) {
       if (!validateStep(s)) {
         setStep(s);
         return;
@@ -375,13 +379,12 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-8 md:px-6 lg:grid-cols-[1fr_360px]">
           <div className="min-w-0">
             {step === 1 && <Step1Category data={data} update={update} />}
-            {step === 2 && (
-              <Step2Details data={data} update={update} errors={errors} feePercent={feePercent} />
+            {step === 2 && user && (
+              <Step2Details data={data} update={update} errors={errors} feePercent={feePercent} userId={user.id} />
             )}
-            {step === 3 && user && <Step3Photos data={data} update={update} userId={user.id} errors={errors} />}
-            {step === 4 && <Step4Location data={data} update={update} errors={errors} />}
-            {step === 5 && <Step5Pricing data={data} update={update} feePercent={feePercent} freeListingsLeft={freeListingsLeft} errors={errors} />}
-            {step === 6 && <Step6Review data={data} feePercent={feePercent} onJump={jump} mode={mode} />}
+            {step === 3 && <Step4Location data={data} update={update} errors={errors} />}
+            {step === 4 && <Step5Pricing data={data} update={update} feePercent={feePercent} freeListingsLeft={freeListingsLeft} errors={errors} />}
+            {step === 5 && <Step6Review data={data} feePercent={feePercent} onJump={jump} mode={mode} />}
           </div>
 
           <aside className="hidden lg:block">
@@ -390,7 +393,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
                 Previzualizare live
               </p>
               <LivePreviewCard data={data} feePercent={feePercent} />
-              {step >= 3 && <QualityScoreCard data={data} />}
+              {step >= 2 && <QualityScoreCard data={data} />}
             </div>
           </aside>
         </div>
@@ -555,11 +558,13 @@ const Step2Details = ({
   update,
   errors,
   feePercent: _fee,
+  userId,
 }: {
   data: PublishFormData;
   update: <K extends keyof PublishFormData>(k: K, v: PublishFormData[K]) => void;
   errors: Record<string, string>;
   feePercent: number;
+  userId: string;
 }) => {
   const [genLoading, setGenLoading] = useState(false);
   const { toast } = useToast();
@@ -593,12 +598,37 @@ const Step2Details = ({
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 2 din 6"
-        title="Spune-ne despre produsul tău"
-        subtitle="Un titlu clar și o descriere detaliată cresc considerabil rata de rezervare."
+        eyebrow="Pasul 2 din 5"
+        title="Fotografii & detalii"
+        subtitle="Adaugă întâi pozele (6+ recomandat) — apoi completează titlul și descrierea."
       />
 
       <div className="mt-6 space-y-6">
+        {/* Photos */}
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold">
+            Fotografii <span className="font-normal text-muted-foreground">(prima poză devine coperta)</span>
+          </Label>
+          <div className="rounded-2xl border border-border bg-card p-4">
+            <ImageUpload userId={userId} images={data.images} onChange={(imgs) => update("images", imgs)} maxImages={10} />
+          </div>
+          {errors.images && <p className="text-sm text-destructive">{errors.images}</p>}
+          <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-4">
+            <div className="flex items-start gap-3">
+              <ImageIcon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <div className="space-y-1 text-xs text-muted-foreground">
+                <p className="font-medium text-foreground">Sfaturi pentru poze bune:</p>
+                <ul className="list-disc space-y-0.5 pl-4">
+                  <li>Lumină naturală, fără bliț</li>
+                  <li>Fundal curat, neutru</li>
+                  <li>Arată produsul din 3-4 unghiuri + detalii</li>
+                  <li>Include accesoriile incluse</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Title */}
         <div className="space-y-2">
           <Label htmlFor="title" className="text-sm font-semibold">
@@ -894,7 +924,7 @@ const Step4Location = ({
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 4 din 6"
+        eyebrow="Pasul 3 din 5"
         title="Unde se află produsul?"
         subtitle="Adresa exactă este vizibilă doar după ce o rezervare e confirmată."
       />
@@ -1006,7 +1036,7 @@ const Step5Pricing = ({
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 5 din 6"
+        eyebrow="Pasul 4 din 5"
         title="Preț chirie"
         subtitle="Setează cât vrei să primești pe zi. Comisionul platformei se adaugă automat clientului."
       />
@@ -1155,7 +1185,7 @@ const Step6Review = ({
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 6 din 6"
+        eyebrow="Pasul 5 din 5"
         title={mode === "edit" ? "Verifică modificările" : "Aproape gata!"}
         subtitle={
           mode === "edit"
@@ -1187,16 +1217,16 @@ const Step6Review = ({
           value={data.condition ? CONDITION_LABELS[data.condition].ro : "—"}
           onEdit={() => onJump(2)}
         />
-        <ReviewRow label="Fotografii" value={`${data.images.length} imagini`} onEdit={() => onJump(3)} />
+        <ReviewRow label="Fotografii" value={`${data.images.length} imagini`} onEdit={() => onJump(2)} />
         <ReviewRow
           label="Locație"
           value={`${data.location_city}${data.location_county ? `, ${data.location_county}` : ""}`}
-          onEdit={() => onJump(4)}
+          onEdit={() => onJump(3)}
         />
         <ReviewRow
           label="Preț"
           value={`${owner} RON/zi · client ${calculateClientPrice(owner, feePercent)} RON`}
-          onEdit={() => onJump(5)}
+          onEdit={() => onJump(4)}
         />
         <ReviewRow
           label="Durată închiriere"
@@ -1205,7 +1235,7 @@ const Step6Review = ({
               ? `${data.min_rental_days || 1} – ${data.max_rental_days} zile`
               : `min. ${data.min_rental_days || 1} ${(data.min_rental_days || 1) === 1 ? "zi" : "zile"}`
           }
-          onEdit={() => onJump(5)}
+          onEdit={() => onJump(4)}
         />
 
         {score.total < 60 && (

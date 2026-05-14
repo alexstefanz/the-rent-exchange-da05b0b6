@@ -1,16 +1,28 @@
-## Adaugare reguli personalizate în "Reguli de utilizare"
+## Unificare "Detalii" + "Fotografii" într-un singur pas
 
-În pasul 2 din wizardul de publicare, secțiunea "Reguli de utilizare" oferă acum doar chip-uri presetate (din `DEFAULT_USAGE_RULES`). Le păstrăm, dar adăugăm exact același pattern de input + buton "+" ca la "Ce este inclus", pentru a permite adăugarea de reguli proprii.
+Reducem wizardul de la 6 la 5 pași, combinând fostul pas 2 ("Detalii") cu fostul pas 3 ("Fotografii") într-un singur pas numit **"Fotografii & detalii"**, cu **fotografiile afișate primele**.
 
-### Modificări (frontend only, `src/components/publish/PublishWizard.tsx`)
+### Noua structură de pași
+1. Categorie
+2. **Fotografii & detalii** (nou — poze sus, apoi titlu/condiție/descriere/accesorii/reguli)
+3. Locație
+4. Preț & disponibilitate
+5. Verificare & publicare
 
-1. Adaug un nou state local `newRule` (alături de `newItem`).
-2. Sub label-ul "Reguli de utilizare", adaug un rând cu `<Input>` + buton `+` identic cu cel de la "Ce este inclus":
-   - placeholder: `Ex: Doar în interior, fără copii sub 12 ani`
-   - Enter sau click pe `+` adaugă în `data.usage_rules` (dacă nu există deja, după `trim()`).
-3. Sub input păstrez chip-urile presetate `DEFAULT_USAGE_RULES` (toggle on/off ca acum).
-4. Adaug, sub chip-uri, o listă cu regulile **custom** adăugate de utilizator (cele care NU sunt în `DEFAULT_USAGE_RULES`), afișate ca pill-uri cu `X` pentru ștergere — exact stilul de la `included_items`.
+### Modificări (toate în `src/components/publish/PublishWizard.tsx`)
+
+1. **`STEPS`**: 5 intrări, label-ul pasului 2 devine `"Fotografii & detalii"` (shortLabel: `"Detalii"`).
+2. **Render switch**: `step === 2` randează un nou `Step2DetailsPhotos` care primește toate props-urile (`data`, `update`, `errors`, `feePercent`, `userId`); `step === 3 → Step4Location`, `step === 4 → Step5Pricing`, `step === 5 → Step6Review` (păstrăm numele componentelor existente, schimbăm doar la ce `step` se montează).
+3. **`Step2DetailsPhotos`**: nou wrapper care randează în ordine:
+   - blocul de upload din `Step3Photos` (fără headerul "PASUL 3 DIN 6" — se folosește un singur header la nivel de pas: "Fotografii & detalii")
+   - blocul existent din `Step2Details` (titlu, condiție, descriere, "Ce este inclus", "Reguli de utilizare")
+   Reutilizăm conținutul JSX al celor două componente existente; le păstrăm exportate dar le folosim direct sub forma de fragmente componibile (mut JSX-ul în două sub-componente fără shell-ul exterior, apoi le compun în `Step2DetailsPhotos`).
+4. **`validateStep`**: pasul 2 rulează atât `stepValidators.step2` (titlu/descriere/condiție) cât și `stepValidators.step3` (imagini); pasul 3 → `step4`, pasul 4 → `step5`, pasul 5 → ok. `handlePublish` iterează `for (let s = 1; s <= 4; s++)`.
+5. **`Step6Review.onJump`**: `Categorie → 1`, `Titlu/Descriere/Condiție/Fotografii → 2`, `Locație → 3`, `Preț/Durată → 4`.
+6. **Headere de pas**: "PASUL 2 DIN 5", "PASUL 3 DIN 5"... Actualizez stringurile statice afișate în fiecare componentă internă.
+7. **Drafts existente**: `pendingDraft.step` poate avea valori vechi (3..6). Adaug un mic remap la încărcare: `{1→1, 2→2, 3→2, 4→3, 5→4, 6→5}`, clampat la 5.
 
 ### Out of scope
-- Fără modificări la schemă, RPC, validări sau alte fișiere.
-- Fără modificări la `LivePreviewCard` sau pagina produsului (deja citesc `usage_rules` ca array).
+- Fără modificări la `publishTypes.ts` / `stepValidators` (zod schemas rămân `step1..step5` ca grupuri logice de validare; doar mapping-ul în UI se schimbă).
+- Fără modificări la quality score, RPC-uri, DB sau preview.
+- Fără modificări vizuale la `PublishStepper` (afișează automat câte step-uri primește în props).
