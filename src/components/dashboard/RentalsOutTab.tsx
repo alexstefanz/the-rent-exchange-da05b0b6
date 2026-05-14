@@ -1,19 +1,21 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Package, Plus, Check, X, Loader2, Calendar, TrendingUp, Inbox, MessageSquare } from "lucide-react";
+import { Package, Plus, Check, X, Loader2, Calendar, TrendingUp, Inbox, MessageSquare, Clock, XCircle, Sparkles, ArrowRight, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useAuth } from "@/contexts/AuthContext";
 import { getOwnerRentals, respondToRental, type OwnerRental } from "@/features/rentals/ownerRentalsApi";
+import { requestMutualCancellation } from "@/features/rentals/rentalsApi";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useRentalRealtime } from "@/hooks/useRentalRealtime";
-import RentalProductCard from "./RentalProductCard";
+import StatusBadge from "./StatusBadge";
 
 const RentalsOutTab = () => {
   const copy = useUxCopy();
@@ -72,6 +74,25 @@ const RentalsOutTab = () => {
     finally { setRespondingId(null); }
   };
 
+  const handleRequestCancel = async () => {
+    if (!cancelDialogRental) return;
+    if (!cancelReason.trim() || cancelReason.trim().length < 5) {
+      toast.error("Te rugăm să adaugi un motiv (minim 5 caractere)");
+      return;
+    }
+    setRespondingId(cancelDialogRental.id);
+    try {
+      await requestMutualCancellation(cancelDialogRental.id, cancelReason.trim());
+      toast.success("Cererea de anulare a fost trimisă chiriașului");
+      queryClient.invalidateQueries({ queryKey: ["ownerRentals"] });
+      setCancelDialogRental(null);
+      setCancelReason("");
+    } catch (e: any) {
+      toast.error(e?.message || "Eroare la trimiterea cererii de anulare");
+      console.error(e);
+    } finally { setRespondingId(null); }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -97,8 +118,8 @@ const RentalsOutTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {/* Stats — 4 cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-1"><Inbox className="h-4 w-4" /><span className="text-sm">Cereri noi</span></div>
           <p className="text-2xl font-bold text-foreground">{pendingRentals.length}</p>
@@ -108,89 +129,187 @@ const RentalsOutTab = () => {
           <p className="text-2xl font-bold text-foreground">{activeRentals.length}</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-4">
+          <div className="flex items-center gap-2 text-muted-foreground mb-1"><XCircle className="h-4 w-4" /><span className="text-sm">Anulate</span></div>
+          <p className="text-2xl font-bold text-foreground">{cancelledRentals.length}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-1"><TrendingUp className="h-4 w-4" /><span className="text-sm">Câștig luna asta</span></div>
           <p className="text-2xl font-bold text-primary">{monthEarnings.toFixed(2)} RON</p>
         </div>
       </div>
 
-      {/* Pending requests */}
-      {pendingRentals.length > 0 && (
+      {/* Premium request cards */}
+      {(pendingRentals.length > 0 || premiumActiveRentals.length > 0) && (
         <section>
-          <h3 className="font-heading text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
+          <h3 className="font-heading text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
             Cereri de închiriere
-            <Badge variant="default">{pendingRentals.length}</Badge>
+            <Badge className="bg-primary text-primary-foreground">{pendingRentals.length + premiumActiveRentals.length}</Badge>
           </h3>
-          <div className="space-y-3">
-            {pendingRentals.map((rental) => (
-              <div key={rental.id} className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
-                <div className="flex items-start gap-4">
-                  <img src={rental.product_image || "/placeholder.svg"} alt={rental.product_title} className="w-16 h-16 rounded-lg object-cover" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <h4 className="font-medium text-foreground">{rental.product_title}</h4>
-                      <Badge variant="secondary">În așteptare</Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">De la: <span className="font-medium text-foreground">{rental.renter_name || "Chiriaș"}</span></p>
-                    <div className="grid grid-cols-3 gap-2 mt-3 text-sm">
-                      <div><span className="text-muted-foreground">Perioadă</span><p className="font-medium">{format(new Date(rental.start_date), "d MMM", { locale: ro })} – {format(new Date(rental.end_date), "d MMM", { locale: ro })}</p></div>
-                      <div><span className="text-muted-foreground">Zile</span><p className="font-medium">{rental.rental_days}</p></div>
-                      <div><span className="text-muted-foreground">Câștig</span><p className="font-medium text-primary">{rental.owner_payout} RON</p></div>
-                    </div>
-                    {rental.message_to_owner && rental.message_to_owner.trim().length > 0 && (
-                      <div className="mt-3 rounded-2xl rounded-tl-sm bg-background border border-border px-3 py-2">
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
-                          <MessageSquare className="h-3.5 w-3.5" />
-                          <span>Mesaj de la chiriaș</span>
-                        </div>
-                        <p className="text-sm text-foreground whitespace-pre-wrap break-words">
-                          {rental.message_to_owner}
-                        </p>
-                      </div>
+          <div className="space-y-4">
+            {[...pendingRentals, ...premiumActiveRentals].map((rental) => {
+              const isPending = rental.status === "pending";
+              const canRequestCancel = !isPending && !rental.handover_confirmed_at;
+              return (
+                <div
+                  key={rental.id}
+                  className="relative overflow-hidden rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-primary/5 to-card p-5 sm:p-6 shadow-lg shadow-primary/10"
+                >
+                  <div className="absolute top-4 right-4 flex items-center gap-2">
+                    {isPending ? (
+                      <Badge className="bg-primary text-primary-foreground animate-pulse">Cerere nouă</Badge>
+                    ) : (
+                      <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200">Confirmată</Badge>
                     )}
-                    <div className="flex gap-2 mt-4">
-                      <Button size="sm" onClick={() => handleAccept(rental)} disabled={respondingId === rental.id} className="flex-1">
+                  </div>
+
+                  <div className="flex items-start gap-2 mb-1 pr-24 sm:pr-28">
+                    <Inbox className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">
+                        {isPending ? "Cerere de la" : "Rezervare confirmată cu"}
+                      </p>
+                      <p className="text-lg font-semibold text-foreground truncate">
+                        {rental.renter_name || "Chiriaș"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-base font-medium text-foreground mt-2">
+                    pentru <span className="text-primary">{rental.product_title}</span>
+                  </p>
+
+                  <div className="grid grid-cols-3 gap-3 mt-5">
+                    <div className="rounded-xl bg-card/80 border border-border p-3">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                        <Calendar className="h-3.5 w-3.5" /><span>Perioadă</span>
+                      </div>
+                      <p className="text-sm font-semibold text-foreground">
+                        {format(new Date(rental.start_date), "d MMM", { locale: ro })} – {format(new Date(rental.end_date), "d MMM", { locale: ro })}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-card/80 border border-border p-3">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                        <Clock className="h-3.5 w-3.5" /><span>Zile</span>
+                      </div>
+                      <p className="text-sm font-semibold text-foreground">{rental.rental_days}</p>
+                    </div>
+                    <div className="rounded-xl bg-primary/15 border border-primary/30 p-3">
+                      <div className="flex items-center gap-1.5 text-xs text-primary/80 mb-1">
+                        <TrendingUp className="h-3.5 w-3.5" /><span>Câștig</span>
+                      </div>
+                      <p className="text-lg font-bold text-primary leading-tight">{rental.owner_payout} RON</p>
+                    </div>
+                  </div>
+
+                  {rental.message_to_owner && rental.message_to_owner.trim().length > 0 && (
+                    <div className="mt-4 rounded-2xl rounded-tl-sm bg-background border border-border px-3 py-2">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        <span>Mesaj de la chiriaș</span>
+                      </div>
+                      <p className="text-sm text-foreground whitespace-pre-wrap break-words">
+                        {rental.message_to_owner}
+                      </p>
+                    </div>
+                  )}
+
+                  {isPending ? (
+                    <div className="flex flex-col sm:flex-row gap-2 mt-5">
+                      <Button
+                        onClick={() => handleAccept(rental)}
+                        disabled={respondingId === rental.id}
+                        className="flex-1 bg-gradient-to-r from-primary to-primary/90 shadow-md"
+                      >
                         {respondingId === rental.id ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Check className="h-4 w-4 mr-1" />}
                         Acceptă
                       </Button>
-                      <Button size="sm" variant="outline" onClick={() => setRejectDialogRental(rental)} disabled={respondingId === rental.id} className="flex-1">
+                      <Button
+                        variant="outline"
+                        onClick={() => setRejectDialogRental(rental)}
+                        disabled={respondingId === rental.id}
+                        className="flex-1"
+                      >
                         <X className="h-4 w-4 mr-1" />Refuză
                       </Button>
                     </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+                  ) : (
+                    <div className="flex flex-col sm:flex-row gap-2 mt-5">
+                      <Button asChild className="flex-1">
+                        <Link to={rental.public_id ? `/inchirieri/${rental.public_id}` : `/produs/${rental.product_id}`}>
+                          Vezi detalii <ArrowRight className="h-4 w-4 ml-1" />
+                        </Link>
+                      </Button>
+                    </div>
+                  )}
 
-      {/* Active & history grid */}
-      {otherRentals.length > 0 && (
-        <section>
-          <h3 className="font-heading text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-            <Package className="h-5 w-5 text-primary" />
-            Închirieri active &amp; istoric
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {otherRentals.map((rental) => {
-              const to = rental.public_id ? `/inchirieri/${rental.public_id}` : `/produs/${rental.product_id}`;
-              return (
-                <RentalProductCard
-                  key={rental.id}
-                  to={to}
-                  image={rental.product_image || "/placeholder.svg"}
-                  title={rental.product_title}
-                  startDate={format(new Date(rental.start_date), "d MMM", { locale: ro })}
-                  endDate={format(new Date(rental.end_date), "d MMM", { locale: ro })}
-                  status={rental.status}
-                  amount={rental.owner_payout}
-                  amountLabel="Câștig"
-                />
+                  {canRequestCancel && (
+                    <div className="mt-3 pt-3 border-t border-border/50 flex justify-center">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCancelDialogRental(rental)}
+                        disabled={respondingId === rental.id}
+                        className="text-muted-foreground hover:text-destructive text-xs"
+                      >
+                        <Ban className="h-3.5 w-3.5 mr-1" />
+                        Solicită anularea cererii
+                      </Button>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
         </section>
+      )}
+
+      {/* History accordion (no images) */}
+      {historyRentals.length > 0 && (
+        <Accordion type="single" collapsible className="w-full">
+          <AccordionItem value="history" className="border rounded-xl bg-card px-4">
+            <AccordionTrigger className="hover:no-underline">
+              <span className="flex items-center gap-2 font-heading text-lg font-semibold">
+                <Package className="h-5 w-5 text-primary" />
+                Închirieri active &amp; istoric
+                <Badge variant="secondary">{historyRentals.length}</Badge>
+              </span>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="divide-y divide-border">
+                {historyRentals.map((rental) => {
+                  const to = rental.public_id ? `/inchirieri/${rental.public_id}` : `/produs/${rental.product_id}`;
+                  const allowed = ["pending", "accepted", "rejected", "completed", "cancelled", "active", "inactive"];
+                  const statusKey = (allowed.includes(rental.status) ? rental.status : "pending") as any;
+                  return (
+                    <div key={rental.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-foreground truncate">{rental.product_title}</p>
+                        <p className="text-sm text-muted-foreground truncate">
+                          Chiriaș: <span className="text-foreground">{rental.renter_name || "—"}</span>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(rental.start_date), "d MMM yyyy", { locale: ro })} – {format(new Date(rental.end_date), "d MMM yyyy", { locale: ro })} · {rental.rental_days} zile
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between sm:justify-end gap-3 flex-shrink-0">
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-foreground">{rental.owner_payout} RON</p>
+                          <StatusBadge status={statusKey} />
+                        </div>
+                        <Button asChild variant="outline" size="sm">
+                          <Link to={to}>
+                            Vezi mai mult <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       )}
 
       {/* Reject dialog */}
@@ -206,6 +325,35 @@ const RentalsOutTab = () => {
             <Button variant="destructive" onClick={handleReject} disabled={respondingId === rejectDialogRental?.id}>
               {respondingId === rejectDialogRental?.id ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <X className="h-4 w-4 mr-2" />}
               Refuză cererea
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mutual cancel request dialog */}
+      <Dialog open={!!cancelDialogRental} onOpenChange={(open) => !open && setCancelDialogRental(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Solicită anularea cererii</DialogTitle>
+            <DialogDescription>
+              Trimitem o cerere de anulare către chiriaș pentru „{cancelDialogRental?.product_title}". Dacă acceptă, banii (inclusiv comisionul) îi sunt rambursați integral.
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            placeholder="Motivul anulării (obligatoriu)"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            rows={3}
+          />
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setCancelDialogRental(null)}>Renunță</Button>
+            <Button
+              variant="destructive"
+              onClick={handleRequestCancel}
+              disabled={respondingId === cancelDialogRental?.id}
+            >
+              {respondingId === cancelDialogRental?.id ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Ban className="h-4 w-4 mr-2" />}
+              Trimite cererea
             </Button>
           </DialogFooter>
         </DialogContent>
