@@ -171,20 +171,6 @@ export async function openAdminConversation(otherUserId: string, productId: stri
   const adminId = userData?.user?.id;
   if (!adminId) throw new Error("unauthenticated");
 
-  // Reuse existing admin↔user conversation tied to this rental if any
-  if (rentalId) {
-    const { data: existingForRental } = await supabase
-      .from("conversations")
-      .select("id, buyer_id, owner_id")
-      .eq("rentals_id", rentalId);
-    const match = (existingForRental || []).find(
-      (c: any) =>
-        (c.buyer_id === adminId && c.owner_id === otherUserId) ||
-        (c.owner_id === adminId && c.buyer_id === otherUserId)
-    );
-    if (match) return (match as any).id;
-  }
-
   // Ensure productId is present (conversations.product_id is NOT NULL)
   let resolvedProductId = productId;
   if (!resolvedProductId && rentalId) {
@@ -197,23 +183,24 @@ export async function openAdminConversation(otherUserId: string, productId: stri
   }
   if (!resolvedProductId) throw new Error("Produsul asociat rezervării nu a fost găsit.");
 
-  // Fallback: existing admin-initiated conversation for the same product (no rental)
-  if (!rentalId) {
-    const { data: existing } = await supabase
-      .from("conversations")
-      .select("id")
-      .eq("buyer_id", adminId)
-      .eq("owner_id", otherUserId)
-      .eq("product_id", resolvedProductId)
-      .maybeSingle();
-    if (existing?.id) return existing.id;
-  }
+  // Reuse existing admin↔user conversation for this product (no rental link, since rentals_id is unique)
+  const { data: existingConvs } = await supabase
+    .from("conversations")
+    .select("id, buyer_id, owner_id")
+    .eq("product_id", resolvedProductId)
+    .is("rentals_id", null);
+  const match = (existingConvs || []).find(
+    (c: any) =>
+      (c.buyer_id === adminId && c.owner_id === otherUserId) ||
+      (c.owner_id === adminId && c.buyer_id === otherUserId)
+  );
+  if (match) return (match as any).id;
 
+  // Note: do NOT set rentals_id — it has a UNIQUE constraint and is already used by the renter↔owner conversation.
   const insertPayload: any = {
     buyer_id: adminId,
     owner_id: otherUserId,
     product_id: resolvedProductId,
-    rentals_id: rentalId,
   };
   const { data: created, error } = await supabase
     .from("conversations")
