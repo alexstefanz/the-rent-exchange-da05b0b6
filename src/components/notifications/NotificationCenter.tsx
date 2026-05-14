@@ -7,7 +7,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useNotifications } from "@/hooks/queries/useNotifications";
 import type { Notification } from "@/features/profile/notificationsApi";
 import { categorize } from "@/lib/notificationCategory";
-import { NotificationFilters, type FilterValue } from "./NotificationFilters";
+import { NotificationFilters, type FilterValue, type ReadFilterValue } from "./NotificationFilters";
 import { NotificationGroups } from "./NotificationGroup";
 import { NotificationEmpty } from "./NotificationEmpty";
 import { NotificationSkeleton } from "./NotificationSkeleton";
@@ -40,17 +40,29 @@ export function NotificationCenter({ variant = "popover", onClose }: Props) {
   const navigate = useNavigate();
   const { notifications, isLoading, markAsRead, markAllAsRead } = useNotifications(user?.id);
   const [filter, setFilter] = useState<FilterValue>("all");
+  const [readFilter, setReadFilter] = useState<ReadFilterValue>(
+    variant === "page" ? "all" : "unread",
+  );
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // In dropdown/sheet variants, only show unread notifications.
-  const visibleNotifications = useMemo(
-    () => (variant === "page" ? notifications : notifications.filter((n) => !n.is_read)),
-    [notifications, variant],
+  const readCounts = useMemo(
+    () => ({
+      all: notifications.length,
+      unread: notifications.filter((n) => !n.is_read).length,
+      read: notifications.filter((n) => n.is_read).length,
+    }),
+    [notifications],
   );
+
+  const visibleNotifications = useMemo(() => {
+    if (readFilter === "unread") return notifications.filter((n) => !n.is_read);
+    if (readFilter === "read") return notifications.filter((n) => n.is_read);
+    return notifications;
+  }, [notifications, readFilter]);
 
   const counts = useMemo(() => {
     const c: Record<FilterValue, number> = {
-      all: notifications.length,
+      all: 0,
       reservation: 0,
       message: 0,
       payment: 0,
@@ -58,14 +70,13 @@ export function NotificationCenter({ variant = "popover", onClose }: Props) {
       system: 0,
       urgent: 0,
     };
-    const source = visibleNotifications;
-    c.all = source.length;
-    for (const n of source) {
+    c.all = visibleNotifications.length;
+    for (const n of visibleNotifications) {
       const cat = categorize(n.type);
       c[cat] = (c[cat] ?? 0) + 1;
     }
     return c;
-  }, [notifications, visibleNotifications]);
+  }, [visibleNotifications]);
 
   const unreadCount = useMemo(
     () => notifications.filter((n) => !n.is_read).length,
@@ -143,7 +154,14 @@ export function NotificationCenter({ variant = "popover", onClose }: Props) {
 
       {/* Filters */}
       <div className="shrink-0 pt-1">
-        <NotificationFilters value={filter} onChange={setFilter} counts={counts} />
+        <NotificationFilters
+          value={filter}
+          onChange={setFilter}
+          counts={counts}
+          readFilter={readFilter}
+          onReadChange={setReadFilter}
+          readCounts={readCounts}
+        />
       </div>
 
       {/* Body */}
