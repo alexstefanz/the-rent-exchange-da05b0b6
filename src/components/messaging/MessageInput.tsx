@@ -16,7 +16,6 @@ import {
 import { MAX_MESSAGE_LENGTH } from "@/features/messaging/messagingApi";
 import { cn } from "@/lib/utils";
 import { containsProfanity } from "@/lib/profanityFilter";
-import { useLanguage as _ } from "@/contexts/LanguageContext";
 
 interface Props {
   conversationId: string;
