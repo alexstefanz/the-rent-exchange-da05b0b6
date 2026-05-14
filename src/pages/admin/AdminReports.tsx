@@ -192,10 +192,35 @@ function ReportDetailSheet({
 
         <div className="space-y-5 mt-5">
           <div>
-            <Label className="text-xs text-muted-foreground">Mesaj raportat</Label>
-            <div className="mt-1 p-3 rounded-md bg-muted text-sm whitespace-pre-wrap break-words">
-              {report.message_content || <span className="italic">[mesaj indisponibil]</span>}
-            </div>
+            <Label className="text-xs text-muted-foreground">
+              {report.message_id ? "Mesaj raportat" : "Conversație raportată"}
+            </Label>
+            {report.message_id ? (
+              <div className="mt-1 p-3 rounded-md bg-muted text-sm whitespace-pre-wrap break-words">
+                {report.message_content || <span className="italic">[mesaj indisponibil]</span>}
+              </div>
+            ) : report.recent_messages && report.recent_messages.length > 0 ? (
+              <div className="mt-1 space-y-1.5">
+                <p className="text-[11px] text-muted-foreground">Ultimele {report.recent_messages.length} mesaje din conversație:</p>
+                <div className="rounded-md border bg-muted/40 divide-y">
+                  {report.recent_messages.map((m) => (
+                    <div key={m.id} className="p-2 text-sm">
+                      <p className={`whitespace-pre-wrap break-words ${m.is_hidden ? "italic text-muted-foreground" : ""}`}>
+                        {m.content}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {format(new Date(m.created_at), "d MMM HH:mm", { locale: ro })}
+                        {m.is_hidden && " · ascuns"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="mt-1 p-3 rounded-md bg-muted text-sm italic text-muted-foreground">
+                Conversație raportată fără mesaje vizibile.
+              </div>
+            )}
             {report.conversation_id && (
               <Link
                 to={`/admin/conversations/${report.conversation_id}`}
