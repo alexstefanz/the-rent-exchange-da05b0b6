@@ -23,6 +23,7 @@ export interface AdminNotificationSummary {
   pending_withdrawals: number;
   unread_high_priority: number;
   pending_cancellations: number;
+  pending_reports: number;
 }
 
 export async function getAdminNotifications(limit = 50): Promise<AdminNotification[]> {
@@ -72,5 +73,6 @@ export async function getAdminNotificationSummary(): Promise<AdminNotificationSu
     pending_withdrawals: Number(row?.pending_withdrawals || 0),
     unread_high_priority: Number(row?.unread_high_priority || 0),
     pending_cancellations: Number(row?.pending_cancellations || 0),
+    pending_reports: Number(row?.pending_reports || 0),
   };
 }

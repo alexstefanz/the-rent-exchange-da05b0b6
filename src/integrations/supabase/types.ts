@@ -80,6 +80,33 @@ export type Database = {
         }
         Relationships: []
       }
+      banned_identifiers: {
+        Row: {
+          banned_by: string | null
+          created_at: string
+          id: string
+          identifier_type: string
+          reason: string | null
+          value: string
+        }
+        Insert: {
+          banned_by?: string | null
+          created_at?: string
+          id?: string
+          identifier_type: string
+          reason?: string | null
+          value: string
+        }
+        Update: {
+          banned_by?: string | null
+          created_at?: string
+          id?: string
+          identifier_type?: string
+          reason?: string | null
+          value?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           buyer_id: string
@@ -592,31 +619,49 @@ export type Database = {
       }
       message_reports: {
         Row: {
+          action_taken: string
+          admin_notes: string | null
           attachment_id: string | null
+          category: string
           created_at: string
           id: string
           message_id: string | null
+          public_id: string | null
           reason: string | null
           reporter_id: string
           resolved: boolean
+          resolved_at: string | null
+          resolved_by: string | null
         }
         Insert: {
+          action_taken?: string
+          admin_notes?: string | null
           attachment_id?: string | null
+          category?: string
           created_at?: string
           id?: string
           message_id?: string | null
+          public_id?: string | null
           reason?: string | null
           reporter_id: string
           resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
         }
         Update: {
+          action_taken?: string
+          admin_notes?: string | null
           attachment_id?: string | null
+          category?: string
           created_at?: string
           id?: string
           message_id?: string | null
+          public_id?: string | null
           reason?: string | null
           reporter_id?: string
           resolved?: boolean
+          resolved_at?: string | null
+          resolved_by?: string | null
         }
         Relationships: [
           {
@@ -640,7 +685,10 @@ export type Database = {
           content: string
           conversation_id: string
           created_at: string
+          hidden_at: string | null
+          hidden_by: string | null
           id: string
+          is_hidden: boolean
           is_read: boolean
           message_type: string
           sender_id: string | null
@@ -649,7 +697,10 @@ export type Database = {
           content: string
           conversation_id: string
           created_at?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
           id?: string
+          is_hidden?: boolean
           is_read?: boolean
           message_type?: string
           sender_id?: string | null
@@ -658,7 +709,10 @@ export type Database = {
           content?: string
           conversation_id?: string
           created_at?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
           id?: string
+          is_hidden?: boolean
           is_read?: boolean
           message_type?: string
           sender_id?: string | null
@@ -2383,6 +2437,7 @@ export type Database = {
           pending_cancellations: number
           pending_kyc: number
           pending_products: number
+          pending_reports: number
           pending_withdrawals: number
           unread_high_priority: number
           unread_total: number
@@ -2918,6 +2973,7 @@ export type Database = {
         }
         Returns: number
       }
+      normalize_for_profanity: { Args: { input: string }; Returns: string }
       normalize_full_name: { Args: { input_name: string }; Returns: string }
       notify_rental_event_async: {
         Args: {

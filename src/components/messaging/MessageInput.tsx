@@ -15,6 +15,7 @@ import {
 } from "@/lib/chatMedia";
 import { MAX_MESSAGE_LENGTH } from "@/features/messaging/messagingApi";
 import { cn } from "@/lib/utils";
+import { containsProfanity } from "@/lib/profanityFilter";
 
 interface Props {
   conversationId: string;
@@ -77,6 +78,15 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
     const content = text.trim();
     if (sending) return;
     if (!content && pending.length === 0) return;
+    if (content && containsProfanity(content).hit) {
+      toast.error(
+        t(
+          "Limbajul licențios nu este permis. Conturile care încalcă această regulă pot fi suspendate.",
+          "Offensive language is not allowed. Accounts that break this rule can be suspended."
+        )
+      );
+      return;
+    }
     setSending(true);
     setUploadProgress(0);
 

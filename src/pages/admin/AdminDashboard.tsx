@@ -6,6 +6,7 @@ import {
   Clock,
   ShieldCheck,
   Banknote,
+  Flag,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -14,6 +15,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import StatsCard from "@/components/admin/StatsCard";
 import DashboardCategoriesWidget from "@/components/admin/DashboardCategoriesWidget";
 import { useAdminStats, useAdminRentals } from "@/hooks/queries/useAdminStats";
+import { useAdminNotificationSummary } from "@/hooks/queries/useAdminNotifications";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +41,7 @@ const statusLabels: Record<string, string> = {
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { data: stats, isLoading: statsLoading } = useAdminStats();
+  const { data: summary } = useAdminNotificationSummary();
   const { data: recentRentals, isLoading: rentalsLoading } = useAdminRentals(undefined, 5);
 
   const formatCurrency = (value: number) => {
@@ -115,6 +118,12 @@ const AdminDashboard = () => {
                 value={formatCurrency(stats?.total_withdrawn || 0)}
                 icon={<Banknote className="h-4 w-4" />}
                 onClick={() => navigate('/admin/finances')}
+              />
+              <StatsCard
+                title="Rapoarte Deschise"
+                value={summary?.pending_reports || 0}
+                icon={<Flag className="h-4 w-4" />}
+                onClick={() => navigate('/admin/reports')}
               />
             </>
           )}

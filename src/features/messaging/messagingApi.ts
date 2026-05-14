@@ -255,6 +255,9 @@ export async function sendMessage(conversationId: string, content: string): Prom
 
   if (error) {
     console.error('Error sending message:', error);
+    if ((error.message || '').includes('PROFANITY_BLOCKED')) {
+      throw new Error('PROFANITY_BLOCKED');
+    }
     return null;
   }
 
