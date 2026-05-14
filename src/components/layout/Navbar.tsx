@@ -151,22 +151,24 @@ const Navbar = () => {
       <header className="fixed lg:sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-md">
         {/* Main navbar */}
         <div className="container relative h-16 flex items-center justify-between gap-[10px] px-[10px]">
-          <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
-            <img src={logoImage} alt="Rentli" width={120} height={40} className="h-10 w-auto" />
-          </Link>
+          <div className="flex items-center gap-6">
+            <Link to="/" className="flex items-center gap-2 transition-opacity hover:opacity-80">
+              <img src={logoImage} alt="Rentli" width={120} height={40} className="h-10 w-auto" />
+            </Link>
 
-          {/* Desktop Navigation - centered */}
-          <nav className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-6 lg:flex">
-            <Link to="/categorii" className="text-sm font-medium text-foreground/80 transition-colors hover:text-primary">
-              {t("Explorează", "Explore")}
-            </Link>
-            <Link to="/cum-functioneaza" className="text-sm font-medium text-foreground/80 transition-colors hover:text-primary">
-              {t("Cum funcționează", "How it works")}
-            </Link>
-            <Link to="/despre-noi" className="text-sm font-medium text-foreground/80 transition-colors hover:text-primary">
-              {t("Despre noi", "About us")}
-            </Link>
-          </nav>
+            {/* Desktop Navigation - next to logo */}
+            <nav className="hidden items-center gap-6 lg:flex">
+              <Link to="/categorii" className="text-sm font-medium text-foreground/80 transition-colors hover:text-primary">
+                {t("Explorează", "Explore")}
+              </Link>
+              <Link to="/cum-functioneaza" className="text-sm font-medium text-foreground/80 transition-colors hover:text-primary">
+                {t("Cum funcționează", "How it works")}
+              </Link>
+              <Link to="/despre-noi" className="text-sm font-medium text-foreground/80 transition-colors hover:text-primary">
+                {t("Despre noi", "About us")}
+              </Link>
+            </nav>
+          </div>
 
           <div className="flex items-center gap-2">
             {loading ? (
