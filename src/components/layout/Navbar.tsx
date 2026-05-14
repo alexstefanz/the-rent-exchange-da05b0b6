@@ -41,6 +41,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useCurrentUserProfile } from "@/hooks/queries/useCurrentUserProfile";
 import { useConversations } from "@/hooks/queries/useConversations";
 import { useIsAdmin } from "@/hooks/queries/useAdminStats";
+import { useIsBanned } from "@/hooks/useIsBanned";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import NotificationBell from "./NotificationBell";
@@ -57,6 +58,7 @@ const Navbar = () => {
   const { data: profile } = useCurrentUserProfile();
   const { data: conversations } = useConversations(user?.id);
   const { data: isAdmin } = useIsAdmin(user?.id);
+  const { isBanned } = useIsBanned();
   const unreadMessagesCount = conversations?.reduce((sum: number, c: any) => sum + (c.unread_count || 0), 0) || 0;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeMegaMenu, setActiveMegaMenu] = useState<number | null>(null);
@@ -176,17 +178,31 @@ const Navbar = () => {
             ) : user ? (
               <>
                 {/* Chat - Desktop */}
-                <Button variant="ghost" size="sm" className="hidden lg:flex relative gap-2" asChild>
-                  <Link to="/mesaje" aria-label="Chat">
+                {isBanned ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="hidden lg:flex relative gap-2 opacity-50 cursor-not-allowed"
+                    disabled
+                    title="Cont suspendat"
+                    aria-label="Chat indisponibil — cont suspendat"
+                  >
                     <MessageCircle className="h-4 w-4" />
                     <span>Chat</span>
-                    {unreadMessagesCount > 0 && (
-                      <span className="ml-1 inline-flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
-                        {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
-                      </span>
-                    )}
-                  </Link>
-                </Button>
+                  </Button>
+                ) : (
+                  <Button variant="ghost" size="sm" className="hidden lg:flex relative gap-2" asChild>
+                    <Link to="/mesaje" aria-label="Chat">
+                      <MessageCircle className="h-4 w-4" />
+                      <span>Chat</span>
+                      {unreadMessagesCount > 0 && (
+                        <span className="ml-1 inline-flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+                          {unreadMessagesCount > 9 ? "9+" : unreadMessagesCount}
+                        </span>
+                      )}
+                    </Link>
+                  </Button>
+                )}
 
                 {/* Favorites - Desktop */}
                 <Button variant="ghost" size="icon" className="hidden lg:flex" asChild>
@@ -210,12 +226,24 @@ const Navbar = () => {
             )}
 
             {/* Add button - Desktop only */}
-            <Button size="sm" className="hidden lg:flex" asChild>
-              <Link to="/owner/new-product">
+            {isBanned ? (
+              <Button
+                size="sm"
+                className="hidden lg:flex opacity-50 cursor-not-allowed"
+                disabled
+                title="Cont suspendat — nu poți publica anunțuri"
+              >
                 <Plus className="h-4 w-4" />
                 {t("Adaugă anunț nou", "Add listing")}
-              </Link>
-            </Button>
+              </Button>
+            ) : (
+              <Button size="sm" className="hidden lg:flex" asChild>
+                <Link to="/owner/new-product">
+                  <Plus className="h-4 w-4" />
+                  {t("Adaugă anunț nou", "Add listing")}
+                </Link>
+              </Button>
+            )}
             
             {/* Notification Bell - Mobile/Tablet */}
             {user && (
