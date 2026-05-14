@@ -38,7 +38,6 @@ export interface WithdrawalRow {
 export interface EarningsData {
   totalThisMonth: number;
   totalAllTime: number;
-  pendingPayout: number;
   totalRentals: number;
   availableBalance: number;
   totalWithdrawn: number;
@@ -53,7 +52,6 @@ export interface PayoutMethod {
 const empty: EarningsData = {
   totalThisMonth: 0,
   totalAllTime: 0,
-  pendingPayout: 0,
   totalRentals: 0,
   availableBalance: 0,
   totalWithdrawn: 0,
@@ -135,26 +133,15 @@ export const useEarnings = () => {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       let totalAllTime = 0;
       let totalThisMonth = 0;
-      let pendingPayout = 0;
       const txns: EarningsTransaction[] = [];
 
       for (const r of list as any[]) {
         const payout = Number(r.owner_payout) || 0;
         totalAllTime += payout;
         if (new Date(r.created_at) >= monthStart) totalThisMonth += payout;
-        if (
-          r.status !== "completed" &&
-          r.status !== "cancelled" &&
-          r.payment_status === "authorized"
-        ) {
-          pendingPayout += payout;
-        }
 
-        let status: TxStatus = "pending";
+        let status: TxStatus = "available";
         if (r.status === "cancelled") status = "cancelled";
-        else if (r.status === "completed") status = "available";
-        else if (r.payment_status === "captured" || r.payment_status === "paid") status = "available";
-        else if (r.payment_status === "authorized") status = "held";
 
         txns.push({
           id: r.id,
@@ -179,13 +166,12 @@ export const useEarnings = () => {
 
       const availableBalance = Math.max(
         0,
-        Math.round((totalAllTime - pendingPayout - totalWithdrawn - pendingWithdrawals) * 100) / 100
+        Math.round((totalAllTime - totalWithdrawn - pendingWithdrawals) * 100) / 100
       );
 
       setEarnings({
         totalThisMonth: Math.round(totalThisMonth * 100) / 100,
         totalAllTime: Math.round(totalAllTime * 100) / 100,
-        pendingPayout: Math.round(pendingPayout * 100) / 100,
         totalRentals: list.length,
         availableBalance,
         totalWithdrawn: Math.round(totalWithdrawn * 100) / 100,

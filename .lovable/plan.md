@@ -1,43 +1,24 @@
-## Diagnosis
+## Plan
 
-Currently in `src/hooks/useEarnings.ts`, the wallet shows funds as "În așteptare" while `payment_status === 'authorized'` (Stripe hold). However, several rentals exist where the rental is already finalized (`status === 'completed'`) but the payment_status is still `authorized` (Stripe capture didn't update the row, e.g. test payments or capture race). Those funds are stuck in "În așteptare" forever even though the rental is done.
+Remove the "În așteptare" (pending) state entirely from the wallet. All owner payouts go straight into "Disponibil" the moment the rental record exists with an owner_payout, with no holding state.
 
-Example from the database:
-- rental `70bf38…` — status `completed`, payment_status `authorized`, owner_payout 2.99 RON → currently sits in "În așteptare"
-- rental `46a65c…` — status `completed`, payment_status `authorized`, owner_payout 2.00 RON → same issue (this is the 2 RON visible in your screenshot)
+### Changes
 
-## Fix
+**1. `src/hooks/useEarnings.ts`**
+- Drop the `pendingPayout` accumulator and the `pendingPayout` field from `EarningsData` (and its initial value).
+- `availableBalance` becomes `totalAllTime - totalWithdrawn - pendingWithdrawals` (no pending subtracted).
+- Per-row tx `status` mapping: keep `cancelled` as cancelled, everything else → `available` (drop the `held` case).
 
-Move funds from "În așteptare" → "Disponibil" the moment a rental reaches `status = 'completed'`, regardless of `payment_status`. Pending should only count rentals that are still active/confirmed and haven't been finalized.
+**2. `src/components/earnings/BalanceBreakdown.tsx`**
+- Remove the `pending` prop and the second card.
+- Grid becomes 3 columns: Disponibil / Retras / Total câștiguri (`grid-cols-3` on `sm:`, `grid-cols-1` or `grid-cols-3` on mobile).
 
-Edit in `src/hooks/useEarnings.ts`:
+**3. `src/components/profile/EarningsTab.tsx`**
+- Drop `pending={earnings.pendingPayout}` from the `<BalanceBreakdown>` call.
 
-```text
-- if (r.payment_status === "authorized") pendingPayout += payout;
-+ if (r.status !== "completed" && r.status !== "cancelled"
-+     && r.payment_status === "authorized") {
-+   pendingPayout += payout;
-+ }
-```
+**4. `src/components/earnings/statusBadge.tsx` & `PayoutTimeline.tsx`**
+- Leave the `pending`/`held` enum values in place (not breaking), but they will simply no longer be emitted by `useEarnings`. No UI will surface them. (No edits needed unless they're rendered elsewhere — quick check confirms they're driven only by `useEarnings`.)
 
-And mirror in the per-row `status` mapping so completed always shows "available":
-
-```text
-let status: TxStatus = "pending";
-if (r.status === "cancelled") status = "cancelled";
-else if (r.status === "completed") status = "available";   // already first
-else if (r.payment_status === "captured" || r.payment_status === "paid") status = "available";
-else if (r.payment_status === "authorized") status = "held";
-```
-(no change needed here — already correct.)
-
-## Result
-
-- The 2 RON from the completed rental is instantly added to "Disponibil".
-- Any future rental marked as completed (return confirmed by both parties) immediately frees the owner payout into the available balance.
-- Active/confirmed rentals (still on Stripe hold) continue to show as "În așteptare", as expected.
-
-## Out of scope
-
-- No backend / Stripe changes — capture flow stays the same. The fix is purely how the wallet UI categorizes already-finalized rentals.
-- No automatic bank transfer — withdrawals remain manual via the existing "Retrage bani" flow.
+### Out of scope
+- Backend / Stripe capture flow stays unchanged (escrow still happens server-side); only the wallet UI's pending categorization is removed.
+- Withdrawal flow unchanged.
