@@ -140,7 +140,6 @@ export function getTypeIcon(type: string): LucideIcon {
 
 export const ALL_CATEGORIES: NotificationCategory[] = [
   "reservation",
-  "message",
   "payment",
   "support",
   "system",

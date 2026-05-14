@@ -1,38 +1,25 @@
-## Modificări header (desktop)
+## Modificări
 
-### 1. Bara de sus (`src/components/layout/Navbar.tsx`)
-Reorganizez zona din dreapta (vizibilă doar pe desktop, `lg:flex`). Ordinea finală, de la stânga la dreapta:
+### 1. Scoatem tabul "Mesaje" din filtre
+**`src/lib/notificationCategory.ts`** — eliminăm `"message"` din `ALL_CATEGORIES` (rămâne: reservation, payment, support, system). Categoria în sine rămâne definită (pentru styling), dar nu mai apare ca chip de filtrare. Notificările tip mesaj vor cădea pe tabul "Toate".
 
-1. **Chat** — buton/link nou către `/mesaje` cu iconul `MessageCircle` + textul „Chat" / „Chat" și badge roșu pentru `unreadMessagesCount` (deja calculat în Navbar).
-2. **Favorite** — buton-link nou către `/favorite` cu iconul `Heart`.
-3. **Notificări** — `<NotificationBell />` (există deja).
-4. **Cont** — `<AccountHubMenu />` (avatar + dropdown), cu o etichetă text „Contul tău" / „Your account" afișată lângă avatar pe desktop (vezi punctul 3).
-5. **Adaugă anunț nou** — butonul portocaliu existent (textul rămâne „Adaugă" pe desktop sau îl actualizez la „Adaugă anunț nou" pentru a se potrivi cu mockup-ul; confirmă dacă vrei textul mai lung).
+### 2. Dropdown-ul afișează doar necitite (popover desktop + sheet mobil)
+**`src/components/notifications/NotificationCenter.tsx`**:
+- Doar pentru `variant !== "page"` (deci dropdown + sheet), filtrăm lista la `is_read === false` înainte de aplicarea filtrului categoric.
+- Counts pe chips devin counts pe necitite (recalculăm `counts` din lista necitită când nu suntem pe `page`).
+- Subtitlul header-ului rămâne („Ai X notificări noi" / „Ești la zi").
+- Empty state când nu sunt necitite: variantă nouă cu mesaj „Ești la zi" (folosim `NotificationEmpty` existent — variant `"all"` e ok, sau adăugăm un text simplu inline).
+- Pagina `/notificari` (variant `page`) rămâne neschimbată și arată toate notificările.
 
-Eliminat: `<LanguageSwitcher />` din bara desktop (rămâne doar pe mobil, dacă există în drawer; altfel doar în meniul de cont — vezi punctul 2).
+### 3. Buton "Vezi toate notificările" prominent portocaliu
+**`src/components/notifications/NotificationCenter.tsx`** — footer link devine:
+- `bg-primary text-primary-foreground` (portocaliu Rentli #F59E0B + alb)
+- `hover:bg-[hsl(var(--primary-hover))]` sau `hover:opacity-90`
+- padding mai mare (`py-3.5`), `font-semibold`, `text-sm`, fără border-top (sau border-top subtil)
+- arrow icon mic la dreapta pentru semnal vizual
 
-### 2. Comutator limbă mutat în dropdown-ul „Contul tău" (`src/components/layout/AccountHubMenu.tsx`)
-În `FooterZone`, înlocuiesc `<LanguageSwitcher />` (dropdown cu un singur buton) cu **două butoane segmentate RO / EN**, exact cum apar în drawer-ul de mobil:
+Toate folosesc tokens semantice — nicio culoare hardcodată.
 
-```text
-[ RO ] [ EN ]   ────────   [ Ieși din cont ]
-```
-
-- Butonul activ: `bg-primary/10 text-primary` + `ring-1 ring-primary/30`.
-- Butonul inactiv: `text-muted-foreground hover:bg-muted`.
-- Click → `setLanguage("ro" | "en")` din `useLanguage()`.
-- Înlocuiesc importul `LanguageSwitcher` (devine nefolosit aici).
-
-Aplic aceeași schimbare și în varianta `Sheet` mobilă a `AccountHubMenu`, ca să arate identic.
-
-### 3. Etichetă „Contul tău" lângă avatar
-În `AccountHubMenu`, modific `trigger`-ul desktop ca să fie un `Button variant="ghost"` lat, nu doar `size="icon"`: avatar 28-32px + text „Contul tău" / „Your account" în dreapta, păstrând punctul de notificare/admin.
-
-### 4. Curățare
-- Șterg importul `LanguageSwitcher` din `Navbar.tsx`.
-- Las `LanguageSwitcher.tsx` neatins (nu îl mai folosim, dar nu îl șterg ca să nu sparg eventuale referințe — dacă vrei îl pot șterge complet).
-
-### Detalii tehnice (frontend)
-- Nu se schimbă rutele, hook-urile sau API-ul; folosesc datele deja disponibile (`useConversations` pentru badge-ul Chat este deja în `Navbar.tsx`).
-- Iconurile vin din `lucide-react` (`MessageCircle`, `Heart`, deja importate).
-- Nu se atinge logica de business sau backend.
+### Fișiere atinse
+- `src/lib/notificationCategory.ts`
+- `src/components/notifications/NotificationCenter.tsx`
