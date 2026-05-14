@@ -17,6 +17,8 @@ interface Props {
   isOwnProduct?: boolean;
   responseMinutes?: number | null;
   ownerVerified?: boolean;
+  minRentalDays?: number | null;
+  maxRentalDays?: number | null;
 }
 
 const MobileStickyBookingBar = (props: Props) => {
