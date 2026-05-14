@@ -33,6 +33,20 @@ export async function listPendingCancellationRequests(): Promise<PendingCancella
   return (data || []) as PendingCancellationRequest[];
 }
 
+export interface ResolvedCancellationRequest extends PendingCancellationRequest {
+  cancel_request_status: "approved" | "rejected";
+  cancel_request_responded_at: string | null;
+  cancel_request_admin_note: string | null;
+  cancel_request_response_note: string | null;
+  cancel_request_admin_id: string | null;
+}
+
+export async function listResolvedCancellationRequests(): Promise<ResolvedCancellationRequest[]> {
+  const { data, error } = await (supabase as any).rpc("list_resolved_cancellation_requests");
+  if (error) throw error;
+  return (data || []) as ResolvedCancellationRequest[];
+}
+
 export async function adminApproveCancellation(rentalId: string, note?: string) {
   const { error } = await supabase.rpc("admin_respond_cancellation", {
     _rental_id: rentalId,
