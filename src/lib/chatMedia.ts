@@ -290,6 +290,8 @@ export async function reportMessage(opts: {
   messageId?: string;
   attachmentId?: string;
   conversationId?: string;
+  reportedUserId?: string;
+  category?: string;
   reason?: string;
 }): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser();
@@ -298,6 +300,8 @@ export async function reportMessage(opts: {
     message_id: opts.messageId ?? null,
     attachment_id: opts.attachmentId ?? null,
     conversation_id: opts.conversationId ?? null,
+    reported_user_id: opts.reportedUserId ?? null,
+    category: opts.category ?? "other",
     reporter_id: user.id,
     reason: opts.reason ?? null,
   });

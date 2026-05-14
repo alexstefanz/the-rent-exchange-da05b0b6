@@ -8,6 +8,14 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import {
@@ -99,13 +107,30 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, classN
     );
   };
 
-  const handleReport = async () => {
-    const ok = await reportMessage({ conversationId });
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportCategory, setReportCategory] = useState<string>("inappropriate_language");
+  const [reportDetails, setReportDetails] = useState<string>("");
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+
+  const submitReport = async () => {
+    setReportSubmitting(true);
+    const ok = await reportMessage({
+      conversationId,
+      reportedUserId: peerId,
+      category: reportCategory,
+      reason: reportDetails.trim().slice(0, 500) || null,
+    });
+    setReportSubmitting(false);
     toast[ok ? "success" : "error"](
       ok
         ? t("Raportare trimisă", "Report submitted")
         : t("Eroare la raportare", "Report failed")
     );
+    if (ok) {
+      setReportOpen(false);
+      setReportDetails("");
+      setReportCategory("inappropriate_language");
+    }
   };
 
   const memberYear = memberSince ? new Date(memberSince).getFullYear() : null;
@@ -246,25 +271,59 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, classN
       </Tabs>
 
       <div className="border-t p-3 grid grid-cols-2 gap-2">
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
+        <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+          <DialogTrigger asChild>
             <Button variant="outline" size="sm" className="gap-1.5">
               <Flag className="h-3.5 w-3.5" /> {t("Raportează", "Report")}
             </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{t("Raportează conversația", "Report conversation")}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {t("Echipa noastră va revizui conversația.", "Our team will review this conversation.")}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{t("Anulează", "Cancel")}</AlertDialogCancel>
-              <AlertDialogAction onClick={handleReport}>{t("Raportează", "Report")}</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t("Raportează conversația", "Report conversation")}</DialogTitle>
+              <DialogDescription>
+                {t(
+                  "Spune-ne ce este în neregulă. Echipa de moderare va analiza conversația.",
+                  "Tell us what's wrong. Our moderation team will review this conversation."
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>{t("Motiv", "Reason")}</Label>
+                <Select value={reportCategory} onValueChange={setReportCategory}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="inappropriate_language">{t("Limbaj licențios / injurii", "Offensive language / insults")}</SelectItem>
+                    <SelectItem value="harassment">{t("Hărțuire / agresiune", "Harassment / aggression")}</SelectItem>
+                    <SelectItem value="threats">{t("Amenințări", "Threats")}</SelectItem>
+                    <SelectItem value="fraud">{t("Tentativă de fraudă", "Fraud attempt")}</SelectItem>
+                    <SelectItem value="spam">{t("Spam / reclame", "Spam / ads")}</SelectItem>
+                    <SelectItem value="other">{t("Altceva", "Other")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>{t("Detalii (opțional)", "Details (optional)")}</Label>
+                <Textarea
+                  maxLength={500}
+                  rows={4}
+                  value={reportDetails}
+                  onChange={(e) => setReportDetails(e.target.value)}
+                  placeholder={t("Adaugă context dacă e necesar...", "Add context if needed...")}
+                />
+                <p className="text-xs text-muted-foreground text-right">{reportDetails.length}/500</p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setReportOpen(false)} disabled={reportSubmitting}>
+                {t("Anulează", "Cancel")}
+              </Button>
+              <Button onClick={submitReport} disabled={reportSubmitting}>
+                {t("Trimite raport", "Send report")}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <AlertDialog>
           <AlertDialogTrigger asChild>

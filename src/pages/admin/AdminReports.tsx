@@ -13,14 +13,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Flag, EyeOff, Ban, MessageCircle, Loader2 } from "lucide-react";
+import { Flag, EyeOff, Ban, MessageCircle, Loader2, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  listMessageReports, hideMessage, resolveReport, banIdentifier,
+  listMessageReports, hideMessage, resolveReport, banIdentifier, warnUser,
   CATEGORY_LABELS_RO, CATEGORY_COLORS,
   type MessageReportRow, type ReportAction,
 } from "@/features/admin/messageReportsApi";
@@ -99,7 +99,7 @@ const AdminReports = () => {
                             {r.message_content || <span className="italic text-muted-foreground">[mesaj șters]</span>}
                           </p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Autor: <span className="font-medium">{r.author_name || "—"}</span>
+                            Raportat: <span className="font-medium">{r.reported_user_name || r.author_name || "—"}</span>
                             {" · "}Raportat de: {r.reporter_name || "—"}
                             {" · "}{format(new Date(r.created_at), "d MMM yyyy, HH:mm", { locale: ro })}
                           </p>
@@ -137,15 +137,20 @@ function ReportDetailSheet({
   const [banAccount, setBanAccount] = useState(false);
   const [banEmail, setBanEmail] = useState(false);
   const [hideMsg, setHideMsg] = useState(true);
+  const [warn, setWarn] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (report) {
-      setAction("warning"); setNotes(""); setBanAccount(false); setBanEmail(false); setHideMsg(true);
+      setAction("warning"); setNotes(""); setBanAccount(false); setBanEmail(false); setHideMsg(true); setWarn(false);
     }
   }, [report?.id]);
 
   if (!report) return null;
+
+  const targetUserId = report.reported_user_id || report.author_id;
+  const targetUserName = report.reported_user_name || report.author_name || "—";
+  const targetUserEmail = report.reported_user_email || report.author_email;
 
   const handleResolve = async () => {
     setBusy(true);
@@ -154,13 +159,45 @@ function ReportDetailSheet({
         await hideMessage(report.message_id);
       }
       let finalAction = action;
-      if (banAccount && report.author_id) {
-        await banUser(report.author_id, notes || `Raport ${report.public_id}: ${CATEGORY_LABELS_RO[report.category]}`,
-          (await supabase.auth.getUser()).data.user?.id || "");
-        finalAction = "user_banned";
-        if (banEmail && report.author_email) {
-          await banIdentifier({ type: "email", value: report.author_email, reason: `Report ${report.public_id}` });
+      if (banAccount) {
+        if (!targetUserId) {
+          toast.error("Nu pot bana: raportul nu are un utilizator asociat.");
+          setBusy(false);
+          return;
         }
+        try {
+          await banUser(
+            targetUserId,
+            notes || `Raport ${report.public_id}: ${CATEGORY_LABELS_RO[report.category]}`,
+            (await supabase.auth.getUser()).data.user?.id || ""
+          );
+          finalAction = "user_banned";
+          if (banEmail && targetUserEmail) {
+            await banIdentifier({ type: "email", value: targetUserEmail, reason: `Report ${report.public_id}` });
+          }
+        } catch (e: any) {
+          toast.error("Banarea a eșuat: " + (e?.message || "eroare necunoscută"));
+          setBusy(false);
+          return;
+        }
+      } else if (warn) {
+        if (!targetUserId) {
+          toast.error("Nu pot avertiza: raportul nu are un utilizator asociat.");
+          setBusy(false);
+          return;
+        }
+        const ok = await warnUser({
+          userId: targetUserId,
+          reason: notes || `Raport ${report.public_id}: ${CATEGORY_LABELS_RO[report.category]}`,
+          category: report.category,
+          relatedReportId: report.id,
+        });
+        if (!ok) {
+          toast.error("Trimiterea avertizării a eșuat.");
+          setBusy(false);
+          return;
+        }
+        finalAction = "warning";
       } else if (hideMsg) {
         finalAction = "message_hidden";
       }
@@ -205,6 +242,9 @@ function ReportDetailSheet({
                 <div className="rounded-md border bg-muted/40 divide-y">
                   {report.recent_messages.map((m) => (
                     <div key={m.id} className="p-2 text-sm">
+                      <p className="text-[10px] font-medium text-muted-foreground mb-0.5">
+                        {m.sender_name || "—"}
+                      </p>
                       <p className={`whitespace-pre-wrap break-words ${m.is_hidden ? "italic text-muted-foreground" : ""}`}>
                         {m.content}
                       </p>
@@ -233,30 +273,58 @@ function ReportDetailSheet({
 
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <Label className="text-xs text-muted-foreground">Autor mesaj</Label>
-              <p>{report.author_name || "—"}</p>
-              {report.author_email && <p className="text-xs text-muted-foreground">{report.author_email}</p>}
-              {report.author_id && (
-                <Link to={`/admin/users/${report.author_id}`} className="text-xs text-primary hover:underline">
+              <Label className="text-xs text-muted-foreground">Utilizator raportat</Label>
+              <p className="font-medium">{targetUserName}</p>
+              {targetUserEmail && <p className="text-xs text-muted-foreground">{targetUserEmail}</p>}
+              {targetUserId && (
+                <Link to={`/admin/users/${targetUserId}`} className="text-xs text-primary hover:underline">
                   Profil utilizator →
                 </Link>
               )}
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Raportat de</Label>
-              <p>{report.reporter_name || "—"}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="font-medium">{report.reporter_name || "—"}</p>
+              {report.reporter_email && <p className="text-xs text-muted-foreground">{report.reporter_email}</p>}
+              {report.reporter_id && (
+                <Link to={`/admin/users/${report.reporter_id}`} className="text-xs text-primary hover:underline">
+                  Profil utilizator →
+                </Link>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">
                 {format(new Date(report.created_at), "d MMM yyyy, HH:mm", { locale: ro })}
               </p>
             </div>
           </div>
 
-          {report.reason && (
-            <div>
-              <Label className="text-xs text-muted-foreground">Detalii reporter</Label>
-              <p className="mt-1 text-sm p-2 rounded bg-muted/50">{report.reason}</p>
+          {(report.buyer_id || report.owner_id) && (
+            <div className="grid grid-cols-2 gap-3 text-xs text-muted-foreground border rounded-md p-2 bg-muted/30">
+              <div>
+                <span className="block">Cumpărător</span>
+                <span className="text-foreground">{report.buyer_name || "—"}</span>
+              </div>
+              <div>
+                <span className="block">Proprietar</span>
+                <span className="text-foreground">{report.owner_name || "—"}</span>
+              </div>
             </div>
           )}
+
+          <div>
+            <Label className="text-xs text-muted-foreground">Motiv raportare</Label>
+            <div className="mt-1 flex items-center gap-2">
+              <Badge className={CATEGORY_COLORS[report.category]} variant="outline">
+                {CATEGORY_LABELS_RO[report.category]}
+              </Badge>
+            </div>
+            {report.reason_clean ? (
+              <p className="mt-2 text-sm p-2 rounded bg-muted/50 whitespace-pre-wrap">{report.reason_clean}</p>
+            ) : (
+              <p className="mt-2 text-xs italic text-muted-foreground">
+                Reporter-ul nu a adăugat detalii suplimentare.
+              </p>
+            )}
+          </div>
 
           {!report.resolved && (
             <>
@@ -277,14 +345,35 @@ function ReportDetailSheet({
                 </label>
 
                 <label className="flex items-start gap-2 text-sm cursor-pointer">
-                  <Checkbox checked={banAccount} onCheckedChange={(v) => setBanAccount(!!v)} />
-                  <span><Ban className="h-3 w-3 inline mr-1" />Banează contul autorului</span>
+                  <Checkbox
+                    checked={warn}
+                    onCheckedChange={(v) => { setWarn(!!v); if (v) setBanAccount(false); }}
+                    disabled={!targetUserId}
+                  />
+                  <span>
+                    <AlertTriangle className="h-3 w-3 inline mr-1" />
+                    Avertizează utilizatorul ({targetUserName})
+                    {!targetUserId && <span className="text-xs text-muted-foreground ml-2">(indisponibil — niciun utilizator asociat)</span>}
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-2 text-sm cursor-pointer">
+                  <Checkbox
+                    checked={banAccount}
+                    onCheckedChange={(v) => { setBanAccount(!!v); if (v) setWarn(false); }}
+                    disabled={!targetUserId}
+                  />
+                  <span>
+                    <Ban className="h-3 w-3 inline mr-1" />
+                    Banează contul ({targetUserName})
+                    {!targetUserId && <span className="text-xs text-muted-foreground ml-2">(indisponibil — niciun utilizator asociat)</span>}
+                  </span>
                 </label>
 
                 {banAccount && (
                   <label className="flex items-start gap-2 text-sm cursor-pointer ml-6">
-                    <Checkbox checked={banEmail} onCheckedChange={(v) => setBanEmail(!!v)} disabled={!report.author_email} />
-                    <span>Blochează și emailul ({report.author_email || "—"}) la reînregistrare</span>
+                    <Checkbox checked={banEmail} onCheckedChange={(v) => setBanEmail(!!v)} disabled={!targetUserEmail} />
+                    <span>Blochează și emailul ({targetUserEmail || "—"}) la reînregistrare</span>
                   </label>
                 )}
 
@@ -302,7 +391,9 @@ function ReportDetailSheet({
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-xs">Note interne</Label>
+                  <Label className="text-xs">
+                    Note interne {warn && <span className="text-muted-foreground">(folosite ca text al avertizării)</span>}
+                  </Label>
                   <Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Detalii decizie..." />
                 </div>
               </div>

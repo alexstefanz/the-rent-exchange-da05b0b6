@@ -31,7 +31,19 @@ export interface MessageReportRow {
   author_name: string | null;
   author_email: string | null;
   reporter_name: string | null;
-  recent_messages?: { id: string; content: string; sender_id: string | null; created_at: string; is_hidden: boolean }[];
+  reporter_email: string | null;
+  // Reported user (resolved from reported_user_id, message author, or other conversation participant)
+  reported_user_id: string | null;
+  reported_user_name: string | null;
+  reported_user_email: string | null;
+  // Conversation participants (when available)
+  buyer_id: string | null;
+  buyer_name: string | null;
+  owner_id: string | null;
+  owner_name: string | null;
+  // Cleaned reason (legacy "Conversation <uuid>" reasons are stripped)
+  reason_clean: string | null;
+  recent_messages?: { id: string; content: string; sender_id: string | null; sender_name: string | null; created_at: string; is_hidden: boolean }[];
 }
 
 export async function listMessageReports(opts: {
@@ -43,7 +55,7 @@ export async function listMessageReports(opts: {
     .from("message_reports")
     .select(`
       id, public_id, category, reason, resolved, action_taken, admin_notes,
-      resolved_at, created_at, message_id, reporter_id, conversation_id,
+      resolved_at, created_at, message_id, reporter_id, conversation_id, reported_user_id,
       message:messages!message_reports_message_id_fkey (
         id, content, created_at, is_hidden, conversation_id, sender_id
       )
@@ -85,6 +97,21 @@ export async function listMessageReports(opts: {
   const convoIdOf = (r: any): string | null =>
     r.conversation_id ?? r.message?.conversation_id ?? null;
 
+  // Fetch conversation participants for any report tied to a conversation
+  const allConvoIds = Array.from(
+    new Set(reports.map((r: any) => convoIdOf(r)).filter(Boolean) as string[])
+  );
+  const convoMap = new Map<string, { buyer_id: string; owner_id: string }>();
+  if (allConvoIds.length) {
+    const { data: convos } = await supabase
+      .from("conversations")
+      .select("id, buyer_id, owner_id")
+      .in("id", allConvoIds);
+    for (const c of convos || []) {
+      convoMap.set((c as any).id, { buyer_id: (c as any).buyer_id, owner_id: (c as any).owner_id });
+    }
+  }
+
   // Fetch the latest few messages for conversation-level reports (no specific message)
   const convoOnlyIds = Array.from(
     new Set(
@@ -108,6 +135,7 @@ export async function listMessageReports(opts: {
           id: (row as any).id,
           content: (row as any).content,
           sender_id: (row as any).sender_id,
+          sender_name: null,
           created_at: (row as any).created_at,
           is_hidden: (row as any).is_hidden,
         });
@@ -118,10 +146,29 @@ export async function listMessageReports(opts: {
     for (const [k, v] of recentByConvo) recentByConvo.set(k, [...(v || [])].reverse());
   }
 
-  // Hydrate profiles for reporters and message authors
+  // Resolve reported_user_id per report (column → message author → other convo participant)
+  const resolvedReportedUserId = (r: any): string | null => {
+    if (r.reported_user_id) return r.reported_user_id;
+    if (r.message?.sender_id) return r.message.sender_id;
+    const convoId = convoIdOf(r);
+    if (convoId) {
+      const c = convoMap.get(convoId);
+      if (c) {
+        if (c.buyer_id === r.reporter_id) return c.owner_id;
+        if (c.owner_id === r.reporter_id) return c.buyer_id;
+      }
+    }
+    return null;
+  };
+
+  // Hydrate profiles for reporters, reported users, message authors, and convo participants
   const reporterIds = Array.from(new Set(reports.map((r: any) => r.reporter_id).filter(Boolean)));
-  const authorIds = Array.from(
-    new Set(reports.map((r: any) => r.message?.sender_id).filter(Boolean))
+  const authorIds = Array.from(new Set(reports.map((r: any) => r.message?.sender_id).filter(Boolean)));
+  const reportedIds = Array.from(new Set(reports.map((r: any) => resolvedReportedUserId(r)).filter(Boolean) as string[]));
+  const participantIds = Array.from(
+    new Set(
+      Array.from(convoMap.values()).flatMap((c) => [c.buyer_id, c.owner_id]).filter(Boolean) as string[]
+    )
   );
   const recentSenderIds = Array.from(
     new Set(
@@ -131,23 +178,47 @@ export async function listMessageReports(opts: {
         .filter(Boolean) as string[]
     )
   );
-  const allProfileIds = Array.from(new Set([...reporterIds, ...authorIds, ...recentSenderIds]));
+  const allProfileIds = Array.from(new Set([...reporterIds, ...authorIds, ...reportedIds, ...participantIds, ...recentSenderIds]));
 
   const { data: profiles } = allProfileIds.length
     ? await supabase.from("profiles").select("id, full_name, email").in("id", allProfileIds)
     : { data: [] as any[] };
   const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
 
+  // Fill in sender_name on recent messages now that profiles are loaded
+  for (const [k, arr] of recentByConvo) {
+    recentByConvo.set(
+      k,
+      (arr || []).map((m) => ({
+        ...m,
+        sender_name: m.sender_id ? (profileMap.get(m.sender_id)?.full_name ?? null) : null,
+      }))
+    );
+  }
+
+  const cleanReason = (raw: string | null): string | null => {
+    if (!raw) return null;
+    // Legacy reports stored "Conversation <uuid>" in reason — hide that as it's not a real motive.
+    if (/^Conversation\s+[0-9a-f-]{36}$/i.test(raw.trim())) return null;
+    return raw;
+  };
+
   return reports.map((r: any) => {
     const m = r.message ?? null;
     const author = m?.sender_id ? profileMap.get(m.sender_id) : null;
     const reporter = profileMap.get(r.reporter_id);
     const convoId = convoIdOf(r);
+    const convo = convoId ? convoMap.get(convoId) : null;
+    const reportedId = resolvedReportedUserId(r);
+    const reported = reportedId ? profileMap.get(reportedId) : null;
+    const buyerProfile = convo?.buyer_id ? profileMap.get(convo.buyer_id) : null;
+    const ownerProfile = convo?.owner_id ? profileMap.get(convo.owner_id) : null;
     return {
       id: r.id,
       public_id: r.public_id,
       category: r.category,
       reason: r.reason,
+      reason_clean: cleanReason(r.reason),
       resolved: r.resolved,
       action_taken: r.action_taken || "none",
       admin_notes: r.admin_notes,
@@ -163,6 +234,14 @@ export async function listMessageReports(opts: {
       author_name: author?.full_name ?? null,
       author_email: author?.email ?? null,
       reporter_name: reporter?.full_name ?? null,
+      reporter_email: reporter?.email ?? null,
+      reported_user_id: reportedId,
+      reported_user_name: reported?.full_name ?? null,
+      reported_user_email: reported?.email ?? null,
+      buyer_id: convo?.buyer_id ?? null,
+      buyer_name: buyerProfile?.full_name ?? null,
+      owner_id: convo?.owner_id ?? null,
+      owner_name: ownerProfile?.full_name ?? null,
       recent_messages: !r.message_id && convoId ? recentByConvo.get(convoId) ?? [] : undefined,
     } as MessageReportRow;
   });
@@ -205,6 +284,41 @@ export async function banIdentifier(input: { type: "email" | "phone"; value: str
   if (error && (error as any).code !== "23505") {
     console.error("banIdentifier", error);
     return false;
+  }
+  return true;
+}
+
+export async function warnUser(input: {
+  userId: string;
+  reason: string;
+  category?: string | null;
+  relatedReportId?: string | null;
+}): Promise<boolean> {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase.from("user_warnings").insert({
+    user_id: input.userId,
+    issued_by: user?.id,
+    reason: input.reason,
+    category: input.category ?? null,
+    related_report_id: input.relatedReportId ?? null,
+  });
+  if (error) {
+    console.error("warnUser", error);
+    return false;
+  }
+  // Best-effort in-app notification
+  try {
+    await supabase.from("notifications").insert({
+      user_id: input.userId,
+      type: "account_warning",
+      title_ro: "Avertizare de la moderare",
+      title_en: "Warning from moderation",
+      description_ro: input.reason,
+      description_en: input.reason,
+      link: "/profil/notificari",
+    });
+  } catch (e) {
+    console.warn("warnUser notification insert failed", e);
   }
   return true;
 }

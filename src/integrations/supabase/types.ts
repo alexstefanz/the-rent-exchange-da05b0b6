@@ -629,6 +629,7 @@ export type Database = {
           message_id: string | null
           public_id: string | null
           reason: string | null
+          reported_user_id: string | null
           reporter_id: string
           resolved: boolean
           resolved_at: string | null
@@ -645,6 +646,7 @@ export type Database = {
           message_id?: string | null
           public_id?: string | null
           reason?: string | null
+          reported_user_id?: string | null
           reporter_id: string
           resolved?: boolean
           resolved_at?: string | null
@@ -661,6 +663,7 @@ export type Database = {
           message_id?: string | null
           public_id?: string | null
           reason?: string | null
+          reported_user_id?: string | null
           reporter_id?: string
           resolved?: boolean
           resolved_at?: string | null
@@ -686,6 +689,13 @@ export type Database = {
             columns: ["message_id"]
             isOneToOne: false
             referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reports_reported_user_id_fkey"
+            columns: ["reported_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -2283,6 +2293,61 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_warnings: {
+        Row: {
+          acknowledged_at: string | null
+          category: string | null
+          created_at: string
+          id: string
+          issued_by: string | null
+          reason: string
+          related_report_id: string | null
+          user_id: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          issued_by?: string | null
+          reason: string
+          related_report_id?: string | null
+          user_id: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          issued_by?: string | null
+          reason?: string
+          related_report_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_warnings_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_warnings_related_report_id_fkey"
+            columns: ["related_report_id"]
+            isOneToOne: false
+            referencedRelation: "message_reports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_warnings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wallet_ledger: {
         Row: {
