@@ -1,77 +1,18 @@
+## Problema
 
-## Schimbarea modelului de anulare
+La trimiterea cererii de anulare apare eroarea `column "handover_pv_owner_signed_at" does not exist`.
 
-În prezent, anularea funcționează "mutual" (cealaltă parte aprobă direct). Trecem la un model **admin-mediat**: orice parte trimite o cerere → adminul o vede în "Confirmări / Anulări" → aprobă (face refundul) sau respinge.
+RPC-ul `request_mutual_cancellation` referă o coloană inexistentă în tabela `rentals`. Coloana corectă este `handover_confirmed_at` (singura coloană `handover_*` care există). În plus, există două versiuni suprascrise ale funcției (cu și fără `_subject`), iar PostgREST poate apela varianta veche, care în plus nu cere subiect.
 
-Disponibilitatea cererii rămâne până la **semnarea primului proces verbal** (`handover_pv_owner_signed_at IS NULL`) — deja validat în RPC.
+## Migrație
 
-## Modificări de bază de date
+1. `DROP FUNCTION public.request_mutual_cancellation(uuid, text);` — eliminăm versiunea veche fără subiect, ca să rămână doar semnătura `(uuid, text, text)` apelată de UI.
+2. `CREATE OR REPLACE FUNCTION public.request_mutual_cancellation(_rental_id uuid, _reason text, _subject text)` — aceeași logică, dar:
+   - se selectează `handover_confirmed_at` în loc de `handover_pv_owner_signed_at`
+   - condiția devine `IF r.handover_confirmed_at IS NOT NULL THEN RAISE EXCEPTION 'handover_signed'`
+   - `_subject` devine obligatoriu (fără DEFAULT) cu min 3 caractere.
+3. Aceeași corecție pentru `admin_respond_cancellation` și `withdraw_cancellation_request` dacă au aceeași referință greșită — verific și înlocuiesc.
 
-Adăugăm pe `rentals`:
-- `cancel_request_subject` (text) — subiectul cererii
-- `cancel_request_admin_id` (uuid) — adminul care a procesat
-- `cancel_request_admin_note` (text) — nota internă
+## Fără modificări de UI
 
-Statusurile `cancel_request_status` rămân: `pending`, `approved`, `rejected`, `withdrawn` — dar sunt setate de admin (nu de cealaltă parte).
-
-Update RPC `request_mutual_cancellation` → acceptă și `_subject`. Înlocuim `respond_mutual_cancellation` cu `admin_respond_cancellation(_rental_id, _action, _note)` care verifică `has_role(uid, 'admin')`.
-
-Refundul Stripe rămâne în edge-function-ul existent `mutual-cancel-rental`, apelat de admin la aprobare.
-
-## Frontend chiriaș/proprietar
-
-`src/components/rentals/MutualCancellationCard.tsx`:
-- Formularul de cerere primește un câmp **Subiect** (text scurt obligatoriu, min 3 caractere) deasupra motivului.
-- Stările "iAmRecipient" / "iAmInitiator" sunt înlocuite cu o singură stare informativă: **„Cerere trimisă către admin pentru revizuire"** cu subiect, motiv, dată; butonul "Retrage" rămâne disponibil pentru inițiator cât timp `pending`.
-- Eliminăm UI-ul de aprobă/refuză din partea utilizatorului final.
-
-`src/features/rentals/rentalsApi.ts`:
-- `requestMutualCancellation(rentalId, subject, reason)` — semnătură nouă.
-- `withdrawCancellationRequest(rentalId)` — pentru inițiator.
-- Eliminăm `respondMutualCancellation` din UI client.
-
-Mesaj de eroare clar dacă RPC-ul respinge (afișarea actuală „Eroare la trimitere" e cauza pentru care „nu funcționează"; după corecția semnăturii + subiect, validarea va trece).
-
-## Admin: tab „Confirmări / Anulări"
-
-Redenumim sidebar item-ul `Confirmări` → `Confirmări / Anulări` (`src/components/admin/AdminSidebar.tsx`).
-
-În `src/pages/admin/AdminApprovals.tsx` adăugăm un **Tabs** cu două secțiuni:
-1. **Produse** — UI existent neschimbat.
-2. **Anulări rezervări** — listă cu cereri `pending` (sortate după `cancel_request_created_at` desc).
-
-Pentru fiecare cerere afișăm:
-- Produs (titlu + thumbnail), public ID rezervare (`RNT-XXXXXX`), perioadă, sumă.
-- Inițiator (chiriaș/proprietar) cu nume + rol.
-- Subiect, motiv complet.
-- Acțiuni: **Aprobă anularea** (rulează edge function `mutual-cancel-rental` → refund integral), **Respinge** (cu notă opțională), **Contactează chiriașul**, **Contactează proprietarul** (deschid `/messages?user=<id>` sau echivalent în messaging existent).
-- Badge cu vechimea cererii pentru SLA vizibil.
-
-Edge function `mutual-cancel-rental`: înlocuim verificarea `cancel_request_status = 'approved'` cu apelarea de către admin (verifică rol admin în loc de status mutual). Setează `cancel_request_status = 'approved'` + `cancel_request_admin_id` + execută refundul Stripe ca acum.
-
-## Notificări
-
-`notify-rental-event` capătă cheile noi:
-- `cancel_request_submitted` — email admin + ambele părți („cererea ta este în revizuire").
-- `cancel_request_approved` — ambele părți.
-- `cancel_request_rejected` — ambele părți (cu nota adminului).
-- `cancel_request_withdrawn` — ambele părți.
-
-(Template-uri reutilizate din cele existente cu text actualizat — fără șabloane noi pentru moment dacă timpul presează.)
-
-## Out of scope
-
-- Nu schimbăm logica de refund (rămâne integrală inclusiv comision la aprobare).
-- Nu modificăm fluxul post-handover (PV semnat → cererea de anulare nu mai e disponibilă, deja blocată).
-- Nu schimbăm `RentalsTab` / `RentalsOutTab` în afară de butonul existent care apelează `requestMutualCancellation` cu noua semnătură (subject).
-
-## Tehnic — fișiere atinse
-
-- Migrație: noi coloane + RPC `admin_respond_cancellation` + update `request_mutual_cancellation`.
-- `src/features/rentals/rentalsApi.ts` — semnături noi.
-- `src/components/rentals/MutualCancellationCard.tsx` — câmp subiect + UI simplificat.
-- `src/components/dashboard/RentalsTab.tsx`, `RentalsOutTab.tsx` — dialogul "Solicită anularea" primește subject.
-- `src/pages/admin/AdminApprovals.tsx` — Tabs + secțiunea anulări.
-- `src/components/admin/AdminSidebar.tsx` — titlu redenumit.
-- `src/features/admin/` — nou `cancellationRequestsApi.ts` (listare + acțiuni admin).
-- `supabase/functions/mutual-cancel-rental/index.ts` — verificare rol admin.
+Frontendul (`MutualCancellationCard`, `RentalsTab`, `RentalsOutTab`) trimite deja `subject` + `reason`, deci după migrație totul funcționează. Nu e nevoie de schimbări în client.
