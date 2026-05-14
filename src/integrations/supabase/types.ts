@@ -2347,6 +2347,7 @@ export type Database = {
         Args: never
         Returns: {
           open_tickets: number
+          pending_cancellations: number
           pending_kyc: number
           pending_products: number
           pending_withdrawals: number
