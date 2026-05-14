@@ -1,18 +1,20 @@
-## Problema
+## Problem
 
-La trimiterea cererii de anulare apare eroarea `column "handover_pv_owner_signed_at" does not exist`.
+The two pending cancellation requests exist in the database (`cancel_request_status = 'pending'`), but the admin "Anulări rezervări" tab shows an empty list because the RPC `list_pending_cancellation_requests` errors out:
 
-RPC-ul `request_mutual_cancellation` referă o coloană inexistentă în tabela `rentals`. Coloana corectă este `handover_confirmed_at` (singura coloană `handover_*` care există). În plus, există două versiuni suprascrise ale funcției (cu și fără `_subject`), iar PostgREST poate apela varianta veche, care în plus nu cere subiect.
+```
+ERROR: column r.total_days does not exist
+HINT: Perhaps you meant to reference the column "r.rental_days".
+```
 
-## Migrație
+The `rentals` table uses `rental_days`, not `total_days`.
 
-1. `DROP FUNCTION public.request_mutual_cancellation(uuid, text);` — eliminăm versiunea veche fără subiect, ca să rămână doar semnătura `(uuid, text, text)` apelată de UI.
-2. `CREATE OR REPLACE FUNCTION public.request_mutual_cancellation(_rental_id uuid, _reason text, _subject text)` — aceeași logică, dar:
-   - se selectează `handover_confirmed_at` în loc de `handover_pv_owner_signed_at`
-   - condiția devine `IF r.handover_confirmed_at IS NOT NULL THEN RAISE EXCEPTION 'handover_signed'`
-   - `_subject` devine obligatoriu (fără DEFAULT) cu min 3 caractere.
-3. Aceeași corecție pentru `admin_respond_cancellation` și `withdraw_cancellation_request` dacă au aceeași referință greșită — verific și înlocuiesc.
+## Fix
 
-## Fără modificări de UI
+Create a migration that recreates `public.list_pending_cancellation_requests()` with `r.rental_days` aliased as `total_days` (so the function signature and the frontend `PendingCancellationRequest.total_days` field stay unchanged — no client code edits needed).
 
-Frontendul (`MutualCancellationCard`, `RentalsTab`, `RentalsOutTab`) trimite deja `subject` + `reason`, deci după migrație totul funcționează. Nu e nevoie de schimbări în client.
+All other fields, ordering, admin role check, and SECURITY DEFINER stay identical.
+
+## Verification
+
+After the migration, calling the RPC will return the 2 pending rows; the admin panel will render them automatically (React Query already polls).
