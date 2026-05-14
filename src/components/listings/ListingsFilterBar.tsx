@@ -31,26 +31,13 @@ const ListingsFilterBar = ({ filters, onChange, categories, cities, resultCount 
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const set = <K extends keyof ListingsFilters>(k: K, v: ListingsFilters[K]) => onChange({ ...filters, [k]: v });
-  const reset = () => onChange({ search: "", status: "all", category: "all", city: "all", sort: "recent" });
+  const reset = () => onChange({ search: "", status: filters.status, category: "all", city: "all", sort: "recent" });
   const activeCount = [
-    filters.status !== "all",
     filters.category !== "all",
     filters.city !== "all",
     filters.sort !== "recent",
   ].filter(Boolean).length;
 
-  const StatusSelect = (
-    <Select value={filters.status} onValueChange={(v) => set("status", v as ListingsStatusFilter)}>
-      <SelectTrigger className="h-10 w-full sm:w-[160px]"><SelectValue /></SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">{t("Toate statusurile", "All statuses")}</SelectItem>
-        <SelectItem value="active">{t("Active", "Active")}</SelectItem>
-        <SelectItem value="pending">{t("În verificare", "In review")}</SelectItem>
-        <SelectItem value="hidden">{t("Ascunse", "Hidden")}</SelectItem>
-        <SelectItem value="rejected">{t("Respinse", "Rejected")}</SelectItem>
-      </SelectContent>
-    </Select>
-  );
   const CategorySelect = (
     <Select value={filters.category} onValueChange={(v) => set("category", v)}>
       <SelectTrigger className="h-10 w-full sm:w-[160px]"><SelectValue placeholder={t("Categorie", "Category")} /></SelectTrigger>
