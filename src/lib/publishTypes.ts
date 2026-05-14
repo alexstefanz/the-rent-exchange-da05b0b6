@@ -38,6 +38,7 @@ export interface PublishFormData {
   deposit_value: number | null;
   min_rental_preset: MinRentalPreset;
   min_rental_days: number;
+  max_rental_days: number | null;
   available_immediately: boolean;
   blocked_dates: string[]; // ISO YYYY-MM-DD
 
@@ -69,6 +70,7 @@ export const emptyPublishForm = (): PublishFormData => ({
   deposit_value: null,
   min_rental_preset: "1_day",
   min_rental_days: 1,
+  max_rental_days: null,
   available_immediately: true,
   blocked_dates: [],
   is_active: true,
