@@ -87,8 +87,12 @@ const LivePreviewCard = ({ data, feePercent }: Props) => {
               </p>
             ) : null}
           </div>
-          {data.min_rental_days > 1 && (
-            <p className="text-[11px] text-muted-foreground">min. {data.min_rental_days} zile</p>
+          {(data.min_rental_days > 1 || data.max_rental_days != null) && (
+            <p className="text-[11px] text-muted-foreground">
+              {data.max_rental_days != null
+                ? `${data.min_rental_days || 1}–${data.max_rental_days} zile`
+                : `min. ${data.min_rental_days} zile`}
+            </p>
           )}
         </div>
       </div>
