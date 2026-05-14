@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, User as UserIcon, ShoppingBag } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from "@/components/layout/Navbar";
@@ -34,7 +34,21 @@ const RentalsPage = () => {
           <ArrowLeft className="h-4 w-4 mr-1" />
           {t("Înapoi la Contul Meu", "Back to My Account")}
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight mb-6">{t("Rezervări", "Reservations")}</h1>
+        <div className="mb-6 flex items-start gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700">
+            <ShoppingBag className="h-6 w-6" />
+          </div>
+          <div>
+            <div className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-sky-100 px-2.5 py-0.5 text-[11px] font-semibold text-sky-700">
+              <UserIcon className="h-3 w-3" />
+              {t("Ca chiriaș", "As renter")}
+            </div>
+            <h1 className="text-3xl font-bold tracking-tight">{t("Închirierile mele", "My rentals")}</h1>
+            <p className="text-muted-foreground mt-1">
+              {t("Produsele pe care le-ai închiriat de la alți utilizatori", "Products you have rented from other users")}
+            </p>
+          </div>
+        </div>
         <RentalsTab />
       </main>
       <Footer />
