@@ -799,10 +799,10 @@ const Step2Details = ({
               );
             })}
           </div>
-          {data.usage_rules.filter((r) => !DEFAULT_USAGE_RULES.includes(r)).length > 0 && (
+          {data.usage_rules.filter((r) => !(DEFAULT_USAGE_RULES as readonly string[]).includes(r)).length > 0 && (
             <div className="flex flex-wrap gap-2 pt-1">
               {data.usage_rules
-                .filter((r) => !DEFAULT_USAGE_RULES.includes(r))
+                .filter((r) => !(DEFAULT_USAGE_RULES as readonly string[]).includes(r))
                 .map((rule, i) => (
                   <span
                     key={`${rule}-${i}`}
