@@ -1,21 +1,30 @@
 ## Goal
-Exclude test-mode (Stripe test card) payments from the wallet so only real card revenue counts toward balances.
+Add explicit "change" and "delete" actions for the payout method (IBAN / cont bancar) in the user account, so users can replace or remove their saved bank account.
 
-## Findings
-- `rentals.is_test_payment` already flags Stripe test-mode rentals (set by `create-test-checkout-session`).
-- Currently `useEarnings.ts` and the `get_user_wallet_balance` RPC sum `owner_payout` for every rental in `payment_status IN ('authorized','paid','captured')` regardless of the test flag.
-- Example: user `74835c82…` has 12 RON earnings, of which 2 RON come from a single `is_test_payment = true` rental that should not appear in the wallet.
+## Current state
+- IBAN + Titular cont sunt salvate pe `profiles.iban` și `profiles.account_holder_name`.
+- În `AccountTab.tsx → PayoutForm` există deja câmpurile editabile + butonul „Salvează IBAN" (efectiv „schimbă"), dar:
+  - Când un IBAN e configurat, câmpul e mascat (`formatIbanMask`) și nu e clar cum îl schimbi.
+  - Nu există acțiune de **ștergere**.
+- `WithdrawalMethodCard` din /castiguri are doar buton „Editează" care duce la `/contul-meu?section=payout`.
 
-## Changes
+## Changes (frontend only — `src/components/profile/AccountTab.tsx → PayoutForm`)
 
-1. **DB migration** — recreate `get_user_wallet_balance(_user_id uuid)` so the earnings sum adds `AND is_test_payment = false`. No signature change.
+1. **Modul „card configurat" vs „edit"**
+   - Când există IBAN salvat: afișăm un bloc read-only stilizat (icon Landmark, IBAN mascat `RO49 •••• •••• •••• 0000`, titular), cu două butoane:
+     - „Schimbă" (Pencil) → trece formularul în mod editabil cu inputurile goale (forțează re-introducerea completă, nu pre-completate cu vechiul IBAN, ca să eviți modificarea accidentală a unei singure cifre).
+     - „Șterge" (Trash, variant `outline` cu text destructive) → deschide un `AlertDialog` de confirmare.
+   - Când nu există IBAN sau utilizatorul a apăsat „Schimbă": formularul actual cu IBAN + Titular + butoane „Salvează" și „Anulează" (revine la modul read-only fără modificări).
 
-2. **`src/hooks/useEarnings.ts`**
-   - Add `is_test_payment` to the `rentals` select.
-   - Filter the in-memory `list` with `r.is_test_payment === false` before computing `totalAllTime`, `totalThisMonth`, `availableBalance`, transactions list, and rental count.
+2. **Ștergere IBAN**
+   - `AlertDialog` cu titlu „Șterge IBAN-ul?" și descriere care explică că nu vei mai putea solicita retrageri până la adăugarea altuia.
+   - **Blocare**: înainte de delete, verifică dacă există `withdrawal_requests` cu `status='pending'` pentru user; dacă da, arată toast destructive „Ai o cerere de retragere în așteptare. Așteaptă procesarea ei înainte să ștergi IBAN-ul." și nu execută delete.
+   - La confirmare: `update profiles set iban=null, account_holder_name=null where id=user`. Toast de succes „IBAN șters". Resetează state local și apelează `onSaved("", "")` ca să sincronizeze părintele.
 
-No UI changes; the breakdown card and hero card automatically reflect the corrected numbers. Withdrawals logic stays untouched.
+3. **Validare la salvare** (mică îmbunătățire ca să fie consistent):
+   - Trim + uppercase, regex `/^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$/`. Dacă invalid → toast destructive, fără update.
 
 ## Out of scope
-- Admin earnings/analytics dashboards (they may intentionally show test totals).
-- Hiding the test rentals from rental lists / history.
+- `WithdrawalMethodCard` din /castiguri rămâne neschimbat (deja link-uiește către secțiunea Payouts unde acum apar ambele acțiuni).
+- Niciun edge function / migrație necesare — folosim RLS-ul existent pe `profiles` (`Users can update their own profile`).
+- Nu atingem `WithdrawalDialog.tsx` (e flow-ul vechi, separat).
