@@ -474,6 +474,42 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
         </div>
       )}
 
+      <SectionLabel>{t("Ca chiriaș", "As renter")}</SectionLabel>
+      <NavRow
+        to="/rezervari"
+        icon={ShoppingBag}
+        label={t("Închirierile mele", "My rentals")}
+        onNav={handleNav}
+      />
+      <NavRow
+        to="/favorite"
+        icon={Heart}
+        label={t("Favorite", "Favorites")}
+        onNav={handleNav}
+      />
+
+      <SectionLabel>{t("Ca proprietar", "As owner")}</SectionLabel>
+      <NavRow
+        to="/anunturi"
+        icon={Package}
+        label={t("Anunțurile mele", "My listings")}
+        onNav={handleNav}
+      />
+      <NavRow
+        to="/inchirieri"
+        icon={PackageCheck}
+        label={t("Cereri primite", "Bookings received")}
+        onNav={handleNav}
+      />
+      <NavRow
+        to="/castiguri"
+        icon={CreditCard}
+        label={t("Câștiguri & retrageri", "Earnings & payouts")}
+        badge={signals?.ibanMissing ? t("Adaugă IBAN", "Add IBAN") : undefined}
+        badgeTone="warning"
+        onNav={handleNav}
+      />
+
       <SectionLabel>{t("Cont", "Account")}</SectionLabel>
       <NavRow
         to="/contul-meu"
@@ -486,14 +522,6 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
         icon={Shield}
         label={t("Verificare KYC", "KYC Verification")}
         badge={signals?.kycPending ? t("În așteptare", "Pending") : undefined}
-        badgeTone="warning"
-        onNav={handleNav}
-      />
-      <NavRow
-        to="/castiguri"
-        icon={CreditCard}
-        label={t("Plăți & Retrageri", "Payouts")}
-        badge={signals?.ibanMissing ? t("Adaugă IBAN", "Add IBAN") : undefined}
         badgeTone="warning"
         onNav={handleNav}
       />
