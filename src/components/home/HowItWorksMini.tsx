@@ -1,13 +1,17 @@
-import { Search, MessageSquare, PackageCheck } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
-import { cn } from "@/lib/utils";
+import { Send, CheckCircle2, Package, Wrench, Undo2, Wallet } from "lucide-react";
+import { useUxCopy } from "@/hooks/useUxCopy";
 
 const HowItWorksMini = () => {
-  const { t } = useLanguage();
+  const copy = useUxCopy();
+  const p = copy.howItWorksPage;
+
   const steps = [
-    { icon: Search, title: t("Caută produsul", "Find the item"), desc: t("Filtrează după categorie și locație și găsește exact ce ai nevoie.", "Filter by category and location to find exactly what you need.") },
-    { icon: MessageSquare, title: t("Trimite cererea", "Send a request"), desc: t("Discută pe chat cu proprietarul și plătește în siguranță.", "Chat with the owner and pay securely in-app.") },
-    { icon: PackageCheck, title: t("Ridică și folosește", "Pick up and use"), desc: t("Predare cu foto obligatorii, fără surprize la întoarcere.", "Mandatory photo handover — no surprises on return.") },
+    { icon: Send, title: p.cycleStep1Title, desc: p.cycleStep1Desc },
+    { icon: CheckCircle2, title: p.cycleStep2Title, desc: p.cycleStep2Desc },
+    { icon: Package, title: p.cycleStep3Title, desc: p.cycleStep3Desc },
+    { icon: Wrench, title: p.cycleStep4Title, desc: p.cycleStep4Desc },
+    { icon: Undo2, title: p.cycleStep5Title, desc: p.cycleStep5Desc },
+    { icon: Wallet, title: p.cycleStep6Title, desc: p.cycleStep6Desc },
   ];
 
   return (
@@ -15,71 +19,68 @@ const HowItWorksMini = () => {
       <div className="container">
         <div className="mb-12 text-center">
           <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-primary">
-            {t("Procesul", "The process")}
+            {p.processBadge}
           </span>
-          <h2 className="mt-4 font-heading text-3xl font-bold text-foreground md:text-4xl">
-            {t("Cum funcționează", "How it works")}
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-            {t("Trei pași simpli — de la căutare la folosire.", "Three simple steps — from search to use.")}
-          </p>
+          <h2 className="mt-4 font-heading text-3xl font-bold text-foreground md:text-4xl">{p.processTitle}</h2>
+          <p className="mx-auto mt-3 max-w-xl text-muted-foreground">{p.processSubtitle}</p>
         </div>
 
-        {/* Desktop zigzag timeline */}
-        <div className="relative mx-auto hidden max-w-4xl md:block">
+        {/* Desktop horizontal timeline */}
+        <div className="relative hidden lg:block">
           <div
             aria-hidden
-            className="pointer-events-none absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-gradient-to-b from-primary/0 via-primary/60 to-primary/0"
+            className="pointer-events-none absolute left-0 right-0 top-7 h-px bg-gradient-to-r from-primary/0 via-primary/40 to-primary/0"
           />
-          <div className="space-y-14">
-            {steps.map((step, idx) => {
-              const left = idx % 2 === 0;
-              return (
-                <div key={idx} className="relative grid grid-cols-2 items-center gap-12">
-                  <span
-                    aria-hidden
-                    className="absolute left-1/2 top-1/2 z-10 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-4 ring-background"
-                  />
-                  <div className={cn(left ? "text-right pr-6" : "col-start-2 text-left pl-6")}>
-                    <span className="inline-block rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
-                      {`${t("PAS", "STEP")} · ${String(idx + 1).padStart(2, "0")}`}
-                    </span>
-                    <h3 className="mt-3 font-heading text-xl font-semibold text-foreground">{step.title}</h3>
-                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
-                  </div>
-                  <div className={cn(left ? "col-start-2 pl-6" : "row-start-1 pr-6")}>
-                    <div className={cn("flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-card shadow-card", left ? "" : "ml-auto")}>
-                      <step.icon className="h-7 w-7 text-primary" />
-                    </div>
-                  </div>
+          <div className="relative grid grid-cols-6 gap-4">
+            {steps.map((step, idx) => (
+              <div key={idx} className="flex flex-col items-center text-center px-2">
+                <div className="relative z-10 flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-card shadow-card">
+                  <step.icon className="h-6 w-6 text-primary" />
                 </div>
-              );
-            })}
+                <span className="mt-4 inline-block rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+                  {`PAS · ${String(idx + 1).padStart(2, "0")}`}
+                </span>
+                <h3 className="mt-2 font-heading text-sm font-semibold text-foreground">{step.title}</h3>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{step.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Mobile vertical */}
-        <div className="relative md:hidden">
-          <div aria-hidden className="absolute left-5 top-2 h-[calc(100%-1rem)] w-px bg-primary/30" />
-          <div className="space-y-6">
+        {/* Tablet: 3 columns × 2 rows */}
+        <div className="hidden md:grid lg:hidden grid-cols-3 gap-6">
+          {steps.map((step, idx) => (
+            <div key={idx} className="flex flex-col items-center text-center px-2">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-border bg-card shadow-card">
+                <step.icon className="h-6 w-6 text-primary" />
+              </div>
+              <span className="mt-4 inline-block rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+                {`PAS · ${String(idx + 1).padStart(2, "0")}`}
+              </span>
+              <h3 className="mt-2 font-heading text-sm font-semibold text-foreground">{step.title}</h3>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{step.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Mobile: horizontal scroll snap */}
+        <div className="md:hidden -mx-4 px-4 overflow-x-auto snap-x snap-mandatory">
+          <div className="flex gap-4 pb-2">
             {steps.map((step, idx) => (
-              <div key={idx} className="relative pl-14">
-                <span
-                  aria-hidden
-                  className="absolute left-5 top-5 z-10 h-3 w-3 -translate-x-1/2 rounded-full bg-primary ring-4 ring-background"
-                />
-                <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
-                  <div className="mb-2 flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10">
-                      <step.icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-                      {`${t("PAS", "STEP")} · ${String(idx + 1).padStart(2, "0")}`}
-                    </span>
+              <div
+                key={idx}
+                className="snap-start shrink-0 w-[260px] rounded-2xl border border-border bg-card p-4 shadow-card"
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
+                    <step.icon className="h-5 w-5 text-primary" />
                   </div>
-                  <h3 className="font-heading text-base font-semibold text-foreground">{step.title}</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                    {`PAS · ${String(idx + 1).padStart(2, "0")}`}
+                  </span>
                 </div>
+                <h3 className="font-heading text-base font-semibold text-foreground">{step.title}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
               </div>
             ))}
           </div>
