@@ -8,6 +8,17 @@ const BAD_WORDS: string[] = [
   "handicapat","retardat","retardata","futumati","futinetamati","matiitifutu",
   "panarama","labagiu","labagioaica","cocalar","tigan","tiganca","jidan",
   "teomor","teamenit","teameninti",
+  // Romanian — extra (variante ofuscate + injurii cu „ma-tii")
+  "pwla","poola","puwla","pule","pulele","pulet",
+  "sugi","sugio","sugiopula","sugimi","sugepula","sugepulamea","sugipula",
+  "mortiimati","mortiimatii","mortiitai","mortiitaiii",
+  "cruceamati","cruceamatii","bisericamati","bisericamatii",
+  "dumnezeulmatii","dumnezeumatii","dumnezeumati",
+  "pastelemati","pastelematii","familiamatii","neamulmatii","mamatii",
+  "mamadracului","ducetevadracului","ducetenpula",
+  "bagmiapula","bagmiapizda","bagpula","tragipula","linsemiapula","lapula",
+  "pizdamasii","pizdamuii","futumama","futumamata","futiomama","futiomortii",
+  "futinematii","futinemortii","futiocrucea",
   // English
   "fuck","fucker","fucking","motherfucker","shit","bullshit","bitch","bitches",
   "asshole","pussy","cunt","whore","slut","retard","retarded",
@@ -19,10 +30,19 @@ const DIACRITICS_MAP: Record<string, string> = {
   Ă: "a", Â: "a", Î: "i", Ș: "s", Ş: "s", Ț: "t", Ţ: "t",
 };
 
+// Common leetspeak/obfuscation substitutions applied before non-alphanumeric strip.
+const LEET_MAP: Record<string, string> = {
+  "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t",
+  "@": "a", "$": "s",
+};
+
 export function normalizeForProfanity(input: string): string {
   if (!input) return "";
   let s = "";
-  for (const ch of input) s += DIACRITICS_MAP[ch] ?? ch;
+  for (const ch of input) {
+    const noDia = DIACRITICS_MAP[ch] ?? ch;
+    s += LEET_MAP[noDia] ?? noDia;
+  }
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "");
 }
 
