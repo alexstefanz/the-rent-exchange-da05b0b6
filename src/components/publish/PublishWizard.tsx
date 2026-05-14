@@ -1172,15 +1172,6 @@ const Step6Review = ({
           value={`${owner} RON/zi · client ${calculateClientPrice(owner, feePercent)} RON`}
           onEdit={() => onJump(4)}
         />
-        <ReviewRow
-          label="Durată închiriere"
-          value={
-            data.max_rental_days != null
-              ? `${data.min_rental_days || 1} – ${data.max_rental_days} zile`
-              : `min. ${data.min_rental_days || 1} ${(data.min_rental_days || 1) === 1 ? "zi" : "zile"}`
-          }
-          onEdit={() => onJump(4)}
-        />
 
         {score.total < 60 && (
           <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm dark:bg-amber-950/30">
