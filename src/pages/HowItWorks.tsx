@@ -149,15 +149,6 @@ const HowItWorks = () => {
             </div>
           </div>
 
-          {/* Stats strip */}
-          <div className="mt-16 grid grid-cols-2 gap-6 border-t border-border pt-10 md:grid-cols-4">
-            {stats.map((s, i) => (
-              <div key={i} className="text-center">
-                <div className="font-heading text-3xl font-bold text-primary md:text-4xl">{s.value}</div>
-                <div className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">{s.label}</div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 
