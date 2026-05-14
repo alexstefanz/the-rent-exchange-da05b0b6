@@ -2820,6 +2820,39 @@ export type Database = {
           total_days: number
         }[]
       }
+      list_resolved_cancellation_requests: {
+        Args: never
+        Returns: {
+          cancel_request_admin_id: string
+          cancel_request_admin_note: string
+          cancel_request_created_at: string
+          cancel_request_reason: string
+          cancel_request_responded_at: string
+          cancel_request_response_note: string
+          cancel_request_status: string
+          cancel_request_subject: string
+          end_date: string
+          initiator_id: string
+          initiator_role: string
+          owner_email: string
+          owner_id: string
+          owner_name: string
+          payment_status: string
+          platform_fee: number
+          product_id: string
+          product_image: string
+          product_title: string
+          rental_id: string
+          rental_public_id: string
+          renter_email: string
+          renter_id: string
+          renter_name: string
+          start_date: string
+          status: string
+          subtotal: number
+          total_days: number
+        }[]
+      }
       mark_conversation_read: {
         Args: { p_conversation_id: string }
         Returns: undefined
