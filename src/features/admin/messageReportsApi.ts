@@ -53,71 +53,79 @@ export async function listMessageReports(opts: {
   if (status === "open") query = query.eq("resolved", false);
   else if (status === "resolved") query = query.eq("resolved", true);
 
+  let reports: any[] = [];
   const { data, error } = await query;
+
   if (error) {
-    // Fall back without FK alias if relation isn't named
+    // Fallback if FK alias is unavailable: fetch reports + messages separately
     const fallback = await supabase
       .from("message_reports")
       .select("*")
       .order("created_at", { ascending: false })
       .limit(limit);
     if (fallback.error) throw fallback.error;
-
-    // Hydrate manually
-    const reports = fallback.data || [];
-    const messageIds = reports.map((r: any) => r.message_id).filter(Boolean);
-    const reporterIds = reports.map((r: any) => r.reporter_id).filter(Boolean);
-
-    const [{ data: messages }, { data: reporters }] = await Promise.all([
-      messageIds.length
-        ? supabase.from("messages").select("id, content, created_at, is_hidden, conversation_id, sender_id").in("id", messageIds)
-        : Promise.resolve({ data: [] as any[] }),
-      reporterIds.length
-        ? supabase.from("profiles").select("id, full_name, email").in("id", reporterIds)
-        : Promise.resolve({ data: [] as any[] }),
-    ]);
-
-    const senderIds = (messages || []).map((m: any) => m.sender_id).filter(Boolean);
-    const { data: authors } = senderIds.length
-      ? await supabase.from("profiles").select("id, full_name, email").in("id", senderIds)
-      : { data: [] as any[] };
-
-    const msgMap = new Map((messages || []).map((m: any) => [m.id, m]));
-    const repMap = new Map((reporters || []).map((p: any) => [p.id, p]));
-    const authMap = new Map((authors || []).map((p: any) => [p.id, p]));
-
-    const filtered = reports.filter((r: any) =>
+    const raw = (fallback.data || []).filter((r: any) =>
       status === "open" ? !r.resolved : status === "resolved" ? r.resolved : true
     );
-    return filtered.map((r: any) => {
-      const m = r.message_id ? msgMap.get(r.message_id) : null;
-      const a = m?.sender_id ? authMap.get(m.sender_id) : null;
-      const rep = repMap.get(r.reporter_id);
-      return {
-        id: r.id,
-        public_id: r.public_id,
-        category: r.category,
-        reason: r.reason,
-        resolved: r.resolved,
-        action_taken: r.action_taken || "none",
-        admin_notes: r.admin_notes,
-        resolved_at: r.resolved_at,
-        created_at: r.created_at,
-        message_id: r.message_id,
-        reporter_id: r.reporter_id,
-        message_content: m?.content ?? null,
-        message_created_at: m?.created_at ?? null,
-        message_is_hidden: m?.is_hidden ?? null,
-        conversation_id: m?.conversation_id ?? null,
-        author_id: m?.sender_id ?? null,
-        author_name: a?.full_name ?? null,
-        author_email: a?.email ?? null,
-        reporter_name: rep?.full_name ?? null,
-      } as MessageReportRow;
-    });
+    const messageIds = raw.map((r: any) => r.message_id).filter(Boolean);
+    const { data: messages } = messageIds.length
+      ? await supabase
+          .from("messages")
+          .select("id, content, created_at, is_hidden, conversation_id, sender_id")
+          .in("id", messageIds)
+      : { data: [] as any[] };
+    const msgMap = new Map((messages || []).map((m: any) => [m.id, m]));
+    reports = raw.map((r: any) => ({ ...r, message: r.message_id ? msgMap.get(r.message_id) ?? null : null }));
+  } else {
+    reports = data || [];
   }
-  // Should not happen on this schema; falls back regardless
-  throw error;
+
+  // Try to recover conversation_id from `reason` for conversation-level reports
+  // (current shape: "Conversation <uuid>")
+  const convoFromReason = (reason: string | null): string | null => {
+    if (!reason) return null;
+    const m = reason.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+    return m ? m[0] : null;
+  };
+
+  // Hydrate profiles for reporters and message authors
+  const reporterIds = Array.from(new Set(reports.map((r: any) => r.reporter_id).filter(Boolean)));
+  const authorIds = Array.from(
+    new Set(reports.map((r: any) => r.message?.sender_id).filter(Boolean))
+  );
+  const allProfileIds = Array.from(new Set([...reporterIds, ...authorIds]));
+
+  const { data: profiles } = allProfileIds.length
+    ? await supabase.from("profiles").select("id, full_name, email").in("id", allProfileIds)
+    : { data: [] as any[] };
+  const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+
+  return reports.map((r: any) => {
+    const m = r.message ?? null;
+    const author = m?.sender_id ? profileMap.get(m.sender_id) : null;
+    const reporter = profileMap.get(r.reporter_id);
+    return {
+      id: r.id,
+      public_id: r.public_id,
+      category: r.category,
+      reason: r.reason,
+      resolved: r.resolved,
+      action_taken: r.action_taken || "none",
+      admin_notes: r.admin_notes,
+      resolved_at: r.resolved_at,
+      created_at: r.created_at,
+      message_id: r.message_id,
+      reporter_id: r.reporter_id,
+      message_content: m?.content ?? null,
+      message_created_at: m?.created_at ?? null,
+      message_is_hidden: m?.is_hidden ?? null,
+      conversation_id: m?.conversation_id ?? convoFromReason(r.reason),
+      author_id: m?.sender_id ?? null,
+      author_name: author?.full_name ?? null,
+      author_email: author?.email ?? null,
+      reporter_name: reporter?.full_name ?? null,
+    } as MessageReportRow;
+  });
 }
 
 export async function hideMessage(messageId: string): Promise<boolean> {
