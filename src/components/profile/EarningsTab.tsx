@@ -38,7 +38,6 @@ const EarningsTab = () => {
 
       <BalanceBreakdown
         available={earnings.availableBalance}
-        pending={earnings.pendingPayout}
         withdrawn={earnings.totalWithdrawn}
         total={earnings.totalAllTime}
       />
