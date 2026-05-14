@@ -623,6 +623,7 @@ export type Database = {
           admin_notes: string | null
           attachment_id: string | null
           category: string
+          conversation_id: string | null
           created_at: string
           id: string
           message_id: string | null
@@ -638,6 +639,7 @@ export type Database = {
           admin_notes?: string | null
           attachment_id?: string | null
           category?: string
+          conversation_id?: string | null
           created_at?: string
           id?: string
           message_id?: string | null
@@ -653,6 +655,7 @@ export type Database = {
           admin_notes?: string | null
           attachment_id?: string | null
           category?: string
+          conversation_id?: string | null
           created_at?: string
           id?: string
           message_id?: string | null
@@ -669,6 +672,13 @@ export type Database = {
             columns: ["attachment_id"]
             isOneToOne: false
             referencedRelation: "message_attachments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reports_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
             referencedColumns: ["id"]
           },
           {
