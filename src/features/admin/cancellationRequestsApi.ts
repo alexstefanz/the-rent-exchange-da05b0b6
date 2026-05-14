@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { createOpsTicket, updateOpsTicketField, createTicketMessage } from "@/features/admin/opsTicketsApi";
 
 export interface PendingCancellationRequest {
   rental_id: string;
@@ -39,15 +40,113 @@ export async function adminApproveCancellation(rentalId: string, note?: string) 
     _note: note ?? null,
   });
   if (error) throw error;
-  const { data, error: fnErr } = await supabase.functions.invoke("mutual-cancel-rental", {
-    body: { rental_id: rentalId },
-  });
-  if (fnErr) throw fnErr;
-  if ((data as any)?.error) throw new Error((data as any).error);
+
+  // Load rental context for ticket
+  const { data: rental } = await supabase
+    .from("rentals")
+    .select("id, public_id, product_id, renter_id, owner_id, subtotal, platform_fee, payment_status, cancel_request_subject, cancel_request_reason, cancel_request_initiator_id")
+    .eq("id", rentalId)
+    .maybeSingle();
+
+  // Find or create refund ticket (avoid duplicates)
+  let ticketId: string | null = null;
+  let ticketPublicId: string | null = null;
+  try {
+    const { data: existing } = await (supabase.from("ops_tickets" as any) as any)
+      .select("id, public_id")
+      .eq("reservation_id", rentalId)
+      .contains("tags", ["cancel-refund"])
+      .not("status", "in", "(CLOSED,RESOLVED)")
+      .limit(1)
+      .maybeSingle();
+    if (existing?.id) {
+      ticketId = existing.id;
+      ticketPublicId = existing.public_id;
+    }
+  } catch { /* ignore */ }
+
+  if (!ticketId && rental) {
+    const initiatorIsRenter = rental.cancel_request_initiator_id === rental.renter_id;
+    const initiatorLabel = initiatorIsRenter ? "chiriaș" : "proprietar";
+    const requesterId = rental.cancel_request_initiator_id || rental.renter_id;
+    const subtotal = Number(rental.subtotal || 0);
+    const fee = Number(rental.platform_fee || 0);
+    const total = (subtotal + fee).toFixed(2);
+    const description = [
+      `Anulare aprobată mutual pentru rezervarea ${rental.public_id || rentalId}.`,
+      `Inițiator: ${initiatorLabel}.`,
+      rental.cancel_request_subject ? `Subiect: ${rental.cancel_request_subject}` : null,
+      rental.cancel_request_reason ? `Motiv: ${rental.cancel_request_reason}` : null,
+      `Sume: ${subtotal.toFixed(2)} RON + comision ${fee.toFixed(2)} RON = ${total} RON`,
+      `Status plată curent: ${rental.payment_status || "—"}`,
+      note ? `Notă admin: ${note}` : null,
+    ].filter(Boolean).join("\n");
+
+    try {
+      const ticket = await createOpsTicket({
+        title: `Refund anulare ${rental.public_id || rentalId.slice(0, 8)}`,
+        description,
+        category_group: "FINANCIAL",
+        category_type: "REFUND_REQUEST",
+        priority: "HIGH",
+        reservation_id: rentalId,
+        product_id: rental.product_id,
+        requester_user_id: requesterId,
+        rental_user_id: rental.renter_id,
+        owner_user_id: rental.owner_id,
+        tags: ["cancel-refund", "auto"],
+      });
+      ticketId = ticket.id;
+      ticketPublicId = ticket.public_id;
+      await updateOpsTicketField(ticketId, "status", "NEW", "IN_PROGRESS", "STATUS_CHANGED");
+    } catch (e) {
+      console.error("[adminApproveCancellation] ticket create failed", e);
+    }
+  }
+
+  // Process refund via edge function
+  let refundData: any = null;
+  let refundError: Error | null = null;
+  try {
+    const { data, error: fnErr } = await supabase.functions.invoke("mutual-cancel-rental", {
+      body: { rental_id: rentalId },
+    });
+    if (fnErr) throw fnErr;
+    if ((data as any)?.error) throw new Error((data as any).error);
+    refundData = data;
+  } catch (e: any) {
+    refundError = e instanceof Error ? e : new Error(String(e?.message || e));
+  }
+
+  // Update ticket based on refund outcome
+  if (ticketId) {
+    if (refundError) {
+      try {
+        await createTicketMessage(ticketId, `❌ Refund automat a eșuat: ${refundError.message}. Necesită intervenție manuală.`, false, "ADMIN");
+      } catch { /* ignore */ }
+    } else {
+      const ps = (refundData as any)?.payment_status;
+      const msg = ps === "voided"
+        ? "✅ Refund procesat automat: hold-ul Stripe a fost anulat înainte de capture (payment_status = voided)."
+        : ps === "refunded"
+          ? "✅ Refund procesat automat: suma completă a fost returnată chiriașului (payment_status = refunded)."
+          : `✅ Refund procesat automat (payment_status = ${ps || "n/a"}).`;
+      try {
+        await createTicketMessage(ticketId, msg, false, "ADMIN");
+        await updateOpsTicketField(ticketId, "status", "IN_PROGRESS", "RESOLVED", "REFUND_COMPLETED");
+      } catch (e) {
+        console.error("[adminApproveCancellation] ticket resolve failed", e);
+      }
+    }
+  }
+
+  if (refundError) throw refundError;
+
   supabase.functions.invoke("notify-rental-event", {
     body: { rental_id: rentalId, event_key: "cancel_request_approved" },
   }).catch(() => {});
-  return data;
+
+  return { ...refundData, ticket_id: ticketId, ticket_public_id: ticketPublicId };
 }
 
 export async function adminRejectCancellation(rentalId: string, note?: string) {
@@ -72,14 +171,40 @@ export async function openAdminConversation(otherUserId: string, productId: stri
   const adminId = userData?.user?.id;
   if (!adminId) throw new Error("unauthenticated");
 
-  // Try to find an existing conversation between admin (as buyer) and the other user (as owner) for this product.
-  if (productId) {
+  // Reuse existing admin↔user conversation tied to this rental if any
+  if (rentalId) {
+    const { data: existingForRental } = await supabase
+      .from("conversations")
+      .select("id, buyer_id, owner_id")
+      .eq("rentals_id", rentalId);
+    const match = (existingForRental || []).find(
+      (c: any) =>
+        (c.buyer_id === adminId && c.owner_id === otherUserId) ||
+        (c.owner_id === adminId && c.buyer_id === otherUserId)
+    );
+    if (match) return (match as any).id;
+  }
+
+  // Ensure productId is present (conversations.product_id is NOT NULL)
+  let resolvedProductId = productId;
+  if (!resolvedProductId && rentalId) {
+    const { data: rental } = await supabase
+      .from("rentals")
+      .select("product_id")
+      .eq("id", rentalId)
+      .maybeSingle();
+    resolvedProductId = rental?.product_id ?? null;
+  }
+  if (!resolvedProductId) throw new Error("Produsul asociat rezervării nu a fost găsit.");
+
+  // Fallback: existing admin-initiated conversation for the same product (no rental)
+  if (!rentalId) {
     const { data: existing } = await supabase
       .from("conversations")
       .select("id")
       .eq("buyer_id", adminId)
       .eq("owner_id", otherUserId)
-      .eq("product_id", productId)
+      .eq("product_id", resolvedProductId)
       .maybeSingle();
     if (existing?.id) return existing.id;
   }
@@ -87,7 +212,7 @@ export async function openAdminConversation(otherUserId: string, productId: stri
   const insertPayload: any = {
     buyer_id: adminId,
     owner_id: otherUserId,
-    product_id: productId,
+    product_id: resolvedProductId,
     rentals_id: rentalId,
   };
   const { data: created, error } = await supabase
