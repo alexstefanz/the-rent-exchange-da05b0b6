@@ -51,8 +51,19 @@ serve(async (req) => {
     if (rErr || !rental) {
       return new Response(JSON.stringify({ error: "rental_not_found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    // Allow renter, owner, or admin
+    let isAdmin = false;
     if (rental.renter_id !== userId && rental.owner_id !== userId) {
-      return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      const { data: roleRow } = await admin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId)
+        .eq("role", "admin")
+        .maybeSingle();
+      isAdmin = !!roleRow;
+      if (!isAdmin) {
+        return new Response(JSON.stringify({ error: "forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
     }
     if (rental.cancel_request_status !== "approved") {
       return new Response(JSON.stringify({ error: "not_approved" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
