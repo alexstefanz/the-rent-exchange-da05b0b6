@@ -1613,6 +1613,7 @@ export type Database = {
           status: string
           subtotal: number
           updated_at: string | null
+          wallet_credit_applied: number
         }
         Insert: {
           authorized_at?: string | null
@@ -1676,6 +1677,7 @@ export type Database = {
           status?: string
           subtotal: number
           updated_at?: string | null
+          wallet_credit_applied?: number
         }
         Update: {
           authorized_at?: string | null
@@ -1739,6 +1741,7 @@ export type Database = {
           status?: string
           subtotal?: number
           updated_at?: string | null
+          wallet_credit_applied?: number
         }
         Relationships: [
           {
@@ -2210,6 +2213,36 @@ export type Database = {
           created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallet_ledger: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          kind: string
+          metadata: Json | null
+          rental_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          kind: string
+          metadata?: Json | null
+          rental_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          metadata?: Json | null
+          rental_id?: string | null
           user_id?: string
         }
         Relationships: []
@@ -2762,6 +2795,16 @@ export type Database = {
           reviews_count: number
         }[]
       }
+      get_user_wallet_balance: {
+        Args: { _user_id: string }
+        Returns: {
+          available: number
+          pending_withdrawals: number
+          total_earnings: number
+          total_withdrawn: number
+          wallet_spent: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2889,6 +2932,7 @@ export type Database = {
         Args: { _phase: string; _reason: string; _rental_id: string }
         Returns: undefined
       }
+      pay_rental_with_wallet: { Args: { _rental_id: string }; Returns: Json }
       pick_admin_for_ticket_category: {
         Args: { p_group: string }
         Returns: string

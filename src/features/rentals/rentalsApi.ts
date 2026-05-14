@@ -149,6 +149,19 @@ export async function requestMutualCancellation(rentalId: string, subject: strin
   return data;
 }
 
+/** Pay an accepted rental fully from the renter's wallet balance. */
+export async function payRentalWithWallet(rentalId: string) {
+  const { data, error } = await supabase.rpc("pay_rental_with_wallet" as any, {
+    _rental_id: rentalId,
+  });
+  if (error) throw error;
+  // Fire post-payment notifications, mirroring Stripe success path.
+  supabase.functions.invoke("notify-rental-event", {
+    body: { rental_id: rentalId, event_key: "payment_succeeded" },
+  }).catch((e) => console.warn("notify wallet payment_succeeded failed", e));
+  return data as { ok: boolean; amount_charged: number; wallet_remaining: number };
+}
+
 /** Initiator withdraws their pending cancellation request. */
 export async function withdrawCancellationRequest(rentalId: string) {
   const { data, error } = await supabase.rpc("withdraw_cancellation_request", {
