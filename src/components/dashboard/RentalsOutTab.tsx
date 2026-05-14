@@ -355,15 +355,33 @@ const RentalsOutTab = () => {
           <DialogHeader>
             <DialogTitle>Solicită anularea cererii</DialogTitle>
             <DialogDescription>
-              Trimitem o cerere de anulare către chiriaș pentru „{cancelDialogRental?.product_title}". Dacă acceptă, banii (inclusiv comisionul) îi sunt rambursați integral.
+              Cererea va fi revizuită de un admin. La aprobare, banii (inclusiv comisionul) sunt rambursați integral chiriașului pentru „{cancelDialogRental?.product_title}".
             </DialogDescription>
           </DialogHeader>
-          <Textarea
-            placeholder="Motivul anulării (obligatoriu)"
-            value={cancelReason}
-            onChange={(e) => setCancelReason(e.target.value)}
-            rows={3}
-          />
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="cancel-subject-owner">Subiect</Label>
+              <Input
+                id="cancel-subject-owner"
+                placeholder="Ex: Indisponibilitate produs"
+                value={cancelSubject}
+                onChange={(e) => setCancelSubject(e.target.value)}
+                maxLength={120}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="cancel-reason-owner">Motivul anulării</Label>
+              <Textarea
+                id="cancel-reason-owner"
+                placeholder="Descrie pe scurt motivul (min. 5 caractere)"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                rows={3}
+                className="mt-1"
+              />
+            </div>
+          </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setCancelDialogRental(null)}>Renunță</Button>
             <Button
