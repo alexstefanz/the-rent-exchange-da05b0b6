@@ -25,7 +25,6 @@ import MobileStickyBookingBar from "@/components/product/MobileStickyBookingBar"
 import OwnerTrustCard from "@/components/product/OwnerTrustCard";
 import ProductInfoAccordion from "@/components/product/ProductInfoAccordion";
 import RentalProtection from "@/components/product/RentalProtection";
-import HowItWorksMini from "@/components/product/HowItWorksMini";
 import SocialProofStrip from "@/components/product/SocialProofStrip";
 import LocationCard from "@/components/product/LocationCard";
 import ReviewSummaryCard from "@/components/product/ReviewSummaryCard";
@@ -340,8 +339,6 @@ const ProductDetail = () => {
             />
 
             <RentalProtection />
-
-            <HowItWorksMini />
 
             <LocationCard address={product.pickup_address || location} city={product.location_city} />
 
