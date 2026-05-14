@@ -1,24 +1,45 @@
-## Plan
+# Plan: "Produsele mele" — tabs + stats simplificat
 
-Remove the "În așteptare" (pending) state entirely from the wallet. All owner payouts go straight into "Disponibil" the moment the rental record exists with an owner_payout, with no holding state.
+## 1. Redenumire "Anunțurile mele" → "Produsele mele"
+Înlocuiesc label-ul în cele 3 locuri unde apare în navigație (header-ul paginii e deja "Produsele mele"):
+- `src/data/uxCopy.ts` → `myListings` devine `{ ro: "Produsele mele", en: "My Products" }`
+- `src/components/layout/mobile-drawer/MobileDrawer.tsx` → link `/anunturi`
+- `src/components/layout/AccountHubMenu.tsx` → item meniu cont
 
-### Changes
+## 2. Stats bar simplificat (`ListingsStatsBar.tsx`)
+Păstrez **doar 4 carduri**, în ordinea cerută:
+1. Total
+2. Active
+3. În verificare
+4. Cereri noi
 
-**1. `src/hooks/useEarnings.ts`**
-- Drop the `pendingPayout` accumulator and the `pendingPayout` field from `EarningsData` (and its initial value).
-- `availableBalance` becomes `totalAllTime - totalWithdrawn - pendingWithdrawals` (no pending subtracted).
-- Per-row tx `status` mapping: keep `cancelled` as cancelled, everything else → `available` (drop the `held` case).
+Șterg: Drafturi, Ascunse, Respinse, Câștiguri.
 
-**2. `src/components/earnings/BalanceBreakdown.tsx`**
-- Remove the `pending` prop and the second card.
-- Grid becomes 3 columns: Disponibil / Retras / Total câștiguri (`grid-cols-3` on `sm:`, `grid-cols-1` or `grid-cols-3` on mobile).
+Grid devine `grid-cols-2 sm:grid-cols-4` (fără scroll orizontal pe mobil — încap 2×2).
 
-**3. `src/components/profile/EarningsTab.tsx`**
-- Drop `pending={earnings.pendingPayout}` from the `<BalanceBreakdown>` call.
+**Cardurile devin clickabile**: click pe un card setează tab-ul activ corespunzător (Total = `all`, Active = `active`, În verificare = `pending`, Cereri noi = nu filtrează produse, ci redirect la pagina de cereri sau scroll, vezi mai jos). Cardul activ primește `ring-2 ring-primary` + `border-primary`.
 
-**4. `src/components/earnings/statusBadge.tsx` & `PayoutTimeline.tsx`**
-- Leave the `pending`/`held` enum values in place (not breaking), but they will simply no longer be emitted by `useEarnings`. No UI will surface them. (No edits needed unless they're rendered elsewhere — quick check confirms they're driven only by `useEarnings`.)
+## 3. Tabs pentru produse (în `ListingsPage.tsx`)
+Adaug un component `<ListingsTabs>` deasupra grilei de produse cu tab-urile:
+- **Toate** (badge: total)
+- **Active** (badge: active)
+- **În verificare** (badge: pending)
+- **Ascunse** (badge: hidden) — păstrat doar ca tab, nu ca stat card
+- **Respinse** (badge: rejected) — la fel
 
-### Out of scope
-- Backend / Stripe capture flow stays unchanged (escrow still happens server-side); only the wallet UI's pending categorization is removed.
-- Withdrawal flow unchanged.
+Tab-ul activ este sincronizat cu `filters.status`. Click pe un stat-card de mai sus selectează tab-ul, click pe tab actualizează `filters.status`. Astfel utilizatorul vede o singură categorie odată.
+
+Elimin selectorul "Status" din `ListingsFilterBar` (devine redundant cu tab-urile) — păstrez Categorie / Oraș / Sortare.
+
+## 4. "Cereri noi"
+Cardul "Cereri noi" rămâne ca link/quick-action: la click navighează la `/inchirieri` (rentals owner) cu un filtru pentru cereri pending. Nu este un tab pe pagina de produse — sunt rezervări, nu produse.
+
+## Detalii tehnice
+- `ListingsStatsBar` primește un prop nou `activeStatus` și callback `onSelect(status)`.
+- `ListingsFilterBar`: scot `StatusSelect` din desktop și sheet mobil; `ListingsStatusFilter` rămâne în types pentru `filters.status`.
+- Nu modific RPC `get_owner_listings_stats` — pur și simplu nu mai afișez câmpurile `drafts`, `hidden`, `rejected`, `earnings_total` în statsbar (rămân disponibile pentru badge-urile pe taburi).
+- Tab-urile folosesc `Tabs` din `@/components/ui/tabs` pentru consistență.
+
+## Out of scope
+- Logica back-end / RPC.
+- Pagini de inchirieri / cereri.
