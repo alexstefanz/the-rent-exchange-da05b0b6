@@ -70,11 +70,10 @@ import {
 
 const STEPS: StepDef[] = [
   { id: 1, label: "Categorie", shortLabel: "Categorie" },
-  { id: 2, label: "Detalii", shortLabel: "Detalii" },
-  { id: 3, label: "Fotografii", shortLabel: "Fotografii" },
-  { id: 4, label: "Locație", shortLabel: "Locație" },
-  { id: 5, label: "Preț & disponibilitate", shortLabel: "Preț" },
-  { id: 6, label: "Verificare & publicare", shortLabel: "Publică" },
+  { id: 2, label: "Fotografii & detalii", shortLabel: "Detalii" },
+  { id: 3, label: "Locație", shortLabel: "Locație" },
+  { id: 4, label: "Preț & disponibilitate", shortLabel: "Preț" },
+  { id: 5, label: "Verificare & publicare", shortLabel: "Publică" },
 ];
 
 interface Props {
