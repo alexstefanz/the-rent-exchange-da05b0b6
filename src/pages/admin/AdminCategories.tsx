@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FolderTree, Plus, Loader2, Pencil, Trash2, ToggleLeft, ToggleRight, icons } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -235,8 +236,14 @@ const AdminCategories = () => {
             <DialogTitle>{catDialog.editing ? "Editează Categorie" : "Categorie Nouă"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div><Label>Nume (RO)</Label><Input value={catForm.name} onChange={(e) => setCatForm({ ...catForm, name: e.target.value })} /></div>
-            <div><Label>Nume (EN)</Label><Input value={catForm.name_en} onChange={(e) => setCatForm({ ...catForm, name_en: e.target.value })} /></div>
+            <div className="rounded-lg border p-3 space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">🇷🇴 Română</p>
+              <div><Label>Nume (RO)</Label><Input value={catForm.name} onChange={(e) => setCatForm({ ...catForm, name: e.target.value })} /></div>
+            </div>
+            <div className="rounded-lg border p-3 space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">🇬🇧 English</p>
+              <div><Label>Name (EN)</Label><Input value={catForm.name_en} onChange={(e) => setCatForm({ ...catForm, name_en: e.target.value })} /></div>
+            </div>
             <div><Label>Icon (Lucide)</Label><LucideIconPicker value={catForm.icon} onChange={(v) => setCatForm({ ...catForm, icon: v })} /></div>
             <div><Label>Ordine sortare</Label><Input type="number" value={catForm.sort_order} onChange={(e) => setCatForm({ ...catForm, sort_order: Number(e.target.value) })} /></div>
           </div>
@@ -251,14 +258,21 @@ const AdminCategories = () => {
 
       {/* Subcategory Dialog */}
       <Dialog open={subDialog.open} onOpenChange={(open) => setSubDialog({ ...subDialog, open })}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{subDialog.editing ? "Editează Subcategorie" : "Subcategorie Nouă"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div><Label>Nume (RO)</Label><Input value={subForm.name} onChange={(e) => setSubForm({ ...subForm, name: e.target.value })} /></div>
-            <div><Label>Nume (EN)</Label><Input value={subForm.name_en} onChange={(e) => setSubForm({ ...subForm, name_en: e.target.value })} /></div>
-            <div><Label>Descriere (RO)</Label><Input value={subForm.description} onChange={(e) => setSubForm({ ...subForm, description: e.target.value })} /></div>
+            <div className="rounded-lg border p-3 space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">🇷🇴 Română</p>
+              <div><Label>Nume (RO)</Label><Input value={subForm.name} onChange={(e) => setSubForm({ ...subForm, name: e.target.value })} /></div>
+              <div><Label>Descriere (RO)</Label><Textarea rows={3} value={subForm.description} onChange={(e) => setSubForm({ ...subForm, description: e.target.value })} /></div>
+            </div>
+            <div className="rounded-lg border p-3 space-y-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">🇬🇧 English</p>
+              <div><Label>Name (EN)</Label><Input value={subForm.name_en} onChange={(e) => setSubForm({ ...subForm, name_en: e.target.value })} /></div>
+              <div><Label>Description (EN)</Label><Textarea rows={3} value={subForm.description_en} onChange={(e) => setSubForm({ ...subForm, description_en: e.target.value })} /></div>
+            </div>
             <div><Label>URL Imagine</Label><Input value={subForm.image_url} onChange={(e) => setSubForm({ ...subForm, image_url: e.target.value })} /></div>
             <div><Label>Ordine sortare</Label><Input type="number" value={subForm.sort_order} onChange={(e) => setSubForm({ ...subForm, sort_order: Number(e.target.value) })} /></div>
           </div>
