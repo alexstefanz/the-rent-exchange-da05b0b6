@@ -15,6 +15,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import StatsCard from "@/components/admin/StatsCard";
 import DashboardCategoriesWidget from "@/components/admin/DashboardCategoriesWidget";
 import { useAdminStats, useAdminRentals } from "@/hooks/queries/useAdminStats";
+import { useAdminNotificationSummary } from "@/hooks/queries/useAdminNotifications";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
@@ -40,6 +41,7 @@ const statusLabels: Record<string, string> = {
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { data: stats, isLoading: statsLoading } = useAdminStats();
+  const { data: summary } = useAdminNotificationSummary();
   const { data: recentRentals, isLoading: rentalsLoading } = useAdminRentals(undefined, 5);
 
   const formatCurrency = (value: number) => {
