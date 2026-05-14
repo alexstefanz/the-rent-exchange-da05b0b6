@@ -479,13 +479,6 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
         badge={signals?.activeRentalsAsOwner || undefined}
         onNav={handleNav}
       />
-      <NavRow
-        to="/rezervari"
-        icon={CalendarCheck}
-        label={t("Rezervări", "Reservations")}
-        badge={signals?.activeRentalsAsRenter || undefined}
-        onNav={handleNav}
-      />
 
       <SectionLabel>{t("Cont", "Account")}</SectionLabel>
       <NavRow
