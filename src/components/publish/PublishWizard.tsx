@@ -1214,16 +1214,16 @@ const Step6Review = ({
           value={data.condition ? CONDITION_LABELS[data.condition].ro : "—"}
           onEdit={() => onJump(2)}
         />
-        <ReviewRow label="Fotografii" value={`${data.images.length} imagini`} onEdit={() => onJump(3)} />
+        <ReviewRow label="Fotografii" value={`${data.images.length} imagini`} onEdit={() => onJump(2)} />
         <ReviewRow
           label="Locație"
           value={`${data.location_city}${data.location_county ? `, ${data.location_county}` : ""}`}
-          onEdit={() => onJump(4)}
+          onEdit={() => onJump(3)}
         />
         <ReviewRow
           label="Preț"
           value={`${owner} RON/zi · client ${calculateClientPrice(owner, feePercent)} RON`}
-          onEdit={() => onJump(5)}
+          onEdit={() => onJump(4)}
         />
         <ReviewRow
           label="Durată închiriere"
@@ -1232,7 +1232,7 @@ const Step6Review = ({
               ? `${data.min_rental_days || 1} – ${data.max_rental_days} zile`
               : `min. ${data.min_rental_days || 1} ${(data.min_rental_days || 1) === 1 ? "zi" : "zile"}`
           }
-          onEdit={() => onJump(5)}
+          onEdit={() => onJump(4)}
         />
 
         {score.total < 60 && (
