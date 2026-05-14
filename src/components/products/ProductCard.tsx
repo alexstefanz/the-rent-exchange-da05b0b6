@@ -189,7 +189,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
           <MapPin className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
           <span className="truncate">{location}</span>
         </div>
-        <div className="mt-3.5 mt-auto pt-3.5">
+        <div className="mt-auto pt-3.5">
           <span className="font-heading text-lg md:text-xl font-bold text-primary">
             {clientPrice} RON
           </span>
