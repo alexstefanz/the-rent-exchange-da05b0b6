@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Wallet, ArrowUpRight, TrendingUp, Lock } from "lucide-react";
+import { Wallet, ArrowUpRight, TrendingUp, Lock, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -81,6 +81,18 @@ export const WalletHeroCard = ({ available, thisMonth, hasMethod, onWithdraw }: 
                 +{thisMonth.toFixed(2)} RON
               </span>
               <span className="text-muted-foreground">{t("luna aceasta", "this month")}</span>
+            </div>
+          )}
+
+          {available > 0 && (
+            <div className="flex items-start gap-1.5 text-xs text-muted-foreground pt-1 max-w-md">
+              <ShoppingBag className="h-3.5 w-3.5 mt-0.5 text-primary" />
+              <span>
+                {t(
+                  "Poți folosi soldul pentru a plăti închirieri pe site. La pasul de plată va apărea opțiunea „Plătește din wallet”.",
+                  "You can use this balance to pay for rentals on the site. A “Pay from wallet” option appears at checkout."
+                )}
+              </span>
             </div>
           )}
         </div>
