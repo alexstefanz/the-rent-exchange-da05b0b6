@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
+import { useAdminNotificationSummary } from "@/hooks/queries/useAdminNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import { approveProduct, rejectProduct } from "@/features/admin/adminProductsApi";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -68,6 +69,9 @@ const AdminApprovals = () => {
   const [imageIndices, setImageIndices] = useState<Record<string, number>>({});
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") === "cancellations" ? "cancellations" : "products";
+  const { data: notifSummary } = useAdminNotificationSummary();
+  const pendingProductsCount = Number(notifSummary?.pending_products || 0);
+  const pendingCancellationsCount = Number(notifSummary?.pending_cancellations || 0);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin-pending-products", searchQuery],
@@ -127,8 +131,22 @@ const AdminApprovals = () => {
         <h1 className="text-2xl font-bold text-foreground">Confirmări / Anulări</h1>
         <Tabs value={activeTab} onValueChange={(v) => setSearchParams((prev) => { const p = new URLSearchParams(prev); p.set("tab", v); return p; }, { replace: true })} className="space-y-4">
           <TabsList>
-            <TabsTrigger value="products">Anunțuri</TabsTrigger>
-            <TabsTrigger value="cancellations">Anulări rezervări</TabsTrigger>
+            <TabsTrigger value="products" className="gap-2">
+              Anunțuri
+              {pendingProductsCount > 0 && (
+                <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-semibold text-destructive-foreground">
+                  {pendingProductsCount > 9 ? "9+" : pendingProductsCount}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="cancellations" className="gap-2">
+              Anulări rezervări
+              {pendingCancellationsCount > 0 && (
+                <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-semibold text-destructive-foreground">
+                  {pendingCancellationsCount > 9 ? "9+" : pendingCancellationsCount}
+                </span>
+              )}
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="products" className="space-y-6">
         <div className="flex items-center gap-4">
