@@ -46,6 +46,7 @@ export interface RentalFullDetail {
   return_pv_renter_signed_at: string | null;
   cancel_request_status?: string | null;
   cancel_request_initiator?: string | null;
+  cancel_request_subject?: string | null;
   cancel_request_reason?: string | null;
   cancel_request_created_at?: string | null;
   cancel_request_responded_at?: string | null;
@@ -61,7 +62,7 @@ export async function getRentalFullDetail(publicId: string): Promise<RentalFullD
   try {
     const { data: c } = await supabase
       .from("rentals")
-      .select("cancel_request_status, cancel_request_initiator, cancel_request_reason, cancel_request_created_at, cancel_request_responded_at, cancel_request_response_note")
+      .select("cancel_request_status, cancel_request_initiator, cancel_request_subject, cancel_request_reason, cancel_request_created_at, cancel_request_responded_at, cancel_request_response_note")
       .eq("id", (row as any).id)
       .maybeSingle();
     return { ...(row as RentalFullDetail), ...(c || {}) } as RentalFullDetail;
