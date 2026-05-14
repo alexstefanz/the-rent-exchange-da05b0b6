@@ -118,7 +118,7 @@ const BookingCard = ({
 
       <div className="mb-3 flex items-baseline justify-between gap-2 flex-wrap">
         <div className="flex items-baseline gap-1">
-          <span className="font-heading text-xl font-bold text-primary">{clientPrice} RON</span>
+          <span className="font-heading text-xl font-bold text-primary">{formatPriceShort(clientPrice)} RON</span>
           <span className="text-xs text-muted-foreground">{copy.common.perDay}</span>
         </div>
       </div>
@@ -161,7 +161,7 @@ const BookingCard = ({
                 ({rentalDays} {language === "ro" ? (rentalDays === 1 ? "zi" : "zile") : (rentalDays === 1 ? "day" : "days")})
               </span>
             </span>
-            <span className="text-primary">{totalPrice} RON</span>
+            <span className="text-primary">{formatPriceShort(totalPrice)} RON</span>
           </div>
         </div>
       )}
