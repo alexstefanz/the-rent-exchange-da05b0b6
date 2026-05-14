@@ -82,7 +82,7 @@ const ListingsFilterBar = ({ filters, onChange, categories, cities, resultCount 
         </div>
 
         <div className="hidden lg:flex items-center gap-2">
-          {StatusSelect}{CategorySelect}{CitySelect}{SortSelect}
+          {CategorySelect}{CitySelect}{SortSelect}
         </div>
 
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -98,7 +98,6 @@ const ListingsFilterBar = ({ filters, onChange, categories, cities, resultCount 
           <SheetContent side="bottom" className="rounded-t-2xl">
             <SheetHeader><SheetTitle>{t("Filtre și sortare", "Filters & sorting")}</SheetTitle></SheetHeader>
             <div className="mt-4 space-y-3">
-              <div><label className="mb-1 block text-xs font-medium text-muted-foreground">{t("Status", "Status")}</label>{StatusSelect}</div>
               <div><label className="mb-1 block text-xs font-medium text-muted-foreground">{t("Categorie", "Category")}</label>{CategorySelect}</div>
               <div><label className="mb-1 block text-xs font-medium text-muted-foreground">{t("Oraș", "City")}</label>{CitySelect}</div>
               <div><label className="mb-1 block text-xs font-medium text-muted-foreground">{t("Sortare", "Sort")}</label>{SortSelect}</div>
