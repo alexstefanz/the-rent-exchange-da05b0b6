@@ -356,8 +356,6 @@ const AdminApprovals = () => {
             })}
           </div>
         )}
-      </div>
-
           </TabsContent>
           <TabsContent value="cancellations">
             <AdminCancellationRequestsPanel />
