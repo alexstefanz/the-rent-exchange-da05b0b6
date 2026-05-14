@@ -61,20 +61,20 @@ const TrustBarPremium = () => {
     <section className="relative -mt-8 z-30">
       <div className="container">
         <div className="rounded-2xl bg-card/90 backdrop-blur-xl border border-border/60 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.18)] p-3 md:p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
             {items.map((it, i) => (
               <div
                 key={i}
-                className="group flex items-center gap-3 rounded-xl px-3 py-2.5 hover:bg-primary/5 transition-colors"
+                className="group flex items-center gap-2.5 md:gap-3 rounded-xl px-2.5 py-2 md:px-3 md:py-2.5 hover:bg-primary/5 transition-colors"
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 group-hover:scale-110 transition-transform">
-                  <it.icon className={`h-5 w-5 ${it.tone}`} />
+                <div className="flex h-9 w-9 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 group-hover:scale-110 transition-transform">
+                  <it.icon className={`h-4.5 w-4.5 md:h-5 md:w-5 ${it.tone}`} />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="font-heading text-sm md:text-base font-bold text-foreground leading-tight">
+                  <div className="font-heading text-sm md:text-base font-bold text-foreground leading-tight truncate">
                     {it.value}
                   </div>
-                  <div className="text-[11px] md:text-xs text-muted-foreground leading-tight">
+                  <div className="text-[11px] md:text-xs text-muted-foreground leading-tight line-clamp-2">
                     {it.label}
                   </div>
                 </div>

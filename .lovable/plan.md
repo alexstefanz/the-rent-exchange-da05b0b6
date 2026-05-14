@@ -1,12 +1,13 @@
-## Problem
-On product page, the "Ce e inclus" accordion always shows 4 default items (from `uxCopy.productIncludes`) when the owner left `included_items` empty. Should be hidden entirely.
+## Modificare TrustBarPremium (mobil)
 
-## Changes
+În `src/components/home/TrustBarPremium.tsx`, schimb gridul de la 1 coloană pe mobil → 2 coloane, păstrând 4 pe desktop.
 
-1. `src/components/product/ProductIncludes.tsx`
-   - Remove the `defaultItems` fallback. If `items` is empty/undefined, return `null`.
+**Schimbare:**
+- `grid-cols-1 md:grid-cols-4` → `grid-cols-2 md:grid-cols-4`
+- ajustez padding/gap pentru a încăpea bine pe 390px: `gap-2` rămâne, iar pe item reduc `px-3 py-2.5` la `px-2.5 py-2` pe mobil
+- icon container rămâne `h-10 w-10`, dar pe mobil îl fac `h-9 w-9` ca să dea aer textului
+- textul valoare rămâne `text-sm md:text-base`, label `text-[11px]` — OK pentru 2 coloane
+- adaug `min-w-0` și `truncate` unde e nevoie ca să prevină overflow pe label-uri lungi ("Echipă reală 7 zile pe săptămână")
+- pentru label-urile lungi, permit 2 linii (`line-clamp-2`) în loc de truncate, ca să nu pierdem info
 
-2. `src/components/product/ProductInfoAccordion.tsx`
-   - Conditionally render the entire `included` AccordionItem only when `includedItems?.length > 0`.
-
-No other consumers of `ProductIncludes` need changes (only used here).
+Restul (containerul card, shadow, hover) rămâne neschimbat.
