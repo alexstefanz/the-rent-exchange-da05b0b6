@@ -111,6 +111,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         deposit_value: p.deposit_value ?? null,
         min_rental_preset: (p.min_rental_preset as MinRentalPreset) || "1_day",
         min_rental_days: p.min_rental_days ?? 1,
+        max_rental_days: p.max_rental_days ?? null,
         available_immediately: p.available_immediately ?? true,
         blocked_dates: p.blocked_dates || [],
         is_active: p.is_active ?? true,
@@ -203,6 +204,15 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       if (firstMsg) toast({ title: "Verifică datele", description: firstMsg, variant: "destructive" });
       return false;
     }
+    if (s === 5 && data.max_rental_days != null && data.max_rental_days < (data.min_rental_days || 1)) {
+      setErrors({ max_rental_days: "Maximul trebuie să fie ≥ minimul" });
+      toast({
+        title: "Verifică datele",
+        description: "Durata maximă trebuie să fie mai mare sau egală cu durata minimă.",
+        variant: "destructive",
+      });
+      return false;
+    }
     setErrors({});
     return true;
   };
@@ -272,6 +282,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         deposit_value: data.deposit_value,
         min_rental_days: data.min_rental_days,
         min_rental_preset: data.min_rental_preset,
+        max_rental_days: data.max_rental_days,
         available_immediately: data.available_immediately,
         blocked_dates: data.blocked_dates,
         quality_score: quality,
@@ -916,6 +927,53 @@ const Step5Pricing = ({
           )}
         </div>
 
+        {/* Rental duration limits */}
+        <div className="rounded-2xl border border-border bg-card p-5">
+          <Label className="text-sm font-semibold">Durata de închiriere</Label>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Tu decizi câte zile minim și (opțional) maxim ești dispus să închiriezi acest produs. Aceste limite se afișează vizibil pe pagina anunțului.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="min_rental_days" className="text-xs font-medium text-muted-foreground">
+                Minim (zile)
+              </Label>
+              <Input
+                id="min_rental_days"
+                type="number"
+                min={1}
+                value={data.min_rental_days ?? 1}
+                onChange={(e) => {
+                  const v = e.target.value === "" ? 1 : Math.max(1, Number(e.target.value));
+                  update("min_rental_days", v);
+                }}
+                className="mt-1 h-11"
+              />
+            </div>
+            <div>
+              <Label htmlFor="max_rental_days" className="text-xs font-medium text-muted-foreground">
+                Maxim (zile) <span className="text-muted-foreground/70">— opțional</span>
+              </Label>
+              <Input
+                id="max_rental_days"
+                type="number"
+                min={data.min_rental_days || 1}
+                value={data.max_rental_days ?? ""}
+                placeholder="Fără limită"
+                onChange={(e) =>
+                  update("max_rental_days", e.target.value === "" ? null : Math.max(1, Number(e.target.value)))
+                }
+                className="mt-1 h-11"
+              />
+            </div>
+          </div>
+          {data.max_rental_days != null && data.max_rental_days < (data.min_rental_days || 1) && (
+            <p className="mt-2 text-xs text-destructive">
+              Maximul trebuie să fie mai mare sau egal cu minimul.
+            </p>
+          )}
+        </div>
+
       </div>
     </div>
   );
@@ -999,8 +1057,12 @@ const Step6Review = ({
           onEdit={() => onJump(5)}
         />
         <ReviewRow
-          label="Durată minimă"
-          value={`${data.min_rental_days} ${data.min_rental_days === 1 ? "zi" : "zile"}`}
+          label="Durată închiriere"
+          value={
+            data.max_rental_days != null
+              ? `${data.min_rental_days || 1} – ${data.max_rental_days} zile`
+              : `min. ${data.min_rental_days || 1} ${(data.min_rental_days || 1) === 1 ? "zi" : "zile"}`
+          }
           onEdit={() => onJump(5)}
         />
 

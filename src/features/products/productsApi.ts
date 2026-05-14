@@ -29,6 +29,7 @@ export interface Product {
   deposit_value?: number | null;
   min_rental_days?: number | null;
   min_rental_preset?: string | null;
+  max_rental_days?: number | null;
   delivery_available?: boolean | null;
   delivery_fee?: number | null;
   delivery_radius_km?: number | null;
@@ -173,6 +174,7 @@ export interface PublishProductInput {
   deposit_value?: number | null;
   min_rental_days?: number;
   min_rental_preset?: string | null;
+  max_rental_days?: number | null;
   available_immediately?: boolean;
   blocked_dates?: string[];
   quality_score?: number;
@@ -212,6 +214,7 @@ export const createProduct = async (
     deposit_value: data.deposit_value ?? null,
     min_rental_days: data.min_rental_days ?? 1,
     min_rental_preset: data.min_rental_preset ?? null,
+    max_rental_days: data.max_rental_days ?? null,
     available_immediately: data.available_immediately ?? true,
     blocked_dates: data.blocked_dates || [],
     quality_score: data.quality_score ?? 0,

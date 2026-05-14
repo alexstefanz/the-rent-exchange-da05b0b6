@@ -367,6 +367,8 @@ const ProductDetail = () => {
                 isOwnProduct={isOwnProduct}
                 responseMinutes={extendedStats?.owner_response_minutes}
                 ownerVerified={!!extendedStats?.owner_kyc_verified}
+                minRentalDays={product.min_rental_days}
+                maxRentalDays={(product as any).max_rental_days ?? null}
               />
             </div>
           </div>
@@ -400,6 +402,8 @@ const ProductDetail = () => {
         isOwnProduct={isOwnProduct}
         responseMinutes={extendedStats?.owner_response_minutes}
         ownerVerified={!!extendedStats?.owner_kyc_verified}
+        minRentalDays={product.min_rental_days}
+        maxRentalDays={(product as any).max_rental_days ?? null}
       />
 
       {conversationId && (
