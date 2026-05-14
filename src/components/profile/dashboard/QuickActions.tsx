@@ -52,13 +52,13 @@ export function QuickActions({ unreadMessages, activeRentalsAsRenter, activeRent
       <Secondary
         to="/rezervari"
         icon={ShoppingBag}
-        label={t("Rezervări", "Reservations")}
+        label={t("Închirierile mele", "My rentals")}
         badge={activeRentalsAsRenter}
       />
       <Secondary
         to="/inchirieri"
         icon={PackageCheck}
-        label={t("Închirieri", "Lendings")}
+        label={t("Cereri primite", "Bookings received")}
         badge={activeRentalsAsOwner}
       />
       <Secondary
