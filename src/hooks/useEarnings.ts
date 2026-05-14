@@ -74,7 +74,7 @@ export const useEarnings = () => {
         supabase
           .from("rentals")
           .select(
-            "id, public_id, owner_payout, subtotal, platform_fee, payment_status, status, created_at, start_date, end_date, product_id, renter_id, products:product_id(title, images)"
+            "id, public_id, owner_payout, subtotal, platform_fee, payment_status, status, created_at, start_date, end_date, product_id, renter_id, is_test_payment, products:product_id(title, images)"
           )
           .eq("owner_id", user.id)
           .order("created_at", { ascending: false }),
@@ -113,8 +113,10 @@ export const useEarnings = () => {
         .filter((w) => w.status === "pending")
         .reduce((s, w) => s + w.amount, 0);
 
-      const list = (rentals || []).filter((r: any) =>
-        ["authorized", "paid", "captured"].includes(r.payment_status)
+      const list = (rentals || []).filter(
+        (r: any) =>
+          ["authorized", "paid", "captured"].includes(r.payment_status) &&
+          r.is_test_payment !== true
       );
 
       const renterIds = [...new Set((list as any[]).map((r) => r.renter_id).filter(Boolean))];
