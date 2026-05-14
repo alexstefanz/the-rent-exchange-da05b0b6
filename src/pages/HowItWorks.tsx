@@ -302,7 +302,7 @@ const HowItWorks = () => {
               <h2 className="mt-4 font-heading text-3xl font-bold text-white md:text-5xl">{p.ctaTitle}</h2>
               <p className="mx-auto mt-3 max-w-xl text-white/90">{p.ctaSubtitle}</p>
               <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-                <Button asChild size="lg" className="bg-background text-foreground hover:bg-background/90">
+                <Button asChild size="lg" className="bg-background text-foreground hover:bg-background/90 text-black bg-white">
                   <Link to="/cauta">{p.ctaRent}</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white">
