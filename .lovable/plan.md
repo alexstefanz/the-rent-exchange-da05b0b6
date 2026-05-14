@@ -1,42 +1,39 @@
-## Cauza
-Conversația `429bee57-...` chiar nu are niciun mesaj în DB (0 totale, 0 ascunse) — utilizatorul a deschis chat-ul și a apăsat "Raportează conversația" fără să existe vreun mesaj. Pagina admin funcționează corect, dar afișează "Niciun mesaj" pentru că nu există ce să afișeze.
+## Plan
 
-În plus, la nivel de schemă există o problemă structurală: rapoartele la nivel de conversație nu au `conversation_id` propriu — `InfoPanel.tsx:103` trimite `message_id: null` și injectează ID-ul în câmpul `reason` ca text (`"Conversation <uuid>"`). În admin recuperăm ID-ul cu regex pe `reason` (hack). Și când conversația are mesaje, nu vedem niciun context în panoul de raport.
+1. **Fix pentru datele afișate în report details**
+   - Pentru report-urile pe conversație, voi afișa ambii participanți cu nume, email și rol în conversație: `Raportat de`, `Utilizator raportat`, `Cumpărător`, `Proprietar`.
+   - Voi separa clar `Motiv report` (categoria selectată: Altceva/Fraudă/Hărțuire etc.) de `Detalii reporter`.
+   - Pentru report-urile vechi unde în `reason` apare doar `Conversation <uuid>`, nu voi mai afișa acel text ca motiv; îl voi trata ca detaliu tehnic ascuns/legacy.
+   - În conversația raportată voi afișa mesajele recente cu numele expeditorului, nu doar timestamp-ul.
 
-## Soluție
+2. **Raportarea conversației cu motiv real**
+   - Voi înlocui confirmarea simplă din panoul de chat cu un dialog similar celui de raportare mesaj.
+   - Utilizatorul va putea alege motivul report-ului și completa detalii opționale.
+   - La trimitere se va salva `conversation_id`, `reported_user_id` și categoria/motivul, nu doar conversația.
 
-### 1. Schemă DB (migration)
-- Adaug coloana `conversation_id uuid NULL REFERENCES conversations(id) ON DELETE SET NULL` în `message_reports`.
-- Index pe `(conversation_id)`.
-- Backfill: pentru rapoartele existente unde `conversation_id IS NULL`:
-  - dacă `message_id` există → ia `conversation_id` din `messages`;
-  - altfel extrage UUID din `reason` cu regex și setează.
-- RLS: păstrăm politicile actuale (admin RPC/role); doar adăugăm coloana în SELECT.
+3. **Schema backend pentru utilizator raportat și avertizări**
+   - Voi adăuga în `message_reports` un câmp `reported_user_id`, populat automat pentru report-urile noi.
+   - Voi face backfill pentru report-urile existente: dacă raportorul este buyer, utilizatorul raportat devine owner și invers.
+   - Voi crea un tabel securizat `user_warnings` pentru avertizări, vizibil/administabil doar de admini, iar utilizatorul avertizat își poate vedea propriile avertizări.
 
-### 2. Frontend — inserare raport conversație
-- `src/lib/chatMedia.ts` → `reportMessage` primește și `conversationId?: string` și îl trece la insert.
-- `src/components/messaging/InfoPanel.tsx:103` → `reportMessage({ conversationId, reason: details })` în loc de hack-ul cu `Conversation ${id}` în `reason`.
+4. **Fix pentru ban din Reports**
+   - Pentru conversații raportate, banarea va folosi `reported_user_id`, nu `author_id` (care e gol când nu există mesaj selectat).
+   - Butonul/checkbox-ul va arăta explicit pe cine banează: numele utilizatorului raportat.
+   - Voi trata erorile de banare cu mesaj clar în UI, ca să nu pară că report-ul s-a rezolvat dacă banarea a eșuat.
 
-### 3. Admin — listare și afișare
-- `src/features/admin/messageReportsApi.ts`:
-  - Selectez direct `conversation_id` din `message_reports` (elimin regex-ul din `convoFromReason`).
-  - Pentru rapoartele fără `message_id`, fac un fetch separat al **ultimelor 5 mesaje** din `conversation_id` și le returnez ca `recent_messages`.
-- `src/pages/admin/AdminReports.tsx` (panoul detail):
-  - Dacă `message_content` este null și avem `conversation_id`, afișez secțiunea "Ultimele mesaje din conversație" (listă scurtă cu autor + conținut + ora) ca să avem context vizibil înainte să dăm click pe link-ul de conversație.
-  - Dacă conversația e goală, afișez explicit "Conversație raportată fără mesaje".
+5. **Variantă de avertizare**
+   - În acțiuni moderare voi adăuga flux real de `Avertizează utilizatorul raportat`.
+   - La avertizare se creează înregistrare în `user_warnings` și o notificare in-app către utilizator, cu motivul și notele adminului.
+   - Report-ul se marchează rezolvat cu acțiunea `warning` doar după ce avertizarea s-a salvat.
 
-### 4. Tipuri
-- Adaug `conversation_id` în interfața `MessageReportRow` și `recent_messages?: { id; content; sender_id; created_at }[]`.
+## Fișiere vizate
 
-### Fișiere atinse
-- migration SQL nouă (ALTER TABLE + backfill + index)
-- `src/lib/chatMedia.ts`
-- `src/components/messaging/InfoPanel.tsx`
-- `src/features/admin/messageReportsApi.ts`
-- `src/pages/admin/AdminReports.tsx`
+- `supabase/migrations/...sql` — câmp `reported_user_id`, tabel `user_warnings`, RLS și backfill.
+- `src/lib/chatMedia.ts` — suport pentru `category`, `reportedUserId`, `conversationId`.
+- `src/components/messaging/InfoPanel.tsx` — dialog de raportare conversație cu motiv/detalii.
+- `src/features/admin/messageReportsApi.ts` — hidratare participanți, utilizator raportat, mesaje recente cu nume, funcție `warnUser`.
+- `src/pages/admin/AdminReports.tsx` — UI complet pentru detalii, ban pe utilizatorul corect și avertizare.
 
-### Ce NU se atinge
-- `AdminConversationDetail.tsx` — funcționează corect; rămâne ca fallback prin link.
-- RLS pe `messages` — nu schimbăm; deja admin are acces.
+## Notă importantă
 
-Rezultat: rapoartele de conversație au context vizibil direct în panoul de moderare; nu mai ajunge moderatorul pe o pagină goală fără să știe ce a raportat utilizatorul.
+Report-ul din screenshot are conversația `429bee...`, iar baza de date arată că acea conversație are 0 mesaje. De aceea nu poate afișa text de conversație, dar după schimbare vei vedea cel puțin participanții, utilizatorul raportat, motivul real și acțiunile corecte de ban/avertizare.
