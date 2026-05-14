@@ -367,10 +367,27 @@ const RentalDetailPage = () => {
                   )}
                 </p>
               </div>
-              <Button size="lg" onClick={handlePay} disabled={paying} className="shadow-lg shadow-primary/20">
-                {paying ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CreditCard className="h-4 w-4 mr-2" />}
-                {t(`Plătește ${rental.subtotal} RON`, `Pay ${rental.subtotal} RON`)}
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button size="lg" onClick={handlePay} disabled={paying || payingWallet} className="shadow-lg shadow-primary/20">
+                  {paying ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CreditCard className="h-4 w-4 mr-2" />}
+                  {t(`Plătește ${rental.subtotal} RON`, `Pay ${rental.subtotal} RON`)}
+                </Button>
+                {wallet && wallet.available >= Number(rental.subtotal) && (
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={handlePayWithWallet}
+                    disabled={paying || payingWallet}
+                    className="border-primary/40 text-primary hover:bg-primary/5"
+                  >
+                    {payingWallet ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wallet className="h-4 w-4 mr-2" />}
+                    {t(
+                      `Plătește din wallet (${wallet.available.toFixed(2)} RON disponibili)`,
+                      `Pay from wallet (${wallet.available.toFixed(2)} RON available)`
+                    )}
+                  </Button>
+                )}
+              </div>
             </div>
             {isAdmin && (
               <div className="mt-4 rounded-xl border border-dashed border-yellow-400 bg-yellow-50/60 p-3">
