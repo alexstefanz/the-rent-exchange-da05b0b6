@@ -10,11 +10,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
-  MessageCircle,
   CalendarCheck,
   Wallet,
   Package,
-  Heart,
   User,
   FileText,
   Shield,
@@ -29,7 +27,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   CreditCard,
-  Bell,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -360,14 +357,6 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
         ) : (
           <>
             <StatusCard
-              icon={MessageCircle}
-              label={t("mesaje noi", "new messages")}
-              value={signals?.unreadMessages || 0}
-              badge={signals?.unreadMessages}
-              highlight={(signals?.unreadMessages || 0) > 0}
-              onClick={() => handleNav("/mesaje")}
-            />
-            <StatusCard
               icon={CalendarCheck}
               label={t("rezervări active", "active bookings")}
               value={totalActive}
@@ -478,14 +467,6 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
       {/* Grouped nav */}
       <SectionLabel>{t("Activitate", "Activity")}</SectionLabel>
       <NavRow
-        to="/mesaje"
-        icon={MessageCircle}
-        label="Chat"
-        badge={signals?.unreadMessages ? signals.unreadMessages : undefined}
-        badgeTone="destructive"
-        onNav={handleNav}
-      />
-      <NavRow
         to="/inchirieri"
         icon={Package}
         label={t("Închirieri", "Lendings")}
@@ -499,7 +480,6 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
         badge={signals?.activeRentalsAsRenter || undefined}
         onNav={handleNav}
       />
-      <NavRow to="/favorite" icon={Heart} label={t("Favorite", "Favorites")} onNav={handleNav} />
 
       <SectionLabel>{t("Cont", "Account")}</SectionLabel>
       <NavRow
@@ -528,14 +508,6 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
         label={t("Plăți & Retrageri", "Payouts")}
         badge={signals?.ibanMissing ? t("Adaugă IBAN", "Add IBAN") : undefined}
         badgeTone="warning"
-        onNav={handleNav}
-      />
-      <NavRow
-        to="/notificari"
-        icon={Bell}
-        label={t("Notificări", "Notifications")}
-        badge={data?.notifications?.unread || undefined}
-        badgeTone="destructive"
         onNav={handleNav}
       />
 
