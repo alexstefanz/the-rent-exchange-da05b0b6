@@ -1,38 +1,57 @@
-## Cauză
+## Obiectiv
 
-- SMS-urile conțin link de forma `https://rentli.ro/a/{token}` (generat în `notify-rental-event` din `secure_action_tokens`).
-- Ruta frontend `/a/:token` (`ShortLinkRedirect.tsx`) face redirect către `https://<project>.supabase.co/functions/v1/resolve-action-token?t=...`.
-- Edge function-ul `resolve-action-token` **nu este implementat** (lipsește din `supabase/functions/`), deși este declarat în `supabase/config.toml` cu `verify_jwt = false`.
-- Rezultat: Supabase răspunde `{"code":"NOT_FOUND","message":"Requested function was not found"}`.
+Decongestionarea paginii `/inchirieri` (componenta `RentalsOutTab.tsx`) cu trei modificări vizuale + o acțiune nouă pentru cererile primite.
 
-## Soluție
+## 1. Sumar mic — 4 carduri statistici
 
-Creez edge function-ul lipsă: `supabase/functions/resolve-action-token/index.ts`.
+Înlocuiesc grila `sm:grid-cols-3` cu `sm:grid-cols-2 lg:grid-cols-4`:
 
-**Comportament:**
-1. Citește `?t={token}` din query string. Dacă lipsește → 400.
-2. Folosește `SUPABASE_SERVICE_ROLE_KEY` pentru a face SELECT pe `secure_action_tokens` după `token`.
-3. Dacă tokenul:
-   - nu există → redirect 302 la `https://rentli.ro/?invalid_link=1`
-   - este expirat (`expires_at < now()`) → redirect la `https://rentli.ro/?expired_link=1`
-   - a fost deja folosit (`used_at IS NOT NULL`) → tot redirect la `redirect_path` (linkul rămâne idempotent timp de 7 zile, e mai prietenos decât eroare)
-4. Setează `used_at = now()` la prima utilizare.
-5. Returnează `Response.redirect("https://rentli.ro" + row.redirect_path, 302)` (cu fallback `/` dacă lipsește).
-6. Suportă `OPTIONS` cu CORS.
-7. Logging minim cu `console.log` pentru debugging.
+- **Cereri noi** — `pendingRentals.length` (icon `Inbox`)
+- **Active** — confirmed + active (icon `Package`)
+- **Anulate** — `rentals.filter(r => r.status === "cancelled").length` (icon `XCircle`, accent muted)
+- **Câștig luna asta** — neschimbat, valoarea în `text-primary`
 
-**Securitate:**
-- Folosește SERVICE_ROLE doar pentru lookup/update pe tabelul `secure_action_tokens` (nu expune date utilizator).
-- Nu necesită JWT (deja `verify_jwt = false` în config.toml — corect, pentru că SMS-urile sunt publice).
-- Tokenul însuși este secretul (random, ~7 zile valabilitate).
+Stiluri identice cu cele actuale (rounded-xl, border, bg-card, p-4).
 
-## Fișiere
+## 2. Card premium pentru "Cereri de închiriere"
 
-- **Nou:** `supabase/functions/resolve-action-token/index.ts`
-- Nimic de modificat în `config.toml`, `ShortLinkRedirect.tsx`, sau în SMS sender — totul e deja configurat să apeleze acest endpoint.
+Mutat ca **prima secțiune** (deasupra sumarului? — nu, sumarul rămâne sus, dar pending devine vizual cel mai proeminent prin design). Redesign:
 
-## Verificare după deploy
+- Container: `rounded-2xl` cu gradient subtil `bg-gradient-to-br from-primary/10 via-primary/5 to-card`, `border-2 border-primary/40`, `shadow-lg shadow-primary/10`, padding mai generos `p-5 sm:p-6`
+- Header card: imagine mai mare (20×20), titlu produs `text-lg font-semibold`, badge "Cerere nouă" cu `bg-primary text-primary-foreground` pulsant
+- Linia principală: **"Cerere de la [Nume Chiriaș]"** ca text proeminent (`text-base font-medium`)
+- Grid info în 3 coloane cu iconițe: Perioadă (Calendar), Zile (Clock), **Câștig din tranzacție** (TrendingUp, valoare în `text-primary text-xl font-bold`)
+- Mesaj chiriaș (dacă există) — păstrat în bubble
+- Butoane: `Acceptă` (gradient primary), `Refuză` (outline)
+- **Buton nou suplimentar**: `Solicită anularea cererii` (variant `ghost` cu text muted, dimensiune mică, sub butoanele principale) — vizibil DOAR după acceptare (status `confirmed` sau `active`) și **înainte de semnarea primului PV** (`handover_confirmed_at == null`). Pentru status `pending`, butonul nu are sens (refuzul rezolvă cazul).
 
-- Apăs un link existent din DB (`secure_action_tokens`) → trebuie să mă ducă la pagina corectă (ex: `/inchirieri/{id}`).
-- A doua apăsare → continuă să meargă (idempotent).
-- Token inexistent → redirect la home cu flag.
+  Notă: În realitate, "Solicită anularea cererii" pentru un rental confirmat folosește fluxul existent `requestMutualCancellation` (RPC + edge function `mutual-cancel-rental`) deja folosit în `MutualCancellationCard`. Pentru a respecta cerința user-ului fără a duplica logică, **mutăm cererile confirmate dar fără PV semnat în aceeași secțiune premium "Cereri active"** sau adăugăm butonul direct pe cardul pending după ce devine confirmat. Decizia: extindem secțiunea premium să afișeze și rezervările `confirmed` fără PV (acolo apare butonul de anulare), iar `pending` păstrează doar Acceptă/Refuză.
+
+## 3. Istoric în accordion fără imagini
+
+Secțiunea "Închirieri active & istoric" devine accordion (`@/components/ui/accordion`):
+
+- Trigger: titlu "Închirieri active & istoric" + counter `(N)`, default închis
+- Content: listă verticală fără imagini. Fiecare rând:
+  - Stânga: nume produs (font-medium) + chiriaș/proprietar (text-sm muted) + perioadă (text-xs muted)
+  - Dreapta: preț (`owner_payout RON`) + StatusBadge + buton `Vezi mai mult` (variant outline, size sm) → link la `/inchirieri/{public_id}`
+- Layout `flex items-center justify-between` cu `border-b` între rânduri, `py-3`
+- Pe mobile, devine stack vertical cu butonul full-width
+
+Excludere: rezervările deja afișate în secțiunea premium (confirmed fără PV) nu se dublează în istoric.
+
+## Fișiere modificate
+
+- `src/components/dashboard/RentalsOutTab.tsx` — toate modificările de mai sus
+
+## Detalii tehnice
+
+- Pentru cancel button: import `requestMutualCancellation` din `@/features/rentals/rentalsApi`, dialog confirmare cu textarea pentru motiv (similar cu rejectDialog), invalidate `["ownerRentals"]` la succes
+- Filtrul pentru "fără PV semnat": `r.handover_confirmed_at == null` — câmpul există deja în `OwnerRental` (verific la implementare)
+- Accordion: `<Accordion type="single" collapsible>` cu un singur item
+
+## Out of scope
+
+- Schimbări de business logic / DB
+- Refactorizarea componentei `RentalProductCard` (rămâne folosită altundeva)
+- Modificări la `/inchirieri/{id}` page
