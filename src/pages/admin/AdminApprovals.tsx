@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { approveProduct, rejectProduct } from "@/features/admin/adminProductsApi";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -65,6 +66,8 @@ const AdminApprovals = () => {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [imageIndices, setImageIndices] = useState<Record<string, number>>({});
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") === "cancellations" ? "cancellations" : "products";
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["admin-pending-products", searchQuery],
@@ -122,7 +125,7 @@ const AdminApprovals = () => {
     <AdminLayout>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-foreground">Confirmări / Anulări</h1>
-        <Tabs defaultValue="products" className="space-y-4">
+        <Tabs value={activeTab} onValueChange={(v) => setSearchParams((prev) => { const p = new URLSearchParams(prev); p.set("tab", v); return p; }, { replace: true })} className="space-y-4">
           <TabsList>
             <TabsTrigger value="products">Anunțuri</TabsTrigger>
             <TabsTrigger value="cancellations">Anulări rezervări</TabsTrigger>

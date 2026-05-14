@@ -22,6 +22,7 @@ export interface AdminNotificationSummary {
   open_tickets: number;
   pending_withdrawals: number;
   unread_high_priority: number;
+  pending_cancellations: number;
 }
 
 export async function getAdminNotifications(limit = 50): Promise<AdminNotification[]> {
@@ -70,5 +71,6 @@ export async function getAdminNotificationSummary(): Promise<AdminNotificationSu
     open_tickets: Number(row?.open_tickets || 0),
     pending_withdrawals: Number(row?.pending_withdrawals || 0),
     unread_high_priority: Number(row?.unread_high_priority || 0),
+    pending_cancellations: Number(row?.pending_cancellations || 0),
   };
 }

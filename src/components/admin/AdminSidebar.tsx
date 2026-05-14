@@ -37,7 +37,8 @@ type BadgeKey =
   | "pending_products"
   | "open_tickets"
   | "pending_withdrawals"
-  | "pending_kyc";
+  | "pending_kyc"
+  | "pending_approvals_total";
 
 const menuItems: Array<{
   title: string;
@@ -49,7 +50,7 @@ const menuItems: Array<{
   { title: "Notificări", url: "/admin/notifications", icon: Bell, badgeKey: "unread_total" },
   { title: "Rezervări", url: "/admin/reservations", icon: CalendarCheck },
   { title: "Produse", url: "/admin/products", icon: Package },
-  { title: "Confirmări / Anulări", url: "/admin/approvals", icon: ClipboardCheck, badgeKey: "pending_products" },
+  { title: "Confirmări / Anulări", url: "/admin/approvals", icon: ClipboardCheck, badgeKey: "pending_approvals_total" },
   { title: "Tickete", url: "/admin/tickets", icon: TicketCheck, badgeKey: "open_tickets" },
   { title: "Analytics Suport", url: "/admin/tickets/analytics", icon: BarChart3 },
   { title: "Conversații", url: "/admin/conversations", icon: MessageCircle },
@@ -96,7 +97,11 @@ const AdminSidebar = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {
-                const count = item.badgeKey ? Number(summary?.[item.badgeKey] || 0) : 0;
+                const count = item.badgeKey
+                  ? item.badgeKey === "pending_approvals_total"
+                    ? Number(summary?.pending_products || 0) + Number(summary?.pending_cancellations || 0)
+                    : Number(summary?.[item.badgeKey as keyof typeof summary] || 0)
+                  : 0;
                 const showBadge = count > 0;
                 return (
                   <SidebarMenuItem key={item.title}>
