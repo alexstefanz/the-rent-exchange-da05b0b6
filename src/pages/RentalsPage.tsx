@@ -7,6 +7,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import RentalsTab from "@/components/dashboard/RentalsTab";
 import { Button } from "@/components/ui/button";
+import { BannedBanner } from "@/components/common/BannedBanner";
 
 const RentalsPage = () => {
   const navigate = useNavigate();
@@ -30,6 +31,7 @@ const RentalsPage = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       <main className="flex-1 container py-8 pt-24 lg:pt-8">
+        <BannedBanner className="mb-6" context="Contul tău este suspendat. Nu poți face rezervări noi." />
         <Button variant="ghost" size="sm" className="mb-4" onClick={() => navigate("/profile")}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           {t("Înapoi la Contul Meu", "Back to My Account")}
