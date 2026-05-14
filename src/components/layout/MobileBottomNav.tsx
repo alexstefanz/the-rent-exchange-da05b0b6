@@ -13,13 +13,13 @@ const MobileBottomNav = () => {
   const { isBanned } = useIsBanned();
   const unreadCount = conversations?.reduce((sum: number, c: any) => sum + (c.unread_count || 0), 0) || 0;
 
-  const tabs = [
+  const tabs: Array<{ to: string; icon: any; label: string; highlight?: boolean; badge?: number; disabled?: boolean }> = [
     { to: "/cauta", icon: Search, label: t("Explorează", "Explore") },
     { to: "/favorite", icon: Heart, label: t("Favorite", "Favorites") },
     { to: "/owner/new-product", icon: Plus, label: t("Adaugă", "Add"), highlight: true, disabled: isBanned },
     { to: "/mesaje", icon: MessageCircle, label: "Chat", badge: unreadCount, disabled: isBanned },
     { to: "/profile#contul-meu", icon: User, label: t("Cont", "Account") },
-  ] as const;
+  ];
 
   const isActive = (to: string) => {
     if (to.includes("#")) {
