@@ -130,20 +130,22 @@ const AdminCancellationRequestsPanel = () => {
                     </Button>
                   </div>
                 </div>
-                <div className="flex md:flex-col gap-2 md:min-w-[160px]">
+                <div className="flex md:flex-col gap-1.5 md:min-w-[140px] md:self-start">
                   <Button
+                    size="sm"
                     onClick={() => approveMutation.mutate(r.rental_id)}
                     disabled={approveMutation.isPending}
-                    className="flex-1"
+                    className="flex-1 h-8 text-xs"
                   >
-                    <Check className="h-4 w-4 mr-1" /> Aprobă anularea
+                    <Check className="h-3.5 w-3.5 mr-1" /> Aprobă
                   </Button>
                   <Button
+                    size="sm"
                     variant="destructive"
                     onClick={() => setRejectFor(r)}
-                    className="flex-1"
+                    className="flex-1 h-8 text-xs"
                   >
-                    <X className="h-4 w-4 mr-1" /> Respinge
+                    <X className="h-3.5 w-3.5 mr-1" /> Respinge
                   </Button>
                 </div>
               </div>
