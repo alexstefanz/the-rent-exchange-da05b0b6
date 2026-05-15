@@ -206,14 +206,14 @@ const RentalsTab = () => {
             Rezervările mele
             <Badge className="bg-primary text-primary-foreground">{pendingRentals.length + premiumActiveRentals.length}</Badge>
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+          <div className="columns-2 xl:columns-3 gap-3 sm:gap-4 [column-fill:_balance]">
             {[...pendingRentals, ...premiumActiveRentals].map((rental) => {
               const isPending = rental.status === "pending";
               const canRequestCancel = !isPending && !rental.handover_confirmed_at;
               return (
                 <div
                   key={rental.id}
-                  className="relative flex flex-col overflow-hidden rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-primary/5 to-card shadow-lg shadow-primary/10"
+                  className="relative mb-3 sm:mb-4 break-inside-avoid flex flex-col overflow-hidden rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-primary/5 to-card shadow-lg shadow-primary/10"
                 >
                   <div className="relative aspect-[4/3] sm:aspect-[16/10] overflow-hidden bg-muted">
                     <img
@@ -231,7 +231,7 @@ const RentalsTab = () => {
                     </div>
                   </div>
 
-                  <div className="flex flex-1 flex-col p-3 sm:p-4">
+                  <div className="flex flex-col p-3 sm:p-4">
                     <div className="flex items-start gap-2 mb-1">
                       <Inbox className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary mt-0.5 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
@@ -283,7 +283,7 @@ const RentalsTab = () => {
                       </div>
                     )}
 
-                    <div className="mt-auto pt-3 sm:pt-4">
+                    <div className="mt-3 sm:mt-4">
                       <Button asChild className="w-full h-9 text-xs sm:text-sm">
                         <Link to={rental.public_id ? `/rezervari/${rental.public_id}` : `/produs/${rental.product_id}`}>
                           Vezi detalii <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1" />
