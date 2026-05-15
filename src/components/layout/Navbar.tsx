@@ -187,13 +187,13 @@ const Navbar = () => {
                     title="Cont suspendat"
                     aria-label="Chat indisponibil — cont suspendat"
                   >
-                    <MessageCircle className="h-4 w-4" />
+                    <MessageCircle className="h-5 w-5" />
                     <span>Chat</span>
                   </Button>
                 ) : (
                   <Button variant="ghost" size="sm" className="hidden lg:flex relative gap-2" asChild>
                     <Link to="/mesaje" aria-label="Chat">
-                      <MessageCircle className="h-4 w-4" />
+                      <MessageCircle className="h-5 w-5" />
                       <span>Chat</span>
                       {unreadMessagesCount > 0 && (
                         <span className="ml-1 inline-flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
@@ -207,7 +207,7 @@ const Navbar = () => {
                 {/* Favorites - Desktop */}
                 <Button variant="ghost" size="icon" className="hidden lg:flex" asChild>
                   <Link to="/favorite" aria-label={t("Favorite", "Favorites")}>
-                    <Heart className="h-5 w-5" />
+                    <Heart className="h-6 w-6" />
                   </Link>
                 </Button>
 
@@ -259,7 +259,7 @@ const Navbar = () => {
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
               className="lg:hidden bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </Button>
           </div>
         </div>

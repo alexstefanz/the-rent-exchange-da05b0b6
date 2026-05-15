@@ -311,7 +311,7 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
       className="relative hidden lg:flex items-center gap-2 rounded-full pl-1 pr-3 h-10"
       aria-label={t("Cont", "Account")}
     >
-      <Avatar className="h-8 w-8 border-2 border-primary/20 transition-all hover:border-primary">
+      <Avatar className="h-10 w-10 border-2 border-primary/20 transition-all hover:border-primary">
         <AvatarImage src={profile?.avatar_url || undefined} alt={displayName} />
         <AvatarFallback className="bg-primary/10 text-primary font-medium text-xs">
           {getInitialsFrom(displayName, displayEmail)}
