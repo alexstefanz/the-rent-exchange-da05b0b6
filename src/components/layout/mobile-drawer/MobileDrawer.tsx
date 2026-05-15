@@ -3,33 +3,24 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   X,
-  Plus,
+  PlusCircle,
   LogOut,
   User,
-  FileText,
-  Package,
-  Heart,
-  MessageCircle,
-  CalendarCheck,
   Shield,
-  Wallet,
   HelpCircle,
   ShieldCheck,
-  Star,
-  Activity,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCurrentUserProfile } from "@/hooks/queries/useCurrentUserProfile";
-import { useConversations } from "@/hooks/queries/useConversations";
 import { useIsAdmin } from "@/hooks/queries/useAdminStats";
+import { useAccountDashboard } from "@/hooks/useAccountDashboard";
 import { useDrawerStats } from "@/hooks/queries/useDrawerStats";
-import LanguageSwitcher from "../LanguageSwitcher";
 import logoImage from "@/assets/rentli_logo.webp";
+import { cn } from "@/lib/utils";
 import { DrawerProfileHero } from "./DrawerProfileHero";
 import { DrawerQuickActions } from "./DrawerQuickActions";
-import { DrawerContextualStatus } from "./DrawerContextualStatus";
-import { DrawerSearch } from "./DrawerSearch";
+import { DrawerKycPill } from "./DrawerKycPill";
 import { DrawerNavGroup, DrawerNavItem } from "./DrawerNavGroup";
 import { DrawerCategoryExplorer } from "./DrawerCategoryExplorer";
 import { DrawerAccountHealth } from "./DrawerAccountHealth";
@@ -42,20 +33,17 @@ interface Props {
 
 export function MobileDrawer({ open, onClose, onLogout }: Props) {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const { data: profile } = useCurrentUserProfile();
-  const { data: conversations } = useConversations(user?.id);
   const { data: isAdmin } = useIsAdmin(user?.id);
+  const { data: dashboard } = useAccountDashboard();
   const { data: stats } = useDrawerStats(user?.id);
 
-  const unreadMessages =
-    conversations?.reduce((sum: number, c: any) => sum + (c.unread_count || 0), 0) || 0;
-  const activeRentals = stats?.activeRentals ?? 0;
+  const activeRentalsAsRenter = dashboard?.signals.activeRentalsAsRenter ?? 0;
+  const activeRentalsAsOwner = dashboard?.signals.activeRentalsAsOwner ?? 0;
+  const balance = dashboard?.signals.availableBalance ?? stats?.balance ?? 0;
   const openTickets = stats?.openTickets ?? 0;
-  const balance = stats?.balance ?? 0;
-
   const kycStatus = profile?.kyc_status;
-  const kycPending = !!user && kycStatus !== "APPROVED" && kycStatus !== "VERIFIED";
 
   const getInitials = () => {
     if (profile?.full_name) {
@@ -67,22 +55,15 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
 
   // Body scroll lock
   useEffect(() => {
-    if (open) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
+    if (open) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "";
+    return () => { document.body.style.overflow = ""; };
   }, [open]);
 
   // Escape key
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
@@ -91,9 +72,7 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
   const touchStart = useRef<number | null>(null);
   const [dragX, setDragX] = useState(0);
 
-  const onTouchStart = (e: TouchEvent) => {
-    touchStart.current = e.touches[0].clientX;
-  };
+  const onTouchStart = (e: TouchEvent) => { touchStart.current = e.touches[0].clientX; };
   const onTouchMove = (e: TouchEvent) => {
     if (touchStart.current === null) return;
     const delta = e.touches[0].clientX - touchStart.current;
@@ -104,20 +83,6 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
     setDragX(0);
     touchStart.current = null;
   };
-
-  const renterItems: DrawerNavItem[] = [
-    { to: "/rezervari", label: t("Închirierile mele", "My rentals"), icon: CalendarCheck, badge: activeRentals },
-    { to: "/favorite", label: t("Favorite", "Favorites"), icon: Heart },
-    { to: "/mesaje", label: t("Mesaje", "Messages"), icon: MessageCircle, badge: unreadMessages },
-    { to: "/activitate", label: t("Activitate", "Activity"), icon: Activity },
-  ];
-
-  const ownerItems: DrawerNavItem[] = [
-    { to: "/anunturi", label: t("Anunțurile mele", "My listings"), icon: FileText },
-    { to: "/inchirieri", label: t("Cereri primite", "Bookings received"), icon: Package },
-    { to: "/castiguri", label: t("Câștiguri & retrageri", "Earnings & payouts"), icon: Wallet },
-    { to: "/recenzii", label: t("Recenzii", "Reviews"), icon: Star },
-  ];
 
   const accountItems: DrawerNavItem[] = [
     { to: "/contul-meu", label: t("Contul meu", "My Account"), icon: User },
@@ -137,6 +102,21 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
     animationDelay: `${i * 40}ms`,
     animationFillMode: "both",
   });
+
+  const LangButton = ({ code, label }: { code: "ro" | "en"; label: string }) => (
+    <button
+      onClick={() => setLanguage(code)}
+      className={cn(
+        "px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors",
+        language === code
+          ? "bg-background text-foreground shadow-sm"
+          : "text-muted-foreground hover:text-foreground",
+      )}
+      aria-pressed={language === code}
+    >
+      {label}
+    </button>
+  );
 
   return (
     <>
@@ -158,9 +138,7 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
         style={{
-          transform: open
-            ? `translateX(${dragX}px)`
-            : "translateX(-100%)",
+          transform: open ? `translateX(${dragX}px)` : "translateX(-100%)",
           transitionProperty: dragX !== 0 ? "none" : "transform",
         }}
         className={`fixed top-0 left-0 z-50 h-[100dvh] w-[88vw] max-w-[360px] bg-background/95 backdrop-blur-xl shadow-2xl transition-transform duration-300 ease-[cubic-bezier(.32,.72,0,1)] lg:hidden ${
@@ -173,20 +151,27 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
             <Link to="/" onClick={onClose} className="flex items-center">
               <img src={logoImage} alt="Rentli" className="h-7 w-auto" />
             </Link>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="h-9 w-9 rounded-full"
-              aria-label={t("Închide", "Close")}
-            >
-              <X className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* RO / EN segmented switch */}
+              <div className="flex items-center gap-0.5 rounded-lg bg-muted p-0.5">
+                <LangButton code="ro" label="RO" />
+                <LangButton code="en" label="EN" />
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-9 w-9 rounded-full"
+                aria-label={t("Închide", "Close")}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
 
           {/* Scrollable content */}
           <div
-            className="flex-1 overflow-y-auto overscroll-contain pb-28"
+            className="flex-1 overflow-y-auto overscroll-contain pb-24"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
             <div className="flex flex-col gap-4 py-4">
@@ -198,7 +183,7 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
                     avatarUrl={profile.avatar_url}
                     initials={getInitials()}
                     kycStatus={kycStatus}
-                    activeRentals={activeRentals}
+                    activeRentals={activeRentalsAsRenter}
                     onNavigate={onClose}
                   />
                 </div>
@@ -207,8 +192,8 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
               {user && (
                 <div className="animate-fade-in" style={stagger(1)}>
                   <DrawerQuickActions
-                    unreadMessages={unreadMessages}
-                    activeRentals={activeRentals}
+                    activeRentalsAsRenter={activeRentalsAsRenter}
+                    activeRentalsAsOwner={activeRentalsAsOwner}
                     balance={balance}
                     onNavigate={onClose}
                   />
@@ -216,38 +201,44 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
               )}
 
               {user && (
-                <div className="animate-fade-in" style={stagger(2)}>
-                  <DrawerContextualStatus
-                    kycPending={kycPending}
-                    activeRentals={activeRentals}
-                    balance={balance}
-                    openTickets={openTickets}
+                <div className="px-2 animate-fade-in" style={stagger(2)}>
+                  <DrawerKycPill onNavigate={onClose} />
+                </div>
+              )}
+
+              {user && profile && (
+                <div className="animate-fade-in" style={stagger(3)}>
+                  <DrawerAccountHealth
+                    emailVerified={!!user.email_confirmed_at}
+                    hasPhone={!!profile.phone}
+                    hasIban={!!profile.iban}
                     onNavigate={onClose}
                   />
                 </div>
               )}
 
-              <div className="animate-fade-in" style={stagger(3)}>
-                <DrawerSearch onNavigate={onClose} />
-              </div>
-
+              {/* Primary CTA row */}
               {user && (
-                <div className="animate-fade-in" style={stagger(4)}>
-                  <DrawerNavGroup
-                    title={t("Ca chiriaș", "As renter")}
-                    items={renterItems}
-                    onNavigate={onClose}
-                  />
-                </div>
-              )}
-
-              {user && (
-                <div className="animate-fade-in" style={stagger(4)}>
-                  <DrawerNavGroup
-                    title={t("Ca proprietar", "As owner")}
-                    items={ownerItems}
-                    onNavigate={onClose}
-                  />
+                <div className="px-4 flex items-center gap-2 animate-fade-in" style={stagger(4)}>
+                  <Link
+                    to="/owner/new-product"
+                    onClick={onClose}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[#F98715] px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all active:scale-[.98]"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                    {t("Adaugă anunț", "Add a listing")}
+                  </Link>
+                  {isAdmin && (
+                    <Link
+                      to="/admin"
+                      onClick={onClose}
+                      className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-3 py-2.5 text-sm font-semibold text-white shadow-md transition-all active:scale-[.98]"
+                      aria-label={t("Panou Admin", "Admin Panel")}
+                    >
+                      <ShieldCheck className="h-4 w-4" />
+                      <span className="whitespace-nowrap">{t("Admin", "Admin")}</span>
+                    </Link>
+                  )}
                 </div>
               )}
 
@@ -265,83 +256,38 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
                 <DrawerCategoryExplorer onNavigate={onClose} />
               </div>
 
-              {user && profile && (
-                <div className="animate-fade-in" style={stagger(7)}>
-                  <DrawerAccountHealth
-                    emailVerified={!!user.email_confirmed_at}
-                    hasPhone={!!profile.phone}
-                    hasIban={!!profile.iban}
-                    onNavigate={onClose}
-                  />
-                </div>
-              )}
-
-              <div className="animate-fade-in" style={stagger(8)}>
+              <div className="animate-fade-in" style={stagger(7)}>
                 <DrawerNavGroup
                   title={t("Suport", "Support")}
                   items={supportItems}
                   onNavigate={onClose}
                 />
               </div>
-
-              {isAdmin && (
-                <div className="animate-fade-in" style={stagger(9)}>
-                  <DrawerNavGroup
-                    title={t("Admin", "Admin")}
-                    items={[
-                      {
-                        to: "/admin",
-                        label: t("Panou Admin", "Admin Panel"),
-                        icon: ShieldCheck,
-                        accent: "success",
-                      },
-                    ]}
-                    onNavigate={onClose}
-                  />
-                </div>
-              )}
-
-              {/* Footer row: language + logout */}
-              <div className="mt-2 flex items-center justify-between gap-2 px-4 animate-fade-in" style={stagger(10)}>
-                <LanguageSwitcher />
-                {user ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      onClose();
-                      onLogout();
-                    }}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <LogOut className="h-4 w-4 mr-1.5" />
-                    {t("Deconectare", "Log out")}
-                  </Button>
-                ) : (
-                  <Button size="sm" asChild>
-                    <Link to="/auth" onClick={onClose}>
-                      {t("Autentificare", "Login")}
-                    </Link>
-                  </Button>
-                )}
-              </div>
             </div>
           </div>
 
-          {/* Floating CTA */}
-          {user && (
-            <div
-              className="absolute bottom-0 left-0 right-0 border-t border-border/40 bg-background/95 backdrop-blur-xl px-4 pt-3"
-              style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
-            >
-              <Button asChild className="w-full h-11 rounded-xl shadow-lg shadow-primary/20">
-                <Link to="/owner/new-product" onClick={onClose}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  {t("Adaugă produs", "Add product")}
+          {/* Footer: logout / login */}
+          <div
+            className="border-t border-border/40 bg-background/95 backdrop-blur-xl px-4 pt-3"
+            style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+          >
+            {user ? (
+              <Button
+                variant="ghost"
+                onClick={() => { onClose(); onLogout(); }}
+                className="w-full h-11 rounded-xl text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                {t("Deconectare", "Log out")}
+              </Button>
+            ) : (
+              <Button asChild className="w-full h-11 rounded-xl">
+                <Link to="/auth" onClick={onClose}>
+                  {t("Autentificare", "Login")}
                 </Link>
               </Button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </aside>
     </>
