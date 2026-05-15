@@ -1056,7 +1056,10 @@ const SupportChatWidget = () => {
                                     )}
                                   </div>
                                   <div className="flex items-center justify-between gap-2">
-                                    <p className="text-xs text-muted-foreground truncate">
+                                    <p className={cn(
+                                      "text-xs truncate",
+                                      isUnread ? "font-bold text-foreground" : "text-muted-foreground",
+                                    )}>
                                       {conv.product?.title
                                         ? `${conv.product.title} · `
                                         : ""}
