@@ -725,6 +725,7 @@ const SupportChatWidget = () => {
                 buyerId={activeConv.buyer_id}
                 rentalsId={activeConv.rentals_id || null}
                 hideHeader
+                defaultRentalContextOpen={false}
               />
             ) : ticketId ? (
               /* ----- Active ticket conversation ----- */
