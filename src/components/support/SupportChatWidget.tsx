@@ -409,22 +409,8 @@ const SupportChatWidget = () => {
   );
   const openTicketsCount = openTickets.length;
 
-  // Auto-select most recent open ticket (regular users only) when entering Tickete tab
-  useEffect(() => {
-    if (
-      isOpen &&
-      !isAdmin &&
-      activeTab === "tickets" &&
-      !ticketId &&
-      !showTicketArchive &&
-      !userLeftTicket &&
-      openTickets.length > 0
-    ) {
-      const latest = openTickets[0];
-      setTicketId(latest.id);
-      setTicketPublicId(latest.public_id ?? null);
-    }
-  }, [isOpen, isAdmin, activeTab, ticketId, showTicketArchive, userLeftTicket, openTickets]);
+  // Welcome screen rămâne starea implicită pe tabul Suport.
+  // User-ul reintră într-un ticket explicit din lista "Tickete anterioare".
 
   const handleSelectArchivedTicket = (ticket: OpsTicket) => {
     setTicketId(ticket.id);
@@ -924,7 +910,7 @@ const SupportChatWidget = () => {
                     )}
                   >
                     <Ticket className="h-3.5 w-3.5" />
-                    {t("Tickete", "Tickets")}
+                    {isAdmin ? t("Tickete", "Tickets") : t("Suport", "Support")}
                     {ticketsTabBadge > 0 && (
                       <span
                         className={cn(
