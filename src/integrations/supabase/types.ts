@@ -2646,25 +2646,53 @@ export type Database = {
           total_withdrawn: number
         }[]
       }
-      get_admin_users: {
-        Args: {
-          limit_count?: number
-          offset_count?: number
-          search_query?: string
-        }
-        Returns: {
-          avatar_url: string
-          created_at: string
-          email: string
-          full_name: string
-          id: string
-          kyc_status: string
-          phone: string
-          products_count: number
-          rentals_count: number
-          user_role: string
-        }[]
-      }
+      get_admin_users:
+        | {
+            Args: {
+              limit_count?: number
+              offset_count?: number
+              search_query?: string
+            }
+            Returns: {
+              avatar_url: string
+              created_at: string
+              email: string
+              full_name: string
+              id: string
+              kyc_status: string
+              phone: string
+              products_count: number
+              rentals_count: number
+              user_role: string
+            }[]
+          }
+        | {
+            Args: {
+              limit_count?: number
+              offset_count?: number
+              search_query?: string
+              status_filter?: string
+            }
+            Returns: {
+              avatar_url: string
+              ban_reason: string
+              banned_at: string
+              created_at: string
+              email: string
+              full_name: string
+              id: string
+              is_banned: boolean
+              kyc_status: string
+              last_warning_at: string
+              phone: string
+              products_count: number
+              rentals_count: number
+              total_earned: number
+              total_spent: number
+              user_role: string
+              warnings_count: number
+            }[]
+          }
       get_booked_dates: {
         Args: { p_product_id: string }
         Returns: {
