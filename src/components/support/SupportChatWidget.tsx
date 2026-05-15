@@ -10,9 +10,11 @@ import {
   Ticket,
   ArrowLeft,
   History,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +27,12 @@ import {
   fetchUserTickets,
   type OpsTicket,
 } from "@/features/tickets/userTicketsApi";
+import {
+  fetchOpsTickets,
+  fetchTicketMessages,
+  createTicketMessage,
+  type OpsTicket as AdminOpsTicket,
+} from "@/features/admin/opsTicketsApi";
 import {
   getConversations,
   type Conversation,
@@ -187,6 +195,7 @@ const SupportChatWidget = () => {
   const [messageText, setMessageText] = useState("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
+  const [isInternal, setIsInternal] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -201,8 +210,132 @@ const SupportChatWidget = () => {
       setTicketPublicId(null);
       setShowTicketArchive(false);
       setMessageText("");
+      setIsInternal(false);
     }
   }, [isOpen]);
+
+  // -------- Admin role detection --------
+  const { data: isAdmin = false } = useQuery({
+    queryKey: ["isAdmin", user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const { data } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin",
+      });
+      return !!data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // -------- Admin inbox (Tickete tab for admins) --------
+  type AdminInboxTicket = AdminOpsTicket & {
+    unread_count: number;
+    last_message?: string;
+    last_message_at?: string;
+  };
+  const { data: adminInbox = [], isLoading: isLoadingAdminInbox } = useQuery<
+    AdminInboxTicket[]
+  >({
+    queryKey: ["adminOpsInbox"],
+    queryFn: async () => {
+      const all = await fetchOpsTickets();
+      const active = all.filter((t) =>
+        [
+          "NEW",
+          "IN_PROGRESS",
+          "WAITING_CUSTOMER",
+          "WAITING_OWNER",
+          "WAITING_INTERNAL",
+        ].includes(t.status),
+      );
+      const enriched: AdminInboxTicket[] = await Promise.all(
+        active.map(async (ticket) => {
+          const msgs = await fetchTicketMessages(ticket.id);
+          const lastMsg = msgs[msgs.length - 1];
+          const lastAdminRead = ticket.last_admin_read_at;
+          const unread = msgs.filter(
+            (m) =>
+              m.author_type === "CUSTOMER" &&
+              (!lastAdminRead ||
+                new Date(m.created_at) > new Date(lastAdminRead)),
+          ).length;
+          return {
+            ...ticket,
+            unread_count: unread,
+            last_message: lastMsg?.message_text,
+            last_message_at: lastMsg?.created_at,
+          };
+        }),
+      );
+      enriched.sort((a, b) => {
+        if (a.status === "NEW" && b.status !== "NEW") return -1;
+        if (b.status === "NEW" && a.status !== "NEW") return 1;
+        if (a.unread_count > 0 && b.unread_count === 0) return -1;
+        if (b.unread_count > 0 && a.unread_count === 0) return 1;
+        return (
+          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        );
+      });
+      return enriched;
+    },
+    enabled: isOpen && !!user && isAdmin,
+    refetchInterval: 15000,
+  });
+
+  const adminInboxUnread = adminInbox.reduce(
+    (acc, t) => acc + (t.unread_count || 0),
+    0,
+  );
+  const adminNewCount = adminInbox.filter((t) => t.status === "NEW").length;
+
+  // Admin realtime: refresh inbox + active ticket on changes
+  useEffect(() => {
+    if (!isAdmin || !isOpen) return;
+    const ch = supabase
+      .channel(`admin-widget-inbox-${user?.id || "x"}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "ops_tickets" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["adminOpsInbox"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "ops_ticket_messages",
+        },
+        (payload: any) => {
+          queryClient.invalidateQueries({ queryKey: ["adminOpsInbox"] });
+          const tid = payload?.new?.ticket_id;
+          if (tid) {
+            queryClient.invalidateQueries({
+              queryKey: ["supportChatMessages", tid],
+            });
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [isAdmin, isOpen, user?.id, queryClient]);
+
+  // Mark ticket as read for admin when opened
+  useEffect(() => {
+    if (!isAdmin || !ticketId) return;
+    (supabase
+      .from("ops_tickets" as any)
+      .update({ last_admin_read_at: new Date().toISOString() } as any)
+      .eq("id", ticketId) as any)
+      .then(() =>
+        queryClient.invalidateQueries({ queryKey: ["adminOpsInbox"] }),
+      );
+  }, [isAdmin, ticketId, queryClient]);
 
   // -------- Conversations (Chat tab) --------
   const { data: conversations = [], isLoading: isLoadingConvs } = useQuery<
@@ -267,10 +400,11 @@ const SupportChatWidget = () => {
   );
   const openTicketsCount = openTickets.length;
 
-  // Auto-select most recent open ticket when entering Tickete tab without an active one
+  // Auto-select most recent open ticket (regular users only) when entering Tickete tab
   useEffect(() => {
     if (
       isOpen &&
+      !isAdmin &&
       activeTab === "tickets" &&
       !ticketId &&
       !showTicketArchive &&
@@ -280,7 +414,7 @@ const SupportChatWidget = () => {
       setTicketId(latest.id);
       setTicketPublicId(latest.public_id ?? null);
     }
-  }, [isOpen, activeTab, ticketId, showTicketArchive, openTickets]);
+  }, [isOpen, isAdmin, activeTab, ticketId, showTicketArchive, openTickets]);
 
   const handleSelectArchivedTicket = (ticket: OpsTicket) => {
     setTicketId(ticket.id);
@@ -322,12 +456,21 @@ const SupportChatWidget = () => {
   }, [messages]);
 
   const sendMutation = useMutation({
-    mutationFn: (text: string) => addUserTicketMessage(ticketId!, text),
+    mutationFn: async (text: string) => {
+      if (isAdmin) {
+        return createTicketMessage(ticketId!, text, isInternal, "ADMIN");
+      }
+      return addUserTicketMessage(ticketId!, text);
+    },
     onSuccess: () => {
       setMessageText("");
+      setIsInternal(false);
       queryClient.invalidateQueries({
         queryKey: ["supportChatMessages", ticketId],
       });
+      if (isAdmin) {
+        queryClient.invalidateQueries({ queryKey: ["adminOpsInbox"] });
+      }
     },
   });
 
@@ -337,6 +480,8 @@ const SupportChatWidget = () => {
       sendMutation.mutate(text);
       return;
     }
+    // Admins never auto-create tickets — they only reply to existing ones.
+    if (isAdmin) return;
     // No active ticket → create one with this first message
     setIsCreatingTicket(true);
     try {
@@ -405,24 +550,41 @@ const SupportChatWidget = () => {
     setShowTicketArchive(false);
   };
 
-  if (isAdminRoute) return null;
+  // Hide on admin route only for non-admins (so plain users don't see widget there).
+  if (isAdminRoute && !isAdmin) return null;
 
   const isClosed =
     ticketInfo?.status === "CLOSED" || ticketInfo?.status === "RESOLVED";
+
+  // FAB & tab badges (role-aware)
+  const fabBadgeCount = isAdmin
+    ? totalUnread + adminInboxUnread + adminNewCount
+    : totalUnread + openTicketsCount;
+  const ticketsTabBadge = isAdmin
+    ? adminInboxUnread + adminNewCount
+    : openTicketsCount;
+  const activeAdminTicket =
+    isAdmin && ticketId ? adminInbox.find((t) => t.id === ticketId) : null;
 
   // Header content
   const showBack = !!activeConv || !!ticketId || showTicketArchive;
   const headerTitle = activeConv
     ? activeConv.other_user?.full_name || t("Conversație", "Conversation")
     : ticketId
-    ? t("Suport Rentli", "Rentli Support")
+    ? isAdmin
+      ? ticketPublicId || t("Ticket", "Ticket")
+      : t("Suport Rentli", "Rentli Support")
     : showTicketArchive
     ? t("Tickete anterioare", "Previous tickets")
+    : isAdmin
+    ? t("Inbox suport", "Support inbox")
     : t("Mesajele mele", "My messages");
   const headerSubtitle = activeConv
     ? activeConv.product?.title || ""
     : ticketId
-    ? ticketPublicId || "Online"
+    ? isAdmin
+      ? activeAdminTicket?.requester_name || activeAdminTicket?.title || "Online"
+      : ticketPublicId || "Online"
     : "Online";
 
   const handleBack = () => {
@@ -458,11 +620,9 @@ const SupportChatWidget = () => {
           aria-label={t("Suport", "Support")}
         >
           <MessageCircle className="h-6 w-6" />
-          {totalUnread + openTicketsCount > 0 && (
+          {fabBadgeCount > 0 && (
             <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center border-2 border-background">
-              {totalUnread + openTicketsCount > 99
-                ? "99+"
-                : totalUnread + openTicketsCount}
+              {fabBadgeCount > 99 ? "99+" : fabBadgeCount}
             </span>
           )}
         </button>
@@ -565,6 +725,14 @@ const SupportChatWidget = () => {
               <>
                 <ScrollArea className="flex-1 px-4 py-3">
                   {messages.length === 0 ? (
+                    isAdmin ? (
+                      <p className="text-xs text-muted-foreground text-center py-6">
+                        {t(
+                          "Niciun mesaj încă în acest ticket.",
+                          "No messages in this ticket yet.",
+                        )}
+                      </p>
+                    ) : (
                     <div className="flex items-start gap-2 mt-2">
                       <Avatar className="h-7 w-7 shrink-0 mt-0.5">
                         <AvatarFallback className="bg-primary/10 text-primary text-[11px] font-bold">
@@ -578,25 +746,37 @@ const SupportChatWidget = () => {
                         )}
                       </div>
                     </div>
+                    )
                   ) : (
                     <div className="space-y-3">
                       {messages.map((msg) => {
-                        const isCustomer = msg.author_type === "CUSTOMER";
+                        const isOwn = isAdmin
+                          ? msg.author_type === "ADMIN"
+                          : msg.author_type === "CUSTOMER";
+                        const isInternalNote = (msg as any).is_internal === true;
                         return (
                           <div
                             key={msg.id}
-                            className={`flex ${isCustomer ? "justify-end" : "justify-start"}`}
+                            className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
                           >
                             <div
                               className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
-                                isCustomer
+                                isInternalNote
+                                  ? "bg-yellow-100 border border-yellow-300 text-foreground"
+                                  : isOwn
                                   ? "bg-amber-400 text-foreground rounded-br-md"
                                   : "bg-muted text-foreground rounded-bl-md"
                               }`}
                             >
+                              {isInternalNote && (
+                                <p className="flex items-center gap-1 text-[10px] font-semibold text-yellow-800 mb-1">
+                                  <Lock className="h-3 w-3" />
+                                  {t("Notă internă", "Internal note")}
+                                </p>
+                              )}
                               {renderMessageContent(msg.message_text)}
                               <p
-                                className={`text-[10px] mt-1 ${isCustomer ? "text-foreground/60" : "text-muted-foreground"}`}
+                                className={`text-[10px] mt-1 ${isOwn ? "text-foreground/60" : "text-muted-foreground"}`}
                               >
                                 {format(new Date(msg.created_at), "HH:mm")}
                               </p>
@@ -620,6 +800,28 @@ const SupportChatWidget = () => {
                   </div>
                 ) : (
                   <div className="shrink-0 border-t pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:pb-0">
+                    {isAdmin && (
+                      <div className="flex items-center justify-between px-3 pt-2 pb-1">
+                        <label className="flex items-center gap-2 text-[11px] text-muted-foreground cursor-pointer">
+                          <Switch
+                            checked={isInternal}
+                            onCheckedChange={setIsInternal}
+                          />
+                          <span className="inline-flex items-center gap-1">
+                            <Lock className="h-3 w-3" />
+                            {t("Notă internă", "Internal note")}
+                          </span>
+                        </label>
+                        {isInternal && (
+                          <span className="text-[10px] text-yellow-700 font-semibold">
+                            {t(
+                              "Nu va fi vizibil clientului",
+                              "Hidden from customer",
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 px-3 py-2.5">
                       <button
                         type="button"
@@ -709,7 +911,7 @@ const SupportChatWidget = () => {
                   >
                     <Ticket className="h-3.5 w-3.5" />
                     {t("Tickete", "Tickets")}
-                    {openTicketsCount > 0 && (
+                    {ticketsTabBadge > 0 && (
                       <span
                         className={cn(
                           "ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold",
@@ -718,7 +920,7 @@ const SupportChatWidget = () => {
                             : "bg-primary text-primary-foreground",
                         )}
                       >
-                        {openTicketsCount}
+                        {ticketsTabBadge}
                       </span>
                     )}
                   </button>
@@ -854,6 +1056,84 @@ const SupportChatWidget = () => {
                       )}
                     </ScrollArea>
                   </>
+                ) : isAdmin ? (
+                  /* ----- Admin inbox list ----- */
+                  <ScrollArea className="flex-1 px-3 py-3">
+                    {isLoadingAdminInbox ? (
+                      <div className="flex items-center justify-center py-10">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : adminInbox.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center text-center py-12 px-4">
+                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                          <Inbox className="h-6 w-6 text-primary" />
+                        </div>
+                        <p className="text-sm font-medium">
+                          {t("Niciun ticket activ", "No active tickets")}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {t(
+                            "Ticketele noi de la clienți vor apărea aici.",
+                            "New customer tickets will show up here.",
+                          )}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {adminInbox.map((ticket) => (
+                          <button
+                            key={ticket.id}
+                            type="button"
+                            onClick={() => {
+                              setTicketId(ticket.id);
+                              setTicketPublicId(ticket.public_id ?? null);
+                            }}
+                            className={cn(
+                              "w-full text-left rounded-xl border bg-card p-3 hover:border-primary/50 hover:bg-primary/5 transition-colors",
+                              ticket.unread_count > 0 && "border-primary/40 bg-primary/5",
+                            )}
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <span
+                                className={cn(
+                                  "h-2 w-2 rounded-full shrink-0",
+                                  ticket.status === "NEW"
+                                    ? "bg-blue-500"
+                                    : "bg-primary",
+                                )}
+                              />
+                              <span className="text-[11px] font-mono font-medium text-muted-foreground">
+                                {ticket.public_id || `#${ticket.id.slice(0, 6)}`}
+                              </span>
+                              <StatusPill
+                                status={ticket.status}
+                                size="xs"
+                                className="ml-auto"
+                              />
+                              {ticket.unread_count > 0 && (
+                                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-primary text-primary-foreground">
+                                  {ticket.unread_count}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm font-medium line-clamp-1 mb-0.5">
+                              {ticket.title}
+                            </p>
+                            {ticket.requester_name && (
+                              <p className="text-[11px] text-muted-foreground truncate">
+                                {ticket.requester_name}
+                              </p>
+                            )}
+                            {ticket.last_message && (
+                              <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
+                                {ticket.last_message}
+                              </p>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
                 ) : showTicketArchive ? (
                   /* ----- Archive list ----- */
                   <ScrollArea className="flex-1 px-3 py-3">
