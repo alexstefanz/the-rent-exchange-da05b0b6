@@ -93,7 +93,7 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
     {
       to: "/suport",
       label: t("Suport & Tickete", "Support & Tickets"),
-      icon: HelpCircle,
+      icon: LifeBuoy,
       badge: openTickets,
     },
   ];
