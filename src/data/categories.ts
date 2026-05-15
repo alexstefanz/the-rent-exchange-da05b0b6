@@ -82,7 +82,7 @@ export const categories: Category[] = [
   {
     id: 5,
     slug: "outdoor",
-    name: "Outdoor",
+    name: "Drumeții & Natură",
     nameEn: "Outdoor",
     icon: "🏕️",
     subcategories: [
@@ -126,7 +126,7 @@ export const categories: Category[] = [
   {
     id: 8,
     slug: "travel",
-    name: "Travel",
+    name: "Călătorii",
     nameEn: "Travel",
     icon: "🧳",
     subcategories: [
@@ -170,8 +170,8 @@ export const categories: Category[] = [
   {
     id: 11,
     slug: "utilaje",
-    name: "Utilaje",
-    nameEn: "Heavy Equipment",
+    name: "Echipamente Agricole",
+    nameEn: "Agricultural Equipment",
     icon: "🚜",
     subcategories: [
       { id: "11-1", name: "Tractoare și mini-tractoare", nameEn: "Tractors & Mini-Tractors", description: "Tractoare pentru lucrări agricole", descriptionEn: "Tractors for agricultural work", image: "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=400&q=80" },
