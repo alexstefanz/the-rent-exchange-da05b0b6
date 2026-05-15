@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronDown } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -39,6 +39,7 @@ interface ChatPanelProps {
   onOpenInfo?: () => void;
   className?: string;
   hideHeader?: boolean;
+  defaultRentalContextOpen?: boolean;
 }
 
 export function ChatPanel({
@@ -53,6 +54,7 @@ export function ChatPanel({
   onOpenInfo,
   className = "",
   hideHeader = false,
+  defaultRentalContextOpen = true,
 }: ChatPanelProps) {
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -64,6 +66,7 @@ export function ChatPanel({
   const scrollRef = useRef<HTMLDivElement>(null);
   const isOwner = user?.id === ownerId;
   const peerId = isOwner ? buyerId : ownerId;
+  const [rentalCtxOpen, setRentalCtxOpen] = useState(defaultRentalContextOpen);
 
   const { peerOnline, peerTyping, setTyping } = useChatPresence(
     conversationId,
@@ -255,23 +258,58 @@ export function ChatPanel({
       )}
 
       {rentalCtx && (
-        <>
-          <RentalStageStepper rental={rentalCtx} />
-          <TransactionCard
-            data={{
-              publicId: rentalCtx.public_id,
-              productTitle: rentalCtx.product_title || productTitle,
-              productImage: rentalCtx.product_image,
-              startDate: rentalCtx.start_date,
-              endDate: rentalCtx.end_date,
-              rentalDays: rentalCtx.rental_days,
-              subtotal: rentalCtx.subtotal,
-              status: rentalCtx.status,
-              paymentStatus: rentalCtx.payment_status,
-              role: isOwner ? "owner" : "renter",
-            }}
-          />
-        </>
+        <div className="border-b bg-background shrink-0">
+          <button
+            type="button"
+            onClick={() => setRentalCtxOpen((v) => !v)}
+            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/50 transition-colors text-left"
+            aria-expanded={rentalCtxOpen}
+          >
+            {rentalCtx.product_image ? (
+              <img
+                src={rentalCtx.product_image}
+                alt=""
+                className="h-8 w-8 rounded-md object-cover shrink-0"
+              />
+            ) : (
+              <div className="h-8 w-8 rounded-md bg-muted shrink-0" />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate">
+                {rentalCtx.product_title || productTitle}
+              </p>
+              <p className="text-[10px] text-muted-foreground truncate">
+                {rentalCtx.public_id} · {rentalCtx.rental_days}{" "}
+                {rentalCtx.rental_days === 1 ? t("zi", "day") : t("zile", "days")} ·{" "}
+                {rentalCtx.subtotal} RON
+              </p>
+            </div>
+            <ChevronDown
+              className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform ${
+                rentalCtxOpen ? "rotate-180" : ""
+              }`}
+            />
+          </button>
+          {rentalCtxOpen && (
+            <div className="border-t">
+              <RentalStageStepper rental={rentalCtx} />
+              <TransactionCard
+                data={{
+                  publicId: rentalCtx.public_id,
+                  productTitle: rentalCtx.product_title || productTitle,
+                  productImage: rentalCtx.product_image,
+                  startDate: rentalCtx.start_date,
+                  endDate: rentalCtx.end_date,
+                  rentalDays: rentalCtx.rental_days,
+                  subtotal: rentalCtx.subtotal,
+                  status: rentalCtx.status,
+                  paymentStatus: rentalCtx.payment_status,
+                  role: isOwner ? "owner" : "renter",
+                }}
+              />
+            </div>
+          )}
+        </div>
       )}
 
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-3" style={{ touchAction: "pan-y" }}>
