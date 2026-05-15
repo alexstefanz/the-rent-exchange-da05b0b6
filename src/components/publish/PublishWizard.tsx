@@ -522,10 +522,10 @@ const Step1Category = ({
         })}
       </div>
 
-      {selectedCat && (
+      {selectedCat && selectedCat.subcategories.length > 0 && (
         <div className="mt-8 rounded-2xl border border-border bg-card p-5">
           <Label className="text-sm font-semibold text-foreground">
-            Subcategorie <span className="font-normal text-muted-foreground">(opțional, dar ajută vizibilitatea)</span>
+            Subcategorie <span className="text-destructive">*</span>
           </Label>
           <div className="mt-3 flex flex-wrap gap-2">
             {selectedCat.subcategories.map((sub) => {
