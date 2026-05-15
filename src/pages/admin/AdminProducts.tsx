@@ -310,6 +310,15 @@ const AdminProducts = () => {
     return categories.map(c => ({ value: c.name, label: c.name }));
   }, [categories]);
 
+  const subcategoryOptions = useMemo(() => {
+    if (!subcategories || !categories || !editForm.category) return [];
+    const cat = categories.find(c => c.name === editForm.category);
+    if (!cat) return [];
+    return subcategories
+      .filter(s => s.category_id === cat.id)
+      .map(s => ({ value: s.name, label: s.name }));
+  }, [subcategories, categories, editForm.category]);
+
   const productColumnFilters: ColumnFilterConfig[] = [
     { key: "title", type: "text", placeholder: "Titlu..." },
     { key: "owner_name", type: "text", placeholder: "Proprietar..." },
