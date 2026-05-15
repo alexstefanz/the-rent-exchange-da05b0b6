@@ -43,8 +43,8 @@ const RentalsOutPage = () => {
               <Store className="h-3 w-3" />
               {t("Ca proprietar", "As owner")}
             </div>
-            <h1 className="text-3xl font-bold tracking-tight">{t("Cereri primite", "Bookings received")}</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="font-bold tracking-tight text-lg">{t("Cereri primite", "Bookings received")}</h1>
+            <p className="text-muted-foreground mt-1 text-xs">
               {t("Rezervări pentru anunțurile tale", "Bookings on your listings")}
             </p>
           </div>
