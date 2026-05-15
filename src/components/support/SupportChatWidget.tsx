@@ -637,11 +637,10 @@ const SupportChatWidget = () => {
       {/* Panel */}
       {isOpen && (
         <div
-          className="fixed z-[60] bg-background flex flex-col overflow-hidden inset-0 lg:inset-auto lg:bottom-6 lg:right-4 lg:w-[400px] lg:max-w-[calc(100vw-2rem)] lg:rounded-2xl lg:border lg:shadow-2xl"
           style={{ height: "100dvh" }}
           ref={(el) => {
             if (el && window.innerWidth >= 1024) {
-              el.style.height = "min(600px, calc(100vh - 100px))";
+              el.style.height = "min(720px, calc(100vh - 80px))";
             }
           }}
         >
