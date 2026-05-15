@@ -17,8 +17,8 @@ const NotificationBell = () => {
   const [open, setOpen] = useState(false);
 
   const trigger = (
-    <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
-      <Bell className="h-5 w-5" />
+    <Button variant="ghost" size="icon" className="relative h-11 w-11" aria-label="Notifications">
+      <Bell className="h-6 w-6" />
       {unreadCount > 0 && (
         <span className="absolute -top-0.5 -right-0.5 flex">
           <span
