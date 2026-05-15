@@ -1,58 +1,119 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { LucideIcon, PlusCircle, MessageCircle, CalendarCheck, Wallet } from "lucide-react";
+import { CalendarCheck, Wallet, Package, FileText, Eye, EyeOff } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { cn } from "@/lib/utils";
 
 interface Props {
-  unreadMessages: number;
-  activeRentals: number;
+  activeRentalsAsRenter: number;
+  activeRentalsAsOwner: number;
   balance: number;
   onNavigate: () => void;
 }
 
-interface Action {
+interface CardProps {
   to: string;
-  icon: LucideIcon;
+  icon: any;
   label: string;
-  badge?: number;
-  hint?: string;
+  value: React.ReactNode;
+  highlight?: boolean;
+  tone?: "default" | "success" | "warning";
+  onNavigate: () => void;
 }
 
-export function DrawerQuickActions({ unreadMessages, activeRentals, balance, onNavigate }: Props) {
-  const { t } = useLanguage();
+function StatCard({ to, icon: Icon, label, value, highlight, tone = "default", onNavigate }: CardProps) {
+  const toneClass =
+    tone === "warning"
+      ? "text-amber-600"
+      : tone === "success"
+        ? "text-emerald-600"
+        : "text-primary";
+  return (
+    <Link
+      to={to}
+      onClick={onNavigate}
+      className={cn(
+        "relative flex flex-col rounded-xl border border-border/60 bg-card p-3 transition-all hover:border-primary/40 hover:shadow-sm active:scale-[0.98]",
+        highlight && "border-primary/40 shadow-sm",
+      )}
+    >
+      <Icon className={cn("h-4 w-4", toneClass)} />
+      <div className="mt-1.5 text-sm font-semibold text-foreground leading-tight">{value}</div>
+      <div className="text-[12px] font-semibold text-foreground leading-tight">{label}</div>
+    </Link>
+  );
+}
 
-  const actions: Action[] = [
-    { to: "/owner/new-product", icon: PlusCircle, label: t("Adaugă", "Add") },
-    { to: "/mesaje", icon: MessageCircle, label: t("Mesaje", "Messages"), badge: unreadMessages },
-    { to: "/rezervari", icon: CalendarCheck, label: t("Rezervări", "Bookings"), badge: activeRentals },
-    { to: "/castiguri", icon: Wallet, label: t("Câștiguri", "Earnings"), hint: `${balance.toFixed(0)} RON` },
-  ];
+export function DrawerQuickActions({
+  activeRentalsAsRenter,
+  activeRentalsAsOwner,
+  balance,
+  onNavigate,
+}: Props) {
+  const { t } = useLanguage();
+  const [showBalance, setShowBalance] = useState(
+    () => typeof window !== "undefined" && localStorage.getItem("show_balance") !== "false",
+  );
+
+  const toggleBalance = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setShowBalance((prev) => {
+      const next = !prev;
+      localStorage.setItem("show_balance", String(next));
+      return next;
+    });
+  };
 
   return (
     <div className="grid grid-cols-2 gap-2 px-2">
-      {actions.map((a) => {
-        const Icon = a.icon;
-        return (
-          <Link
-            key={a.to}
-            to={a.to}
-            onClick={onNavigate}
-            className="group relative flex items-center gap-3 rounded-2xl border border-border/60 bg-card p-3 transition-all hover:border-primary/40 hover:shadow-sm active:scale-[.97]"
-          >
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Icon className="h-5 w-5" />
+      <StatCard
+        to="/rezervari"
+        icon={CalendarCheck}
+        label={t("active (chiriaș)", "active (renter)")}
+        value={activeRentalsAsRenter}
+        highlight={activeRentalsAsRenter > 0}
+        onNavigate={onNavigate}
+      />
+      <StatCard
+        to="/castiguri"
+        icon={Wallet}
+        tone="success"
+        label={t("balanță", "balance")}
+        onNavigate={onNavigate}
+        value={
+          <span className="inline-flex items-center gap-1">
+            {showBalance ? `${balance.toFixed(0)} RON` : "•••"}
+            <span
+              role="button"
+              onClick={toggleBalance}
+              className="inline-flex items-center justify-center"
+              aria-label={showBalance ? t("Ascunde", "Hide") : t("Arată", "Show")}
+            >
+              {showBalance ? (
+                <EyeOff className="h-3 w-3 text-muted-foreground" />
+              ) : (
+                <Eye className="h-3 w-3 text-muted-foreground" />
+              )}
             </span>
-            <span className="flex flex-col min-w-0">
-              <span className="text-[13px] font-semibold text-foreground leading-tight truncate">{a.label}</span>
-              {a.hint && <span className="text-[10px] text-muted-foreground truncate">{a.hint}</span>}
-            </span>
-            {a.badge !== undefined && a.badge > 0 && (
-              <span className="absolute right-2 top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
-                {a.badge > 99 ? "99+" : a.badge}
-              </span>
-            )}
-          </Link>
-        );
-      })}
+          </span>
+        }
+      />
+      <StatCard
+        to="/inchirieri"
+        icon={Package}
+        label={t("cereri (proprietar)", "requests (owner)")}
+        value={activeRentalsAsOwner}
+        highlight={activeRentalsAsOwner > 0}
+        onNavigate={onNavigate}
+      />
+      <StatCard
+        to="/anunturi"
+        icon={FileText}
+        label={t("anunțurile mele", "my listings")}
+        value={t("Vezi", "View")}
+        onNavigate={onNavigate}
+      />
     </div>
   );
 }
