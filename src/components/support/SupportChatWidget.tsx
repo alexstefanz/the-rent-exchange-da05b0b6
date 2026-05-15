@@ -376,8 +376,8 @@ const SupportChatWidget = () => {
       const ticket = await createUserTicket({
         title,
         description: text,
-        category_group: "OTHER",
-        category_type: "GENERAL",
+        category_group: "USER",
+        category_type: "GENERAL_INQUIRY",
       });
       await addUserTicketMessage(ticket.id, text);
       setTicketId(ticket.id);
