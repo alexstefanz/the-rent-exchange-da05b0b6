@@ -9,7 +9,7 @@ import SubcategoryPills from "@/components/category/SubcategoryPills";
 import CategorySearchBar from "@/components/category/CategorySearchBar";
 import StickyFilterBar, { type QuickFilters } from "@/components/category/StickyFilterBar";
 import MobileFilterSheet from "@/components/category/MobileFilterSheet";
-import DiscoveryRails from "@/components/category/DiscoveryRails";
+import { DiscoveryRailsTop, DiscoveryRailsBottom } from "@/components/category/DiscoveryRails";
 import EmptyCategoryState from "@/components/category/EmptyCategoryState";
 import ProductCardSkeleton from "@/components/category/ProductCardSkeleton";
 import { Button } from "@/components/ui/button";
@@ -229,7 +229,7 @@ const CategoryDetail = () => {
 
         {/* Discovery rails (browse mode only) */}
         {!hasActiveFilters && !isLoading && products.length > 0 && (
-          <DiscoveryRails trending={trending} newArrivals={newArrivals} nearby={nearby} />
+          <DiscoveryRailsTop newArrivals={newArrivals} />
         )}
 
         {/* Results header (only in filter mode) */}
@@ -300,6 +300,11 @@ const CategoryDetail = () => {
               </div>
             )}
           </>
+        )}
+
+        {/* Discovery rails - bottom (Trending + Aproape de tine, 2 per row) */}
+        {!hasActiveFilters && !isLoading && products.length > 0 && (
+          <DiscoveryRailsBottom trending={trending} nearby={nearby} />
         )}
       </main>
 
