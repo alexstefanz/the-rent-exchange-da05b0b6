@@ -248,7 +248,7 @@ const RentalsTab = () => {
                       pentru <span className="text-primary">{rental.product_title}</span>
                     </p>
 
-                    <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mt-3 sm:mt-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-2 mt-3 sm:mt-4">
                       <div className="rounded-lg bg-card/80 border border-border p-1.5 sm:p-2">
                         <div className="flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-[10px] text-muted-foreground mb-0.5">
                           <Calendar className="h-3 w-3" /><span>Perioadă</span>
