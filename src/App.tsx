@@ -11,7 +11,6 @@ import ScrollToTop from "./components/ScrollToTop";
 
 const SupportChatWidget = lazy(() => import("./components/support/SupportChatWidget"));
 const CookieConsent = lazy(() => import("./components/CookieConsent"));
-const AdminSupportWidget = lazy(() => import("./components/admin/AdminSupportWidget"));
 
 const ConditionalWidgets = () => {
   const { pathname } = useLocation();
@@ -19,7 +18,6 @@ const ConditionalWidgets = () => {
   return (
     <>
       <SupportChatWidget />
-      <AdminSupportWidget />
     </>
   );
 };
