@@ -620,11 +620,9 @@ const SupportChatWidget = () => {
           aria-label={t("Suport", "Support")}
         >
           <MessageCircle className="h-6 w-6" />
-          {totalUnread + openTicketsCount > 0 && (
+          {fabBadgeCount > 0 && (
             <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center border-2 border-background">
-              {totalUnread + openTicketsCount > 99
-                ? "99+"
-                : totalUnread + openTicketsCount}
+              {fabBadgeCount > 99 ? "99+" : fabBadgeCount}
             </span>
           )}
         </button>
