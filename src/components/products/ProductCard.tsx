@@ -106,7 +106,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
           </div>
           <div className="flex-1 p-4">
             {product.category && (
-          <span className="inline-block rounded-sm bg-primary px-1.5 py-0.5 text-[9px] md:text-[11px] font-semibold text-primary-foreground mb-1.5 whitespace-nowrap truncate max-w-full">
+          <span className="inline-block rounded-sm bg-primary px-1.5 py-0.5 text-[9px] md:text-[11px] font-semibold text-primary-foreground mb-1.5 whitespace-nowrap truncate w-fit self-start max-w-full">
                 {displayCategory}
               </span>
             )}
@@ -178,7 +178,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
       {/* Info section */}
       <div className="p-3 md:p-4 flex flex-col">
         {product.category && (
-          <span className="inline-block rounded-sm bg-primary px-1.5 py-0.5 text-[9px] md:text-[11px] font-semibold text-primary-foreground mb-2 whitespace-nowrap truncate max-w-full">
+          <span className="inline-block rounded-sm bg-primary px-1.5 py-0.5 text-[9px] md:text-[11px] font-semibold text-primary-foreground mb-2 whitespace-nowrap truncate w-fit self-start max-w-full">
             {displayCategory}
           </span>
         )}
