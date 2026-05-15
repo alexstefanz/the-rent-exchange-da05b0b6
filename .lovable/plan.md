@@ -1,51 +1,23 @@
-## Redesign mobile drawer to match desktop hub
+## Enlarge header icons by ~25%
 
-Refactor `MobileDrawer.tsx` to mirror the structure of `AccountHubMenu` (desktop), keeping mobile-specific affordances (swipe-close, full height, animation). All work stays in `src/components/layout/mobile-drawer/`.
+Bump icon sizes in the header so the Chat/Favorites/Bell glyphs and the avatar trigger feel ~25% larger on both desktop and mobile. Pure presentational change, no logic.
 
-### Top zone (sticky-ish, above the scroll area)
+### Changes
 
-1. **Header bar** — keep logo + close button, add **RO / EN segmented switch** (two pill buttons) on the right next to the close icon, replacing the bottom-row `LanguageSwitcher`.
-2. **Profile hero** — keep `DrawerProfileHero` as is.
-3. **Stats grid (2×2)** — replace `DrawerQuickActions` with 4 desktop-style `StatusCard`s:
-   - `active (chiriaș)` → /rezervari (badge: total active rentals)
-   - `balanță` → /castiguri (with show/hide eye toggle, mirrors desktop `showBalance` localStorage key)
-   - `cereri (proprietar)` → /inchirieri
-   - `Vezi anunțurile mele` → /anunturi
-4. **KYC status pill** (new, shown under stats) — single full-width row with icon + label + chevron:
-   - `NOT_VERIFIED` / `REJECTED` → red (`bg-destructive/10`, destructive icon) — "Verifică-ți identitatea"
-   - `IN_PROGRESS` / `SUBMITTED` / `NEEDS_MANUAL_REVIEW` → amber — "Verificare în curs"
-   - `VERIFIED` → emerald with checkmark — "Identitate verificată"
-   Links to `/verificare`. Uses `useKycGate` for status.
-5. **Account Health** — keep existing `DrawerAccountHealth` (already auto-hides when all 3 items done). Render directly under the KYC pill.
-6. **Primary CTA row** — "Adaugă anunț" gradient button + (if admin) "Panou Admin" emerald button, matching desktop layout. This replaces both the floating bottom CTA and the Admin nav group.
+**`src/components/layout/Navbar.tsx`**
+- Desktop Chat: `MessageCircle` `h-4 w-4` → `h-5 w-5` (16→20px).
+- Desktop Favorites: `Heart` `h-5 w-5` → `h-6 w-6` (20→24px).
 
-### Removed sections
+**`src/components/layout/NotificationBell.tsx`** (used on both desktop and mobile)
+- `Bell` `h-5 w-5` → `h-6 w-6` (20→24px).
+- Trigger button: switch from `size="icon"` (h-10 w-10) to a slightly larger square (`h-11 w-11`) so the icon doesn't crowd the button.
 
-- `DrawerSearch` ("Caută orice…")
-- `DrawerContextualStatus` (replaced by KYC pill + stats badges)
-- "Ca chiriaș" group (Închirierile mele, Favorite, Mesaje, Activitate)
-- "Ca proprietar" group (Anunțurile mele, Cereri primite, Câștiguri, Recenzii)
-- "Admin" nav group (replaced by top CTA button)
+**`src/components/layout/AccountHubMenu.tsx`** (desktop trigger avatar)
+- Avatar in trigger: `h-8 w-8` → `h-10 w-10` (32→40px).
+- Keep the rest of the dropdown unchanged.
 
-### Kept sections (in scroll area, below top zone)
-
-- "Cont" group: Contul meu, Verificare KYC
-- `DrawerCategoryExplorer` (categories)
-- "Suport" group: Suport & Tickete
-
-### Footer
-
-- Remove the floating "Adaugă produs" CTA (moved to top zone).
-- Keep a simple footer with the **Deconectare** button (full width, ghost/destructive variant), respecting `env(safe-area-inset-bottom)`.
-
-### Files touched
-
-- `src/components/layout/mobile-drawer/MobileDrawer.tsx` — recompose layout, add RO/EN switch, KYC pill, primary CTA row, remove deleted sections.
-- `src/components/layout/mobile-drawer/DrawerQuickActions.tsx` — replace internals with `StatusCard`-style 2×2 grid (or inline new component `DrawerStatsGrid`).
-- New: `src/components/layout/mobile-drawer/DrawerKycPill.tsx` — color-coded status row using `useKycGate`.
-- No backend / API changes.
+**Mobile avatar** — the mobile header avatar lives in the menu trigger button. Confirm whether the user wants the Menu/avatar button at the right of the mobile navbar enlarged too; today it shows a `Menu`/`X` icon (`h-5 w-5`) inside an `h-10 w-10` button. Bump that icon to `h-6 w-6` to match.
 
 ### Out of scope
-
-- Desktop `AccountHubMenu` is unchanged.
-- No changes to routes, queries, or business logic.
+- No layout/spacing redesign, no color or animation changes.
+- Notification badge size stays the same so it still reads as a small dot.
