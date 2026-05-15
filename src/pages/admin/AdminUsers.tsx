@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Search, Shield, ShieldCheck, Ban, ChevronDown, ChevronUp, Package, CalendarCheck, ExternalLink, Wallet, ShoppingBag } from "lucide-react";
+import { Users, Search, Shield, ShieldCheck, Ban, ChevronDown, ChevronUp, Package, CalendarCheck, ExternalLink, Wallet, ShoppingBag, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useAdminUsers } from "@/hooks/queries/useAdminStats";
 import { format } from "date-fns";
@@ -29,6 +31,28 @@ const roleLabels: Record<string, { label: string; icon: React.ReactNode }> = {
 
 const UserExpandedPanel = ({ user, onViewProfile }: { user: any; onViewProfile: () => void }) => (
   <div className="p-4 space-y-3 bg-muted/30 border-t">
+    {(user.is_banned || (user.warnings_count ?? 0) > 0) && (
+      <div className="space-y-2">
+        {user.is_banned && (
+          <div className="flex items-start gap-2 p-2 rounded-md bg-destructive/10 text-destructive text-sm">
+            <Ban className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">Cont banat{user.banned_at ? ` la ${format(new Date(user.banned_at), 'd MMM yyyy', { locale: ro })}` : ''}</p>
+              {user.ban_reason && <p className="text-xs opacity-90">Motiv: {user.ban_reason}</p>}
+            </div>
+          </div>
+        )}
+        {(user.warnings_count ?? 0) > 0 && (
+          <div className="flex items-start gap-2 p-2 rounded-md bg-orange-100 text-orange-800 text-sm">
+            <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-medium">{user.warnings_count} avertisment{user.warnings_count === 1 ? '' : 'e'}</p>
+              {user.last_warning_at && <p className="text-xs opacity-90">Ultimul: {format(new Date(user.last_warning_at), 'd MMM yyyy', { locale: ro })}</p>}
+            </div>
+          </div>
+        )}
+      </div>
+    )}
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
       <div className="flex items-center gap-2">
         <Package className="h-4 w-4 text-muted-foreground" />
@@ -72,9 +96,15 @@ const AdminUsers = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [expandedUserId, setExpandedUserId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const navigate = useNavigate();
 
-  const { data: users, isLoading } = useAdminUsers(debouncedSearch || undefined);
+  const { data: users, isLoading } = useAdminUsers(
+    debouncedSearch || undefined,
+    50,
+    0,
+    statusFilter === "all" ? undefined : statusFilter
+  );
 
   const handleSearch = (value: string) => {
     setSearchQuery(value);
@@ -82,10 +112,12 @@ const AdminUsers = () => {
   };
 
   const isUserBanned = (u: any) => u.is_banned === true;
+  const hasWarnings = (u: any) => (u.warnings_count ?? 0) > 0;
   const toggleExpand = (id: string) => setExpandedUserId(prev => prev === id ? null : id);
 
   return (
     <AdminLayout>
+    <TooltipProvider delayDuration={150}>
       <div className="space-y-4">
         <div className="flex items-center gap-2">
           <Users className="h-5 w-5" />
@@ -94,11 +126,23 @@ const AdminUsers = () => {
         </div>
 
         <Card>
-          <CardContent className="pt-4">
+          <CardContent className="pt-4 space-y-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Caută după nume sau email..." value={searchQuery} onChange={(e) => handleSearch(e.target.value)} className="pl-10" />
             </div>
+            <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+              <TabsList className="grid grid-cols-4 w-full sm:w-auto sm:inline-grid">
+                <TabsTrigger value="all">Toți</TabsTrigger>
+                <TabsTrigger value="active">Activi</TabsTrigger>
+                <TabsTrigger value="warned" className="gap-1">
+                  <AlertTriangle className="h-3 w-3" /> Avertizați
+                </TabsTrigger>
+                <TabsTrigger value="banned" className="gap-1">
+                  <Ban className="h-3 w-3" /> Banați
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </CardContent>
         </Card>
 
@@ -164,11 +208,36 @@ const AdminUsers = () => {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {isUserBanned(u) ? (
-                                <Badge variant="destructive" className="gap-1"><Ban className="h-3 w-3" /> BANAT</Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-green-700">Activ</Badge>
-                              )}
+                              <div className="flex flex-wrap items-center gap-1">
+                                {isUserBanned(u) && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge variant="destructive" className="gap-1 cursor-help"><Ban className="h-3 w-3" /> BANAT</Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="max-w-xs">
+                                      <p className="font-medium">Cont banat</p>
+                                      {u.banned_at && <p className="text-xs opacity-80">{format(new Date(u.banned_at), 'd MMM yyyy', { locale: ro })}</p>}
+                                      {u.ban_reason && <p className="text-xs mt-1">{u.ban_reason}</p>}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+                                {hasWarnings(u) && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Badge className="gap-1 bg-orange-100 text-orange-800 hover:bg-orange-100 cursor-help">
+                                        <AlertTriangle className="h-3 w-3" /> Avertizat ({u.warnings_count})
+                                      </Badge>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>{u.warnings_count} avertisment{u.warnings_count === 1 ? '' : 'e'}</p>
+                                      {u.last_warning_at && <p className="text-xs opacity-80">Ultimul: {format(new Date(u.last_warning_at), 'd MMM yyyy', { locale: ro })}</p>}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+                                {!isUserBanned(u) && !hasWarnings(u) && (
+                                  <Badge variant="outline" className="text-green-700">Activ</Badge>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell className="text-muted-foreground whitespace-nowrap">
                               {u.created_at ? format(new Date(u.created_at), 'd MMM yyyy', { locale: ro }) : '-'}
@@ -210,9 +279,15 @@ const AdminUsers = () => {
                             {roleLabels[u.user_role]?.icon}
                             {roleLabels[u.user_role]?.label || u.user_role}
                           </Badge>
-                          {isUserBanned(u) ? (
+                          {isUserBanned(u) && (
                             <Badge variant="destructive" className="gap-1 text-[10px]"><Ban className="h-3 w-3" /> BANAT</Badge>
-                          ) : (
+                          )}
+                          {hasWarnings(u) && (
+                            <Badge className="gap-1 text-[10px] bg-orange-100 text-orange-800 hover:bg-orange-100">
+                              <AlertTriangle className="h-3 w-3" /> {u.warnings_count}
+                            </Badge>
+                          )}
+                          {!isUserBanned(u) && !hasWarnings(u) && (
                             <Badge variant="outline" className="text-green-700 text-[10px]">Activ</Badge>
                           )}
                           {expandedUserId === u.id ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -234,6 +309,7 @@ const AdminUsers = () => {
           </CardContent>
         </Card>
       </div>
+    </TooltipProvider>
     </AdminLayout>
   );
 };
