@@ -400,10 +400,11 @@ const SupportChatWidget = () => {
   );
   const openTicketsCount = openTickets.length;
 
-  // Auto-select most recent open ticket when entering Tickete tab without an active one
+  // Auto-select most recent open ticket (regular users only) when entering Tickete tab
   useEffect(() => {
     if (
       isOpen &&
+      !isAdmin &&
       activeTab === "tickets" &&
       !ticketId &&
       !showTicketArchive &&
@@ -413,7 +414,7 @@ const SupportChatWidget = () => {
       setTicketId(latest.id);
       setTicketPublicId(latest.public_id ?? null);
     }
-  }, [isOpen, activeTab, ticketId, showTicketArchive, openTickets]);
+  }, [isOpen, isAdmin, activeTab, ticketId, showTicketArchive, openTickets]);
 
   const handleSelectArchivedTicket = (ticket: OpsTicket) => {
     setTicketId(ticket.id);
@@ -455,12 +456,21 @@ const SupportChatWidget = () => {
   }, [messages]);
 
   const sendMutation = useMutation({
-    mutationFn: (text: string) => addUserTicketMessage(ticketId!, text),
+    mutationFn: async (text: string) => {
+      if (isAdmin) {
+        return createTicketMessage(ticketId!, text, isInternal, "ADMIN");
+      }
+      return addUserTicketMessage(ticketId!, text);
+    },
     onSuccess: () => {
       setMessageText("");
+      setIsInternal(false);
       queryClient.invalidateQueries({
         queryKey: ["supportChatMessages", ticketId],
       });
+      if (isAdmin) {
+        queryClient.invalidateQueries({ queryKey: ["adminOpsInbox"] });
+      }
     },
   });
 
@@ -470,6 +480,8 @@ const SupportChatWidget = () => {
       sendMutation.mutate(text);
       return;
     }
+    // Admins never auto-create tickets — they only reply to existing ones.
+    if (isAdmin) return;
     // No active ticket → create one with this first message
     setIsCreatingTicket(true);
     try {
