@@ -46,6 +46,11 @@ export interface AdminUser {
   total_spent: number;
   kyc_status: string;
   user_role: string;
+  is_banned: boolean;
+  ban_reason: string | null;
+  banned_at: string | null;
+  warnings_count: number;
+  last_warning_at: string | null;
 }
 
 export interface FinancialSummary {
@@ -113,12 +118,14 @@ export const fetchAdminRentals = async (
 export const fetchAdminUsers = async (
   searchQuery?: string,
   limit = 50,
-  offset = 0
+  offset = 0,
+  statusFilter?: string
 ): Promise<AdminUser[]> => {
   const { data, error } = await supabase.rpc('get_admin_users', {
     search_query: searchQuery || null,
     limit_count: limit,
-    offset_count: offset
+    offset_count: offset,
+    status_filter: statusFilter || null,
   });
   
   if (error) {
