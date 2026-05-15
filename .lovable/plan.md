@@ -1,25 +1,29 @@
-# Dropdown pentru Categorie & Subcategorie în dialogul „Editează produs" (Admin)
+## Sincronizare categorii homepage cu admin (DB)
 
-## Context
-În `src/pages/admin/AdminProducts.tsx`, dialogul de editare folosește `<Input>` text liber pentru `category` și `subcategory`. Vrem `<Select>` populat din DB (`platform_categories` și `platform_subcategories`), cu subcategoriile filtrate după categoria selectată.
+Actualizez fișierul static `src/data/categories.ts` și mapping-ul de iconițe pentru a se potrivi exact cu `platform_categories` din DB (sursa pe care o modifici din Admin).
 
-## Modificări — un singur fișier
+### Schimbări — `src/data/categories.ts`
 
-**`src/pages/admin/AdminProducts.tsx`**
+| ID | Nume curent | Nume nou (din DB) |
+|----|---|---|
+| 5 | `name: "Outdoor"` | `name: "Drumeții & Natură"` (nameEn rămâne `"Outdoor"`) |
+| 8 | `name: "Travel"`, `nameEn: "Travel"` | `name: "Călătorii"`, `nameEn: "Travel"` |
+| 11 | `name: "Utilaje"`, `nameEn: "Heavy Equipment"` (sau similar) | `name: "Echipamente Agricole"`, `nameEn: "Agricultural Equipment"` |
 
-1. **Extinde queryul existent `platformCategories`** (linia ~246) ca să selecteze și `id`, apoi adaugă un al doilea `useQuery` `platformSubcategories` care aduce `category_id, name` din `platform_subcategories` (`is_active=true`, ordonat după `sort_order`).
+Slug-urile rămân neschimbate (pentru a nu strica URL-uri/SEO existente: `/categorie/outdoor`, `/categorie/travel`, `/categorie/utilaje`).
 
-2. **`categoryOptions` rămâne** așa cum este (folosit deja la filtrul de coloană).
+### Schimbări — `src/data/categoryIcons.ts`
 
-3. **`subcategoryOptions` (memo nou)** — filtrează `platformSubcategories` după `category_id`-ul categoriei selectate în `editForm.category` (lookup name → id din lista de categorii). Returnează `[{value, label}]`.
+- ID 11: `Forklift` → `Tractor` (import din `lucide-react`).
+- ID 5 (`TreePine`) și ID 8 (`Luggage`) sunt deja corecte.
 
-4. **Înlocuiește cele două `<Input>`** (linii 893 & 897) cu `<Select>` (componenta shadcn deja importată):
-   - Categorie: opțiuni = `categoryOptions`. La schimbare: `setEditForm(f => ({ ...f, category: v, subcategory: "" }))` (resetează subcategoria).
-   - Subcategorie: opțiuni = `subcategoryOptions`. Disabled când nu e categorie aleasă sau nu există subcategorii. Placeholder „Fără subcategorie" / „Selectează subcategoria".
+### Ce NU se modifică
 
-5. **Fără modificări** la salvare (`handleSaveEdit` deja trimite ambele câmpuri ca string).
+- DB / migrări (ai ales sincronizare statică).
+- Slug-urile categoriilor și rutele.
+- Restul celor 9 categorii (deja identice).
+- `productI18n.ts` — folosește map-ul derivat din `categories.ts`, deci se actualizează automat.
 
-## În afara scopului
-- Nu modific filtrele de coloană din tabel.
-- Nu ating alte dialoguri (creare produs etc.).
-- Nu schimb schema DB.
+### Verificare
+
+După modificări, homepage-ul va afișa: Unelte, Evenimente, Electronice, Grădinărit, **Drumeții & Natură**, Jucării și Petrecere Copii, Sport, **Călătorii**, Transport și Utilitare, Haine și Recuzită, **Echipamente Agricole** (icon Tractor), Diverse — identic cu admin.
