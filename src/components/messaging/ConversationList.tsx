@@ -66,11 +66,11 @@ export function ConversationList({
     <button
       key={conv.id}
       onClick={() => onSelect(conv)}
-      className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors hover:bg-muted/50 border-l-2 ${
+      className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors hover:bg-muted/50 border-l-4 ${
         selectedId === conv.id
           ? "bg-muted border-primary"
           : isUnread
-          ? "bg-primary/5 border-primary"
+          ? "bg-primary/10 border-primary"
           : "border-transparent"
       }`}
     >
@@ -81,14 +81,17 @@ export function ConversationList({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <span className={`text-sm truncate ${isUnread ? "font-bold text-foreground" : "font-medium"}`}>
+          <span className={`text-sm truncate ${isUnread ? "font-extrabold text-foreground" : "font-medium"}`}>
             {conv.product?.title || t("Produs", "Product")}
           </span>
-          {conv.last_message && (
-            <span className={`text-xs whitespace-nowrap ${isUnread ? "text-primary font-semibold" : "text-muted-foreground"}`}>
-              {formatTime(conv.last_message.created_at)}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {isUnread && <span className="h-2 w-2 rounded-full bg-primary" aria-hidden />}
+            {conv.last_message && (
+              <span className={`text-xs whitespace-nowrap ${isUnread ? "text-primary font-bold" : "text-muted-foreground"}`}>
+                {formatTime(conv.last_message.created_at)}
+              </span>
+            )}
+          </div>
         </div>
         {conv.rental && (
           <p className="text-[11px] text-primary font-medium truncate mt-0.5">
@@ -98,11 +101,11 @@ export function ConversationList({
             {conv.rental.rental_days === 1 ? t("zi", "day") : t("zile", "days")}
           </p>
         )}
-        <p className={`text-xs truncate ${isUnread ? "text-foreground font-medium" : "text-muted-foreground"}`}>{conv.other_user?.full_name || t("Utilizator", "User")}</p>
+        <p className={`text-xs truncate ${isUnread ? "text-foreground font-bold" : "text-muted-foreground"}`}>{conv.other_user?.full_name || t("Utilizator", "User")}</p>
         {conv.last_message && (
           <p
             className={`text-sm truncate mt-0.5 ${
-              conv.unread_count ? "font-medium text-foreground" : "text-muted-foreground"
+              isUnread ? "font-bold text-foreground" : "text-muted-foreground"
             }`}
           >
             {(!conv.last_message.sender_id || conv.last_message.content?.startsWith("booking_confirmed|"))
@@ -113,7 +116,7 @@ export function ConversationList({
       </div>
 
       {conv.unread_count && conv.unread_count > 0 && (
-        <Badge variant="default" className="rounded-full h-5 min-w-5 flex items-center justify-center text-[11px] bg-primary text-primary-foreground">
+        <Badge variant="default" className="rounded-full h-5 min-w-5 flex items-center justify-center text-[11px] bg-primary text-primary-foreground shadow-sm">
           {conv.unread_count}
         </Badge>
       )}
