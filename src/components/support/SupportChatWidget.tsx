@@ -550,24 +550,41 @@ const SupportChatWidget = () => {
     setShowTicketArchive(false);
   };
 
-  if (isAdminRoute) return null;
+  // Hide on admin route only for non-admins (so plain users don't see widget there).
+  if (isAdminRoute && !isAdmin) return null;
 
   const isClosed =
     ticketInfo?.status === "CLOSED" || ticketInfo?.status === "RESOLVED";
+
+  // FAB & tab badges (role-aware)
+  const fabBadgeCount = isAdmin
+    ? totalUnread + adminInboxUnread + adminNewCount
+    : totalUnread + openTicketsCount;
+  const ticketsTabBadge = isAdmin
+    ? adminInboxUnread + adminNewCount
+    : openTicketsCount;
+  const activeAdminTicket =
+    isAdmin && ticketId ? adminInbox.find((t) => t.id === ticketId) : null;
 
   // Header content
   const showBack = !!activeConv || !!ticketId || showTicketArchive;
   const headerTitle = activeConv
     ? activeConv.other_user?.full_name || t("Conversație", "Conversation")
     : ticketId
-    ? t("Suport Rentli", "Rentli Support")
+    ? isAdmin
+      ? ticketPublicId || t("Ticket", "Ticket")
+      : t("Suport Rentli", "Rentli Support")
     : showTicketArchive
     ? t("Tickete anterioare", "Previous tickets")
+    : isAdmin
+    ? t("Inbox suport", "Support inbox")
     : t("Mesajele mele", "My messages");
   const headerSubtitle = activeConv
     ? activeConv.product?.title || ""
     : ticketId
-    ? ticketPublicId || "Online"
+    ? isAdmin
+      ? activeAdminTicket?.requester_name || activeAdminTicket?.title || "Online"
+      : ticketPublicId || "Online"
     : "Online";
 
   const handleBack = () => {
