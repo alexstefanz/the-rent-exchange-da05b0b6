@@ -257,11 +257,21 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
               </div>
 
               <div className="animate-fade-in" style={stagger(7)}>
-                <DrawerNavGroup
-                  title={t("Suport", "Support")}
-                  items={supportItems}
-                  onNavigate={onClose}
-                />
+                <Link
+                  to="/suport"
+                  onClick={onClose}
+                  className="flex items-center gap-3 w-full h-12 px-4 rounded-xl bg-white border border-border/60 shadow-sm hover:bg-white/90 transition-colors"
+                >
+                  <LifeBuoy className="h-5 w-5 text-foreground" />
+                  <span className="flex-1 text-sm font-medium text-foreground text-left">
+                    {t("Suport & Tickete", "Support & Tickets")}
+                  </span>
+                  {openTickets > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+                      {openTickets}
+                    </span>
+                  )}
+                </Link>
               </div>
             </div>
           </div>
