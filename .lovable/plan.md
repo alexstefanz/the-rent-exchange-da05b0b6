@@ -1,23 +1,9 @@
-## Enlarge header icons by ~25%
+## Hide redundant account nav items in mobile drawer
 
-Bump icon sizes in the header so the Chat/Favorites/Bell glyphs and the avatar trigger feel ~25% larger on both desktop and mobile. Pure presentational change, no logic.
+In `src/components/layout/mobile-drawer/MobileDrawer.tsx`:
 
-### Changes
+- Always remove "Contul meu" from the `accountItems` list (the profile hero card at the top already links to `/contul-meu`).
+- Build `accountItems` dynamically: include "Verificare KYC" only when the user is **not** verified (i.e. `profile?.kyc_status !== "VERIFIED"`). When verified, the green KYC pill above already represents the state.
+- If the resulting `accountItems` array is empty, skip rendering the entire "Cont" `DrawerNavGroup` (no empty-titled section).
 
-**`src/components/layout/Navbar.tsx`**
-- Desktop Chat: `MessageCircle` `h-4 w-4` → `h-5 w-5` (16→20px).
-- Desktop Favorites: `Heart` `h-5 w-5` → `h-6 w-6` (20→24px).
-
-**`src/components/layout/NotificationBell.tsx`** (used on both desktop and mobile)
-- `Bell` `h-5 w-5` → `h-6 w-6` (20→24px).
-- Trigger button: switch from `size="icon"` (h-10 w-10) to a slightly larger square (`h-11 w-11`) so the icon doesn't crowd the button.
-
-**`src/components/layout/AccountHubMenu.tsx`** (desktop trigger avatar)
-- Avatar in trigger: `h-8 w-8` → `h-10 w-10` (32→40px).
-- Keep the rest of the dropdown unchanged.
-
-**Mobile avatar** — the mobile header avatar lives in the menu trigger button. Confirm whether the user wants the Menu/avatar button at the right of the mobile navbar enlarged too; today it shows a `Menu`/`X` icon (`h-5 w-5`) inside an `h-10 w-10` button. Bump that icon to `h-6 w-6` to match.
-
-### Out of scope
-- No layout/spacing redesign, no color or animation changes.
-- Notification badge size stays the same so it still reads as a small dot.
+No other components or business logic change.
