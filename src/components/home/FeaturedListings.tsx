@@ -202,7 +202,7 @@ const FeaturedListings = () => {
                 </div>
                 <div className="p-3 md:p-4 flex flex-col">
                   {product.category && (
-                    <span className="inline-block rounded bg-primary px-2 py-0.5 text-[10px] md:text-xs font-semibold text-primary-foreground mb-1.5">
+                    <span className="inline-flex w-fit max-w-max self-start rounded bg-primary px-2 py-0.5 text-[10px] md:text-xs font-semibold text-primary-foreground mb-1.5 whitespace-nowrap">
                       {getDisplayCategory(product.category, language)}
                     </span>
                   )}
