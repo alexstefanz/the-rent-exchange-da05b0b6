@@ -869,7 +869,7 @@ const SupportChatWidget = () => {
                   >
                     <Ticket className="h-3.5 w-3.5" />
                     {t("Tickete", "Tickets")}
-                    {openTicketsCount > 0 && (
+                    {ticketsTabBadge > 0 && (
                       <span
                         className={cn(
                           "ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold",
@@ -878,7 +878,7 @@ const SupportChatWidget = () => {
                             : "bg-primary text-primary-foreground",
                         )}
                       >
-                        {openTicketsCount}
+                        {ticketsTabBadge}
                       </span>
                     )}
                   </button>
