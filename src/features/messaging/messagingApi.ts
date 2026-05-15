@@ -261,24 +261,25 @@ export async function sendMessage(conversationId: string, content: string): Prom
     return null;
   }
 
-  // Update conversation timestamp
-  await supabase
+  // Fire-and-forget: don't block the UI on conversation timestamp update
+  void supabase
     .from('conversations')
     .update({ updated_at: new Date().toISOString() })
-    .eq('id', conversationId);
+    .eq('id', conversationId)
+    .then(({ error: updErr }) => {
+      if (updErr) console.error('conversation updated_at error:', updErr);
+    });
 
-  // Send email notification (non-blocking)
-  try {
-    await supabase.functions.invoke('send-message-notification', {
+  // Fire-and-forget: don't block the UI on email notification
+  void supabase.functions
+    .invoke('send-message-notification', {
       body: {
         conversation_id: conversationId,
         sender_id: user.id,
         message_content: trimmed,
       },
-    });
-  } catch (e) {
-    console.error('Message notification error:', e);
-  }
+    })
+    .catch((e) => console.error('Message notification error:', e));
 
   return data as Message;
 }
