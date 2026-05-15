@@ -180,10 +180,25 @@ export function ChatPanel({
     if (!content.trim() && uploaded.length === 0) return;
     // For text-only just send. For attachments, ensure there's at least a placeholder content.
     const finalContent = content.trim() || "📎";
+    // Optimistic: show the message immediately so the UI feels instant.
+    const tmpId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    if (uploaded.length === 0) {
+      const optimistic: Message = {
+        id: tmpId,
+        conversation_id: conversationId,
+        sender_id: user?.id || null,
+        content: finalContent,
+        is_read: false,
+        created_at: new Date().toISOString(),
+        attachments: [],
+      };
+      setLocalMessages((prev) => [...prev, optimistic]);
+    }
     let sent;
     try {
       sent = await sendMessage(conversationId, finalContent);
     } catch (e: any) {
+      setLocalMessages((prev) => prev.filter((m) => m.id !== tmpId));
       if (e?.message === "PROFANITY_BLOCKED") {
         toast.error(
           t(
@@ -195,6 +210,9 @@ export function ChatPanel({
       }
       throw e;
     }
+    if (!sent) {
+      setLocalMessages((prev) => prev.filter((m) => m.id !== tmpId));
+    }
     if (sent) {
       let attachments: AttachmentRow[] = [];
       if (uploaded.length > 0) {
@@ -205,9 +223,12 @@ export function ChatPanel({
           .eq("message_id", sent.id);
         attachments = (data || []) as AttachmentRow[];
       }
-      setLocalMessages((prev) =>
-        prev.some((m) => m.id === sent.id) ? prev : [...prev, { ...sent, attachments }]
-      );
+      setLocalMessages((prev) => {
+        // Replace the optimistic placeholder (if any) with the real message; dedup if realtime already inserted it.
+        const withoutTmp = prev.filter((m) => m.id !== tmpId);
+        if (withoutTmp.some((m) => m.id === sent.id)) return withoutTmp;
+        return [...withoutTmp, { ...sent, attachments }];
+      });
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
     }
   };
