@@ -354,6 +354,13 @@ const SupportChatWidget = () => {
     0,
   );
 
+  const rezervariUnread = conversations
+    .filter((c) => c.buyer_id === user?.id)
+    .reduce((acc, c) => acc + (c.unread_count || 0), 0);
+  const deInchiriatUnread = conversations
+    .filter((c) => c.owner_id === user?.id)
+    .reduce((acc, c) => acc + (c.unread_count || 0), 0);
+
   const filteredConvs = conversations.filter((c) =>
     chatSubTab === "rezervari"
       ? c.buyer_id === user?.id
@@ -941,25 +948,35 @@ const SupportChatWidget = () => {
                         type="button"
                         onClick={() => setChatSubTab("rezervari")}
                         className={cn(
-                          "flex-1 h-7 rounded-full text-[11px] font-medium transition-colors",
+                          "flex-1 h-7 rounded-full text-[11px] font-medium transition-colors inline-flex items-center justify-center gap-1.5",
                           chatSubTab === "rezervari"
                             ? "bg-foreground text-background"
                             : "bg-muted text-muted-foreground hover:bg-muted/70",
                         )}
                       >
                         {t("Rezervări", "Bookings")}
+                        {rezervariUnread > 0 && (
+                          <span className="inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full text-[9px] font-bold bg-destructive text-destructive-foreground">
+                            {rezervariUnread}
+                          </span>
+                        )}
                       </button>
                       <button
                         type="button"
                         onClick={() => setChatSubTab("de-inchiriat")}
                         className={cn(
-                          "flex-1 h-7 rounded-full text-[11px] font-medium transition-colors",
+                          "flex-1 h-7 rounded-full text-[11px] font-medium transition-colors inline-flex items-center justify-center gap-1.5",
                           chatSubTab === "de-inchiriat"
                             ? "bg-foreground text-background"
                             : "bg-muted text-muted-foreground hover:bg-muted/70",
                         )}
                       >
                         {t("De închiriat", "Renting out")}
+                        {deInchiriatUnread > 0 && (
+                          <span className="inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full text-[9px] font-bold bg-destructive text-destructive-foreground">
+                            {deInchiriatUnread}
+                          </span>
+                        )}
                       </button>
                     </div>
 
