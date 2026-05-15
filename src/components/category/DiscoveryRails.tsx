@@ -9,15 +9,20 @@ interface RailProps {
   title: string;
   icon: React.ReactNode;
   products: Product[];
+  slidesPerView?: 2 | 4;
 }
 
-const Rail = ({ title, icon, products }: RailProps) => {
+const Rail = ({ title, icon, products, slidesPerView = 4 }: RailProps) => {
   const { t } = useLanguage();
   const [emblaRef, emblaApi] = useEmblaCarousel({ align: "start", dragFree: true, containScroll: "trimSnaps" });
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
 
   if (products.length === 0) return null;
+
+  const basisClass = slidesPerView === 2
+    ? "shrink-0 basis-[85%] sm:basis-[48%] md:basis-[48%] lg:basis-[48%]"
+    : "shrink-0 basis-[68%] sm:basis-[42%] md:basis-[32%] lg:basis-[24%]";
 
   return (
     <section className="space-y-3 motion-safe:animate-fade-in-up">
@@ -40,7 +45,7 @@ const Rail = ({ title, icon, products }: RailProps) => {
       <div ref={emblaRef} className="overflow-hidden -mx-1">
         <div className="flex gap-4 px-1">
           {products.map((p) => (
-            <div key={p.id} className="shrink-0 basis-[68%] sm:basis-[42%] md:basis-[32%] lg:basis-[24%]">
+            <div key={p.id} className={basisClass}>
               <ProductCard product={p} />
             </div>
           ))}
@@ -50,13 +55,20 @@ const Rail = ({ title, icon, products }: RailProps) => {
   );
 };
 
-interface Props {
-  trending: Product[];
-  newArrivals: Product[];
-  nearby: Product[];
-}
+export const DiscoveryRailsTop = ({ newArrivals }: { newArrivals: Product[] }) => {
+  const { t } = useLanguage();
+  return (
+    <div className="space-y-10">
+      <Rail
+        title={t("Adăugate recent", "Newly added")}
+        icon={<Sparkles className="h-5 w-5 text-primary" />}
+        products={newArrivals}
+      />
+    </div>
+  );
+};
 
-const DiscoveryRails = ({ trending, newArrivals, nearby }: Props) => {
+export const DiscoveryRailsBottom = ({ trending, nearby }: { trending: Product[]; nearby: Product[] }) => {
   const { t } = useLanguage();
   return (
     <div className="space-y-10">
@@ -64,19 +76,23 @@ const DiscoveryRails = ({ trending, newArrivals, nearby }: Props) => {
         title={t("Trending în categorie", "Trending in category")}
         icon={<Flame className="h-5 w-5 text-primary" />}
         products={trending}
-      />
-      <Rail
-        title={t("Adăugate recent", "Newly added")}
-        icon={<Sparkles className="h-5 w-5 text-primary" />}
-        products={newArrivals}
+        slidesPerView={2}
       />
       <Rail
         title={t("Aproape de tine", "Near you")}
         icon={<MapPin className="h-5 w-5 text-primary" />}
         products={nearby}
+        slidesPerView={2}
       />
     </div>
   );
 };
+
+const DiscoveryRails = ({ trending, newArrivals, nearby }: { trending: Product[]; newArrivals: Product[]; nearby: Product[] }) => (
+  <div className="space-y-10">
+    <DiscoveryRailsTop newArrivals={newArrivals} />
+    <DiscoveryRailsBottom trending={trending} nearby={nearby} />
+  </div>
+);
 
 export default DiscoveryRails;
