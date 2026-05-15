@@ -1,29 +1,32 @@
-## Sincronizare categorii homepage cu admin (DB)
+## Live category counts (homepage + Exploreaza)
 
-Actualizez fișierul static `src/data/categories.ts` și mapping-ul de iconițe pentru a se potrivi exact cu `platform_categories` din DB (sursa pe care o modifici din Admin).
+### Problema
 
-### Schimbări — `src/data/categories.ts`
+`Index.tsx` și `Categories.tsx` au fiecare propriul `useQuery(["category-counts"])` cu `staleTime: 5 * 60 * 1000`. Când publici/editezi un produs, contoarele rămân pe valoarea veche până expiră cache-ul. În plus, query-ul filtrează doar `is_active=true` și ignoră `approval_status`, deci poate număra produse `pending`/`rejected` în viitor.
 
-| ID | Nume curent | Nume nou (din DB) |
-|----|---|---|
-| 5 | `name: "Outdoor"` | `name: "Drumeții & Natură"` (nameEn rămâne `"Outdoor"`) |
-| 8 | `name: "Travel"`, `nameEn: "Travel"` | `name: "Călătorii"`, `nameEn: "Travel"` |
-| 11 | `name: "Utilaje"`, `nameEn: "Heavy Equipment"` (sau similar) | `name: "Echipamente Agricole"`, `nameEn: "Agricultural Equipment"` |
+### Soluție
 
-Slug-urile rămân neschimbate (pentru a nu strica URL-uri/SEO existente: `/categorie/outdoor`, `/categorie/travel`, `/categorie/utilaje`).
+1. **Hook partajat** `src/hooks/queries/useCategoryCounts.ts`:
+   - Fetch din `products` cu `is_active=true` AND `approval_status='approved'`.
+   - `staleTime: 60_000` (1 min) și `refetchOnMount: 'always'` ca fallback.
+   - Subscribe Supabase Realtime pe `public.products` (`event: '*'`) și la fiecare change apelează `queryClient.invalidateQueries({ queryKey: ['category-counts'] })`. Cleanup `removeChannel` la unmount.
+   - Returnează `Record<string, number>` (cheie = `category` name din DB).
 
-### Schimbări — `src/data/categoryIcons.ts`
+2. **`src/pages/Index.tsx`** — înlocuiește `useQuery` inline cu `useCategoryCounts()`.
 
-- ID 11: `Forklift` → `Tractor` (import din `lucide-react`).
-- ID 5 (`TreePine`) și ID 8 (`Luggage`) sunt deja corecte.
+3. **`src/pages/Categories.tsx`** — înlocuiește `useQuery` inline cu `useCategoryCounts()`.
+
+4. **Realtime publication** — verific dacă tabela `products` e deja în publicația `supabase_realtime`; dacă nu, migrare:
+   ```sql
+   ALTER PUBLICATION supabase_realtime ADD TABLE public.products;
+   ```
 
 ### Ce NU se modifică
 
-- DB / migrări (ai ales sincronizare statică).
-- Slug-urile categoriilor și rutele.
-- Restul celor 9 categorii (deja identice).
-- `productI18n.ts` — folosește map-ul derivat din `categories.ts`, deci se actualizează automat.
+- Pagina `/categorie/:slug` (CategoryDetail) și search — au propriile query-uri pentru produse, deja reactive.
+- Numele categoriilor / structura DB.
+- Restul componentelor care consumă produse.
 
 ### Verificare
 
-După modificări, homepage-ul va afișa: Unelte, Evenimente, Electronice, Grădinărit, **Drumeții & Natură**, Jucării și Petrecere Copii, Sport, **Călătorii**, Transport și Utilitare, Haine și Recuzită, **Echipamente Agricole** (icon Tractor), Diverse — identic cu admin.
+După publish-ul unui produs nou în Utilaje, contorul de pe homepage și `/categorii` se actualizează în câteva sute de ms (prin Realtime), fără refresh manual.
