@@ -198,6 +198,40 @@ const SupportChatWidget = () => {
   const isAdminRoute = pathname.startsWith("/admin");
   const hasInitiatedAi = useRef(false);
 
+  const [activeTab, setActiveTab] = useState<"chat" | "tickets">("chat");
+
+  // Reset to chat tab whenever the widget closes
+  useEffect(() => {
+    if (!isOpen) setActiveTab("chat");
+  }, [isOpen]);
+
+  const { data: userTickets = [], isLoading: isLoadingTickets } = useQuery<OpsTicket[]>({
+    queryKey: ["userTickets"],
+    queryFn: fetchUserTickets,
+    enabled: isOpen && !!user && activeTab === "tickets",
+    refetchInterval: 15000,
+  });
+
+  const { data: openTicketsCount = 0 } = useQuery<number>({
+    queryKey: ["userTicketsOpenCount"],
+    queryFn: async () => {
+      const list = await fetchUserTickets();
+      return list.filter(t => t.status !== "CLOSED" && t.status !== "RESOLVED").length;
+    },
+    enabled: isOpen && !!user,
+    refetchInterval: 30000,
+  });
+
+  const handleSelectTicket = (ticket: OpsTicket) => {
+    setTicketId(ticket.id);
+    setTicketPublicId(ticket.public_id ?? null);
+    localStorage.setItem(STORAGE_KEY, ticket.id);
+    setAiMessages([]);
+    hasInitiatedAi.current = false;
+    setShowFaq(false);
+    setActiveTab("chat");
+  };
+
   // Detect contextual page (product / rental) for the AI
   const { data: chatContext } = useQuery<ChatContext>({
     queryKey: ["supportChatContext", pathname],
