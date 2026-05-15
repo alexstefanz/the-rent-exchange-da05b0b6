@@ -246,7 +246,16 @@ const AdminProducts = () => {
   const { data: categories } = useQuery({
     queryKey: ['platformCategories'],
     queryFn: async () => {
-      const { data } = await supabase.from('platform_categories').select('name').eq('is_active', true).order('sort_order');
+      const { data } = await supabase.from('platform_categories').select('id, name').eq('is_active', true).order('sort_order');
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: subcategories } = useQuery({
+    queryKey: ['platformSubcategories'],
+    queryFn: async () => {
+      const { data } = await supabase.from('platform_subcategories').select('category_id, name').eq('is_active', true).order('sort_order');
       return data || [];
     },
     staleTime: 5 * 60 * 1000,
