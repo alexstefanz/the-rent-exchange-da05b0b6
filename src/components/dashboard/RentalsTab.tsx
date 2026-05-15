@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Calendar, Search, Loader2, Package, Inbox, XCircle, TrendingUp, Clock, Sparkles, ArrowRight, Ban, MessageSquare } from "lucide-react";
+import { Calendar, Search, Loader2, Package, Inbox, Clock, Sparkles, ArrowRight, Ban, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +18,7 @@ import { useRentalRealtime } from "@/hooks/useRentalRealtime";
 import { requestMutualCancellation } from "@/features/rentals/rentalsApi";
 import { toast } from "sonner";
 import StatusBadge from "./StatusBadge";
+import RentalsFilterBar, { type RentalStatusFilter, type RentalSortBy } from "./RentalsFilterBar";
 
 interface MyRental {
   id: string;
@@ -94,21 +95,44 @@ const RentalsTab = () => {
   const [cancelSubject, setCancelSubject] = useState("");
   const [cancelReason, setCancelReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<RentalStatusFilter>("all");
+  const [sortBy, setSortBy] = useState<RentalSortBy>("newest");
 
-  const pendingRentals = rentals.filter(r => r.status === "pending");
-  const premiumActiveRentals = rentals.filter(
+  const counts = useMemo(() => ({
+    all: rentals.length,
+    active: rentals.filter(r => r.status === "confirmed" || r.status === "active").length,
+    pending: rentals.filter(r => r.status === "pending").length,
+    cancelled: rentals.filter(r => r.status === "cancelled" || r.status === "rejected").length,
+  }), [rentals]);
+
+  const matchesStatus = (r: MyRental) => {
+    if (statusFilter === "all") return true;
+    if (statusFilter === "active") return r.status === "confirmed" || r.status === "active";
+    if (statusFilter === "pending") return r.status === "pending";
+    if (statusFilter === "cancelled") return r.status === "cancelled" || r.status === "rejected";
+    return true;
+  };
+
+  const sortRentals = (arr: MyRental[]) => {
+    const sorted = [...arr];
+    sorted.sort((a, b) => {
+      if (sortBy === "newest") return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
+      if (sortBy === "oldest") return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
+      if (sortBy === "amount_desc") return Number(b.subtotal) - Number(a.subtotal);
+      if (sortBy === "amount_asc") return Number(a.subtotal) - Number(b.subtotal);
+      return 0;
+    });
+    return sorted;
+  };
+
+  const filtered = useMemo(() => sortRentals(rentals.filter(matchesStatus)), [rentals, statusFilter, sortBy]);
+
+  const pendingRentals = filtered.filter(r => r.status === "pending");
+  const premiumActiveRentals = filtered.filter(
     r => (r.status === "confirmed" || r.status === "active") && !r.handover_confirmed_at,
   );
   const premiumIds = new Set([...pendingRentals, ...premiumActiveRentals].map(r => r.id));
-  const historyRentals = rentals.filter(r => !premiumIds.has(r.id));
-  const activeRentals = rentals.filter(r => r.status === "confirmed" || r.status === "active");
-  const cancelledRentals = rentals.filter(r => r.status === "cancelled" || r.status === "rejected");
-
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthSpent = rentals
-    .filter(r => r.status === "completed" && r.return_confirmed_at && new Date(r.return_confirmed_at) >= startOfMonth)
-    .reduce((sum, r) => sum + Number(r.subtotal || 0), 0);
+  const historyRentals = filtered.filter(r => !premiumIds.has(r.id));
 
   const handleRequestCancel = async () => {
     if (!cancelDialogRental) return;
@@ -164,25 +188,15 @@ const RentalsTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Stats — 4 cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1"><Inbox className="h-4 w-4" /><span className="text-sm">În așteptare</span></div>
-          <p className="text-2xl font-bold text-foreground">{pendingRentals.length}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1"><Package className="h-4 w-4" /><span className="text-sm">Active</span></div>
-          <p className="text-2xl font-bold text-foreground">{activeRentals.length}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1"><XCircle className="h-4 w-4" /><span className="text-sm">Anulate</span></div>
-          <p className="text-2xl font-bold text-foreground">{cancelledRentals.length}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1"><TrendingUp className="h-4 w-4" /><span className="text-sm">Cheltuit luna asta</span></div>
-          <p className="text-2xl font-bold text-primary">{monthSpent.toFixed(2)} RON</p>
-        </div>
-      </div>
+      {/* Filter & sort bar */}
+      <RentalsFilterBar
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        counts={counts}
+        amountLabel="Total"
+      />
 
       {/* Premium reservation cards */}
       {(pendingRentals.length > 0 || premiumActiveRentals.length > 0) && (
@@ -192,7 +206,7 @@ const RentalsTab = () => {
             Rezervările mele
             <Badge className="bg-primary text-primary-foreground">{pendingRentals.length + premiumActiveRentals.length}</Badge>
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
             {[...pendingRentals, ...premiumActiveRentals].map((rental) => {
               const isPending = rental.status === "pending";
               const canRequestCancel = !isPending && !rental.handover_confirmed_at;
@@ -201,78 +215,78 @@ const RentalsTab = () => {
                   key={rental.id}
                   className="relative flex flex-col overflow-hidden rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-primary/5 to-card shadow-lg shadow-primary/10"
                 >
-                  <div className="relative aspect-[16/10] overflow-hidden bg-muted">
+                  <div className="relative aspect-[4/3] sm:aspect-[16/10] overflow-hidden bg-muted">
                     <img
                       src={rental.product_image}
                       alt={rental.product_title}
                       loading="lazy"
                       className="h-full w-full object-cover"
                     />
-                    <div className="absolute top-3 right-3">
+                    <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
                       {isPending ? (
-                        <Badge className="bg-primary text-primary-foreground animate-pulse shadow-md">În așteptare</Badge>
+                        <Badge className="bg-primary text-primary-foreground animate-pulse shadow-md text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">În așteptare</Badge>
                       ) : (
-                        <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-md">Confirmată</Badge>
+                        <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-md text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">Confirmată</Badge>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex flex-1 flex-col p-4">
+                  <div className="flex flex-1 flex-col p-3 sm:p-4">
                     <div className="flex items-start gap-2 mb-1">
-                      <Inbox className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                      <Inbox className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary mt-0.5 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
+                        <p className="text-[9px] sm:text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
                           {isPending ? "Cerere către" : "Rezervare la"}
                         </p>
-                        <p className="text-base font-semibold text-foreground truncate">
+                        <p className="text-sm sm:text-base font-semibold text-foreground truncate">
                           {rental.owner_name}
                         </p>
                       </div>
                     </div>
 
-                    <p className="text-sm font-medium text-foreground mt-1 line-clamp-1">
+                    <p className="text-xs sm:text-sm font-medium text-foreground mt-1 line-clamp-1">
                       pentru <span className="text-primary">{rental.product_title}</span>
                     </p>
 
-                    <div className="grid grid-cols-3 gap-2 mt-4">
-                      <div className="rounded-lg bg-card/80 border border-border p-2">
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-0.5">
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mt-3 sm:mt-4">
+                      <div className="rounded-lg bg-card/80 border border-border p-1.5 sm:p-2">
+                        <div className="flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-[10px] text-muted-foreground mb-0.5">
                           <Calendar className="h-3 w-3" /><span>Perioadă</span>
                         </div>
-                        <p className="text-xs font-semibold text-foreground leading-tight">
+                        <p className="text-[11px] sm:text-xs font-semibold text-foreground leading-tight">
                           {format(new Date(rental.start_date), "d MMM", { locale: roLocale })}–{format(new Date(rental.end_date), "d MMM", { locale: roLocale })}
                         </p>
                       </div>
-                      <div className="rounded-lg bg-card/80 border border-border p-2">
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-0.5">
+                      <div className="rounded-lg bg-card/80 border border-border p-1.5 sm:p-2">
+                        <div className="flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-[10px] text-muted-foreground mb-0.5">
                           <Clock className="h-3 w-3" /><span>Zile</span>
                         </div>
-                        <p className="text-xs font-semibold text-foreground">{rental.rental_days}</p>
+                        <p className="text-[11px] sm:text-xs font-semibold text-foreground">{rental.rental_days}</p>
                       </div>
-                      <div className="rounded-lg bg-primary/15 border border-primary/30 p-2">
-                        <div className="flex items-center gap-1 text-[10px] text-primary/80 mb-0.5">
-                          <TrendingUp className="h-3 w-3" /><span>Total</span>
+                      <div className="rounded-lg bg-primary/15 border border-primary/30 p-1.5 sm:p-2">
+                        <div className="flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-[10px] text-primary/80 mb-0.5">
+                          <span>Total</span>
                         </div>
-                        <p className="text-sm font-bold text-primary leading-tight">{rental.subtotal} RON</p>
+                        <p className="text-[11px] sm:text-sm font-bold text-primary leading-tight">{rental.subtotal} RON</p>
                       </div>
                     </div>
 
                     {rental.message_to_owner && rental.message_to_owner.trim().length > 0 && (
-                      <div className="mt-3 rounded-xl rounded-tl-sm bg-background border border-border px-3 py-2">
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground mb-0.5">
+                      <div className="mt-2 sm:mt-3 rounded-xl rounded-tl-sm bg-background border border-border px-2 sm:px-3 py-1.5 sm:py-2">
+                        <div className="flex items-center gap-1 text-[9px] sm:text-[10px] text-muted-foreground mb-0.5">
                           <MessageSquare className="h-3 w-3" />
                           <span>Mesajul tău</span>
                         </div>
-                        <p className="text-xs text-foreground whitespace-pre-wrap break-words line-clamp-3">
+                        <p className="text-[11px] sm:text-xs text-foreground whitespace-pre-wrap break-words line-clamp-2 sm:line-clamp-3">
                           {rental.message_to_owner}
                         </p>
                       </div>
                     )}
 
-                    <div className="mt-auto pt-4">
-                      <Button asChild className="w-full">
+                    <div className="mt-auto pt-3 sm:pt-4">
+                      <Button asChild className="w-full h-9 text-xs sm:text-sm">
                         <Link to={rental.public_id ? `/rezervari/${rental.public_id}` : `/produs/${rental.product_id}`}>
-                          Vezi detalii <ArrowRight className="h-4 w-4 ml-1" />
+                          Vezi detalii <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4 ml-1" />
                         </Link>
                       </Button>
 
@@ -282,10 +296,11 @@ const RentalsTab = () => {
                             variant="ghost"
                             size="sm"
                             onClick={() => setCancelDialogRental(rental)}
-                            className="text-muted-foreground hover:text-destructive text-xs"
+                            className="text-muted-foreground hover:text-destructive text-[11px] sm:text-xs px-2"
                           >
-                            <Ban className="h-3.5 w-3.5 mr-1" />
-                            Solicită anularea cererii
+                            <Ban className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
+                            <span className="sm:hidden">Anulează</span>
+                            <span className="hidden sm:inline">Solicită anularea cererii</span>
                           </Button>
                         </div>
                       )}
