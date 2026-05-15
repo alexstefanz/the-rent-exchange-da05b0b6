@@ -725,6 +725,14 @@ const SupportChatWidget = () => {
               <>
                 <ScrollArea className="flex-1 px-4 py-3">
                   {messages.length === 0 ? (
+                    isAdmin ? (
+                      <p className="text-xs text-muted-foreground text-center py-6">
+                        {t(
+                          "Niciun mesaj încă în acest ticket.",
+                          "No messages in this ticket yet.",
+                        )}
+                      </p>
+                    ) : (
                     <div className="flex items-start gap-2 mt-2">
                       <Avatar className="h-7 w-7 shrink-0 mt-0.5">
                         <AvatarFallback className="bg-primary/10 text-primary text-[11px] font-bold">
@@ -738,25 +746,37 @@ const SupportChatWidget = () => {
                         )}
                       </div>
                     </div>
+                    )
                   ) : (
                     <div className="space-y-3">
                       {messages.map((msg) => {
-                        const isCustomer = msg.author_type === "CUSTOMER";
+                        const isOwn = isAdmin
+                          ? msg.author_type === "ADMIN"
+                          : msg.author_type === "CUSTOMER";
+                        const isInternalNote = (msg as any).is_internal === true;
                         return (
                           <div
                             key={msg.id}
-                            className={`flex ${isCustomer ? "justify-end" : "justify-start"}`}
+                            className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
                           >
                             <div
                               className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
-                                isCustomer
+                                isInternalNote
+                                  ? "bg-yellow-100 border border-yellow-300 text-foreground"
+                                  : isOwn
                                   ? "bg-amber-400 text-foreground rounded-br-md"
                                   : "bg-muted text-foreground rounded-bl-md"
                               }`}
                             >
+                              {isInternalNote && (
+                                <p className="flex items-center gap-1 text-[10px] font-semibold text-yellow-800 mb-1">
+                                  <Lock className="h-3 w-3" />
+                                  {t("Notă internă", "Internal note")}
+                                </p>
+                              )}
                               {renderMessageContent(msg.message_text)}
                               <p
-                                className={`text-[10px] mt-1 ${isCustomer ? "text-foreground/60" : "text-muted-foreground"}`}
+                                className={`text-[10px] mt-1 ${isOwn ? "text-foreground/60" : "text-muted-foreground"}`}
                               >
                                 {format(new Date(msg.created_at), "HH:mm")}
                               </p>
