@@ -10,9 +10,11 @@ import {
   Ticket,
   ArrowLeft,
   History,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +27,12 @@ import {
   fetchUserTickets,
   type OpsTicket,
 } from "@/features/tickets/userTicketsApi";
+import {
+  fetchOpsTickets,
+  fetchTicketMessages,
+  createTicketMessage,
+  type OpsTicket as AdminOpsTicket,
+} from "@/features/admin/opsTicketsApi";
 import {
   getConversations,
   type Conversation,
