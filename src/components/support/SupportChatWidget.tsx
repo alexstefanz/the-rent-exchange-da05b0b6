@@ -211,6 +211,7 @@ const SupportChatWidget = () => {
       setShowTicketArchive(false);
       setMessageText("");
       setIsInternal(false);
+      setUserLeftTicket(false);
     }
   }, [isOpen]);
 
