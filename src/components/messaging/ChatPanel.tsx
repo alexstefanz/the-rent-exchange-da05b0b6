@@ -38,6 +38,7 @@ interface ChatPanelProps {
   onBack?: () => void;
   onOpenInfo?: () => void;
   className?: string;
+  hideHeader?: boolean;
 }
 
 export function ChatPanel({
@@ -51,6 +52,7 @@ export function ChatPanel({
   onBack,
   onOpenInfo,
   className = "",
+  hideHeader = false,
 }: ChatPanelProps) {
   const { user } = useAuth();
   const { t } = useLanguage();
@@ -239,16 +241,18 @@ export function ChatPanel({
 
   return (
     <div className={`flex flex-col h-full bg-[#FCFAF8] ${className}`}>
-      <ChatHeader
-        name={otherUserName}
-        avatarUrl={otherUserAvatar}
-        productTitle={productTitle}
-        online={peerOnline}
-        typing={peerTyping}
-        onBack={onBack}
-        onInfo={onOpenInfo}
-        phone={ownerPhone}
-      />
+      {!hideHeader && (
+        <ChatHeader
+          name={otherUserName}
+          avatarUrl={otherUserAvatar}
+          productTitle={productTitle}
+          online={peerOnline}
+          typing={peerTyping}
+          onBack={onBack}
+          onInfo={onOpenInfo}
+          phone={ownerPhone}
+        />
+      )}
 
       {rentalCtx && (
         <>
