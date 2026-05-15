@@ -246,7 +246,16 @@ const AdminProducts = () => {
   const { data: categories } = useQuery({
     queryKey: ['platformCategories'],
     queryFn: async () => {
-      const { data } = await supabase.from('platform_categories').select('name').eq('is_active', true).order('sort_order');
+      const { data } = await supabase.from('platform_categories').select('id, name').eq('is_active', true).order('sort_order');
+      return data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: subcategories } = useQuery({
+    queryKey: ['platformSubcategories'],
+    queryFn: async () => {
+      const { data } = await supabase.from('platform_subcategories').select('category_id, name').eq('is_active', true).order('sort_order');
       return data || [];
     },
     staleTime: 5 * 60 * 1000,
@@ -300,6 +309,15 @@ const AdminProducts = () => {
     if (!categories) return [];
     return categories.map(c => ({ value: c.name, label: c.name }));
   }, [categories]);
+
+  const subcategoryOptions = useMemo(() => {
+    if (!subcategories || !categories || !editForm.category) return [];
+    const cat = categories.find(c => c.name === editForm.category);
+    if (!cat) return [];
+    return subcategories
+      .filter(s => s.category_id === cat.id)
+      .map(s => ({ value: s.name, label: s.name }));
+  }, [subcategories, categories, editForm.category]);
 
   const productColumnFilters: ColumnFilterConfig[] = [
     { key: "title", type: "text", placeholder: "Titlu..." },
@@ -890,11 +908,31 @@ const AdminProducts = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Categorie</label>
-                <Input value={editForm.category} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} />
+                <Select value={editForm.category || undefined} onValueChange={(v) => setEditForm(f => ({ ...f, category: v, subcategory: "" }))}>
+                  <SelectTrigger><SelectValue placeholder="Selectează categoria" /></SelectTrigger>
+                  <SelectContent>
+                    {categoryOptions.map(o => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Subcategorie</label>
-                <Input value={editForm.subcategory} onChange={(e) => setEditForm(f => ({ ...f, subcategory: e.target.value }))} />
+                <Select
+                  value={editForm.subcategory || undefined}
+                  onValueChange={(v) => setEditForm(f => ({ ...f, subcategory: v }))}
+                  disabled={!editForm.category || subcategoryOptions.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={!editForm.category ? "Alege întâi categoria" : subcategoryOptions.length === 0 ? "Fără subcategorii" : "Selectează subcategoria"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subcategoryOptions.map(o => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
