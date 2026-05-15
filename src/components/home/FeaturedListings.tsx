@@ -200,20 +200,20 @@ const FeaturedListings = () => {
                     </div>
                   )}
                 </div>
-                <div className="p-3 md:p-4">
+                <div className="p-3 md:p-4 flex flex-col">
                   {product.category && (
                     <span className="inline-block rounded bg-primary px-2 py-0.5 text-[10px] md:text-xs font-semibold text-primary-foreground mb-1.5">
                       {getDisplayCategory(product.category, language)}
                     </span>
                   )}
-                  <h3 className="font-heading text-sm text-foreground line-clamp-2 md:text-xl font-bold">{getDisplayTitle(product, language)}</h3>
+                  <h3 className="text-sm md:text-base text-foreground line-clamp-2 font-medium min-h-[2.5rem] md:min-h-[3rem]">{getDisplayTitle(product, language)}</h3>
                   <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground md:text-sm">
                     <MapPin className="h-3 w-3 shrink-0" />
                     <span className="truncate">{location}</span>
                   </div>
-                  <div className="mt-2 md:mt-3">
-                    <span className="font-heading text-base font-bold text-primary md:text-lg">{clientPrice} RON</span>
-                    <span className="text-xs text-muted-foreground md:text-sm"> {copy.common.perDay}</span>
+                  <div className="mt-auto pt-3.5">
+                    <span className="font-heading text-lg md:text-xl font-bold text-primary">{clientPrice} RON</span>
+                    <span className="text-xs md:text-sm text-muted-foreground"> {copy.common.perDay}</span>
                   </div>
                 </div>
               </Link>
