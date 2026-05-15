@@ -908,11 +908,31 @@ const AdminProducts = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Categorie</label>
-                <Input value={editForm.category} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} />
+                <Select value={editForm.category || undefined} onValueChange={(v) => setEditForm(f => ({ ...f, category: v, subcategory: "" }))}>
+                  <SelectTrigger><SelectValue placeholder="Selectează categoria" /></SelectTrigger>
+                  <SelectContent>
+                    {categoryOptions.map(o => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Subcategorie</label>
-                <Input value={editForm.subcategory} onChange={(e) => setEditForm(f => ({ ...f, subcategory: e.target.value }))} />
+                <Select
+                  value={editForm.subcategory || undefined}
+                  onValueChange={(v) => setEditForm(f => ({ ...f, subcategory: v }))}
+                  disabled={!editForm.category || subcategoryOptions.length === 0}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={!editForm.category ? "Alege întâi categoria" : subcategoryOptions.length === 0 ? "Fără subcategorii" : "Selectează subcategoria"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subcategoryOptions.map(o => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
