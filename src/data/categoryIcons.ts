@@ -9,7 +9,7 @@ import {
   Luggage,
   Truck,
   Shirt,
-  Tractor,
+  Forklift,
   Package,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -25,7 +25,7 @@ export const categoryIcons: Record<number, LucideIcon> = {
   8: Luggage,       // Travel
   9: Truck,         // Transport și Utilitare
   10: Shirt,        // Haine și Recuzită
-  11: Tractor,      // Echipamente Agricole
+  11: Forklift,     // Utilaje
   12: Package,      // Diverse
 };
 
