@@ -21,7 +21,7 @@ const Rail = ({ title, icon, products, slidesPerView = 4 }: RailProps) => {
   if (products.length === 0) return null;
 
   const basisClass = slidesPerView === 2
-    ? "shrink-0 basis-[85%] sm:basis-[48%] md:basis-[48%] lg:basis-[48%]"
+    ? "shrink-0 basis-[48%] sm:basis-[42%] md:basis-[32%] lg:basis-[24%]"
     : "shrink-0 basis-[68%] sm:basis-[42%] md:basis-[32%] lg:basis-[24%]";
 
   return (
