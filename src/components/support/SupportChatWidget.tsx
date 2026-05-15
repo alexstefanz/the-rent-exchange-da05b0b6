@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { Headphones, Send, X, MessageSquare, Plus, Bot, Loader2, ImagePlus, ChevronRight, ArrowLeft, Sparkles, Check, Pencil, Paperclip } from "lucide-react";
+import { Headphones, Send, X, MessageSquare, Plus, Bot, Loader2, ImagePlus, ChevronRight, ArrowLeft, Sparkles, Check, Pencil, Paperclip, Inbox, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,11 +12,15 @@ import {
   createUserTicket,
   fetchUserTicketMessages,
   addUserTicketMessage,
+  fetchUserTickets,
+  type OpsTicket,
 } from "@/features/tickets/userTicketsApi";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { SUPPORT_FAQ } from "@/data/supportFaq";
+import { StatusPill } from "@/components/support/center/StatusPill";
+import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "support_chat_ticket_id";
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/support-ai-chat`;
