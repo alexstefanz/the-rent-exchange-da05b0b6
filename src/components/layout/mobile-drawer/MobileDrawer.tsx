@@ -7,7 +7,7 @@ import {
   LogOut,
   User,
   Shield,
-  HelpCircle,
+  LifeBuoy,
   ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -93,7 +93,7 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
     {
       to: "/suport",
       label: t("Suport & Tickete", "Support & Tickets"),
-      icon: HelpCircle,
+      icon: LifeBuoy,
       badge: openTickets,
     },
   ];
