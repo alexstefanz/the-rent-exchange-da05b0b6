@@ -1,0 +1,1 @@
+UPDATE public.platform_categories SET name = 'Utilaje', name_en = 'Heavy Equipment', icon = 'Forklift' WHERE sort_order = 11;
