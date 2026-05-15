@@ -1,28 +1,34 @@
-## Probleme
+# Aliniere card produs homepage cu pagina de categorie
 
-1. Când user-ul deschide widget-ul și apasă prima oară pe tab-ul "Tickete", e aruncat direct în ultimul ticket activ (imaginea 1) în loc să vadă ecranul welcome cu mesajul prescris + linkul "Vezi tickete anterioare" (imaginea 2). Cauza: `useEffect`-ul din `SupportChatWidget.tsx` care auto-selectează `openTickets[0]` când `ticketId === null` rulează la fiecare intrare pe tab, nu doar după Back.
-2. Eticheta tab-ului "Tickete" trebuie să devină "Suport" / "Support" pentru utilizatorii normali, dar să rămână "Tickete" pentru admini.
+## Context
+Pe `/categorie/...` cardurile folosesc `ProductCard` cu un layout flex-column unde prețul este împins la baza cardului (`mt-auto pt-3.5`), astfel toate prețurile se aliniază pe aceeași linie indiferent de lungimea titlului. Pe homepage, în `FeaturedListings.tsx`, cardurile nu folosesc `mt-auto` deci prețurile "saltă" în funcție de cât de lung e titlul. În plus, titlul este randat cu `font-heading` și `font-bold` la `md:text-xl`, ceea ce diferă de stilul cerut (text body).
 
-## Soluție
+## Modificări — un singur fișier
 
-### 1. Welcome by default pe tabul Suport
+**`src/components/home/FeaturedListings.tsx`** (cardul de produs din grila `displayProducts.map`):
 
-În `src/components/support/SupportChatWidget.tsx`:
-- Elimin auto-resume-ul în ticket pentru user-ii normali. Concret: șterg blocul din `useEffect` care setează `ticketId = openTickets[0].id` când suntem pe tab-ul tickets fără ticket selectat. Welcome screen-ul (cu mesaj prescris + buton "Vezi tickete anterioare") rămâne starea implicită ori de câte ori `ticketId === null`.
-- Astfel, flag-ul `userLeftTicket` adăugat anterior devine redundant pentru user-i; îl pot lăsa pe loc fără efecte negative sau îl curăț odată cu efectul.
-- Comportamentul admin nu e afectat (oricum era gardat cu `!isAdmin`).
+1. **Container info section** — adaugă `flex flex-col` pe `<div className="p-3 md:p-4">` ca să permită `mt-auto` pentru preț.
 
-### 2. Rename tab pentru user-i
+2. **Titlu produs** — schimbă din:
+   ```tsx
+   <h3 className="font-heading text-sm text-foreground line-clamp-2 md:text-xl font-bold">
+   ```
+   în (font body, dimensiune body, aliniază înălțimea ca pe categorie):
+   ```tsx
+   <h3 className="text-sm md:text-base text-foreground line-clamp-2 font-medium min-h-[2.5rem] md:min-h-[3rem]">
+   ```
 
-În același fișier, butonul de tab "Tickete" (linia ~919-920):
-- Eticheta devine `isAdmin ? t("Tickete", "Tickets") : t("Suport", "Support")`.
-- Iconul rămâne `Ticket` (e ok semantic pentru ambele).
-- FAB-ul și restul textelor rămân.
+3. **Bloc preț** — schimbă din `<div className="mt-2 md:mt-3">` în `<div className="mt-auto pt-3.5">` și aliniază clasele cu cele din `ProductCard`:
+   ```tsx
+   <div className="mt-auto pt-3.5">
+     <span className="font-heading text-lg md:text-xl font-bold text-primary">
+       {clientPrice} RON
+     </span>
+     <span className="text-xs md:text-sm text-muted-foreground"> {copy.common.perDay}</span>
+   </div>
+   ```
 
-## Fișiere
-
-- `src/components/support/SupportChatWidget.tsx` — elimin auto-resume pentru tab-ul Suport și redenumesc eticheta tab-ului în funcție de rol.
-
-## În afara scope-ului
-
-- Layout welcome screen, lista de tickete arhivate, fluxul admin inbox — rămân neschimbate.
+## În afara scopului
+- Nu modific `ProductCard.tsx` (deja este referința).
+- Nu ating `SeeAllCard`, badge-ul de categorie, imaginea sau butonul de favorit.
+- Nu modific alte secțiuni ale homepage-ului.
