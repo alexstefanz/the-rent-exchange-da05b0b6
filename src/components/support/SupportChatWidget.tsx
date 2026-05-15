@@ -195,6 +195,7 @@ const SupportChatWidget = () => {
   const [messageText, setMessageText] = useState("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
+  const [isInternal, setIsInternal] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -209,8 +210,132 @@ const SupportChatWidget = () => {
       setTicketPublicId(null);
       setShowTicketArchive(false);
       setMessageText("");
+      setIsInternal(false);
     }
   }, [isOpen]);
+
+  // -------- Admin role detection --------
+  const { data: isAdmin = false } = useQuery({
+    queryKey: ["isAdmin", user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const { data } = await supabase.rpc("has_role", {
+        _user_id: user.id,
+        _role: "admin",
+      });
+      return !!data;
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // -------- Admin inbox (Tickete tab for admins) --------
+  type AdminInboxTicket = AdminOpsTicket & {
+    unread_count: number;
+    last_message?: string;
+    last_message_at?: string;
+  };
+  const { data: adminInbox = [], isLoading: isLoadingAdminInbox } = useQuery<
+    AdminInboxTicket[]
+  >({
+    queryKey: ["adminOpsInbox"],
+    queryFn: async () => {
+      const all = await fetchOpsTickets();
+      const active = all.filter((t) =>
+        [
+          "NEW",
+          "IN_PROGRESS",
+          "WAITING_CUSTOMER",
+          "WAITING_OWNER",
+          "WAITING_INTERNAL",
+        ].includes(t.status),
+      );
+      const enriched: AdminInboxTicket[] = await Promise.all(
+        active.map(async (ticket) => {
+          const msgs = await fetchTicketMessages(ticket.id);
+          const lastMsg = msgs[msgs.length - 1];
+          const lastAdminRead = ticket.last_admin_read_at;
+          const unread = msgs.filter(
+            (m) =>
+              m.author_type === "CUSTOMER" &&
+              (!lastAdminRead ||
+                new Date(m.created_at) > new Date(lastAdminRead)),
+          ).length;
+          return {
+            ...ticket,
+            unread_count: unread,
+            last_message: lastMsg?.message_text,
+            last_message_at: lastMsg?.created_at,
+          };
+        }),
+      );
+      enriched.sort((a, b) => {
+        if (a.status === "NEW" && b.status !== "NEW") return -1;
+        if (b.status === "NEW" && a.status !== "NEW") return 1;
+        if (a.unread_count > 0 && b.unread_count === 0) return -1;
+        if (b.unread_count > 0 && a.unread_count === 0) return 1;
+        return (
+          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        );
+      });
+      return enriched;
+    },
+    enabled: isOpen && !!user && isAdmin,
+    refetchInterval: 15000,
+  });
+
+  const adminInboxUnread = adminInbox.reduce(
+    (acc, t) => acc + (t.unread_count || 0),
+    0,
+  );
+  const adminNewCount = adminInbox.filter((t) => t.status === "NEW").length;
+
+  // Admin realtime: refresh inbox + active ticket on changes
+  useEffect(() => {
+    if (!isAdmin || !isOpen) return;
+    const ch = supabase
+      .channel(`admin-widget-inbox-${user?.id || "x"}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "ops_tickets" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["adminOpsInbox"] });
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "ops_ticket_messages",
+        },
+        (payload: any) => {
+          queryClient.invalidateQueries({ queryKey: ["adminOpsInbox"] });
+          const tid = payload?.new?.ticket_id;
+          if (tid) {
+            queryClient.invalidateQueries({
+              queryKey: ["supportChatMessages", tid],
+            });
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [isAdmin, isOpen, user?.id, queryClient]);
+
+  // Mark ticket as read for admin when opened
+  useEffect(() => {
+    if (!isAdmin || !ticketId) return;
+    (supabase
+      .from("ops_tickets" as any)
+      .update({ last_admin_read_at: new Date().toISOString() } as any)
+      .eq("id", ticketId) as any)
+      .then(() =>
+        queryClient.invalidateQueries({ queryKey: ["adminOpsInbox"] }),
+      );
+  }, [isAdmin, ticketId, queryClient]);
 
   // -------- Conversations (Chat tab) --------
   const { data: conversations = [], isLoading: isLoadingConvs } = useQuery<
