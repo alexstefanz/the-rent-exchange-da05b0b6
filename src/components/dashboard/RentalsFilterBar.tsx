@@ -1,7 +1,5 @@
-import { ArrowUpDown } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ArrowUpDown, Filter } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 
 export type RentalStatusFilter = "all" | "active" | "pending" | "cancelled";
 export type RentalSortBy = "newest" | "oldest" | "amount_desc" | "amount_asc";
@@ -39,37 +37,19 @@ const RentalsFilterBar = ({
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-      <div className="flex-1 -mx-1 px-1 overflow-x-auto">
-        <div className="flex items-center gap-2 min-w-max">
-          {items.map((it) => {
-            const active = statusFilter === it.key;
-            return (
-              <button
-                key={it.key}
-                type="button"
-                onClick={() => onStatusFilterChange(it.key)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors",
-                  active
-                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                    : "bg-card text-foreground border-border hover:bg-muted"
-                )}
-              >
-                {it.label}
-                <Badge
-                  variant="secondary"
-                  className={cn(
-                    "h-5 min-w-5 px-1.5 text-[10px] font-semibold",
-                    active ? "bg-primary-foreground/20 text-primary-foreground" : ""
-                  )}
-                >
-                  {it.count}
-                </Badge>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <Select value={statusFilter} onValueChange={(v) => onStatusFilterChange(v as RentalStatusFilter)}>
+        <SelectTrigger className="w-full sm:w-[220px] h-9">
+          <Filter className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+          <SelectValue placeholder="Status" />
+        </SelectTrigger>
+        <SelectContent>
+          {items.map((it) => (
+            <SelectItem key={it.key} value={it.key}>
+              {it.label} ({it.count})
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <Select value={sortBy} onValueChange={(v) => onSortChange(v as RentalSortBy)}>
         <SelectTrigger className="w-full sm:w-[200px] h-9">
           <ArrowUpDown className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
