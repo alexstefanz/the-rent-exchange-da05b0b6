@@ -500,6 +500,7 @@ const SupportChatWidget = () => {
       setTicketId(ticket.id);
       setTicketPublicId(ticket.public_id);
       setMessageText("");
+      setUserLeftTicket(false);
       queryClient.invalidateQueries({ queryKey: ["userTickets"] });
       queryClient.invalidateQueries({
         queryKey: ["supportChatMessages", ticket.id],
