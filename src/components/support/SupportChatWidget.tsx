@@ -1,15 +1,15 @@
-import { useState, useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import {
   MessageCircle,
   Send,
   X,
-  Plus,
   Loader2,
   ImagePlus,
   Inbox,
   Ticket,
-  MessageSquare,
+  ArrowLeft,
+  History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,14 +29,13 @@ import {
   getConversations,
   type Conversation,
 } from "@/features/messaging/messagingApi";
+import { ChatPanel } from "@/components/messaging/ChatPanel";
 import { supabase } from "@/integrations/supabase/client";
 import { format, isToday, isYesterday } from "date-fns";
 import { ro as roLocale, enUS } from "date-fns/locale";
 import { toast } from "sonner";
 import { StatusPill } from "@/components/support/center/StatusPill";
 import { cn } from "@/lib/utils";
-
-const STORAGE_KEY = "support_chat_ticket_id";
 
 const MAX_DIMENSION = 1920;
 const JPEG_QUALITY = 0.8;
@@ -169,7 +168,6 @@ const renderMessageContent = (text: string) => {
 
 const SupportChatWidget = () => {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
@@ -180,29 +178,29 @@ const SupportChatWidget = () => {
   const [chatSubTab, setChatSubTab] = useState<"rezervari" | "de-inchiriat">(
     "rezervari",
   );
-  const [ticketId, setTicketId] = useState<string | null>(() =>
-    localStorage.getItem(STORAGE_KEY),
-  );
+  // In-memory only — no localStorage persistence so reopen always lands on the list.
+  const [activeConv, setActiveConv] = useState<Conversation | null>(null);
+  const [ticketId, setTicketId] = useState<string | null>(null);
   const [ticketPublicId, setTicketPublicId] = useState<string | null>(null);
-
-  // New-ticket composer state (when user clicks "+" on Tickete tab)
-  const [isComposingTicket, setIsComposingTicket] = useState(false);
-  const [newTicketText, setNewTicketText] = useState("");
-  const [isCreatingTicket, setIsCreatingTicket] = useState(false);
+  const [showTicketArchive, setShowTicketArchive] = useState(false);
 
   const [messageText, setMessageText] = useState("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isCreatingTicket, setIsCreatingTicket] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isAdminRoute = pathname.startsWith("/admin");
 
-  // Reset transient widget state when closed
+  // Reset transient state on close
   useEffect(() => {
     if (!isOpen) {
       setActiveTab("chat");
-      setIsComposingTicket(false);
-      setNewTicketText("");
+      setActiveConv(null);
+      setTicketId(null);
+      setTicketPublicId(null);
+      setShowTicketArchive(false);
+      setMessageText("");
     }
   }, [isOpen]);
 
@@ -212,7 +210,7 @@ const SupportChatWidget = () => {
   >({
     queryKey: ["conversations", user?.id],
     queryFn: getConversations,
-    enabled: isOpen && !!user && activeTab === "chat" && !ticketId,
+    enabled: isOpen && !!user,
     refetchInterval: 30000,
   });
 
@@ -243,37 +241,51 @@ const SupportChatWidget = () => {
     return format(d, "d MMM", { locale: dateLocale });
   };
 
-  const handleOpenConversation = (conv: Conversation) => {
-    setIsOpen(false);
-    navigate(`/mesaje?conv=${conv.id}`);
-  };
-
   // -------- Tickets (Tickete tab) --------
   const { data: userTickets = [], isLoading: isLoadingTickets } = useQuery<
     OpsTicket[]
   >({
     queryKey: ["userTickets"],
     queryFn: fetchUserTickets,
-    enabled: isOpen && !!user && activeTab === "tickets" && !ticketId,
+    enabled: isOpen && !!user,
     refetchInterval: 15000,
   });
 
-  const { data: openTicketsCount = 0 } = useQuery<number>({
-    queryKey: ["userTicketsOpenCount"],
-    queryFn: async () => {
-      const list = await fetchUserTickets();
-      return list.filter(
+  const openTickets = useMemo(
+    () =>
+      userTickets.filter(
         (x) => x.status !== "CLOSED" && x.status !== "RESOLVED",
-      ).length;
-    },
-    enabled: isOpen && !!user,
-    refetchInterval: 30000,
-  });
+      ),
+    [userTickets],
+  );
+  const archivedTickets = useMemo(
+    () =>
+      userTickets.filter(
+        (x) => x.status === "CLOSED" || x.status === "RESOLVED",
+      ),
+    [userTickets],
+  );
+  const openTicketsCount = openTickets.length;
 
-  const handleSelectTicket = (ticket: OpsTicket) => {
+  // Auto-select most recent open ticket when entering Tickete tab without an active one
+  useEffect(() => {
+    if (
+      isOpen &&
+      activeTab === "tickets" &&
+      !ticketId &&
+      !showTicketArchive &&
+      openTickets.length > 0
+    ) {
+      const latest = openTickets[0];
+      setTicketId(latest.id);
+      setTicketPublicId(latest.public_id ?? null);
+    }
+  }, [isOpen, activeTab, ticketId, showTicketArchive, openTickets]);
+
+  const handleSelectArchivedTicket = (ticket: OpsTicket) => {
     setTicketId(ticket.id);
     setTicketPublicId(ticket.public_id ?? null);
-    localStorage.setItem(STORAGE_KEY, ticket.id);
+    setShowTicketArchive(false);
   };
 
   // -------- Active ticket conversation --------
@@ -286,7 +298,6 @@ const SupportChatWidget = () => {
         .eq("id", ticketId!)
         .single();
       if (error) {
-        localStorage.removeItem(STORAGE_KEY);
         setTicketId(null);
         return null;
       }
@@ -320,56 +331,13 @@ const SupportChatWidget = () => {
     },
   });
 
-  const handleSendMessage = () => {
-    const text = messageText.trim();
-    if (!text || !ticketId) return;
-    sendMutation.mutate(text);
-  };
-
-  const handleImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error(t("Poți trimite doar imagini.", "You can only send images."));
+  const ensureTicketAndSend = async (text: string) => {
+    if (!user || !text.trim()) return;
+    if (ticketId) {
+      sendMutation.mutate(text);
       return;
     }
-    setIsUploadingImage(true);
-    try {
-      const compressed = await compressImage(file);
-      const url = await uploadSupportImage(compressed, user.id);
-      if (ticketId) {
-        sendMutation.mutate(url);
-      } else if (isComposingTicket) {
-        setNewTicketText((prev) => (prev ? `${prev}\n${url}` : url));
-      }
-    } catch (err) {
-      console.error("Image upload error:", err);
-      toast.error(t("Eroare la încărcarea imaginii.", "Failed to upload image."));
-    } finally {
-      setIsUploadingImage(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-
-  const handleBackToList = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setTicketId(null);
-    setTicketPublicId(null);
-    setMessageText("");
-    setActiveTab("tickets");
-  };
-
-  const handleStartNewTicket = () => {
-    setActiveTab("tickets");
-    setIsComposingTicket(true);
-    setNewTicketText("");
-  };
-
-  const handleCreateTicket = async () => {
-    const text = newTicketText.trim();
-    if (!text || !user) return;
+    // No active ticket → create one with this first message
     setIsCreatingTicket(true);
     try {
       const title = text.length > 60 ? `${text.slice(0, 60)}…` : text;
@@ -382,11 +350,8 @@ const SupportChatWidget = () => {
       await addUserTicketMessage(ticket.id, text);
       setTicketId(ticket.id);
       setTicketPublicId(ticket.public_id);
-      localStorage.setItem(STORAGE_KEY, ticket.id);
-      setIsComposingTicket(false);
-      setNewTicketText("");
+      setMessageText("");
       queryClient.invalidateQueries({ queryKey: ["userTickets"] });
-      queryClient.invalidateQueries({ queryKey: ["userTicketsOpenCount"] });
       queryClient.invalidateQueries({
         queryKey: ["supportChatMessages", ticket.id],
       });
@@ -403,10 +368,77 @@ const SupportChatWidget = () => {
     }
   };
 
+  const handleSendTicketMessage = () => {
+    const text = messageText.trim();
+    if (!text) return;
+    ensureTicketAndSend(text);
+  };
+
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error(t("Poți trimite doar imagini.", "You can only send images."));
+      return;
+    }
+    setIsUploadingImage(true);
+    try {
+      const compressed = await compressImage(file);
+      const url = await uploadSupportImage(compressed, user.id);
+      await ensureTicketAndSend(url);
+    } catch (err) {
+      console.error("Image upload error:", err);
+      toast.error(t("Eroare la încărcarea imaginii.", "Failed to upload image."));
+    } finally {
+      setIsUploadingImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleBackFromTicket = () => {
+    setTicketId(null);
+    setTicketPublicId(null);
+    setMessageText("");
+    // If user has other open tickets, show archive toggle path; otherwise welcome screen
+    setShowTicketArchive(false);
+  };
+
   if (isAdminRoute) return null;
 
   const isClosed =
     ticketInfo?.status === "CLOSED" || ticketInfo?.status === "RESOLVED";
+
+  // Header content
+  const showBack = !!activeConv || !!ticketId || showTicketArchive;
+  const headerTitle = activeConv
+    ? activeConv.other_user?.full_name || t("Conversație", "Conversation")
+    : ticketId
+    ? t("Suport Rentli", "Rentli Support")
+    : showTicketArchive
+    ? t("Tickete anterioare", "Previous tickets")
+    : t("Mesajele mele", "My messages");
+  const headerSubtitle = activeConv
+    ? activeConv.product?.title || ""
+    : ticketId
+    ? ticketPublicId || "Online"
+    : "Online";
+
+  const handleBack = () => {
+    if (activeConv) {
+      setActiveConv(null);
+      return;
+    }
+    if (ticketId) {
+      handleBackFromTicket();
+      return;
+    }
+    if (showTicketArchive) {
+      setShowTicketArchive(false);
+      return;
+    }
+  };
 
   return (
     <>
@@ -449,50 +481,54 @@ const SupportChatWidget = () => {
         >
           {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 border-b shrink-0 lg:rounded-t-2xl bg-primary text-primary-foreground lg:bg-background lg:text-foreground">
-            <div className="relative shrink-0">
-              <div className="h-9 w-9 rounded-full bg-primary/10 lg:bg-primary flex items-center justify-center">
-                <span className="text-sm font-bold text-primary-foreground">
-                  R
-                </span>
-              </div>
-              <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm">
-                {ticketId
-                  ? t("Suport Rentli", "Rentli Support")
-                  : t("Mesajele mele", "My messages")}
-              </p>
-              <p className="text-xs opacity-70 lg:text-muted-foreground">
-                {ticketId ? ticketPublicId || "Online" : "Online"}
-              </p>
-            </div>
-            <div className="flex items-center gap-1">
-              {ticketId && (
-                <button
-                  onClick={handleBackToList}
-                  className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors text-xs px-2"
-                  title={t("Înapoi la tickete", "Back to tickets")}
-                >
-                  ←
-                </button>
-              )}
-              {!ticketId && activeTab === "tickets" && !isComposingTicket && (
-                <button
-                  onClick={handleStartNewTicket}
-                  className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors"
-                  title={t("Ticket nou", "New ticket")}
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              )}
+            {showBack ? (
               <button
-                onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors"
+                onClick={handleBack}
+                className="h-8 w-8 shrink-0 inline-flex items-center justify-center rounded-full bg-primary-foreground/15 hover:bg-primary-foreground/25 lg:bg-secondary lg:hover:bg-secondary/80 transition-colors"
+                aria-label={t("Înapoi", "Back")}
+                title={t("Înapoi", "Back")}
               >
-                <X className="h-5 w-5" />
+                <ArrowLeft className="h-4 w-4" />
               </button>
+            ) : (
+              <div className="relative shrink-0">
+                <div className="h-9 w-9 rounded-full bg-primary/10 lg:bg-primary flex items-center justify-center">
+                  <span className="text-sm font-bold text-primary-foreground">
+                    R
+                  </span>
+                </div>
+                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background" />
+              </div>
+            )}
+            {showBack && (activeConv || ticketId) && (
+              <Avatar className="h-9 w-9 shrink-0">
+                {activeConv ? (
+                  <>
+                    <AvatarImage src={activeConv.other_user?.avatar_url || undefined} />
+                    <AvatarFallback>
+                      {activeConv.other_user?.full_name?.charAt(0) || "U"}
+                    </AvatarFallback>
+                  </>
+                ) : (
+                  <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                    R
+                  </AvatarFallback>
+                )}
+              </Avatar>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm truncate">{headerTitle}</p>
+              <p className="text-xs opacity-70 lg:text-muted-foreground truncate">
+                {headerSubtitle}
+              </p>
             </div>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors"
+              aria-label={t("Închide", "Close")}
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
 
           {/* Body */}
@@ -512,17 +548,36 @@ const SupportChatWidget = () => {
                   </Button>
                 </div>
               </div>
+            ) : activeConv ? (
+              /* ----- User↔User conversation inline ----- */
+              <ChatPanel
+                conversationId={activeConv.id}
+                otherUserName={activeConv.other_user?.full_name || null}
+                otherUserAvatar={activeConv.other_user?.avatar_url || null}
+                productTitle={activeConv.product?.title || ""}
+                ownerId={activeConv.owner_id}
+                buyerId={activeConv.buyer_id}
+                rentalsId={activeConv.rentals_id || null}
+                hideHeader
+              />
             ) : ticketId ? (
               /* ----- Active ticket conversation ----- */
               <>
                 <ScrollArea className="flex-1 px-4 py-3">
                   {messages.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-6">
-                      {t(
-                        "Ticketul tău a fost creat. Un administrator va răspunde în curând.",
-                        "Your ticket has been created. An admin will respond soon.",
-                      )}
-                    </p>
+                    <div className="flex items-start gap-2 mt-2">
+                      <Avatar className="h-7 w-7 shrink-0 mt-0.5">
+                        <AvatarFallback className="bg-primary/10 text-primary text-[11px] font-bold">
+                          R
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="bg-muted rounded-2xl rounded-bl-md px-3 py-2 text-sm max-w-[80%]">
+                        {t(
+                          "Bună! Suntem aici să te ajutăm. Scrie-ne mesajul tău și un membru al echipei Rentli îți va răspunde cât mai curând.",
+                          "Hi! We're here to help. Write us your message and a member of the Rentli team will reply as soon as possible.",
+                        )}
+                      </div>
+                    </div>
                   ) : (
                     <div className="space-y-3">
                       {messages.map((msg) => {
@@ -559,8 +614,8 @@ const SupportChatWidget = () => {
                     <p className="text-xs text-muted-foreground mb-2">
                       {t("Acest ticket a fost închis.", "This ticket has been closed.")}
                     </p>
-                    <Button variant="outline" size="sm" onClick={handleBackToList}>
-                      {t("Înapoi la tickete", "Back to tickets")}
+                    <Button variant="outline" size="sm" onClick={handleBackFromTicket}>
+                      {t("Înapoi", "Back")}
                     </Button>
                   </div>
                 ) : (
@@ -569,7 +624,7 @@ const SupportChatWidget = () => {
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        disabled={sendMutation.isPending || isUploadingImage}
+                        disabled={sendMutation.isPending || isUploadingImage || isCreatingTicket}
                         className="h-9 w-9 shrink-0 flex items-center justify-center rounded-full hover:bg-secondary transition-colors disabled:opacity-50"
                       >
                         {isUploadingImage ? (
@@ -586,17 +641,25 @@ const SupportChatWidget = () => {
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !e.shiftKey) {
                             e.preventDefault();
-                            handleSendMessage();
+                            handleSendTicketMessage();
                           }
                         }}
                       />
                       <Button
                         size="icon"
                         className="h-9 w-9 shrink-0 rounded-full"
-                        onClick={handleSendMessage}
-                        disabled={!messageText.trim() || sendMutation.isPending}
+                        onClick={handleSendTicketMessage}
+                        disabled={
+                          !messageText.trim() ||
+                          sendMutation.isPending ||
+                          isCreatingTicket
+                        }
                       >
-                        <Send className="h-4 w-4" />
+                        {isCreatingTicket || sendMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                     <p className="hidden lg:block text-[10px] text-muted-foreground text-center pb-2">
@@ -728,7 +791,7 @@ const SupportChatWidget = () => {
                               <button
                                 key={conv.id}
                                 type="button"
-                                onClick={() => handleOpenConversation(conv)}
+                                onClick={() => setActiveConv(conv)}
                                 className={cn(
                                   "w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-colors hover:bg-muted/60",
                                   isUnread && "bg-primary/5",
@@ -791,76 +854,8 @@ const SupportChatWidget = () => {
                       )}
                     </ScrollArea>
                   </>
-                ) : isComposingTicket ? (
-                  /* ----- New ticket composer ----- */
-                  <>
-                    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-                      <div className="flex items-start gap-2">
-                        <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                          <MessageSquare className="h-4 w-4 text-primary" />
-                        </div>
-                        <div className="bg-muted rounded-2xl rounded-bl-md px-3 py-2 text-sm">
-                          {t(
-                            "Descrie pe scurt problema. Echipa Rentli îți va răspunde în cel mai scurt timp.",
-                            "Briefly describe your issue. The Rentli team will reply as soon as possible.",
-                          )}
-                        </div>
-                      </div>
-                      <textarea
-                        value={newTicketText}
-                        onChange={(e) => setNewTicketText(e.target.value)}
-                        placeholder={t(
-                          "Scrie mesajul tău...",
-                          "Write your message...",
-                        )}
-                        rows={6}
-                        className="w-full rounded-xl border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
-                      />
-                    </div>
-                    <div className="shrink-0 border-t pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:pb-0">
-                      <div className="flex items-center gap-2 px-3 py-2.5">
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={isUploadingImage || isCreatingTicket}
-                          className="h-9 w-9 shrink-0 flex items-center justify-center rounded-full hover:bg-secondary transition-colors disabled:opacity-50"
-                        >
-                          {isUploadingImage ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                          ) : (
-                            <ImagePlus className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-9 rounded-full"
-                          onClick={() => {
-                            setIsComposingTicket(false);
-                            setNewTicketText("");
-                          }}
-                          disabled={isCreatingTicket}
-                        >
-                          {t("Anulează", "Cancel")}
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="h-9 flex-1 rounded-full gap-1.5"
-                          onClick={handleCreateTicket}
-                          disabled={!newTicketText.trim() || isCreatingTicket}
-                        >
-                          {isCreatingTicket ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Send className="h-4 w-4" />
-                          )}
-                          {t("Trimite", "Send")}
-                        </Button>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  /* ----- Tickets list ----- */
+                ) : showTicketArchive ? (
+                  /* ----- Archive list ----- */
                   <ScrollArea className="flex-1 px-3 py-3">
                     {isLoadingTickets ? (
                       <div className="flex items-center justify-center py-10">
@@ -868,26 +863,10 @@ const SupportChatWidget = () => {
                       </div>
                     ) : userTickets.length === 0 ? (
                       <div className="flex flex-col items-center justify-center text-center py-12 px-4">
-                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                          <Inbox className="h-6 w-6 text-primary" />
-                        </div>
-                        <p className="text-sm font-medium">
-                          {t("Nu ai tickete deschise", "No open tickets")}
+                        <Inbox className="h-8 w-8 text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          {t("Niciun ticket încă.", "No tickets yet.")}
                         </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {t(
-                            "Apasă + pentru a deschide un ticket nou.",
-                            "Tap + to open a new ticket.",
-                          )}
-                        </p>
-                        <Button
-                          size="sm"
-                          className="mt-4 gap-1.5"
-                          onClick={handleStartNewTicket}
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          {t("Ticket nou", "New ticket")}
-                        </Button>
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -895,7 +874,7 @@ const SupportChatWidget = () => {
                           <button
                             key={ticket.id}
                             type="button"
-                            onClick={() => handleSelectTicket(ticket)}
+                            onClick={() => handleSelectArchivedTicket(ticket)}
                             className="w-full text-left rounded-xl border bg-card p-3 hover:border-primary/50 hover:bg-primary/5 transition-colors"
                           >
                             <div className="flex items-center gap-2 mb-1">
@@ -923,6 +902,91 @@ const SupportChatWidget = () => {
                       </div>
                     )}
                   </ScrollArea>
+                ) : (
+                  /* ----- Tickete: welcome / direct chat with admin ----- */
+                  <>
+                    <ScrollArea className="flex-1 px-4 py-3">
+                      <div className="flex items-start gap-2 mt-2">
+                        <Avatar className="h-7 w-7 shrink-0 mt-0.5">
+                          <AvatarFallback className="bg-primary/10 text-primary text-[11px] font-bold">
+                            R
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="bg-muted rounded-2xl rounded-bl-md px-3 py-2 text-sm max-w-[85%]">
+                          <p className="font-semibold text-xs mb-0.5">
+                            {t("Echipa Rentli", "Rentli Team")}
+                          </p>
+                          {t(
+                            "Bună! Suntem aici să te ajutăm. Scrie-ne mesajul tău și un membru al echipei Rentli îți va răspunde cât mai curând.",
+                            "Hi! We're here to help. Write us your message and a member of the Rentli team will reply as soon as possible.",
+                          )}
+                        </div>
+                      </div>
+
+                      {archivedTickets.length > 0 && (
+                        <div className="mt-4 flex justify-center">
+                          <button
+                            type="button"
+                            onClick={() => setShowTicketArchive(true)}
+                            className="inline-flex items-center gap-1.5 text-[11px] text-primary hover:underline"
+                          >
+                            <History className="h-3 w-3" />
+                            {t(
+                              `Vezi tickete anterioare (${archivedTickets.length})`,
+                              `View previous tickets (${archivedTickets.length})`,
+                            )}
+                          </button>
+                        </div>
+                      )}
+                    </ScrollArea>
+
+                    <div className="shrink-0 border-t pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:pb-0">
+                      <div className="flex items-center gap-2 px-3 py-2.5">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploadingImage || isCreatingTicket}
+                          className="h-9 w-9 shrink-0 flex items-center justify-center rounded-full hover:bg-secondary transition-colors disabled:opacity-50"
+                        >
+                          {isUploadingImage ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          ) : (
+                            <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </button>
+                        <Input
+                          value={messageText}
+                          onChange={(e) => setMessageText(e.target.value)}
+                          placeholder={t(
+                            "Scrie mesajul tău...",
+                            "Write your message...",
+                          )}
+                          className="h-9 text-sm flex-1 rounded-full"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              e.preventDefault();
+                              handleSendTicketMessage();
+                            }
+                          }}
+                        />
+                        <Button
+                          size="icon"
+                          className="h-9 w-9 shrink-0 rounded-full"
+                          onClick={handleSendTicketMessage}
+                          disabled={!messageText.trim() || isCreatingTicket}
+                        >
+                          {isCreatingTicket ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Send className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                      <p className="hidden lg:block text-[10px] text-muted-foreground text-center pb-2">
+                        Chat Rentli
+                      </p>
+                    </div>
+                  </>
                 )}
               </>
             )}
