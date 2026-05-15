@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ChevronRight, ShieldCheck, Lock, FileCheck2, Headphones, Sparkles } from "lucide-react";
+import { ChevronRight, Sparkles } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCountUp } from "@/hooks/useCountUp";
 
@@ -10,13 +10,6 @@ interface CategoryHeroProps {
   newThisWeek: number;
   topCity: string | null;
 }
-
-const trustBadges = [
-  { icon: ShieldCheck, ro: "Produse verificate", en: "Verified products" },
-  { icon: Lock, ro: "Plăți securizate", en: "Secure payments" },
-  { icon: FileCheck2, ro: "Proces verbal digital", en: "Digital handover" },
-  { icon: Headphones, ro: "Suport 7 zile/săpt", en: "7-day support" },
-];
 
 const CategoryHero = ({ name, bannerImage, total, newThisWeek, topCity }: CategoryHeroProps) => {
   const { t } = useLanguage();
@@ -70,19 +63,6 @@ const CategoryHero = ({ name, bannerImage, total, newThisWeek, topCity }: Catego
               <span className="font-semibold">{topCity}</span>
             </span>
           )}
-        </div>
-
-        {/* Trust badges */}
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-white/80">
-          {trustBadges.map((b) => {
-            const Icon = b.icon;
-            return (
-              <span key={b.ro} className="inline-flex items-center gap-1.5">
-                <Icon className="h-3.5 w-3.5 text-primary" />
-                {t(b.ro, b.en)}
-              </span>
-            );
-          })}
         </div>
       </div>
     </header>
