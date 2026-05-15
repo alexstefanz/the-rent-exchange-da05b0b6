@@ -1056,6 +1056,84 @@ const SupportChatWidget = () => {
                       )}
                     </ScrollArea>
                   </>
+                ) : isAdmin ? (
+                  /* ----- Admin inbox list ----- */
+                  <ScrollArea className="flex-1 px-3 py-3">
+                    {isLoadingAdminInbox ? (
+                      <div className="flex items-center justify-center py-10">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : adminInbox.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center text-center py-12 px-4">
+                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                          <Inbox className="h-6 w-6 text-primary" />
+                        </div>
+                        <p className="text-sm font-medium">
+                          {t("Niciun ticket activ", "No active tickets")}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {t(
+                            "Ticketele noi de la clienți vor apărea aici.",
+                            "New customer tickets will show up here.",
+                          )}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {adminInbox.map((ticket) => (
+                          <button
+                            key={ticket.id}
+                            type="button"
+                            onClick={() => {
+                              setTicketId(ticket.id);
+                              setTicketPublicId(ticket.public_id ?? null);
+                            }}
+                            className={cn(
+                              "w-full text-left rounded-xl border bg-card p-3 hover:border-primary/50 hover:bg-primary/5 transition-colors",
+                              ticket.unread_count > 0 && "border-primary/40 bg-primary/5",
+                            )}
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <span
+                                className={cn(
+                                  "h-2 w-2 rounded-full shrink-0",
+                                  ticket.status === "NEW"
+                                    ? "bg-blue-500"
+                                    : "bg-primary",
+                                )}
+                              />
+                              <span className="text-[11px] font-mono font-medium text-muted-foreground">
+                                {ticket.public_id || `#${ticket.id.slice(0, 6)}`}
+                              </span>
+                              <StatusPill
+                                status={ticket.status}
+                                size="xs"
+                                className="ml-auto"
+                              />
+                              {ticket.unread_count > 0 && (
+                                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-primary text-primary-foreground">
+                                  {ticket.unread_count}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm font-medium line-clamp-1 mb-0.5">
+                              {ticket.title}
+                            </p>
+                            {ticket.requester_name && (
+                              <p className="text-[11px] text-muted-foreground truncate">
+                                {ticket.requester_name}
+                              </p>
+                            )}
+                            {ticket.last_message && (
+                              <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
+                                {ticket.last_message}
+                              </p>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
                 ) : showTicketArchive ? (
                   /* ----- Archive list ----- */
                   <ScrollArea className="flex-1 px-3 py-3">
