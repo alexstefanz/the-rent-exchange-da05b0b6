@@ -37,10 +37,10 @@ export const useAdminRentals = (statusFilter?: string, limit = 50, offset = 0) =
   });
 };
 
-export const useAdminUsers = (searchQuery?: string, limit = 50, offset = 0) => {
+export const useAdminUsers = (searchQuery?: string, limit = 50, offset = 0, statusFilter?: string) => {
   return useQuery<AdminUser[]>({
-    queryKey: ['adminUsers', searchQuery, limit, offset],
-    queryFn: () => fetchAdminUsers(searchQuery, limit, offset),
+    queryKey: ['adminUsers', searchQuery, limit, offset, statusFilter],
+    queryFn: () => fetchAdminUsers(searchQuery, limit, offset, statusFilter),
     staleTime: 60 * 1000, // 1 minute
   });
 };
