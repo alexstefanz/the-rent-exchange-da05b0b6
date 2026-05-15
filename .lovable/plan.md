@@ -1,60 +1,57 @@
-## Obiectiv
+## Problem
 
-Pe mobil, paginile **Rezervările mele** (`/rezervari`) și **Cereri primite** (`/inchirieri`) să arate mai curat și mai funcțional:
-- Eliminăm cardurile de statistici (În așteptare / Active / Anulate / Cheltuit/Câștig luna asta)
-- Le înlocuim cu o **bară de filtre** (`Toate`, `Active`, `În așteptare`, `Anulate`) + **sortare** (cele mai noi / cele mai vechi / sumă)
-- Cardurile premium "Rezervările mele" / "Cereri de închiriere" devin **2 pe rând pe mobil** cu tipografie mai compactă, fără overlap
+In `RentalsTab.tsx` and `RentalsOutTab.tsx` the premium card uses `mt-auto pt-3 sm:pt-4` on the action area, which pushes the "Vezi detalii" button to the bottom of the card. Because cards in the same CSS grid row stretch to the tallest card's height, cards without a "Mesajul tău" / "Mesaj de la chiriaș" block end up with a large empty gap between Total and the button.
 
-## Modificări
+## Fix
 
-### 1. `src/components/dashboard/RentalsTab.tsx` (Rezervările mele - ca chiriaș)
+### 1. Remove forced bottom-push on the action area
 
-**Înlocuim blocul stats** (liniile 168–185, grid 2-col cu 4 carduri) cu o bară unificată:
+In both files, the wrapper around the "Vezi detalii" button currently is:
 
-```text
-[Toate (24)] [Active (3)] [În așteptare (1)] [Anulate (11)]   [Sortare ⌄]
+```tsx
+<div className="mt-auto pt-3 sm:pt-4">
 ```
 
-- Pills/chips orizontale, scrollabile pe mobil (`overflow-x-auto`), cu `Badge`-uri pentru contoare
-- Filtrul activ folosește `bg-primary text-primary-foreground`
-- `Select` cu opțiuni: `Cele mai noi`, `Cele mai vechi`, `Suma (mare→mic)`, `Suma (mic→mare)`
-- State local: `statusFilter: "all" | "active" | "pending" | "cancelled"`, `sortBy`
+Change to a fixed top spacing so the button sits right below the message (when present) or right below the Total tile (when absent):
 
-**Aplicăm filter+sort** atât pe blocul premium ("Rezervările mele") cât și pe accordion-ul de istoric. Logica curentă (premium = pending sau confirmed/active fără handover) rămâne, dar e intersectată cu filtrul de status.
+```tsx
+<div className="mt-3 sm:mt-4">
+```
 
-**Grid premium** (linia 195): `grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3` → `grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3`
+Also remove `flex-1` from the inner content column so cards size to their content rather than stretching:
 
-**Densitate card pe mobil** (pentru a evita overlap-ul din imaginea 1):
-- Padding card: `p-4` → `p-3 sm:p-4`
-- Aspect imagine: `aspect-[16/10]` → `aspect-[4/3] sm:aspect-[16/10]`
-- Titluri: `text-base` → `text-sm sm:text-base`
-- Grila celor 3 mini-tiles (Perioadă/Zile/Total) pe mobil → 3 coloane rămân, dar `text-[10px]` label și `text-[11px]` valoare, `gap-1.5 sm:gap-2`, `p-1.5 sm:p-2`
-- Badge-ul "În așteptare/Confirmată" din colț: `top-2 right-2 text-[10px] px-1.5 py-0.5` pe mobil
-- Buton "Vezi detalii": `h-9 text-xs sm:text-sm`
-- Buton "Solicită anularea cererii": rămâne dar pe mobil cu text mai scurt: `Anulează cererea`
+- Line ~234 in `RentalsTab.tsx` and equivalent in `RentalsOutTab.tsx`:
+  `className="flex flex-1 flex-col p-3 sm:p-4"` → `className="flex flex-col p-3 sm:p-4"`
 
-### 2. `src/components/dashboard/RentalsOutTab.tsx` (Cereri primite - ca proprietar)
+### 2. Masonry layout so uneven heights don't leave gaps
 
-Aceleași schimbări:
-- Eliminăm cele 4 carduri de stats (liniile 130–147)
-- Adăugăm aceeași bară: `Toate / Active / În așteptare / Anulate` + sortare
-- Grid premium: `grid-cols-2` pe mobil
-- Aceleași tweak-uri de densitate
+Replace the CSS grid with a CSS columns masonry on the premium cards section in both files.
 
-### 3. Istoric (accordion-ul de jos)
+Current:
+```tsx
+<div className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+  {[...pendingRentals, ...premiumActiveRentals].map(...)}
+</div>
+```
 
-Filtrul de status + sortarea se aplică **și** pe `historyRentals` (nu doar pe cardurile premium). Astfel utilizatorul vede toate rezervările care matchează indiferent că sunt în secțiunea "premium" sau în istoric.
+New:
+```tsx
+<div className="columns-2 xl:columns-3 gap-3 sm:gap-4 [column-fill:_balance]">
+  {[...pendingRentals, ...premiumActiveRentals].map(rental => (
+    <div key={rental.id} className="mb-3 sm:mb-4 break-inside-avoid">
+      {/* existing card markup */}
+    </div>
+  ))}
+</div>
+```
 
-## Ce NU se schimbă
+Notes:
+- `columns-2` keeps 2 columns on mobile (matches current request).
+- `break-inside-avoid` + `mb-*` ensures each card stays intact and spacing stays uniform.
+- Cards will now flow vertically per column, removing the row-stretch gaps.
 
-- Logica de business (status pending/confirmed/active/completed/cancelled, plățile, anulările)
-- Realtime (`useRentalRealtime`)
-- Desktop layout (4-col stats nu apare pentru că eliminăm complet stats — pe desktop rămâne tot bara de filtre, mai curat)
-- Pagina `/anunțuri` (owner listings)
+### Files changed
+- `src/components/dashboard/RentalsTab.tsx`
+- `src/components/dashboard/RentalsOutTab.tsx`
 
-## Detalii tehnice
-
-- Filtrele și sortarea sunt **pur client-side** (datele se încarcă deja toate)
-- Nu adăugăm dependințe noi
-- Componenta filtru o ținem inline în fiecare tab (sunt logici diferite: "Cheltuit" vs "Câștig" — am eliminat ambele oricum)
-- Counter-ele de pe pills se calculează din arrays-urile existente (`pendingRentals.length` etc.)
+No business logic, data, or desktop layout changes beyond the column count parity (`md:grid-cols-2 xl:grid-cols-3` → `xl:columns-3`).
