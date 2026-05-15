@@ -189,6 +189,7 @@ const SupportChatWidget = () => {
   // In-memory only — no localStorage persistence so reopen always lands on the list.
   const [activeConv, setActiveConv] = useState<Conversation | null>(null);
   const [ticketId, setTicketId] = useState<string | null>(null);
+  const [userLeftTicket, setUserLeftTicket] = useState(false);
   const [ticketPublicId, setTicketPublicId] = useState<string | null>(null);
   const [showTicketArchive, setShowTicketArchive] = useState(false);
 
@@ -211,6 +212,7 @@ const SupportChatWidget = () => {
       setShowTicketArchive(false);
       setMessageText("");
       setIsInternal(false);
+      setUserLeftTicket(false);
     }
   }, [isOpen]);
 
@@ -408,18 +410,20 @@ const SupportChatWidget = () => {
       activeTab === "tickets" &&
       !ticketId &&
       !showTicketArchive &&
+      !userLeftTicket &&
       openTickets.length > 0
     ) {
       const latest = openTickets[0];
       setTicketId(latest.id);
       setTicketPublicId(latest.public_id ?? null);
     }
-  }, [isOpen, isAdmin, activeTab, ticketId, showTicketArchive, openTickets]);
+  }, [isOpen, isAdmin, activeTab, ticketId, showTicketArchive, userLeftTicket, openTickets]);
 
   const handleSelectArchivedTicket = (ticket: OpsTicket) => {
     setTicketId(ticket.id);
     setTicketPublicId(ticket.public_id ?? null);
     setShowTicketArchive(false);
+    setUserLeftTicket(false);
   };
 
   // -------- Active ticket conversation --------
@@ -496,6 +500,7 @@ const SupportChatWidget = () => {
       setTicketId(ticket.id);
       setTicketPublicId(ticket.public_id);
       setMessageText("");
+      setUserLeftTicket(false);
       queryClient.invalidateQueries({ queryKey: ["userTickets"] });
       queryClient.invalidateQueries({
         queryKey: ["supportChatMessages", ticket.id],
@@ -548,6 +553,7 @@ const SupportChatWidget = () => {
     setMessageText("");
     // If user has other open tickets, show archive toggle path; otherwise welcome screen
     setShowTicketArchive(false);
+    setUserLeftTicket(true);
   };
 
   // Hide on admin route only for non-admins (so plain users don't see widget there).
