@@ -84,10 +84,10 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
     touchStart.current = null;
   };
 
-  const accountItems: DrawerNavItem[] = [
-    { to: "/contul-meu", label: t("Contul meu", "My Account"), icon: User },
-    { to: "/verificare", label: t("Verificare KYC", "KYC Verification"), icon: Shield },
-  ];
+  const accountItems: DrawerNavItem[] =
+    kycStatus === "VERIFIED"
+      ? []
+      : [{ to: "/verificare", label: t("Verificare KYC", "KYC Verification"), icon: Shield }];
 
   const supportItems: DrawerNavItem[] = [
     {
@@ -242,7 +242,7 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
                 </div>
               )}
 
-              {user && (
+              {user && accountItems.length > 0 && (
                 <div className="animate-fade-in" style={stagger(5)}>
                   <DrawerNavGroup
                     title={t("Cont", "Account")}
