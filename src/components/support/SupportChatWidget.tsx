@@ -800,6 +800,28 @@ const SupportChatWidget = () => {
                   </div>
                 ) : (
                   <div className="shrink-0 border-t pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:pb-0">
+                    {isAdmin && (
+                      <div className="flex items-center justify-between px-3 pt-2 pb-1">
+                        <label className="flex items-center gap-2 text-[11px] text-muted-foreground cursor-pointer">
+                          <Switch
+                            checked={isInternal}
+                            onCheckedChange={setIsInternal}
+                          />
+                          <span className="inline-flex items-center gap-1">
+                            <Lock className="h-3 w-3" />
+                            {t("Notă internă", "Internal note")}
+                          </span>
+                        </label>
+                        {isInternal && (
+                          <span className="text-[10px] text-yellow-700 font-semibold">
+                            {t(
+                              "Nu va fi vizibil clientului",
+                              "Hidden from customer",
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 px-3 py-2.5">
                       <button
                         type="button"
