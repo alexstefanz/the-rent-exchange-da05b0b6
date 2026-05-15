@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { Headphones, Send, X, MessageSquare, Plus, Bot, Loader2, ImagePlus, ChevronRight, ArrowLeft, Sparkles, Check, Pencil, Paperclip } from "lucide-react";
+import { Headphones, Send, X, MessageSquare, Plus, Bot, Loader2, ImagePlus, ChevronRight, ArrowLeft, Sparkles, Check, Pencil, Paperclip, Inbox, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,11 +12,15 @@ import {
   createUserTicket,
   fetchUserTicketMessages,
   addUserTicketMessage,
+  fetchUserTickets,
+  type OpsTicket,
 } from "@/features/tickets/userTicketsApi";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { SUPPORT_FAQ } from "@/data/supportFaq";
+import { StatusPill } from "@/components/support/center/StatusPill";
+import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "support_chat_ticket_id";
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/support-ai-chat`;
@@ -193,6 +197,40 @@ const SupportChatWidget = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isAdminRoute = pathname.startsWith("/admin");
   const hasInitiatedAi = useRef(false);
+
+  const [activeTab, setActiveTab] = useState<"chat" | "tickets">("chat");
+
+  // Reset to chat tab whenever the widget closes
+  useEffect(() => {
+    if (!isOpen) setActiveTab("chat");
+  }, [isOpen]);
+
+  const { data: userTickets = [], isLoading: isLoadingTickets } = useQuery<OpsTicket[]>({
+    queryKey: ["userTickets"],
+    queryFn: fetchUserTickets,
+    enabled: isOpen && !!user && activeTab === "tickets",
+    refetchInterval: 15000,
+  });
+
+  const { data: openTicketsCount = 0 } = useQuery<number>({
+    queryKey: ["userTicketsOpenCount"],
+    queryFn: async () => {
+      const list = await fetchUserTickets();
+      return list.filter(t => t.status !== "CLOSED" && t.status !== "RESOLVED").length;
+    },
+    enabled: isOpen && !!user,
+    refetchInterval: 30000,
+  });
+
+  const handleSelectTicket = (ticket: OpsTicket) => {
+    setTicketId(ticket.id);
+    setTicketPublicId(ticket.public_id ?? null);
+    localStorage.setItem(STORAGE_KEY, ticket.id);
+    setAiMessages([]);
+    hasInitiatedAi.current = false;
+    setShowFaq(false);
+    setActiveTab("chat");
+  };
 
   // Detect contextual page (product / rental) for the AI
   const { data: chatContext } = useQuery<ChatContext>({
@@ -615,7 +653,101 @@ const SupportChatWidget = () => {
                   </Button>
                 </div>
               </div>
-            ) : !ticketId ? (
+            ) : (
+              <>
+                {/* Tabs */}
+                <div className="shrink-0 flex items-center gap-2 px-3 pt-2 pb-2 border-b bg-background">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("chat")}
+                    className={cn(
+                      "flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-full text-xs font-medium transition-colors",
+                      activeTab === "chat"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-primary/10 text-primary hover:bg-primary/15"
+                    )}
+                  >
+                    <MessageSquare className="h-3.5 w-3.5" />
+                    {t("Chat", "Chat")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("tickets")}
+                    className={cn(
+                      "flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-full text-xs font-medium transition-colors relative",
+                      activeTab === "tickets"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-primary/10 text-primary hover:bg-primary/15"
+                    )}
+                  >
+                    <Ticket className="h-3.5 w-3.5" />
+                    {t("Tickete", "Tickets")}
+                    {openTicketsCount > 0 && (
+                      <span className={cn(
+                        "ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold",
+                        activeTab === "tickets"
+                          ? "bg-primary-foreground text-primary"
+                          : "bg-primary text-primary-foreground"
+                      )}>
+                        {openTicketsCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {activeTab === "tickets" ? (
+                  <ScrollArea className="flex-1 px-3 py-3">
+                    {isLoadingTickets ? (
+                      <div className="flex items-center justify-center py-10">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : userTickets.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center text-center py-12 px-4">
+                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                          <Inbox className="h-6 w-6 text-primary" />
+                        </div>
+                        <p className="text-sm font-medium">
+                          {t("Nu ai tickete deschise", "No open tickets")}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {t(
+                            "Deschide o conversație în tabul Chat pentru a crea unul.",
+                            "Open a conversation in the Chat tab to create one."
+                          )}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {userTickets.map((ticket) => {
+                          const isActive = ticket.id === ticketId;
+                          return (
+                            <button
+                              key={ticket.id}
+                              type="button"
+                              onClick={() => handleSelectTicket(ticket)}
+                              className={cn(
+                                "w-full text-left rounded-xl border bg-card p-3 hover:border-primary/50 hover:bg-primary/5 transition-colors",
+                                isActive && "border-primary/60 bg-primary/5"
+                              )}
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                                <span className="text-[11px] font-mono font-medium text-muted-foreground">
+                                  {ticket.public_id || `#${ticket.id.slice(0, 6)}`}
+                                </span>
+                                <StatusPill status={ticket.status} size="xs" className="ml-auto" />
+                              </div>
+                              <p className="text-sm font-medium line-clamp-2 mb-1">{ticket.title}</p>
+                              <p className="text-[11px] text-muted-foreground">
+                                {format(new Date(ticket.created_at), "dd MMM yyyy, HH:mm")}
+                              </p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </ScrollArea>
+                ) : !ticketId ? (
               /* AI Chat Phase */
               <>
                 {showFaq ? (
@@ -937,6 +1069,8 @@ const SupportChatWidget = () => {
                     <p className="hidden lg:block text-[10px] text-muted-foreground text-center pb-2">Chat Rentli</p>
                   </div>
                 )}
+              </>
+            )}
               </>
             )}
           </div>
