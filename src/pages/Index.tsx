@@ -1,6 +1,5 @@
 import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
@@ -15,28 +14,13 @@ import { categories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { supabase } from "@/integrations/supabase/client";
+import { useCategoryCounts } from "@/hooks/queries/useCategoryCounts";
 
 const Index = () => {
   const copy = useUxCopy();
   const { language } = useLanguage();
 
-  const { data: categoryCounts } = useQuery({
-    queryKey: ["category-counts"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("category")
-        .eq("is_active", true);
-      if (error) return {};
-      const counts: Record<string, number> = {};
-      data?.forEach((p) => {
-        if (p.category) counts[p.category] = (counts[p.category] || 0) + 1;
-      });
-      return counts;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  const categoryCounts = useCategoryCounts();
 
 
   return (

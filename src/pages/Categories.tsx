@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Search } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -9,29 +8,14 @@ import { categories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { supabase } from "@/integrations/supabase/client";
+import { useCategoryCounts } from "@/hooks/queries/useCategoryCounts";
 
 const Categories = () => {
   const copy = useUxCopy();
   const { language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data: categoryCounts } = useQuery({
-    queryKey: ["category-counts"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select("category")
-        .eq("is_active", true);
-      if (error) return {};
-      const counts: Record<string, number> = {};
-      data?.forEach((p) => {
-        if (p.category) counts[p.category] = (counts[p.category] || 0) + 1;
-      });
-      return counts;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
+  const categoryCounts = useCategoryCounts();
 
   const filteredCategories = categories.filter(
     (cat) =>
