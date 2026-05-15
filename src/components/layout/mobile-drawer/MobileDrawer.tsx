@@ -7,7 +7,7 @@ import {
   LogOut,
   User,
   Shield,
-  HelpCircle,
+  LifeBuoy,
   ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
