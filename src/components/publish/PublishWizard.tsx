@@ -226,7 +226,18 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
 
   const validateStep = (s: number): boolean => {
     const validators: Record<number, () => any> = {
-      1: () => stepValidators.step1.safeParse({ category: data.category }),
+      1: () => {
+        const catRes = stepValidators.step1.safeParse({ category: data.category });
+        if (!catRes.success) return catRes;
+        const cat = categories.find((c) => c.name === data.category);
+        if (cat && cat.subcategories.length > 0 && !data.subcategory) {
+          return {
+            success: false,
+            error: { errors: [{ path: ["subcategory"], message: "Selectează o subcategorie" }] },
+          };
+        }
+        return { success: true };
+      },
       2: () => {
         const detailsRes = stepValidators.step2.safeParse({
           title: data.title,
