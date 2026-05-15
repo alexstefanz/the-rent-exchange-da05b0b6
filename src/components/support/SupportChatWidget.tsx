@@ -1,11 +1,21 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useLocation, useParams } from "react-router-dom";
-import { Headphones, Send, X, MessageSquare, Plus, Bot, Loader2, ImagePlus, ChevronRight, ArrowLeft, Sparkles, Check, Pencil, Paperclip, Inbox, Ticket } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  MessageCircle,
+  Send,
+  X,
+  Plus,
+  Loader2,
+  ImagePlus,
+  Inbox,
+  Ticket,
+  MessageSquare,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCurrentUserProfile } from "@/hooks/queries/useCurrentUserProfile";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -15,22 +25,25 @@ import {
   fetchUserTickets,
   type OpsTicket,
 } from "@/features/tickets/userTicketsApi";
+import {
+  getConversations,
+  type Conversation,
+} from "@/features/messaging/messagingApi";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { format, isToday, isYesterday } from "date-fns";
+import { ro as roLocale, enUS } from "date-fns/locale";
 import { toast } from "sonner";
-import { SUPPORT_FAQ } from "@/data/supportFaq";
 import { StatusPill } from "@/components/support/center/StatusPill";
 import { cn } from "@/lib/utils";
 
 const STORAGE_KEY = "support_chat_ticket_id";
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/support-ai-chat`;
 
 const MAX_DIMENSION = 1920;
 const JPEG_QUALITY = 0.8;
 const COMPRESS_THRESHOLD = 1 * 1024 * 1024;
 
-const compressImage = (file: File): Promise<File> => {
-  return new Promise((resolve, reject) => {
+const compressImage = (file: File): Promise<File> =>
+  new Promise((resolve, reject) => {
     if (file.size <= COMPRESS_THRESHOLD) {
       resolve(file);
       return;
@@ -53,15 +66,25 @@ const compressImage = (file: File): Promise<File> => {
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext("2d");
-      if (!ctx) { resolve(file); return; }
+      if (!ctx) {
+        resolve(file);
+        return;
+      }
       ctx.drawImage(img, 0, 0, width, height);
       canvas.toBlob(
         (blob) => {
-          if (!blob) { resolve(file); return; }
-          resolve(new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), { type: "image/jpeg" }));
+          if (!blob) {
+            resolve(file);
+            return;
+          }
+          resolve(
+            new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
+              type: "image/jpeg",
+            }),
+          );
         },
         "image/jpeg",
-        JPEG_QUALITY
+        JPEG_QUALITY,
       );
     };
     img.onerror = () => {
@@ -70,39 +93,37 @@ const compressImage = (file: File): Promise<File> => {
     };
     img.src = url;
   });
-};
 
 const SUPPORT_BUCKET = "support-attachments";
 const SUPPORT_PATH_PREFIX = "support-attachments://";
 
-const uploadSupportImage = async (file: File, userId: string): Promise<string> => {
-  const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
-  const { error } = await supabase.storage.from(SUPPORT_BUCKET).upload(fileName, file);
+const uploadSupportImage = async (
+  file: File,
+  userId: string,
+): Promise<string> => {
+  const fileName = `${userId}/${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(2)}.jpg`;
+  const { error } = await supabase.storage
+    .from(SUPPORT_BUCKET)
+    .upload(fileName, file);
   if (error) throw error;
-  // Return scoped reference (not a public URL) so private bucket policies apply
   return `${SUPPORT_PATH_PREFIX}${fileName}`;
 };
 
-/**
- * Extracts a storage path inside `support-attachments` from any of:
- *  - new format: `support-attachments://<userId>/<file>`
- *  - legacy public URL: `https://.../storage/v1/object/public/support-attachments/<userId>/<file>`
- *  - legacy signed URL: `https://.../storage/v1/object/sign/support-attachments/<userId>/<file>?token=...`
- * Returns null if the text is not an attachment reference.
- */
 const extractSupportPath = (raw: string): string | null => {
   const text = raw.trim();
   if (text.startsWith(SUPPORT_PATH_PREFIX)) {
     return text.slice(SUPPORT_PATH_PREFIX.length);
   }
-  const publicMatch = text.match(/\/storage\/v1\/object\/(?:public|sign)\/support-attachments\/([^?#]+)/);
+  const publicMatch = text.match(
+    /\/storage\/v1\/object\/(?:public|sign)\/support-attachments\/([^?#]+)/,
+  );
   if (publicMatch) {
     return decodeURIComponent(publicMatch[1]);
   }
   return null;
 };
-
-const isImageUrl = (text: string) => extractSupportPath(text) !== null;
 
 const SupportImage = ({ path }: { path: string }) => {
   const { data: signedUrl, isLoading } = useQuery({
@@ -114,7 +135,7 @@ const SupportImage = ({ path }: { path: string }) => {
       if (error) throw error;
       return data.signedUrl;
     },
-    staleTime: 50 * 60 * 1000, // 50 minutes (URL expires after 60)
+    staleTime: 50 * 60 * 1000,
     retry: 1,
   });
 
@@ -142,73 +163,98 @@ const SupportImage = ({ path }: { path: string }) => {
 
 const renderMessageContent = (text: string) => {
   const path = extractSupportPath(text);
-  if (path) {
-    return <SupportImage path={path} />;
-  }
+  if (path) return <SupportImage path={path} />;
   return <p className="whitespace-pre-wrap break-words">{text}</p>;
 };
 
-interface AiMessage {
-  role: "user" | "assistant";
-  content: string;
-  chips?: string[];
-  attachmentHint?: string;
-  draft?: ToolCallData;
-}
-
-interface ToolCallData {
-  subject: string;
-  description: string;
-  category_group: string;
-  category_type: string;
-  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-}
-
-interface ChatContext {
-  route: string;
-  productId?: string;
-  productTitle?: string;
-  reservationId?: string;
-}
-
 const SupportChatWidget = () => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const { data: profile } = useCurrentUserProfile();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const queryClient = useQueryClient();
+  const dateLocale = language === "ro" ? roLocale : enUS;
 
   const [isOpen, setIsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"chat" | "tickets">("chat");
+  const [chatSubTab, setChatSubTab] = useState<"rezervari" | "de-inchiriat">(
+    "rezervari",
+  );
   const [ticketId, setTicketId] = useState<string | null>(() =>
-    localStorage.getItem(STORAGE_KEY)
+    localStorage.getItem(STORAGE_KEY),
   );
   const [ticketPublicId, setTicketPublicId] = useState<string | null>(null);
 
-  const [aiMessages, setAiMessages] = useState<AiMessage[]>([]);
-  const [aiInput, setAiInput] = useState("");
-  const [isAiLoading, setIsAiLoading] = useState(false);
+  // New-ticket composer state (when user clicks "+" on Tickete tab)
+  const [isComposingTicket, setIsComposingTicket] = useState(false);
+  const [newTicketText, setNewTicketText] = useState("");
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [showFaq, setShowFaq] = useState(true);
-  const [openFaqId, setOpenFaqId] = useState<string | null>(null);
 
   const [messageText, setMessageText] = useState("");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isAdminRoute = pathname.startsWith("/admin");
-  const hasInitiatedAi = useRef(false);
 
-  const [activeTab, setActiveTab] = useState<"chat" | "tickets">("chat");
-
-  // Reset to chat tab whenever the widget closes
+  // Reset transient widget state when closed
   useEffect(() => {
-    if (!isOpen) setActiveTab("chat");
+    if (!isOpen) {
+      setActiveTab("chat");
+      setIsComposingTicket(false);
+      setNewTicketText("");
+    }
   }, [isOpen]);
 
-  const { data: userTickets = [], isLoading: isLoadingTickets } = useQuery<OpsTicket[]>({
+  // -------- Conversations (Chat tab) --------
+  const { data: conversations = [], isLoading: isLoadingConvs } = useQuery<
+    Conversation[]
+  >({
+    queryKey: ["conversations", user?.id],
+    queryFn: getConversations,
+    enabled: isOpen && !!user && activeTab === "chat" && !ticketId,
+    refetchInterval: 30000,
+  });
+
+  const totalUnread = conversations.reduce(
+    (acc, c) => acc + (c.unread_count || 0),
+    0,
+  );
+
+  const filteredConvs = conversations.filter((c) =>
+    chatSubTab === "rezervari"
+      ? c.buyer_id === user?.id
+      : c.owner_id === user?.id,
+  );
+  const sortedConvs = [...filteredConvs].sort((a, b) => {
+    const ta = a.last_message?.created_at
+      ? new Date(a.last_message.created_at).getTime()
+      : 0;
+    const tb = b.last_message?.created_at
+      ? new Date(b.last_message.created_at).getTime()
+      : 0;
+    return tb - ta;
+  });
+
+  const formatConvTime = (dateString: string) => {
+    const d = new Date(dateString);
+    if (isToday(d)) return format(d, "HH:mm");
+    if (isYesterday(d)) return t("Ieri", "Yesterday");
+    return format(d, "d MMM", { locale: dateLocale });
+  };
+
+  const handleOpenConversation = (conv: Conversation) => {
+    setIsOpen(false);
+    navigate(`/mesaje?conv=${conv.id}`);
+  };
+
+  // -------- Tickets (Tickete tab) --------
+  const { data: userTickets = [], isLoading: isLoadingTickets } = useQuery<
+    OpsTicket[]
+  >({
     queryKey: ["userTickets"],
     queryFn: fetchUserTickets,
-    enabled: isOpen && !!user && activeTab === "tickets",
+    enabled: isOpen && !!user && activeTab === "tickets" && !ticketId,
     refetchInterval: 15000,
   });
 
@@ -216,7 +262,9 @@ const SupportChatWidget = () => {
     queryKey: ["userTicketsOpenCount"],
     queryFn: async () => {
       const list = await fetchUserTickets();
-      return list.filter(t => t.status !== "CLOSED" && t.status !== "RESOLVED").length;
+      return list.filter(
+        (x) => x.status !== "CLOSED" && x.status !== "RESOLVED",
+      ).length;
     },
     enabled: isOpen && !!user,
     refetchInterval: 30000,
@@ -226,42 +274,9 @@ const SupportChatWidget = () => {
     setTicketId(ticket.id);
     setTicketPublicId(ticket.public_id ?? null);
     localStorage.setItem(STORAGE_KEY, ticket.id);
-    setAiMessages([]);
-    hasInitiatedAi.current = false;
-    setShowFaq(false);
-    setActiveTab("chat");
   };
 
-  // Detect contextual page (product / rental) for the AI
-  const { data: chatContext } = useQuery<ChatContext>({
-    queryKey: ["supportChatContext", pathname],
-    queryFn: async () => {
-      const ctx: ChatContext = { route: pathname };
-      // Product page: /produs/:slug or /product/:slug
-      const productMatch = pathname.match(/^\/(?:produs|product)\/([^/]+)/);
-      if (productMatch) {
-        const slug = productMatch[1];
-        const { data } = await supabase
-          .from("products")
-          .select("id, title")
-          .eq("slug", slug)
-          .maybeSingle();
-        if (data) {
-          ctx.productId = data.id;
-          ctx.productTitle = data.title;
-        }
-      }
-      // Rental pages: /inchirieri/:id, /rezervari/:id, /checkout/:id, /rentals/:id, /rentals-out/:id
-      const rentalMatch = pathname.match(/^\/(?:inchirieri|rezervari|checkout|rentals|rentals-out)\/([0-9a-f-]{36})/i);
-      if (rentalMatch) {
-        ctx.reservationId = rentalMatch[1];
-      }
-      return ctx;
-    },
-    enabled: isOpen && !!user && !ticketId,
-    staleTime: 60_000,
-  });
-
+  // -------- Active ticket conversation --------
   const { data: ticketInfo } = useQuery({
     queryKey: ["supportTicketInfo", ticketId],
     queryFn: async () => {
@@ -281,9 +296,7 @@ const SupportChatWidget = () => {
   });
 
   useEffect(() => {
-    if (ticketInfo?.public_id) {
-      setTicketPublicId(ticketInfo.public_id);
-    }
+    if (ticketInfo?.public_id) setTicketPublicId(ticketInfo.public_id);
   }, [ticketInfo]);
 
   const { data: messages = [] } = useQuery({
@@ -295,220 +308,15 @@ const SupportChatWidget = () => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, aiMessages]);
-
-  useEffect(() => {
-    if (isOpen && user && !ticketId && aiMessages.length === 0 && !hasInitiatedAi.current && !showFaq) {
-      hasInitiatedAi.current = true;
-      streamAiResponse([]);
-    }
-  }, [isOpen, user, ticketId, showFaq]);
-
-  const handleToolCall = useCallback(async (toolData: ToolCallData) => {
-    setIsCreatingTicket(true);
-    try {
-      const ticket = await createUserTicket({
-        title: toolData.subject,
-        description: toolData.description,
-        category_group: toolData.category_group,
-        category_type: toolData.category_type,
-        priority: toolData.priority,
-        product_id: chatContext?.productId,
-        reservation_id: chatContext?.reservationId,
-      });
-
-      const aiSummary = aiMessages
-        .filter(m => m.role === "user")
-        .map(m => m.content)
-        .join("\n");
-      if (aiSummary) {
-        await addUserTicketMessage(ticket.id, aiSummary);
-      }
-
-      setTicketId(ticket.id);
-      setTicketPublicId(ticket.public_id);
-      localStorage.setItem(STORAGE_KEY, ticket.id);
-      setAiMessages([]);
-      hasInitiatedAi.current = false;
-      queryClient.invalidateQueries({ queryKey: ["supportChatMessages", ticket.id] });
-    } catch (err) {
-      console.error("Failed to create ticket:", err);
-      toast.error(t("Eroare la crearea ticketului. Încearcă din nou.", "Failed to create ticket. Please try again."));
-    } finally {
-      setIsCreatingTicket(false);
-    }
-  }, [aiMessages, t, queryClient, chatContext]);
-
-  const streamAiResponse = async (conversationMessages: AiMessage[]) => {
-    setIsAiLoading(true);
-    setAiMessages(prev => [...prev, { role: "assistant", content: "" }]);
-
-    try {
-      const resp = await fetch(CHAT_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({
-          messages: conversationMessages.map(({ role, content }) => ({ role, content })),
-          context: chatContext,
-        }),
-      });
-
-      if (!resp.ok) {
-        const errorData = await resp.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${resp.status}`);
-      }
-
-      if (!resp.body) throw new Error("No response body");
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = "";
-      let assistantSoFar = "";
-      // Tool calls accumulated by `index` (multiple calls in one stream)
-      const toolCallsByIndex: Record<number, { name: string; args: string }> = {};
-
-      const updateAssistant = (content: string) => {
-        assistantSoFar = content;
-        setAiMessages(prev => {
-          const updated = [...prev];
-          updated[updated.length - 1] = { role: "assistant", content };
-          return updated;
-        });
-      };
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        textBuffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
-
-          if (line.endsWith("\r")) line = line.slice(0, -1);
-          if (line.startsWith(":") || line.trim() === "") continue;
-          if (!line.startsWith("data: ")) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === "[DONE]") break;
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const delta = parsed.choices?.[0]?.delta;
-
-            if (delta?.content) {
-              updateAssistant(assistantSoFar + delta.content);
-            }
-
-            if (delta?.tool_calls) {
-              for (const tc of delta.tool_calls) {
-                const idx = typeof tc.index === "number" ? tc.index : 0;
-                if (!toolCallsByIndex[idx]) toolCallsByIndex[idx] = { name: "", args: "" };
-                if (tc.function?.name) toolCallsByIndex[idx].name = tc.function.name;
-                if (tc.function?.arguments) toolCallsByIndex[idx].args += tc.function.arguments;
-              }
-            }
-          } catch {
-            textBuffer = line + "\n" + textBuffer;
-            break;
-          }
-        }
-      }
-
-      // Process tool calls
-      const calls = Object.values(toolCallsByIndex).filter(c => c.name);
-      let chips: string[] | undefined;
-      let attachmentHint: string | undefined;
-      let draft: ToolCallData | undefined;
-      let createPayload: ToolCallData | undefined;
-
-      for (const call of calls) {
-        try {
-          const parsed = JSON.parse(call.args || "{}");
-          if (call.name === "propose_quick_replies" && Array.isArray(parsed.chips)) {
-            chips = parsed.chips.slice(0, 5);
-          } else if (call.name === "propose_attachment_hint" && typeof parsed.hint === "string") {
-            attachmentHint = parsed.hint;
-          } else if (call.name === "draft_ticket") {
-            draft = parsed as ToolCallData;
-          } else if (call.name === "create_support_ticket") {
-            createPayload = parsed as ToolCallData;
-          }
-        } catch (e) {
-          console.warn("Failed to parse tool call args:", call.name, e);
-        }
-      }
-
-      if (chips || attachmentHint || draft) {
-        setAiMessages(prev => {
-          const updated = [...prev];
-          const last = updated[updated.length - 1];
-          if (last?.role === "assistant") {
-            updated[updated.length - 1] = { ...last, chips, attachmentHint, draft };
-          }
-          return updated;
-        });
-      }
-
-      if (createPayload) {
-        const handoffMsg = t(
-          "Perfect! Creez ticketul și un coleg din echipă va prelua conversația. Mulțumesc! 🙏",
-          "Perfect! Creating the ticket — a team member will take over. Thank you! 🙏"
-        );
-        updateAssistant(handoffMsg);
-        await handleToolCall(createPayload);
-      }
-    } catch (err) {
-      console.error("AI stream error:", err);
-      setAiMessages(prev => {
-        const updated = [...prev];
-        if (updated[updated.length - 1]?.role === "assistant" && !updated[updated.length - 1].content) {
-          updated[updated.length - 1] = {
-            role: "assistant",
-            content: t(
-              "Îmi pare rău, am întâmpinat o eroare. Te rog încearcă din nou.",
-              "Sorry, I encountered an error. Please try again."
-            ),
-          };
-        }
-        return updated;
-      });
-    } finally {
-      setIsAiLoading(false);
-    }
-  };
-
-  const sendAiText = useCallback((text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed || isAiLoading) return;
-    const userMsg: AiMessage = { role: "user", content: trimmed };
-    const newMessages = [...aiMessages, userMsg];
-    // Strip chips/draft from prior messages before resending so AI doesn't re-propose
-    setAiMessages(newMessages.map((m, i) =>
-      i < newMessages.length - 1 && m.role === "assistant"
-        ? { ...m, chips: undefined, draft: undefined, attachmentHint: undefined }
-        : m
-    ));
-    const apiMessages = newMessages.filter(m => m.content.trim());
-    streamAiResponse(apiMessages);
-  }, [aiMessages, isAiLoading]);
-
-  const handleSendAiMessage = () => {
-    const text = aiInput.trim();
-    if (!text) return;
-    setAiInput("");
-    sendAiText(text);
-  };
+  }, [messages]);
 
   const sendMutation = useMutation({
     mutationFn: (text: string) => addUserTicketMessage(ticketId!, text),
     onSuccess: () => {
       setMessageText("");
-      queryClient.invalidateQueries({ queryKey: ["supportChatMessages", ticketId] });
+      queryClient.invalidateQueries({
+        queryKey: ["supportChatMessages", ticketId],
+      });
     },
   });
 
@@ -518,27 +326,23 @@ const SupportChatWidget = () => {
     sendMutation.mutate(text);
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     if (!file.type.startsWith("image/")) {
       toast.error(t("Poți trimite doar imagini.", "You can only send images."));
       return;
     }
-
     setIsUploadingImage(true);
     try {
       const compressed = await compressImage(file);
       const url = await uploadSupportImage(compressed, user.id);
-
       if (ticketId) {
         sendMutation.mutate(url);
-      } else {
-        const userMsg: AiMessage = { role: "user", content: url };
-        const newMessages = [...aiMessages, userMsg];
-        setAiMessages(newMessages);
-        const apiMessages = newMessages.filter(m => m.content.trim());
-        streamAiResponse(apiMessages);
+      } else if (isComposingTicket) {
+        setNewTicketText((prev) => (prev ? `${prev}\n${url}` : url));
       }
     } catch (err) {
       console.error("Image upload error:", err);
@@ -549,29 +353,63 @@ const SupportChatWidget = () => {
     }
   };
 
-  const handleNewConversation = () => {
+  const handleBackToList = () => {
     localStorage.removeItem(STORAGE_KEY);
     setTicketId(null);
     setTicketPublicId(null);
     setMessageText("");
-    setAiMessages([]);
-    hasInitiatedAi.current = false;
-    setShowFaq(true);
-    setOpenFaqId(null);
+    setActiveTab("tickets");
   };
 
-  const handleSkipFaq = () => {
-    setShowFaq(false);
-    setOpenFaqId(null);
+  const handleStartNewTicket = () => {
+    setActiveTab("tickets");
+    setIsComposingTicket(true);
+    setNewTicketText("");
+  };
+
+  const handleCreateTicket = async () => {
+    const text = newTicketText.trim();
+    if (!text || !user) return;
+    setIsCreatingTicket(true);
+    try {
+      const title = text.length > 60 ? `${text.slice(0, 60)}…` : text;
+      const ticket = await createUserTicket({
+        title,
+        description: text,
+        category_group: "OTHER",
+        category_type: "GENERAL",
+      });
+      await addUserTicketMessage(ticket.id, text);
+      setTicketId(ticket.id);
+      setTicketPublicId(ticket.public_id);
+      localStorage.setItem(STORAGE_KEY, ticket.id);
+      setIsComposingTicket(false);
+      setNewTicketText("");
+      queryClient.invalidateQueries({ queryKey: ["userTickets"] });
+      queryClient.invalidateQueries({ queryKey: ["userTicketsOpenCount"] });
+      queryClient.invalidateQueries({
+        queryKey: ["supportChatMessages", ticket.id],
+      });
+    } catch (err) {
+      console.error("Failed to create ticket:", err);
+      toast.error(
+        t(
+          "Eroare la crearea ticketului. Încearcă din nou.",
+          "Failed to create ticket. Please try again.",
+        ),
+      );
+    } finally {
+      setIsCreatingTicket(false);
+    }
   };
 
   if (isAdminRoute) return null;
 
-  const isClosed = ticketInfo?.status === "CLOSED" || ticketInfo?.status === "RESOLVED";
+  const isClosed =
+    ticketInfo?.status === "CLOSED" || ticketInfo?.status === "RESOLVED";
 
   return (
     <>
-      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -580,18 +418,25 @@ const SupportChatWidget = () => {
         onChange={handleImageUpload}
       />
 
-      {/* FAB Button */}
+      {/* FAB */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
           className={`fixed bottom-20 lg:bottom-6 right-4 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-all duration-200 items-center justify-center hover:scale-105 active:scale-95 ${pathname.startsWith("/mesaje") ? "hidden lg:flex" : "flex"}`}
           aria-label={t("Suport", "Support")}
         >
-          <Headphones className="h-6 w-6" />
+          <MessageCircle className="h-6 w-6" />
+          {totalUnread + openTicketsCount > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center border-2 border-background">
+              {totalUnread + openTicketsCount > 99
+                ? "99+"
+                : totalUnread + openTicketsCount}
+            </span>
+          )}
         </button>
       )}
 
-      {/* Chat Panel */}
+      {/* Panel */}
       {isOpen && (
         <div
           className="fixed z-[60] bg-background flex flex-col overflow-hidden inset-0 lg:inset-auto lg:bottom-6 lg:right-4 lg:w-[400px] lg:max-w-[calc(100vw-2rem)] lg:rounded-2xl lg:border lg:shadow-2xl"
@@ -602,27 +447,41 @@ const SupportChatWidget = () => {
             }
           }}
         >
-          {/* Header — desktop: white/clean, mobile: primary */}
+          {/* Header */}
           <div className="flex items-center gap-3 px-4 py-3 border-b shrink-0 lg:rounded-t-2xl bg-primary text-primary-foreground lg:bg-background lg:text-foreground">
-            {/* Avatar with online dot */}
             <div className="relative shrink-0">
               <div className="h-9 w-9 rounded-full bg-primary/10 lg:bg-primary flex items-center justify-center">
-                <span className="text-sm font-bold text-primary-foreground lg:text-primary-foreground">R</span>
+                <span className="text-sm font-bold text-primary-foreground">
+                  R
+                </span>
               </div>
               <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm">{t("Suport Rentli", "Rentli Support")}</p>
+              <p className="font-semibold text-sm">
+                {ticketId
+                  ? t("Suport Rentli", "Rentli Support")
+                  : t("Mesajele mele", "My messages")}
+              </p>
               <p className="text-xs opacity-70 lg:text-muted-foreground">
-                {ticketPublicId || "Online"}
+                {ticketId ? ticketPublicId || "Online" : "Online"}
               </p>
             </div>
             <div className="flex items-center gap-1">
-              {(ticketId || aiMessages.length > 0) && (
+              {ticketId && (
                 <button
-                  onClick={handleNewConversation}
+                  onClick={handleBackToList}
+                  className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors text-xs px-2"
+                  title={t("Înapoi la tickete", "Back to tickets")}
+                >
+                  ←
+                </button>
+              )}
+              {!ticketId && activeTab === "tickets" && !isComposingTicket && (
+                <button
+                  onClick={handleStartNewTicket}
                   className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors"
-                  title={t("Conversație nouă", "New conversation")}
+                  title={t("Ticket nou", "New ticket")}
                 >
                   <Plus className="h-4 w-4" />
                 </button>
@@ -641,11 +500,11 @@ const SupportChatWidget = () => {
             {!user ? (
               <div className="flex-1 flex items-center justify-center p-6 text-center">
                 <div>
-                  <Headphones className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                  <MessageCircle className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                   <p className="text-sm text-muted-foreground">
                     {t(
-                      "Trebuie să fii autentificat pentru a contacta suportul.",
-                      "You must be logged in to contact support."
+                      "Trebuie să fii autentificat pentru a folosi chat-ul.",
+                      "You must be logged in to use the chat.",
                     )}
                   </p>
                   <Button variant="default" size="sm" className="mt-3" asChild>
@@ -653,338 +512,15 @@ const SupportChatWidget = () => {
                   </Button>
                 </div>
               </div>
-            ) : (
-              <>
-                {/* Tabs */}
-                <div className="shrink-0 flex items-center gap-2 px-3 pt-2 pb-2 border-b bg-background">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("chat")}
-                    className={cn(
-                      "flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-full text-xs font-medium transition-colors",
-                      activeTab === "chat"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-primary/10 text-primary hover:bg-primary/15"
-                    )}
-                  >
-                    <MessageSquare className="h-3.5 w-3.5" />
-                    {t("Chat", "Chat")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("tickets")}
-                    className={cn(
-                      "flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-full text-xs font-medium transition-colors relative",
-                      activeTab === "tickets"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-primary/10 text-primary hover:bg-primary/15"
-                    )}
-                  >
-                    <Ticket className="h-3.5 w-3.5" />
-                    {t("Tickete", "Tickets")}
-                    {openTicketsCount > 0 && (
-                      <span className={cn(
-                        "ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold",
-                        activeTab === "tickets"
-                          ? "bg-primary-foreground text-primary"
-                          : "bg-primary text-primary-foreground"
-                      )}>
-                        {openTicketsCount}
-                      </span>
-                    )}
-                  </button>
-                </div>
-
-                {activeTab === "tickets" ? (
-                  <ScrollArea className="flex-1 px-3 py-3">
-                    {isLoadingTickets ? (
-                      <div className="flex items-center justify-center py-10">
-                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                      </div>
-                    ) : userTickets.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center text-center py-12 px-4">
-                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                          <Inbox className="h-6 w-6 text-primary" />
-                        </div>
-                        <p className="text-sm font-medium">
-                          {t("Nu ai tickete deschise", "No open tickets")}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {t(
-                            "Deschide o conversație în tabul Chat pentru a crea unul.",
-                            "Open a conversation in the Chat tab to create one."
-                          )}
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {userTickets.map((ticket) => {
-                          const isActive = ticket.id === ticketId;
-                          return (
-                            <button
-                              key={ticket.id}
-                              type="button"
-                              onClick={() => handleSelectTicket(ticket)}
-                              className={cn(
-                                "w-full text-left rounded-xl border bg-card p-3 hover:border-primary/50 hover:bg-primary/5 transition-colors",
-                                isActive && "border-primary/60 bg-primary/5"
-                              )}
-                            >
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
-                                <span className="text-[11px] font-mono font-medium text-muted-foreground">
-                                  {ticket.public_id || `#${ticket.id.slice(0, 6)}`}
-                                </span>
-                                <StatusPill status={ticket.status} size="xs" className="ml-auto" />
-                              </div>
-                              <p className="text-sm font-medium line-clamp-2 mb-1">{ticket.title}</p>
-                              <p className="text-[11px] text-muted-foreground">
-                                {format(new Date(ticket.created_at), "dd MMM yyyy, HH:mm")}
-                              </p>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </ScrollArea>
-                ) : !ticketId ? (
-              /* AI Chat Phase */
-              <>
-                {showFaq ? (
-                  <ScrollArea className="flex-1 px-4 py-4">
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-2">
-                        <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                          <Bot className="h-4 w-4 text-primary" />
-                        </div>
-                        <div className="bg-muted rounded-2xl rounded-bl-md px-3 py-2 text-sm">
-                          {t(
-                            "Salut! 👋 Înainte să deschidem un ticket, vezi dacă răspunsul e mai jos. Dacă nu — sunt aici!",
-                            "Hi! 👋 Before opening a ticket, check if your answer is below. If not — I'm here!",
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 pt-1">
-                        {SUPPORT_FAQ.map((faq) => {
-                          const isOpen = openFaqId === faq.id;
-                          return (
-                            <div key={faq.id} className="border rounded-xl overflow-hidden bg-card">
-                              <button
-                                type="button"
-                                onClick={() => setOpenFaqId(isOpen ? null : faq.id)}
-                                className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left text-sm font-medium hover:bg-muted/50 transition-colors"
-                              >
-                                <span className="flex-1">{t(faq.question.ro, faq.question.en)}</span>
-                                <ChevronRight
-                                  className={`h-4 w-4 text-muted-foreground transition-transform shrink-0 ${
-                                    isOpen ? "rotate-90" : ""
-                                  }`}
-                                />
-                              </button>
-                              {isOpen && (
-                                <div className="px-3 pb-3 pt-1 text-xs text-muted-foreground border-t bg-muted/30 whitespace-pre-wrap">
-                                  {t(faq.answer.ro, faq.answer.en)}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="w-full mt-3 gap-1.5"
-                        onClick={handleSkipFaq}
-                      >
-                        <MessageSquare className="h-3.5 w-3.5" />
-                        {t("Tot am nevoie de ajutor", "I still need help")}
-                      </Button>
-                      <p className="text-[10px] text-muted-foreground text-center">
-                        {t(
-                          "Asistentul AI te ajută să creezi un ticket pentru echipă.",
-                          "The AI assistant helps you open a ticket for the team.",
-                        )}
-                      </p>
-                    </div>
-                  </ScrollArea>
-                ) : (
-                <>
-                <ScrollArea className="flex-1 px-4 py-3">
-                  <div className="space-y-3">
-                    <button
-                      type="button"
-                      onClick={() => { setShowFaq(true); setAiMessages([]); hasInitiatedAi.current = false; }}
-                      className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-                    >
-                      <ArrowLeft className="h-3 w-3" />
-                      {t("Întoarce-te la întrebări frecvente", "Back to FAQ")}
-                    </button>
-                    {aiMessages.map((msg, idx) => {
-                      const isUser = msg.role === "user";
-                      return (
-                        <div key={idx} className="space-y-2">
-                        <div
-                          className={`flex ${isUser ? "justify-end" : "justify-start"}`}
-                        >
-                          {!isUser && (
-                            <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center mr-2 shrink-0 mt-0.5">
-                              <Bot className="h-4 w-4 text-primary" />
-                            </div>
-                          )}
-                          <div
-                            className={`max-w-[75%] rounded-2xl px-3 py-2 text-sm ${
-                              isUser
-                                ? "bg-amber-400 text-foreground rounded-br-md"
-                                : "bg-muted text-foreground rounded-bl-md"
-                            }`}
-                          >
-                            {msg.content ? renderMessageContent(msg.content) : null}
-                            {!msg.content && isAiLoading && idx === aiMessages.length - 1 && (
-                              <div className="flex items-center gap-1 py-1">
-                                <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "0ms" }} />
-                                <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "150ms" }} />
-                                <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: "300ms" }} />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        {!isUser && msg.chips && msg.chips.length > 0 && idx === aiMessages.length - 1 && !isAiLoading && (
-                          <div className="flex flex-wrap gap-1.5 pl-9">
-                            {msg.chips.map((chip, i) => (
-                              <button
-                                key={i}
-                                type="button"
-                                onClick={() => sendAiText(chip)}
-                                disabled={isAiLoading || isCreatingTicket}
-                                className="text-xs px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
-                              >
-                                {chip}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        {!isUser && msg.attachmentHint && idx === aiMessages.length - 1 && !isAiLoading && (
-                          <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={isUploadingImage}
-                            className="ml-9 inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-dashed border-primary/30 text-primary hover:bg-primary/5 transition-colors"
-                          >
-                            <Paperclip className="h-3 w-3" />
-                            {msg.attachmentHint}
-                          </button>
-                        )}
-                        {!isUser && msg.draft && idx === aiMessages.length - 1 && !isAiLoading && (
-                          <div className="ml-9 rounded-2xl border border-primary/30 bg-card p-3 space-y-2 shadow-sm">
-                            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-primary uppercase tracking-wide">
-                              <Sparkles className="h-3 w-3" />
-                              {t("Pregătire ticket", "Ticket draft")}
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">{t("Subiect", "Subject")}</p>
-                              <p className="text-sm font-medium">{msg.draft.subject}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-muted-foreground">{t("Sumar", "Summary")}</p>
-                              <p className="text-xs whitespace-pre-wrap">{msg.draft.description}</p>
-                            </div>
-                            <div className="flex flex-wrap gap-1.5">
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted">{msg.draft.category_group}</span>
-                              {msg.draft.priority && (
-                                <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                                  {msg.draft.priority}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex gap-2 pt-1">
-                              <Button
-                                size="sm"
-                                className="flex-1 h-8 text-xs"
-                                onClick={() => msg.draft && handleToolCall(msg.draft)}
-                                disabled={isAiLoading || isCreatingTicket}
-                              >
-                                <Check className="h-3.5 w-3.5 mr-1" />
-                                {t("Confirmă", "Confirm")}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1 h-8 text-xs"
-                                onClick={() => sendAiText(t("Vreau să modific ceva.", "I want to edit something."))}
-                                disabled={isAiLoading || isCreatingTicket}
-                              >
-                                <Pencil className="h-3.5 w-3.5 mr-1" />
-                                {t("Modifică", "Edit")}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                        </div>
-                      );
-                    })}
-                    {isCreatingTicket && (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center py-2">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        {t("Se creează ticketul...", "Creating ticket...")}
-                      </div>
-                    )}
-                    <div ref={messagesEndRef} />
-                  </div>
-                </ScrollArea>
-
-                {/* AI input */}
-                <div className="shrink-0 border-t pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:pb-0">
-                  <div className="flex items-center gap-2 px-3 py-2.5">
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isAiLoading || isCreatingTicket || isUploadingImage}
-                      className="h-9 w-9 shrink-0 flex items-center justify-center rounded-full hover:bg-secondary transition-colors disabled:opacity-50"
-                    >
-                      {isUploadingImage ? (
-                        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                      ) : (
-                        <ImagePlus className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </button>
-                    <Input
-                      value={aiInput}
-                      onChange={(e) => setAiInput(e.target.value)}
-                      placeholder={t("Scrie mesajul tău...", "Write your message...")}
-                      className="h-9 text-sm flex-1 rounded-full"
-                      disabled={isAiLoading || isCreatingTicket}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSendAiMessage();
-                        }
-                      }}
-                    />
-                    <Button
-                      size="icon"
-                      className="h-9 w-9 shrink-0 rounded-full"
-                      onClick={handleSendAiMessage}
-                      disabled={!aiInput.trim() || isAiLoading || isCreatingTicket}
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <p className="hidden lg:block text-[10px] text-muted-foreground text-center pb-2">Chat Rentli</p>
-                </div>
-                </>
-                )}
-              </>
-            ) : (
-              /* Ticket Chat View */
+            ) : ticketId ? (
+              /* ----- Active ticket conversation ----- */
               <>
                 <ScrollArea className="flex-1 px-4 py-3">
                   {messages.length === 0 ? (
                     <p className="text-xs text-muted-foreground text-center py-6">
                       {t(
                         "Ticketul tău a fost creat. Un administrator va răspunde în curând.",
-                        "Your ticket has been created. An admin will respond soon."
+                        "Your ticket has been created. An admin will respond soon.",
                       )}
                     </p>
                   ) : (
@@ -1005,9 +541,7 @@ const SupportChatWidget = () => {
                             >
                               {renderMessageContent(msg.message_text)}
                               <p
-                                className={`text-[10px] mt-1 ${
-                                  isCustomer ? "text-foreground/60" : "text-muted-foreground"
-                                }`}
+                                className={`text-[10px] mt-1 ${isCustomer ? "text-foreground/60" : "text-muted-foreground"}`}
                               >
                                 {format(new Date(msg.created_at), "HH:mm")}
                               </p>
@@ -1025,9 +559,8 @@ const SupportChatWidget = () => {
                     <p className="text-xs text-muted-foreground mb-2">
                       {t("Acest ticket a fost închis.", "This ticket has been closed.")}
                     </p>
-                    <Button variant="outline" size="sm" onClick={handleNewConversation}>
-                      <Plus className="h-3.5 w-3.5 mr-1" />
-                      {t("Conversație nouă", "New conversation")}
+                    <Button variant="outline" size="sm" onClick={handleBackToList}>
+                      {t("Înapoi la tickete", "Back to tickets")}
                     </Button>
                   </div>
                 ) : (
@@ -1066,11 +599,331 @@ const SupportChatWidget = () => {
                         <Send className="h-4 w-4" />
                       </Button>
                     </div>
-                    <p className="hidden lg:block text-[10px] text-muted-foreground text-center pb-2">Chat Rentli</p>
+                    <p className="hidden lg:block text-[10px] text-muted-foreground text-center pb-2">
+                      Chat Rentli
+                    </p>
                   </div>
                 )}
               </>
-            )}
+            ) : (
+              <>
+                {/* Tabs */}
+                <div className="shrink-0 flex items-center gap-2 px-3 pt-2 pb-2 border-b bg-background">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("chat")}
+                    className={cn(
+                      "flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-full text-xs font-medium transition-colors relative",
+                      activeTab === "chat"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-primary/10 text-primary hover:bg-primary/15",
+                    )}
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                    {t("Chat", "Chat")}
+                    {totalUnread > 0 && (
+                      <span
+                        className={cn(
+                          "ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold",
+                          activeTab === "chat"
+                            ? "bg-primary-foreground text-primary"
+                            : "bg-primary text-primary-foreground",
+                        )}
+                      >
+                        {totalUnread}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("tickets")}
+                    className={cn(
+                      "flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-full text-xs font-medium transition-colors relative",
+                      activeTab === "tickets"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-primary/10 text-primary hover:bg-primary/15",
+                    )}
+                  >
+                    <Ticket className="h-3.5 w-3.5" />
+                    {t("Tickete", "Tickets")}
+                    {openTicketsCount > 0 && (
+                      <span
+                        className={cn(
+                          "ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold",
+                          activeTab === "tickets"
+                            ? "bg-primary-foreground text-primary"
+                            : "bg-primary text-primary-foreground",
+                        )}
+                      >
+                        {openTicketsCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+
+                {activeTab === "chat" ? (
+                  /* ----- Conversations list ----- */
+                  <>
+                    <div className="shrink-0 flex items-center gap-2 px-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setChatSubTab("rezervari")}
+                        className={cn(
+                          "flex-1 h-7 rounded-full text-[11px] font-medium transition-colors",
+                          chatSubTab === "rezervari"
+                            ? "bg-foreground text-background"
+                            : "bg-muted text-muted-foreground hover:bg-muted/70",
+                        )}
+                      >
+                        {t("Rezervări", "Bookings")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setChatSubTab("de-inchiriat")}
+                        className={cn(
+                          "flex-1 h-7 rounded-full text-[11px] font-medium transition-colors",
+                          chatSubTab === "de-inchiriat"
+                            ? "bg-foreground text-background"
+                            : "bg-muted text-muted-foreground hover:bg-muted/70",
+                        )}
+                      >
+                        {t("De închiriat", "Renting out")}
+                      </button>
+                    </div>
+
+                    <ScrollArea className="flex-1 px-2 py-2">
+                      {isLoadingConvs ? (
+                        <div className="flex items-center justify-center py-10">
+                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : sortedConvs.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center text-center py-12 px-4">
+                          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                            <MessageCircle className="h-6 w-6 text-primary" />
+                          </div>
+                          <p className="text-sm font-medium">
+                            {t(
+                              "Nu ai conversații încă",
+                              "No conversations yet",
+                            )}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {chatSubTab === "rezervari"
+                              ? t(
+                                  "Începe o rezervare pentru a discuta cu proprietarul.",
+                                  "Start a booking to chat with the owner.",
+                                )
+                              : t(
+                                  "Vei vedea aici mesajele de la chiriași.",
+                                  "You'll see messages from renters here.",
+                                )}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          {sortedConvs.map((conv) => {
+                            const isUnread = (conv.unread_count || 0) > 0;
+                            const lastText = conv.last_message?.content || "";
+                            return (
+                              <button
+                                key={conv.id}
+                                type="button"
+                                onClick={() => handleOpenConversation(conv)}
+                                className={cn(
+                                  "w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-colors hover:bg-muted/60",
+                                  isUnread && "bg-primary/5",
+                                )}
+                              >
+                                <Avatar className="h-10 w-10 shrink-0">
+                                  <AvatarImage
+                                    src={
+                                      conv.other_user?.avatar_url || undefined
+                                    }
+                                  />
+                                  <AvatarFallback>
+                                    {conv.other_user?.full_name?.charAt(0) ||
+                                      "U"}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <p
+                                      className={cn(
+                                        "text-sm truncate",
+                                        isUnread
+                                          ? "font-semibold"
+                                          : "font-medium",
+                                      )}
+                                    >
+                                      {conv.other_user?.full_name ||
+                                        t("Utilizator", "User")}
+                                    </p>
+                                    {conv.last_message?.created_at && (
+                                      <span className="text-[10px] text-muted-foreground shrink-0">
+                                        {formatConvTime(
+                                          conv.last_message.created_at,
+                                        )}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center justify-between gap-2">
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {conv.product?.title
+                                        ? `${conv.product.title} · `
+                                        : ""}
+                                      {lastText ||
+                                        t(
+                                          "Fără mesaje",
+                                          "No messages",
+                                        )}
+                                    </p>
+                                    {isUnread && (
+                                      <span className="shrink-0 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-primary text-primary-foreground">
+                                        {conv.unread_count}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  </>
+                ) : isComposingTicket ? (
+                  /* ----- New ticket composer ----- */
+                  <>
+                    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+                      <div className="flex items-start gap-2">
+                        <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                          <MessageSquare className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="bg-muted rounded-2xl rounded-bl-md px-3 py-2 text-sm">
+                          {t(
+                            "Descrie pe scurt problema. Echipa Rentli îți va răspunde în cel mai scurt timp.",
+                            "Briefly describe your issue. The Rentli team will reply as soon as possible.",
+                          )}
+                        </div>
+                      </div>
+                      <textarea
+                        value={newTicketText}
+                        onChange={(e) => setNewTicketText(e.target.value)}
+                        placeholder={t(
+                          "Scrie mesajul tău...",
+                          "Write your message...",
+                        )}
+                        rows={6}
+                        className="w-full rounded-xl border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      />
+                    </div>
+                    <div className="shrink-0 border-t pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:pb-0">
+                      <div className="flex items-center gap-2 px-3 py-2.5">
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploadingImage || isCreatingTicket}
+                          className="h-9 w-9 shrink-0 flex items-center justify-center rounded-full hover:bg-secondary transition-colors disabled:opacity-50"
+                        >
+                          {isUploadingImage ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          ) : (
+                            <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9 rounded-full"
+                          onClick={() => {
+                            setIsComposingTicket(false);
+                            setNewTicketText("");
+                          }}
+                          disabled={isCreatingTicket}
+                        >
+                          {t("Anulează", "Cancel")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="h-9 flex-1 rounded-full gap-1.5"
+                          onClick={handleCreateTicket}
+                          disabled={!newTicketText.trim() || isCreatingTicket}
+                        >
+                          {isCreatingTicket ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Send className="h-4 w-4" />
+                          )}
+                          {t("Trimite", "Send")}
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* ----- Tickets list ----- */
+                  <ScrollArea className="flex-1 px-3 py-3">
+                    {isLoadingTickets ? (
+                      <div className="flex items-center justify-center py-10">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : userTickets.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center text-center py-12 px-4">
+                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                          <Inbox className="h-6 w-6 text-primary" />
+                        </div>
+                        <p className="text-sm font-medium">
+                          {t("Nu ai tickete deschise", "No open tickets")}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {t(
+                            "Apasă + pentru a deschide un ticket nou.",
+                            "Tap + to open a new ticket.",
+                          )}
+                        </p>
+                        <Button
+                          size="sm"
+                          className="mt-4 gap-1.5"
+                          onClick={handleStartNewTicket}
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          {t("Ticket nou", "New ticket")}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {userTickets.map((ticket) => (
+                          <button
+                            key={ticket.id}
+                            type="button"
+                            onClick={() => handleSelectTicket(ticket)}
+                            className="w-full text-left rounded-xl border bg-card p-3 hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                              <span className="text-[11px] font-mono font-medium text-muted-foreground">
+                                {ticket.public_id || `#${ticket.id.slice(0, 6)}`}
+                              </span>
+                              <StatusPill
+                                status={ticket.status}
+                                size="xs"
+                                className="ml-auto"
+                              />
+                            </div>
+                            <p className="text-sm font-medium line-clamp-2 mb-1">
+                              {ticket.title}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground">
+                              {format(
+                                new Date(ticket.created_at),
+                                "dd MMM yyyy, HH:mm",
+                              )}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </ScrollArea>
+                )}
               </>
             )}
           </div>
