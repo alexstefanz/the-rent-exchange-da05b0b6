@@ -163,7 +163,7 @@ const RentalsOutTab = () => {
       {/* Premium request cards */}
       {(pendingRentals.length > 0 || premiumActiveRentals.length > 0) && (
         <section>
-          <h3 className="font-heading text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+          <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2 text-base">
             <Sparkles className="h-5 w-5 text-primary" />
             Cereri de închiriere
             <Badge className="bg-primary text-primary-foreground">{pendingRentals.length + premiumActiveRentals.length}</Badge>
