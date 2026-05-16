@@ -129,11 +129,13 @@ const RentalsTab = () => {
 
   const filtered = useMemo(() => sortRentals(rentals.filter(matchesStatus)), [rentals, statusFilter, sortBy]);
 
-  const pendingRentals = filtered.filter(r => r.status === "pending");
-  const premiumActiveRentals = filtered.filter(
-    r => (r.status === "confirmed" || r.status === "active") && !r.handover_confirmed_at,
-  );
-  const premiumIds = new Set([...pendingRentals, ...premiumActiveRentals].map(r => r.id));
+  const isPremium = (r: MyRental) =>
+    r.status === "pending" ||
+    ((r.status === "confirmed" || r.status === "active") && !r.handover_confirmed_at);
+  // Keep the filtered sort order (default: newest first) so the most recent rental
+  // always shows up as the first card, regardless of status.
+  const premiumRentals = filtered.filter(isPremium);
+  const premiumIds = new Set(premiumRentals.map(r => r.id));
   const historyRentals = filtered.filter(r => !premiumIds.has(r.id));
 
   const handleRequestCancel = async () => {
@@ -201,14 +203,14 @@ const RentalsTab = () => {
       />
 
       {/* Premium reservation cards */}
-      {(pendingRentals.length > 0 || premiumActiveRentals.length > 0) && (
+      {premiumRentals.length > 0 && (
         <section>
           <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2 text-base">
             Rezervările mele
-            <Badge className="bg-primary text-primary-foreground">{pendingRentals.length + premiumActiveRentals.length}</Badge>
+            <Badge className="bg-primary text-primary-foreground">{premiumRentals.length}</Badge>
           </h3>
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-            {[...pendingRentals, ...premiumActiveRentals].map((rental) => {
+            {premiumRentals.map((rental) => {
               const isPending = rental.status === "pending";
               const canRequestCancel = !isPending && !rental.handover_confirmed_at;
               return (
