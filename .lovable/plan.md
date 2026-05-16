@@ -1,39 +1,33 @@
-## Problem
+## Cauza erorii
 
-When you banned `alesso.cwalk@yahoo.com`, his products were deactivated (`is_active=false`). The unban flow only flips `profiles.is_banned=false` but never re-activates the products, so they remain hidden from the public site (public RLS requires `is_active=true`).
+`new row violates row-level security policy for table "rentals"` apare la încercarea de a trimite o cerere de rezervare din `/checkout`.
 
-Confirmed in DB — 3 products for owner `74835c82-750e-487f-a664-60a2832d9504`:
-- Televizor OLED EVO LG 48C52LA
-- Sony XM5
-- Masina de tuns iarba
+Am verificat politicile RLS de pe tabela `rentals`. Există doar:
+- `Admins can delete rentals` (DELETE)
+- `Admins can manage all rentals` (UPDATE — `w`, nu ALL)
+- `Block banned users from inserting rentals` (INSERT, **restrictivă**) — doar blochează utilizatorii banați, nu permite nimănui să insereze
+- `Block banned users from updating rentals` (UPDATE, restrictivă)
+- `Owners can update own rental requests` (UPDATE)
+- `Renters can cancel own pending rentals` (UPDATE)
+- `Users can view own rentals` (SELECT)
 
-All `approval_status=approved`, `deleted_at=null`, `is_active=false`.
+**Nu există nicio politică permisivă de INSERT pentru renteri.** În Postgres, fără o politică permisivă care să permită acțiunea, totul este refuzat — de aceea orice utilizator (chiar și unul curat, neban) primește eroarea când încearcă să creeze o rezervare.
 
-## Plan
+## Soluție
 
-### 1. Immediate data fix (one-off)
-Reactivate the 3 products for this user via an insert/update operation:
+Adaug o migrare care creează politica lipsă pe `public.rentals`:
 
 ```sql
-UPDATE products
-SET is_active = true
-WHERE owner_id = '74835c82-750e-487f-a664-60a2832d9504'
-  AND approval_status = 'approved'
-  AND deleted_at IS NULL
-  AND is_active = false;
+CREATE POLICY "Renters can create own rentals"
+ON public.rentals
+FOR INSERT
+TO authenticated
+WITH CHECK (renter_id = auth.uid());
 ```
 
-### 2. Fix the unban flow (`src/features/admin/banApi.ts`)
-Currently `unbanUser` only updates the profile. Update it to also reactivate the user's previously-approved, non-deleted products so unban is symmetric to ban.
-
-- After the profile update, run an update on `products` setting `is_active = true` for `owner_id = userId`, `approval_status = 'approved'`, `deleted_at IS NULL`.
-- Keep behavior simple: we restore everything that was approved. Products that are pending/rejected/soft-deleted remain untouched.
-
-### 3. (Optional but recommended) Notify in admin UI
-No UI change required, but the admin toast on unban can mention "produsele utilizatorului au fost reactivate" so the operator knows.
+Politica restrictivă existentă (`Block banned users from inserting rentals`) continuă să se aplice peste, deci utilizatorii banați rămân blocați.
 
 ## Out of scope
-- Changing the ban behavior itself (we keep auto-deactivation on ban).
-- Touching products that are `pending`, `rejected`, or soft-deleted.
 
-Confirm and I'll apply both the data fix and the code change.
+- Nu modific fluxul de checkout sau alte politici.
+- Nu schimb politica de admin / ban — rămân exact cum sunt.
