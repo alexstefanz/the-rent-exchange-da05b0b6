@@ -342,13 +342,30 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
               onOpen={(path) => setLightbox(photos.indexOf(path))}
             />
 
+            {/* Prominent PDF button */}
+            {pv?.pdf_path && (
+              <button
+                type="button"
+                onClick={handleViewPdf}
+                className="w-full flex items-center justify-between gap-3 rounded-xl bg-[#F59E0B] hover:bg-[#F98715] transition-colors text-white p-4 shadow-sm"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="flex items-center justify-center h-10 w-10 rounded-full bg-white/20">
+                    <FileText className="h-5 w-5" />
+                  </span>
+                  <span className="text-left">
+                    <span className="block font-semibold text-sm">Vezi PV semnat (PDF)</span>
+                    <span className="block text-xs opacity-90">Document semnat de ambele părți, cu fotografii</span>
+                  </span>
+                </span>
+                <ExternalLink className="h-4 w-4 opacity-90" />
+              </button>
+            )}
+
             {/* Status */}
             <section className="rounded-lg border border-border bg-muted/30 p-3 text-xs space-y-1">
               <div>Proprietar: {pv?.owner_signed_at ? `semnat ${format(new Date(pv.owner_signed_at), "dd.MM.yyyy HH:mm")}` : "in asteptare"}</div>
               <div>Chirias: {pv?.renter_signed_at ? `semnat ${format(new Date(pv.renter_signed_at), "dd.MM.yyyy HH:mm")}` : "in asteptare"}</div>
-              {pv?.pdf_path && (
-                <Button type="button" variant="link" className="h-auto p-0 text-xs" onClick={handleViewPdf}>Vezi PDF generat</Button>
-              )}
             </section>
 
             {/* Signature pad */}
