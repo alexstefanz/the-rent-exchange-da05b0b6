@@ -20,7 +20,7 @@ import ReturnCountdownBadge from "@/components/rentals/ReturnCountdownBadge";
 import LeaveReviewDialog from "@/components/dashboard/LeaveReviewDialog";
 import EarlyReturnCard from "@/components/rentals/EarlyReturnCard";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
-import { ChatDialog } from "@/components/messaging/ChatDialog";
+
 import { payForConfirmedRental, payRentalWithWallet } from "@/features/rentals/rentalsApi";
 import { respondToRental } from "@/features/rentals/ownerRentalsApi";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -46,8 +46,6 @@ const RentalDetailPage = () => {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [reviewOpen, setReviewOpen] = useState(false);
-  const [chatConvId, setChatConvId] = useState<string | null>(null);
-  const [chatOpen, setChatOpen] = useState(false);
   const queryClient = useQueryClient();
   const { data: isAdmin } = useIsAdmin(user?.id);
   const { data: wallet, refetch: refetchWallet } = useWalletBalance();
@@ -174,8 +172,7 @@ const RentalDetailPage = () => {
   async function handleChat() {
     const convId = await getOrCreateRentalConversation(rental.id);
     if (convId) {
-      setChatConvId(convId);
-      setChatOpen(true);
+      navigate(`/mesaje?conv=${convId}`);
     } else {
       toast.error(t("Nu am putut deschide conversația.", "Could not open conversation."));
     }
@@ -676,17 +673,6 @@ const RentalDetailPage = () => {
         }}
         currentUserRole={isOwner ? "owner" : "renter"}
       />
-
-      {chatConvId && (
-        <ChatDialog
-          open={chatOpen}
-          onOpenChange={setChatOpen}
-          conversationId={chatConvId}
-          otherUserName={counterparty.name}
-          otherUserAvatar={null}
-          productTitle={rental.product_title || ""}
-        />
-      )}
 
       <Dialog open={rejectOpen} onOpenChange={(o) => { if (!o) { setRejectOpen(false); setRejectReason(""); } }}>
         <DialogContent>
