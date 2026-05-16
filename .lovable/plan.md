@@ -1,31 +1,37 @@
 ## Obiectiv
-Adăugarea unui filtru nou „În derulare" în bara de filtrare a paginilor `/rezervari` (chiriaș) și `/cereri-primite` (proprietar), care arată rezervările aflate între plata confirmată și finalizare (returnare confirmată).
+Înlocuirea celor 3 cutiuțe înghesuite (Perioadă / Zile / Total) cu un singur card unificat pe cardurile de rezervare, atât pentru chiriaș (`RentalsTab.tsx`) cât și pentru proprietar (`RentalsOutTab.tsx`).
 
-## Definiție „În derulare"
-O rezervare e „în derulare" dacă:
-- `status` ∈ {`confirmed`, `active`}
-- `payment_status` = `authorized` sau `captured` (plată făcută)
-- `handover_confirmed_at IS NOT NULL` (produsul a fost predat)
-- `return_confirmed_at IS NULL` (încă nu s-a finalizat returnarea)
+## Design propus
+Un singur card cu fundal `bg-card` și border subtil, organizat orizontal pe două coloane:
 
-Filtrul „Active" existent rămâne, dar va însemna „confirmate + plătite, înainte de predare" (adică: confirmate dar `handover_confirmed_at IS NULL`), pentru a evita suprapunerea cu noul filtru.
+- **Stânga (flex-1):** iconiță `Calendar`, deasupra label-ul „Perioadă" (text-[10px] uppercase muted), dedesubt intervalul „26 mai – 27 mai" pe un rând, urmat de un sub-text muted „2 zile".
+- **Dreapta (auto width, aliniat la dreapta, separator `border-l border-border` cu `pl-3`):** label „Total" (text-[10px] uppercase, primary/70), dedesubt suma în primary, bold, `text-lg` „2 RON".
 
-## Modificări
+Avantaje: o singură suprafață vizuală, mai mult spațiu pentru date, „Total" rămâne accentuat vizual prin culoarea primary fără să mai aibă fundal propriu.
 
-### 1. `src/components/dashboard/RentalsFilterBar.tsx`
-- Extinde `RentalStatusFilter` cu `"in_progress"`.
-- Adaugă `in_progress: number` în `Counts`.
-- Adaugă item nou în lista de filtre: `{ key: "in_progress", label: "În derulare", count: counts.in_progress }`, plasat între „Active" și „În așteptare".
+## Implementare
+Înlocuiește blocul `<div className="grid grid-cols-1 sm:grid-cols-3 ...">...</div>` (cele 3 boxes) cu un singur card:
 
-### 2. `src/components/dashboard/RentalsTab.tsx` (chiriaș)
-- În `counts`, calculează:
-  - `active`: confirmed/active && !handover_confirmed_at (înainte de predare)
-  - `in_progress`: (confirmed/active) && handover_confirmed_at && !return_confirmed_at
-- În `matchesStatus`, adaugă ramură pentru `"in_progress"`.
+```tsx
+<div className="mt-3 sm:mt-4 flex items-center gap-3 rounded-xl border border-border bg-card/80 p-3">
+  <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+  <div className="min-w-0 flex-1">
+    <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Perioadă</p>
+    <p className="text-sm font-semibold text-foreground leading-tight truncate">
+      {format(new Date(rental.start_date), "d MMM", { locale: roLocale })} – {format(new Date(rental.end_date), "d MMM", { locale: roLocale })}
+    </p>
+    <p className="text-[11px] text-muted-foreground">{rental.rental_days} {rental.rental_days === 1 ? "zi" : "zile"}</p>
+  </div>
+  <div className="border-l border-border pl-3 text-right">
+    <p className="text-[10px] uppercase tracking-wide text-primary/70 font-semibold">Total</p>
+    <p className="text-base sm:text-lg font-bold text-primary leading-tight">{rental.subtotal} RON</p>
+  </div>
+</div>
+```
 
-### 3. `src/components/dashboard/RentalsOutTab.tsx` (proprietar)
-- Aceleași actualizări pentru `counts` și `matchesStatus`.
+Aceeași schimbare pe ambele fișiere:
+- `src/components/dashboard/RentalsTab.tsx` (chiriaș, folosește `rental.subtotal`)
+- `src/components/dashboard/RentalsOutTab.tsx` (proprietar, va folosi câmpul echivalent — `owner_payout` dacă există, altfel `subtotal`; verific în implementare).
 
 ## În afara scopului
-- Nu se schimbă logica `isPremium` / `premiumActiveRentals` (cardurile vizuale rămân așa cum sunt acum — cererile în derulare sunt deja afișate ca premium după fix-ul anterior).
-- Nu se schimbă sortarea sau alte filtre.
+Nu se modifică restul cardului (imagine, header, mesaj, butoane).
