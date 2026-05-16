@@ -168,14 +168,14 @@ const RentalsOutTab = () => {
             Cereri de închiriere
             <Badge className="bg-primary text-primary-foreground">{pendingRentals.length + premiumActiveRentals.length}</Badge>
           </h3>
-          <div className="columns-2 xl:columns-3 gap-3 sm:gap-4 [column-fill:_balance]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
             {[...pendingRentals, ...premiumActiveRentals].map((rental) => {
               const isPending = rental.status === "pending";
               const canRequestCancel = !isPending && !rental.handover_confirmed_at;
               return (
                 <div
                   key={rental.id}
-                  className="relative mb-3 sm:mb-4 break-inside-avoid flex flex-col overflow-hidden rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-primary/5 to-card shadow-lg shadow-primary/10"
+                  className="relative flex flex-col overflow-hidden rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-primary/5 to-card shadow-lg shadow-primary/10"
                 >
                   {/* Product image */}
                   <div className="relative aspect-[4/3] sm:aspect-[16/10] overflow-hidden bg-muted">
