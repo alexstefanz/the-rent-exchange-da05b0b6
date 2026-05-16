@@ -1,37 +1,36 @@
-## Obiectiv
-Elimină pop-up-ul de chat (`ChatDialog`) de pe toată aplicația. Orice buton care „deschide chat" va naviga direct la pagina principală de mesaje `/mesaje?conv=<conversationId>`.
+## Problema
+Pe `RNT-000077` predarea (handover PV) a fost semnată de ambele părți pe 16 mai, dar perioada de închiriere e 26–27 mai (pickup făcut mai devreme). Cardul „Vrei să predai produsul înainte de termen?" nu apare.
 
-## Locuri afectate
+Cauza, în `src/components/rentals/EarlyReturnCard.tsx` (linia 64–68 + 182):
+```ts
+const inWindow = today > start && today < end;
+...
+if (!inWindow) return null;
+```
+Pentru RNT-000077, `today (16 mai) < start (26 mai)` ⇒ `inWindow = false` ⇒ cardul e ascuns, deși produsul e deja la chiriaș.
 
-`ChatDialog` apare doar în 2 pagini (verificat cu `rg`):
-1. `src/pages/RentalDetailPage.tsx` — `handleChat()` (folosit de butonul „Discută cu chiriașul/proprietarul" din diverse carduri: header, EarlyReturnCard etc.).
-2. `src/pages/ProductDetail.tsx` — `handleStartChat()` și `handleQuickQuestion()` (CTA „Trimite mesaj" pe pagina produs).
+În același timp, în `RentalDetailPage.tsx` cardul e deja gardat corect de:
+```
+handoverDoneEarly && !returnDoneEarly && status !== completed/cancelled
+```
+care e adevărat acum pentru RNT-000077. Deci gardarea pe `start_date` din interiorul cardului e redundantă și greșită pentru cazurile de predare anticipată.
 
-`ChatPanel` (panoul mare din `/mesaje` și tabul Mesaje din profil) **rămâne neatins** — e chat-ul principal complet.
+## Soluție
 
-## Modificări
+### `src/components/rentals/EarlyReturnCard.tsx`
 
-### 1. `src/pages/RentalDetailPage.tsx`
-- Înlocuiește `handleChat()`:
-  ```ts
-  async function handleChat() {
-    const convId = await getOrCreateRentalConversation(rental.id);
-    if (convId) navigate(`/mesaje?conv=${convId}`);
-    else toast.error(t("Nu am putut deschide conversația.", "Could not open conversation."));
-  }
-  ```
-- Elimină: `import { ChatDialog }`, state-ul `chatOpen`/`setChatOpen` și `chatConvId`/`setChatConvId`, plus blocul `<ChatDialog ... />` din JSX (linia ~681).
-- `navigate` deja există în fișier (folosit altundeva).
+1. **Elimină gardarea pe `inWindow`** pentru afișarea cardului-prompt. Componenta se mai afișează când părintele decide că predarea e făcută și returul nu e încă făcut. Concret: șterge `if (!inWindow) return null;`.
 
-### 2. `src/pages/ProductDetail.tsx`
-- `handleStartChat`: după `ensureConversation`, în loc de `setChatOpen(true)` → `navigate(\`/mesaje?conv=\${conv.id}\`)`.
-- `handleQuickQuestion`: după `sendMessage`, în loc de `setChatOpen(true)` → `navigate(\`/mesaje?conv=\${conv.id}\`)`.
-- Elimină importul `ChatDialog`, state-ul `chatOpen`/`setChatOpen` și `<ChatDialog ... />` din JSX (linia 407).
+2. **Recalculează ferestrele calendarului** ca să accepte și scenariul „handover înainte de start_date":
+   - `earliest` = `max(today, addDays(start,1))` rămâne valabil în cazul normal; pentru predare anticipată, `earliest` devine practic `today` (azi sau mâine în funcție de regulă) — folosim `earliest = today` (chiriașul poate returna oricând după ce a luat produsul).
+   - `maxDate` = `addDays(end, -1)` rămâne — nu are sens „early return" în chiar ultima zi sau după.
+   - Dacă `today >= end` (deja peste termen), ascundem cardul-prompt (nu mai e „early") — `return null`.
 
-### 3. Șterge fișierul nefolosit
-- `src/components/messaging/ChatDialog.tsx` — după eliminarea ultimelor 2 referințe, nu mai e importat nicăieri.
+3. **Calcul subtotal nou (`newDays`)** — în loc de `differenceInCalendarDays(selectedDate, start) + 1`, folosim `max(1, differenceInCalendarDays(selectedDate, start) + 1)` ca să nu obținem zile negative când `selectedDate < start` (predare înainte chiar de a începe oficial). Astfel `newSubtotal` minim = `dailyPrice`.
 
-## În afara scopului
-- `ChatPanel`, pagina `/mesaje`, `MessagesTab` din profil — rămân ca sunt.
-- `SupportChatWidget` (chat-ul de support cu AI) — diferit de chat-ul user-to-user, nu se atinge.
-- Logica de creare/ensure conversație rămâne aceeași.
+4. **Mesajul din `DialogDescription`** — în loc de „între `minDate` și `maxDate`" (care poate fi în viitor față de azi), arătăm intervalul efectiv calendar: „între `format(earliest)` și `format(maxDate)`".
+
+### În afara scopului
+- Nu schimbăm edge function-ul `request-early-return` (acceptă orice `newEndDate` validat server-side).
+- Nu modificăm logica din `RentalDetailPage.tsx` — gardarea de acolo e corectă.
+- Nu atingem `EarlyReturnResponseCard` / fluxul de aprobare.

@@ -61,16 +61,16 @@ export default function EarlyReturnCard({ rentalId, role, startDate, endDate, da
     refetchInterval: 30_000,
   });
 
-  // Window: today must be strictly between start and end
+  // Today (midnight) and rental bounds
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const start = parseISO(startDate);
   const end = parseISO(endDate);
-  const inWindow = today > start && today < end;
 
-  // Disabled days in calendar: anything <= start or >= end, or before today
-  const minDate = addDays(start, 1);
+  // Calendar bounds: returnul anticipat poate fi între azi și ziua dinaintea end_date.
+  // Pentru predare anticipată (handover înainte de start_date), `today < start` e ok —
+  // permitem returnarea oricând după ce produsul e deja la chiriaș.
   const maxDate = addDays(end, -1);
-  const earliest = today > minDate ? today : minDate;
+  const earliest = today;
 
   const status = data?.early_return_status ?? "none";
   const hasActive = status === "pending" || status === "accepted";
@@ -177,11 +177,13 @@ export default function EarlyReturnCard({ rentalId, role, startDate, endDate, da
     );
   }
 
-  // Default: prompt card with chat + request button
-  // Hide entirely if outside the allowed window (first or last day)
-  if (!inWindow) return null;
+  // Default: prompt card with chat + request button.
+  // Dacă suntem deja peste sau în ultima zi a perioadei, nu mai e „early" — ascundem.
+  if (today >= maxDate) return null;
 
-  const newDays = selectedDate ? differenceInCalendarDays(selectedDate, start) + 1 : 0;
+  const newDays = selectedDate
+    ? Math.max(1, differenceInCalendarDays(selectedDate, start) + 1)
+    : 0;
   const newSubtotal = newDays > 0 ? Math.round(dailyPrice * newDays * 100) / 100 : 0;
   const refund = Math.max(0, Math.round((subtotal - newSubtotal) * 100) / 100);
 
@@ -252,8 +254,8 @@ export default function EarlyReturnCard({ rentalId, role, startDate, endDate, da
             <DialogTitle>{t("Returnare anticipată", "Early return")}</DialogTitle>
             <DialogDescription>
               {t(
-                `Alege o dată între ${format(minDate, "dd.MM")} și ${format(maxDate, "dd.MM")}. Prețul este recalculat automat în funcție de zilele efectiv folosite.`,
-                `Pick a date between ${format(minDate, "dd.MM")} and ${format(maxDate, "dd.MM")}. The price is recalculated based on days actually used.`,
+                `Alege o dată între ${format(earliest, "dd.MM")} și ${format(maxDate, "dd.MM")}. Prețul este recalculat automat în funcție de zilele efectiv folosite.`,
+                `Pick a date between ${format(earliest, "dd.MM")} and ${format(maxDate, "dd.MM")}. The price is recalculated based on days actually used.`,
               )}
             </DialogDescription>
           </DialogHeader>
