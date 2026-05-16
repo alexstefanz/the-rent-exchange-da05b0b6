@@ -77,7 +77,15 @@ const Checkout = () => {
     try {
       const conv = await getOrCreateConversation(product.id, product.ownerId);
       if (conv) {
-        navigate(`/mesaje?conv=${conv.id}`);
+        navigate(`/mesaje?conv=${conv.id}`, {
+          state: {
+            returnTo: {
+              pathname: "/checkout",
+              search: "",
+              state,
+            },
+          },
+        });
       } else {
         toast.error(t("Nu am putut deschide conversația.", "Couldn't open the conversation."));
       }

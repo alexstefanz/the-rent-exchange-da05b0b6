@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Loader2, MessageCircle } from "lucide-react";
@@ -55,6 +55,7 @@ export default function Messages() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const isDesktop = useIsDesktop();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -82,8 +83,17 @@ export default function Messages() {
 
   const handleSelect = (conv: Conversation) => setSelectedConversation(conv);
   const handleBack = () => {
-    setSelectedConversation(null);
+    const returnTo = (location.state as any)?.returnTo as
+      | { pathname: string; search?: string; state?: any }
+      | undefined;
     queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    if (returnTo?.pathname) {
+      navigate(`${returnTo.pathname}${returnTo.search || ""}`, {
+        state: returnTo.state,
+      });
+      return;
+    }
+    setSelectedConversation(null);
   };
 
   if (authLoading) {

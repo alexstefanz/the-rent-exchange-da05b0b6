@@ -115,16 +115,23 @@ const ProductDetail = () => {
     return conv;
   };
 
+  const buildReturnTo = () => ({
+    returnTo: {
+      pathname: window.location.pathname,
+      search: window.location.search,
+    },
+  });
+
   const handleStartChat = async () => {
     const conv = await ensureConversation();
-    if (conv) navigate(`/mesaje?conv=${conv.id}`);
+    if (conv) navigate(`/mesaje?conv=${conv.id}`, { state: buildReturnTo() });
   };
 
   const handleQuickQuestion = async (message: string) => {
     const conv = await ensureConversation();
     if (!conv) return;
     await sendMessage(conv.id, message);
-    navigate(`/mesaje?conv=${conv.id}`);
+    navigate(`/mesaje?conv=${conv.id}`, { state: buildReturnTo() });
   };
 
   const category = product?.category ? categories.find(c => c.name === product.category) : null;
