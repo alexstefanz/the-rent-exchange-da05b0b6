@@ -399,20 +399,6 @@ const RentalDetailPage = () => {
           </section>
         )}
 
-        {/* Early return prompt — visible while product is handed over but not yet returned */}
-        {handoverDoneEarly && !returnDoneEarly && rental.status !== "completed" && rental.status !== "cancelled" && (
-          <EarlyReturnCard
-            rentalId={rental.id}
-            role={role}
-            startDate={rental.start_date}
-            endDate={rental.end_date}
-            dailyPrice={Number(rental.daily_price)}
-            subtotal={Number(rental.subtotal)}
-            onOpenChat={handleChat}
-            t={t}
-          />
-        )}
-
         {/* PV (Procese verbale) — full width under the timeline */}
         {(showHandoverPv || showReturnPv) && (
           <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
@@ -628,7 +614,7 @@ const RentalDetailPage = () => {
 
           {/* Right: pricing */}
           <aside className="space-y-3">
-            <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sticky top-24">
+            <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
               <h3 className="font-heading font-semibold mb-3">{t("Sumar financiar", "Financial summary")}</h3>
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between"><dt className="text-muted-foreground">{rental.daily_price} RON × {rental.rental_days} {t("zile", "days")}</dt><dd>{rental.subtotal} RON</dd></div>
@@ -645,6 +631,20 @@ const RentalDetailPage = () => {
                 <Badge variant="secondary" className="mt-3 text-xs">{t("Plata de test", "Test payment")}</Badge>
               )}
             </section>
+
+            {/* Early return prompt — sub Sumar financiar, aceeași lățime */}
+            {handoverDoneEarly && !returnDoneEarly && rental.status !== "completed" && rental.status !== "cancelled" && (
+              <EarlyReturnCard
+                rentalId={rental.id}
+                role={role}
+                startDate={rental.start_date}
+                endDate={rental.end_date}
+                dailyPrice={Number(rental.daily_price)}
+                subtotal={Number(rental.subtotal)}
+                onOpenChat={handleChat}
+                t={t}
+              />
+            )}
           </aside>
         </div>
       </main>
