@@ -145,27 +145,29 @@ export async function openRentalDispute(rentalId: string, phase: "handover" | "r
   }).catch((e) => console.warn("notify dispute_opened failed", e));
 }
 
-/** Renter requests an early return after handover PV is signed. */
-export async function requestEarlyReturn(rentalId: string, reason: string) {
+/** Either party requests an early return after handover; must provide a new end date. */
+export async function requestEarlyReturn(
+  rentalId: string,
+  args: { reason: string; newEndDate: string },
+) {
   const { data, error } = await supabase.functions.invoke("request-early-return", {
-    body: { rental_id: rentalId, reason },
+    body: { rental_id: rentalId, reason: args.reason, new_end_date: args.newEndDate },
   });
   if (error) throw error;
   if ((data as any)?.error) throw new Error((data as any).error);
   return data;
 }
 
-/** Owner accepts/rejects an early return request. */
+/** Counterparty approves or rejects an early return request. */
 export async function respondEarlyReturn(
   rentalId: string,
-  action: "accept" | "reject",
-  options: { proposedRefundAmount?: number; response?: string } = {},
+  action: "approve" | "reject",
+  options: { response?: string } = {},
 ) {
   const { data, error } = await supabase.functions.invoke("respond-early-return", {
     body: {
       rental_id: rentalId,
       action,
-      proposed_refund_amount: options.proposedRefundAmount ?? 0,
       response: options.response ?? "",
     },
   });
