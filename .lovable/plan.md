@@ -1,12 +1,20 @@
-Voi face fixul în zona de mesagerie, ca să acopere atât pagina de produs, cât și checkout-ul și orice alt buton care trimite către `/mesaje?conv=...`.
+## Simplificare checkout într-un singur pas
 
-Plan:
-1. Actualizez `Messages.tsx` ca atunci când există `conv` în URL să nu se bazeze doar pe lista de conversații cache-uită.
-2. Dacă ID-ul conversației din URL nu este găsit în lista curentă, pagina va reîmprospăta conversațiile și va încerca din nou selecția automată.
-3. Păstrez comportamentul existent pentru `/mesaje` fără `conv`: lista rămâne deschisă și utilizatorul selectează manual conversația.
-4. Ajustez opțional `ProductDetail.tsx` și `Checkout.tsx` să invalideze cache-ul conversațiilor imediat după `getOrCreateConversation`, înainte de navigarea la chat, ca fluxul să fie instant și stabil.
-5. Verific apoi toate navigările către `/mesaje?conv=...` ca să folosească aceeași logică și să nu mai apară ecranul „Selectează o conversație...” după click pe „Întreabă proprietarul” / „Deschide chat”.
+### Ce se schimbă în `src/pages/Checkout.tsx`
 
-Detalii tehnice:
-- Problema probabilă este cache-ul React Query: conversația nou creată există, dar lista din `Messages.tsx` poate fi încă veche, deci `conv` din URL nu se găsește și chat-ul rămâne neselectat.
-- Fixul central în `Messages.tsx` previne aceeași problemă și pentru alte intrări în chat, nu doar pentru produs și checkout.
+1. **Elimin sistemul de pași** (`currentStep`, `PremiumStepper`, butonul „Continuă", `handleContinueToPayment`, array-ul `steps`, și bara `PremiumStepper` din header).
+2. **Elimin cardul „Vrei să trimiți un mesaj proprietarului?"** (componenta `OptionalMessageCard` și state-ul `messageToOwner`). Mesajul opțional către proprietar dispare complet din flow — `createRentalRequest` va fi apelat fără `messageToOwner`.
+3. **Elimin cardul „Ce urmează?"** (componenta `WhatHappensNext`).
+4. **Păstrez într-o singură pagină:**
+   - Cardul „Ai întrebări înainte de rezervare? / Deschide chat" (intrare către chat cu proprietarul).
+   - Cardul „Trimite cererea de închiriere" cu `PaymentTrustStrip`, mesajul de siguranță cu cele 24h, termenii & confidențialitatea, butonul principal „Trimite cererea" și nota „Cardul nu este debitat acum".
+   - Sumarul rezervării sticky pe dreapta (`PremiumBookingSummary`).
+   - `StickyCheckoutBar` mobil va avea un singur CTA: „Trimite cererea".
+5. **`LoginDialog`**: după login se trimite direct cererea (nu se mai trece la pasul 2). Adaptez `handleLoginSuccess` să apeleze `handleSendRequest`.
+6. **Butonul „Înapoi" din header**: revine direct la pagina anterioară (`navigate(-1)`), fără logica de pași.
+
+### Componente neatinse
+- `PremiumStepper`, `OptionalMessageCard`, `WhatHappensNext` rămân în proiect (nu le șterg din `src/components/checkout/`) — doar nu mai sunt folosite în Checkout. Pot fi curățate ulterior dacă vrei.
+
+### Rezultat
+Checkout devine o pagină unică: utilizatorul vede sumarul, eventual deschide chatul cu proprietarul, citește garanțiile și apasă „Trimite cererea". Niciun pas intermediar, niciun mesaj opțional, niciun card „Ce urmează".
