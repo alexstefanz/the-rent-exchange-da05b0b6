@@ -37,6 +37,7 @@ interface MyRental {
   handover_confirmed_at: string | null;
   return_confirmed_at: string | null;
   message_to_owner: string | null;
+  created_at: string | null;
 }
 
 const fetchMyRentals = async (userId: string): Promise<MyRental[]> => {
@@ -75,6 +76,7 @@ const fetchMyRentals = async (userId: string): Promise<MyRental[]> => {
     handover_confirmed_at: r.handover_confirmed_at,
     return_confirmed_at: r.return_confirmed_at,
     message_to_owner: r.message_to_owner,
+    created_at: r.created_at,
   }));
 };
 
@@ -116,8 +118,8 @@ const RentalsTab = () => {
   const sortRentals = (arr: MyRental[]) => {
     const sorted = [...arr];
     sorted.sort((a, b) => {
-      if (sortBy === "newest") return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
-      if (sortBy === "oldest") return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
+      if (sortBy === "newest") return new Date(b.created_at || b.start_date).getTime() - new Date(a.created_at || a.start_date).getTime();
+      if (sortBy === "oldest") return new Date(a.created_at || a.start_date).getTime() - new Date(b.created_at || b.start_date).getTime();
       if (sortBy === "amount_desc") return Number(b.subtotal) - Number(a.subtotal);
       if (sortBy === "amount_asc") return Number(a.subtotal) - Number(b.subtotal);
       return 0;

@@ -1,22 +1,20 @@
-## Goal
+## Problema
 
-Afișează ID-ul public al rezervării (ex: `RNT-000077`) pe fiecare card din:
-- `/inchirieri` — "Cereri primite" (owner view, `RentalsOutTab.tsx`)
-- `/rezervari` — "Închirierile mele" (renter view, `RentalsTab.tsx`)
+În „Cereri primite" (`/inchirieri`) și „Închirierile mele" (`/rezervari`), sortarea „cele mai noi" se face după `start_date` (perioada rezervată), nu după momentul când rezervarea a fost creată. De aceea RNT-000077, deși e ultima rezervare creată, nu apare prima — fiindcă altă rezervare are `start_date` mai târziu în viitor.
 
 ## Fix
 
-În ambele componente, afișează `rental.public_id` într-un mic chip discret în colțul de sus al cardului (lângă badge-ul de status) și în rândurile din istoricul cu accordion.
+Schimbă sortarea „newest"/„oldest" să folosească `created_at` (data plasării cererii), nu `start_date`.
 
 **`src/components/dashboard/RentalsOutTab.tsx`**
-- În cardurile premium (zona "Cereri de închiriere"), adaugă deasupra titlului produsului un `<span>` mic cu font-mono: `{rental.public_id}` (doar dacă există), stilizat ca chip subtil (`text-[10px] uppercase tracking-wider text-muted-foreground bg-muted/50 rounded-md px-1.5 py-0.5`).
-- În rândurile din accordion-ul "Închirieri active & istoric", afișează ID-ul mic sub titlul produsului.
+- În `sortRentals`, pentru `sortBy === "newest"` și `"oldest"` folosește `created_at` în loc de `start_date`. `OwnerRental.created_at` deja există.
 
-**`src/components/dashboard/RentalsTab.tsx`** (renter)
-- Aceeași abordare: chip cu `public_id` pe fiecare card / rând.
+**`src/components/dashboard/RentalsTab.tsx`**
+- Adaugă `created_at: string | null` în interfața `MyRental` și mapează-l în `fetchMyRentals` (e deja inclus în `select`).
+- În `sortRentals`, pentru `newest`/`oldest` folosește `created_at` în loc de `start_date`.
 
-Fără modificări de date sau RPC — `public_id` e deja inclus în `OwnerRental` și în datele rentale.
+Astfel cea mai recent creată rezervare (RNT-000077) apare prima atât în secțiunea premium cât și în accordion-ul de istoric.
 
-## Verification
+## Verificare
 
-- Reload `/inchirieri` și `/rezervari` și confirmă că fiecare card afișează ID-ul (ex: `RNT-000077`).
+Reload `/inchirieri` și `/rezervari` cu sort = „Cele mai noi" și confirmă că RNT-000077 e primul card.

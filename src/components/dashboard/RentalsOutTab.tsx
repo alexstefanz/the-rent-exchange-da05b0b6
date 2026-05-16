@@ -60,8 +60,8 @@ const RentalsOutTab = () => {
   const sortRentals = (arr: OwnerRental[]) => {
     const sorted = [...arr];
     sorted.sort((a, b) => {
-      if (sortBy === "newest") return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
-      if (sortBy === "oldest") return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
+      if (sortBy === "newest") return new Date(b.created_at || b.start_date).getTime() - new Date(a.created_at || a.start_date).getTime();
+      if (sortBy === "oldest") return new Date(a.created_at || a.start_date).getTime() - new Date(b.created_at || b.start_date).getTime();
       if (sortBy === "amount_desc") return Number(b.owner_payout || 0) - Number(a.owner_payout || 0);
       if (sortBy === "amount_asc") return Number(a.owner_payout || 0) - Number(b.owner_payout || 0);
       return 0;
