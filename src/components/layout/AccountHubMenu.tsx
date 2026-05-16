@@ -485,66 +485,43 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
         </div>
       )}
 
-      <SectionLabel>{t("Ca chiriaș", "As renter")}</SectionLabel>
-      <NavRow
-        to="/rezervari"
-        icon={ShoppingBag}
-        label={t("Închirierile mele", "My rentals")}
-        onNav={handleNav}
-      />
-      <NavRow
-        to="/favorite"
-        icon={Heart}
-        label={t("Favorite", "Favorites")}
-        onNav={handleNav}
-      />
-
-      <SectionLabel>{t("Ca proprietar", "As owner")}</SectionLabel>
-      <NavRow
-        to="/anunturi"
-        icon={Package}
-        label={t("Anunțurile mele", "My listings")}
-        onNav={handleNav}
-      />
-      <NavRow
-        to="/inchirieri"
-        icon={PackageCheck}
-        label={t("Cereri primite", "Bookings received")}
-        onNav={handleNav}
-      />
-      <NavRow
-        to="/castiguri"
-        icon={CreditCard}
-        label={t("Câștiguri & retrageri", "Earnings & payouts")}
-        badge={signals?.ibanMissing ? t("Adaugă IBAN", "Add IBAN") : undefined}
-        badgeTone="warning"
-        onNav={handleNav}
-      />
-
-      <SectionLabel>{t("Cont", "Account")}</SectionLabel>
-      <NavRow
-        to="/contul-meu"
-        icon={User}
-        label={t("Contul meu", "My Account")}
-        onNav={handleNav}
-      />
-      <NavRow
-        to="/verificare"
-        icon={Shield}
-        label={t("Verificare KYC", "KYC Verification")}
-        badge={signals?.kycPending ? t("În așteptare", "Pending") : undefined}
-        badgeTone="warning"
-        onNav={handleNav}
-      />
-
-      <SectionLabel>{t("Suport", "Support")}</SectionLabel>
-      <NavRow
-        to="/suport"
-        icon={HelpCircle}
-        label={t("Suport & Tickete", "Support & Tickets")}
-        onNav={handleNav}
-      />
-
+      <div className="space-y-2 mt-2">
+        {!trust?.verified && (
+          <button
+            onClick={() => handleNav("/verificare")}
+            className="flex w-full items-center gap-3 rounded-xl border border-amber-300/70 bg-amber-50 px-3.5 py-3 text-left transition hover:bg-amber-100/70"
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/15">
+              <ShieldCheck className="h-5 w-5 text-amber-600" />
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-sm font-semibold text-amber-900">
+                {t("Verifică-ți identitatea", "Verify your identity")}
+              </span>
+              <span className="block text-[11px] text-amber-700/80">
+                {signals?.kycPending
+                  ? t("Documentele tale sunt în verificare.", "Your documents are under review.")
+                  : t("Necesar pentru rezervări și încasări.", "Required for bookings and payouts.")}
+              </span>
+            </span>
+            <ChevronRight className="h-4 w-4 text-amber-700/60" />
+          </button>
+        )}
+        <button
+          onClick={() => handleNav("/suport")}
+          className="flex w-full items-center gap-3 h-12 px-4 rounded-xl bg-white border border-border/60 shadow-sm hover:bg-white/90 transition-colors"
+        >
+          <LifeBuoy className="h-5 w-5 text-foreground" />
+          <span className="flex-1 text-sm font-medium text-foreground text-left">
+            {t("Suport & Tickete", "Support & Tickets")}
+          </span>
+          {openTickets > 0 && (
+            <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+              {openTickets}
+            </span>
+          )}
+        </button>
+      </div>
     </div>
   );
 
