@@ -268,6 +268,31 @@ export function ChatPanel({
     return items;
   }, [localMessages, user?.id, peerLastReadAt]);
 
+  const isClosed = useMemo(() => {
+    if (!rentalCtx) return false;
+    if (rentalCtx.status !== "completed") return false;
+    if (!reopenedAt) return true;
+    // Reopened any time after status changed → keep open
+    return false;
+  }, [rentalCtx, reopenedAt]);
+
+  const handleReopen = async () => {
+    if (!conversationId || reopening) return;
+    setReopening(true);
+    const nowIso = new Date().toISOString();
+    const { error } = await supabase
+      .from("conversations")
+      .update({ reopened_at: nowIso })
+      .eq("id", conversationId);
+    setReopening(false);
+    if (error) {
+      toast.error(t("Nu am putut relua conversația.", "Could not resume the conversation."));
+      return;
+    }
+    setReopenedAt(nowIso);
+    queryClient.invalidateQueries({ queryKey: ["conversations"] });
+  };
+
   return (
     <div className={`flex flex-col h-full bg-[#FCFAF8] ${className}`}>
       {!hideHeader && (
