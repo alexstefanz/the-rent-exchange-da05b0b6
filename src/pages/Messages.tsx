@@ -71,15 +71,19 @@ export default function Messages() {
 
   useEffect(() => {
     const convId = searchParams.get("conv");
-    if (convId && conversations.length > 0 && convId !== selectedConversation?.id) {
-      const found = conversations.find((c) => c.id === convId);
-      if (found) {
-        const correctTab = found.buyer_id === user?.id ? "rezervari" : "de-inchiriat";
-        setActiveTab(correctTab);
-        setSelectedConversation(found);
-      }
+    if (!convId || !user?.id) return;
+    if (convId === selectedConversation?.id) return;
+    const found = conversations.find((c) => c.id === convId);
+    if (found) {
+      const correctTab = found.buyer_id === user?.id ? "rezervari" : "de-inchiriat";
+      setActiveTab(correctTab);
+      setSelectedConversation(found);
+    } else if (!isLoading) {
+      // Conversation not in the cached list yet (e.g. just created from a
+      // product page or checkout). Force a refetch so it shows up.
+      queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
     }
-  }, [searchParams, conversations, selectedConversation?.id, user?.id]);
+  }, [searchParams, conversations, selectedConversation?.id, user?.id, isLoading, queryClient]);
 
   const handleSelect = (conv: Conversation) => setSelectedConversation(conv);
   const handleBack = () => {

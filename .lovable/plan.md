@@ -1,16 +1,12 @@
-Extind comportamentul „back din chat → pagina sursă” și pentru celelalte locuri care deschid o conversație specifică prin `navigate('/mesaje?conv=...')`.
+Voi face fixul în zona de mesagerie, ca să acopere atât pagina de produs, cât și checkout-ul și orice alt buton care trimite către `/mesaje?conv=...`.
 
-Locuri vizate (toate trimit deja un `conv` în URL, deci au sens pentru back):
-1. `src/pages/RentalDetailPage.tsx` (linia 175) — chat deschis dintr-o rezervare/închiriere → back la `/rezervari/:publicId` sau `/inchirieri/:publicId`.
-2. `src/components/admin/AdminCancellationRequestsPanel.tsx` (linia 92) — back la `/admin/approvals?tab=cancellations` (pagina curentă).
-3. `src/components/dashboard/AcceptedRentalDialog.tsx` (linia 72) — back la pagina pe care era dialogul (ex. `/rezervari`).
-4. `src/components/booking/BookingConfirmation.tsx` (linia 33) — back la pagina pe care a apărut confirmarea.
-5. `src/components/dashboard/PickupArrangementCard.tsx` (linia 80) — back la pagina cu cardul (rental detail / dashboard).
-6. `src/components/profile/NotificationsTab.tsx` (linia 170) — back la `/notificari`.
+Plan:
+1. Actualizez `Messages.tsx` ca atunci când există `conv` în URL să nu se bazeze doar pe lista de conversații cache-uită.
+2. Dacă ID-ul conversației din URL nu este găsit în lista curentă, pagina va reîmprospăta conversațiile și va încerca din nou selecția automată.
+3. Păstrez comportamentul existent pentru `/mesaje` fără `conv`: lista rămâne deschisă și utilizatorul selectează manual conversația.
+4. Ajustez opțional `ProductDetail.tsx` și `Checkout.tsx` să invalideze cache-ul conversațiilor imediat după `getOrCreateConversation`, înainte de navigarea la chat, ca fluxul să fie instant și stabil.
+5. Verific apoi toate navigările către `/mesaje?conv=...` ca să folosească aceeași logică și să nu mai apară ecranul „Selectează o conversație...” după click pe „Întreabă proprietarul” / „Deschide chat”.
 
-Pentru fiecare, voi adăuga `{ state: { returnTo: { pathname: window.location.pathname, search: window.location.search } } }` la apelul `navigate`. Logica de back din `Messages.tsx` (deja implementată) folosește acest `returnTo` și restaurează corect pagina anterioară.
-
-Nu modific:
-- `navigate("/mesaje")` (fără `conv`) — deschide direct lista, nu are sens returnTo.
-- Backend, RPC-uri sau RLS.
-- Comportamentul când utilizatorul intră direct pe `/mesaje?conv=...` (rămâne fallback la lista de mesaje).
+Detalii tehnice:
+- Problema probabilă este cache-ul React Query: conversația nou creată există, dar lista din `Messages.tsx` poate fi încă veche, deci `conv` din URL nu se găsește și chat-ul rămâne neselectat.
+- Fixul central în `Messages.tsx` previne aceeași problemă și pentru alte intrări în chat, nu doar pentru produs și checkout.

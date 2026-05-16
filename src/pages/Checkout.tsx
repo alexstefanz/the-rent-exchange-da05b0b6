@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ArrowLeft, ArrowRight, Send, Info, Shield, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ const Checkout = () => {
   const { language, t } = useLanguage();
   const { user } = useAuth();
   const kyc = useKycGate();
+  const queryClient = useQueryClient();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -77,6 +79,7 @@ const Checkout = () => {
     try {
       const conv = await getOrCreateConversation(product.id, product.ownerId);
       if (conv) {
+        if (user) queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
         navigate(`/mesaje?conv=${conv.id}`, {
           state: {
             returnTo: {
