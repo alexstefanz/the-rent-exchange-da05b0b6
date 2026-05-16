@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { differenceInDays, isBefore } from "date-fns";
 import { useBookedDates, isDateBooked, hasBookedDateInRange } from "@/hooks/queries/useBookedDates";
 import { computeRentalPrice } from "@/lib/rentalPricing";
@@ -48,6 +49,7 @@ const ProductDetail = () => {
   const { user } = useAuth();
   const copy = useUxCopy();
   const { language, t } = useLanguage();
+  const queryClient = useQueryClient();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [owner, setOwner] = useState<OwnerInfo | null>(null);
@@ -112,6 +114,8 @@ const ProductDetail = () => {
       return null;
     }
     setConversationId(conv.id);
+    // Prime the conversations list so Messages can select it immediately.
+    if (user) queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
     return conv;
   };
 
