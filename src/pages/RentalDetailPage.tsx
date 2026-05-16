@@ -291,6 +291,28 @@ const RentalDetailPage = () => {
           <RentalTimeline rental={tlRental} />
         </section>
 
+        {/* Owner: waiting for renter payment */}
+        {isOwner && rental.status === "confirmed" && rental.payment_status === "pending" && (
+          <section className="rounded-2xl border border-primary/30 bg-primary/5 p-5 shadow-sm mb-6">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/15 grid place-items-center shrink-0">
+                <Clock className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-heading text-base font-semibold text-foreground">
+                  {t("Așteptăm plata chiriașului", "Waiting for renter payment")}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {t(
+                    "Ai acceptat cererea. Chiriașul urmează să facă plata — te rugăm să aștepți. Vei fi notificat imediat ce plata este confirmată.",
+                    "You accepted the request. The renter is about to pay — please wait. You'll be notified as soon as the payment is confirmed.",
+                  )}
+                </p>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Owner: accept/reject pending request */}
         {isOwner && rental.status === "pending" && (
           <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
@@ -534,6 +556,12 @@ const RentalDetailPage = () => {
                   )}
                 </div>
               </div>
+              <Button onClick={handleChat} className="w-full mt-4">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                {isOwner
+                  ? t("Vorbește cu chiriașul", "Talk to the renter")
+                  : t("Vorbește cu proprietarul", "Talk to the owner")}
+              </Button>
             </section>
 
             {/* Counterparty */}
@@ -548,9 +576,6 @@ const RentalDetailPage = () => {
               ) : (
                 <p className="text-xs text-muted-foreground mt-2">{t("Datele de contact se vor afisa dupa confirmarea platii.", "Contact info appears after payment is confirmed.")}</p>
               )}
-              <Button variant="outline" size="sm" className="mt-3" onClick={handleChat}>
-                <MessageSquare className="h-4 w-4 mr-2" />{t("Trimite mesaj", "Send message")}
-              </Button>
             </section>
 
             {/* Payment status */}
