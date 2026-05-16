@@ -1,12 +1,16 @@
-Voi corecta navigarea astfel încât butonul de back din conversația deschisă din checkout sau pagina de produs să ducă înapoi exact la pagina de unde s-a apăsat „Discută cu proprietarul”.
+Extind comportamentul „back din chat → pagina sursă” și pentru celelalte locuri care deschid o conversație specifică prin `navigate('/mesaje?conv=...')`.
 
-Pași:
-1. În `Checkout.tsx`, la deschiderea chatului voi trimite către `/mesaje?conv=...` cu `state.returnTo`, păstrând ruta `/checkout` și datele existente din checkout, ca formularul să poată fi refăcut la întoarcere.
-2. În `ProductDetail.tsx`, la `handleStartChat` și `handleQuickQuestion`, voi trimite către `/mesaje?conv=...` cu `state.returnTo` setat la URL-ul curent al produsului.
-3. În `Messages.tsx`, `handleBack` va verifica `location.state.returnTo`; dacă există și utilizatorul a venit din checkout/produs, va naviga acolo. Dacă nu există, va păstra comportamentul actual: închide conversația și revine la lista de mesaje.
-4. Voi păstra fallback-ul existent pentru conversațiile deschise direct din `/mesaje`, rezervări sau notificări, ca să nu schimb fluxurile care nu fac parte din cerere.
+Locuri vizate (toate trimit deja un `conv` în URL, deci au sens pentru back):
+1. `src/pages/RentalDetailPage.tsx` (linia 175) — chat deschis dintr-o rezervare/închiriere → back la `/rezervari/:publicId` sau `/inchirieri/:publicId`.
+2. `src/components/admin/AdminCancellationRequestsPanel.tsx` (linia 92) — back la `/admin/approvals?tab=cancellations` (pagina curentă).
+3. `src/components/dashboard/AcceptedRentalDialog.tsx` (linia 72) — back la pagina pe care era dialogul (ex. `/rezervari`).
+4. `src/components/booking/BookingConfirmation.tsx` (linia 33) — back la pagina pe care a apărut confirmarea.
+5. `src/components/dashboard/PickupArrangementCard.tsx` (linia 80) — back la pagina cu cardul (rental detail / dashboard).
+6. `src/components/profile/NotificationsTab.tsx` (linia 170) — back la `/notificari`.
 
-Detalii tehnice:
-- Se folosește `useLocation` + `navigate(returnTo.pathname + returnTo.search, { state: returnTo.state })`.
-- Pentru checkout, `state` va include aceleași date de rezervare, ca pagina să nu afișeze „nu există date” la revenire.
-- Nu modific backend-ul și nu schimb structura conversațiilor.
+Pentru fiecare, voi adăuga `{ state: { returnTo: { pathname: window.location.pathname, search: window.location.search } } }` la apelul `navigate`. Logica de back din `Messages.tsx` (deja implementată) folosește acest `returnTo` și restaurează corect pagina anterioară.
+
+Nu modific:
+- `navigate("/mesaje")` (fără `conv`) — deschide direct lista, nu are sens returnTo.
+- Backend, RPC-uri sau RLS.
+- Comportamentul când utilizatorul intră direct pe `/mesaje?conv=...` (rămâne fallback la lista de mesaje).
