@@ -1,26 +1,34 @@
-## Modificări în `src/pages/RentalDetailPage.tsx`
+## Notificare vizuală pe cardurile „chiriaș" și „proprietar" din My Account
 
-### 1. Container "așteptăm plata" sub timeline (doar pentru proprietar)
-Sub secțiunea Timeline (după linia 292), adaug un container vizibil când:
-- `isOwner === true`
-- `rental.status === "confirmed"`
-- `rental.payment_status === "pending"` (chiriașul nu a plătit încă)
+### Scope
+Modific doar componenta `src/components/profile/dashboard/QuickActions.tsx`. Cele două carduri vizate sunt:
+- „Închirierile mele" (rol chiriaș) — badge `activeRentalsAsRenter`
+- „Cereri primite" (rol proprietar) — badge `activeRentalsAsOwner`
 
-Conținut:
-- Iconiță Clock + titlu: „Așteptăm plata chiriașului"
-- Text: „Ai acceptat cererea. Chiriașul urmează să facă plata — te rugăm să aștepți. Vei fi notificat imediat ce plata este confirmată."
-- Stil: card cu border `border-primary/30`, fundal `bg-primary/5`, în ton cu restul paginii.
+Cardurile „Mesaje" și „Câștiguri" rămân neschimbate (nu sunt „cereri noi").
 
-### 2. Buton portocaliu „Vorbește cu..." în cardul „Produs închiriat"
-În secțiunea „Produs închiriat" (linia 515–537), adaug sub conținutul existent un buton primar (portocaliu, `bg-primary`) pe lățime completă:
-- Pentru proprietar: „Vorbește cu chiriașul"
-- Pentru chiriaș: „Vorbește cu proprietarul"
-- Iconiță `MessageSquare`, folosește handler-ul existent `handleChat`.
+### Comportament
+Când `badge > 0` pe unul din cele două carduri vizate, cardul intră în starea „notificare":
 
-### 3. Curățare card „Counterparty" (Chirias / Proprietar)
-Elimin butonul vag „Trimite mesaj" (linia 551–553) din cardul counterparty, deoarece acțiunea de chat este acum în cardul produsului (portocaliu, vizibil). Cardul rămâne pentru afișarea datelor de contact (după plată) și mesajul de gating.
+- Fundalul cardului devine portocaliu (`#F59E0B`, hover `#F98715`), cu shadow ușor mai pronunțat.
+- Iconița (cercul interior) → fundal `bg-white/20`, iar `Icon` devine alb.
+- Textul label (ex. „Închirierile mele" / „Cereri primite") → alb, semibold.
+- Cercul cu numărul (badge-ul mic, dreapta-sus pe iconiță) → fundal alb, text negru bold, fără shadow roșu (înlocuiește varianta `bg-destructive`).
+- Tranziție smooth pe culoare/shadow la hover.
 
-### Note tehnice
-- Nu modific logica de business sau API-uri.
-- Toate textele sunt bilingve (RO/EN) prin helper-ul existent `t(...)`.
-- Folosesc tokenele semantice existente (`primary`, `border`, `card`).
+Când `badge === 0`, cardul rămâne exact cum este azi (fundal `bg-card`, badge ascuns).
+
+### Implementare tehnică
+În `QuickActions.tsx`:
+- Adaug prop `highlight?: boolean` pe componenta `Secondary`. Calculat ca `!!badge && badge > 0`, dar se setează doar pentru cele două carduri vizate (transmis explicit din părinte, nu derivat automat — astfel „Mesaje" nu se colorează niciodată în portocaliu).
+- Aplic clase condiționate prin `cn(...)`:
+  - container: `highlight ? "bg-[#F59E0B] hover:bg-[#F98715] border-transparent text-white shadow-md" : "bg-card hover:border-primary/40 hover:shadow-sm"`
+  - cerc iconiță: `highlight ? "bg-white/20" : "bg-muted group-hover:bg-primary/10"`
+  - Icon: `highlight ? "text-white" : "text-foreground group-hover:text-primary"`
+  - badge cifre: `highlight ? "bg-white text-black" : "bg-destructive text-destructive-foreground"`
+- Restul markup-ului rămâne identic. Nu se atinge logica de date, hook-uri sau alte componente.
+
+### Out of scope
+- Nu modific `useAccountDashboard` sau orice query.
+- Nu modific celelalte carduri (Mesaje, Câștiguri, CTA Adaugă produs).
+- Nu modific stiluri globale / tokens.
