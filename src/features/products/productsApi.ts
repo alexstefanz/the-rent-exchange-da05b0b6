@@ -264,7 +264,7 @@ export const updateProduct = async (
 export const deleteProduct = async (id: string, ownerId: string): Promise<void> => {
   const { error } = await supabase
     .from("products")
-    .update({ deleted_at: new Date().toISOString(), deleted_by: ownerId } as Record<string, unknown>)
+    .update({ deleted_at: new Date().toISOString(), deleted_by: ownerId } as never)
     .eq("id", id)
     .eq("owner_id", ownerId);
 

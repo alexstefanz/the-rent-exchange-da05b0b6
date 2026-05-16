@@ -24,7 +24,7 @@ export interface AdminProduct {
 export const approveProduct = async (productId: string): Promise<void> => {
   const { error } = await supabase
     .from('products')
-    .update({ approval_status: 'approved', is_active: true } as Record<string, unknown>)
+    .update({ approval_status: 'approved', is_active: true } as never)
     .eq('id', productId);
   if (error) throw new Error(error.message);
 
@@ -67,7 +67,7 @@ export const approveProduct = async (productId: string): Promise<void> => {
 export const rejectProduct = async (productId: string, reason: string): Promise<void> => {
   const { error } = await supabase
     .from('products')
-    .update({ approval_status: 'rejected', is_active: false, flag_reason: reason } as Record<string, unknown>)
+    .update({ approval_status: 'rejected', is_active: false, flag_reason: reason } as never)
     .eq('id', productId);
   if (error) throw new Error(error.message);
 
@@ -127,7 +127,7 @@ export const fetchAdminProducts = async (
 export const toggleProductActive = async (productId: string, isActive: boolean): Promise<void> => {
   const { error } = await supabase
     .from('products')
-    .update({ is_active: isActive } as Record<string, unknown>)
+    .update({ is_active: isActive } as never)
     .eq('id', productId);
   if (error) throw new Error(error.message);
 };
@@ -135,7 +135,7 @@ export const toggleProductActive = async (productId: string, isActive: boolean):
 export const flagProduct = async (productId: string, flagReason: string): Promise<void> => {
   const { error } = await supabase
     .from('products')
-    .update({ admin_flagged: true, flag_reason: flagReason } as Record<string, unknown>)
+    .update({ admin_flagged: true, flag_reason: flagReason } as never)
     .eq('id', productId);
   if (error) throw new Error(error.message);
 };
@@ -143,7 +143,7 @@ export const flagProduct = async (productId: string, flagReason: string): Promis
 export const unflagProduct = async (productId: string): Promise<void> => {
   const { error } = await supabase
     .from('products')
-    .update({ admin_flagged: false, flag_reason: null } as Record<string, unknown>)
+    .update({ admin_flagged: false, flag_reason: null } as never)
     .eq('id', productId);
   if (error) throw new Error(error.message);
 };
@@ -209,7 +209,7 @@ export const fetchDeletedProducts = async (): Promise<DeletedProduct[]> => {
 export const restoreProduct = async (productId: string): Promise<void> => {
   const { error } = await supabase
     .from('products')
-    .update({ deleted_at: null, deleted_by: null } as Record<string, unknown>)
+    .update({ deleted_at: null, deleted_by: null } as never)
     .eq('id', productId);
   if (error) throw new Error(error.message);
 };
@@ -235,7 +235,7 @@ export const updateProductAdmin = async (
       ...updates,
       admin_edited_at: new Date().toISOString(),
       admin_edited_by: user?.id ?? null,
-    } as Record<string, unknown>)
+    } as never)
     .eq('id', productId);
   if (error) throw new Error(error.message);
 };
