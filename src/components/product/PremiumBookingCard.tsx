@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { format, differenceInDays, isBefore } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
-import { Calendar as CalendarIcon, Shield, Clock, CheckCircle2, MessageCircle, CalendarCheck, CalendarRange, AlertCircle } from "lucide-react";
+import { Calendar as CalendarIcon, Shield, Clock, CheckCircle2, MessageCircle, CalendarCheck } from "lucide-react";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -41,16 +41,6 @@ const PremiumBookingCard = ({
   const breakdown = useMemo(() => computeRentalPrice(rentalDays, clientPrice, priceWeek, priceMonth), [rentalDays, clientPrice, priceWeek, priceMonth]);
   const totalPrice = breakdown.total;
 
-  const minDays = Math.max(1, minRentalDays || 1);
-  const maxDays = maxRentalDays && maxRentalDays >= minDays ? maxRentalDays : null;
-  const belowMin = rentalDays > 0 && rentalDays < minDays;
-  const aboveMax = rentalDays > 0 && maxDays != null && rentalDays > maxDays;
-  const durationOk = rentalDays === 0 || (!belowMin && !aboveMax);
-  const showDurationBadge = minDays > 1 || maxDays != null;
-  const durationBadge = maxDays != null
-    ? t(`Durată: ${minDays}–${maxDays} zile`, `Duration: ${minDays}–${maxDays} days`)
-    : t(`Închiriere minimă: ${minDays} zile`, `Minimum rental: ${minDays} days`);
-
   const responseLabel = responseMinutes && responseMinutes > 0
     ? responseMinutes < 60
       ? t(`Răspunde în ~${Math.round(responseMinutes)} min`, `Replies in ~${Math.round(responseMinutes)} min`)
@@ -66,12 +56,6 @@ const PremiumBookingCard = ({
           <span className="text-base font-semibold text-foreground">RON</span>
           <span className="text-muted-foreground text-sm">/ {t("zi", "day")}</span>
         </div>
-        {showDurationBadge && (
-          <div className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
-            <CalendarRange className="h-3.5 w-3.5" />
-            {durationBadge}
-          </div>
-        )}
       </div>
 
       {/* Calendar */}
@@ -132,38 +116,19 @@ const PremiumBookingCard = ({
         </div>
       )}
 
-      {(belowMin || aboveMax) && (
-        <div className="mx-5 mb-3 flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
-          <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>
-            {belowMin
-              ? t(
-                  `Proprietarul închiriază minim ${minDays} zile. Selectează o perioadă mai lungă.`,
-                  `The owner requires at least ${minDays} days. Please pick a longer period.`,
-                )
-              : t(
-                  `Proprietarul închiriază maxim ${maxDays} zile. Selectează o perioadă mai scurtă.`,
-                  `The owner allows at most ${maxDays} days. Please pick a shorter period.`,
-                )}
-          </span>
-        </div>
-      )}
-
       {/* CTA */}
       <div className="border-t border-border bg-card p-4 space-y-2">
         <Button
           className="w-full h-12 text-base font-semibold transition-all hover:shadow-lg hover:-translate-y-0.5"
           size="lg"
-          disabled={!startDate || !endDate || isOwnProduct || !durationOk}
+          disabled={!startDate || !endDate || isOwnProduct}
           onClick={onReserve}
         >
           <CalendarCheck className="h-4 w-4 mr-2" />
           {isOwnProduct
             ? t("Nu poți rezerva propriul anunț", "You can't book your own listing")
             : startDate && endDate
-              ? (durationOk
-                  ? t("Rezervă acum", "Reserve now")
-                  : t("Ajustează perioada", "Adjust the period"))
+              ? t("Rezervă acum", "Reserve now")
               : t("Verifică datele", "Check dates")}
         </Button>
         <Button
