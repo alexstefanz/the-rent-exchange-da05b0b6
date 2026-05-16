@@ -553,12 +553,6 @@ const RentalDetailPage = () => {
                   )}
                 </div>
               </div>
-              <Button onClick={handleChat} className="w-full mt-4">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                {isOwner
-                  ? t("Vorbește cu chiriașul", "Talk to the renter")
-                  : t("Vorbește cu proprietarul", "Talk to the owner")}
-              </Button>
             </section>
 
             {/* Counterparty */}
