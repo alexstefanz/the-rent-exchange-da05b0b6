@@ -3,7 +3,7 @@ import SignatureCanvas from "react-signature-canvas";
 import { jsPDF } from "jspdf";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Eraser, FileSignature, Camera, X, ChevronLeft, ChevronRight, ImagePlus, Lock } from "lucide-react";
+import { Loader2, Eraser, FileSignature, Camera, X, ChevronLeft, ChevronRight, ImagePlus, Lock, FileText, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -98,6 +98,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   async function generatePdf(updatedPv: PvDocument): Promise<Blob> {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const W = doc.internal.pageSize.getWidth();
+    const H = doc.internal.pageSize.getHeight();
     let y = 50;
     const phaseLabel = phase === "handover" ? "PROCES VERBAL DE PREDARE-PRIMIRE" : "PROCES VERBAL DE RETURNARE";
     doc.setFontSize(16); doc.setFont("helvetica", "bold");
@@ -120,6 +121,79 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
 
     doc.setFont("helvetica", "bold"); doc.text("Fotografii anexate:", 50, y); doc.setFont("helvetica", "normal");
     doc.text(`${updatedPv.photos.length} fotografii`, 170, y); y += 22;
+
+    // Embed photos in a 2-column grid
+    const meta = (updatedPv as any).photos_meta as Array<{ path: string; role: "owner" | "renter"; uploaded_at: string }> | undefined;
+    const photoList = (meta && meta.length > 0)
+      ? meta
+      : (updatedPv.photos || []).map((p) => ({ path: p, role: "owner" as const, uploaded_at: "" }));
+
+    if (photoList.length > 0) {
+      const loaded = await Promise.all(
+        photoList.map(async (m) => {
+          try {
+            const url = await getPvFileSignedUrl(m.path);
+            const res = await fetch(url);
+            const blob = await res.blob();
+            const dataUrl: string = await new Promise((resolve, reject) => {
+              const fr = new FileReader();
+              fr.onload = () => resolve(fr.result as string);
+              fr.onerror = () => reject(fr.error);
+              fr.readAsDataURL(blob);
+            });
+            const dims = await new Promise<{ w: number; h: number }>((resolve, reject) => {
+              const img = new Image();
+              img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+              img.onerror = () => reject(new Error("img load"));
+              img.src = dataUrl;
+            });
+            return { ...m, dataUrl, dims };
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      const items = loaded.filter(Boolean) as Array<{ path: string; role: "owner" | "renter"; uploaded_at: string; dataUrl: string; dims: { w: number; h: number } }>;
+      if (items.length > 0) {
+        const colW = (W - 100 - 20) / 2; // 50 margin each side, 20 gutter
+        const maxImgH = 160;
+        for (let i = 0; i < items.length; i += 2) {
+          // Check page space for a row (image + label)
+          if (y + maxImgH + 18 > H - 40) {
+            doc.addPage();
+            y = 50;
+          }
+          let rowH = 0;
+          for (let c = 0; c < 2 && i + c < items.length; c++) {
+            const it = items[i + c];
+            const ratio = it.dims.w / it.dims.h || 1;
+            let w = colW;
+            let h = w / ratio;
+            if (h > maxImgH) { h = maxImgH; w = h * ratio; }
+            const x = 50 + c * (colW + 20);
+            try {
+              doc.addImage(it.dataUrl, "JPEG", x, y, w, h);
+            } catch {
+              try { doc.addImage(it.dataUrl, "PNG", x, y, w, h); } catch { /* skip */ }
+            }
+            doc.setFontSize(8); doc.setFont("helvetica", "normal");
+            const label = `${it.role === "owner" ? "Proprietar" : "Chirias"}${it.uploaded_at ? " · " + format(new Date(it.uploaded_at), "dd.MM.yyyy HH:mm") : ""}`;
+            doc.text(label, x, y + h + 10);
+            rowH = Math.max(rowH, h);
+          }
+          y += rowH + 22;
+        }
+        y += 6;
+        doc.setFontSize(10);
+      }
+    }
+
+    // Ensure room for intro + signatures
+    if (y + 180 > H - 40) {
+      doc.addPage();
+      y = 50;
+    }
 
     doc.setFontSize(9);
     const intro = phase === "handover"
