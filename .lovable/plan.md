@@ -1,20 +1,26 @@
-## Problema
+## Modificări în `src/pages/RentalDetailPage.tsx`
 
-În „Cereri primite" (`/inchirieri`) și „Închirierile mele" (`/rezervari`), sortarea „cele mai noi" se face după `start_date` (perioada rezervată), nu după momentul când rezervarea a fost creată. De aceea RNT-000077, deși e ultima rezervare creată, nu apare prima — fiindcă altă rezervare are `start_date` mai târziu în viitor.
+### 1. Container "așteptăm plata" sub timeline (doar pentru proprietar)
+Sub secțiunea Timeline (după linia 292), adaug un container vizibil când:
+- `isOwner === true`
+- `rental.status === "confirmed"`
+- `rental.payment_status === "pending"` (chiriașul nu a plătit încă)
 
-## Fix
+Conținut:
+- Iconiță Clock + titlu: „Așteptăm plata chiriașului"
+- Text: „Ai acceptat cererea. Chiriașul urmează să facă plata — te rugăm să aștepți. Vei fi notificat imediat ce plata este confirmată."
+- Stil: card cu border `border-primary/30`, fundal `bg-primary/5`, în ton cu restul paginii.
 
-Schimbă sortarea „newest"/„oldest" să folosească `created_at` (data plasării cererii), nu `start_date`.
+### 2. Buton portocaliu „Vorbește cu..." în cardul „Produs închiriat"
+În secțiunea „Produs închiriat" (linia 515–537), adaug sub conținutul existent un buton primar (portocaliu, `bg-primary`) pe lățime completă:
+- Pentru proprietar: „Vorbește cu chiriașul"
+- Pentru chiriaș: „Vorbește cu proprietarul"
+- Iconiță `MessageSquare`, folosește handler-ul existent `handleChat`.
 
-**`src/components/dashboard/RentalsOutTab.tsx`**
-- În `sortRentals`, pentru `sortBy === "newest"` și `"oldest"` folosește `created_at` în loc de `start_date`. `OwnerRental.created_at` deja există.
+### 3. Curățare card „Counterparty" (Chirias / Proprietar)
+Elimin butonul vag „Trimite mesaj" (linia 551–553) din cardul counterparty, deoarece acțiunea de chat este acum în cardul produsului (portocaliu, vizibil). Cardul rămâne pentru afișarea datelor de contact (după plată) și mesajul de gating.
 
-**`src/components/dashboard/RentalsTab.tsx`**
-- Adaugă `created_at: string | null` în interfața `MyRental` și mapează-l în `fetchMyRentals` (e deja inclus în `select`).
-- În `sortRentals`, pentru `newest`/`oldest` folosește `created_at` în loc de `start_date`.
-
-Astfel cea mai recent creată rezervare (RNT-000077) apare prima atât în secțiunea premium cât și în accordion-ul de istoric.
-
-## Verificare
-
-Reload `/inchirieri` și `/rezervari` cu sort = „Cele mai noi" și confirmă că RNT-000077 e primul card.
+### Note tehnice
+- Nu modific logica de business sau API-uri.
+- Toate textele sunt bilingve (RO/EN) prin helper-ul existent `t(...)`.
+- Folosesc tokenele semantice existente (`primary`, `border`, `card`).
