@@ -637,6 +637,35 @@ const RentalDetailPage = () => {
           productTitle={rental.product_title || ""}
         />
       )}
+
+      <Dialog open={rejectOpen} onOpenChange={(o) => { if (!o) { setRejectOpen(false); setRejectReason(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("Refuză cererea de închiriere", "Reject rental request")}</DialogTitle>
+            <DialogDescription>
+              {t(
+                `Ești sigur că vrei să refuzi cererea pentru „${rental.product_title}"?`,
+                `Are you sure you want to reject the request for "${rental.product_title}"?`,
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            placeholder={t("Motiv (opțional)", "Reason (optional)")}
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            rows={3}
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setRejectOpen(false); setRejectReason(""); }} disabled={responding}>
+              {t("Anulează", "Cancel")}
+            </Button>
+            <Button variant="destructive" onClick={handleReject} disabled={responding}>
+              {responding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <X className="h-4 w-4 mr-2" />}
+              {t("Refuză cererea", "Reject request")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
