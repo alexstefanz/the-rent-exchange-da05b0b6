@@ -44,6 +44,22 @@ export const unbanUser = async (userId: string): Promise<void> => {
     } as Record<string, unknown>)
     .eq('id', userId);
   if (error) throw new Error(error.message);
+
+  // Re-activate approved, non-deleted products that were auto-disabled on ban.
+  try {
+    const { error: productsError } = await supabase
+      .from('products')
+      .update({ is_active: true } as Record<string, unknown>)
+      .eq('owner_id', userId)
+      .eq('approval_status', 'approved')
+      .is('deleted_at', null)
+      .eq('is_active', false);
+    if (productsError) {
+      console.error('[banApi] Failed to reactivate products on unban:', productsError);
+    }
+  } catch (e) {
+    console.error('[banApi] Failed to reactivate products on unban:', e);
+  }
 };
 
 export const adminDeleteUser = async (userId: string): Promise<void> => {
