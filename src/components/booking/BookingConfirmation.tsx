@@ -30,7 +30,9 @@ const BookingConfirmation = ({
     try {
       const conversationId = await getOrCreateRentalConversation(rentalId);
       if (conversationId) {
-        navigate(`/mesaje?conv=${conversationId}`);
+        navigate(`/mesaje?conv=${conversationId}`, {
+          state: { returnTo: { pathname: window.location.pathname, search: window.location.search } },
+        });
       } else {
         toast.error("Nu s-a putut deschide conversația.");
       }

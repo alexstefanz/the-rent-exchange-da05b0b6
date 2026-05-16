@@ -167,7 +167,9 @@ const NotificationsTab = () => {
     }
 
     if (conversationId) {
-      navigate(`/mesaje?conv=${conversationId}`);
+      navigate(`/mesaje?conv=${conversationId}`, {
+        state: { returnTo: { pathname: window.location.pathname, search: window.location.search } },
+      });
     }
   };
 

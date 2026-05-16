@@ -89,7 +89,9 @@ const AdminCancellationRequestsPanel = () => {
   const handleContact = async (userId: string, productId: string | null, rentalId: string) => {
     try {
       const conversationId = await openAdminConversation(userId, productId, rentalId);
-      navigate(`/mesaje?conv=${conversationId}`);
+      navigate(`/mesaje?conv=${conversationId}`, {
+        state: { returnTo: { pathname: window.location.pathname, search: window.location.search } },
+      });
     } catch (e: any) {
       toast.error(e?.message || "Eroare la deschiderea conversației");
     }
