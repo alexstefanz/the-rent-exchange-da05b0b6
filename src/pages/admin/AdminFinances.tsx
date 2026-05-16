@@ -119,7 +119,7 @@ const AdminFinances = () => {
     try {
       const updates: Record<string, unknown> = { status };
       if (status === 'completed') updates.processed_at = new Date().toISOString();
-      const { error } = await supabase.from('transactions').update(updates).eq('id', txId);
+      const { error } = await supabase.from('transactions').update(updates as never).eq('id', txId);
       if (error) throw error;
       toast.success(`Tranzacție marcată ca "${status}"`);
       queryClient.invalidateQueries({ queryKey: ['adminTransactions'] });

@@ -172,7 +172,7 @@ export async function savePvSignatureAndPdf(args: {
   }
   const { error } = await supabase
     .from("rental_pv_documents")
-    .update(update)
+    .update(update as never)
     .eq("rental_id", args.rentalId)
     .eq("phase", args.phase);
   if (error) throw error;

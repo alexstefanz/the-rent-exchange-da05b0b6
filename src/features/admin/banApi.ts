@@ -8,7 +8,7 @@ export const banUser = async (userId: string, reason: string, bannedBy: string):
       banned_at: new Date().toISOString(),
       banned_by: bannedBy,
       ban_reason: reason
-    } as Record<string, unknown>)
+    } as never)
     .eq('id', userId);
   if (error) throw new Error(error.message);
 
@@ -41,7 +41,7 @@ export const unbanUser = async (userId: string): Promise<void> => {
       banned_at: null,
       banned_by: null,
       ban_reason: null
-    } as Record<string, unknown>)
+    } as never)
     .eq('id', userId);
   if (error) throw new Error(error.message);
 
@@ -49,7 +49,7 @@ export const unbanUser = async (userId: string): Promise<void> => {
   try {
     const { error: productsError } = await supabase
       .from('products')
-      .update({ is_active: true } as Record<string, unknown>)
+      .update({ is_active: true } as never)
       .eq('owner_id', userId)
       .eq('approval_status', 'approved')
       .is('deleted_at', null)

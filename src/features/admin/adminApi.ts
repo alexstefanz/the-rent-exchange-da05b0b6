@@ -179,7 +179,7 @@ export const updateRentalStatus = async (
   
   const { error } = await supabase
     .from('rentals')
-    .update(updateData)
+    .update(updateData as never)
     .eq('id', rentalId);
   
   if (error) {
