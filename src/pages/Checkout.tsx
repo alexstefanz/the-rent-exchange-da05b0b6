@@ -2,15 +2,12 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { ArrowLeft, ArrowRight, Send, Info, Shield, MessageCircle } from "lucide-react";
+import { ArrowLeft, Send, Info, Shield, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LoginDialog from "@/components/checkout/LoginDialog";
 import TermsDialog from "@/components/checkout/TermsDialog";
 import PrivacyDialog from "@/components/checkout/PrivacyDialog";
-import PremiumStepper from "@/components/checkout/PremiumStepper";
 import PremiumBookingSummary from "@/components/checkout/PremiumBookingSummary";
-import OptionalMessageCard from "@/components/checkout/OptionalMessageCard";
-import WhatHappensNext from "@/components/checkout/WhatHappensNext";
 import PaymentTrustStrip from "@/components/checkout/PaymentTrustStrip";
 import StickyCheckoutBar from "@/components/checkout/StickyCheckoutBar";
 import { useUxCopy } from "@/hooks/useUxCopy";
@@ -50,10 +47,8 @@ const Checkout = () => {
   const kyc = useKycGate();
   const queryClient = useQueryClient();
 
-  const [currentStep, setCurrentStep] = useState(1);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const phoneGate = usePhoneRequired();
-  const [messageToOwner, setMessageToOwner] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
@@ -100,14 +95,8 @@ const Checkout = () => {
     }
   };
 
-  const handleContinueToPayment = () => {
-    if (!user) { setShowLoginDialog(true); return; }
-    setCurrentStep(2);
-    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-  const handleLoginSuccess = () => { setShowLoginDialog(false); setCurrentStep(2); };
-
   const handleSendRequest = async () => {
+    if (!user) { setShowLoginDialog(true); return; }
     if (isSubmitting) return;
     if (user && !kyc.isVerified) {
       toast.error(language === "ro"
@@ -129,7 +118,6 @@ const Checkout = () => {
         subtotal: totalPrice,
         platformFeePercent: product.platformFeePercent,
         paymentMethod: "stripe",
-        messageToOwner: messageToOwner || undefined,
       });
       toast.success(language === "ro"
         ? "Cererea a fost trimisă! Vei fi notificat când proprietarul răspunde."
@@ -154,18 +142,14 @@ const Checkout = () => {
       setIsSubmitting(false);
     }
   };
-
-  const steps = [
-    t("Confirmă detaliile", "Confirm details"),
-    t("Trimite cererea", "Send request"),
-  ];
+  const handleLoginSuccess = () => { setShowLoginDialog(false); handleSendRequest(); };
 
   return (
     <div className="min-h-screen bg-background pb-28 md:pb-0">
       <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-xl">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
           <button
-            onClick={() => (currentStep > 1 ? setCurrentStep(currentStep - 1) : navigate(-1))}
+            onClick={() => navigate(-1)}
             className="w-10 h-10 rounded-full hover:bg-muted flex items-center justify-center transition-colors"
             aria-label={t("Înapoi", "Back")}
           >
@@ -174,11 +158,6 @@ const Checkout = () => {
           <h1 className="font-heading text-base md:text-xl font-semibold flex-1 truncate">
             {t("Finalizează rezervarea", "Complete your booking")}
           </h1>
-        </div>
-        <div className="border-t border-border/60 bg-card/40">
-          <div className="max-w-5xl mx-auto px-4 py-3">
-            <PremiumStepper currentStep={currentStep} steps={steps} />
-          </div>
         </div>
       </header>
 
@@ -194,9 +173,7 @@ const Checkout = () => {
         <div className="grid lg:grid-cols-[1fr_380px] gap-6 lg:gap-8 items-start">
           {/* Left column — content */}
           <div className="space-y-4 min-w-0 order-2 lg:order-1">
-            {currentStep === 1 ? (
-              <>
-                <div className="animate-fade-in rounded-2xl border border-border bg-card p-4 flex items-start gap-3">
+            <div className="animate-fade-in rounded-2xl border border-border bg-card p-4 flex items-start gap-3">
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <MessageCircle className="h-5 w-5 text-primary" />
                   </div>
@@ -217,27 +194,9 @@ const Checkout = () => {
                   >
                     {t("Deschide chat", "Open chat")}
                   </Button>
-                </div>
-                <div className="animate-fade-in" style={{ animationDelay: "0ms" }}>
-                  <OptionalMessageCard value={messageToOwner} onChange={setMessageToOwner} />
-                </div>
-                <div className="animate-fade-in" style={{ animationDelay: "60ms" }}>
-                  <WhatHappensNext />
-                </div>
-                <div className="hidden md:flex justify-end pt-2">
-                  <Button
-                    size="lg"
-                    onClick={handleContinueToPayment}
-                    className="h-12 px-6 shadow-lg shadow-primary/20"
-                  >
-                    {t("Continuă", "Continue")}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="bg-card rounded-2xl border border-border p-5 space-y-4 animate-fade-in">
+            </div>
+
+            <div className="bg-card rounded-2xl border border-border p-5 space-y-4 animate-fade-in">
                   <div>
                     <h2 className="font-semibold text-lg text-foreground">
                       {t("Trimite cererea de închiriere", "Send your rental request")}
@@ -250,9 +209,9 @@ const Checkout = () => {
                     </p>
                   </div>
                   <PaymentTrustStrip />
-                </div>
+            </div>
 
-                <div className="bg-card rounded-2xl border border-border p-5 animate-fade-in" style={{ animationDelay: "60ms" }}>
+            <div className="bg-card rounded-2xl border border-border p-5 animate-fade-in" style={{ animationDelay: "60ms" }}>
                   <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-100">
                     <Shield className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
                     <p className="text-sm text-emerald-900">
@@ -290,9 +249,7 @@ const Checkout = () => {
                     <Info className="h-3 w-3" />
                     {t("Cardul nu este debitat acum — plătești doar după acceptarea proprietarului.", "No charge now — you pay only after the owner accepts.")}
                   </p>
-                </div>
-              </>
-            )}
+            </div>
           </div>
 
           {/* Right column — sticky summary */}
@@ -312,14 +269,10 @@ const Checkout = () => {
 
       <StickyCheckoutBar
         total={totalPrice}
-        ctaLabel={
-          currentStep === 1
-            ? t("Continuă", "Continue")
-            : t("Trimite cererea", "Send request")
-        }
-        onClick={currentStep === 1 ? handleContinueToPayment : handleSendRequest}
+        ctaLabel={t("Trimite cererea", "Send request")}
+        onClick={handleSendRequest}
         loading={isSubmitting}
-        disabled={currentStep === 2 && !phoneGate.hasValidPhone}
+        disabled={!phoneGate.hasValidPhone}
       />
 
       <LoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} onLoginSuccess={handleLoginSuccess} />
