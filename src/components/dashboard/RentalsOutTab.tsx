@@ -168,7 +168,7 @@ const RentalsOutTab = () => {
             Cereri de închiriere
             <Badge className="bg-primary text-primary-foreground">{pendingRentals.length + premiumActiveRentals.length}</Badge>
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
             {[...pendingRentals, ...premiumActiveRentals].map((rental) => {
               const isPending = rental.status === "pending";
               const canRequestCancel = !isPending && !rental.handover_confirmed_at;
