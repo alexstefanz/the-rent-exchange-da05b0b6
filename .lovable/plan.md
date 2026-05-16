@@ -1,33 +1,23 @@
-## Cauza erorii
+## Obiectiv
 
-`new row violates row-level security policy for table "rentals"` apare la încercarea de a trimite o cerere de rezervare din `/checkout`.
+Pe pagina de detaliu a unei închirieri (`/inchiriere/:publicId`), proprietarul să poată **accepta** sau **refuza** o cerere `pending` direct din pagină — nu doar din lista `/inchirieri`. Astfel întreg fluxul (cerere → confirmare → plată → predare → returnare) trăiește într-un singur loc.
 
-Am verificat politicile RLS de pe tabela `rentals`. Există doar:
-- `Admins can delete rentals` (DELETE)
-- `Admins can manage all rentals` (UPDATE — `w`, nu ALL)
-- `Block banned users from inserting rentals` (INSERT, **restrictivă**) — doar blochează utilizatorii banați, nu permite nimănui să insereze
-- `Block banned users from updating rentals` (UPDATE, restrictivă)
-- `Owners can update own rental requests` (UPDATE)
-- `Renters can cancel own pending rentals` (UPDATE)
-- `Users can view own rentals` (SELECT)
+## Ce adaug în `src/pages/RentalDetailPage.tsx`
 
-**Nu există nicio politică permisivă de INSERT pentru renteri.** În Postgres, fără o politică permisivă care să permită acțiunea, totul este refuzat — de aceea orice utilizator (chiar și unul curat, neban) primește eroarea când încearcă să creeze o rezervare.
+O secțiune nouă vizibilă **doar pentru proprietar când `rental.status === "pending"`**, plasată imediat sub timeline (înainte de cardul de Chat / PV-uri), urmând stilul cardului existent „Plătește acum":
 
-## Soluție
+- Titlu: „Cerere noua de inchiriere" / „New rental request"
+- Subtitlu: explică pe scurt că prin acceptare chiriașul primește notificare să plătească, iar refuzul poate include un motiv.
+- Două butoane:
+  - **Acceptă cererea** (primar) → `respondToRental(rental.id, "accept")`
+  - **Refuză** (outline, roșu) → deschide un mic `Dialog` cu `Textarea` pentru motiv opțional → `respondToRental(rental.id, "reject", reason)`
+- Stările de loading dezactivează ambele butoane, plus toast de succes/eroare ca în `RentalsOutTab`.
+- Pe succes: `refetch()` la query-ul `rental-detail` (realtime-ul existent va prelua și el).
 
-Adaug o migrare care creează politica lipsă pe `public.rentals`:
-
-```sql
-CREATE POLICY "Renters can create own rentals"
-ON public.rentals
-FOR INSERT
-TO authenticated
-WITH CHECK (renter_id = auth.uid());
-```
-
-Politica restrictivă existentă (`Block banned users from inserting rentals`) continuă să se aplice peste, deci utilizatorii banați rămân blocați.
+Dacă mesajul chiriașului la checkout există (`rental.message_to_owner`), îl afișez ca quote sub subtitlu, pentru context la decizie.
 
 ## Out of scope
 
-- Nu modific fluxul de checkout sau alte politici.
-- Nu schimb politica de admin / ban — rămân exact cum sunt.
+- Nu schimb logica din `RentalsOutTab` (rămâne identică, dublu acces).
+- Nu modific edge functions, RLS sau API-ul `respondToRental`.
+- Fără modificări vizuale la timeline sau la celelalte secțiuni.
