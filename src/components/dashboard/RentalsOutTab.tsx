@@ -223,26 +223,18 @@ const RentalsOutTab = () => {
                       pentru <span className="text-primary">{rental.product_title}</span>
                     </p>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 sm:gap-2 mt-3 sm:mt-4">
-                      <div className="rounded-lg bg-card/80 border border-border p-1.5 sm:p-2">
-                        <div className="flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-[10px] text-muted-foreground mb-0.5">
-                          <Calendar className="h-3 w-3" /><span>Perioadă</span>
-                        </div>
-                        <p className="text-[11px] sm:text-xs font-semibold text-foreground leading-tight">
-                          {format(new Date(rental.start_date), "d MMM", { locale: ro })}–{format(new Date(rental.end_date), "d MMM", { locale: ro })}
+                    <div className="mt-3 sm:mt-4 flex items-center gap-3 rounded-xl border border-border bg-card/80 p-3">
+                      <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Perioadă</p>
+                        <p className="text-sm font-semibold text-foreground leading-tight truncate">
+                          {format(new Date(rental.start_date), "d MMM", { locale: ro })} – {format(new Date(rental.end_date), "d MMM", { locale: ro })}
                         </p>
+                        <p className="text-[11px] text-muted-foreground">{rental.rental_days} {rental.rental_days === 1 ? "zi" : "zile"}</p>
                       </div>
-                      <div className="rounded-lg bg-card/80 border border-border p-1.5 sm:p-2">
-                        <div className="flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-[10px] text-muted-foreground mb-0.5">
-                          <Clock className="h-3 w-3" /><span>Zile</span>
-                        </div>
-                        <p className="text-[11px] sm:text-xs font-semibold text-foreground">{rental.rental_days}</p>
-                      </div>
-                      <div className="rounded-lg bg-primary/15 border border-primary/30 p-1.5 sm:p-2">
-                        <div className="flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-[10px] text-primary/80 mb-0.5">
-                          <span>Câștig</span>
-                        </div>
-                        <p className="text-[11px] sm:text-sm font-bold text-primary leading-tight">{rental.owner_payout} RON</p>
+                      <div className="border-l border-border pl-3 text-right">
+                        <p className="text-[10px] uppercase tracking-wide text-primary/70 font-semibold">Câștig</p>
+                        <p className="text-base sm:text-lg font-bold text-primary leading-tight">{rental.owner_payout} RON</p>
                       </div>
                     </div>
 
