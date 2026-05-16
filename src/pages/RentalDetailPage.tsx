@@ -501,10 +501,8 @@ const RentalDetailPage = () => {
                       if (error) throw error;
                       if (data?.error) throw new Error(data.error);
                       if (!data?.url) throw new Error("Nu s-a putut crea sesiunea de test");
-                      toast.info(language === "ro"
-                        ? "Mod TEST: folosește cardul 4242 4242 4242 4242, orice CVC, dată viitoare."
-                        : "TEST mode: use card 4242 4242 4242 4242, any CVC, future date.");
-                      setTimeout(() => { window.location.href = data.url; }, 400);
+                      // Redirect imediat — toast-ul s-ar pierde la navigare oricum.
+                      window.location.assign(data.url);
                     } catch (e: any) {
                       console.error("TEST checkout error:", e);
                       toast.error(e?.message || "Eroare la inițierea plății de test.");
