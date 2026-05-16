@@ -1,44 +1,22 @@
-## Problem
+## Goal
 
-In "Cereri primite" (`/inchirieri` → `RentalsOutTab`) the rental **RNT-000077** (Televizor OLED EVO LG 48C52LA, pending) does not appear, even though the data is correctly returned by the database.
-
-## Investigation so far
-
-- DB row exists: `rentals.public_id = 'RNT-000077'`, `status = 'pending'`, `payment_status = 'pending'`, owner = `74835c82…` (same as logged-in owner)
-- `get_owner_rentals(owner_uuid)` RPC **does** return RNT-000077 (confirmed via direct query)
-- Total = 17 → matches the "Toate (17)" chip in the UI
-- Other pending rental (RNT-000074, also pending+payment_pending) renders fine, so it's not a status/payment filter
-
-## Likely cause
-
-The premium card grid uses CSS `columns-2 xl:columns-3 [column-fill:_balance]` (`RentalsOutTab.tsx` line 171). With 5 cards of unequal heights (the pending card is taller because of 2 action buttons + the cancel link area), CSS columns reflow can:
-
-- push RNT-000077 into a second column row that visually falls below the fold, and
-- in some browsers / heights, the balancing of `column-fill: balance` can clip or "swallow" a `break-inside-avoid` item when its computed height exceeds the column's available space, making it appear missing.
-
-It's also fragile because the rendering order `[...pendingRentals, ...premiumActiveRentals]` doesn't visually group pending requests together when CSS columns reflow.
+Afișează ID-ul public al rezervării (ex: `RNT-000077`) pe fiecare card din:
+- `/inchirieri` — "Cereri primite" (owner view, `RentalsOutTab.tsx`)
+- `/rezervari` — "Închirierile mele" (renter view, `RentalsTab.tsx`)
 
 ## Fix
 
-Replace the brittle CSS columns layout with a normal responsive CSS grid that places pending requests first and on their own row, so every card is guaranteed to render in a predictable position.
+În ambele componente, afișează `rental.public_id` într-un mic chip discret în colțul de sus al cardului (lângă badge-ul de status) și în rândurile din istoricul cu accordion.
 
-`src/components/dashboard/RentalsOutTab.tsx`:
+**`src/components/dashboard/RentalsOutTab.tsx`**
+- În cardurile premium (zona "Cereri de închiriere"), adaugă deasupra titlului produsului un `<span>` mic cu font-mono: `{rental.public_id}` (doar dacă există), stilizat ca chip subtil (`text-[10px] uppercase tracking-wider text-muted-foreground bg-muted/50 rounded-md px-1.5 py-0.5`).
+- În rândurile din accordion-ul "Închirieri active & istoric", afișează ID-ul mic sub titlul produsului.
 
-1. Change the wrapper around the cards (line 171) from:
-   ```
-   <div className="columns-2 xl:columns-3 gap-3 sm:gap-4 [column-fill:_balance]">
-   ```
-   to:
-   ```
-   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-   ```
-2. Remove `break-inside-avoid` and `mb-3 sm:mb-4` from the card root (no longer needed inside a grid).
-3. Optionally render pending requests in their own grid block (with a small "Necesită acțiune" subtitle) followed by a second grid for `premiumActiveRentals`, so new requests are always visually grouped at the top regardless of column reflow.
+**`src/components/dashboard/RentalsTab.tsx`** (renter)
+- Aceeași abordare: chip cu `public_id` pe fiecare card / rând.
 
-No backend, RLS, or data changes are needed — the RPC already returns RNT-000077 correctly.
+Fără modificări de date sau RPC — `public_id` e deja inclus în `OwnerRental` și în datele rentale.
 
 ## Verification
 
-- Reload `/inchirieri` as the owner and confirm RNT-000077 appears among the 5 "Cereri de închiriere" cards with the "Cerere nouă" badge.
-- Confirm Acceptă / Refuză work on it.
-- Confirm the other 4 cards still render and the layout looks correct on mobile, tablet and desktop.
+- Reload `/inchirieri` și `/rezervari` și confirmă că fiecare card afișează ID-ul (ex: `RNT-000077`).
