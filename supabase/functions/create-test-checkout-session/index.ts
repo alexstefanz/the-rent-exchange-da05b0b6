@@ -107,7 +107,95 @@ serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ url: session.url, is_test: true }), {
+    try {
+      const safeMessageToOwner =
+        typeof message_to_owner === "string" && message_to_owner.trim().length > 0
+          ? message_to_owner.trim().slice(0, 480)
+          : typeof updatedRental.message_to_owner === "string"
+            ? updatedRental.message_to_owner.trim().slice(0, 480)
+            : "";
+
+      const { data: existingConv } = await supabaseAdmin
+        .from("conversations")
+        .select("id")
+        .eq("product_id", updatedRental.product_id)
+        .eq("buyer_id", updatedRental.renter_id)
+        .eq("owner_id", updatedRental.owner_id)
+        .maybeSingle();
+
+      let conversationId = existingConv?.id as string | undefined;
+      if (!conversationId) {
+        const { data: newConv } = await supabaseAdmin
+          .from("conversations")
+          .insert({
+            product_id: updatedRental.product_id,
+            buyer_id: updatedRental.renter_id,
+            owner_id: updatedRental.owner_id,
+          })
+          .select("id")
+          .single();
+        conversationId = newConv?.id;
+      }
+
+      if (conversationId) {
+        const { data: existingSystem } = await supabaseAdmin
+          .from("messages")
+          .select("id")
+          .eq("conversation_id", conversationId)
+          .eq("message_type", "system")
+          .limit(1);
+
+        if (!existingSystem || existingSystem.length === 0) {
+          const fmt = (d: string) => new Date(d).toLocaleDateString("ro-RO", { day: "numeric", month: "short", year: "numeric" });
+          const dayLabel = updatedRental.rental_days === 1 ? "zi" : "zile";
+          const systemContent =
+            `booking_confirmed|${productTitle}|${fmt(updatedRental.start_date)}|${fmt(updatedRental.end_date)}|${updatedRental.rental_days} ${dayLabel}|${updatedRental.subtotal} RON`;
+
+          await supabaseAdmin.from("messages").insert({
+            conversation_id: conversationId,
+            sender_id: null,
+            content: systemContent,
+            message_type: "system",
+          });
+        }
+
+        if (safeMessageToOwner) {
+          const { data: existingUserMsg } = await supabaseAdmin
+            .from("messages")
+            .select("id")
+            .eq("conversation_id", conversationId)
+            .eq("message_type", "user")
+            .eq("sender_id", updatedRental.renter_id)
+            .limit(1);
+
+          if (!existingUserMsg || existingUserMsg.length === 0) {
+            await supabaseAdmin.from("messages").insert({
+              conversation_id: conversationId,
+              sender_id: updatedRental.renter_id,
+              content: safeMessageToOwner,
+              message_type: "user",
+            });
+          }
+        }
+
+        await supabaseAdmin
+          .from("conversations")
+          .update({ updated_at: now })
+          .eq("id", conversationId);
+      }
+    } catch (convErr) {
+      console.error("TEST post-payment conversation error (non-blocking):", convErr);
+    }
+
+    try {
+      await supabaseAdmin.functions.invoke("send-rental-notification", {
+        body: { rental_id },
+      });
+    } catch (notifyErr) {
+      console.error("TEST post-payment notification error (non-blocking):", notifyErr);
+    }
+
+    return new Response(JSON.stringify({ success: true, is_test: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
