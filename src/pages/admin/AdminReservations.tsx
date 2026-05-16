@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { CalendarCheck, Filter, Loader2, ChevronDown, ChevronUp, User, MapPin, Tag, DollarSign, Calendar, Copy, Hash } from "lucide-react";
+import { CalendarCheck, Filter, Loader2, ChevronDown, ChevronUp, User, MapPin, Tag, DollarSign, Calendar, Copy, Hash, ExternalLink } from "lucide-react";
 import SortableTableHead, { SortDirection, sortData, useToggleSort } from "@/components/admin/SortableTableHead";
 import TableColumnFilterRow, { applyColumnFilters, ColumnFilterConfig } from "@/components/admin/TableColumnFilter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -102,6 +102,12 @@ const RentalExpandedPanel = ({
             {rental.id.slice(0, 8)}…
           </button>
         </span>
+        <Button asChild size="sm" variant="outline" className="ml-2">
+          <a href={`/rezervari/${rental.public_id}`} target="_blank" rel="noopener noreferrer">
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Deschide pagina închirierii
+          </a>
+        </Button>
       </div>
       <Tabs defaultValue="summary">
         <TabsList>
