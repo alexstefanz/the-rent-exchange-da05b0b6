@@ -1,34 +1,44 @@
-## Notificare vizuală pe cardurile „chiriaș" și „proprietar" din My Account
+# PV: buton vizibil + poze în PDF
 
-### Scope
-Modific doar componenta `src/components/profile/dashboard/QuickActions.tsx`. Cele două carduri vizate sunt:
-- „Închirierile mele" (rol chiriaș) — badge `activeRentalsAsRenter`
-- „Cereri primite" (rol proprietar) — badge `activeRentalsAsOwner`
+Două schimbări în `src/components/rentals/PvSignatureDialog.tsx`.
 
-Cardurile „Mesaje" și „Câștiguri" rămân neschimbate (nu sunt „cereri noi").
+## 1. Buton „Vezi PDF generat" mai vizibil
 
-### Comportament
-Când `badge > 0` pe unul din cele două carduri vizate, cardul intră în starea „notificare":
+Acum este un `variant="link"` mic ascuns în secțiunea de status. Îl scoatem într-un card propriu, full-width, cu accent portocaliu (brand `#F59E0B` / hover `#F98715`), iconiță `FileText` + `ExternalLink`, deasupra secțiunii de status, vizibil doar când `pv?.pdf_path` există:
 
-- Fundalul cardului devine portocaliu (`#F59E0B`, hover `#F98715`), cu shadow ușor mai pronunțat.
-- Iconița (cercul interior) → fundal `bg-white/20`, iar `Icon` devine alb.
-- Textul label (ex. „Închirierile mele" / „Cereri primite") → alb, semibold.
-- Cercul cu numărul (badge-ul mic, dreapta-sus pe iconiță) → fundal alb, text negru bold, fără shadow roșu (înlocuiește varianta `bg-destructive`).
-- Tranziție smooth pe culoare/shadow la hover.
+- `Button` mărime default, `w-full`
+- fundal `bg-[#F59E0B] hover:bg-[#F98715] text-white`
+- text: „Vezi PV semnat (PDF)" + iconiță
+- subtext mic: „Document semnat de ambele părți"
 
-Când `badge === 0`, cardul rămâne exact cum este azi (fundal `bg-card`, badge ascuns).
+Linkul vechi din blocul de status este eliminat ca să nu se dubleze.
 
-### Implementare tehnică
-În `QuickActions.tsx`:
-- Adaug prop `highlight?: boolean` pe componenta `Secondary`. Calculat ca `!!badge && badge > 0`, dar se setează doar pentru cele două carduri vizate (transmis explicit din părinte, nu derivat automat — astfel „Mesaje" nu se colorează niciodată în portocaliu).
-- Aplic clase condiționate prin `cn(...)`:
-  - container: `highlight ? "bg-[#F59E0B] hover:bg-[#F98715] border-transparent text-white shadow-md" : "bg-card hover:border-primary/40 hover:shadow-sm"`
-  - cerc iconiță: `highlight ? "bg-white/20" : "bg-muted group-hover:bg-primary/10"`
-  - Icon: `highlight ? "text-white" : "text-foreground group-hover:text-primary"`
-  - badge cifre: `highlight ? "bg-white text-black" : "bg-destructive text-destructive-foreground"`
-- Restul markup-ului rămâne identic. Nu se atinge logica de date, hook-uri sau alte componente.
+## 2. Fotografiile în PDF
 
-### Out of scope
-- Nu modific `useAccountDashboard` sau orice query.
-- Nu modific celelalte carduri (Mesaje, Câștiguri, CTA Adaugă produs).
-- Nu modific stiluri globale / tokens.
+Funcția `generatePdf(updatedPv)` actualmente scrie doar numărul de poze. O extindem să atașeze imaginile real:
+
+- După secțiunea „Fotografii anexate", pentru fiecare intrare din `updatedPv.photos` (sau `photos_meta`):
+  1. obține URL semnat cu `getPvFileSignedUrl(path)`
+  2. fetch → blob → `FileReader` → dataURL
+  3. determinăm dimensiunile cu un `Image()` temporar ca să păstrăm aspect ratio
+  4. `doc.addImage(dataUrl, "JPEG", x, y, w, h)` într-un grid 2 coloane, fiecare poză max ~240×180 pt
+  5. sub fiecare poză etichetă mică: „Proprietar" / „Chirias" + data upload (din `photos_meta`)
+  6. `doc.addPage()` automat când `y + h` depășește înălțimea paginii; resetăm `y` la 50
+
+- După grilă, lăsăm spațiu și continuăm cu textul introductiv + semnături existente (mutăm semnăturile pe pagină nouă dacă nu mai încap, prin verificare `y > pageHeight - 200 → addPage()`).
+
+Folosim doar API-uri deja importate (`jsPDF`, `getPvFileSignedUrl`) — fără dependențe noi. Funcția devine `async` (deja este) și încărcăm pozele în paralel cu `Promise.all` pentru viteză.
+
+## Detalii tehnice
+
+- Fișier modificat: `src/components/rentals/PvSignatureDialog.tsx`
+- Importuri noi din `lucide-react`: `FileText`, `ExternalLink`
+- Helper local `fetchAsDataUrl(url)` + `loadImageSize(dataUrl)` (în același fișier, înainte de `generatePdf`)
+- Erori la o poză individuală sunt prinse cu try/catch și sărim peste poza respectivă (nu blocăm PDF-ul)
+- Regenerarea PDF-ului se face automat la următoarea semnătură; PV-urile deja semnate vor primi poze doar dacă cineva re-semnează — acceptăm acest comportament (nu adăugăm buton „regenerează")
+
+## Out of scope
+
+- Nu modificăm RLS sau storage policies (`getPvFileSignedUrl` deja funcționează)
+- Nu schimbăm layout-ul cardurilor de fotografii din dialog
+- Nu adăugăm OCR/compresie suplimentară — pozele sunt deja optimizate la upload
