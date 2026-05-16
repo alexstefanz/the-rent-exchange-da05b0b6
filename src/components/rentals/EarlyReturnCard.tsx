@@ -233,14 +233,14 @@ export default function EarlyReturnCard({ rentalId, role, startDate, endDate, da
               <p className="text-xs text-muted-foreground mt-1">{promptHint}</p>
             </div>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-            <Button variant="outline" onClick={onOpenChat} className="sm:flex-1">
+          <div className="flex flex-col gap-2">
+            <Button variant="outline" onClick={onOpenChat} className="w-full">
               <MessageSquare className="h-4 w-4 mr-2" />
               {role === "renter"
                 ? t("Discută cu Proprietarul", "Chat with Owner")
                 : t("Discută cu Chiriașul", "Chat with Renter")}
             </Button>
-            <Button onClick={() => setDialogOpen(true)} className="sm:flex-1 bg-[#F59E0B] hover:bg-[#F98715]">
+            <Button onClick={() => setDialogOpen(true)} className="w-full bg-[#F59E0B] hover:bg-[#F98715]">
               <CalendarIcon className="h-4 w-4 mr-2" />
               {t("Solicită returnare anticipată", "Request early return")}
             </Button>
