@@ -52,8 +52,12 @@ serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const rentalId = typeof body?.rental_id === "string" ? body.rental_id : "";
-    const action = body?.action === "accept" || body?.action === "reject" ? body.action : null;
-    const proposedRefund = Number(body?.proposed_refund_amount ?? 0);
+    // Backward compatible: accept legacy "accept" as "approve"
+    const rawAction = body?.action;
+    const action: "approve" | "reject" | null =
+      rawAction === "approve" || rawAction === "accept" ? "approve"
+      : rawAction === "reject" ? "reject"
+      : null;
     const response = typeof body?.response === "string" ? body.response.trim().slice(0, 500) : "";
     if (!rentalId || !action) {
       return new Response(JSON.stringify({ error: "invalid_input" }), {
@@ -64,7 +68,7 @@ serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
     const { data: rental, error: rErr } = await admin
       .from("rentals")
-      .select("id, renter_id, owner_id, subtotal, early_return_status")
+      .select("id, renter_id, owner_id, subtotal, early_return_status, early_return_initiator, early_return_renter_approved_at, early_return_owner_approved_at, early_return_new_end_date, early_return_new_rental_days, early_return_new_subtotal, early_return_refund_amount")
       .eq("id", rentalId)
       .maybeSingle();
     if (rErr || !rental) {
@@ -72,9 +76,17 @@ serve(async (req) => {
         status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    if (rental.owner_id !== userId) {
+    const isRenter = rental.renter_id === userId;
+    const isOwner = rental.owner_id === userId;
+    if (!isRenter && !isOwner) {
       return new Response(JSON.stringify({ error: "forbidden" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // The counterparty must respond — initiator already auto-approved
+    if (rental.early_return_initiator && rental.early_return_initiator === userId) {
+      return new Response(JSON.stringify({ error: "cannot_respond_own_request" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     if (rental.early_return_status !== "pending") {
@@ -85,18 +97,27 @@ serve(async (req) => {
 
     const now = new Date().toISOString();
     const updates: Record<string, unknown> = {
-      early_return_decided_at: now,
       early_return_owner_response: response || null,
     };
 
-    if (action === "accept") {
-      const refund = Math.min(Math.max(0, Math.round(proposedRefund * 100) / 100), Number(rental.subtotal));
-      updates.early_return_status = "accepted";
-      updates.early_return_refund_amount = refund;
-      updates.status = "active"; // back to active so PV return flow can proceed
+    if (action === "approve") {
+      if (isRenter) updates.early_return_renter_approved_at = now;
+      if (isOwner) updates.early_return_owner_approved_at = now;
+      const renterApproved = isRenter || !!rental.early_return_renter_approved_at;
+      const ownerApproved = isOwner || !!rental.early_return_owner_approved_at;
+      if (renterApproved && ownerApproved) {
+        updates.early_return_status = "accepted";
+        updates.early_return_decided_at = now;
+        updates.status = "active";
+        // Apply the new dates / amounts
+        updates.end_date = rental.early_return_new_end_date;
+        updates.rental_days = rental.early_return_new_rental_days;
+        updates.subtotal = rental.early_return_new_subtotal;
+      }
     } else {
       updates.early_return_status = "rejected";
-      updates.status = "active"; // continues normally
+      updates.early_return_decided_at = now;
+      updates.status = "active";
     }
 
     const { error: uErr } = await admin.from("rentals").update(updates).eq("id", rentalId);
@@ -109,9 +130,11 @@ serve(async (req) => {
     admin.functions.invoke("notify-rental-event", {
       body: {
         rental_id: rentalId,
-        event_key: action === "accept" ? "early_return_accepted" : "early_return_rejected",
+        event_key: action === "approve"
+          ? (updates.early_return_status === "accepted" ? "early_return_accepted" : "early_return_approved_partial")
+          : "early_return_rejected",
         actor_id: userId,
-        extra: { proposedRefund: action === "accept" ? updates.early_return_refund_amount : 0, response },
+        extra: { refundAmount: rental.early_return_refund_amount, response },
       },
     }).catch((e) => console.warn("notify early_return response failed", e));
 
