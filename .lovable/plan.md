@@ -1,41 +1,68 @@
 ## Obiectiv
-Re-adăugăm opțiunea "Vorbește cu proprietarul" în două locuri unde lipsește în acest moment, fără să afectăm logica de rezervare:
+Curățăm `MiddleZone` din `src/components/layout/AccountHubMenu.tsx` (dropdown desktop + sheet mobil — folosesc același conținut). Acțiunile rapide sunt deja accesibile prin cele 4 `StatusCard`-uri (Închirieri, Balanță, Cereri proprietar, Anunțuri) și prin `HeaderCard` (→ `/contul-meu`).
 
-1. **Pagina produsului** (`PremiumBookingCard` desktop + `MobileStickyBookingBar`) — un buton secundar lângă "Rezervă acum".
-2. **Pagina de checkout** (`/checkout`, pasul 1) — o acțiune vizibilă lângă cardul de mesaj opțional, care deschide o conversație reală în `/mesaje`.
+## Modificări în `AccountHubMenu.tsx`
 
-Funcția `handleStartChat` din `ProductDetail.tsx` deja există (folosește `getOrCreateConversation`) și este transmisă ca prop `onAsk` în ambele componente — dar butonul nu mai e randat. La fel, la checkout avem deja `product.owner_id`, deci putem reutiliza același `getOrCreateConversation` fără modificări de backend.
+### 1. Elimină rândurile duplicate
+Șterge complet din `MiddleZone`:
+- `SectionLabel "Ca chiriaș"` + `NavRow` pentru `/rezervari` (Închirierile mele) și `/favorite` (Favorite).
+- `SectionLabel "Ca proprietar"` + `NavRow` pentru `/anunturi`, `/inchirieri`, `/castiguri`.
+- `SectionLabel "Cont"` + `NavRow` pentru `/contul-meu` (deja acoperit de `HeaderCard`).
+- `SectionLabel "Suport"` (header devine inutil — vezi punctul 3).
 
-## Modificări UI
+### 2. KYC — vizibil DOAR dacă nu este verificat
+Înlocuiește `NavRow` curent pentru `/verificare` cu un card de avertizare evidențiat, randat condiționat `!trust?.verified` (KYC neverificat). Stil propus:
 
-### 1. `src/components/product/PremiumBookingCard.tsx`
-- În blocul CTA (sub butonul "Rezervă acum"), adaugă un `Button variant="outline"` cu iconiță `MessageCircle` (deja importată) și label `t("Întreabă proprietarul", "Ask the owner")`.
-- `onClick={onAsk}`, `disabled={isOwnProduct}`.
-- Păstrează același styling consistent cu restul cardului (înălțime `h-11`, `w-full`).
+```
+<button onClick={() => handleNav("/verificare")}
+  className="flex w-full items-center gap-3 rounded-xl border border-amber-300/70 bg-amber-50 px-3.5 py-3 text-left transition hover:bg-amber-100/70">
+  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/15">
+    <ShieldCheck className="h-5 w-5 text-amber-600" />
+  </span>
+  <span className="flex-1 min-w-0">
+    <span className="block text-sm font-semibold text-amber-900">
+      {t("Verifică-ți identitatea", "Verify your identity")}
+    </span>
+    <span className="block text-[11px] text-amber-700/80">
+      {signals?.kycPending
+        ? t("Documentele tale sunt în verificare.", "Your documents are under review.")
+        : t("Necesar pentru rezervări și încasări.", "Required for bookings and payouts.")}
+    </span>
+  </span>
+  <ChevronRight className="h-4 w-4 text-amber-700/60" />
+</button>
+```
 
-### 2. `src/components/product/MobileStickyBookingBar.tsx`
-- Aceeași tratare: un buton secundar mic ("Întreabă" / "Ask") lângă CTA principal sau în bara expandată, folosind `onAsk` (deja primit ca prop).
+Când `trust.verified === true`, nu mai randăm nimic pentru KYC (deja apare ca "Cont complet verificat" în `health` block).
 
-### 3. `src/pages/Checkout.tsx`
-- Adaugă un mic banner/buton deasupra (sau în interiorul) `OptionalMessageCard` la pasul 1:
-  - Iconiță `MessageCircle`, text bilingv: `t("Ai întrebări înainte de rezervare? Vorbește cu proprietarul", "Have questions before booking? Chat with the owner")`.
-  - Buton `variant="outline"` → `Deschide chat` / `Open chat`.
-- Handler nou `handleOpenChat`:
-  ```
-  const conv = await getOrCreateConversation(product.id, product.owner_id);
-  navigate(`/mesaje?conv=${conv.id}`);
-  ```
-- Reutilizează `getOrCreateConversation` din `@/features/messaging/messagingApi`.
-- Nu modificăm flow-ul de submit — utilizatorul se poate întoarce și continua.
+### 3. Suport & Tickete — stil identic cu mobile offcanvas
+Înlocuiește `NavRow` curent pentru `/suport` cu un card alb cu `border + shadow-sm`, care reproduce stilul din `src/components/layout/mobile-drawer/MobileDrawer.tsx` (LifeBuoy + label + badge `openTickets`).
 
-### 4. `src/data/uxCopy.ts`
-- Adaugă cheile noi în `productDetail` și `checkout`:
-  - `askOwnerCta: { ro: "Întreabă proprietarul", en: "Ask the owner" }`
-  - `chatBeforeBooking: { ro: "Ai întrebări? Vorbește cu proprietarul înainte de rezervare", en: "Questions? Chat with the owner before booking" }`
-  - `openChat: { ro: "Deschide chat", en: "Open chat" }`
+- Adaugă imports: `LifeBuoy` (lucide-react) și `useDrawerStats` din hook-ul existent folosit de mobile drawer.
+- Citește `openTickets = stats?.openTickets ?? 0`.
+- Markup:
+
+```
+<button onClick={() => handleNav("/suport")}
+  className="flex w-full items-center gap-3 h-12 px-4 rounded-xl bg-white border border-border/60 shadow-sm hover:bg-white/90 transition-colors">
+  <LifeBuoy className="h-5 w-5 text-foreground" />
+  <span className="flex-1 text-sm font-medium text-foreground text-left">
+    {t("Suport & Tickete", "Support & Tickets")}
+  </span>
+  {openTickets > 0 && (
+    <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+      {openTickets}
+    </span>
+  )}
+</button>
+```
+
+### 4. Curățare
+- Elimină din imports lucide-react ce nu mai e folosit (`ShoppingBag`, `Heart`, `Package` în secțiunea NavRow, `CreditCard`, `PackageCheck`, `User`, `FileText`, `Shield`, `HelpCircle`) — păstrează doar ce e folosit în StatusCards / header / trigger. `Package` rămâne (StatusCard cereri). `User`/`FileText` rămân doar dacă mai sunt folosite altundeva în fișier; le verificăm la implementare.
+- Distanțarea finală a `MiddleZone`: wrappează cele 2 carduri rămase (KYC condiționat + Suport) într-un `div className="space-y-2 mt-2"`.
 
 ## În afara scopului
-- Fără schimbări de backend / RLS / RPC.
-- Nu atingem `message_to_owner` (rămâne mesajul opțional atașat cererii).
-- Fără modificări în pagina de mesaje sau în logica conversațiilor.
-- Fără schimbări la `RentalDetailPage` sau la flow-ul post-rezervare.
+- Fără modificări la `MobileDrawer` (sursa de adevăr pentru stilul cardului de suport).
+- Fără modificări la `StatusCard`-uri, `HeaderCard`, `FooterZone`, sau la trigger-ul desktop/mobil.
+- Fără modificări în rute, RLS sau backend.
+- Comportament identic pe sheet-ul mobil al `AccountHubMenu` (același `MiddleZone`) — utilizatorul a cerut explicit doar desktop, dar conținutul fiind partajat, simplificarea se aplică ambelor; aspectul rămâne consistent.
