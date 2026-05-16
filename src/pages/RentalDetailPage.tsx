@@ -18,6 +18,7 @@ import MutualCancellationCard from "@/components/rentals/MutualCancellationCard"
 import PvSignatureDialog from "@/components/rentals/PvSignatureDialog";
 import ReturnCountdownBadge from "@/components/rentals/ReturnCountdownBadge";
 import LeaveReviewDialog from "@/components/dashboard/LeaveReviewDialog";
+import EarlyReturnCard from "@/components/rentals/EarlyReturnCard";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import { ChatDialog } from "@/components/messaging/ChatDialog";
 import { payForConfirmedRental, payRentalWithWallet } from "@/features/rentals/rentalsApi";
