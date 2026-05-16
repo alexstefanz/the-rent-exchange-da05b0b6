@@ -222,6 +222,38 @@ const RentalDetailPage = () => {
     }
   }
 
+  async function handleAccept() {
+    if (responding) return;
+    setResponding(true);
+    try {
+      await respondToRental(rental!.id, "accept");
+      toast.success(t("Cerere acceptată. Așteptăm plata chiriașului.", "Request accepted. Waiting for renter payment."));
+      await refetch();
+    } catch (e: any) {
+      console.error("accept rental error:", e);
+      toast.error(e?.message || t("Eroare la acceptarea cererii.", "Error accepting the request."));
+    } finally {
+      setResponding(false);
+    }
+  }
+
+  async function handleReject() {
+    if (responding) return;
+    setResponding(true);
+    try {
+      await respondToRental(rental!.id, "reject", rejectReason || undefined);
+      toast.success(t("Cererea a fost refuzată.", "Request rejected."));
+      setRejectOpen(false);
+      setRejectReason("");
+      await refetch();
+    } catch (e: any) {
+      console.error("reject rental error:", e);
+      toast.error(e?.message || t("Eroare la refuzarea cererii.", "Error rejecting the request."));
+    } finally {
+      setResponding(false);
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
