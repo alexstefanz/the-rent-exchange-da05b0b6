@@ -1,20 +1,22 @@
-## Simplificare checkout într-un singur pas
+## Goal
+Declutter the notifications filter bar by replacing the category chip row with a single dropdown on all devices.
 
-### Ce se schimbă în `src/pages/Checkout.tsx`
+## Scope
+Only `src/components/notifications/NotificationFilters.tsx`. No API, no logic changes.
 
-1. **Elimin sistemul de pași** (`currentStep`, `PremiumStepper`, butonul „Continuă", `handleContinueToPayment`, array-ul `steps`, și bara `PremiumStepper` din header).
-2. **Elimin cardul „Vrei să trimiți un mesaj proprietarului?"** (componenta `OptionalMessageCard` și state-ul `messageToOwner`). Mesajul opțional către proprietar dispare complet din flow — `createRentalRequest` va fi apelat fără `messageToOwner`.
-3. **Elimin cardul „Ce urmează?"** (componenta `WhatHappensNext`).
-4. **Păstrez într-o singură pagină:**
-   - Cardul „Ai întrebări înainte de rezervare? / Deschide chat" (intrare către chat cu proprietarul).
-   - Cardul „Trimite cererea de închiriere" cu `PaymentTrustStrip`, mesajul de siguranță cu cele 24h, termenii & confidențialitatea, butonul principal „Trimite cererea" și nota „Cardul nu este debitat acum".
-   - Sumarul rezervării sticky pe dreapta (`PremiumBookingSummary`).
-   - `StickyCheckoutBar` mobil va avea un singur CTA: „Trimite cererea".
-5. **`LoginDialog`**: după login se trimite direct cererea (nu se mai trece la pasul 2). Adaptez `handleLoginSuccess` să apeleze `handleSendRequest`.
-6. **Butonul „Înapoi" din header**: revine direct la pagina anterioară (`navigate(-1)`), fără logica de pași.
+## Changes
 
-### Componente neatinse
-- `PremiumStepper`, `OptionalMessageCard`, `WhatHappensNext` rămân în proiect (nu le șterg din `src/components/checkout/`) — doar nu mai sunt folosite în Checkout. Pot fi curățate ulterior dacă vrei.
+**Keep as chips (only 3 items):**
+- Read state row: `Toate mesajele` / `Necitite` / `Citite` — stays unchanged.
 
-### Rezultat
-Checkout devine o pagină unică: utilizatorul vede sumarul, eventual deschide chatul cu proprietarul, citește garanțiile și apasă „Trimite cererea". Niciun pas intermediar, niciun mesaj opțional, niciun card „Ce urmează".
+**Convert to dropdown:**
+- Category row (`Toate`, `Rezervări`, `Plăți`, `Suport`, `Sistem`, …) becomes a shadcn `Select`.
+- Trigger shows the active category label + its count badge inline.
+- Each `SelectItem` shows the category label with its count badge on the right.
+- Width: compact (`w-[200px]` desktop, `w-full sm:w-[200px]` mobile) so it doesn't span the full row.
+- Placed on the same line as (or just below) the read filter row depending on space — single row on desktop using `flex items-center justify-between`, stacked on mobile.
+
+## Technical notes
+- Use existing `Select`, `SelectTrigger`, `SelectValue`, `SelectContent`, `SelectItem` from `@/components/ui/select`.
+- Keep the same `FilterValue` type, `onChange` signature, and `counts` prop — purely presentational change.
+- No change needed in `NotificationCenter.tsx` (consumer API unchanged).
