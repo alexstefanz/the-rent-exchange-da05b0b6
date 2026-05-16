@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical, Wallet, Check, X } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical, Wallet, Check, X, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import Navbar from "@/components/layout/Navbar";
@@ -571,6 +571,17 @@ const RentalDetailPage = () => {
                 <div className="mt-2 space-y-1 text-sm">
                   {counterparty.email && <p className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-muted-foreground" />{counterparty.email}</p>}
                   {counterparty.phone && <p className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-muted-foreground" />{counterparty.phone}</p>}
+                  {counterparty.phone && (
+                    <a
+                      href={`https://wa.me/${counterparty.phone.replace(/[^\d]/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-[#25D366] hover:underline"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" />
+                      {t("Trimite mesaj pe WhatsApp", "Send WhatsApp message")}
+                    </a>
+                  )}
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground mt-2">{t("Datele de contact se vor afisa dupa confirmarea platii.", "Contact info appears after payment is confirmed.")}</p>
