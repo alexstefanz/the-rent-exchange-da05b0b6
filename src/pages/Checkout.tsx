@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { ArrowLeft, ArrowRight, Send, Info, Shield } from "lucide-react";
+import { ArrowLeft, ArrowRight, Send, Info, Shield, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LoginDialog from "@/components/checkout/LoginDialog";
 import TermsDialog from "@/components/checkout/TermsDialog";
@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { useKycGate } from "@/hooks/queries/useKycGate";
 import KycGateBanner from "@/components/kyc/KycGateBanner";
 import { PhoneRequiredGate, PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
+import { getOrCreateConversation } from "@/features/messaging/messagingApi";
 
 interface CheckoutState {
   product: {
@@ -54,6 +55,7 @@ const Checkout = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
+  const [openingChat, setOpeningChat] = useState(false);
 
   if (!state) {
     return (
@@ -67,6 +69,25 @@ const Checkout = () => {
   }
 
   const { product, startDate, endDate, rentalDays, totalPrice } = state;
+
+  const handleOpenChat = async () => {
+    if (!user) { setShowLoginDialog(true); return; }
+    if (openingChat) return;
+    setOpeningChat(true);
+    try {
+      const conv = await getOrCreateConversation(product.id, product.ownerId);
+      if (conv) {
+        navigate(`/mesaje?conv=${conv.id}`);
+      } else {
+        toast.error(t("Nu am putut deschide conversația.", "Couldn't open the conversation."));
+      }
+    } catch (e: any) {
+      console.error("Open chat error:", e);
+      toast.error(t("Nu am putut deschide conversația.", "Couldn't open the conversation."));
+    } finally {
+      setOpeningChat(false);
+    }
+  };
 
   const handleContinueToPayment = () => {
     if (!user) { setShowLoginDialog(true); return; }
@@ -164,6 +185,28 @@ const Checkout = () => {
           <div className="space-y-4 min-w-0 order-2 lg:order-1">
             {currentStep === 1 ? (
               <>
+                <div className="animate-fade-in rounded-2xl border border-border bg-card p-4 flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <MessageCircle className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground">
+                      {t("Ai întrebări înainte de rezervare?", "Questions before booking?")}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {t("Vorbește direct cu proprietarul prin chat.", "Chat directly with the owner.")}
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleOpenChat}
+                    disabled={openingChat}
+                    className="shrink-0"
+                  >
+                    {t("Deschide chat", "Open chat")}
+                  </Button>
+                </div>
                 <div className="animate-fade-in" style={{ animationDelay: "0ms" }}>
                   <OptionalMessageCard value={messageToOwner} onChange={setMessageToOwner} />
                 </div>
