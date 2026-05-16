@@ -131,7 +131,7 @@ const RentalsTab = () => {
 
   const isPremium = (r: MyRental) =>
     r.status === "pending" ||
-    ((r.status === "confirmed" || r.status === "active") && !r.handover_confirmed_at);
+    ((r.status === "confirmed" || r.status === "active") && !r.return_confirmed_at);
   // Keep the filtered sort order (default: newest first) so the most recent rental
   // always shows up as the first card, regardless of status.
   const premiumRentals = filtered.filter(isPremium);
