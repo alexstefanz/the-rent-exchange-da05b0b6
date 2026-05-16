@@ -1654,9 +1654,15 @@ export type Database = {
           dispute_reason: string | null
           dispute_status: string
           early_return_decided_at: string | null
+          early_return_initiator: string | null
+          early_return_new_end_date: string | null
+          early_return_new_rental_days: number | null
+          early_return_new_subtotal: number | null
+          early_return_owner_approved_at: string | null
           early_return_owner_response: string | null
           early_return_reason: string | null
           early_return_refund_amount: number | null
+          early_return_renter_approved_at: string | null
           early_return_requested_at: string | null
           early_return_status: string
           end_date: string
@@ -1718,9 +1724,15 @@ export type Database = {
           dispute_reason?: string | null
           dispute_status?: string
           early_return_decided_at?: string | null
+          early_return_initiator?: string | null
+          early_return_new_end_date?: string | null
+          early_return_new_rental_days?: number | null
+          early_return_new_subtotal?: number | null
+          early_return_owner_approved_at?: string | null
           early_return_owner_response?: string | null
           early_return_reason?: string | null
           early_return_refund_amount?: number | null
+          early_return_renter_approved_at?: string | null
           early_return_requested_at?: string | null
           early_return_status?: string
           end_date: string
@@ -1782,9 +1794,15 @@ export type Database = {
           dispute_reason?: string | null
           dispute_status?: string
           early_return_decided_at?: string | null
+          early_return_initiator?: string | null
+          early_return_new_end_date?: string | null
+          early_return_new_rental_days?: number | null
+          early_return_new_subtotal?: number | null
+          early_return_owner_approved_at?: string | null
           early_return_owner_response?: string | null
           early_return_reason?: string | null
           early_return_refund_amount?: number | null
+          early_return_renter_approved_at?: string | null
           early_return_requested_at?: string | null
           early_return_status?: string
           end_date?: string

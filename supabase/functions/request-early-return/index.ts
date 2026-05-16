@@ -53,7 +53,8 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const rentalId = typeof body?.rental_id === "string" ? body.rental_id : "";
     const reason = typeof body?.reason === "string" ? body.reason.trim().slice(0, 500) : "";
-    if (!rentalId || reason.length < 20) {
+    const newEndDate = typeof body?.new_end_date === "string" ? body.new_end_date.slice(0, 10) : "";
+    if (!rentalId || reason.length < 20 || !/^\d{4}-\d{2}-\d{2}$/.test(newEndDate)) {
       return new Response(JSON.stringify({ error: "invalid_input" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -62,7 +63,7 @@ serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_KEY);
     const { data: rental, error: rErr } = await admin
       .from("rentals")
-      .select("id, renter_id, owner_id, status, handover_confirmed_at, return_confirmed_at, dispute_status, early_return_status")
+      .select("id, renter_id, owner_id, status, start_date, end_date, daily_price, subtotal, handover_confirmed_at, return_confirmed_at, dispute_status, early_return_status")
       .eq("id", rentalId)
       .maybeSingle();
     if (rErr || !rental) {
@@ -70,7 +71,9 @@ serve(async (req) => {
         status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    if (rental.renter_id !== userId) {
+    const isRenter = rental.renter_id === userId;
+    const isOwner = rental.owner_id === userId;
+    if (!isRenter && !isOwner) {
       return new Response(JSON.stringify({ error: "forbidden" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -96,15 +99,46 @@ serve(async (req) => {
       });
     }
 
+    // Date window: today must be strictly between start_date and end_date (not first, not last day)
+    const today = new Date().toISOString().slice(0, 10);
+    if (!(rental.start_date < today && today < rental.end_date)) {
+      return new Response(JSON.stringify({ error: "outside_window" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Proposed date strictly between start_date and end_date
+    if (!(rental.start_date < newEndDate && newEndDate < rental.end_date)) {
+      return new Response(JSON.stringify({ error: "invalid_date" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Recalculate price
+    const msPerDay = 86400000;
+    const newDays = Math.round((Date.parse(newEndDate) - Date.parse(rental.start_date)) / msPerDay) + 1;
+    const newSubtotal = Math.round(Number(rental.daily_price) * newDays * 100) / 100;
+    const refundAmount = Math.max(0, Math.round((Number(rental.subtotal) - newSubtotal) * 100) / 100);
+
     const now = new Date().toISOString();
+    const updates: Record<string, unknown> = {
+      status: "early_return_requested",
+      early_return_status: "pending",
+      early_return_requested_at: now,
+      early_return_reason: reason,
+      early_return_initiator: userId,
+      early_return_new_end_date: newEndDate,
+      early_return_new_rental_days: newDays,
+      early_return_new_subtotal: newSubtotal,
+      early_return_refund_amount: refundAmount,
+      early_return_decided_at: null,
+      early_return_owner_response: null,
+      early_return_renter_approved_at: isRenter ? now : null,
+      early_return_owner_approved_at: isOwner ? now : null,
+    };
     const { error: uErr } = await admin
       .from("rentals")
-      .update({
-        status: "early_return_requested",
-        early_return_status: "pending",
-        early_return_requested_at: now,
-        early_return_reason: reason,
-      })
+      .update(updates)
       .eq("id", rentalId);
     if (uErr) {
       return new Response(JSON.stringify({ error: "update_failed", detail: uErr.message }), {
@@ -113,8 +147,8 @@ serve(async (req) => {
     }
 
     admin.functions.invoke("notify-rental-event", {
-      body: { rental_id: rentalId, event_key: "early_return_requested", actor_id: userId, extra: { reason } },
-    }).catch((e) => console.warn("notify early_return_requested failed", e));
+      body: { rental_id: rentalId, event_key: "early_return_proposed", actor_id: userId, extra: { reason, newEndDate, refundAmount, initiatorRole: isRenter ? "renter" : "owner" } },
+    }).catch((e) => console.warn("notify early_return_proposed failed", e));
 
     return new Response(JSON.stringify({ ok: true }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },

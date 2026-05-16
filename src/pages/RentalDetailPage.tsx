@@ -18,6 +18,7 @@ import MutualCancellationCard from "@/components/rentals/MutualCancellationCard"
 import PvSignatureDialog from "@/components/rentals/PvSignatureDialog";
 import ReturnCountdownBadge from "@/components/rentals/ReturnCountdownBadge";
 import LeaveReviewDialog from "@/components/dashboard/LeaveReviewDialog";
+import EarlyReturnCard from "@/components/rentals/EarlyReturnCard";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import { ChatDialog } from "@/components/messaging/ChatDialog";
 import { payForConfirmedRental, payRentalWithWallet } from "@/features/rentals/rentalsApi";
@@ -399,6 +400,20 @@ const RentalDetailPage = () => {
               {t("Lasă un review", "Leave a review")}
             </Button>
           </section>
+        )}
+
+        {/* Early return prompt — visible while product is handed over but not yet returned */}
+        {handoverDoneEarly && !returnDoneEarly && rental.status !== "completed" && rental.status !== "cancelled" && (
+          <EarlyReturnCard
+            rentalId={rental.id}
+            role={role}
+            startDate={rental.start_date}
+            endDate={rental.end_date}
+            dailyPrice={Number(rental.daily_price)}
+            subtotal={Number(rental.subtotal)}
+            onOpenChat={handleChat}
+            t={t}
+          />
         )}
 
         {/* PV (Procese verbale) — full width under the timeline */}

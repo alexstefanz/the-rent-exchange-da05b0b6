@@ -1,44 +1,101 @@
-# PV: buton vizibil + poze în PDF
+# Returnare înainte de termen (în pasul „Produs predat")
 
-Două schimbări în `src/components/rentals/PvSignatureDialog.tsx`.
+## UX nou pe `RentalDetailPage` (afișat când `step === 5`, adică `handover_confirmed_at` setat și `return_confirmed_at` nesetat)
 
-## 1. Buton „Vezi PDF generat" mai vizibil
+Apare un card portocaliu sub timeline (deasupra panoului „Procese verbale"), cu două CTA-uri:
 
-Acum este un `variant="link"` mic ascuns în secțiunea de status. Îl scoatem într-un card propriu, full-width, cu accent portocaliu (brand `#F59E0B` / hover `#F98715`), iconiță `FileText` + `ExternalLink`, deasupra secțiunii de status, vizibil doar când `pv?.pdf_path` există:
+1. **„Discută cu {proprietarul|chiriașul}"** — text variabil:
+   - Chiriaș: „Vrei să predai produsul înainte de termen? Discută cu proprietarul"
+   - Proprietar: „Vrei să ceri înapoi produsul înainte de termen? Discută cu chiriașul"
+   - Buton secundar → `navigate(/messages?rental=<id>)` (deschide conversația existentă)
 
-- `Button` mărime default, `w-full`
-- fundal `bg-[#F59E0B] hover:bg-[#F98715] text-white`
-- text: „Vezi PV semnat (PDF)" + iconiță
-- subtext mic: „Document semnat de ambele părți"
+2. **„Solicită returnare anticipată"** — buton primar care deschide un nou dialog `EarlyReturnRequestDialog`.
 
-Linkul vechi din blocul de status este eliminat ca să nu se dubleze.
+### Eligibilitate buton (calculat client + server)
+- `handover_confirmed_at != null && return_confirmed_at == null`
+- `early_return_status` ∈ {`none`, null, `rejected`} (nu există deja una activă)
+- `today` strict între `start_date` și `end_date` (deci NU în prima și NU în ultima zi a închirierii)
+- `dispute_status` lipsă
 
-## 2. Fotografiile în PDF
+Dacă există deja o cerere `pending` sau `accepted_partial`, cardul afișează statusul + acțiuni (vezi mai jos).
 
-Funcția `generatePdf(updatedPv)` actualmente scrie doar numărul de poze. O extindem să atașeze imaginile real:
+## `EarlyReturnRequestDialog` (nou)
 
-- După secțiunea „Fotografii anexate", pentru fiecare intrare din `updatedPv.photos` (sau `photos_meta`):
-  1. obține URL semnat cu `getPvFileSignedUrl(path)`
-  2. fetch → blob → `FileReader` → dataURL
-  3. determinăm dimensiunile cu un `Image()` temporar ca să păstrăm aspect ratio
-  4. `doc.addImage(dataUrl, "JPEG", x, y, w, h)` într-un grid 2 coloane, fiecare poză max ~240×180 pt
-  5. sub fiecare poză etichetă mică: „Proprietar" / „Chirias" + data upload (din `photos_meta`)
-  6. `doc.addPage()` automat când `y + h` depășește înălțimea paginii; resetăm `y` la 50
+Conține:
+- `Calendar` (shadcn) cu disabled days: orice zi `<= start_date` sau `>= end_date` → permite doar `start_date+1` până la `end_date-1`
+- `Textarea` motiv (min 20 caractere, max 500 — păstrăm validarea existentă)
+- Calculator live de recalcul preț:
+  - `new_days = differenceInCalendarDays(new_end_date, start_date) + 1` (sau formula folosită azi pentru `rental_days`)
+  - `new_subtotal = daily_price * new_days`
+  - `refund = subtotal - new_subtotal` (afișat în RON, ne-negativ)
+  - Notă: comisionul rămâne calculat pe subtotalul inițial (politică actuală, refundul afectează doar partea chiriașului). Mențiune vizibilă în dialog.
+- Submit → invocă edge function `request-early-return` (extinsă, vezi mai jos).
 
-- După grilă, lăsăm spațiu și continuăm cu textul introductiv + semnături existente (mutăm semnăturile pe pagină nouă dacă nu mai încap, prin verificare `y > pageHeight - 200 → addPage()`).
+## Card de status (când există cerere activă)
 
-Folosim doar API-uri deja importate (`jsPDF`, `getPvFileSignedUrl`) — fără dependențe noi. Funcția devine `async` (deja este) și încărcăm pozele în paralel cu `Promise.all` pentru viteză.
+Înlocuiește `EarlyReturnResponseCard` actual cu un card unificat afișat ambilor:
+- Inițiator + data propusă + motiv + recalcul preț + refund
+- Două bife: „Aprobat chiriaș" / „Aprobat proprietar" cu dată
+- Buton „Aprobă" pentru cel care nu a aprobat încă (inițiatorul e aprobat automat)
+- Buton „Respinge" pentru contraparte
+- Când ambii au aprobat → status `accepted`, `end_date` se actualizează la `early_return_new_end_date`, `rental_days` și `subtotal` se recalculează, restul fluxului (PV Returnare) continuă normal pe noua dată
+- Refundul se procesează la finalul rentalului prin fluxul existent (`captured_amount` redus). Pentru MVP: doar marcăm `early_return_refund_amount`; nu modificăm Stripe charge aici (păstrăm consistența cu codul existent).
 
-## Detalii tehnice
+## Modificări DB (migrație nouă)
 
-- Fișier modificat: `src/components/rentals/PvSignatureDialog.tsx`
-- Importuri noi din `lucide-react`: `FileText`, `ExternalLink`
-- Helper local `fetchAsDataUrl(url)` + `loadImageSize(dataUrl)` (în același fișier, înainte de `generatePdf`)
-- Erori la o poză individuală sunt prinse cu try/catch și sărim peste poza respectivă (nu blocăm PDF-ul)
-- Regenerarea PDF-ului se face automat la următoarea semnătură; PV-urile deja semnate vor primi poze doar dacă cineva re-semnează — acceptăm acest comportament (nu adăugăm buton „regenerează")
+Adăugăm coloane în `rentals`:
+- `early_return_new_end_date date` — data propusă
+- `early_return_initiator uuid` — `owner_id` sau `renter_id`
+- `early_return_renter_approved_at timestamptz`
+- `early_return_owner_approved_at timestamptz`
+- `early_return_new_subtotal numeric(10,2)`
+- `early_return_new_rental_days int`
 
-## Out of scope
+Statusuri folosite în `early_return_status`: `none` (default), `pending`, `accepted`, `rejected`, `cancelled`.
 
-- Nu modificăm RLS sau storage policies (`getPvFileSignedUrl` deja funcționează)
-- Nu schimbăm layout-ul cardurilor de fotografii din dialog
-- Nu adăugăm OCR/compresie suplimentară — pozele sunt deja optimizate la upload
+Constraint trigger (validation trigger, nu CHECK) care impune:
+- `early_return_new_end_date > start_date AND early_return_new_end_date < end_date`
+- `early_return_initiator IN (renter_id, owner_id)`
+
+Index parțial pe `(early_return_status)` pentru cererile pending.
+
+## Edge functions
+
+### `request-early-return` (modificat)
+- Acceptă acum `initiator_role: "owner" | "renter"` (derivat din `userId`)
+- Acceptă `new_end_date` (string ISO date) obligatoriu
+- Validează:
+  - userId == renter_id sau owner_id
+  - data strict între `start_date` și `end_date`
+  - data curentă strict între start și end
+  - nu există cerere `pending`
+- Calculează `new_rental_days` și `new_subtotal`
+- Setează: `early_return_status='pending'`, `early_return_initiator`, `early_return_new_end_date`, `early_return_new_subtotal`, `early_return_new_rental_days`, `early_return_refund_amount = subtotal - new_subtotal`, `early_return_reason`, marchează auto-aprobarea inițiatorului (`early_return_<role>_approved_at = now()`)
+- Notifică contraparte cu `event_key` nou: `early_return_proposed`
+
+### `respond-early-return` (modificat)
+- Acceptă `action: "approve" | "reject"`
+- Validează: userId este contrapartea inițiatorului
+- Pe `approve`:
+  - setează `early_return_<role>_approved_at = now()`
+  - dacă ambele aprobate → `early_return_status='accepted'`, `early_return_decided_at=now()`, actualizează `end_date = early_return_new_end_date`, `rental_days = early_return_new_rental_days`, `subtotal = early_return_new_subtotal`
+- Pe `reject`: `early_return_status='rejected'`, status rental revine la `active`
+
+Notificări noi în `notify-rental-event`: `early_return_proposed`, `early_return_approved`, `early_return_rejected` (template-uri email scurte, identice ca structură cu cele existente).
+
+## Fișiere atinse
+
+- DB: migrație nouă (coloane + trigger + index)
+- Edge: `supabase/functions/request-early-return/index.ts`, `supabase/functions/respond-early-return/index.ts`
+- API: `src/features/rentals/ownerRentalsApi.ts` — semnături actualizate (`requestEarlyReturn(rentalId, { newEndDate, reason })`, `respondEarlyReturn(rentalId, "approve"|"reject")`)
+- Componente noi: `src/components/rentals/EarlyReturnPromptCard.tsx`, `src/components/rentals/EarlyReturnRequestDialog.tsx`, `src/components/rentals/EarlyReturnStatusCard.tsx`
+- `EarlyReturnResponseCard.tsx` — eliminat sau redus la wrapper care randează noul `EarlyReturnStatusCard`
+- `src/pages/RentalDetailPage.tsx` — montează cele 2 carduri noi în zona PV când `step === 5`
+- `src/integrations/emails/` — 3 template-uri scurte noi (proposed/approved/rejected) urmând stilul existent
+- Memorie proiect: nouă intrare `mem://features/early-return-flow`
+
+## Out of scope (MVP)
+
+- Modificarea efectivă a `payment_intent` în Stripe pentru refund parțial — rămâne pe fluxul existent de capturare/refund manual
+- Modificarea comisionului platformei
+- Modificarea calendarului de disponibilitate al produsului înainte ca PV Returnare să fie semnat (eliberăm zilele doar la `return_confirmed_at`)
