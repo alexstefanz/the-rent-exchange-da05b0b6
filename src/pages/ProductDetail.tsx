@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { getOrCreateConversation, sendMessage } from "@/features/messaging/messagingApi";
-import { ChatDialog } from "@/components/messaging/ChatDialog";
+
 import NearbyProductsSlider from "@/components/products/NearbyProductsSlider";
 import ProductImageGallery from "@/components/product/ProductImageGallery";
 import FreeCancellationNotice from "@/components/product/FreeCancellationNotice";
@@ -55,7 +55,6 @@ const ProductDetail = () => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [chatOpen, setChatOpen] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -118,14 +117,14 @@ const ProductDetail = () => {
 
   const handleStartChat = async () => {
     const conv = await ensureConversation();
-    if (conv) setChatOpen(true);
+    if (conv) navigate(`/mesaje?conv=${conv.id}`);
   };
 
   const handleQuickQuestion = async (message: string) => {
     const conv = await ensureConversation();
     if (!conv) return;
     await sendMessage(conv.id, message);
-    setChatOpen(true);
+    navigate(`/mesaje?conv=${conv.id}`);
   };
 
   const category = product?.category ? categories.find(c => c.name === product.category) : null;
@@ -402,10 +401,6 @@ const ProductDetail = () => {
         minRentalDays={product.min_rental_days}
         maxRentalDays={(product as any).max_rental_days ?? null}
       />
-
-      {conversationId && (
-        <ChatDialog open={chatOpen} onOpenChange={setChatOpen} conversationId={conversationId} otherUserName={owner?.full_name || null} otherUserAvatar={owner?.avatar_url || null} productTitle={product?.title || 'Produs'} />
-      )}
 
       <PremiumLightbox
         open={lightboxOpen}
