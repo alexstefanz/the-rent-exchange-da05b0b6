@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Loader2, ChevronDown } from "lucide-react";
+import { Loader2, ChevronDown, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -26,6 +26,7 @@ import { DateSeparator } from "@/components/messaging/DateSeparator";
 import { MediaLightbox } from "@/components/messaging/MediaLightbox";
 import { isSameDay } from "date-fns";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface ChatPanelProps {
   conversationId: string;
@@ -61,6 +62,8 @@ export function ChatPanel({
   const queryClient = useQueryClient();
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
   const [peerLastReadAt, setPeerLastReadAt] = useState<string | null>(null);
+  const [reopenedAt, setReopenedAt] = useState<string | null>(null);
+  const [reopening, setReopening] = useState(false);
   const [ownerPhone, setOwnerPhone] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<{ items: AttachmentRow[]; index: number } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -99,7 +102,7 @@ export function ChatPanel({
     (async () => {
       const { data } = await supabase
         .from("conversations")
-        .select("buyer_id,owner_id,buyer_last_read_at,owner_last_read_at")
+        .select("buyer_id,owner_id,buyer_last_read_at,owner_last_read_at,reopened_at")
         .eq("id", conversationId)
         .maybeSingle();
       if (data) {
@@ -107,6 +110,7 @@ export function ChatPanel({
           ? (data as any).owner_last_read_at
           : (data as any).buyer_last_read_at;
         setPeerLastReadAt(peerRead);
+        setReopenedAt((data as any).reopened_at ?? null);
       }
     })();
   }, [conversationId, user?.id]);
@@ -151,6 +155,7 @@ export function ChatPanel({
           const peerRead =
             user?.id === conv.buyer_id ? conv.owner_last_read_at : conv.buyer_last_read_at;
           setPeerLastReadAt(peerRead);
+          setReopenedAt(conv.reopened_at ?? null);
         }
       )
       .subscribe();
@@ -263,6 +268,31 @@ export function ChatPanel({
     return items;
   }, [localMessages, user?.id, peerLastReadAt]);
 
+  const isClosed = useMemo(() => {
+    if (!rentalCtx) return false;
+    if (rentalCtx.status !== "completed") return false;
+    if (!reopenedAt) return true;
+    // Reopened any time after status changed → keep open
+    return false;
+  }, [rentalCtx, reopenedAt]);
+
+  const handleReopen = async () => {
+    if (!conversationId || reopening) return;
+    setReopening(true);
+    const nowIso = new Date().toISOString();
+    const { error } = await supabase
+      .from("conversations")
+      .update({ reopened_at: nowIso })
+      .eq("id", conversationId);
+    setReopening(false);
+    if (error) {
+      toast.error(t("Nu am putut relua conversația.", "Could not resume the conversation."));
+      return;
+    }
+    setReopenedAt(nowIso);
+    queryClient.invalidateQueries({ queryKey: ["conversations"] });
+  };
+
   return (
     <div className={`flex flex-col h-full bg-[#FCFAF8] ${className}`}>
       {!hideHeader && (
@@ -370,11 +400,30 @@ export function ChatPanel({
         )}
       </div>
 
-      <MessageInput
-        conversationId={conversationId}
-        onSend={handleSend}
-        onTyping={() => setTyping(true)}
-      />
+      {isClosed ? (
+        <div className="border-t bg-background px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-start gap-2 text-sm">
+            <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium">{t("Conversație finalizată", "Conversation closed")}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("Închirierea a fost încheiată.", "The rental has ended.")}
+              </p>
+            </div>
+          </div>
+          <Button onClick={handleReopen} disabled={reopening} size="sm" className="shrink-0">
+            {reopening
+              ? t("Se reia…", "Resuming…")
+              : t("Reia conversația", "Resume conversation")}
+          </Button>
+        </div>
+      ) : (
+        <MessageInput
+          conversationId={conversationId}
+          onSend={handleSend}
+          onTyping={() => setTyping(true)}
+        />
+      )}
 
       {lightbox && (
         <MediaLightbox
