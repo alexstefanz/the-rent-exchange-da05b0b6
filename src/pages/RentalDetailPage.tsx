@@ -291,6 +291,41 @@ const RentalDetailPage = () => {
           <RentalTimeline rental={tlRental} />
         </section>
 
+        {/* Owner: accept/reject pending request */}
+        {isOwner && rental.status === "pending" && (
+          <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1">
+                <h3 className="font-heading text-lg font-semibold text-foreground">
+                  {t("Cerere noua de inchiriere", "New rental request")}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {t(
+                    "Acceptă pentru a trimite chiriașului notificarea de plată. Dacă refuzi, poți adăuga un motiv scurt.",
+                    "Accept to notify the renter to pay. If you reject, you can add a short reason.",
+                  )}
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                <Button size="lg" onClick={handleAccept} disabled={responding} className="shadow-lg shadow-primary/20">
+                  {responding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
+                  {t("Acceptă cererea", "Accept request")}
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => setRejectOpen(true)}
+                  disabled={responding}
+                  className="border-destructive/40 text-destructive hover:bg-destructive/5"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  {t("Refuză", "Reject")}
+                </Button>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Chat CTA — visible after payment is authorized; replaced by Review CTA when completed */}
         {isPaidEarly && rental.status !== "completed" && (
           <section className="rounded-2xl border border-border bg-card p-4 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
