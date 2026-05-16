@@ -73,7 +73,7 @@ const RentalsOutTab = () => {
 
   const pendingRentals = filtered.filter(r => r.status === "pending");
   const premiumActiveRentals = filtered.filter(
-    r => (r.status === "confirmed" || r.status === "active") && !r.handover_confirmed_at
+    r => (r.status === "confirmed" || r.status === "active") && !r.return_confirmed_at
   );
   const premiumIds = new Set([...pendingRentals, ...premiumActiveRentals].map(r => r.id));
   const historyRentals = filtered.filter(r => !premiumIds.has(r.id));
