@@ -402,6 +402,20 @@ const RentalDetailPage = () => {
           </section>
         )}
 
+        {/* Early return prompt — visible while product is handed over but not yet returned */}
+        {handoverDoneEarly && !returnDoneEarly && rental.status !== "completed" && rental.status !== "cancelled" && (
+          <EarlyReturnCard
+            rentalId={rental.id}
+            role={role}
+            startDate={rental.start_date}
+            endDate={rental.end_date}
+            dailyPrice={Number(rental.daily_price)}
+            subtotal={Number(rental.subtotal)}
+            onOpenChat={handleChat}
+            t={t}
+          />
+        )}
+
         {/* PV (Procese verbale) — full width under the timeline */}
         {(showHandoverPv || showReturnPv) && (
           <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
