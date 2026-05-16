@@ -166,6 +166,15 @@ const PremiumBookingCard = ({
                   : t("Ajustează perioada", "Adjust the period"))
               : t("Verifică datele", "Check dates")}
         </Button>
+        <Button
+          variant="outline"
+          className="w-full h-11 font-medium"
+          disabled={isOwnProduct}
+          onClick={onAsk}
+        >
+          <MessageCircle className="h-4 w-4 mr-2" />
+          {t("Întreabă proprietarul", "Ask the owner")}
+        </Button>
         <p className="text-center text-xs text-muted-foreground pt-1">
           {isOwnProduct
             ? t("Acesta este anunțul tău.", "This is your own listing.")
