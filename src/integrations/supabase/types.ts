@@ -117,6 +117,7 @@ export type Database = {
           owner_last_read_at: string | null
           product_id: string
           rentals_id: string | null
+          reopened_at: string | null
           updated_at: string
         }
         Insert: {
@@ -128,6 +129,7 @@ export type Database = {
           owner_last_read_at?: string | null
           product_id: string
           rentals_id?: string | null
+          reopened_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -139,6 +141,7 @@ export type Database = {
           owner_last_read_at?: string | null
           product_id?: string
           rentals_id?: string | null
+          reopened_at?: string | null
           updated_at?: string
         }
         Relationships: [

@@ -1,36 +1,50 @@
-## Problema
-Pe `RNT-000077` predarea (handover PV) a fost semnată de ambele părți pe 16 mai, dar perioada de închiriere e 26–27 mai (pickup făcut mai devreme). Cardul „Vrei să predai produsul înainte de termen?" nu apare.
+## Obiectiv
 
-Cauza, în `src/components/rentals/EarlyReturnCard.tsx` (linia 64–68 + 182):
-```ts
-const inWindow = today > start && today < end;
-...
-if (!inWindow) return null;
+După ce o închiriere ajunge în starea `completed` (Finalizat), conversația dintre proprietar și chiriaș se marchează automat ca închisă: input-ul de mesaje este blocat, se afișează un banner „Conversație finalizată" și un buton „Reia conversația". Oricare dintre cele două părți poate reactiva chatul cu un click.
+
+## Modificări baza de date
+
+Adăugăm o coloană pe `conversations`:
+
+- `reopened_at timestamptz NULL` — setată când oricare participant apasă „Reia conversația".
+
+Logica de „închis" devine pur derivată:
+
+```text
+isClosed = rental.status === 'completed'
+         && (conversations.reopened_at IS NULL
+             OR conversations.reopened_at < rental.completed_at)
 ```
-Pentru RNT-000077, `today (16 mai) < start (26 mai)` ⇒ `inWindow = false` ⇒ cardul e ascuns, deși produsul e deja la chiriaș.
 
-În același timp, în `RentalDetailPage.tsx` cardul e deja gardat corect de:
-```
-handoverDoneEarly && !returnDoneEarly && status !== completed/cancelled
-```
-care e adevărat acum pentru RNT-000077. Deci gardarea pe `start_date` din interiorul cardului e redundantă și greșită pentru cazurile de predare anticipată.
+Astfel, dacă chatul este reluat, rămâne deschis; dacă în viitor apare o nouă finalizare (nu e cazul aici, dar e safe), s-ar reînchide.
 
-## Soluție
+Politica RLS existentă „Conversation participants can update conversation" permite deja buyer/owner să facă `UPDATE` pe rândul lor — nu sunt necesare schimbări de policy.
 
-### `src/components/rentals/EarlyReturnCard.tsx`
+## Modificări UI (`src/components/messaging/ChatPanel.tsx`)
 
-1. **Elimină gardarea pe `inWindow`** pentru afișarea cardului-prompt. Componenta se mai afișează când părintele decide că predarea e făcută și returul nu e încă făcut. Concret: șterge `if (!inWindow) return null;`.
+1. Citim `reopened_at` din `conversations` (în efectul existent care încarcă `buyer_last_read_at` / `owner_last_read_at`).
+2. Calculăm `isClosed` din `rentalCtx.status === 'completed'` + `reopened_at`.
+3. Când `isClosed`:
+   - Ascundem `<MessageInput />` și în locul lui afișăm un panou:
+     - Iconiță + text: „Conversație finalizată. Închirierea a fost încheiată."
+     - Buton primar „Reia conversația" / „Resume conversation".
+   - Apăsarea butonului face `UPDATE conversations SET reopened_at = now()` și invalidează query-urile de conversații / mesaje. După aceea inputul reapare normal.
+4. Realtime: subscription-ul existent pe `UPDATE conversations` reflectă automat schimbarea la celălalt participant, deci când unul reia, celuilalt i se deschide chatul fără refresh.
 
-2. **Recalculează ferestrele calendarului** ca să accepte și scenariul „handover înainte de start_date":
-   - `earliest` = `max(today, addDays(start,1))` rămâne valabil în cazul normal; pentru predare anticipată, `earliest` devine practic `today` (azi sau mâine în funcție de regulă) — folosim `earliest = today` (chiriașul poate returna oricând după ce a luat produsul).
-   - `maxDate` = `addDays(end, -1)` rămâne — nu are sens „early return" în chiar ultima zi sau după.
-   - Dacă `today >= end` (deja peste termen), ascundem cardul-prompt (nu mai e „early") — `return null`.
+## Lista conversațiilor (`ConversationList.tsx`)
 
-3. **Calcul subtotal nou (`newDays`)** — în loc de `differenceInCalendarDays(selectedDate, start) + 1`, folosim `max(1, differenceInCalendarDays(selectedDate, start) + 1)` ca să nu obținem zile negative când `selectedDate < start` (predare înainte chiar de a începe oficial). Astfel `newSubtotal` minim = `dailyPrice`.
+- Adăugăm un mic badge gri „Finalizat" pe item-ul de conversație când rentalul atașat e `completed` și `reopened_at` nu e mai recent decât finalizarea. (cosmetic, opțional, dar îmbunătățește claritatea)
 
-4. **Mesajul din `DialogDescription`** — în loc de „între `minDate` și `maxDate`" (care poate fi în viitor față de azi), arătăm intervalul efectiv calendar: „între `format(earliest)` și `format(maxDate)`".
+## Localizare
 
-### În afara scopului
-- Nu schimbăm edge function-ul `request-early-return` (acceptă orice `newEndDate` validat server-side).
-- Nu modificăm logica din `RentalDetailPage.tsx` — gardarea de acolo e corectă.
-- Nu atingem `EarlyReturnResponseCard` / fluxul de aprobare.
+Adăugăm cheile noi în `uxCopy.ts`:
+
+- „Conversație finalizată" / „Conversation closed"
+- „Închirierea a fost încheiată" / „The rental has ended"
+- „Reia conversația" / „Resume conversation"
+
+## Ce NU se schimbă
+
+- Mesajele istorice rămân vizibile integral.
+- Nu se schimbă nimic în lifecycle-ul rentalului, doar UI-ul chatului reacționează la `status = 'completed'`.
+- Nu se șterg/arhivează conversații.
