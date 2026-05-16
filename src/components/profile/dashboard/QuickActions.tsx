@@ -1,32 +1,64 @@
 import { Link } from "react-router-dom";
 import { Plus, ShoppingBag, PackageCheck, MessageCircle, Wallet } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { cn } from "@/lib/utils";
 
 interface SecondaryProps {
   to: string;
   icon: React.ElementType;
   label: string;
   badge?: number;
+  highlight?: boolean;
 }
 
-const Secondary = ({ to, icon: Icon, label, badge }: SecondaryProps) => (
-  <Link
-    to={to}
-    className="group relative flex flex-col items-center justify-center gap-2 rounded-[12px] border bg-card p-4 hover:border-primary/40 hover:shadow-sm transition-all"
-  >
-    <div className="relative">
-      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-muted group-hover:bg-primary/10 transition-colors">
-        <Icon className="h-5 w-5 text-foreground group-hover:text-primary transition-colors" />
-      </div>
-      {!!badge && badge > 0 && (
-        <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1 shadow-sm">
-          {badge > 99 ? "99+" : badge}
-        </span>
+const Secondary = ({ to, icon: Icon, label, badge, highlight }: SecondaryProps) => {
+  const isOn = !!highlight && !!badge && badge > 0;
+  return (
+    <Link
+      to={to}
+      className={cn(
+        "group relative flex flex-col items-center justify-center gap-2 rounded-[12px] border p-4 transition-all",
+        isOn
+          ? "bg-[#F59E0B] hover:bg-[#F98715] border-transparent text-white shadow-md hover:shadow-lg"
+          : "bg-card hover:border-primary/40 hover:shadow-sm",
       )}
-    </div>
-    <span className="text-xs sm:text-sm font-medium text-center">{label}</span>
-  </Link>
-);
+    >
+      <div className="relative">
+        <div
+          className={cn(
+            "flex h-11 w-11 items-center justify-center rounded-full transition-colors",
+            isOn ? "bg-white/20" : "bg-muted group-hover:bg-primary/10",
+          )}
+        >
+          <Icon
+            className={cn(
+              "h-5 w-5 transition-colors",
+              isOn ? "text-white" : "text-foreground group-hover:text-primary",
+            )}
+          />
+        </div>
+        {!!badge && badge > 0 && (
+          <span
+            className={cn(
+              "absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full text-[10px] font-bold px-1 shadow-sm",
+              isOn ? "bg-white text-black" : "bg-destructive text-destructive-foreground",
+            )}
+          >
+            {badge > 99 ? "99+" : badge}
+          </span>
+        )}
+      </div>
+      <span
+        className={cn(
+          "text-xs sm:text-sm text-center",
+          isOn ? "text-white font-semibold" : "font-medium",
+        )}
+      >
+        {label}
+      </span>
+    </Link>
+  );
+};
 
 interface Props {
   unreadMessages: number;
@@ -54,12 +86,14 @@ export function QuickActions({ unreadMessages, activeRentalsAsRenter, activeRent
         icon={ShoppingBag}
         label={t("Închirierile mele", "My rentals")}
         badge={activeRentalsAsRenter}
+        highlight
       />
       <Secondary
         to="/inchirieri"
         icon={PackageCheck}
         label={t("Cereri primite", "Bookings received")}
         badge={activeRentalsAsOwner}
+        highlight
       />
       <Secondary
         to="/mesaje"
