@@ -1,12 +1,13 @@
 import { ArrowUpDown, Filter } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export type RentalStatusFilter = "all" | "active" | "pending" | "cancelled";
+export type RentalStatusFilter = "all" | "active" | "in_progress" | "pending" | "cancelled";
 export type RentalSortBy = "newest" | "oldest" | "amount_desc" | "amount_asc";
 
 interface Counts {
   all: number;
   active: number;
+  in_progress: number;
   pending: number;
   cancelled: number;
 }
@@ -31,6 +32,7 @@ const RentalsFilterBar = ({
   const items: { key: RentalStatusFilter; label: string; count: number }[] = [
     { key: "all", label: "Toate", count: counts.all },
     { key: "active", label: "Active", count: counts.active },
+    { key: "in_progress", label: "În derulare", count: counts.in_progress },
     { key: "pending", label: "În așteptare", count: counts.pending },
     { key: "cancelled", label: "Anulate", count: counts.cancelled },
   ];
