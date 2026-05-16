@@ -1,50 +1,45 @@
-## Obiectiv
+## Problemă
 
-După ce o închiriere ajunge în starea `completed` (Finalizat), conversația dintre proprietar și chiriaș se marchează automat ca închisă: input-ul de mesaje este blocat, se afișează un banner „Conversație finalizată" și un buton „Reia conversația". Oricare dintre cele două părți poate reactiva chatul cu un click.
+În panoul de admin (`/admin/reservations`), când se expandează o rezervare, se vede doar timeline-ul + câteva date sumare. Nu există acces la pagina completă a închirierii (PV-uri, sumar financiar, părți, produs etc.) — aceeași vedere pe care o au proprietarul și chiriașul la `/rezervari/RNT-XXXXXX`.
 
-## Modificări baza de date
+## Soluție
 
-Adăugăm o coloană pe `conversations`:
+Adăugăm în panoul expandat din admin un buton clar `Deschide pagina închirierii` care navighează către `/rezervari/{public_id}` (în tab nou, pentru ca admin-ul să nu piardă filtrele și paginarea din ERP).
 
-- `reopened_at timestamptz NULL` — setată când oricare participant apasă „Reia conversația".
+Pagina `RentalDetailPage` deja se ocupă singură de tot conținutul (stepper complet, PV-uri, sumar financiar, predare devansată, produs închiriat, contraparte, chat etc.). Trebuie doar să ne asigurăm că admin-ul o poate accesa fără să fie owner/renter.
 
-Logica de „închis" devine pur derivată:
+## Modificări
 
-```text
-isClosed = rental.status === 'completed'
-         && (conversations.reopened_at IS NULL
-             OR conversations.reopened_at < rental.completed_at)
+### 1. `src/pages/admin/AdminReservations.tsx`
+
+În `RentalExpandedPanel`, sus de tot (în bara cu `Hash` + ID Rezervare), adaug în dreapta un buton:
+
+```
+<Button asChild size="sm" variant="outline">
+  <a href={`/rezervari/${rental.public_id}`} target="_blank" rel="noopener">
+    <ExternalLink className="h-4 w-4 mr-2" />
+    Deschide pagina închirierii
+  </a>
+</Button>
 ```
 
-Astfel, dacă chatul este reluat, rămâne deschis; dacă în viitor apare o nouă finalizare (nu e cazul aici, dar e safe), s-ar reînchide.
+(import `ExternalLink` din lucide-react)
 
-Politica RLS existentă „Conversation participants can update conversation" permite deja buyer/owner să facă `UPDATE` pe rândul lor — nu sunt necesare schimbări de policy.
+### 2. `src/pages/RentalDetailPage.tsx` — acces pentru admin
 
-## Modificări UI (`src/components/messaging/ChatPanel.tsx`)
+Pagina folosește RPC-ul `get_rental_by_public_id` și apoi verifică `renter_id === user.id || owner_id === user.id`. Trebuie să:
 
-1. Citim `reopened_at` din `conversations` (în efectul existent care încarcă `buyer_last_read_at` / `owner_last_read_at`).
-2. Calculăm `isClosed` din `rentalCtx.status === 'completed'` + `reopened_at`.
-3. Când `isClosed`:
-   - Ascundem `<MessageInput />` și în locul lui afișăm un panou:
-     - Iconiță + text: „Conversație finalizată. Închirierea a fost încheiată."
-     - Buton primar „Reia conversația" / „Resume conversation".
-   - Apăsarea butonului face `UPDATE conversations SET reopened_at = now()` și invalidează query-urile de conversații / mesaje. După aceea inputul reapare normal.
-4. Realtime: subscription-ul existent pe `UPDATE conversations` reflectă automat schimbarea la celălalt participant, deci când unul reia, celuilalt i se deschide chatul fără refresh.
+- Permitem accesul când utilizatorul curent are rolul `admin` (`has_role`). Verificăm explicit cu un mic helper pe client (`useIsAdmin` există deja în proiect — voi verifica și folosesc patternul existent, altfel fac un `select 1 from user_roles`).
+- Bypass-uim secțiunile interactive care nu au sens pentru admin (`EarlyReturnCard`, butonul „Lasă un review", chat-ul propriu) — le ascundem dacă utilizatorul nu e nici renter nici owner, ci doar admin. Adminul vede totul read-only.
+- Datele de contraparte / contact: admin-ul vede ambele părți. Adăugăm un mic card suplimentar „Chiriaș" + „Proprietar" cu nume/email/telefon (read-only). Datele există deja în răspunsul RPC; doar UI suplimentar.
 
-## Lista conversațiilor (`ConversationList.tsx`)
+Dacă RPC-ul `get_rental_by_public_id` nu returnează rentalul când caller-ul nu e participant, vom extinde funcția SQL să accepte și admin (`OR has_role(auth.uid(),'admin')`). Verific întâi codul RPC; dacă întoarce deja datele (DEFINER), e suficient client-side gating.
 
-- Adăugăm un mic badge gri „Finalizat" pe item-ul de conversație când rentalul atașat e `completed` și `reopened_at` nu e mai recent decât finalizarea. (cosmetic, opțional, dar îmbunătățește claritatea)
+### 3. Mic UX
 
-## Localizare
-
-Adăugăm cheile noi în `uxCopy.ts`:
-
-- „Conversație finalizată" / „Conversation closed"
-- „Închirierea a fost încheiată" / „The rental has ended"
-- „Reia conversația" / „Resume conversation"
+- Pe rândul rezervării din tabel, adaug un mic `ExternalLink` icon-button lângă `public_id` care face același lucru — shortcut fără a fi necesar să expandezi.
 
 ## Ce NU se schimbă
 
-- Mesajele istorice rămân vizibile integral.
-- Nu se schimbă nimic în lifecycle-ul rentalului, doar UI-ul chatului reacționează la `status = 'completed'`.
-- Nu se șterg/arhivează conversații.
+- Lifecycle-ul / acțiunile admin (confirm/cancel/etc.) rămân unde sunt în panoul expandat — pagina deschisă este informativă.
+- Nu se atinge chat-ul / RLS-ul mesajelor; adminul are deja policies de read pe conversations/messages.
