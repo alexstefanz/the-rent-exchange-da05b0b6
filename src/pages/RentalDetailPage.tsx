@@ -500,12 +500,13 @@ const RentalDetailPage = () => {
                       });
                       if (error) throw error;
                       if (data?.error) throw new Error(data.error);
-                      if (!data?.url) throw new Error("Nu s-a putut crea sesiunea de test");
-                      // Redirect imediat — toast-ul s-ar pierde la navigare oricum.
-                      window.location.assign(data.url);
+                      if (!data?.success) throw new Error("Nu s-a putut confirma plata de test");
+                      toast.success(t("Plata de test a fost autorizată.", "Test payment authorized."));
+                      await refetch();
                     } catch (e: any) {
                       console.error("TEST checkout error:", e);
                       toast.error(e?.message || "Eroare la inițierea plății de test.");
+                    } finally {
                       setPayingTest(false);
                     }
                   }}
@@ -519,8 +520,8 @@ const RentalDetailPage = () => {
                 </Button>
                 <p className="mt-2 text-[10px] text-yellow-800/80 leading-snug">
                   {t(
-                    'Nu se debitează bani reali. Rezervarea va fi marcată „Test" în dashboard.',
-                    'No real money is charged. Booking will be flagged as „Test" in the dashboard.'
+                    'Nu se debitează bani reali și nu mai ești redirecționat în Stripe. Rezervarea va fi marcată „Test" în dashboard.',
+                    'No real money is charged and you are not redirected to Stripe. Booking will be flagged as „Test" in the dashboard.'
                   )}
                 </p>
               </div>

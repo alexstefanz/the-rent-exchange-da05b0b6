@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
@@ -85,75 +84,118 @@ serve(async (req) => {
       });
     }
 
-    const testKey = Deno.env.get("STRIPE_TEST_SECRET_KEY");
-    if (!testKey) {
-      return new Response(
-        JSON.stringify({ error: "STRIPE_TEST_SECRET_KEY not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-    if (!testKey.startsWith("sk_test_")) {
-      return new Response(
-        JSON.stringify({ error: "STRIPE_TEST_SECRET_KEY must be a sk_test_ key" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
-
-    const stripe = new Stripe(testKey, { apiVersion: "2025-08-27.basil" });
-
     const productTitle = rental.products?.title || "Închiriere TEST";
-    const productImage = rental.products?.images?.[0] || undefined;
-    const productSlug = rental.products?.slug || "";
-    const origin = req.headers.get("origin") || "https://the-rent-exchange.lovable.app";
+    const now = new Date().toISOString();
 
-    const safeMessageToOwner =
-      typeof message_to_owner === "string" && message_to_owner.trim().length > 0
-        ? message_to_owner.trim().slice(0, 480)
-        : "";
-
-    const session = await stripe.checkout.sessions.create({
-      customer_email: user.email!,
-      line_items: [
-        {
-          price_data: {
-            currency: "ron",
-            product_data: {
-              name: `[TEST] ${productTitle} — ${rental.rental_days} zile`,
-              description: `TEST PAYMENT (admin): Închiriere ${rental.start_date} → ${rental.end_date}`,
-              ...(productImage ? { images: [productImage] } : {}),
-            },
-            unit_amount: Math.round(rental.subtotal * 100),
-          },
-          quantity: 1,
-        },
-      ],
-      mode: "payment",
-      payment_intent_data: {
-        capture_method: "manual",
-        metadata: { rental_id: rental.id, renter_id: user.id, is_test: "true" },
-      },
-      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: productSlug ? `${origin}/produs/${productSlug}` : `${origin}/`,
-      metadata: {
-        rental_id: rental.id,
-        renter_id: user.id,
-        capture_method: "manual",
-        is_test: "true",
-        ...(safeMessageToOwner ? { message_to_owner: safeMessageToOwner } : {}),
-      },
-    });
-
-    // Mark the rental as a test payment BEFORE returning, so verify/capture flows
-    // know which Stripe key to use.
-    await supabaseAdmin
+    const { data: updatedRental, error: updateError } = await supabaseAdmin
       .from("rentals")
       .update({
-        payment_method: `stripe:${session.id}`,
+        payment_status: "authorized",
+        payment_method: "test_card_4242",
         is_test_payment: true,
+        authorized_at: now,
       })
-      .eq("id", rental_id);
+      .eq("id", rental_id)
+      .select("*, products:product_id(title, images, owner_id)")
+      .single();
 
-    return new Response(JSON.stringify({ url: session.url, is_test: true }), {
+    if (updateError || !updatedRental) {
+      console.error("TEST rental update error:", updateError);
+      return new Response(JSON.stringify({ error: "Failed to authorize test payment" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    try {
+      const safeMessageToOwner =
+        typeof message_to_owner === "string" && message_to_owner.trim().length > 0
+          ? message_to_owner.trim().slice(0, 480)
+          : typeof updatedRental.message_to_owner === "string"
+            ? updatedRental.message_to_owner.trim().slice(0, 480)
+            : "";
+
+      const { data: existingConv } = await supabaseAdmin
+        .from("conversations")
+        .select("id")
+        .eq("product_id", updatedRental.product_id)
+        .eq("buyer_id", updatedRental.renter_id)
+        .eq("owner_id", updatedRental.owner_id)
+        .maybeSingle();
+
+      let conversationId = existingConv?.id as string | undefined;
+      if (!conversationId) {
+        const { data: newConv } = await supabaseAdmin
+          .from("conversations")
+          .insert({
+            product_id: updatedRental.product_id,
+            buyer_id: updatedRental.renter_id,
+            owner_id: updatedRental.owner_id,
+          })
+          .select("id")
+          .single();
+        conversationId = newConv?.id;
+      }
+
+      if (conversationId) {
+        const { data: existingSystem } = await supabaseAdmin
+          .from("messages")
+          .select("id")
+          .eq("conversation_id", conversationId)
+          .eq("message_type", "system")
+          .limit(1);
+
+        if (!existingSystem || existingSystem.length === 0) {
+          const fmt = (d: string) => new Date(d).toLocaleDateString("ro-RO", { day: "numeric", month: "short", year: "numeric" });
+          const dayLabel = updatedRental.rental_days === 1 ? "zi" : "zile";
+          const systemContent =
+            `booking_confirmed|${productTitle}|${fmt(updatedRental.start_date)}|${fmt(updatedRental.end_date)}|${updatedRental.rental_days} ${dayLabel}|${updatedRental.subtotal} RON`;
+
+          await supabaseAdmin.from("messages").insert({
+            conversation_id: conversationId,
+            sender_id: null,
+            content: systemContent,
+            message_type: "system",
+          });
+        }
+
+        if (safeMessageToOwner) {
+          const { data: existingUserMsg } = await supabaseAdmin
+            .from("messages")
+            .select("id")
+            .eq("conversation_id", conversationId)
+            .eq("message_type", "user")
+            .eq("sender_id", updatedRental.renter_id)
+            .limit(1);
+
+          if (!existingUserMsg || existingUserMsg.length === 0) {
+            await supabaseAdmin.from("messages").insert({
+              conversation_id: conversationId,
+              sender_id: updatedRental.renter_id,
+              content: safeMessageToOwner,
+              message_type: "user",
+            });
+          }
+        }
+
+        await supabaseAdmin
+          .from("conversations")
+          .update({ updated_at: now })
+          .eq("id", conversationId);
+      }
+    } catch (convErr) {
+      console.error("TEST post-payment conversation error (non-blocking):", convErr);
+    }
+
+    try {
+      await supabaseAdmin.functions.invoke("send-rental-notification", {
+        body: { rental_id },
+      });
+    } catch (notifyErr) {
+      console.error("TEST post-payment notification error (non-blocking):", notifyErr);
+    }
+
+    return new Response(JSON.stringify({ success: true, is_test: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
