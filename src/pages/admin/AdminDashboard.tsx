@@ -152,9 +152,12 @@ const AdminDashboard = () => {
               ) : recentRentals && recentRentals.length > 0 ? (
                 <div className="space-y-4">
                   {recentRentals.map((rental) => (
-                    <div 
-                      key={rental.id} 
-                      className="flex items-center justify-between gap-2 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors min-w-0"
+                    <a
+                      key={rental.id}
+                      href={`/rezervari/${rental.public_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between gap-2 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors min-w-0 cursor-pointer"
                     >
                       <div className="space-y-1 min-w-0">
                         <p className="font-mono text-[10px] text-primary font-semibold">
@@ -178,7 +181,7 @@ const AdminDashboard = () => {
                           {formatCurrency(rental.subtotal)}
                         </p>
                       </div>
-                    </div>
+                    </a>
                   ))}
                 </div>
               ) : (

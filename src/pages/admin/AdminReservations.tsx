@@ -102,7 +102,7 @@ const RentalExpandedPanel = ({
             {rental.id.slice(0, 8)}…
           </button>
         </span>
-        <Button asChild size="sm" variant="outline" className="ml-2">
+        <Button asChild size="sm" className="ml-2 bg-primary text-primary-foreground hover:bg-primary/90">
           <a href={`/rezervari/${rental.public_id}`} target="_blank" rel="noopener noreferrer">
             <ExternalLink className="h-4 w-4 mr-2" />
             Deschide pagina închirierii
