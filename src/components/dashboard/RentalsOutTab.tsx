@@ -168,7 +168,7 @@ const RentalsOutTab = () => {
             Cereri de închiriere
             <Badge className="bg-primary text-primary-foreground">{pendingRentals.length + premiumActiveRentals.length}</Badge>
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
             {[...pendingRentals, ...premiumActiveRentals].map((rental) => {
               const isPending = rental.status === "pending";
               const canRequestCancel = !isPending && !rental.handover_confirmed_at;
@@ -178,12 +178,15 @@ const RentalsOutTab = () => {
                   className="relative flex flex-col overflow-hidden rounded-2xl border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-primary/5 to-card shadow-lg shadow-primary/10"
                 >
                   {/* Product image */}
-                  <div className="relative aspect-[4/3] sm:aspect-[16/10] overflow-hidden bg-muted">
+                  <Link
+                    to={rental.public_id ? `/inchirieri/${rental.public_id}` : `/produs/${rental.product_id}`}
+                    className="relative aspect-[4/3] sm:aspect-[16/10] overflow-hidden bg-muted block group"
+                  >
                     <img
                       src={rental.product_image || "/placeholder.svg"}
                       alt={rental.product_title}
                       loading="lazy"
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                       {rental.public_id && (
                         <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
@@ -199,7 +202,7 @@ const RentalsOutTab = () => {
                         <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-md text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">Confirmată</Badge>
                       )}
                     </div>
-                  </div>
+                  </Link>
 
                   <div className="flex flex-col p-3 sm:p-4">
                     <div className="flex items-start gap-2 mb-1">
