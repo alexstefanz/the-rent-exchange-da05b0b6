@@ -102,14 +102,16 @@ const RentalsTab = () => {
 
   const counts = useMemo(() => ({
     all: rentals.length,
-    active: rentals.filter(r => r.status === "confirmed" || r.status === "active").length,
+    active: rentals.filter(r => (r.status === "confirmed" || r.status === "active") && !r.handover_confirmed_at).length,
+    in_progress: rentals.filter(r => (r.status === "confirmed" || r.status === "active") && !!r.handover_confirmed_at && !r.return_confirmed_at).length,
     pending: rentals.filter(r => r.status === "pending").length,
     cancelled: rentals.filter(r => r.status === "cancelled" || r.status === "rejected").length,
   }), [rentals]);
 
   const matchesStatus = (r: MyRental) => {
     if (statusFilter === "all") return true;
-    if (statusFilter === "active") return r.status === "confirmed" || r.status === "active";
+    if (statusFilter === "active") return (r.status === "confirmed" || r.status === "active") && !r.handover_confirmed_at;
+    if (statusFilter === "in_progress") return (r.status === "confirmed" || r.status === "active") && !!r.handover_confirmed_at && !r.return_confirmed_at;
     if (statusFilter === "pending") return r.status === "pending";
     if (statusFilter === "cancelled") return r.status === "cancelled" || r.status === "rejected";
     return true;
