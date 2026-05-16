@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical, Wallet } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical, Wallet, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import Navbar from "@/components/layout/Navbar";
@@ -21,6 +21,9 @@ import LeaveReviewDialog from "@/components/dashboard/LeaveReviewDialog";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import { ChatDialog } from "@/components/messaging/ChatDialog";
 import { payForConfirmedRental, payRentalWithWallet } from "@/features/rentals/rentalsApi";
+import { respondToRental } from "@/features/rentals/ownerRentalsApi";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { useIsAdmin } from "@/hooks/queries/useAdminStats";
 import { toast } from "sonner";
@@ -38,6 +41,9 @@ const RentalDetailPage = () => {
   const [paying, setPaying] = useState(false);
   const [payingTest, setPayingTest] = useState(false);
   const [payingWallet, setPayingWallet] = useState(false);
+  const [responding, setResponding] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
   const [reviewOpen, setReviewOpen] = useState(false);
   const [chatConvId, setChatConvId] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
