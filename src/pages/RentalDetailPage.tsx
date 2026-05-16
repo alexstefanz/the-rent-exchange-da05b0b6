@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical, Wallet } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical, Wallet, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import Navbar from "@/components/layout/Navbar";
@@ -21,6 +21,9 @@ import LeaveReviewDialog from "@/components/dashboard/LeaveReviewDialog";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import { ChatDialog } from "@/components/messaging/ChatDialog";
 import { payForConfirmedRental, payRentalWithWallet } from "@/features/rentals/rentalsApi";
+import { respondToRental } from "@/features/rentals/ownerRentalsApi";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { useIsAdmin } from "@/hooks/queries/useAdminStats";
 import { toast } from "sonner";
@@ -38,6 +41,9 @@ const RentalDetailPage = () => {
   const [paying, setPaying] = useState(false);
   const [payingTest, setPayingTest] = useState(false);
   const [payingWallet, setPayingWallet] = useState(false);
+  const [responding, setResponding] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
   const [reviewOpen, setReviewOpen] = useState(false);
   const [chatConvId, setChatConvId] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
@@ -216,6 +222,38 @@ const RentalDetailPage = () => {
     }
   }
 
+  async function handleAccept() {
+    if (responding) return;
+    setResponding(true);
+    try {
+      await respondToRental(rental!.id, "accept");
+      toast.success(t("Cerere acceptată. Așteptăm plata chiriașului.", "Request accepted. Waiting for renter payment."));
+      await refetch();
+    } catch (e: any) {
+      console.error("accept rental error:", e);
+      toast.error(e?.message || t("Eroare la acceptarea cererii.", "Error accepting the request."));
+    } finally {
+      setResponding(false);
+    }
+  }
+
+  async function handleReject() {
+    if (responding) return;
+    setResponding(true);
+    try {
+      await respondToRental(rental!.id, "reject", rejectReason || undefined);
+      toast.success(t("Cererea a fost refuzată.", "Request rejected."));
+      setRejectOpen(false);
+      setRejectReason("");
+      await refetch();
+    } catch (e: any) {
+      console.error("reject rental error:", e);
+      toast.error(e?.message || t("Eroare la refuzarea cererii.", "Error rejecting the request."));
+    } finally {
+      setResponding(false);
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
@@ -252,6 +290,41 @@ const RentalDetailPage = () => {
         <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
           <RentalTimeline rental={tlRental} />
         </section>
+
+        {/* Owner: accept/reject pending request */}
+        {isOwner && rental.status === "pending" && (
+          <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1">
+                <h3 className="font-heading text-lg font-semibold text-foreground">
+                  {t("Cerere noua de inchiriere", "New rental request")}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {t(
+                    "Acceptă pentru a trimite chiriașului notificarea de plată. Dacă refuzi, poți adăuga un motiv scurt.",
+                    "Accept to notify the renter to pay. If you reject, you can add a short reason.",
+                  )}
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                <Button size="lg" onClick={handleAccept} disabled={responding} className="shadow-lg shadow-primary/20">
+                  {responding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
+                  {t("Acceptă cererea", "Accept request")}
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => setRejectOpen(true)}
+                  disabled={responding}
+                  className="border-destructive/40 text-destructive hover:bg-destructive/5"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  {t("Refuză", "Reject")}
+                </Button>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Chat CTA — visible after payment is authorized; replaced by Review CTA when completed */}
         {isPaidEarly && rental.status !== "completed" && (
@@ -564,6 +637,35 @@ const RentalDetailPage = () => {
           productTitle={rental.product_title || ""}
         />
       )}
+
+      <Dialog open={rejectOpen} onOpenChange={(o) => { if (!o) { setRejectOpen(false); setRejectReason(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("Refuză cererea de închiriere", "Reject rental request")}</DialogTitle>
+            <DialogDescription>
+              {t(
+                `Ești sigur că vrei să refuzi cererea pentru „${rental.product_title}"?`,
+                `Are you sure you want to reject the request for "${rental.product_title}"?`,
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea
+            placeholder={t("Motiv (opțional)", "Reason (optional)")}
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            rows={3}
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setRejectOpen(false); setRejectReason(""); }} disabled={responding}>
+              {t("Anulează", "Cancel")}
+            </Button>
+            <Button variant="destructive" onClick={handleReject} disabled={responding}>
+              {responding ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <X className="h-4 w-4 mr-2" />}
+              {t("Refuză cererea", "Reject request")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
