@@ -68,8 +68,9 @@ export function AcceptedRentalDialog({ rental, open, onOpenChange, onCancelled }
         .maybeSingle();
 
       onOpenChange(false);
+      const returnTo = { pathname: window.location.pathname, search: window.location.search };
       if (existing) {
-        navigate(`/mesaje?conv=${existing.id}`);
+        navigate(`/mesaje?conv=${existing.id}`, { state: { returnTo } });
       } else {
         navigate("/mesaje");
       }

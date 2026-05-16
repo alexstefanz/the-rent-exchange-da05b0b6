@@ -77,7 +77,9 @@ export default function PickupArrangementCard({ rentalId, ownerId }: Props) {
 
   const handleChat = async () => {
     const convId = await getOrCreateRentalConversation(rentalId);
-    if (convId) navigate(`/mesaje?conv=${convId}`);
+    if (convId) navigate(`/mesaje?conv=${convId}`, {
+      state: { returnTo: { pathname: window.location.pathname, search: window.location.search } },
+    });
   };
 
   if (isLoading) return null;

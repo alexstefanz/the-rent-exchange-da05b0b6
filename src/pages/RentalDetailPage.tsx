@@ -172,7 +172,9 @@ const RentalDetailPage = () => {
   async function handleChat() {
     const convId = await getOrCreateRentalConversation(rental.id);
     if (convId) {
-      navigate(`/mesaje?conv=${convId}`);
+      navigate(`/mesaje?conv=${convId}`, {
+        state: { returnTo: { pathname: window.location.pathname, search: window.location.search } },
+      });
     } else {
       toast.error(t("Nu am putut deschide conversația.", "Could not open conversation."));
     }
