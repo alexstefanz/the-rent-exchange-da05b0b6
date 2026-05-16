@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Loader2, ChevronDown } from "lucide-react";
+import { Loader2, ChevronDown, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -26,6 +26,7 @@ import { DateSeparator } from "@/components/messaging/DateSeparator";
 import { MediaLightbox } from "@/components/messaging/MediaLightbox";
 import { isSameDay } from "date-fns";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface ChatPanelProps {
   conversationId: string;
@@ -61,6 +62,8 @@ export function ChatPanel({
   const queryClient = useQueryClient();
   const [localMessages, setLocalMessages] = useState<Message[]>([]);
   const [peerLastReadAt, setPeerLastReadAt] = useState<string | null>(null);
+  const [reopenedAt, setReopenedAt] = useState<string | null>(null);
+  const [reopening, setReopening] = useState(false);
   const [ownerPhone, setOwnerPhone] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<{ items: AttachmentRow[]; index: number } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -99,7 +102,7 @@ export function ChatPanel({
     (async () => {
       const { data } = await supabase
         .from("conversations")
-        .select("buyer_id,owner_id,buyer_last_read_at,owner_last_read_at")
+        .select("buyer_id,owner_id,buyer_last_read_at,owner_last_read_at,reopened_at")
         .eq("id", conversationId)
         .maybeSingle();
       if (data) {
@@ -107,6 +110,7 @@ export function ChatPanel({
           ? (data as any).owner_last_read_at
           : (data as any).buyer_last_read_at;
         setPeerLastReadAt(peerRead);
+        setReopenedAt((data as any).reopened_at ?? null);
       }
     })();
   }, [conversationId, user?.id]);
@@ -151,6 +155,7 @@ export function ChatPanel({
           const peerRead =
             user?.id === conv.buyer_id ? conv.owner_last_read_at : conv.buyer_last_read_at;
           setPeerLastReadAt(peerRead);
+          setReopenedAt(conv.reopened_at ?? null);
         }
       )
       .subscribe();
