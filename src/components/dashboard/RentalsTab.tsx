@@ -203,11 +203,11 @@ const RentalsTab = () => {
       />
 
       {/* Premium reservation cards */}
-      {(pendingRentals.length > 0 || premiumActiveRentals.length > 0) && (
+      {premiumRentals.length > 0 && (
         <section>
           <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2 text-base">
             Rezervările mele
-            <Badge className="bg-primary text-primary-foreground">{pendingRentals.length + premiumActiveRentals.length}</Badge>
+            <Badge className="bg-primary text-primary-foreground">{premiumRentals.length}</Badge>
           </h3>
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
             {premiumRentals.map((rental) => {
