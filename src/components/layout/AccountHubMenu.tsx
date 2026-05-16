@@ -31,12 +31,14 @@ import {
   Heart,
   PackageCheck,
   Store,
+  LifeBuoy,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAccountDashboard } from "@/hooks/useAccountDashboard";
 import { useIsAdmin } from "@/hooks/queries/useAdminStats";
 import { useAdminNotificationSummary } from "@/hooks/queries/useAdminNotifications";
+import { useDrawerStats } from "@/hooks/queries/useDrawerStats";
 import { useIsBanned } from "@/hooks/useIsBanned";
 import { BannedBadge } from "@/components/common/BannedBadge";
 import { BannedBanner } from "@/components/common/BannedBanner";
@@ -259,6 +261,8 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
   const { data, isLoading } = useAccountDashboard();
   const { data: isAdmin } = useIsAdmin(user?.id);
   const { data: adminSummary } = useAdminNotificationSummary();
+  const { data: drawerStats } = useDrawerStats(user?.id);
+  const openTickets = drawerStats?.openTickets ?? 0;
   const { isBanned } = useIsBanned();
   const adminUnread = isAdmin ? adminSummary?.unread_total ?? 0 : 0;
 
