@@ -185,6 +185,13 @@ const RentalsOutTab = () => {
                       loading="lazy"
                       className="h-full w-full object-cover"
                     />
+                      {rental.public_id && (
+                        <div className="absolute top-2 left-2 sm:top-3 sm:left-3">
+                          <Badge variant="secondary" className="font-mono text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 bg-background/90 text-foreground border border-border shadow-md">
+                            {rental.public_id}
+                          </Badge>
+                        </div>
+                      )}
                     <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
                       {isPending ? (
                         <Badge className="bg-primary text-primary-foreground animate-pulse shadow-md text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">Cerere nouă</Badge>
