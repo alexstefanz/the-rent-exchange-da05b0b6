@@ -400,11 +400,30 @@ export function ChatPanel({
         )}
       </div>
 
-      <MessageInput
-        conversationId={conversationId}
-        onSend={handleSend}
-        onTyping={() => setTyping(true)}
-      />
+      {isClosed ? (
+        <div className="border-t bg-background px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-start gap-2 text-sm">
+            <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+            <div>
+              <p className="font-medium">{t("Conversație finalizată", "Conversation closed")}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("Închirierea a fost încheiată.", "The rental has ended.")}
+              </p>
+            </div>
+          </div>
+          <Button onClick={handleReopen} disabled={reopening} size="sm" className="shrink-0">
+            {reopening
+              ? t("Se reia…", "Resuming…")
+              : t("Reia conversația", "Resume conversation")}
+          </Button>
+        </div>
+      ) : (
+        <MessageInput
+          conversationId={conversationId}
+          onSend={handleSend}
+          onTyping={() => setTyping(true)}
+        />
+      )}
 
       {lightbox && (
         <MediaLightbox
