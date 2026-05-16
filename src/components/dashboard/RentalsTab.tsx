@@ -339,7 +339,12 @@ const RentalsTab = () => {
                   return (
                     <div key={rental.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3">
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-foreground truncate">{rental.product_title}</p>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <p className="font-medium text-foreground truncate">{rental.product_title}</p>
+                          {rental.public_id && (
+                            <span className="font-mono text-[10px] text-muted-foreground bg-muted/60 rounded px-1.5 py-0.5 flex-shrink-0">{rental.public_id}</span>
+                          )}
+                        </div>
                         <p className="text-sm text-muted-foreground truncate">
                           Proprietar: <span className="text-foreground">{rental.owner_name}</span>
                         </p>
