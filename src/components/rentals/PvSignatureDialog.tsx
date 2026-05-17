@@ -558,8 +558,11 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
                   <Button type="button" variant="ghost" size="sm" onClick={() => sigRef.current?.clear()}>
                     <Eraser className="h-4 w-4 mr-1" />Sterge
                   </Button>
-                  {!canSign && photos.length < MIN_PHOTOS && (
+                  {!canSign && isUploader && photos.length < MIN_PHOTOS && (
                     <span className="text-xs text-muted-foreground self-center">Adauga {MIN_PHOTOS - photos.length} fotografii</span>
+                  )}
+                  {!canSign && !isUploader && photos.length === 0 && (
+                    <span className="text-xs text-muted-foreground self-center">Asteapta fotografii</span>
                   )}
                 </div>
               </section>
