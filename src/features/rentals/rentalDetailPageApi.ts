@@ -214,11 +214,20 @@ export async function updatePvPdfPath(rentalId: string, phase: "handover" | "ret
 
 /** Initiate the return phase (renter clicks "Iniciaza returnarea"). */
 export async function initiateReturn(rentalId: string) {
-  const { error } = await supabase
-    .from("rentals")
-    .update({ early_return_status: "initiated" })
-    .eq("id", rentalId);
+  const { error } = await supabase.rpc("initiate_return" as never, { _rental_id: rentalId } as never);
   if (error) throw error;
+}
+
+/** Check if the return phase has been initiated (= return PV row exists). */
+export async function getReturnInitiated(rentalId: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("rental_pv_documents")
+    .select("id")
+    .eq("rental_id", rentalId)
+    .eq("phase", "return")
+    .maybeSingle();
+  if (error) return false;
+  return !!data;
 }
 
 /** Renter confirms they physically received the product (after handover PV is signed by both). */
