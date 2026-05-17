@@ -3036,6 +3036,7 @@ export type Database = {
         Args: { p_macro_id: string }
         Returns: undefined
       }
+      initiate_return: { Args: { _rental_id: string }; Returns: undefined }
       is_user_banned: { Args: { _user_id: string }; Returns: boolean }
       is_user_favorite: { Args: { target_user_id: string }; Returns: boolean }
       kb_record_view: { Args: { p_slug: string }; Returns: undefined }
