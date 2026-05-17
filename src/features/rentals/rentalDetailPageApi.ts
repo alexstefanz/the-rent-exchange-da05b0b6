@@ -220,3 +220,9 @@ export async function initiateReturn(rentalId: string) {
     .eq("id", rentalId);
   if (error) throw error;
 }
+
+/** Renter confirms they physically received the product (after handover PV is signed by both). */
+export async function confirmHandoverReceived(rentalId: string) {
+  const { error } = await supabase.rpc("confirm_handover_received" as never, { _rental_id: rentalId } as never);
+  if (error) throw error;
+}
