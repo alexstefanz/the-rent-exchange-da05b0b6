@@ -1,48 +1,38 @@
-## Problema
+## Obiectiv
 
-PV-urile semnate de ambele părți după noul template ar trebui să arate un buton **„Vezi PV semnat (PDF)"** și să genereze automat fișierul PDF cu noul format. În screenshot, după ce ambele părți au semnat (17.05.2026 11:42), butonul portocaliu de PDF lipsește din dialog.
+Adauga un pas explicit de confirmare a primirii produsului de catre chirias dupa semnarea PV de predare. Astazi, dupa ce ambele parti semneaza PV-ul, rezervarea trece automat in `active` (Pasul 5 — Produs predat). Vrem ca acest pas sa devina manual: chiriasul trebuie sa apese „Am primit produsul" pentru a confirma fizic primirea.
 
-Cauze identificate în `src/components/rentals/PvSignatureDialog.tsx`:
+## Comportament
 
-1. **`generatePdf` poate eșua silențios** — operația include fetch-uri către storage pentru fiecare poză, `new Image()` async și `doc.addImage`. Orice excepție (CORS, imagine corruptă, FileReader fail) este prinsă de `try/catch` din `handleSign` și se afișează doar `toast.error` generic. Semnătura rămâne salvată, dar `pdf_path` rămâne `null` → la următoarea deschidere a dialogului nu apare butonul PDF.
-2. **Nu există o cale de recuperare** — odată ce ambii au semnat și PDF-ul a eșuat, nu se poate reîncerca generarea. PV-urile vechi (semnate înainte de noul template) au PDF generat cu vechiul layout și nu pot fi reîmprospătate.
-3. **Refresh după semnare** — în `handleSign`, după ce se salvează `pdfPath`, nu se face `setPv(...)` cu noul rând, deci dacă utilizatorul nu închide dialogul, butonul tot nu apare.
+1. Ambele parti semneaza PV de predare → status ramane `confirmed`, `handover_confirmed_at` ramane `NULL`.
+2. Pe pagina rezervarii apare un card nou „Pasul 5 — Preia produsul":
+   - **Chirias**: text „PV-ul a fost semnat de ambele parti. Mergi la {oras} si confirma primirea dupa ce ai produsul in mana." + buton secundar „Vezi PV" + buton primar „Am primit produsul".
+   - **Proprietar**: aceeasi sectiune, dar in loc de buton de confirmare: badge „Asteptam chiriasul sa confirme primirea" + buton „Vezi PV".
+3. La click pe „Am primit produsul" → confirm dialog → seteaza `handover_confirmed_at = now()` si `status = 'active'`. Realtime updateaza UI-ul ambelor parti.
+4. Dupa confirmare, restul fluxului (PV Returnare, early return, etc.) ramane neschimbat.
 
-## Soluție
+## Modificari tehnice
 
-Modific doar `src/components/rentals/PvSignatureDialog.tsx`:
+**Backend (migration noua):**
+- Modifica trigger-ul `tg_pv_handover_progress` astfel incat sa NU mai seteze automat `handover_confirmed_at` si `status='active'` la semnarea ambelor PV-uri. Trigger-ul poate fi sters complet sau redus la no-op (PV-ul semnat ramane in `rental_pv_documents`, dar nu mai promoveaza rental-ul).
+- Adauga RPC `confirm_handover_received(_rental_id uuid)`:
+  - Verifica `auth.uid() = rentals.renter_id`.
+  - Verifica ca exista `rental_pv_documents` cu `phase='handover'` si ambele `owner_signed_at` + `renter_signed_at` non-null.
+  - Verifica ca `handover_confirmed_at IS NULL` si `status NOT IN ('cancelled','rejected','completed')`.
+  - Seteaza `handover_confirmed_at = now()`, `status = 'active'`.
+  - `SECURITY DEFINER`, `search_path = public`.
 
-1. **Buton „Regenereaza PDF"** vizibil oricui când `pv.owner_signed_at && pv.renter_signed_at` (indiferent dacă `pdf_path` există), poziționat lângă/peste butonul existent „Vezi PV semnat (PDF)". Acțiunea:
-   - apelează `generatePdf(pv)` → `uploadPvPdf(blob, ...)` → `savePvSignatureAndPdf({ pdfPath })` (folosind semnătura existentă a utilizatorului curent, fără a re-suprascrie semnătura celuilalt — adaug `signatureDataUrl` opțional în `savePvSignatureAndPdf` sau, mai curat, fac un mic helper care actualizează direct `pdf_path` + `generated_at` fără să atingă semnăturile).
-   - toast success + `setPv(refreshed)`.
+**Frontend:**
+- `src/features/rentals/rentalDetailPageApi.ts`: helper nou `confirmHandoverReceived(rentalId)` care apeleaza RPC-ul.
+- `src/pages/RentalDetailPage.tsx`: card nou „Pasul 5 — Preia produsul" afisat cand `handoverDoneEarly && !rental.handover_confirmed_at && rental.status !== 'cancelled'`. Pozitionat sub sectiunea „Procese verbale". Buton „Vezi PV" deschide `setPvOpen('handover')`; buton „Am primit produsul" (doar pentru renter) deschide un mic `AlertDialog` de confirmare → `confirmHandoverReceived` → `refetch`.
+- Pentru proprietar: acelasi card, fara butonul de confirmare, cu mesaj „Asteptam chiriasul sa confirme primirea".
+- Notificare in-app opcional pentru proprietar la confirmare — **out of scope** pentru acest pas (se poate adauga separat).
 
-2. **Helper nou `updatePvPdfPath(rentalId, phase, pdfPath)`** în `src/features/rentals/rentalDetailPageApi.ts` care face doar `update({ pdf_path, generated_at })` — evită cerința de `signatureDataUrl` din `savePvSignatureAndPdf` la regenerare.
+**Compatibilitate cu rezervarile existente:**
+- Rezervarile cu `handover_confirmed_at` deja setat sau `status='active'` raman neatinse (cardul nu se afiseaza pentru ele).
+- Rezervarile in care PV-ul este semnat dar `handover_confirmed_at` e `NULL` vor afisa noul card si vor astepta confirmarea chiriasului.
 
-3. **Hardening la `generatePdf`**:
-   - dacă `rental.start_date`/`end_date` lipsesc → folosesc fallback `-`.
-   - try/catch în jurul fetch-ului fiecărei imagini (deja există), dar și în jurul `new Image()` cu timeout 8s.
-   - log explicit în consolă cu motivul eșuării.
+## Out of scope
 
-4. **Mesaj de eroare detaliat în `handleSign`** — `toast.error("PDF: " + (e?.message || "eroare necunoscuta"))` în loc de generic.
-
-5. **Refresh `pv` după generarea PDF-ului în `handleSign`** — apel `getPvDocument` și `setPv(...)` înainte de `onOpenChange(false)`, ca să vadă imediat butonul dacă ar redeschide.
-
-Nu se modifică schema bazei de date, RLS sau edge functions.
-
-## Detalii tehnice
-
-```text
-PvSignatureDialog
- ├── handleSign (existent)
- │    ├── savePvSignatureAndPdf (semnătură)
- │    ├── dacă ambii semnati:
- │    │     generatePdf → uploadPvPdf → updatePvPdfPath
- │    │     setPv(refreshed)
- │    └── toast.error("PDF: <motiv>") la fail
- └── handleRegeneratePdf (nou)
-      generatePdf → uploadPvPdf → updatePvPdfPath
-      setPv(refreshed)
-      toast.success("PDF regenerat")
-```
-
-Buton nou redat doar când `pv.owner_signed_at && pv.renter_signed_at`, deasupra/sub butonul portocaliu de vizualizare. Dacă `pdf_path` lipsește, butonul portocaliu nu apare iar cel de regenerare devine principalul CTA.
+- SMS/email la confirmare (se pot adauga ulterior via `notify-rental-event`).
+- Schimbari pe `RentalTimeline` (step 5 ramane „Produs predat" si se aprinde tot pe baza `handover_confirmed_at`, ceea ce e deja corect).
