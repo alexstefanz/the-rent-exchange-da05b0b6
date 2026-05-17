@@ -1,20 +1,12 @@
-## Fix titlu notificări și poziție timp
+## Permite încărcarea de poze multiple în PV
 
-**Problemă:** Titlurile notificărilor sunt trunchiate (ex. "Plata a fost confirma...") din cauza `truncate` pe aceeași linie cu timestamp-ul.
-
-**Fișier de modificat:** `src/components/notifications/NotificationCard.tsx`
+**Fișier:** `src/components/rentals/PvPhotoUploadCard.tsx`
 
 **Schimbări:**
 
-1. Elimin `truncate` de pe titlu și `whitespace-nowrap` de pe rândul flex; titlul devine `line-clamp-2` pe lățime completă, fără competiție pentru spațiu.
-2. Mut timestamp-ul sub titlu (rând nou), cu `text-[11px] text-muted-foreground/70`, eventual cu un punct separator înainte de descriere sau pe linie proprie.
+1. `handleAddPhotos` — elimin `slice(0, Math.max(0, MIN_PV_PHOTOS - photoCount) || files.length)` care plafona la minim. Iterez peste TOATE fișierele selectate (`Array.from(files)`).
+2. `EmptySlot` `<input>` — adaug `multiple` ca să poată selecta mai multe poze dintr-o singură dată chiar și din slot-urile dashed.
+3. Buton principal de încărcare — păstrează `multiple` (deja există); actualizez label-ul ca să reflecte că minimul e 2 dar poți adăuga mai multe: `Incarca poze (X · min ${MIN_PV_PHOTOS})`.
+4. Grid-ul deja randează `Math.max(MIN_PV_PHOTOS, photoCount)` slot-uri, deci pozele suplimentare apar automat. Adaug încă un slot gol la final după ce s-au atins minimul, pentru a permite adăugarea continuă.
 
-**Structură nouă a body-ului:**
-```
-[Titlu complet pe 1–2 rânduri]
-[Timp — mai puțin de un minut în urmă]
-[Descriere line-clamp-2]
-[Buton acțiune]
-```
-
-**În afara scopului:** Logica de filtre, categorii, realtime, mapLink — neatinse. Doar layout în card.
+**În afara scopului:** Nicio schimbare în DB/RLS, în logica de semnare sau în `PvSignatureDialog`. Doar UI-ul cardului de upload.

@@ -59,7 +59,7 @@ export default function PvPhotoUploadCard({ rental, phase, role, onOpenDocument,
     if (!files || files.length === 0) return;
     setUploading(true);
     try {
-      const arr = Array.from(files).slice(0, Math.max(0, MIN_PV_PHOTOS - photoCount) || files.length);
+      const arr = Array.from(files);
       for (const f of arr) {
         const path = await uploadPvPhoto(f, rental.id, phase);
         await addPvPhoto({ rentalId: rental.id, phase, role, path });
@@ -147,7 +147,7 @@ export default function PvPhotoUploadCard({ rental, phase, role, onOpenDocument,
         ) : (
           <>
             <div className="grid grid-cols-2 gap-3">
-              {Array.from({ length: Math.max(MIN_PV_PHOTOS, photoCount) }).map((_, idx) => {
+              {Array.from({ length: Math.max(MIN_PV_PHOTOS, photoCount) + (photoCount >= MIN_PV_PHOTOS ? 1 : 0) }).map((_, idx) => {
                 const path = photos[idx];
                 return path ? (
                   <PhotoSlot key={path} path={path} index={idx} onRemove={() => handleRemove(path)} />
@@ -168,7 +168,7 @@ export default function PvPhotoUploadCard({ rental, phase, role, onOpenDocument,
               />
               <span className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background hover:bg-muted/50 transition-colors px-4 py-2.5 text-sm font-medium text-foreground">
                 {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                Incarca poze ({photoCount}/{MIN_PV_PHOTOS})
+                Incarca poze ({photoCount} · min {MIN_PV_PHOTOS})
               </span>
             </label>
           </>
@@ -208,6 +208,7 @@ function EmptySlot({ index, disabled, onPick }: { index: number; disabled: boole
       <input
         type="file"
         accept="image/*"
+        multiple
         className="hidden"
         disabled={disabled}
         onChange={(e) => { onPick(e.target.files); e.target.value = ""; }}
