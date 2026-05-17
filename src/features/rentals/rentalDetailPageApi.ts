@@ -202,6 +202,16 @@ export async function getPvFileSignedUrl(path: string): Promise<string> {
   return data.signedUrl;
 }
 
+/** Update only the pdf_path on a PV (used for regeneration without touching signatures). */
+export async function updatePvPdfPath(rentalId: string, phase: "handover" | "return", pdfPath: string) {
+  const { error } = await supabase
+    .from("rental_pv_documents")
+    .update({ pdf_path: pdfPath, generated_at: new Date().toISOString() } as never)
+    .eq("rental_id", rentalId)
+    .eq("phase", phase);
+  if (error) throw error;
+}
+
 /** Initiate the return phase (renter clicks "Iniciaza returnarea"). */
 export async function initiateReturn(rentalId: string) {
   const { error } = await supabase

@@ -15,6 +15,7 @@ import {
   uploadPvPdf,
   savePvSignatureAndPdf,
   getPvFileSignedUrl,
+  updatePvPdfPath,
   type PvDocument,
 } from "@/features/rentals/rentalDetailPageApi";
 import type { RentalFullDetail } from "@/features/rentals/rentalDetailPageApi";
@@ -38,6 +39,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [signing, setSigning] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [lightbox, setLightbox] = useState<number | null>(null);
 
   useEffect(() => {
@@ -353,9 +355,18 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
 
       // If both signed -> generate PDF
       if (refreshed.owner_signature_data && refreshed.renter_signature_data) {
-        const blob = await generatePdf(refreshed);
-        const path = await uploadPvPdf(blob, rental.id, phase);
-        await savePvSignatureAndPdf({ rentalId: rental.id, phase, role, signatureDataUrl: dataUrl, pdfPath: path });
+        try {
+          const blob = await generatePdf(refreshed);
+          const path = await uploadPvPdf(blob, rental.id, phase);
+          await updatePvPdfPath(rental.id, phase, path);
+          const afterPdf = await getPvDocument(rental.id, phase);
+          if (afterPdf) setPv(afterPdf);
+        } catch (pdfErr: any) {
+          console.error("PV PDF generation failed:", pdfErr);
+          toast.error("PDF: " + (pdfErr?.message || "eroare la generare"));
+        }
+      } else {
+        setPv(refreshed);
       }
 
       // Notify the other party (in-app + email + SMS via existing function)
@@ -373,7 +384,10 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
 
       toast.success("Semnatura inregistrata");
       onSigned?.();
-      onOpenChange(false);
+      // Keep dialog open if PDF still missing so user sees the regenerate button.
+      const finalPv = await getPvDocument(rental.id, phase);
+      if (finalPv) setPv(finalPv);
+      if (finalPv?.pdf_path) onOpenChange(false);
     } catch (e: any) {
       toast.error(e?.message || "Eroare la semnare");
     } finally {
@@ -388,6 +402,24 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       window.open(url, "_blank");
     } catch (e: any) {
       toast.error(e?.message || "Nu s-a putut deschide PDF");
+    }
+  }
+
+  async function handleRegeneratePdf() {
+    if (!pv) return;
+    setRegenerating(true);
+    try {
+      const blob = await generatePdf(pv);
+      const path = await uploadPvPdf(blob, rental.id, phase);
+      await updatePvPdfPath(rental.id, phase, path);
+      const refreshed = await getPvDocument(rental.id, phase);
+      if (refreshed) setPv(refreshed);
+      toast.success("PDF regenerat");
+    } catch (e: any) {
+      console.error("PV PDF regenerate failed:", e);
+      toast.error("PDF: " + (e?.message || "eroare la generare"));
+    } finally {
+      setRegenerating(false);
     }
   }
 
@@ -474,6 +506,28 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
                   </span>
                 </span>
                 <ExternalLink className="h-4 w-4 opacity-90" />
+              </button>
+            )}
+
+            {/* Regenerate PDF (also creates it if missing). Available once both parties signed. */}
+            {pv?.owner_signed_at && pv?.renter_signed_at && (
+              <button
+                type="button"
+                onClick={handleRegeneratePdf}
+                disabled={regenerating}
+                className="w-full flex items-center justify-between gap-3 rounded-xl border border-border bg-card hover:bg-muted/40 transition-colors p-3 text-sm disabled:opacity-60"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary">
+                    {regenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                  </span>
+                  <span className="text-left">
+                    <span className="block font-semibold">{pv?.pdf_path ? "Regenereaza PDF" : "Genereaza PDF"}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {pv?.pdf_path ? "Recreeaza documentul cu noul template" : "PDF-ul nu a fost generat — apasa pentru a-l crea"}
+                    </span>
+                  </span>
+                </span>
               </button>
             )}
 
