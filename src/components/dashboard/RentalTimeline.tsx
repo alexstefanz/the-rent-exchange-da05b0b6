@@ -55,13 +55,13 @@ export function getTimelineStep(rental: RentalForTimeline): { current: number; c
 }
 
 const STEPS = [
-  { icon: Send, ro: "Cerere trimisă", en: "Request sent" },
-  { icon: ThumbsUp, ro: "Confirmat", en: "Confirmed" },
-  { icon: CreditCard, ro: "Plată efectuată", en: "Payment done" },
-  { icon: FileSignature, ro: "Semnături PV", en: "PV signatures" },
-  { icon: Package, ro: "Produs predat", en: "Handed over" },
-  { icon: RotateCcw, ro: "Returnare", en: "Return" },
-  { icon: CheckCircle2, ro: "Finalizat", en: "Completed" },
+  { icon: Send, ro: "Cerere trimisă", en: "Request sent", roShort: "Cerere", enShort: "Request" },
+  { icon: ThumbsUp, ro: "Confirmat", en: "Confirmed", roShort: "Confirmat", enShort: "Confirmed" },
+  { icon: CreditCard, ro: "Plată efectuată", en: "Payment done", roShort: "Plată", enShort: "Payment" },
+  { icon: FileSignature, ro: "Semnături PV", en: "PV signatures", roShort: "Semnături", enShort: "Signatures" },
+  { icon: Package, ro: "Produs predat", en: "Handed over", roShort: "Predat", enShort: "Handover" },
+  { icon: RotateCcw, ro: "Returnare", en: "Return", roShort: "Returnare", enShort: "Return" },
+  { icon: CheckCircle2, ro: "Finalizat", en: "Completed", roShort: "Finalizat", enShort: "Done" },
 ] as const;
 
 interface Props {
@@ -93,13 +93,13 @@ const RentalTimeline = ({ rental, className }: Props) => {
                   idx === 0 ? "opacity-0" : isPast || isActive ? "bg-emerald-500" : "bg-border",
                 )} />
                 <div className={cn(
-                  "relative z-10 flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300",
+                  "relative z-10 flex h-7 w-7 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300",
                   isPast && "bg-emerald-500 border-emerald-500 text-white",
                   isActive && "bg-[#F98715] border-[#F98715] text-white animate-[soft-pulse_3.2s_ease-in-out_infinite]",
                   isCancel && "bg-rose-500 border-rose-500 text-white",
                   isFuture && "bg-muted border-border text-muted-foreground",
                 )}>
-                  <Icon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
+                  <Icon className="h-3.5 w-3.5 sm:h-[18px] sm:w-[18px]" />
                 </div>
                 <div className={cn(
                   "h-[2px] flex-1 transition-all duration-700",
@@ -107,10 +107,11 @@ const RentalTimeline = ({ rental, className }: Props) => {
                 )} />
               </div>
               <span className={cn(
-                "mt-2 text-[10px] sm:text-[11px] text-center leading-tight px-0.5 truncate w-full",
+                "mt-2 text-[9px] sm:text-[11px] text-center leading-tight px-0.5 w-full break-words hyphens-auto",
                 isActive ? "text-[#F98715] font-semibold" : isPast ? "text-emerald-700" : "text-muted-foreground",
               )}>
-                {language === "ro" ? s.ro : s.en}
+                <span className="sm:hidden">{language === "ro" ? s.roShort : s.enShort}</span>
+                <span className="hidden sm:inline">{language === "ro" ? s.ro : s.en}</span>
               </span>
             </div>
           );
