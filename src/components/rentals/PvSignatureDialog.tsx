@@ -449,16 +449,20 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm">Fotografii ({photos.length})</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Min. {MIN_PHOTOS} foto. Recomandat: vedere de ansamblu, accesorii, eventuale defecte.
+                  {isUploader
+                    ? `Min. ${MIN_PHOTOS} foto. Recomandat: vedere de ansamblu, accesorii, eventuale defecte.`
+                    : `Doar ${uploaderRole === "owner" ? "proprietarul" : "chiriasul"} poate adauga fotografii pentru acest PV. Tu doar verifici si semnezi.`}
                 </p>
               </div>
-              <label className={(mySigned || !isMyTurn) ? "pointer-events-none opacity-50" : "cursor-pointer"}>
-                <input type="file" accept="image/*" multiple className="hidden" onChange={handleAddPhotos} disabled={uploading || mySigned || !isMyTurn} />
-                <span className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-[#F98715] transition-colors px-4 py-2 text-sm font-semibold shadow-sm">
-                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
-                  Adauga fotografii
-                </span>
-              </label>
+              {canUpload && (
+                <label className={uploading ? "pointer-events-none opacity-50" : "cursor-pointer"}>
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleAddPhotos} disabled={uploading} />
+                  <span className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-[#F98715] transition-colors px-4 py-2 text-sm font-semibold shadow-sm">
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+                    Adauga fotografii
+                  </span>
+                </label>
+              )}
             </section>
 
             {isLockedWaiting && (
@@ -471,30 +475,24 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
               </section>
             )}
 
-            {/* Owner gallery */}
+            {/* Unified gallery (uploader contributes; the other party only views) */}
             <PhotoGallery
-              title="Fotografii Proprietar"
-              accent="bg-sky-50 border-sky-200"
-              chip="bg-sky-100 text-sky-800"
-              photosMeta={ownerPhotos}
+              title={galleryTitle}
+              accent={uploaderRole === "owner" ? "bg-sky-50 border-sky-200" : "bg-amber-50 border-amber-200"}
+              chip={uploaderRole === "owner" ? "bg-sky-100 text-sky-800" : "bg-amber-100 text-amber-800"}
+              photosMeta={photosMeta}
               myRole={role}
-              role="owner"
-              canDelete={role === "owner" && !mySigned}
+              role={uploaderRole}
+              canDelete={isUploader && !mySigned}
               onRemove={handleRemovePhoto}
               onOpen={(path) => setLightbox(photos.indexOf(path))}
             />
-            {/* Renter gallery */}
-            <PhotoGallery
-              title="Fotografii Chirias"
-              accent="bg-amber-50 border-amber-200"
-              chip="bg-amber-100 text-amber-800"
-              photosMeta={renterPhotos}
-              myRole={role}
-              role="renter"
-              canDelete={role === "renter" && !mySigned}
-              onRemove={handleRemovePhoto}
-              onOpen={(path) => setLightbox(photos.indexOf(path))}
-            />
+
+            {approverHint && (
+              <p className="text-xs text-muted-foreground bg-muted/40 border border-border rounded-lg p-3">
+                {approverHint}
+              </p>
+            )}
 
             {/* Prominent PDF button */}
             {pv?.pdf_path && (
