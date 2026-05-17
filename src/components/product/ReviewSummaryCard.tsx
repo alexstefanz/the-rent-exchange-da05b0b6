@@ -38,10 +38,9 @@ const ReviewSummaryCard = ({ productId }: Props) => {
             {data.count} {data.count === 1 ? t("recenzie", "review") : t("recenzii", "reviews")}
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Bar label={t("Comunicare", "Communication")} value={data.avg_communication} />
           <Bar label={t("Stare produs", "Condition")} value={data.avg_condition} />
-          <Bar label={t("Punctualitate", "Punctuality")} value={data.avg_punctuality} />
         </div>
       </div>
     </div>
