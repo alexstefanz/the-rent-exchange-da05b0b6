@@ -753,6 +753,7 @@ const RentalDetailPage = () => {
   );
 };
 
+
 function PvRow({ label, ownerSignedAt, renterSignedAt, onOpen }: { label: string; ownerSignedAt: string | null; renterSignedAt: string | null; onOpen: () => void }) {
   const ownerOk = !!ownerSignedAt;
   const renterOk = !!renterSignedAt;
