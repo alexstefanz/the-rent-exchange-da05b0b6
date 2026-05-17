@@ -4,10 +4,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { Suspense, lazy } from "react";
 import Index from "./pages/Index";
 import ScrollToTop from "./components/ScrollToTop";
+import { useGlobalRealtime } from "@/hooks/useGlobalRealtime";
 
 const SupportChatWidget = lazy(() => import("./components/support/SupportChatWidget"));
 const CookieConsent = lazy(() => import("./components/CookieConsent"));
@@ -20,6 +22,12 @@ const ConditionalWidgets = () => {
       <SupportChatWidget />
     </>
   );
+};
+
+const GlobalRealtime = () => {
+  const { user } = useAuth();
+  useGlobalRealtime(user?.id);
+  return null;
 };
 
 // Lazy-loaded routes
@@ -108,6 +116,7 @@ const App = () => (
               <ConditionalWidgets />
               <CookieConsent />
             </Suspense>
+            <GlobalRealtime />
             <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>}>
               <Routes>
                 <Route path="/" element={<Index />} />
