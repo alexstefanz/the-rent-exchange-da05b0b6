@@ -48,8 +48,10 @@ function ReviewCard({ review }: { review: ProductReview }) {
         {review.rating_communication && (
           <div className="flex items-center gap-2"><span className="text-muted-foreground w-28">Comunicare</span><StarRating value={review.rating_communication} readonly /></div>
         )}
+        {review.rating_punctuality && (
+          <div className="flex items-center gap-2"><span className="text-muted-foreground w-28">Punctualitate</span><StarRating value={review.rating_punctuality} readonly /></div>
+        )}
       </div>
-      {review.comment && <p className="mt-2 ml-12 text-sm text-muted-foreground">{review.comment}</p>}
     </div>
   );
 }
