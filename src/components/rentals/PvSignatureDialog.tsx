@@ -15,6 +15,7 @@ import {
   uploadPvPdf,
   savePvSignatureAndPdf,
   getPvFileSignedUrl,
+  updatePvPdfPath,
   type PvDocument,
 } from "@/features/rentals/rentalDetailPageApi";
 import type { RentalFullDetail } from "@/features/rentals/rentalDetailPageApi";
@@ -38,6 +39,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [signing, setSigning] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [lightbox, setLightbox] = useState<number | null>(null);
 
   useEffect(() => {
@@ -353,9 +355,18 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
 
       // If both signed -> generate PDF
       if (refreshed.owner_signature_data && refreshed.renter_signature_data) {
-        const blob = await generatePdf(refreshed);
-        const path = await uploadPvPdf(blob, rental.id, phase);
-        await savePvSignatureAndPdf({ rentalId: rental.id, phase, role, signatureDataUrl: dataUrl, pdfPath: path });
+        try {
+          const blob = await generatePdf(refreshed);
+          const path = await uploadPvPdf(blob, rental.id, phase);
+          await updatePvPdfPath(rental.id, phase, path);
+          const afterPdf = await getPvDocument(rental.id, phase);
+          if (afterPdf) setPv(afterPdf);
+        } catch (pdfErr: any) {
+          console.error("PV PDF generation failed:", pdfErr);
+          toast.error("PDF: " + (pdfErr?.message || "eroare la generare"));
+        }
+      } else {
+        setPv(refreshed);
       }
 
       // Notify the other party (in-app + email + SMS via existing function)
@@ -373,7 +384,10 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
 
       toast.success("Semnatura inregistrata");
       onSigned?.();
-      onOpenChange(false);
+      // Keep dialog open if PDF still missing so user sees the regenerate button.
+      const finalPv = await getPvDocument(rental.id, phase);
+      if (finalPv) setPv(finalPv);
+      if (finalPv?.pdf_path) onOpenChange(false);
     } catch (e: any) {
       toast.error(e?.message || "Eroare la semnare");
     } finally {
@@ -388,6 +402,24 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       window.open(url, "_blank");
     } catch (e: any) {
       toast.error(e?.message || "Nu s-a putut deschide PDF");
+    }
+  }
+
+  async function handleRegeneratePdf() {
+    if (!pv) return;
+    setRegenerating(true);
+    try {
+      const blob = await generatePdf(pv);
+      const path = await uploadPvPdf(blob, rental.id, phase);
+      await updatePvPdfPath(rental.id, phase, path);
+      const refreshed = await getPvDocument(rental.id, phase);
+      if (refreshed) setPv(refreshed);
+      toast.success("PDF regenerat");
+    } catch (e: any) {
+      console.error("PV PDF regenerate failed:", e);
+      toast.error("PDF: " + (e?.message || "eroare la generare"));
+    } finally {
+      setRegenerating(false);
     }
   }
 
