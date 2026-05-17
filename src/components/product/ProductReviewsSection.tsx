@@ -5,7 +5,7 @@ import { ro } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -41,7 +41,10 @@ function StarRating({ value, onChange, readonly = false }: { value: number; onCh
   );
 }
 
-function ReviewCard({ review }: { review: ProductReview }) {
+function ReviewCard({ review, type, language }: { review: ProductReview; type: "owner" | "renter"; language: "ro" | "en" }) {
+  const label = type === "owner"
+    ? (language === "ro" ? "Proprietar" : "Owner")
+    : (language === "ro" ? "Chiriaș" : "Renter");
   return (
     <div className="border-b border-border pb-4 last:border-b-0 last:pb-0">
       <div className="flex items-center gap-3 mb-2">
@@ -49,8 +52,11 @@ function ReviewCard({ review }: { review: ProductReview }) {
           <AvatarImage src={review.reviewer_avatar || undefined} />
           <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
         </Avatar>
-        <div>
-          <p className="font-medium text-sm text-foreground">{review.reviewer_name || "Utilizator"}</p>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-medium text-sm text-foreground">{review.reviewer_name || "Utilizator"}</p>
+            <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5">{label}</Badge>
+          </div>
           <span className="text-xs text-muted-foreground">{format(new Date(review.created_at), "d MMM yyyy", { locale: ro })}</span>
         </div>
       </div>
@@ -68,13 +74,6 @@ function ReviewCard({ review }: { review: ProductReview }) {
       {review.comment && <p className="mt-2 ml-12 text-sm text-muted-foreground">{review.comment}</p>}
     </div>
   );
-}
-
-function ReviewList({ reviews }: { reviews: ProductReview[] }) {
-  if (reviews.length === 0) {
-    return <p className="text-sm text-muted-foreground py-6 text-center">Nu există recenzii momentan.</p>;
-  }
-  return <div className="space-y-4">{reviews.map((r) => <ReviewCard key={r.id} review={r} />)}</div>;
 }
 
 export default function ProductReviewsSection({ productId, isOwnProduct }: Props) {
@@ -142,6 +141,11 @@ export default function ProductReviewsSection({ productId, isOwnProduct }: Props
     ? (([...ownerReviews, ...renterReviews].reduce((s, r) => s + r.rating, 0)) / totalCount).toFixed(1)
     : "0";
 
+  const combinedReviews = [
+    ...ownerReviews.map((r) => ({ review: r, type: "owner" as const })),
+    ...renterReviews.map((r) => ({ review: r, type: "renter" as const })),
+  ].sort((a, b) => new Date(b.review.created_at).getTime() - new Date(a.review.created_at).getTime());
+
   return (
     <div className="rounded-xl border border-border bg-card p-6">
       <div className="mb-4 flex items-center justify-between">
@@ -156,30 +160,44 @@ export default function ProductReviewsSection({ productId, isOwnProduct }: Props
         )}
       </div>
 
-      <Tabs defaultValue="owner" onValueChange={(v) => setReviewType(v as "owner" | "renter")}>
-        <TabsList className="w-full">
-          <TabsTrigger value="owner" className="flex-1">
-            {language === "ro" ? "Recenzii proprietar" : "Owner reviews"} ({ownerReviews.length})
-          </TabsTrigger>
-          <TabsTrigger value="renter" className="flex-1">
-            {language === "ro" ? "Recenzii chiriaș" : "Renter reviews"} ({renterReviews.length})
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="owner">
-          {loading ? <p className="text-sm text-muted-foreground py-4">Se încarcă...</p> : <ReviewList reviews={ownerReviews} />}
-        </TabsContent>
-        <TabsContent value="renter">
-          {loading ? <p className="text-sm text-muted-foreground py-4">Se încarcă...</p> : <ReviewList reviews={renterReviews} />}
-        </TabsContent>
-      </Tabs>
+      {loading ? (
+        <p className="text-sm text-muted-foreground py-4">{language === "ro" ? "Se încarcă..." : "Loading..."}</p>
+      ) : combinedReviews.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-6 text-center">
+          {language === "ro" ? "Nu există recenzii momentan." : "No reviews yet."}
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {combinedReviews.map(({ review, type }) => (
+            <ReviewCard key={review.id} review={review} type={type} language={language as "ro" | "en"} />
+          ))}
+        </div>
+      )}
 
       {/* Add review form */}
       {user && !isOwnProduct && hasCompletedRental && (
         <div className="mt-6 border-t border-border pt-4">
-          <h3 className="font-medium text-foreground mb-3">
-            {language === "ro" ? "Adaugă o recenzie" : "Add a review"}
-          </h3>
+          <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+            <h3 className="font-medium text-foreground">
+              {language === "ro" ? "Adaugă o recenzie" : "Add a review"}
+            </h3>
+            <div className="inline-flex rounded-md border border-border p-0.5 bg-muted">
+              <button
+                type="button"
+                onClick={() => setReviewType("owner")}
+                className={`text-xs px-3 py-1 rounded ${reviewType === "owner" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+              >
+                {language === "ro" ? "Pentru proprietar" : "For owner"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setReviewType("renter")}
+                className={`text-xs px-3 py-1 rounded ${reviewType === "renter" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
+              >
+                {language === "ro" ? "Pentru chiriaș" : "For renter"}
+              </button>
+            </div>
+          </div>
           <div className="space-y-3">
             {CRITERIA.map((c) => (
               <div key={c.key} className="flex items-center gap-3">
