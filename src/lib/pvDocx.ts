@@ -35,7 +35,7 @@ async function loadImage(path: string): Promise<{ data: ArrayBuffer; type: "jpg"
   }
 }
 
-function p(text: string, opts: { bold?: boolean; align?: AlignmentType; size?: number } = {}) {
+function p(text: string, opts: { bold?: boolean; align?: (typeof AlignmentType)[keyof typeof AlignmentType]; size?: number } = {}) {
   return new Paragraph({
     alignment: opts.align ?? AlignmentType.JUSTIFIED,
     spacing: { after: 160 },
