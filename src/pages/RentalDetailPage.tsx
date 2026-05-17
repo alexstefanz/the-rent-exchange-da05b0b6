@@ -851,6 +851,48 @@ const RentalDetailPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={returnDialogOpen} onOpenChange={(o) => !initiatingReturn && setReturnDialogOpen(o)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("Initiaza returnarea produsului", "Initiate product return")}</DialogTitle>
+            <DialogDescription>
+              {t(
+                "Dupa confirmare, vei fotografia produsul si vei completa procesul verbal de returnare.",
+                "After confirmation, you'll photograph the product and complete the return PV.",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReturnDialogOpen(false)} disabled={initiatingReturn}>
+              {t("Renunta", "Cancel")}
+            </Button>
+            <Button
+              onClick={async () => {
+                if (initiatingReturn) return;
+                setInitiatingReturn(true);
+                try {
+                  await initiateReturn(rental.id);
+                  toast.success(t("Returnarea a fost initiata.", "Return initiated."));
+                  setReturnDialogOpen(false);
+                  await Promise.all([refetch(), refetchReturnInitiated()]);
+                  setPvOpen("return");
+                } catch (e: any) {
+                  console.error("initiate_return error:", e);
+                  toast.error(e?.message || t("Eroare la initiere.", "Failed to initiate."));
+                } finally {
+                  setInitiatingReturn(false);
+                }
+              }}
+              disabled={initiatingReturn}
+              className="shadow-lg shadow-primary/20"
+            >
+              {initiatingReturn ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-2" />}
+              {t("Confirm returnarea", "Confirm return")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
