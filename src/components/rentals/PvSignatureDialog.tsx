@@ -509,6 +509,28 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
               </button>
             )}
 
+            {/* Regenerate PDF (also creates it if missing). Available once both parties signed. */}
+            {pv?.owner_signed_at && pv?.renter_signed_at && (
+              <button
+                type="button"
+                onClick={handleRegeneratePdf}
+                disabled={regenerating}
+                className="w-full flex items-center justify-between gap-3 rounded-xl border border-border bg-card hover:bg-muted/40 transition-colors p-3 text-sm disabled:opacity-60"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary">
+                    {regenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                  </span>
+                  <span className="text-left">
+                    <span className="block font-semibold">{pv?.pdf_path ? "Regenereaza PDF" : "Genereaza PDF"}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {pv?.pdf_path ? "Recreeaza documentul cu noul template" : "PDF-ul nu a fost generat — apasa pentru a-l crea"}
+                    </span>
+                  </span>
+                </span>
+              </button>
+            )}
+
             {/* Status */}
             <section className="rounded-lg border border-border bg-muted/30 p-3 text-xs space-y-1">
               <div>Proprietar: {pv?.owner_signed_at ? `semnat ${format(new Date(pv.owner_signed_at), "dd.MM.yyyy HH:mm")}` : "in asteptare"}</div>
