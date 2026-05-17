@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical, Wallet, Check, X, MessageCircle, PackageCheck } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical, Wallet, Check, X, MessageCircle, PackageCheck, RotateCcw, PackageOpen } from "lucide-react";
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import Navbar from "@/components/layout/Navbar";
@@ -13,7 +13,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import RentalTimeline, { getTimelineStep } from "@/components/dashboard/RentalTimeline";
 import StatusBadge from "@/components/dashboard/StatusBadge";
 import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
-import { getRentalFullDetail, confirmHandoverReceived } from "@/features/rentals/rentalDetailPageApi";
+import { getRentalFullDetail, confirmHandoverReceived, getReturnInitiated, initiateReturn } from "@/features/rentals/rentalDetailPageApi";
 import MutualCancellationCard from "@/components/rentals/MutualCancellationCard";
 import PvSignatureDialog from "@/components/rentals/PvSignatureDialog";
 import ReturnCountdownBadge from "@/components/rentals/ReturnCountdownBadge";
@@ -48,6 +48,8 @@ const RentalDetailPage = () => {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [confirmingReceipt, setConfirmingReceipt] = useState(false);
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
+  const [initiatingReturn, setInitiatingReturn] = useState(false);
+  const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { data: isAdmin } = useIsAdmin(user?.id);
   const { data: wallet, refetch: refetchWallet } = useWalletBalance();
@@ -60,6 +62,12 @@ const RentalDetailPage = () => {
     queryKey: ["rental-detail", publicId],
     queryFn: () => getRentalFullDetail(publicId!),
     enabled: !!publicId && !!user?.id,
+  });
+
+  const { data: returnInitiated = false, refetch: refetchReturnInitiated } = useQuery({
+    queryKey: ["return-initiated", rental?.id],
+    queryFn: () => getReturnInitiated(rental!.id),
+    enabled: !!rental?.id,
   });
 
   // Realtime: refetch rental detail on rentals + rental_pv_documents changes.
@@ -75,7 +83,10 @@ const RentalDetailPage = () => {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "rental_pv_documents", filter: `rental_id=eq.${rental.id}` },
-        () => queryClient.invalidateQueries({ queryKey: ["rental-detail", publicId] }),
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["rental-detail", publicId] });
+          queryClient.invalidateQueries({ queryKey: ["return-initiated", rental.id] });
+        },
       )
       .on(
         "postgres_changes",
