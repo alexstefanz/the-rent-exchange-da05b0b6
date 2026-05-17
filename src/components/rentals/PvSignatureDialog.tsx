@@ -95,32 +95,147 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
     }
   }
 
+  // TODO: inlocuit cu date reale din KYC odata ce avem CI uploadata si validata.
+  // Pana atunci generam date fictive deterministice pe baza user id-ului.
+  function fakeIdentity(seed: string | null | undefined) {
+    const s = (seed || "00000000").replace(/[^a-f0-9]/gi, "");
+    const h = (offset: number, len: number, mod: number) => {
+      let n = 0;
+      for (let i = 0; i < s.length; i++) n = (n * 31 + s.charCodeAt(i) + offset) >>> 0;
+      return String(n % mod).padStart(len, "0");
+    };
+    const cnp = `1${h(1, 2, 100)}${h(2, 2, 12).padStart(2, "0")}${h(3, 2, 28).padStart(2, "0")}${h(4, 6, 1000000)}`;
+    const seriiCI = ["RR", "RX", "RT", "RK", "RD", "RZ"];
+    const serie = seriiCI[parseInt(h(5, 1, 6), 10) || 0];
+    const nr = h(6, 6, 1000000);
+    const strazi = ["Florilor", "Mihai Eminescu", "Aviatorilor", "Stefan cel Mare", "Unirii", "Victoriei"];
+    const strada = strazi[parseInt(h(7, 1, 6), 10) || 0];
+    const nrCasa = parseInt(h(8, 2, 99), 10) || 1;
+    const sector = (parseInt(h(9, 1, 6), 10) || 1);
+    const adresa = `Str. ${strada} nr. ${nrCasa}, Bucuresti, Sector ${sector}`;
+    return { cnp, serie, nr, adresa };
+  }
+
+  // jsPDF Helvetica nu suporta diacriticele romanesti — le inlocuim cu echivalente ASCII
+  function noDia(s: string | null | undefined): string {
+    if (!s) return "-";
+    return s
+      .replace(/[ăâ]/g, "a").replace(/[ĂÂ]/g, "A")
+      .replace(/î/g, "i").replace(/Î/g, "I")
+      .replace(/[șş]/g, "s").replace(/[ȘŞ]/g, "S")
+      .replace(/[țţ]/g, "t").replace(/[ȚŢ]/g, "T");
+  }
+
   async function generatePdf(updatedPv: PvDocument): Promise<Blob> {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const W = doc.internal.pageSize.getWidth();
     const H = doc.internal.pageSize.getHeight();
-    let y = 50;
-    const phaseLabel = phase === "handover" ? "PROCES VERBAL DE PREDARE-PRIMIRE" : "PROCES VERBAL DE RETURNARE";
-    doc.setFontSize(16); doc.setFont("helvetica", "bold");
-    doc.text(phaseLabel, W / 2, y, { align: "center" }); y += 30;
-    doc.setFontSize(10); doc.setFont("helvetica", "normal");
-    doc.text(`Cod inchiriere: ${rental.public_id}`, 50, y); y += 14;
-    doc.text(`Data generare: ${format(new Date(), "dd.MM.yyyy HH:mm")}`, 50, y); y += 22;
+    const MARGIN = 50;
+    const CONTENT_W = W - MARGIN * 2;
+    let y = 40;
 
-    doc.setFont("helvetica", "bold"); doc.text("Produs:", 50, y); doc.setFont("helvetica", "normal");
-    doc.text(rental.product_title || "-", 110, y); y += 14;
-    doc.setFont("helvetica", "bold"); doc.text("Perioada:", 50, y); doc.setFont("helvetica", "normal");
-    doc.text(`${format(new Date(rental.start_date), "dd.MM.yyyy")} - ${format(new Date(rental.end_date), "dd.MM.yyyy")}`, 110, y); y += 14;
-    doc.setFont("helvetica", "bold"); doc.text("Garantie:", 50, y); doc.setFont("helvetica", "normal");
-    doc.text(`${rental.product_deposit_value ?? 0} RON`, 110, y); y += 22;
+    const ensureSpace = (needed: number) => {
+      if (y + needed > H - 40) {
+        doc.addPage();
+        y = 50;
+      }
+    };
+    const writeParagraph = (text: string, opts: { size?: number; bold?: boolean; align?: "left" | "center" | "justify"; lh?: number } = {}) => {
+      const size = opts.size ?? 10;
+      const lh = opts.lh ?? 13;
+      doc.setFontSize(size);
+      doc.setFont("helvetica", opts.bold ? "bold" : "normal");
+      const lines = doc.splitTextToSize(noDia(text), CONTENT_W) as string[];
+      ensureSpace(lines.length * lh);
+      if (opts.align === "center") {
+        doc.text(lines, W / 2, y, { align: "center" });
+      } else {
+        doc.text(lines, MARGIN, y, { align: opts.align === "justify" ? "justify" : "left", maxWidth: CONTENT_W });
+      }
+      y += lines.length * lh;
+    };
 
-    doc.setFont("helvetica", "bold"); doc.text("Proprietar:", 50, y); doc.setFont("helvetica", "normal");
-    doc.text(rental.owner_name || "-", 130, y); y += 14;
-    doc.setFont("helvetica", "bold"); doc.text("Chirias:", 50, y); doc.setFont("helvetica", "normal");
-    doc.text(rental.renter_name || "-", 130, y); y += 22;
+    // ===== Antet companie =====
+    doc.setFontSize(10); doc.setFont("helvetica", "bold");
+    doc.text("Rentli Platform SRL", W / 2, y, { align: "center" }); y += 12;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+    doc.text(noDia("Str. Exemplu nr. 1, Bucuresti"), W / 2, y, { align: "center" }); y += 11;
+    doc.text("CUI: RO12345678 | J40/1234/2024", W / 2, y, { align: "center" }); y += 11;
+    doc.text("Tel: +40 740 000 000 | Email: contact@rentli.ro", W / 2, y, { align: "center" }); y += 14;
+    doc.setDrawColor(200); doc.line(MARGIN, y, W - MARGIN, y); y += 22;
 
-    doc.setFont("helvetica", "bold"); doc.text("Fotografii anexate:", 50, y); doc.setFont("helvetica", "normal");
-    doc.text(`${updatedPv.photos.length} fotografii`, 170, y); y += 22;
+    // ===== Titlu =====
+    const phaseLabel = phase === "handover" ? "PROCES-VERBAL DE PREDARE-PRIMIRE" : "PROCES-VERBAL DE RETURNARE";
+    doc.setFontSize(14); doc.setFont("helvetica", "bold");
+    doc.text(phaseLabel, W / 2, y, { align: "center" }); y += 22;
+
+    // ===== Date parti =====
+    const today = format(new Date(), "dd MMMM yyyy");
+    const ownerId = fakeIdentity(rental.owner_id);
+    const renterId = fakeIdentity(rental.renter_id);
+    const ownerName = rental.owner_name || "Proprietar";
+    const renterName = rental.renter_name || "Chirias";
+    const ownerPhone = rental.owner_phone || "0740 000 000";
+    const renterPhone = rental.renter_phone || "0740 000 000";
+    const ownerEmail = rental.owner_email || "owner@rentli.ro";
+    const renterEmail = rental.renter_email || "renter@rentli.ro";
+
+    const intro =
+      `Incheiat astazi, ${today}, intre domnul/doamna ${ownerName}, in calitate de Predator (proprietar), ` +
+      `identificat cu CNP ${ownerId.cnp}, CI seria ${ownerId.serie} nr. ${ownerId.nr}, domiciliat in ${ownerId.adresa}, ` +
+      `telefon ${ownerPhone}, email ${ownerEmail}, si domnul/doamna ${renterName}, in calitate de Primitor (chirias/utilizator), ` +
+      `identificat cu CNP ${renterId.cnp}, CI seria ${renterId.serie} nr. ${renterId.nr}, domiciliat in ${renterId.adresa}, ` +
+      `telefon ${renterPhone}, email ${renterEmail}.`;
+    writeParagraph(intro, { align: "justify" });
+    y += 8;
+
+    // ===== Obiectul =====
+    const cat = rental.product_category || "-";
+    const obj =
+      `Prin prezentul proces-verbal, Predatorul preda, iar Primitorul primeste spre utilizare temporara, ` +
+      `prin intermediul platformei de renting peer-to-peer Rentli, urmatorul bun: ${rental.product_title || "-"}, ` +
+      `din categoria ${cat}, pentru o perioada de ${rental.rental_days} zile, cu costul total de ${rental.subtotal} lei ` +
+      `(${rental.daily_price} lei/zi) si o garantie de ${rental.product_deposit_value ?? 0} lei.`;
+    writeParagraph(obj, { align: "justify" });
+    y += 8;
+
+    // ===== Accesorii =====
+    const items = rental.product_included_items || [];
+    if (items.length > 0) {
+      const accText = phase === "handover"
+        ? `Bunul este insotit de urmatoarele accesorii: ${items.join(", ")}. La momentul predarii au fost realizate fotografii pentru confirmarea starii acestuia: DA.`
+        : `Bunul este insotit de urmatoarele accesorii: ${items.join(", ")}. La momentul returnarii au fost realizate fotografii pentru confirmarea starii acestuia: DA.`;
+      writeParagraph(accText, { align: "justify" });
+      y += 8;
+    }
+
+    // ===== Perioada =====
+    const perText =
+      `Perioada de utilizare convenita intre parti este de la data ${format(new Date(rental.start_date), "dd.MM.yyyy")} ` +
+      `pana la data ${format(new Date(rental.end_date), "dd.MM.yyyy")}.`;
+    writeParagraph(perText, { align: "justify" });
+    y += 8;
+
+    // ===== Responsabilitate =====
+    const respText = phase === "handover"
+      ? "Primitorul declara ca a verificat bunul si il accepta in starea mentionata, obligandu-se sa il utilizeze conform destinatiei sale, sa il pastreze in bune conditii si sa il returneze la termenul stabilit, in aceeasi stare, cu exceptia uzurii normale. Primitorul isi asuma raspunderea pentru orice deteriorare, pierdere sau furt survenite pe perioada utilizarii si se obliga sa notifice imediat Predatorul in cazul aparitiei unor defecte sau incidente."
+      : "Primitorul restituie bunul catre Predator, iar Predatorul confirma primirea acestuia in starea documentata prin fotografiile anexate. Eventualele daune constatate la momentul returnarii vor fi reglementate prin intermediul platformei Rentli, conform termenilor si conditiilor agreate.";
+    writeParagraph(respText, { align: "justify" });
+    y += 8;
+
+    // ===== Clauza finala =====
+    writeParagraph(
+      "Eventualele neintelegeri vor fi solutionate conform termenilor si conditiilor platformei Rentli. Prezentul proces-verbal a fost incheiat in doua exemplare, cate unul pentru fiecare parte, avand aceeasi valoare juridica.",
+      { align: "justify" },
+    );
+    y += 14;
+
+    // ===== Fotografii =====
+    ensureSpace(20);
+    doc.setFontSize(11); doc.setFont("helvetica", "bold");
+    doc.text(noDia(phase === "handover" ? "Fotografii la predare:" : "Fotografii la returnare:"), MARGIN, y);
+    y += 14;
+    doc.setFont("helvetica", "normal");
 
     // Embed photos in a 2-column grid
     const meta = (updatedPv as any).photos_meta as Array<{ path: string; role: "owner" | "renter"; uploaded_at: string }> | undefined;
@@ -178,7 +293,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
               try { doc.addImage(it.dataUrl, "PNG", x, y, w, h); } catch { /* skip */ }
             }
             doc.setFontSize(8); doc.setFont("helvetica", "normal");
-            const label = `${it.role === "owner" ? "Proprietar" : "Chirias"}${it.uploaded_at ? " · " + format(new Date(it.uploaded_at), "dd.MM.yyyy HH:mm") : ""}`;
+            const label = `${it.role === "owner" ? "Predator (proprietar)" : "Primitor (chirias)"}${it.uploaded_at ? " - " + format(new Date(it.uploaded_at), "dd.MM.yyyy HH:mm") : ""}`;
             doc.text(label, x, y + h + 10);
             rowH = Math.max(rowH, h);
           }
@@ -189,36 +304,36 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       }
     }
 
-    // Ensure room for intro + signatures
-    if (y + 180 > H - 40) {
-      doc.addPage();
-      y = 50;
-    }
-
-    doc.setFontSize(9);
-    const intro = phase === "handover"
-      ? "Subsemnatii confirma predarea-primirea produsului in stare buna conform fotografiilor anexate. Chiriasul este responsabil de produs pe durata inchirierii."
-      : "Subsemnatii confirma returnarea produsului. Eventualele daune sunt documentate prin fotografiile anexate si vor fi reglementate prin platforma Rentli.";
-    const lines = doc.splitTextToSize(intro, W - 100);
-    doc.text(lines, 50, y); y += lines.length * 12 + 30;
-
-    doc.setFontSize(10);
+    // ===== Semnaturi =====
+    if (y + 130 > H - 40) { doc.addPage(); y = 50; }
     const colW = (W - 100) / 2;
-    doc.setFont("helvetica", "bold");
-    doc.text("Semnatura Proprietar", 50, y);
-    doc.text("Semnatura Chirias", 50 + colW, y);
-    y += 10;
-
+    doc.setFontSize(10); doc.setFont("helvetica", "bold");
+    doc.text(noDia("Predator (proprietar)"), MARGIN, y);
+    doc.text(noDia("Primitor (chirias)"), MARGIN + colW, y);
+    y += 8;
+    const sigY = y;
     function tryDrawSig(dataUrl: string | null, x: number) {
       if (!dataUrl) return;
-      try { doc.addImage(dataUrl, "PNG", x, y, colW - 10, 70); } catch (e) { /* noop */ }
+      try { doc.addImage(dataUrl, "PNG", x, sigY, colW - 10, 60); } catch (e) { /* noop */ }
     }
-    tryDrawSig(updatedPv.owner_signature_data, 50);
-    tryDrawSig(updatedPv.renter_signature_data, 50 + colW);
-    y += 80;
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9);
-    doc.text(`Semnat: ${updatedPv.owner_signed_at ? format(new Date(updatedPv.owner_signed_at), "dd.MM.yyyy HH:mm") : "-"}`, 50, y);
-    doc.text(`Semnat: ${updatedPv.renter_signed_at ? format(new Date(updatedPv.renter_signed_at), "dd.MM.yyyy HH:mm") : "-"}`, 50 + colW, y);
+    tryDrawSig(updatedPv.owner_signature_data, MARGIN);
+    tryDrawSig(updatedPv.renter_signature_data, MARGIN + colW);
+    y += 64;
+    doc.setDrawColor(120);
+    doc.line(MARGIN, y, MARGIN + colW - 10, y);
+    doc.line(MARGIN + colW, y, MARGIN + colW * 2 - 10, y);
+    y += 12;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10);
+    doc.text(noDia(ownerName), MARGIN, y);
+    doc.text(noDia(renterName), MARGIN + colW, y);
+    y += 12;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8);
+    doc.text(`Semnat: ${updatedPv.owner_signed_at ? format(new Date(updatedPv.owner_signed_at), "dd.MM.yyyy HH:mm") : "-"}`, MARGIN, y);
+    doc.text(`Semnat: ${updatedPv.renter_signed_at ? format(new Date(updatedPv.renter_signed_at), "dd.MM.yyyy HH:mm") : "-"}`, MARGIN + colW, y);
+    y += 16;
+    doc.setFontSize(7); doc.setTextColor(140);
+    doc.text(noDia(`Cod inchiriere: ${rental.public_id || "-"} | Generat: ${format(new Date(), "dd.MM.yyyy HH:mm")}`), MARGIN, y);
+    doc.setTextColor(0);
 
     return doc.output("blob");
   }
