@@ -33,6 +33,7 @@ import { useProfileRealtime } from "@/hooks/useProfileRealtime";
 import { TrustScoreRing } from "@/components/profile/account/TrustScoreRing";
 import { AvatarCropperDialog } from "@/components/profile/account/AvatarCropperDialog";
 import KycInlineFlow from "@/components/kyc/KycInlineFlow";
+import PhoneOtpDialog from "@/components/profile/PhoneOtpDialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -96,6 +97,8 @@ const AccountTab = () => {
   const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
   const [cropperOpen, setCropperOpen] = useState(false);
   const [showKycFlow, setShowKycFlow] = useState(false);
+  const [otpDialogOpen, setOtpDialogOpen] = useState(false);
+  const [pendingPhone, setPendingPhone] = useState<string>("");
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
@@ -233,24 +236,41 @@ const AccountTab = () => {
     setIsSaving(true);
     try {
       const normalizedPhone = data.phone ? data.phone.trim().replace(/\s+/g, " ") : "";
+      const phoneChanged =
+        !!normalizedPhone &&
+        isValidRomanianPhone(normalizedPhone) &&
+        normalizedPhone !== (profile?.phone || "");
+      // Save everything EXCEPT phone when it changed — phone is gated by OTP.
       const updated = await updateProfile(user.id, {
         full_name: data.full_name || undefined,
-        phone: normalizedPhone || undefined,
+        phone: phoneChanged ? undefined : (normalizedPhone || undefined),
         email: data.email || undefined,
         whatsapp: data.whatsapp || undefined,
       });
       setProfile(updated);
-      if (normalizedPhone && isValidRomanianPhone(normalizedPhone)) {
-        try { await supabase.auth.updateUser({ data: { phone: normalizedPhone } }); } catch {}
-      }
       await queryClient.invalidateQueries({ queryKey: ["currentUserProfile", user.id] });
-      toast({ title: t("Salvat", "Saved"), description: t("Profil actualizat cu succes", "Profile updated") });
+      if (phoneChanged) {
+        setPendingPhone(normalizedPhone);
+        setOtpDialogOpen(true);
+      } else {
+        toast({ title: t("Salvat", "Saved"), description: t("Profil actualizat cu succes", "Profile updated") });
+      }
     } catch (e) {
       console.error(e);
       toast({ title: t("Eroare", "Error"), description: t("Nu s-a putut actualiza profilul", "Could not update"), variant: "destructive" });
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handlePhoneVerified = async (verifiedPhone: string) => {
+    if (!user) return;
+    try { await supabase.auth.updateUser({ data: { phone: verifiedPhone } }); } catch {}
+    try {
+      const fresh = await getProfile(user.id);
+      if (fresh) setProfile(fresh);
+    } catch { /* ignore */ }
+    await queryClient.invalidateQueries({ queryKey: ["currentUserProfile", user.id] });
   };
 
   const handlePasswordReset = async () => {
@@ -739,6 +759,12 @@ const AccountTab = () => {
         onOpenChange={(o) => { setCropperOpen(o); if (!o) setPendingAvatar(null); }}
         saving={isUploadingAvatar}
         onConfirm={handleAvatarChange}
+      />
+      <PhoneOtpDialog
+        open={otpDialogOpen}
+        phone={pendingPhone}
+        onOpenChange={setOtpDialogOpen}
+        onVerified={handlePhoneVerified}
       />
     </TooltipProvider>
   );
