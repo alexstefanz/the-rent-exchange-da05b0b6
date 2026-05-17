@@ -1,27 +1,31 @@
-## Fix popup-uri care depășesc viewport-ul pe mobil
+# Actualizare "Reguli de utilizare" pe pagina produs
 
-### Diagnostic
+Refresh strict de copy în `src/data/uxCopy.ts` (cheia `usageRules`) pentru a reflecta procesul actual de închiriere. Componenta `src/components/product/UsageRules.tsx` rămâne neschimbată — folosește deja iconițele și structura potrivită.
 
-În screenshot, dialogul "Solicită anularea comenzii" și fundalul (Sumar financiar) depășesc lățimea ecranului — butonul "Trimite cererea" și textul "2 RON" sunt tăiate la dreapta. Cauza: în `DialogContent` și `AlertDialogContent` din shadcn folosim `w-full max-w-lg`. Pe mobil, dacă pagina are orice overflow orizontal, `w-full` se ia raportat la `<body>` (nu la viewport), iar dialogul ajunge mai lat decât ecranul, dând impresia de "zoom in".
+## Reguli noi (RO / EN)
 
-### Modificări
+1. **Plată securizată cu card (escrow)** — Plata se face exclusiv cu cardul prin Stripe. Suma + garanția se blochează la rezervare și se capturează doar după ce proprietarul acceptă cererea și confirmă predarea. Fără numerar, fără transfer bancar.
 
-**`src/components/ui/dialog.tsx`** — în `DialogContent`:
-- Înlocuiesc `w-full max-w-lg` cu `w-[calc(100%-2rem)] max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto` pentru a clampa lățimea la viewport minus marjă de siguranță și a permite scroll vertical pe ecrane mici.
+2. **Acceptare de către proprietar** — Rezervarea devine activă doar după ce proprietarul o acceptă din contul lui. Dacă nu răspunde sau refuză, suma blocată se eliberează automat înapoi pe card.
 
-**`src/components/ui/alert-dialog.tsx`** — în `AlertDialogContent`:
-- Aceeași schimbare: `w-[calc(100%-2rem)] max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto`.
+3. **Comunicare doar în chat-ul Rentli** — Toate discuțiile rămân pe platformă. Telefonul și datele de contact se deblochează automat doar după ce rezervarea este plătită și acceptată. Anunțurile cu telefon, email sau linkuri externe sunt blocate automat.
 
-**`src/index.css`** — adaug o gardă globală împotriva overflow-ului orizontal care declanșează problema:
-```css
-html, body { overflow-x: hidden; }
-```
-(Doar pe axa X — nu afectează scroll-ul vertical.)
+4. **Predare și returnare cu 10 poze obligatorii** — Ambele părți încarcă până la 10 fotografii la preluare și la returnare, direct în aplicație. Acestea sunt singura dovadă acceptată în caz de dispută sau daune.
 
-### Detalii tehnice
+5. **Anulare flexibilă până la predare** — Rambursare 100% atâta timp cât produsul nu a fost predat fizic și confirmat în aplicație. După confirmarea predării nu se mai acordă rambursare.
 
-- `w-[calc(100%-2rem)]` lasă 1rem stânga/dreapta, identic cu marginea folosită deja în `MutualCancellationCard` și restul dialogurilor de anulare.
-- `max-h-[calc(100dvh-2rem)] overflow-y-auto` previne ca un dialog cu mult conținut (ex: anulare cu sumar financiar + checkbox) să fie tăiat pe înălțime pe mobil.
-- Fix-ul în `dialog.tsx` și `alert-dialog.tsx` rezolvă **toate** popup-urile din aplicație într-o singură lovitură (anulare rezervare, return anticipat, OTP telefon, retragere, raport mesaj, etc.) — nu trebuie atinse individual.
-- Nu modific `sheet.tsx` (folosit pentru chat mobil), unde s-a făcut deja fix-ul separat.
-- Nu schimb meta viewport — `initial-scale=1.0` rămâne corect.
+6. **Returnare la termen, în aceeași stare** — Produsul se returnează la data stabilită, în aceeași stare ca la preluare. Întârzierile, lipsurile sau daunele documentate prin pozele de retur duc la rețineri din garanție.
+
+Boxul garanție (afișat când există depozit) primește copy actualizat: „Garanția este blocată pe card prin Stripe și se eliberează automat în 24–48h după ce proprietarul confirmă returnarea fără probleme."
+
+## Modificări tehnice
+
+- `src/data/uxCopy.ts` → cheia `usageRules`:
+  - rescriere `paymentDesc`, `cancellationDesc`, `handoverDesc`, `communicationDesc`, `returnDesc`, `depositReturn` (RO + EN)
+  - adăugare două chei noi: `ownerApproval` + `ownerApprovalDesc`
+- `src/components/product/UsageRules.tsx`:
+  - adăugare import `ShieldCheck` din lucide-react
+  - inserare regulă „Acceptare de către proprietar" în `defaultRules` pe poziția 2 (între plată și comunicare)
+  - reordonare pentru flow logic: Plată → Acceptare → Comunicare → Predare poze → Anulare → Returnare
+
+Fără alte modificări de business logic, layout sau styling.
