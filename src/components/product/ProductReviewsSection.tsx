@@ -5,7 +5,6 @@ import { ro } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -41,10 +40,7 @@ function StarRating({ value, onChange, readonly = false }: { value: number; onCh
   );
 }
 
-function ReviewCard({ review, type, language }: { review: ProductReview; type: "owner" | "renter"; language: "ro" | "en" }) {
-  const label = type === "owner"
-    ? (language === "ro" ? "Proprietar" : "Owner")
-    : (language === "ro" ? "Chiriaș" : "Renter");
+function ReviewCard({ review }: { review: ProductReview }) {
   return (
     <div className="border-b border-border pb-4 last:border-b-0 last:pb-0">
       <div className="flex items-center gap-3 mb-2">
@@ -53,10 +49,7 @@ function ReviewCard({ review, type, language }: { review: ProductReview; type: "
           <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
         </Avatar>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-medium text-sm text-foreground">{review.reviewer_name || "Utilizator"}</p>
-            <Badge variant="secondary" className="text-[10px] px-2 py-0 h-5">{label}</Badge>
-          </div>
+          <p className="font-medium text-sm text-foreground">{review.reviewer_name || "Utilizator"}</p>
           <span className="text-xs text-muted-foreground">{format(new Date(review.created_at), "d MMM yyyy", { locale: ro })}</span>
         </div>
       </div>
@@ -86,7 +79,6 @@ export default function ProductReviewsSection({ productId, isOwnProduct }: Props
   const [hasCompletedRental, setHasCompletedRental] = useState(false);
 
   // Form state
-  const [reviewType, setReviewType] = useState<"owner" | "renter">("owner");
   const [ratings, setRatings] = useState({ condition: 0, communication: 0, punctuality: 0 });
   const [comment, setComment] = useState("");
 
@@ -124,7 +116,7 @@ export default function ProductReviewsSection({ productId, isOwnProduct }: Props
     if (!canSubmit) return;
     setSubmitting(true);
     try {
-      await createProductReview(productId, reviewType, ratings, comment);
+      await createProductReview(productId, "owner", ratings, comment);
       toast({ title: language === "ro" ? "Recenzie adăugată!" : "Review added!" });
       setRatings({ condition: 0, communication: 0, punctuality: 0 });
       setComment("");
@@ -168,8 +160,8 @@ export default function ProductReviewsSection({ productId, isOwnProduct }: Props
         </p>
       ) : (
         <div className="space-y-4">
-          {combinedReviews.map(({ review, type }) => (
-            <ReviewCard key={review.id} review={review} type={type} language={language as "ro" | "en"} />
+          {combinedReviews.map(({ review }) => (
+            <ReviewCard key={review.id} review={review} />
           ))}
         </div>
       )}
@@ -177,27 +169,9 @@ export default function ProductReviewsSection({ productId, isOwnProduct }: Props
       {/* Add review form */}
       {user && !isOwnProduct && hasCompletedRental && (
         <div className="mt-6 border-t border-border pt-4">
-          <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
-            <h3 className="font-medium text-foreground">
-              {language === "ro" ? "Adaugă o recenzie" : "Add a review"}
-            </h3>
-            <div className="inline-flex rounded-md border border-border p-0.5 bg-muted">
-              <button
-                type="button"
-                onClick={() => setReviewType("owner")}
-                className={`text-xs px-3 py-1 rounded ${reviewType === "owner" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
-              >
-                {language === "ro" ? "Pentru proprietar" : "For owner"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setReviewType("renter")}
-                className={`text-xs px-3 py-1 rounded ${reviewType === "renter" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground"}`}
-              >
-                {language === "ro" ? "Pentru chiriaș" : "For renter"}
-              </button>
-            </div>
-          </div>
+          <h3 className="font-medium text-foreground mb-3">
+            {language === "ro" ? "Adaugă o recenzie" : "Add a review"}
+          </h3>
           <div className="space-y-3">
             {CRITERIA.map((c) => (
               <div key={c.key} className="flex items-center gap-3">
