@@ -81,6 +81,14 @@ export async function confirmReturn(rentalId: string) {
     })
     .eq("id", rentalId);
   if (error) throw mapPvError(error);
+
+  // Fire completion + review reminder notifications (best-effort, non-blocking)
+  supabase.functions.invoke("notify-rental-event", {
+    body: { rental_id: rentalId, event_key: "rental_completed" },
+  }).catch((e) => console.warn("notify rental_completed failed", e));
+  supabase.functions.invoke("notify-rental-event", {
+    body: { rental_id: rentalId, event_key: "review_reminder" },
+  }).catch((e) => console.warn("notify review_reminder failed", e));
 }
 
 function mapPvError(error: unknown): Error {

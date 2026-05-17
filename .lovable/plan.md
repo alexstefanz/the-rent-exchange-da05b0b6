@@ -1,13 +1,23 @@
-## Schimbare
+## Context
 
-În dropdown-ul de notificări, bara de filtre conține trei chip-uri: "Toate mesajele", "Necitite", "Citite". Primul este redundant pentru că dropdown-ul lateral "Toate" (categoria) acoperă deja afișarea completă.
+Infrastructura există deja:
+- Edge function `notify-rental-event` are configurate evenimentele `rental_completed` (email owner + renter + SMS + in-app) și `review_reminder` (email cu link spre review + in-app).
+- Template-urile `rental-completed-owner`, `rental-completed-renter`, `review-reminder` sunt în registry. SMS-urile `rental_completed` și `review_reminder` sunt în `send-sms-notification`.
+- Link-ul de review din email duce la `/rezervari?rental_id=…&review=1`.
 
-## Fișier modificat
+Singura piesă lipsă: când proprietarul apasă "Confirmă returnarea" în `confirmReturn()` (`src/features/rentals/ownerRentalsApi.ts`), rental-ul trece pe `completed`, dar nu se emite niciun event de notificare. Asta înseamnă că nici emailurile/SMS-urile de finalizare, nici reminder-ul de review nu pleacă.
 
-**`src/components/notifications/NotificationFilters.tsx`**
-- Elimin intrarea `{ v: "all", label: t("Toate mesajele", "All messages") }` din `readChips`.
-- Rămân doar `Necitite` și `Citite`.
+## Modificare
 
-## Comportament implicit
+**`src/features/rentals/ownerRentalsApi.ts` — funcția `confirmReturn`**
 
-`readFilter` are momentan valoarea inițială `"all"` în `NotificationCenter`. Pentru ca lista să nu rămână "blocată" pe o stare fără chip activ, schimb valoarea implicită la `"unread"` în `NotificationCenter.tsx` (verific exact unde e setată) — astfel utilizatorul vede direct mesajele necitite la deschidere, iar comutarea pe "Citite" funcționează normal. Restul logicii de filtrare rămâne neschimbată.
+După update-ul reușit pe `rentals` (status → `completed`), apelez best-effort (non-blocant, ca la `confirmPickupArrangement`):
+
+1. `notify-rental-event` cu `event_key: "rental_completed"` → trimite email branded + SMS + in-app ambelor părți, cu mesaj de "Închiriere finalizată" și link spre rezervare.
+2. `notify-rental-event` cu `event_key: "review_reminder"` → trimite emailul "Lasă un review" cu CTA către `/rezervari?rental_id={id}&review=1` ambelor părți + notificare in-app.
+
+Ambele apelate cu `.catch()` ca să nu blocheze flow-ul UI dacă pică livrarea.
+
+## Notă
+
+Nu schimb nimic în template-uri, în `notify-rental-event` sau în `send-sms-notification` — totul există deja, doar conectez trigger-ul. Fluxul end-to-end devine: proprietar confirmă returnarea → captură Stripe → status `completed` → email + SMS de finalizare → email + in-app cu link de review pentru fiecare parte.
