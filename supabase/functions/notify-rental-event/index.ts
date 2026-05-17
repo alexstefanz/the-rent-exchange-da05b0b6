@@ -32,7 +32,8 @@ type EventKey =
   | "cancel_request_approved"
   | "cancel_request_rejected"
   | "cancellation_confirmed"
-  | "mutual_cancel_approved";
+  | "mutual_cancel_approved"
+  | "payment_succeeded";
 
 interface EventConfig {
   recipients: Recipient;
@@ -71,6 +72,15 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "rental_accepted",
     inAppTitle: { ro: "Cererea a fost acceptată", en: "Request accepted" },
     inAppDesc: (c) => ({ ro: `Cererea pentru "${c.product?.title}" a fost acceptată`, en: `Request for "${c.product?.title}" was accepted` }),
+    link: (c) => `/rezervari/${c.rental.public_id}`,
+    smsPurpose: "view_rental",
+  },
+  payment_succeeded: {
+    recipients: "both", channels: ["in_app", "email"], critical: true,
+    emailTemplate: { owner: "rental-accepted", renter: "rental-accepted" },
+    smsTemplate: "rental_accepted",
+    inAppTitle: { ro: "Plata a fost confirmată", en: "Payment confirmed" },
+    inAppDesc: (c) => ({ ro: `Plata pentru "${c.product?.title}" a fost confirmată`, en: `Payment for "${c.product?.title}" was confirmed` }),
     link: (c) => `/rezervari/${c.rental.public_id}`,
     smsPurpose: "view_rental",
   },
