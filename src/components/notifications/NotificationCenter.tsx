@@ -40,9 +40,7 @@ export function NotificationCenter({ variant = "popover", onClose }: Props) {
   const navigate = useNavigate();
   const { notifications, isLoading, markAsRead, markAllAsRead } = useNotifications(user?.id);
   const [filter, setFilter] = useState<FilterValue>("all");
-  const [readFilter, setReadFilter] = useState<ReadFilterValue>(
-    variant === "page" ? "all" : "unread",
-  );
+  const [readFilter, setReadFilter] = useState<ReadFilterValue>("unread");
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const readCounts = useMemo(

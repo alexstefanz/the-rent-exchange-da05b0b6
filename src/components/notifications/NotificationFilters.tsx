@@ -37,7 +37,6 @@ export function NotificationFilters({
   ];
 
   const readChips: { v: ReadFilterValue; label: string }[] = [
-    { v: "all", label: t("Toate mesajele", "All messages") },
     { v: "unread", label: t("Necitite", "Unread") },
     { v: "read", label: t("Citite", "Read") },
   ];
