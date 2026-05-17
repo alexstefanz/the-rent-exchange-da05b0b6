@@ -449,6 +449,55 @@ const RentalDetailPage = () => {
           </section>
         )}
 
+        {/* Step 5 — Renter must confirm physical receipt of the product */}
+        {handoverDoneEarly && !rental.handover_confirmed_at && rental.status !== "cancelled" && rental.status !== "completed" && (
+          <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="h-10 w-10 rounded-full bg-primary/15 grid place-items-center shrink-0">
+                <Package className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-heading text-base font-semibold text-foreground">
+                  {t("Pasul 5 — Preia produsul", "Step 5 — Pick up the product")}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {isOwner
+                    ? t(
+                        "PV-ul a fost semnat de ambele parti. Asteptam chiriasul sa confirme primirea produsului.",
+                        "The handover document is signed by both parties. Waiting for the renter to confirm receipt.",
+                      )
+                    : t(
+                        `PV-ul a fost semnat de ambele parti. Mergi la ${rental.product_location_city || "locatia stabilita"} si confirma primirea dupa ce ai produsul in mana.`,
+                        `The handover document is signed by both parties. Go to ${rental.product_location_city || "the agreed location"} and confirm receipt after you have the product in hand.`,
+                      )}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+              <Button variant="outline" onClick={() => setPvOpen("handover")}>
+                <FileSignature className="h-4 w-4 mr-2" />
+                {t("Vezi PV", "View PV")}
+              </Button>
+              {!isOwner && (
+                <Button
+                  onClick={() => setReceiptDialogOpen(true)}
+                  disabled={confirmingReceipt}
+                  className="shadow-lg shadow-primary/20"
+                >
+                  {confirmingReceipt ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <PackageCheck className="h-4 w-4 mr-2" />}
+                  {t("Am primit produsul", "I received the product")}
+                </Button>
+              )}
+              {isOwner && (
+                <div className="inline-flex items-center gap-2 rounded-lg bg-amber-100 text-amber-900 text-xs font-medium px-3 py-2">
+                  <Clock className="h-3.5 w-3.5" />
+                  {t("Asteptam confirmarea chiriasului", "Waiting for renter confirmation")}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
         {/* Pay-now CTA: owner accepted, renter hasn't paid yet */}
         {needsPayment && (
           <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
