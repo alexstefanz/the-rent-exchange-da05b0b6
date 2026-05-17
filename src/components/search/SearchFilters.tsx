@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { categories } from "@/data/categories";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SearchFiltersProps {
   selectedCategory: string;
@@ -23,6 +24,7 @@ const SearchFiltersContent = ({
   selectedCategory, onCategoryChange, priceRange, onPriceRangeChange, sortBy, onSortByChange, onClearFilters, hasActiveFilters,
 }: SearchFiltersProps) => {
   const copy = useUxCopy();
+  const { language } = useLanguage();
   return (
     <div className="space-y-6">
       {hasActiveFilters && (
@@ -39,7 +41,7 @@ const SearchFiltersContent = ({
           <SelectContent>
             <SelectItem value="all">{copy.search_page.allCategoriesFilter}</SelectItem>
             {categories.map((category) => (
-              <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
+              <SelectItem key={category.id} value={category.name}>{language === "en" && category.nameEn ? category.nameEn : category.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -76,6 +78,7 @@ export const InlineSearchFilters = ({
   selectedCategory, onCategoryChange, priceRange, onPriceRangeChange, sortBy, onSortByChange, onClearFilters, hasActiveFilters,
 }: SearchFiltersProps) => {
   const copy = useUxCopy();
+  const { language } = useLanguage();
 
   const priceLabel = priceRange[0] === 0 && priceRange[1] === 1000
     ? copy.search.filters.priceRange
@@ -90,7 +93,7 @@ export const InlineSearchFilters = ({
         <SelectContent>
           <SelectItem value="all">{copy.search_page.allCategoriesFilter}</SelectItem>
           {categories.map((category) => (
-            <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
+            <SelectItem key={category.id} value={category.name}>{language === "en" && category.nameEn ? category.nameEn : category.name}</SelectItem>
           ))}
         </SelectContent>
       </Select>
