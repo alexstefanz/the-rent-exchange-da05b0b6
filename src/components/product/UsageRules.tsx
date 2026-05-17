@@ -1,4 +1,4 @@
-import { AlertCircle, CreditCard, CalendarX, Camera, MessageSquare, PackageCheck, Wallet } from "lucide-react";
+import { AlertCircle, CreditCard, CalendarX, Camera, MessageSquare, PackageCheck, Wallet, ShieldCheck } from "lucide-react";
 import { useUxCopy } from "@/hooks/useUxCopy";
 
 interface UsageRule {
@@ -17,9 +17,10 @@ const UsageRules = ({ rules, depositAmount }: UsageRulesProps) => {
 
   const defaultRules: UsageRule[] = [
     { icon: CreditCard, title: copy.usageRules.payment, description: copy.usageRules.paymentDesc },
-    { icon: CalendarX, title: copy.usageRules.cancellation, description: copy.usageRules.cancellationDesc },
-    { icon: Camera, title: copy.usageRules.handover, description: copy.usageRules.handoverDesc },
+    { icon: ShieldCheck, title: copy.usageRules.ownerApproval, description: copy.usageRules.ownerApprovalDesc },
     { icon: MessageSquare, title: copy.usageRules.communication, description: copy.usageRules.communicationDesc },
+    { icon: Camera, title: copy.usageRules.handover, description: copy.usageRules.handoverDesc },
+    { icon: CalendarX, title: copy.usageRules.cancellation, description: copy.usageRules.cancellationDesc },
     { icon: PackageCheck, title: copy.usageRules.return, description: copy.usageRules.returnDesc },
   ];
 
