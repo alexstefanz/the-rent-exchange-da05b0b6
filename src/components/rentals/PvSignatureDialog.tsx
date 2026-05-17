@@ -53,19 +53,26 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
 
   const photosMeta = pv?.photos_meta || [];
   const photos = photosMeta.map((m) => m.path);
-  const ownerPhotos = photosMeta.filter((m) => m.role === "owner");
-  const renterPhotos = photosMeta.filter((m) => m.role === "renter");
   const otherSigned = role === "owner" ? !!pv?.renter_signed_at : !!pv?.owner_signed_at;
   const mySigned = role === "owner" ? !!pv?.owner_signed_at : !!pv?.renter_signed_at;
-  // Sequential flow: handover → owner first, then renter; return → renter first, then owner.
-  const firstSigner: "owner" | "renter" = phase === "handover" ? "owner" : "renter";
-  const isFirstSigner = role === firstSigner;
+  // Sequential flow: handover → owner uploads+signs first, renter only signs to approve.
+  //                  return   → renter uploads+signs first, owner only signs to approve.
+  const uploaderRole: "owner" | "renter" = phase === "handover" ? "owner" : "renter";
+  const isUploader = role === uploaderRole;
+  const isFirstSigner = isUploader;
   const isMyTurn = !mySigned && (isFirstSigner || otherSigned);
   const isLockedWaiting = !mySigned && !isMyTurn;
-  const canSign = photos.length >= MIN_PHOTOS && isMyTurn;
+  const canUpload = isUploader && !mySigned;
+  const canSign = isMyTurn && (isUploader ? photos.length >= MIN_PHOTOS : photos.length > 0);
   const waitingLabel = phase === "handover"
-    ? "Asteapta proprietarul sa completeze si sa semneze PV-ul de Predare. Vei putea adauga propriile fotografii si semna imediat dupa."
-    : "Asteapta chiriasul sa initieze returnarea si sa semneze PV-ul. Dupa aceea vei putea adauga fotografii si semna.";
+    ? "Asteapta proprietarul sa adauge fotografiile si sa semneze PV-ul de Predare. Apoi vei putea verifica si semna pentru a aproba."
+    : "Asteapta chiriasul sa initieze returnarea, sa adauge fotografiile si sa semneze PV-ul. Apoi vei putea verifica si semna pentru a aproba.";
+  const galleryTitle = uploaderRole === "owner" ? "Fotografii (adaugate de Proprietar)" : "Fotografii (adaugate de Chirias)";
+  const approverHint = !isUploader
+    ? (phase === "handover"
+        ? "Verifica fotografiile facute de proprietar. Semnand confirmi ca esti de acord cu starea documentata a produsului."
+        : "Verifica fotografiile facute de chirias. Semnand confirmi ca esti de acord cu starea in care a fost returnat produsul.")
+    : null;
 
   async function handleAddPhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
