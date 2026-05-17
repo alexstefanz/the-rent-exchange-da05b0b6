@@ -760,6 +760,12 @@ const AccountTab = () => {
         saving={isUploadingAvatar}
         onConfirm={handleAvatarChange}
       />
+      <PhoneOtpDialog
+        open={otpDialogOpen}
+        phone={pendingPhone}
+        onOpenChange={setOtpDialogOpen}
+        onVerified={handlePhoneVerified}
+      />
     </TooltipProvider>
   );
 };
