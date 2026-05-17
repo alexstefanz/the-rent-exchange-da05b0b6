@@ -75,6 +75,15 @@ const EVENTS: Record<EventKey, EventConfig> = {
     link: (c) => `/rezervari/${c.rental.public_id}`,
     smsPurpose: "view_rental",
   },
+  payment_succeeded: {
+    recipients: "both", channels: ["in_app", "email"], critical: true,
+    emailTemplate: { owner: "rental-accepted", renter: "rental-accepted" },
+    smsTemplate: "rental_accepted",
+    inAppTitle: { ro: "Plata a fost confirmată", en: "Payment confirmed" },
+    inAppDesc: (c) => ({ ro: `Plata pentru "${c.product?.title}" a fost confirmată`, en: `Payment for "${c.product?.title}" was confirmed` }),
+    link: (c) => `/rezervari/${c.rental.public_id}`,
+    smsPurpose: "view_rental",
+  },
   request_rejected: {
     recipients: "renter", channels: ["in_app", "email", "sms"], critical: false,
     emailTemplate: { renter: "rental-rejected" },
