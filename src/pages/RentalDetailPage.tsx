@@ -749,6 +749,47 @@ const RentalDetailPage = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={receiptDialogOpen} onOpenChange={(o) => !confirmingReceipt && setReceiptDialogOpen(o)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("Confirmi primirea produsului?", "Confirm product receipt?")}</DialogTitle>
+            <DialogDescription>
+              {t(
+                "Confirma doar dupa ce ai produsul fizic in mana si l-ai verificat. Dupa confirmare, rezervarea devine activa.",
+                "Confirm only after you physically have the product in hand and have inspected it. After confirmation, the rental becomes active.",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReceiptDialogOpen(false)} disabled={confirmingReceipt}>
+              {t("Anuleaza", "Cancel")}
+            </Button>
+            <Button
+              onClick={async () => {
+                if (confirmingReceipt) return;
+                setConfirmingReceipt(true);
+                try {
+                  await confirmHandoverReceived(rental.id);
+                  toast.success(t("Primirea a fost confirmata.", "Receipt confirmed."));
+                  setReceiptDialogOpen(false);
+                  await refetch();
+                } catch (e: any) {
+                  console.error("confirm_handover_received error:", e);
+                  toast.error(e?.message || t("Eroare la confirmare.", "Failed to confirm."));
+                } finally {
+                  setConfirmingReceipt(false);
+                }
+              }}
+              disabled={confirmingReceipt}
+              className="shadow-lg shadow-primary/20"
+            >
+              {confirmingReceipt ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <PackageCheck className="h-4 w-4 mr-2" />}
+              {t("Confirm primirea", "Confirm receipt")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
