@@ -1,38 +1,70 @@
 ## Obiectiv
 
-Adauga un pas explicit de confirmare a primirii produsului de catre chirias dupa semnarea PV de predare. Astazi, dupa ce ambele parti semneaza PV-ul, rezervarea trece automat in `active` (Pasul 5 — Produs predat). Vrem ca acest pas sa devina manual: chiriasul trebuie sa apese „Am primit produsul" pentru a confirma fizic primirea.
+Refactorizam fluxul PV-urilor astfel incat fiecare PV sa fie completat (foto + semnatura prima) de o singura parte, iar cealalta parte doar aproba prin semnatura. Adaugam un pas explicit „Initiaza returnarea" pe care chiriasul il apasa inainte ca PV-ul de returnare sa devina disponibil.
 
-## Comportament
+## Fluxul nou (end-to-end)
 
-1. Ambele parti semneaza PV de predare → status ramane `confirmed`, `handover_confirmed_at` ramane `NULL`.
-2. Pe pagina rezervarii apare un card nou „Pasul 5 — Preia produsul":
-   - **Chirias**: text „PV-ul a fost semnat de ambele parti. Mergi la {oras} si confirma primirea dupa ce ai produsul in mana." + buton secundar „Vezi PV" + buton primar „Am primit produsul".
-   - **Proprietar**: aceeasi sectiune, dar in loc de buton de confirmare: badge „Asteptam chiriasul sa confirme primirea" + buton „Vezi PV".
-3. La click pe „Am primit produsul" → confirm dialog → seteaza `handover_confirmed_at = now()` si `status = 'active'`. Realtime updateaza UI-ul ambelor parti.
-4. Dupa confirmare, restul fluxului (PV Returnare, early return, etc.) ramane neschimbat.
+1. **PV Predare (Proprietar → Chirias)**
+   - Doar **proprietarul** poate urca fotografii (min. 2) si semneaza primul.
+   - **Chiriasul** nu mai urca poze. Vede pozele facute de proprietar si semneaza pentru a confirma ca este de acord cu starea documentata.
+   - Dupa ambele semnaturi → PDF generat automat (ca azi).
+
+2. **Pasul 5 — „Preia produsul"** (deja exista, ramane neschimbat)
+   - Chiriasul apasa „Am primit produsul" → `handover_confirmed_at = now()`, status `active`.
+
+3. **Pasul 6 — „Produsul este in folosire / Initiaza returnarea"** (NOU)
+   - Card vizibil dupa `handover_confirmed_at`, cat timp PV-ul de returnare nu e inceput.
+   - **Chirias**: buton „Initiaza returnarea" → AlertDialog de confirmare („Dupa confirmare, vei fotografia produsul si vei completa procesul verbal de returnare.") → la confirmare se „deschide" PV-ul de returnare.
+   - **Proprietar**: badge „Asteptam chiriasul sa initieze returnarea" + buton „Discuta in chat".
+
+4. **PV Returnare (Chirias → Proprietar)**
+   - Disponibil **doar** dupa ce chiriasul initiaza returnarea.
+   - Doar **chiriasul** urca fotografii (min. 2) si semneaza primul.
+   - **Proprietarul** vede pozele si semneaza pentru a aproba.
+
+5. **Finalizare + review** (deja exista)
+   - Dupa ambele semnaturi pe PV Returnare → status `completed`, ambele parti primesc CTA „Lasa un review" (LeaveReviewDialog deja implementat).
 
 ## Modificari tehnice
 
-**Backend (migration noua):**
-- Modifica trigger-ul `tg_pv_handover_progress` astfel incat sa NU mai seteze automat `handover_confirmed_at` si `status='active'` la semnarea ambelor PV-uri. Trigger-ul poate fi sters complet sau redus la no-op (PV-ul semnat ramane in `rental_pv_documents`, dar nu mai promoveaza rental-ul).
-- Adauga RPC `confirm_handover_received(_rental_id uuid)`:
-  - Verifica `auth.uid() = rentals.renter_id`.
-  - Verifica ca exista `rental_pv_documents` cu `phase='handover'` si ambele `owner_signed_at` + `renter_signed_at` non-null.
-  - Verifica ca `handover_confirmed_at IS NULL` si `status NOT IN ('cancelled','rejected','completed')`.
-  - Seteaza `handover_confirmed_at = now()`, `status = 'active'`.
-  - `SECURITY DEFINER`, `search_path = public`.
+**Backend (o singura migrare):**
+- RPC nou `initiate_return(_rental_id uuid)` `SECURITY DEFINER`:
+  - Verifica `auth.uid() = renter_id`, `handover_confirmed_at IS NOT NULL`, `status = 'active'`.
+  - Verifica ca nu exista deja `rental_pv_documents` cu `phase='return'`.
+  - Face `INSERT INTO rental_pv_documents (rental_id, phase) VALUES (_rental_id, 'return')` — aceasta intrare „goala" e semnalul ca returnarea a fost initiata (zero schimbari de schema; nu adaugam coloana noua).
+  - `GRANT EXECUTE ... TO authenticated`.
 
 **Frontend:**
-- `src/features/rentals/rentalDetailPageApi.ts`: helper nou `confirmHandoverReceived(rentalId)` care apeleaza RPC-ul.
-- `src/pages/RentalDetailPage.tsx`: card nou „Pasul 5 — Preia produsul" afisat cand `handoverDoneEarly && !rental.handover_confirmed_at && rental.status !== 'cancelled'`. Pozitionat sub sectiunea „Procese verbale". Buton „Vezi PV" deschide `setPvOpen('handover')`; buton „Am primit produsul" (doar pentru renter) deschide un mic `AlertDialog` de confirmare → `confirmHandoverReceived` → `refetch`.
-- Pentru proprietar: acelasi card, fara butonul de confirmare, cu mesaj „Asteptam chiriasul sa confirme primirea".
-- Notificare in-app opcional pentru proprietar la confirmare — **out of scope** pentru acest pas (se poate adauga separat).
 
-**Compatibilitate cu rezervarile existente:**
-- Rezervarile cu `handover_confirmed_at` deja setat sau `status='active'` raman neatinse (cardul nu se afiseaza pentru ele).
-- Rezervarile in care PV-ul este semnat dar `handover_confirmed_at` e `NULL` vor afisa noul card si vor astepta confirmarea chiriasului.
+- `src/features/rentals/rentalDetailPageApi.ts`
+  - Inlocuim `initiateReturn` actual (care setea `early_return_status`) cu apel la RPC-ul nou `supabase.rpc('initiate_return', { _rental_id })`.
+  - Helper nou `getReturnInitiated(rentalId)` care verifica existenta rand-ului `rental_pv_documents` cu `phase='return'`.
+
+- `src/components/rentals/PvSignatureDialog.tsx`
+  - Determinam „uploaderul" in functie de faza: `uploaderRole = phase === 'handover' ? 'owner' : 'renter'`.
+  - Doar `role === uploaderRole` poate adauga/sterge fotografii (input file dezactivat pentru celalalt).
+  - Eliminam galeriile duale „Fotografii Proprietar" / „Fotografii Chirias" si afisam o singura galerie unificata cu titlu „Fotografii (proprietar/chirias)" + chip de rol.
+  - Mesajul de „randul tau" se adapteaza: pentru cealalta parte: „Verifica fotografiile si semneaza pentru a aproba PV-ul".
+  - PDF-ul ramane neschimbat — afiseaza pozele cu eticheta rolului uploader-ului (deja face asta).
+
+- `src/pages/RentalDetailPage.tsx`
+  - Adaugam query `useQuery` pentru `getReturnInitiated(rental.id)` → `returnInitiated`.
+  - `showReturnPvEarly` devine: `isPaidEarly && stepEarly >= 3 && handoverDoneEarly && !!rental.handover_confirmed_at && returnInitiated`.
+  - Adaugam card „Pasul 6 — Produsul este in folosire" vizibil cand: `handoverDoneEarly && rental.handover_confirmed_at && !returnInitiated && !returnDoneEarly && status NOT IN ('cancelled','completed')`.
+    - Chirias: buton „Initiaza returnarea" → AlertDialog cu copy din imaginea 3 (titlu „Initiaza returnarea produsului", text „Dupa confirmare, vei fotografia produsul si vei completa procesul verbal de returnare.", actiuni „Renunta" / „Confirm returnarea") → `initiateReturn` → invalidate queries.
+    - Proprietar: badge „Asteptam chiriasul sa initieze returnarea" + buton „Discuta in chat".
+  - Dupa initiere, PvPanel-ul de returnare devine vizibil ca acum.
+
+- `src/components/rentals/EarlyReturnCard.tsx`: neatins (pretul prorata pentru early return ramane logica separata, nu intra in conflict).
+
+## Compatibilitate
+
+- PV-uri vechi cu fotografii de la ambele parti raman lizibile (galeria unificata afiseaza toate pozele indiferent de rol).
+- Rezervari deja in faza de returnare (cu `rental_pv_documents` `phase='return'` deja creat) sunt tratate ca „return initiated" — apar normal in noul flux, fara batuturi.
+- Rezervarile in care chiriasul deja a urcat poze pe PV Predare raman valide; pozele continua sa apara in galeria unificata.
 
 ## Out of scope
 
-- SMS/email la confirmare (se pot adauga ulterior via `notify-rental-event`).
-- Schimbari pe `RentalTimeline` (step 5 ramane „Produs predat" si se aprinde tot pe baza `handover_confirmed_at`, ceea ce e deja corect).
+- Notificari email/SMS pentru pasul „initiaza returnarea" (se pot adauga ulterior prin `notify-rental-event`).
+- Schimbari pe `RentalTimeline` (etapele raman aceleasi).
+- Schimbari pe PDF.
