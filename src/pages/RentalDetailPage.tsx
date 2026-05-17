@@ -16,6 +16,7 @@ import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
 import { getRentalFullDetail, confirmHandoverReceived, getReturnInitiated, initiateReturn } from "@/features/rentals/rentalDetailPageApi";
 import MutualCancellationCard from "@/components/rentals/MutualCancellationCard";
 import PvSignatureDialog from "@/components/rentals/PvSignatureDialog";
+import PvPhotoUploadCard from "@/components/rentals/PvPhotoUploadCard";
 import ReturnCountdownBadge from "@/components/rentals/ReturnCountdownBadge";
 import LeaveReviewDialog from "@/components/dashboard/LeaveReviewDialog";
 import EarlyReturnCard from "@/components/rentals/EarlyReturnCard";
@@ -423,30 +424,50 @@ const RentalDetailPage = () => {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {showHandoverPv && (
-                <PvPanel
-                  label={t("PV Predare", "Handover PV")}
-                  phase="handover"
-                  role={role}
-                  ownerSignedAt={rental.handover_pv_owner_signed_at}
-                  renterSignedAt={rental.handover_pv_renter_signed_at}
-                  onOpen={() => setPvOpen("handover")}
-                  t={t}
-                  notStarted={false}
-                  isCurrentStep={handoverIsCurrent}
-                />
+                rental.handover_pv_owner_signed_at ? (
+                  <PvPanel
+                    label={t("PV Predare", "Handover PV")}
+                    phase="handover"
+                    role={role}
+                    ownerSignedAt={rental.handover_pv_owner_signed_at}
+                    renterSignedAt={rental.handover_pv_renter_signed_at}
+                    onOpen={() => setPvOpen("handover")}
+                    t={t}
+                    notStarted={false}
+                    isCurrentStep={handoverIsCurrent}
+                  />
+                ) : (
+                  <PvPhotoUploadCard
+                    rental={rental}
+                    phase="handover"
+                    role={role}
+                    onOpenDocument={() => setPvOpen("handover")}
+                    onOpenChat={handleChat}
+                  />
+                )
               )}
               {showReturnPv && (
-                <PvPanel
-                  label={t("PV Returnare", "Return PV")}
-                  phase="return"
-                  role={role}
-                  ownerSignedAt={rental.return_pv_owner_signed_at}
-                  renterSignedAt={rental.return_pv_renter_signed_at}
-                  onOpen={() => setPvOpen("return")}
-                  t={t}
-                  notStarted={!handoverDoneEarly}
-                  isCurrentStep={returnIsCurrent}
-                />
+                rental.return_pv_renter_signed_at ? (
+                  <PvPanel
+                    label={t("PV Returnare", "Return PV")}
+                    phase="return"
+                    role={role}
+                    ownerSignedAt={rental.return_pv_owner_signed_at}
+                    renterSignedAt={rental.return_pv_renter_signed_at}
+                    onOpen={() => setPvOpen("return")}
+                    t={t}
+                    notStarted={!handoverDoneEarly}
+                    isCurrentStep={returnIsCurrent}
+                  />
+                ) : (
+                  <PvPhotoUploadCard
+                    rental={rental}
+                    phase="return"
+                    role={role}
+                    onOpenDocument={() => setPvOpen("return")}
+                    onOpenChat={handleChat}
+                  />
+                )
               )}
             </div>
           </section>
