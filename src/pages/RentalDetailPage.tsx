@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical, Wallet, Check, X, MessageCircle } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical, Wallet, Check, X, MessageCircle, PackageCheck } from "lucide-react";
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import Navbar from "@/components/layout/Navbar";
@@ -13,7 +13,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import RentalTimeline, { getTimelineStep } from "@/components/dashboard/RentalTimeline";
 import StatusBadge from "@/components/dashboard/StatusBadge";
 import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
-import { getRentalFullDetail } from "@/features/rentals/rentalDetailPageApi";
+import { getRentalFullDetail, confirmHandoverReceived } from "@/features/rentals/rentalDetailPageApi";
 import MutualCancellationCard from "@/components/rentals/MutualCancellationCard";
 import PvSignatureDialog from "@/components/rentals/PvSignatureDialog";
 import ReturnCountdownBadge from "@/components/rentals/ReturnCountdownBadge";
@@ -46,6 +46,8 @@ const RentalDetailPage = () => {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [confirmingReceipt, setConfirmingReceipt] = useState(false);
+  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { data: isAdmin } = useIsAdmin(user?.id);
   const { data: wallet, refetch: refetchWallet } = useWalletBalance();
