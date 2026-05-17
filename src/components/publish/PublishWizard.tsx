@@ -973,7 +973,7 @@ const Step4Location = ({
 
         <div className="space-y-2">
           <Label className="text-sm font-semibold">
-            Adresă ridicare <span className="font-normal text-muted-foreground">(privată)</span>
+            Adresă ridicare
           </Label>
           <Input
             placeholder="Ex: Strada Exemplu nr. 10, Sector 1"
@@ -983,8 +983,7 @@ const Step4Location = ({
             className="h-12"
           />
           <p className="text-xs text-muted-foreground">
-            <Shield className="mr-1 inline h-3 w-3" />
-            Adresa apare doar pentru clienții cu rezervare confirmată. În anunț vizibil e doar orașul.
+            Apare pe pagina anunțului și ajută chiriașii să vadă unde se află produsul.
           </p>
         </div>
 
