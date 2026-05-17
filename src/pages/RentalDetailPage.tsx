@@ -897,7 +897,6 @@ const RentalDetailPage = () => {
                   toast.success(t("Returnarea a fost initiata.", "Return initiated."));
                   setReturnDialogOpen(false);
                   await Promise.all([refetch(), refetchReturnInitiated()]);
-                  setPvOpen("return");
                 } catch (e: any) {
                   console.error("initiate_return error:", e);
                   toast.error(e?.message || t("Eroare la initiere.", "Failed to initiate."));
