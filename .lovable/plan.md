@@ -1,12 +1,9 @@
-## Permite încărcarea de poze multiple în PV
+## Fix: la inițierea returnării, nu deschide direct PV-ul
 
-**Fișier:** `src/components/rentals/PvPhotoUploadCard.tsx`
+**Problemă:** După „Inițiază returnarea", `handleConfirmInitiate` apelează imediat `setPvOpen("return")`, ceea ce deschide dialogul PV înainte ca chiriașul să încarce pozele. Cardul `PvPhotoUploadCard` (cu „Adauga poza 1/2" + „Genereaza proces verbal") deja există pentru faza de return, dar e ocolit.
 
-**Schimbări:**
+**Fișier:** `src/pages/RentalDetailPage.tsx`
 
-1. `handleAddPhotos` — elimin `slice(0, Math.max(0, MIN_PV_PHOTOS - photoCount) || files.length)` care plafona la minim. Iterez peste TOATE fișierele selectate (`Array.from(files)`).
-2. `EmptySlot` `<input>` — adaug `multiple` ca să poată selecta mai multe poze dintr-o singură dată chiar și din slot-urile dashed.
-3. Buton principal de încărcare — păstrează `multiple` (deja există); actualizez label-ul ca să reflecte că minimul e 2 dar poți adăuga mai multe: `Incarca poze (X · min ${MIN_PV_PHOTOS})`.
-4. Grid-ul deja randează `Math.max(MIN_PV_PHOTOS, photoCount)` slot-uri, deci pozele suplimentare apar automat. Adaug încă un slot gol la final după ce s-au atins minimul, pentru a permite adăugarea continuă.
+**Schimbare unică:** elimin linia `setPvOpen("return")` din callback-ul butonului din `returnDialogOpen` (≈ linia 900). Restul rămâne: `initiateReturn` se execută, query-urile se reîncarcă, dialogul de confirmare se închide. `PvPhotoUploadCard` (phase="return") apare automat pentru chiriaș (uploader la return) și acolo încarcă pozele și apasă „Genereaza proces verbal" care la rândul lui apelează `setPvOpen("return")`.
 
-**În afara scopului:** Nicio schimbare în DB/RLS, în logica de semnare sau în `PvSignatureDialog`. Doar UI-ul cardului de upload.
+**În afara scopului:** logica handover, RLS, conținutul PV, semnături.
