@@ -1,70 +1,43 @@
-## Obiectiv
+## 1. Scoate eticheta "privată" de la adresa de ridicare
 
-Refactorizam fluxul PV-urilor astfel incat fiecare PV sa fie completat (foto + semnatura prima) de o singura parte, iar cealalta parte doar aproba prin semnatura. Adaugam un pas explicit „Initiaza returnarea" pe care chiriasul il apasa inainte ca PV-ul de returnare sa devina disponibil.
+Fișier: `src/components/publish/PublishWizard.tsx` (Pasul 4, în jur de linia 974–989)
 
-## Fluxul nou (end-to-end)
+- Înlocuiește label-ul `Adresă ridicare (privată)` cu `Adresă ridicare`.
+- Șterge nota cu iconul `Shield`: "Adresa apare doar pentru clienții cu rezervare confirmată. În anunț vizibil e doar orașul." (devine inexactă — adresa apare deja public în card-uri și pe pagina produsului).
+- Înlocuiește cu un helper neutru, scurt: "Apare pe pagina anunțului și ajută chiriașii să vadă unde se află produsul."
+- Eliminăm și importul `Shield` dacă rămâne nefolosit în fișier.
 
-1. **PV Predare (Proprietar → Chirias)**
-   - Doar **proprietarul** poate urca fotografii (min. 2) si semneaza primul.
-   - **Chiriasul** nu mai urca poze. Vede pozele facute de proprietar si semneaza pentru a confirma ca este de acord cu starea documentata.
-   - Dupa ambele semnaturi → PDF generat automat (ca azi).
+## 2. Realtime pe tot ce ține de activitate (cereri, plăți, mesaje, aprobări, suport)
 
-2. **Pasul 5 — „Preia produsul"** (deja exista, ramane neschimbat)
-   - Chiriasul apasa „Am primit produsul" → `handover_confirmed_at = now()`, status `active`.
+Notificările au deja realtime (`useNotifications` ascultă `notifications` INSERT/UPDATE/DELETE), iar tabelele importante sunt deja în publication `supabase_realtime` (`notifications`, `conversations`, `messages`, `rentals`, `rental_pv_documents`, `ops_tickets`, `ops_ticket_messages` etc.). Problema este că majoritatea listelor din UI nu se invalidează când vine un eveniment.
 
-3. **Pasul 6 — „Produsul este in folosire / Initiaza returnarea"** (NOU)
-   - Card vizibil dupa `handover_confirmed_at`, cat timp PV-ul de returnare nu e inceput.
-   - **Chirias**: buton „Initiaza returnarea" → AlertDialog de confirmare („Dupa confirmare, vei fotografia produsul si vei completa procesul verbal de returnare.") → la confirmare se „deschide" PV-ul de returnare.
-   - **Proprietar**: badge „Asteptam chiriasul sa initieze returnarea" + buton „Discuta in chat".
+Adăugăm subscriptions ușoare care fac `queryClient.invalidateQueries` pentru cheile relevante. Două nivele:
 
-4. **PV Returnare (Chirias → Proprietar)**
-   - Disponibil **doar** dupa ce chiriasul initiaza returnarea.
-   - Doar **chiriasul** urca fotografii (min. 2) si semneaza primul.
-   - **Proprietarul** vede pozele si semneaza pentru a aproba.
+**a) Hook nou global `useGlobalRealtime(userId)`** (creat în `src/hooks/useGlobalRealtime.ts`), montat o singură dată în `src/App.tsx` (sau în `Navbar`, oriunde e activ pe toate paginile când userul e logat). Ascultă:
 
-5. **Finalizare + review** (deja exista)
-   - Dupa ambele semnaturi pe PV Returnare → status `completed`, ambele parti primesc CTA „Lasa un review" (LeaveReviewDialog deja implementat).
+- `notifications` INSERT/UPDATE filter `user_id=eq.${userId}` → invalidează `["notifications"]` și `["admin-notifications"]` (deja parțial acoperit, dar îl menținem ca safety net pentru badge-uri).
+- `messages` INSERT (fără filter — RLS limitează) → invalidează `["conversations", userId]`, `["unread-messages", userId]`.
+- `conversations` UPDATE → invalidează `["conversations", userId]`.
+- `rentals` INSERT/UPDATE filter `renter_id=eq.${userId}` și un al doilea channel pentru `owner_id=eq.${userId}` → invalidează `["my-rentals"]`, `["owner-rentals"]`, `["rental", id]`, `["rental-payment-status", id]`, `["account-dashboard"]`, `["earnings"]`, `["wallet-balance"]`.
+- `ops_tickets` UPDATE filter `user_id=eq.${userId}` → invalidează `["user-tickets"]`, `["ticket", id]`.
+- `ops_ticket_messages` INSERT → invalidează `["ticket-messages", ticket_id]`.
 
-## Modificari tehnice
+Toate cele de mai sus rulează doar dacă `userId` e definit, cu cleanup pe `removeChannel` la unmount.
 
-**Backend (o singura migrare):**
-- RPC nou `initiate_return(_rental_id uuid)` `SECURITY DEFINER`:
-  - Verifica `auth.uid() = renter_id`, `handover_confirmed_at IS NOT NULL`, `status = 'active'`.
-  - Verifica ca nu exista deja `rental_pv_documents` cu `phase='return'`.
-  - Face `INSERT INTO rental_pv_documents (rental_id, phase) VALUES (_rental_id, 'return')` — aceasta intrare „goala" e semnalul ca returnarea a fost initiata (zero schimbari de schema; nu adaugam coloana noua).
-  - `GRANT EXECUTE ... TO authenticated`.
+**b) Hook nou de pagină `useRentalsListRealtime(userId)`** în `src/pages/RentalsPage.tsx` și `src/pages/RentalsOutPage.tsx`, pentru a invalida lista activă curentă chiar dacă userul nu are global mounting.
 
-**Frontend:**
+Nu sunt necesare migrări — toate tabelele sunt deja în publication.
 
-- `src/features/rentals/rentalDetailPageApi.ts`
-  - Inlocuim `initiateReturn` actual (care setea `early_return_status`) cu apel la RPC-ul nou `supabase.rpc('initiate_return', { _rental_id })`.
-  - Helper nou `getReturnInitiated(rentalId)` care verifica existenta rand-ului `rental_pv_documents` cu `phase='return'`.
+## 3. Scoate butonul "Regenereaza PDF" din PV-uri
 
-- `src/components/rentals/PvSignatureDialog.tsx`
-  - Determinam „uploaderul" in functie de faza: `uploaderRole = phase === 'handover' ? 'owner' : 'renter'`.
-  - Doar `role === uploaderRole` poate adauga/sterge fotografii (input file dezactivat pentru celalalt).
-  - Eliminam galeriile duale „Fotografii Proprietar" / „Fotografii Chirias" si afisam o singura galerie unificata cu titlu „Fotografii (proprietar/chirias)" + chip de rol.
-  - Mesajul de „randul tau" se adapteaza: pentru cealalta parte: „Verifica fotografiile si semneaza pentru a aproba PV-ul".
-  - PDF-ul ramane neschimbat — afiseaza pozele cu eticheta rolului uploader-ului (deja face asta).
+Fișier: `src/components/rentals/PvSignatureDialog.tsx`
 
-- `src/pages/RentalDetailPage.tsx`
-  - Adaugam query `useQuery` pentru `getReturnInitiated(rental.id)` → `returnInitiated`.
-  - `showReturnPvEarly` devine: `isPaidEarly && stepEarly >= 3 && handoverDoneEarly && !!rental.handover_confirmed_at && returnInitiated`.
-  - Adaugam card „Pasul 6 — Produsul este in folosire" vizibil cand: `handoverDoneEarly && rental.handover_confirmed_at && !returnInitiated && !returnDoneEarly && status NOT IN ('cancelled','completed')`.
-    - Chirias: buton „Initiaza returnarea" → AlertDialog cu copy din imaginea 3 (titlu „Initiaza returnarea produsului", text „Dupa confirmare, vei fotografia produsul si vei completa procesul verbal de returnare.", actiuni „Renunta" / „Confirm returnarea") → `initiateReturn` → invalidate queries.
-    - Proprietar: badge „Asteptam chiriasul sa initieze returnarea" + buton „Discuta in chat".
-  - Dupa initiere, PvPanel-ul de returnare devine vizibil ca acum.
+- Șterge complet blocul `{pv?.owner_signed_at && pv?.renter_signed_at && (...)}` din liniile ~517–537 (cardul "Regenereaza PDF / Genereaza PDF").
+- Șterge handler-ul `handleRegeneratePdf` (liniile ~415–430), state-ul `regenerating` și importul `updatePvPdfPath`/`generatePvPdf` dacă rămân nefolosite.
+- Rămâne doar butonul portocaliu "Vezi PV semnat (PDF)" deja prezent (liniile 498–515).
+- Generarea PDF rămâne automată la momentul semnării finale — nu o atingem, doar ascundem UI-ul de re-generare manuală.
 
-- `src/components/rentals/EarlyReturnCard.tsx`: neatins (pretul prorata pentru early return ramane logica separata, nu intra in conflict).
+## Scope explicit
 
-## Compatibilitate
-
-- PV-uri vechi cu fotografii de la ambele parti raman lizibile (galeria unificata afiseaza toate pozele indiferent de rol).
-- Rezervari deja in faza de returnare (cu `rental_pv_documents` `phase='return'` deja creat) sunt tratate ca „return initiated" — apar normal in noul flux, fara batuturi.
-- Rezervarile in care chiriasul deja a urcat poze pe PV Predare raman valide; pozele continua sa apara in galeria unificata.
-
-## Out of scope
-
-- Notificari email/SMS pentru pasul „initiaza returnarea" (se pot adauga ulterior prin `notify-rental-event`).
-- Schimbari pe `RentalTimeline` (etapele raman aceleasi).
-- Schimbari pe PDF.
+- **In scope:** etichetă adresă, hook global de realtime + cleanup în UI, eliminare buton regenerare PDF.
+- **Out of scope:** schimbarea logicii de generare PDF, schimbarea publication-ului realtime, schimbări de RLS, vizibilitate adresă pe pagina produsului (rămâne așa cum este acum).
