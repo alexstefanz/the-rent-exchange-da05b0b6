@@ -83,22 +83,20 @@ export function NotificationCard({ notification, onSelect, onMarkRead }: Props) 
 
       {/* Body */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <p
-            className={cn(
-              "text-sm leading-snug truncate",
-              isUnread ? "font-semibold text-foreground" : "font-medium text-foreground/85",
-            )}
-          >
-            {title}
-          </p>
-          <span className="shrink-0 text-[11px] text-muted-foreground/70 whitespace-nowrap pt-[2px]">
-            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: dateLocale })}
-          </span>
-        </div>
+        <p
+          className={cn(
+            "text-sm leading-snug break-words",
+            isUnread ? "font-semibold text-foreground" : "font-medium text-foreground/85",
+          )}
+        >
+          {title}
+        </p>
+        <span className="mt-0.5 block text-[11px] text-muted-foreground/70">
+          {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: dateLocale })}
+        </span>
 
         {description && (
-          <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{description}</p>
+          <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{description}</p>
         )}
 
         {action && (
