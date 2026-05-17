@@ -2481,6 +2481,10 @@ export type Database = {
         Args: { _action: string; _note?: string; _rental_id: string }
         Returns: Json
       }
+      confirm_handover_received: {
+        Args: { _rental_id: string }
+        Returns: undefined
+      }
       confirm_pickup: { Args: { _rental_id: string }; Returns: Json }
       create_user_notification: {
         Args: {
