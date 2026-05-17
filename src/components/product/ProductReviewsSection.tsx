@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
   getProductReviews,
   ProductReview,
@@ -47,9 +48,6 @@ function ReviewCard({ review }: { review: ProductReview }) {
         {review.rating_communication && (
           <div className="flex items-center gap-2"><span className="text-muted-foreground w-28">Comunicare</span><StarRating value={review.rating_communication} readonly /></div>
         )}
-        {review.rating_punctuality && (
-          <div className="flex items-center gap-2"><span className="text-muted-foreground w-28">Punctualitate</span><StarRating value={review.rating_punctuality} readonly /></div>
-        )}
       </div>
       {review.comment && <p className="mt-2 ml-12 text-sm text-muted-foreground">{review.comment}</p>}
     </div>
@@ -87,32 +85,41 @@ export default function ProductReviewsSection({ productId, isOwnProduct }: Props
   ].sort((a, b) => new Date(b.review.created_at).getTime() - new Date(a.review.created_at).getTime());
 
   return (
-    <div className="rounded-xl border border-border bg-card p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="font-heading text-xl font-semibold text-foreground">
-          {language === "ro" ? "Recenzii" : "Reviews"} ({totalCount})
-        </h2>
-        {totalCount > 0 && (
-          <div className="flex items-center gap-1">
-            <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-            <span className="font-semibold">{avgRating}</span>
-          </div>
-        )}
-      </div>
-
-      {loading ? (
-        <p className="text-sm text-muted-foreground py-4">{language === "ro" ? "Se încarcă..." : "Loading..."}</p>
-      ) : combinedReviews.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-6 text-center">
-          {language === "ro" ? "Nu există recenzii momentan." : "No reviews yet."}
-        </p>
-      ) : (
-        <div className="space-y-4">
-          {combinedReviews.map(({ review }) => (
-            <ReviewCard key={review.id} review={review} />
-          ))}
-        </div>
-      )}
+    <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <Accordion type="single" collapsible className="w-full">
+        <AccordionItem value="reviews" className="border-b-0">
+          <AccordionTrigger className="px-5 py-4 hover:no-underline font-heading text-base font-semibold">
+            <div className="flex items-center gap-3">
+              <span>
+                {language === "ro" ? "Recenzii" : "Reviews"} ({totalCount})
+              </span>
+              {totalCount > 0 && (
+                <span className="flex items-center gap-1 text-sm font-medium">
+                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  {avgRating}
+                </span>
+              )}
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="px-5 pb-5">
+            {loading ? (
+              <p className="text-sm text-muted-foreground py-2">
+                {language === "ro" ? "Se încarcă..." : "Loading..."}
+              </p>
+            ) : combinedReviews.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-2 text-center">
+                {language === "ro" ? "Nu există recenzii momentan." : "No reviews yet."}
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {combinedReviews.map(({ review }) => (
+                  <ReviewCard key={review.id} review={review} />
+                ))}
+              </div>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </div>
   );
 }
