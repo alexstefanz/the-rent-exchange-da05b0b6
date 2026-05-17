@@ -115,7 +115,7 @@ const RentalDetailPage = () => {
   const isPaidEarly = !!rental && (rental.payment_status === "authorized" || rental.payment_status === "paid" || rental.payment_status === "captured");
   // Both PVs are always visible once the rental is paid; activation/locking is handled inside the panels.
   const showHandoverPvEarly = isPaidEarly && stepEarly >= 3;
-  const showReturnPvEarly = isPaidEarly && stepEarly >= 3;
+  const showReturnPvEarly = isPaidEarly && stepEarly >= 3 && returnInitiated;
   const handoverDoneEarly = !!(rental?.handover_pv_owner_signed_at && rental?.handover_pv_renter_signed_at);
   const returnDoneEarly = !!(rental?.return_pv_owner_signed_at && rental?.return_pv_renter_signed_at);
   const handoverIsCurrent = isPaidEarly && !handoverDoneEarly;
@@ -504,6 +504,56 @@ const RentalDetailPage = () => {
                   <Clock className="h-3.5 w-3.5" />
                   {t("Asteptam confirmarea chiriasului", "Waiting for renter confirmation")}
                 </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Step 6 — Renter must initiate the return phase */}
+        {handoverDoneEarly && rental.handover_confirmed_at && !returnInitiated && !returnDoneEarly && rental.status !== "cancelled" && rental.status !== "completed" && (
+          <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="h-10 w-10 rounded-full bg-primary/15 grid place-items-center shrink-0">
+                <PackageOpen className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-heading text-base font-semibold text-foreground">
+                  {t("Pasul 6 — Produsul este in folosire", "Step 6 — Product is in use")}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {isOwner
+                    ? t(
+                        "Asteptam chiriasul sa initieze returnarea cand este gata.",
+                        "Waiting for the renter to initiate the return when ready.",
+                      )
+                    : t(
+                        "Bucura-te de produs! Cand termini, initiaza returnarea — tot tu vei fotografia produsul si vei genera PV-ul de returnare.",
+                        "Enjoy the product! When you're done, initiate the return — you'll photograph the product and complete the return PV.",
+                      )}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+              {isOwner ? (
+                <>
+                  <div className="inline-flex items-center gap-2 rounded-lg bg-amber-100 text-amber-900 text-xs font-medium px-3 py-2">
+                    <Clock className="h-3.5 w-3.5" />
+                    {t("Asteptam chiriasul sa initieze returnarea", "Waiting for renter to initiate return")}
+                  </div>
+                  <Button variant="outline" onClick={handleChat}>
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    {t("Discuta in chat", "Chat with renter")}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={() => setReturnDialogOpen(true)}
+                  disabled={initiatingReturn}
+                  className="shadow-lg shadow-primary/20"
+                >
+                  {initiatingReturn ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-2" />}
+                  {t("Initiaza returnarea", "Initiate return")}
+                </Button>
               )}
             </div>
           </section>
