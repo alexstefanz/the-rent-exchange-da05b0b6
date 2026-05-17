@@ -53,19 +53,26 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
 
   const photosMeta = pv?.photos_meta || [];
   const photos = photosMeta.map((m) => m.path);
-  const ownerPhotos = photosMeta.filter((m) => m.role === "owner");
-  const renterPhotos = photosMeta.filter((m) => m.role === "renter");
   const otherSigned = role === "owner" ? !!pv?.renter_signed_at : !!pv?.owner_signed_at;
   const mySigned = role === "owner" ? !!pv?.owner_signed_at : !!pv?.renter_signed_at;
-  // Sequential flow: handover → owner first, then renter; return → renter first, then owner.
-  const firstSigner: "owner" | "renter" = phase === "handover" ? "owner" : "renter";
-  const isFirstSigner = role === firstSigner;
+  // Sequential flow: handover → owner uploads+signs first, renter only signs to approve.
+  //                  return   → renter uploads+signs first, owner only signs to approve.
+  const uploaderRole: "owner" | "renter" = phase === "handover" ? "owner" : "renter";
+  const isUploader = role === uploaderRole;
+  const isFirstSigner = isUploader;
   const isMyTurn = !mySigned && (isFirstSigner || otherSigned);
   const isLockedWaiting = !mySigned && !isMyTurn;
-  const canSign = photos.length >= MIN_PHOTOS && isMyTurn;
+  const canUpload = isUploader && !mySigned;
+  const canSign = isMyTurn && (isUploader ? photos.length >= MIN_PHOTOS : photos.length > 0);
   const waitingLabel = phase === "handover"
-    ? "Asteapta proprietarul sa completeze si sa semneze PV-ul de Predare. Vei putea adauga propriile fotografii si semna imediat dupa."
-    : "Asteapta chiriasul sa initieze returnarea si sa semneze PV-ul. Dupa aceea vei putea adauga fotografii si semna.";
+    ? "Asteapta proprietarul sa adauge fotografiile si sa semneze PV-ul de Predare. Apoi vei putea verifica si semna pentru a aproba."
+    : "Asteapta chiriasul sa initieze returnarea, sa adauge fotografiile si sa semneze PV-ul. Apoi vei putea verifica si semna pentru a aproba.";
+  const galleryTitle = uploaderRole === "owner" ? "Fotografii (adaugate de Proprietar)" : "Fotografii (adaugate de Chirias)";
+  const approverHint = !isUploader
+    ? (phase === "handover"
+        ? "Verifica fotografiile facute de proprietar. Semnand confirmi ca esti de acord cu starea documentata a produsului."
+        : "Verifica fotografiile facute de chirias. Semnand confirmi ca esti de acord cu starea in care a fost returnat produsul.")
+    : null;
 
   async function handleAddPhotos(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -442,16 +449,20 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm">Fotografii ({photos.length})</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Min. {MIN_PHOTOS} foto. Recomandat: vedere de ansamblu, accesorii, eventuale defecte.
+                  {isUploader
+                    ? `Min. ${MIN_PHOTOS} foto. Recomandat: vedere de ansamblu, accesorii, eventuale defecte.`
+                    : `Doar ${uploaderRole === "owner" ? "proprietarul" : "chiriasul"} poate adauga fotografii pentru acest PV. Tu doar verifici si semnezi.`}
                 </p>
               </div>
-              <label className={(mySigned || !isMyTurn) ? "pointer-events-none opacity-50" : "cursor-pointer"}>
-                <input type="file" accept="image/*" multiple className="hidden" onChange={handleAddPhotos} disabled={uploading || mySigned || !isMyTurn} />
-                <span className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-[#F98715] transition-colors px-4 py-2 text-sm font-semibold shadow-sm">
-                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
-                  Adauga fotografii
-                </span>
-              </label>
+              {canUpload && (
+                <label className={uploading ? "pointer-events-none opacity-50" : "cursor-pointer"}>
+                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleAddPhotos} disabled={uploading} />
+                  <span className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-[#F98715] transition-colors px-4 py-2 text-sm font-semibold shadow-sm">
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+                    Adauga fotografii
+                  </span>
+                </label>
+              )}
             </section>
 
             {isLockedWaiting && (
@@ -464,30 +475,24 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
               </section>
             )}
 
-            {/* Owner gallery */}
+            {/* Unified gallery (uploader contributes; the other party only views) */}
             <PhotoGallery
-              title="Fotografii Proprietar"
-              accent="bg-sky-50 border-sky-200"
-              chip="bg-sky-100 text-sky-800"
-              photosMeta={ownerPhotos}
+              title={galleryTitle}
+              accent={uploaderRole === "owner" ? "bg-sky-50 border-sky-200" : "bg-amber-50 border-amber-200"}
+              chip={uploaderRole === "owner" ? "bg-sky-100 text-sky-800" : "bg-amber-100 text-amber-800"}
+              photosMeta={photosMeta}
               myRole={role}
-              role="owner"
-              canDelete={role === "owner" && !mySigned}
+              role={uploaderRole}
+              canDelete={isUploader && !mySigned}
               onRemove={handleRemovePhoto}
               onOpen={(path) => setLightbox(photos.indexOf(path))}
             />
-            {/* Renter gallery */}
-            <PhotoGallery
-              title="Fotografii Chirias"
-              accent="bg-amber-50 border-amber-200"
-              chip="bg-amber-100 text-amber-800"
-              photosMeta={renterPhotos}
-              myRole={role}
-              role="renter"
-              canDelete={role === "renter" && !mySigned}
-              onRemove={handleRemovePhoto}
-              onOpen={(path) => setLightbox(photos.indexOf(path))}
-            />
+
+            {approverHint && (
+              <p className="text-xs text-muted-foreground bg-muted/40 border border-border rounded-lg p-3">
+                {approverHint}
+              </p>
+            )}
 
             {/* Prominent PDF button */}
             {pv?.pdf_path && (
@@ -553,8 +558,11 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
                   <Button type="button" variant="ghost" size="sm" onClick={() => sigRef.current?.clear()}>
                     <Eraser className="h-4 w-4 mr-1" />Sterge
                   </Button>
-                  {!canSign && photos.length < MIN_PHOTOS && (
+                  {!canSign && isUploader && photos.length < MIN_PHOTOS && (
                     <span className="text-xs text-muted-foreground self-center">Adauga {MIN_PHOTOS - photos.length} fotografii</span>
+                  )}
+                  {!canSign && !isUploader && photos.length === 0 && (
+                    <span className="text-xs text-muted-foreground self-center">Asteapta fotografii</span>
                   )}
                 </div>
               </section>
