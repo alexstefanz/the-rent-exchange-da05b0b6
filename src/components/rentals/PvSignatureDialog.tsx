@@ -411,24 +411,6 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
     }
   }
 
-  async function handleRegeneratePdf() {
-    if (!pv) return;
-    setRegenerating(true);
-    try {
-      const blob = await generatePdf(pv);
-      const path = await uploadPvPdf(blob, rental.id, phase);
-      await updatePvPdfPath(rental.id, phase, path);
-      const refreshed = await getPvDocument(rental.id, phase);
-      if (refreshed) setPv(refreshed);
-      toast.success("PDF regenerat");
-    } catch (e: any) {
-      console.error("PV PDF regenerate failed:", e);
-      toast.error("PDF: " + (e?.message || "eroare la generare"));
-    } finally {
-      setRegenerating(false);
-    }
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -514,26 +496,6 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
             )}
 
             {/* Regenerate PDF (also creates it if missing). Available once both parties signed. */}
-            {pv?.owner_signed_at && pv?.renter_signed_at && (
-              <button
-                type="button"
-                onClick={handleRegeneratePdf}
-                disabled={regenerating}
-                className="w-full flex items-center justify-between gap-3 rounded-xl border border-border bg-card hover:bg-muted/40 transition-colors p-3 text-sm disabled:opacity-60"
-              >
-                <span className="flex items-center gap-3">
-                  <span className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary">
-                    {regenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-                  </span>
-                  <span className="text-left">
-                    <span className="block font-semibold">{pv?.pdf_path ? "Regenereaza PDF" : "Genereaza PDF"}</span>
-                    <span className="block text-xs text-muted-foreground">
-                      {pv?.pdf_path ? "Recreeaza documentul cu noul template" : "PDF-ul nu a fost generat — apasa pentru a-l crea"}
-                    </span>
-                  </span>
-                </span>
-              </button>
-            )}
 
             {/* Status */}
             <section className="rounded-lg border border-border bg-muted/30 p-3 text-xs space-y-1">
