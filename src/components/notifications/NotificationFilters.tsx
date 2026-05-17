@@ -48,41 +48,9 @@ export function NotificationFilters({
   const activeCategoryCount = counts[value] ?? 0;
 
   return (
-    <div className="px-4 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-      {showReadRow && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          {readChips.map(({ v, label }) => {
-            const active = readFilter === v;
-            const count = readCounts?.[v] ?? 0;
-            return (
-              <button
-                key={v}
-                onClick={() => onReadChange?.(v)}
-                className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all",
-                  active
-                    ? "bg-foreground text-background"
-                    : "bg-muted/60 text-muted-foreground hover:bg-muted",
-                )}
-              >
-                {label}
-                {count > 0 && (
-                  <span
-                    className={cn(
-                      "min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full text-[10px] font-bold",
-                      active ? "bg-background/20 text-background" : "bg-foreground/10 text-foreground",
-                    )}
-                  >
-                    {count > 99 ? "99+" : count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
+    <div className="px-4 pb-3 flex flex-wrap items-center gap-2">
       <Select value={value} onValueChange={(v) => onChange(v as FilterValue)}>
-        <SelectTrigger className="w-full sm:w-[200px] h-9 rounded-full bg-muted/60 border-0 text-xs font-semibold">
+        <SelectTrigger className="w-auto min-w-[140px] h-9 rounded-full bg-muted/60 border-0 text-xs font-semibold">
           <SelectValue>
             <span className="inline-flex items-center gap-1.5">
               {activeCategoryLabel}
@@ -112,6 +80,35 @@ export function NotificationFilters({
           })}
         </SelectContent>
       </Select>
+      {showReadRow &&
+        readChips.map(({ v, label }) => {
+            const active = readFilter === v;
+            const count = readCounts?.[v] ?? 0;
+            return (
+              <button
+                key={v}
+                onClick={() => onReadChange?.(v)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all",
+                  active
+                    ? "bg-foreground text-background"
+                    : "bg-muted/60 text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {label}
+                {count > 0 && (
+                  <span
+                    className={cn(
+                      "min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full text-[10px] font-bold",
+                      active ? "bg-background/20 text-background" : "bg-foreground/10 text-foreground",
+                    )}
+                  >
+                    {count > 99 ? "99+" : count}
+                  </span>
+                )}
+              </button>
+            );
+        })}
     </div>
   );
 }
