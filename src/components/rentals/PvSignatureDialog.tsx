@@ -15,7 +15,6 @@ import {
   uploadPvPdf,
   savePvSignatureAndPdf,
   getPvFileSignedUrl,
-  updatePvPdfPath,
   type PvDocument,
 } from "@/features/rentals/rentalDetailPageApi";
 import type { RentalFullDetail } from "@/features/rentals/rentalDetailPageApi";
@@ -39,7 +38,6 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [signing, setSigning] = useState(false);
-  const [regenerating, setRegenerating] = useState(false);
   const [lightbox, setLightbox] = useState<number | null>(null);
 
   useEffect(() => {
