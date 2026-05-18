@@ -8,7 +8,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import OnboardingStepper from "@/components/onboarding/OnboardingStepper";
 import CuiLookupField, { CuiLookupResult } from "@/components/onboarding/CuiLookupField";
 import CompanyAutofillCard, { CompanyData } from "@/components/onboarding/CompanyAutofillCard";
 import TrustStrip from "@/components/onboarding/TrustStrip";
