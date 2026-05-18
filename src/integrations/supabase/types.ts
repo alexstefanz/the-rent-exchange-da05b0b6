@@ -3176,6 +3176,10 @@ export type Database = {
           read_ct: number
         }[]
       }
+      renter_cancel_unpaid_rental: {
+        Args: { _rental_id: string }
+        Returns: Json
+      }
       request_mutual_cancellation: {
         Args: { _reason: string; _rental_id: string; _subject: string }
         Returns: Json

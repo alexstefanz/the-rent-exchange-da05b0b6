@@ -736,6 +736,9 @@ const RentalDetailPage = () => {
                 cancelRequestSubject={rental.cancel_request_subject}
                 cancelRequestReason={rental.cancel_request_reason}
                 currentUserId={user.id}
+                isRenter={user.id === rental.renter_id}
+                paymentStatus={rental.payment_status}
+                rentalStatus={rental.status}
                 onChanged={async () => { await refetch(); }}
               />
             )}

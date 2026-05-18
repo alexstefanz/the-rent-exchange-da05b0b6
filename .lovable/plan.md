@@ -1,40 +1,50 @@
-# Redesign notificări (toast)
+## Goal
+Permite chiriașului să anuleze instant cererea trimisă către proprietar, fără aprobare admin, **dacă plata nu a fost încă efectuată** (`payment_status` ≠ `authorized` / `paid` / `captured`). După ce există un hold/plată activă, fluxul curent (cerere mutuală + admin pentru refund) rămâne neschimbat.
 
-## Obiectiv
-Modernizăm toast-urile platformei (Sonner): centrate sus, durată 3s, buton de închidere, card cu soft shadow. În plus, când notificarea ține de o închiriere, în stânga apare poza principală a produsului iar lângă ea titlul produsului.
+## Backend (migration)
 
-## Modificări
+Funcție SQL nouă `public.renter_cancel_unpaid_rental(_rental_id uuid)`:
+- `security definer`, `search_path = public`
+- Verifică:
+  - `auth.uid() = rentals.renter_id`
+  - `payment_status` este `NULL` sau `pending` (nicio sumă reținută la Stripe / wallet)
+  - `status` ∈ (`pending`, `confirmed`) și `handover_pv_owner_signed_at IS NULL`
+  - Nu există deja `cancel_request_status = 'pending'` (sau o resetează)
+- Setează: `status = 'cancelled'`, `cancellation_reason = 'renter_self_unpaid'`, `cancelled_at = now()`, `cancel_request_status = NULL` (curăță orice cerere mutuală deschisă).
+- Returnează `{ ok: true }`.
 
-### 1. `src/components/ui/sonner.tsx` — config global Sonner
-- `position="top-center"`
-- `duration={3000}`
-- `closeButton`
-- `toastOptions.classNames.toast`: card alb (`bg-background`), `rounded-2xl`, `border border-border/60`, `shadow-[0_10px_40px_-12px_hsl(var(--foreground)/0.15)]`, padding generos, font Plus Jakarta Sans (moștenit), icon aliniat centrat-vertical.
-- Stil pentru `closeButton` (vizibil în dreapta-sus, hover subtil).
-- Aceleași tokens pentru `success` / `error` / `info` (doar accent color pe iconiță), păstrând paleta brand (#F59E0B).
+Acordă `EXECUTE` rolului `authenticated`.
 
-### 2. `src/lib/notify.tsx` (fișier nou) — helper-i centralizați
-- `notify.success(message)`, `notify.error(...)`, `notify.info(...)` — wrappers peste `sonner` toast (păstrează stilul nou).
-- `notify.rental({ image, title, message, variant? })` — folosește `toast.custom(...)` și randează un card cu layout:
-  ```text
-  [ img 48x48 rounded-xl ]  Titlu produs (font-semibold, line-clamp-1)
-                            Mesaj (text-sm text-muted-foreground, line-clamp-2)
-                                                                   [x]
-  ```
-  - Imagine: `object-cover`, fallback la placeholder dacă lipsește.
-  - Card: aceleași clase ca toast-ul global (soft shadow, rounded-2xl), lățime ~380px, centrat.
-  - Buton închidere integrat (`X` din lucide) care apelează `toast.dismiss(id)`.
-  - Durată 3000ms.
+## API wrapper
 
-### 3. Înlocuim apelurile relevante
-- `src/pages/Checkout.tsx` (linia 122): înlocuim `toast.success("Cererea a fost trimisă!…")` cu `notify.rental({ image: product.images[0], title: product.title, message: t("Cererea a fost trimisă! Vei fi notificat când proprietarul răspunde.", "Request sent! …") })`.
-- `src/components/rentals/EarlyReturnRequestDialog.tsx`: la fel, folosind imaginea + titlul produsului închirierii.
-- Restul `toast.success/.error` din platformă rămân pe noul stil global automat (nicio modificare necesară).
+În `src/features/rentals/rentalsApi.ts` adaug `renterCancelUnpaidRental(rentalId)`:
+- Apelează RPC-ul.
+- Post-success: `supabase.functions.invoke("notify-rental-event", { body: { rental_id, event_key: "request_cancelled_by_renter" } })` (best-effort, non-blocking). Reutilizez canalul existent; dacă cheia nu e mapată în edge function, primește fallback generic — voi adăuga o mapare scurtă în `notify-rental-event` doar dacă lipsește (verificare la implementare).
 
-### 4. Curățare
-- `<Toaster />` legacy (shadcn) din `src/App.tsx` rămâne (folosit de cod vechi) — dar îl putem lăsa neatins ca să nu introducem regresii; toate locurile noi folosesc Sonner.
+## UI
 
-## Validare
-- Trigger flow checkout → trebuie să apară toast centrat-sus cu poza produsului în stânga + titlu + mesaj, soft shadow, buton X, dispare după 3s.
-- Toast-uri generice (ex. erori login) → același card modern centrat, X vizibil, 3s.
-- Verificare pe mobile: toast rămâne centrat, lățime ≤ `calc(100vw - 32px)`.
+`src/components/rentals/MutualCancellationCard.tsx`:
+- Adaug prop `paymentStatus?: string | null` și `rentalStatus?: string | null`, `isRenter: boolean` (sau derivat din `renterId`).
+- Calculez `canRenterSelfCancel = isRenter && (!paymentStatus || paymentStatus === "pending") && rentalStatus !== "cancelled" && !handoverSigned`.
+- Când `canRenterSelfCancel` și nu există cerere admin în curs:
+  - Înlocuiesc CTA-ul „Solicită anulare" cu un buton direct **„Anulează cererea"** (variant destructive) + un dialog scurt de confirmare (fără subiect/motiv/checkbox).
+  - Text explicativ: „Plata nu a fost efectuată — poți anula cererea instant, fără aprobarea unui admin."
+- Restul logicii (cerere mutuală + admin) rămâne identică pentru cazurile cu plată activă.
+
+`src/pages/RentalDetailPage.tsx`:
+- Pasez `paymentStatus={rental.payment_status}`, `rentalStatus={rental.status}`, `isRenter={user?.id === rental.renter_id}` către `MutualCancellationCard`.
+
+## Notificare (best-effort)
+
+- In-app: trigger-ul existent pe schimbarea `status → cancelled` (dacă există) acoperă cazul; altfel edge function-ul `notify-rental-event` cu cheia nouă trimite email + in-app owner-ului. Verific în implementare și adaug mapping dacă lipsește.
+
+## Out of scope
+
+- Nu modific fluxul de refund / cerere mutuală existent pentru rezervări plătite.
+- Nu schimb dashboard-ul admin (nu apare nimic acolo, fiind self-service).
+- Nu ating UI-ul proprietarului — el primește doar notificarea standard de „cerere anulată".
+
+## Validation
+- Chiriaș cu rental `pending` + `payment_status = pending` → vede butonul „Anulează cererea", confirmă, rental devine `cancelled`, owner primește notificare.
+- Chiriaș cu rental `confirmed` + `payment_status = authorized` → vede în continuare fluxul cu cerere admin.
+- Owner-ul nu vede butonul nou nici într-un caz.
