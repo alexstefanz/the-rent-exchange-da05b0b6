@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
-import { MapPin, ShieldCheck, Heart, Star } from "lucide-react";
+import { MapPin, ShieldCheck, Heart, Star, CheckCircle } from "lucide-react";
 import { Product, calculateClientPrice } from "@/features/products/productsApi";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
