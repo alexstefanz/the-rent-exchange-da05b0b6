@@ -1,17 +1,8 @@
-Plan:
+Voi face o corecție țintită pentru ca notificările toast să poată afișa fizic un singur card.
 
-1. Centralizez afișarea toast-urilor custom într-un singur canal
-- În `src/lib/notify.tsx`, înainte de afișarea unui toast custom, voi apela `toast.dismiss()` ca să închid orice toast existent.
-- Voi folosi un ID global unic pentru notificările de tip card, nu ID-uri diferite per titlu/tip. Astfel un toast nou îl înlocuiește pe cel existent, nu se adaugă peste el.
-
-2. Întăresc deduplicarea notificărilor venite din backend
-- În `src/hooks/useGlobalRealtime.ts`, deduplicarea nu va mai fi doar pe `type`, ci pe o semnătură stabilă: `type + title + description`, cu fereastră mai lungă.
-- Voi partaja același set `shown` între realtime, poll și focus refresh, ca același rând din `notifications` să nu fie afișat de două ori când hook-ul se remontează în React StrictMode.
-
-3. Elimin stivuirea vizuală din Sonner
-- În `src/components/ui/sonner.tsx`, păstrez `visibleToasts={1}`, `expand={false}`, `gap={0}` și aplic aceleași reguli pe ambele instanțe Sonner.
-- Mă asigur că toast-urile bottom-center nu păstrează carduri vechi în fundal.
-
-Rezultat așteptat:
-- Indiferent dacă notificarea vine prin realtime, poll sau focus refresh, utilizatorul vede maximum un singur card toast pe ecran.
-- Dacă apar două notificări aproape simultan pentru același eveniment, se afișează una singură.
+Pași:
+1. Înlocuiesc configurația actuală cu două instanțe Sonner cu o singură instanță Sonner. Acum există două viewports Sonner montate în `App`, iar toast-ul custom poate fi randat în ambele, ceea ce explică exact cardurile suprapuse din screenshot.
+2. Păstrez `visibleToasts={1}` și `expand={false}`, dar pe o singură instanță globală, astfel încât Sonner să nu mai aibă unde duplica același toast.
+3. Ajustez `notifyFromDb` ca să folosească același toast ID stabil și să închidă explicit doar acel toast înainte de a-l înlocui, nu toate toast-urile aplicației.
+4. Las deduplicarea din `useGlobalRealtime` pentru evenimente reale duplicate din backend, dar elimin cauza vizuală principală: randarea aceluiași toast prin două Toastere.
+5. Verific după schimbare prin cod și semnal runtime că în aplicație rămâne montat un singur Sonner pentru notificări.
