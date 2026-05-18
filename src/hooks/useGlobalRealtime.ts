@@ -229,6 +229,15 @@ export function useGlobalRealtime(userId: string | undefined) {
           const n = payload.new as ToastableNotification;
           console.log("[realtime] notification INSERT", n);
           invalidate([["notifications", userId]]);
+          // Chat messages also surface as a `new_message` notification row.
+          // Invalidate conversation caches so the header badge updates even
+          // if the direct `messages` realtime event was missed.
+          if (n.type === "new_message") {
+            invalidate([
+              ["conversations", userId],
+              ["unread-messages", userId],
+            ]);
+          }
           showOnce(n, shown);
         },
       )

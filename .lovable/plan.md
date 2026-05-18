@@ -1,25 +1,41 @@
-## Fix buton de close pe notificarea toast
+## Reparat notificarile chat + reasezare toast deasupra iconitei de chat
 
-### Cauza
+### 1. Notificari realtime pentru chat-ul din header (badge cu numar mesaje necitite)
 
-In `src/lib/notify.tsx`, butonul X are doar `onClick` cu `e.stopPropagation()`. Sonner ataseaza pe wrapperul toastului handler-e de **pointer events** (pentru swipe-to-dismiss) si pentru click pe intregul toast. Cand utilizatorul apasa pe X:
+**Cauza probabila**
 
-1. `pointerdown` ajunge la wrapperul sonner inainte de click-ul React, care porneste tracking-ul de swipe / focus pe toast.
-2. In plus, cand notificarea are `link`, intregul div parinte are `onClick={handleClick}` cu `cursor-pointer`. React synthetic `stopPropagation` impiedica navigarea, dar in unele situatii (ex: cand sonner re-randeaza intre `pointerdown` si `click`), butonul X pierde click-ul.
+`useGlobalRealtime` deja asculta `INSERT` pe `messages` si invalideaza `["conversations", userId]`. Dar evenimentele de pe `messages` depind de RLS — recipientul are politica de SELECT prin join cu `conversations` si in unele cazuri (race intre auth si subscribe, sau cand utilizatorul tocmai s-a logat) realtime nu primeste INSERT-urile pe `messages`. In schimb, `notifications` are deja un trigger per-user fiabil (`filter: user_id=eq.${userId}`) si edge-function-ul `send-message-notification` insereaza un rand cu `type = "new_message"`.
 
-Rezultatul vizibil: utilizatorul apasa pe X, dar toastul nu se inchide (sau, daca toastul are link, navigheaza in loc sa inchida).
+**Fix**
 
-### Modificari (un singur fisier)
+In `src/hooks/useGlobalRealtime.ts`, in handler-ul de `INSERT` pe `notifications`, daca `n.type === "new_message"` invalidez explicit si:
+- `["conversations", userId]`
+- `["unread-messages", userId]`
 
-`src/lib/notify.tsx` — in `NotificationToast`, pe butonul de close:
+Asa, chiar daca evenimentul direct pe `messages` nu ajunge, badge-ul din Navbar se actualizeaza imediat (in <1s).
 
-1. Adaug `onPointerDown={(e) => e.stopPropagation()}` ca sa nu mai porneasca gestul de swipe al sonner.
-2. Adaug `onMouseDown={(e) => e.stopPropagation()}` pentru consistenta.
-3. Pastrez `onClick` cu `e.stopPropagation()` + `toast.dismiss(id)`, dar adaug si `e.preventDefault()` ca masura suplimentara.
-4. Cresc usor zona clickabila a butonului: `h-7 w-7` in loc de `h-6 w-6`, mut la `top-1.5 right-1.5`, si adaug `z-10` pentru a fi sigur ca e deasupra div-ului parinte cu `onClick`.
+### 2. Toast-urile sa apara deasupra iconitei FAB de chat din dreapta-jos
+
+**Situatia actuala**
+
+Toast-urile sonner sunt pozitionate `bottom-center`. FAB-ul de chat (`SupportChatWidget`) sta `fixed bottom-20 lg:bottom-6 right-4 z-50` (mobile: ~80px de jos, desktop: ~24px de jos, dimensiune 56px).
+
+**Fix in `src/components/ui/sonner.tsx`**
+
+1. Schimb `position="bottom-center"` in `position="bottom-right"`.
+2. Adaug un offset responsive calculat dintr-un `useEffect` cu `matchMedia("(min-width: 1024px)")`:
+   - desktop (lg): `offset={{ bottom: 96, right: 16 }}` (deasupra FAB-ului de la `bottom-6` + 56px + spatiu)
+   - mobile: `offset={{ bottom: 152, right: 16 }}` (deasupra FAB-ului de la `bottom-20` + 56px + spatiu)
+3. Lasam `visibleToasts={1}` si restul setarilor neschimbate.
+
+Astfel toast-urile aluneca peste cardul FAB-ului si raman vizibile pe orice pagina.
 
 ### Verificare
 
-- Click pe X intr-o notificare fara link → toastul dispare.
-- Click pe X intr-o notificare cu link → toastul dispare, **fara** navigare.
-- Click pe corpul notificarii cu link → navigheaza normal.
+- Login → trimiterea unui mesaj de pe alt cont catre user → badge-ul din header creste imediat fara refresh; toast "Mesaj nou de la …" apare in dreapta-jos, vizibil deasupra FAB-ului de chat.
+- Toast-ul ramane clickabil (link spre `/mesaje?conv=…`) si butonul de close functioneaza.
+
+### Fisiere modificate
+
+- `src/hooks/useGlobalRealtime.ts`
+- `src/components/ui/sonner.tsx`
