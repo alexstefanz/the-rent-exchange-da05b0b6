@@ -15,7 +15,7 @@ const CookieConsent = lazy(() => import("./components/CookieConsent"));
 
 const ConditionalWidgets = () => {
   const { pathname } = useLocation();
-  if (pathname.startsWith("/auth") || pathname.startsWith("/reset-password")) return null;
+  if (pathname.startsWith("/auth") || pathname.startsWith("/reset-password") || pathname.startsWith("/onboarding")) return null;
   return (
     <>
       <SupportChatWidget />
