@@ -725,6 +725,20 @@ const Auth = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <PhoneOtpDialog
+        open={phoneOtpOpen}
+        phone={pendingPhone}
+        onOpenChange={(o) => {
+          setPhoneOtpOpen(o);
+          if (!o && gatingLogin) {
+            // User closed the gate without verifying — sign out so they retry.
+            supabase.auth.signOut();
+            setGatingLogin(false);
+          }
+        }}
+        onVerified={handlePhoneVerified}
+      />
     </div>
   );
 };
