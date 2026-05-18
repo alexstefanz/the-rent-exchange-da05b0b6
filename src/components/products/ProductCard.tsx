@@ -139,10 +139,10 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
   return (
     <Link
       to={getProductUrl(product)}
-      className="group relative block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover"
+      className="group relative block transition-all hover:-translate-y-0.5"
     >
       {/* Image container */}
-      <div className="relative aspect-[4/3] overflow-hidden">
+      <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
         <img
           src={imageUrl}
           alt={displayTitle}
@@ -153,43 +153,45 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         {product.category && (
-          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm">
-            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-            <span className="truncate max-w-[120px]">{displayCategory}</span>
+          <span className="absolute left-2 top-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 pl-1 pr-2.5 py-1 text-xs font-medium text-foreground shadow-sm">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/15">
+              <ShieldCheck className="h-3 w-3 text-primary" />
+            </span>
+            <span className="truncate max-w-[100px]">{displayCategory}</span>
           </span>
         )}
         <button
           onClick={handleFavoriteClick}
           aria-label={isFavorite ? t("Elimină din favorite", "Remove from favorites") : t("Adaugă la favorite", "Add to favorites")}
-          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-sm transition-colors hover:bg-white"
+          className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 shadow-sm transition-colors hover:bg-white"
         >
           <Heart
             className={cn(
-              "h-4 w-4 transition-colors",
-              isFavorite ? "fill-primary text-primary" : "text-muted-foreground"
+              "h-[18px] w-[18px] transition-colors",
+              isFavorite ? "fill-primary text-primary" : "text-foreground/70"
             )}
           />
         </button>
         {rating && rating.avg > 0 && (
-          <div className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-white/95 px-2 py-0.5 text-xs font-semibold text-foreground shadow-sm">
+          <div className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-foreground shadow-sm">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
             <span>{rating.avg.toFixed(1)}</span>
-            {rating.count > 0 && <span className="font-normal text-muted-foreground">({rating.count})</span>}
+            {rating.count > 0 && <span className="font-normal text-foreground/70">({rating.count})</span>}
           </div>
         )}
       </div>
 
       {/* Info section */}
-      <div className="p-3 flex flex-col">
-        <h3 className="font-heading text-sm md:text-base font-semibold text-foreground line-clamp-1">
+      <div className="pt-2 px-1 pb-1 flex flex-col">
+        <h3 className="font-heading text-sm md:text-[15px] font-semibold text-foreground line-clamp-1">
           {displayTitle}
         </h3>
-        <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+        <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
           <MapPin className="h-3 w-3 shrink-0" />
           <span className="truncate">{location}</span>
         </div>
-        <div className="mt-2">
-          <span className="font-heading text-base md:text-lg font-bold text-foreground">
+        <div className="mt-1.5">
+          <span className="font-heading text-base font-bold text-foreground">
             {clientPrice} RON
           </span>
           <span className="text-xs text-muted-foreground"> / {t("zi", "day")}</span>
