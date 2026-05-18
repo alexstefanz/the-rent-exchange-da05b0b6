@@ -247,10 +247,10 @@ export function useGlobalRealtime(userId: string | undefined) {
       });
 
     // Periodic safety net so a missed websocket frame still surfaces within
-    // ~10s. Dedup via the `shown` set guarantees no duplicate toast.
+    // ~2s. Dedup via the `shown` set guarantees no duplicate toast.
     const interval = window.setInterval(() => {
       void pollRecent();
-    }, 10_000);
+    }, 2_000);
 
     // Resilience: refetch messaging + notification caches when the tab regains focus.
     const refresh = () => {
