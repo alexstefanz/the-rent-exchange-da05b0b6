@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import type { RentalFullDetail, PvDocument } from "@/features/rentals/rentalDetailPageApi";
 import { getPvFileSignedUrl } from "@/features/rentals/rentalDetailPageApi";
 import { buildPvContent, noDia, COMPANY } from "./pvContent";
+import rentliLogoUrl from "@/assets/rentli_logo.png";
 
 async function fetchAsArrayBuffer(url: string): Promise<ArrayBuffer> {
   const res = await fetch(url);
@@ -61,9 +62,29 @@ export async function generatePvDocx(rental: RentalFullDetail, pv: PvDocument, p
   const ownerSig = pv.owner_signature_data ? dataUrlToArrayBuffer(pv.owner_signature_data) : null;
   const renterSig = pv.renter_signature_data ? dataUrlToArrayBuffer(pv.renter_signature_data) : null;
 
+  // Brand logo (Rentli) in header
+  let logoBuffer: ArrayBuffer | null = null;
+  try {
+    logoBuffer = await fetchAsArrayBuffer(rentliLogoUrl);
+  } catch {
+    logoBuffer = null;
+  }
+
   const children: Paragraph[] = [];
 
   // Header
+  if (logoBuffer) {
+    children.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: { after: 120 },
+      children: [new ImageRun({
+        type: "png",
+        data: logoBuffer,
+        transformation: { width: 120, height: 40 },
+        altText: { title: "Rentli", description: "Rentli logo", name: "rentli_logo" },
+      }) as any],
+    }));
+  }
   children.push(centerLine(COMPANY.name, true, 22));
   children.push(centerLine(COMPANY.address, false, 18));
   children.push(centerLine(COMPANY.fiscal, false, 18));
