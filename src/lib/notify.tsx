@@ -211,6 +211,24 @@ export const notify = {
 /** Map a DB notification row to a toast variant. */
 export function variantFromNotificationType(type: string): NotifyVariant {
   const t = (type || "").toLowerCase();
+  // Explicit mappings for rental lifecycle / timeline events.
+  const explicit: Record<string, NotifyVariant> = {
+    active_rental_started: "confirmation",
+    handover_confirmed: "confirmation",
+    rental_completed: "confirmation",
+    review_reminder: "confirmation",
+    request_accepted: "confirmation",
+    payment_succeeded: "payment",
+    pickup_scheduled: "system",
+    return_reminder_24h: "system",
+    return_in_progress: "system",
+    pv_pickup_pending: "system",
+    pv_return_pending: "system",
+    pv_pickup_completed_by_party: "system",
+    pv_return_completed_by_party: "system",
+    dispute_opened: "cancellation",
+  };
+  if (explicit[t]) return explicit[t];
   if (
     t.includes("cancel") ||
     t.includes("reject") ||
