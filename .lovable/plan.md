@@ -1,38 +1,38 @@
-## Problem
+## Probleme identificate
 
-Notificările apar doar după refresh, deși:
-- Tabela `notifications` este în publicația `supabase_realtime`
-- Există subscriere `postgres_changes` în `useNotifications` (și backup în `useGlobalRealtime`)
-- RLS permite `auth.uid() = user_id`
+**A. Notificare eronată "Plată primită — începe chatul"** la creare cerere
+- `supabase/functions/send-rental-notification/index.ts` inserează o notificare către proprietar cu textul „Plată primită — începe chatul" și descriere „X a efectuat plata pentru produsul…". În realitate la acest moment plata este DOAR autorizată (hold Stripe), capture-ul se face abia după ce proprietarul acceptă cererea.
+- În plus, `notify-rental-event` cu `request_created` deja trimite notificarea corectă „Cerere nouă de închiriere" către ambii utilizatori → notificarea din `send-rental-notification` este și **duplicată**, și **greșită semantic**.
+- Același lucru se întâmplă cu emailul: `rental-request-owner.tsx` are titlu „Plată primită — începe chatul" — confuz.
 
-Cauza reală: socket-ul Realtime nu primește JWT-ul utilizatorului autentificat după login / refresh de token. Fără JWT valid, Realtime evaluează RLS ca user anonim și **filtrează** evenimentele înainte să ajungă la client. Asta explică perfect "apar doar după refresh" — la refresh, socket-ul se reinițializează cu token-ul deja prezent în storage.
-
-`AuthContext.onAuthStateChange` nu apelează `supabase.realtime.setAuth(...)`, iar clientul din `src/integrations/supabase/client.ts` nu propagă explicit token-ul către realtime.
+**B. Rezervarea nu apare REALTIME pentru proprietar pe pagina /inchirieri**
+- `useGlobalRealtime` invalidează cheile `["owner-rentals"]` și `["my-rentals"]` la INSERT/UPDATE pe `rentals` cu `owner_id=eq.${userId}`.
+- Dar `src/components/dashboard/RentalsOutTab.tsx` folosește cheia **`["ownerRentals", user?.id]`** (camelCase), care **niciodată** nu este invalidată → lista cererilor primite nu se actualizează decât după refresh manual.
+- Tabela `rentals` este în publication, RLS OK, JWT-ul Realtime e deja sincronizat (fix din turul precedent). Singura cauză rămasă: mismatch cheie cache.
 
 ## Modificări
 
-### 1. `src/contexts/AuthContext.tsx`
-- În callback-ul `onAuthStateChange` (rămâne sincron), adaugă imediat după `setSession(session)`:
-  ```ts
-  supabase.realtime.setAuth(session?.access_token ?? null);
-  ```
-- Apel similar după `getSession()` la mount, ca socket-ul să fie autentificat înainte ca primele canale să se aboneze.
+### 1. `supabase/functions/send-rental-notification/index.ts`
+- Șterg complet blocul `await supabaseAdmin.from("notifications").insert([...])` (cele 2 notificări duplicate).
+- Șterg blocurile `sendBranded("rental-request-owner", …)` și `sendBranded("rental-request-renter", …)` — emailurile sunt deja trimise de `notify-rental-event request_created`.
+- Păstrez: inserția în `transactions` (status `authorized`) și apelul RPC `get_or_create_rental_conversation` (utile pentru chat + tracking financiar).
+- Funcția devine un "side-effects worker" curat: tranzacție + conversație. Fără notificări/emailuri duplicate.
 
-Asta forțează ca toate canalele Realtime existente să refolosească JWT-ul curent — inclusiv la TOKEN_REFRESHED.
-
-### 2. `src/hooks/queries/useNotifications.ts`
-- Adaugă log la `subscribe((status) => ...)` pentru a putea verifica în consolă că statusul devine `SUBSCRIBED` (debug temporar, util pentru QA).
-- Re-creează canalul când se schimbă `userId` (deja se face prin dependencies).
-- Fără alte schimbări de logică (păstrăm optimistic prepend/update/delete).
+### 2. `supabase/functions/_shared/transactional-email-templates/rental-request-owner.tsx`
+- Schimb titlul `H1` și `subject`/`displayName` din „Plată primită — începe chatul" în **„Cerere nouă de închiriere"** / subject: „Cerere nouă pentru {produs}".
+- Schimb `preview` și `Lead` ca să spună clar: „X dorește să închirieze produsul tău. Plata este autorizată (blocată) și va fi încasată după ce acceptați cererea."
+- CTA rămâne „Vezi cererea" → `/rezervari/{publicId}` (sau `/inchirieri` dacă nu avem public_id).
+- Această schimbare se reflectă oricum prin canalul `notify-rental-event` care folosește același template.
 
 ### 3. `src/hooks/useGlobalRealtime.ts`
-- Elimină handler-ul duplicat pentru tabela `notifications` (acum garantat prin `useNotifications`). Reduce zgomotul și invalidările redundante. Restul subscripțiilor (rentals, messages, ops_tickets, etc.) rămân.
+- Pe handler-ele de `rentals` (owner_id și renter_id), adaug în lista de chei și `["ownerRentals"]` respectiv `["myRentals"]` ca să acopere ambele convenții.
+- Restul cheilor (`account-dashboard`, `earnings`, `wallet-balance`, `rental`, `rental-payment-status`) rămân.
 
 ### 4. QA
-- Deschid preview, login, las pagina deschisă cu bell-ul vizibil.
-- Dintr-o sesiune separată inserez o notificare de test pentru user-ul respectiv și verific că:
-  - Badge-ul de pe clopoțel se incrementează fără refresh.
-  - Notificarea apare în popover/sheet.
-- Verific în consolă mesajul `SUBSCRIBED` pentru ambele canale (notifications + global).
+- Curăț notificările vechi greșite pentru testarea finală (opțional, doar pentru claritate vizuală — nu se modifică DB, las în viață).
+- Cu user `alesso.cwalk@yahoo.com` logat pe `/inchirieri`, dintr-o altă sesiune creez o cerere → verific:
+  - Rezervarea apare instant în listă (fără refresh).
+  - Notificarea „Cerere nouă de închiriere" apare în clopoțel (fără cea de „Plată primită").
+  - Emailul are subiect „Cerere nouă pentru …".
 
-Nicio modificare la RLS, edge functions, sau structura DB — fix doar în autentificarea socket-ului Realtime.
+Niciun edit la RLS, schema DB, sau la fluxul Stripe.
