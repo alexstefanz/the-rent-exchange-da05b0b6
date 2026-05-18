@@ -49,7 +49,9 @@ export function useGlobalRealtime(userId: string | undefined) {
           const r = (payload.new ?? payload.old) as { id?: string };
           invalidate([
             ["my-rentals"],
+            ["myRentals"],
             ["owner-rentals"],
+            ["ownerRentals"],
             ["account-dashboard"],
             ["earnings"],
             ["wallet-balance"],
@@ -65,7 +67,9 @@ export function useGlobalRealtime(userId: string | undefined) {
           const r = (payload.new ?? payload.old) as { id?: string };
           invalidate([
             ["my-rentals"],
+            ["myRentals"],
             ["owner-rentals"],
+            ["ownerRentals"],
             ["account-dashboard"],
             ["earnings"],
             ["wallet-balance"],
