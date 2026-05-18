@@ -340,6 +340,7 @@ const Auth = () => {
         <Link to="/" className="mb-8 block">
           <img src={logoImage} alt="RentNow" className="h-12 w-auto" />
         </Link>
+        <OnboardingStepper current={2} className="mb-6" />
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1 text-center">
             <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
