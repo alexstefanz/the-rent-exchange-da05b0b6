@@ -181,10 +181,6 @@ function show(variant: NotifyVariant, opts: NotifyOptions) {
     {
       duration,
       position: "bottom-center",
-      unstyled: true,
-      classNames: {
-        toast: "!bg-transparent !border-0 !shadow-none !p-0",
-      },
     },
   );
 }
@@ -282,8 +278,11 @@ interface DbNotification {
 /** Show a toast for a DB notification row, picking language from localStorage. */
 export function notifyFromDb(n: DbNotification, image?: string | null) {
   const lang = (typeof window !== "undefined" && localStorage.getItem("app_language")) || "ro";
-  const title = lang === "en" ? (n.title_en || n.title_ro) : n.title_ro;
+  const rawTitle = lang === "en" ? (n.title_en || n.title_ro) : n.title_ro;
+  const title = rawTitle || n.title_ro || (n.type ? n.type.replaceAll("_", " ") : "Notificare");
   const message =
     (lang === "en" ? (n.description_en || n.description_ro) : n.description_ro) || "";
-  show(variantFromNotificationType(n.type), { title, message, image });
+  const variant = variantFromNotificationType(n.type);
+  console.log("[notify] showing toast", { type: n.type, variant, title });
+  show(variant, { title, message, image });
 }
