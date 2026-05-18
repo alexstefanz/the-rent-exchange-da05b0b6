@@ -65,7 +65,6 @@ export default function PvPhotoUploadCard({ rental, phase, role, onOpenDocument,
         await addPvPhoto({ rentalId: rental.id, phase, role, path });
       }
       await refresh();
-      toast.success("Fotografii incarcate");
     } catch (e: any) {
       toast.error(e?.message || "Eroare la incarcare");
     } finally {
