@@ -174,6 +174,21 @@ export async function withdrawCancellationRequest(rentalId: string) {
   return data;
 }
 
+/**
+ * Renter self-cancels a rental request that has NOT been paid yet
+ * (no Stripe hold, no wallet charge). Bypasses admin review entirely.
+ */
+export async function renterCancelUnpaidRental(rentalId: string) {
+  const { data, error } = await supabase.rpc("renter_cancel_unpaid_rental" as any, {
+    _rental_id: rentalId,
+  });
+  if (error) throw error;
+  supabase.functions.invoke("notify-rental-event", {
+    body: { rental_id: rentalId, event_key: "request_cancelled_by_renter" },
+  }).catch(() => {});
+  return data as { ok: boolean };
+}
+
 /** Admin reviews a pending cancellation request: approve (refund) or reject. */
 export async function adminRespondCancellation(
   rentalId: string,
