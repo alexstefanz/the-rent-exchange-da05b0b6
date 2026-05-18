@@ -1,4 +1,4 @@
-import { Send, CheckCircle2, Package, Wrench, Undo2, Wallet, ShieldCheck, Headphones, UserCheck, Tag, Check } from "lucide-react";
+import { Send, CheckCircle2, Package, Wrench, Undo2, Wallet, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -7,6 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { cn } from "@/lib/utils";
+import WhyChooseUsBento from "@/components/home/WhyChooseUsBento";
 
 const HowItWorks = () => {
   const copy = useUxCopy();
@@ -26,13 +27,6 @@ const HowItWorks = () => {
     { value: p.statRentalsValue, label: p.statRentalsLabel },
     { value: p.statSatisfactionValue, label: p.statSatisfactionLabel },
     { value: p.statResponseValue, label: p.statResponseLabel },
-  ];
-
-  const bentoCards = [
-    { icon: UserCheck, stat: p.bentoVerifiedStat, statLabel: p.bentoVerifiedStatLabel, title: p.bentoVerifiedTitle, desc: p.bentoVerifiedDesc },
-    { icon: ShieldCheck, stat: p.bentoInsuranceStat, statLabel: p.bentoInsuranceStatLabel, title: p.bentoInsuranceTitle, desc: p.bentoInsuranceDesc },
-    { icon: Headphones, stat: p.bentoSupportStat, statLabel: p.bentoSupportStatLabel, title: p.bentoSupportTitle, desc: p.bentoSupportDesc },
-    { icon: Tag, stat: p.bentoFeeStat, statLabel: p.bentoFeeStatLabel, title: p.bentoFeeTitle, desc: p.bentoFeeDesc },
   ];
 
   const faqs = [
