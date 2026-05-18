@@ -88,11 +88,16 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsPurpose: "view_rental",
   },
   request_rejected: {
-    recipients: "renter", channels: ["in_app", "email", "sms"], critical: false,
+    recipients: "both", channels: ["in_app", "email", "sms"], critical: false,
     emailTemplate: { renter: "rental-rejected" },
     smsTemplate: "rental_rejected",
-    inAppTitle: { ro: "Cererea a fost refuzată", en: "Request declined" },
-    inAppDesc: (c) => ({ ro: `Cererea pentru "${c.product?.title}" a fost refuzată`, en: `Request for "${c.product?.title}" was declined` }),
+    smsRoles: ["renter"],
+    inAppTitle: (c) => c.recipientRole === "owner"
+      ? { ro: "Ai refuzat cererea", en: "You declined the request" }
+      : { ro: "Cererea a fost refuzată", en: "Request declined" },
+    inAppDesc: (c) => c.recipientRole === "owner"
+      ? { ro: `Ai refuzat cererea pentru "${c.product?.title}"`, en: `You declined the request for "${c.product?.title}"` }
+      : { ro: `Cererea pentru "${c.product?.title}" a fost refuzată`, en: `Request for "${c.product?.title}" was declined` },
     link: (c) => `/rezervari/${c.rental.public_id}`,
     smsPurpose: "view_rental",
   },
