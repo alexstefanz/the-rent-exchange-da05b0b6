@@ -42,10 +42,12 @@ interface EventConfig {
   critical: boolean;
   emailTemplate?: { renter?: string; owner?: string; both?: string };
   smsTemplate?: string;
-  inAppTitle: { ro: string; en: string };
+  inAppTitle: { ro: string; en: string } | ((ctx: Ctx) => { ro: string; en: string });
   inAppDesc: (ctx: Ctx) => { ro: string; en: string };
   link: (ctx: Ctx) => string;
   smsPurpose?: string;
+  // Optional per-channel role gating. If unset, the channel fires for every recipient role.
+  smsRoles?: ("owner" | "renter")[];
 }
 
 interface Ctx {
@@ -86,11 +88,16 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsPurpose: "view_rental",
   },
   request_rejected: {
-    recipients: "renter", channels: ["in_app", "email", "sms"], critical: false,
+    recipients: "both", channels: ["in_app", "email", "sms"], critical: false,
     emailTemplate: { renter: "rental-rejected" },
     smsTemplate: "rental_rejected",
-    inAppTitle: { ro: "Cererea a fost refuzată", en: "Request declined" },
-    inAppDesc: (c) => ({ ro: `Cererea pentru "${c.product?.title}" a fost refuzată`, en: `Request for "${c.product?.title}" was declined` }),
+    smsRoles: ["renter"],
+    inAppTitle: (c) => c.recipientRole === "owner"
+      ? { ro: "Ai refuzat cererea", en: "You declined the request" }
+      : { ro: "Cererea a fost refuzată", en: "Request declined" },
+    inAppDesc: (c) => c.recipientRole === "owner"
+      ? { ro: `Ai refuzat cererea pentru "${c.product?.title}"`, en: `You declined the request for "${c.product?.title}"` }
+      : { ro: `Cererea pentru "${c.product?.title}" a fost refuzată`, en: `Request for "${c.product?.title}" was declined` },
     link: (c) => `/rezervari/${c.rental.public_id}`,
     smsPurpose: "view_rental",
   },
@@ -233,11 +240,16 @@ const EVENTS: Record<EventKey, EventConfig> = {
     link: (c) => `/rezervari/${c.rental.public_id}`,
   },
   request_cancelled_by_renter: {
-    recipients: "owner", channels: ["in_app", "email", "sms"], critical: true,
+    recipients: "both", channels: ["in_app", "email", "sms"], critical: true,
     emailTemplate: { owner: "rental-rejected" },
     smsTemplate: "rental_rejected",
-    inAppTitle: { ro: "Cerere de închiriere anulată", en: "Rental request cancelled" },
-    inAppDesc: (c) => ({ ro: `Chiriașul a anulat cererea pentru "${c.product?.title}" înainte de plată`, en: `The renter cancelled the request for "${c.product?.title}" before payment` }),
+    smsRoles: ["owner"],
+    inAppTitle: (c) => c.recipientRole === "renter"
+      ? { ro: "Ai anulat cererea", en: "You cancelled the request" }
+      : { ro: "Cerere de închiriere anulată", en: "Rental request cancelled" },
+    inAppDesc: (c) => c.recipientRole === "renter"
+      ? { ro: `Ai anulat cererea pentru "${c.product?.title}"`, en: `You cancelled the request for "${c.product?.title}"` }
+      : { ro: `Chiriașul a anulat cererea pentru "${c.product?.title}" înainte de plată`, en: `The renter cancelled the request for "${c.product?.title}" before payment` },
     link: (c) => `/rezervari/${c.rental.public_id}`,
     smsPurpose: "view_rental",
   },
@@ -292,6 +304,7 @@ Deno.serve(async (req) => {
 
       const ctx: Ctx = { rental, product, owner, renter, extra: extra || {}, recipientRole: role };
       const desc = cfg.inAppDesc(ctx);
+      const title = typeof cfg.inAppTitle === "function" ? cfg.inAppTitle(ctx) : cfg.inAppTitle;
       const linkPath = cfg.link(ctx);
 
       // Load preferences
@@ -313,8 +326,8 @@ Deno.serve(async (req) => {
         await supabase.from("notifications").insert({
           user_id: userObj.id,
           type: event_key,
-          title_ro: cfg.inAppTitle.ro,
-          title_en: cfg.inAppTitle.en,
+          title_ro: title.ro,
+          title_en: title.en,
           description_ro: desc.ro,
           description_en: desc.en,
           link: linkPath,
@@ -381,7 +394,7 @@ Deno.serve(async (req) => {
       }
 
       // 3) SMS
-      if (cfg.channels.includes("sms") && cfg.smsTemplate) {
+      if (cfg.channels.includes("sms") && cfg.smsTemplate && (!cfg.smsRoles || cfg.smsRoles.includes(role))) {
         if (!smsAllowed) {
           await supabase.from("notification_audit_log").insert({ rental_id, user_id: userObj.id, event_key, channel: "sms", status: "skipped", error: "opt_out" });
         } else if (!(await alreadySent("sms"))) {
