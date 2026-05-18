@@ -105,6 +105,7 @@ interface NotifyOptions {
   message: string;
   image?: string | null;
   duration?: number;
+  link?: string | null;
 }
 
 const GLOBAL_NOTIFICATION_TOAST_ID = "rentli:notification-toast";
@@ -115,16 +116,31 @@ function NotificationToast({
   title,
   message,
   image,
+  link,
 }: NotifyOptions & { id: string | number; variant: NotifyVariant }) {
   const s = VARIANT_STYLES[variant];
   const { Icon } = s;
+  const handleClick = () => {
+    if (!link) return;
+    toast.dismiss(id);
+    if (typeof window !== "undefined") {
+      if (link.startsWith("http")) window.location.assign(link);
+      else window.history.pushState({}, "", link);
+      // Notify the SPA router (React Router listens to popstate).
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    }
+  };
   return (
     <div
+      onClick={link ? handleClick : undefined}
+      role={link ? "button" : undefined}
+      tabIndex={link ? 0 : undefined}
       className={cn(
         "relative flex items-start gap-3 w-[min(380px,calc(100vw-32px))]",
         "bg-background border border-border/60 rounded-2xl overflow-hidden",
         "shadow-[0_12px_40px_-12px_hsl(var(--foreground)/0.18)]",
         "px-4 py-3.5 pr-9",
+        link && "cursor-pointer hover:bg-muted/30 transition-colors",
       )}
     >
       <span className={cn("absolute left-0 top-0 bottom-0 w-1", s.accent)} />
@@ -156,7 +172,10 @@ function NotificationToast({
       </div>
       <button
         type="button"
-        onClick={() => toast.dismiss(id)}
+        onClick={(e) => {
+          e.stopPropagation();
+          toast.dismiss(id);
+        }}
         aria-label="Close"
         className="absolute top-2 right-2 h-6 w-6 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
       >
@@ -179,6 +198,7 @@ function show(variant: NotifyVariant, opts: NotifyOptions) {
         title={opts.title}
         message={opts.message}
         image={opts.image}
+        link={opts.link}
       />
     ),
     {
@@ -277,6 +297,7 @@ interface DbNotification {
   title_en?: string | null;
   description_ro?: string | null;
   description_en?: string | null;
+  link?: string | null;
 }
 
 /** Show a toast for a DB notification row, picking language from localStorage. */
@@ -288,5 +309,5 @@ export function notifyFromDb(n: DbNotification, image?: string | null) {
     (lang === "en" ? (n.description_en || n.description_ro) : n.description_ro) || "";
   const variant = variantFromNotificationType(n.type);
   console.log("[notify] showing toast", { type: n.type, variant, title });
-  show(variant, { title, message, image });
+  show(variant, { title, message, image, link: n.link ?? null });
 }
