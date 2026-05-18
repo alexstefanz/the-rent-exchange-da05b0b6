@@ -172,12 +172,15 @@ function NotificationToast({
       </div>
       <button
         type="button"
+        onPointerDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => {
           e.stopPropagation();
+          e.preventDefault();
           toast.dismiss(id);
         }}
         aria-label="Close"
-        className="absolute top-2 right-2 h-6 w-6 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+        className="absolute top-1.5 right-1.5 z-10 h-7 w-7 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
       >
         <X className="h-3.5 w-3.5" />
       </button>
