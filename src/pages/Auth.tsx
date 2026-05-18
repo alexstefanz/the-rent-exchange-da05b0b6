@@ -14,11 +14,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Mail, Building2, User, Eye, EyeOff } from "lucide-react";
+import { Loader2, Mail, Eye, EyeOff } from "lucide-react";
 import logoImage from "@/assets/rentli_logo.webp";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 import { strongPasswordSchema, isWeakPasswordError } from "@/lib/passwordValidation";
+import OnboardingStepper from "@/components/onboarding/OnboardingStepper";
+import AccountTypeToggle from "@/components/onboarding/AccountTypeToggle";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -57,32 +59,15 @@ const Auth = () => {
   });
 
   const registerSchema = z.object({
-    fullName: z.string().min(2, copy.auth.nameMin),
     email: z.string().email(copy.auth.invalidEmail),
     password: strongPasswordSchema,
     confirmPassword: z.string(),
-    companyName: z.string().max(100).optional().or(z.literal("")),
-    cui: z.string().max(20).optional().or(z.literal("")),
-    regCom: z.string().max(30).optional().or(z.literal("")),
+    terms: z.literal(true, {
+      errorMap: () => ({ message: "Trebuie să accepți termenii" }),
+    }),
   }).refine((data) => data.password === data.confirmPassword, {
     message: copy.auth.passwordMismatch,
     path: ["confirmPassword"],
-  }).refine((data) => {
-    if (accountType === "business") {
-      return !!data.companyName && data.companyName.length >= 2;
-    }
-    return true;
-  }, {
-    message: "Denumirea firmei este obligatorie",
-    path: ["companyName"],
-  }).refine((data) => {
-    if (accountType === "business") {
-      return !!data.cui && data.cui.length >= 2;
-    }
-    return true;
-  }, {
-    message: "CUI-ul este obligatoriu",
-    path: ["cui"],
   });
 
   const resetPasswordSchema = z.object({
@@ -160,7 +145,7 @@ const Auth = () => {
 
   const registerForm = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { fullName: "", email: "", password: "", confirmPassword: "", companyName: "", cui: "", regCom: "" },
+    defaultValues: { email: "", password: "", confirmPassword: "", terms: false as unknown as true },
   });
 
   const resetForm = useForm<ResetPasswordFormData>({
@@ -197,14 +182,7 @@ const Auth = () => {
 
   const handleRegister = async (data: RegisterFormData) => {
     setIsLoading(true);
-    const metadata: Record<string, string> = { full_name: data.fullName };
-    if (accountType === "business") {
-      metadata.account_type = "business";
-      metadata.company_name = data.companyName || "";
-      metadata.cui = data.cui || "";
-      metadata.reg_com = data.regCom || "";
-    }
-    const { error } = await signUp(data.email, data.password, data.fullName);
+    const { error } = await signUp(data.email, data.password, undefined);
     setIsLoading(false);
     if (error) {
       let message = error.message;
@@ -236,20 +214,15 @@ const Auth = () => {
       toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
       return;
     } else {
-      // Update profile with business data after signup
+      // Mark account type early (company details collected in /onboarding/business)
       if (accountType === "business") {
         try {
           const { data: { user: newUser } } = await supabase.auth.getUser();
           if (newUser) {
-            await supabase.from("profiles").update({
-              account_type: "business",
-              company_name: data.companyName || null,
-              cui: data.cui || null,
-              reg_com: data.regCom || null,
-            }).eq("id", newUser.id);
+            await supabase.from("profiles").update({ account_type: "business" }).eq("id", newUser.id);
           }
         } catch (e) {
-          console.error("Failed to save business data:", e);
+          console.error("Failed to set account_type:", e);
         }
       }
       setOtpEmail(data.email);
@@ -290,7 +263,12 @@ const Auth = () => {
       } catch (e) {
         console.error("Failed to send welcome email:", e);
       }
-      navigate("/");
+      // Business accounts go to the company setup step; individuals to home.
+      if (accountType === "business") {
+        navigate("/onboarding/business", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
     }
   };
 
@@ -362,6 +340,7 @@ const Auth = () => {
         <Link to="/" className="mb-8 block">
           <img src={logoImage} alt="RentNow" className="h-12 w-auto" />
         </Link>
+        <OnboardingStepper current={2} className="mb-6" />
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1 text-center">
             <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
@@ -519,6 +498,7 @@ const Auth = () => {
             </TabsContent>
             
             <TabsContent value="register" className="space-y-4">
+              <OnboardingStepper current={1} className="mb-2" />
               <CardTitle className="text-xl">{copy.auth.createAccount}</CardTitle>
               <CardDescription>{copy.auth.registerSubtitle}</CardDescription>
               
@@ -527,58 +507,18 @@ const Auth = () => {
               </div>
 
               <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
-                {/* Account type toggle */}
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    type="button"
-                    variant={accountType === "individual" ? "default" : "outline"}
-                    className="w-full gap-2"
-                    onClick={() => setAccountType("individual")}
-                  >
-                    <User className="h-4 w-4" />
-                    Persoană fizică
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={accountType === "business" ? "default" : "outline"}
-                    className="w-full gap-2"
-                    onClick={() => setAccountType("business")}
-                  >
-                    <Building2 className="h-4 w-4" />
-                    Persoană juridică
-                  </Button>
-                </div>
+                {/* Account type toggle (premium segmented control) */}
+                <AccountTypeToggle value={accountType} onChange={setAccountType} />
 
-                <div className="space-y-2">
-                  <Label htmlFor="register-name">{copy.auth.fullName}</Label>
-                  <Input id="register-name" type="text" placeholder="Ion Popescu" {...registerForm.register("fullName")} />
-                  {registerForm.formState.errors.fullName && <p className="text-sm text-destructive">{registerForm.formState.errors.fullName.message}</p>}
-                </div>
-
-                {accountType === "business" && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="register-company">Denumire firmă *</Label>
-                      <Input id="register-company" type="text" placeholder="SC Exemplu SRL" maxLength={100} {...registerForm.register("companyName")} />
-                      {registerForm.formState.errors.companyName && <p className="text-sm text-destructive">{registerForm.formState.errors.companyName.message}</p>}
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="register-cui">CUI *</Label>
-                        <Input id="register-cui" type="text" placeholder="RO12345678" maxLength={20} {...registerForm.register("cui")} />
-                        {registerForm.formState.errors.cui && <p className="text-sm text-destructive">{registerForm.formState.errors.cui.message}</p>}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="register-regcom">Nr. Reg. Comerț</Label>
-                        <Input id="register-regcom" type="text" placeholder="J40/1234/2024" maxLength={30} {...registerForm.register("regCom")} />
-                      </div>
-                    </div>
-                  </>
-                )}
+                <p className="text-xs text-muted-foreground -mt-1">
+                  {accountType === "business"
+                    ? "Vei completa datele firmei (CUI, IBAN) în pasul următor — durează 1 minut."
+                    : "Cont gratuit, fără card de credit."}
+                </p>
 
                 <div className="space-y-2">
                   <Label htmlFor="register-email">{copy.auth.email}</Label>
-                  <Input id="register-email" type="email" placeholder="email@exemplu.ro" {...registerForm.register("email")} />
+                  <Input id="register-email" type="email" className="h-12" placeholder="email@exemplu.ro" {...registerForm.register("email")} />
                   {registerForm.formState.errors.email && <p className="text-sm text-destructive">{registerForm.formState.errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">
@@ -588,7 +528,7 @@ const Auth = () => {
                       id="register-password"
                       type={showRegisterPassword ? "text" : "password"}
                       placeholder="••••••••"
-                      className="pr-10"
+                      className="pr-10 h-12"
                       {...registerForm.register("password")}
                     />
                     <button
@@ -611,7 +551,7 @@ const Auth = () => {
                       id="register-confirm"
                       type={showRegisterConfirm ? "text" : "password"}
                       placeholder="••••••••"
-                      className="pr-10"
+                      className="pr-10 h-12"
                       {...registerForm.register("confirmPassword")}
                     />
                     <button
@@ -626,14 +566,30 @@ const Auth = () => {
                   </div>
                   {registerForm.formState.errors.confirmPassword && <p className="text-sm text-destructive">{registerForm.formState.errors.confirmPassword.message}</p>}
                 </div>
-                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+                <label className="flex items-start gap-2 text-sm text-muted-foreground cursor-pointer select-none">
                   <Checkbox
-                    checked={rememberMeRegister}
-                    onCheckedChange={(c) => setRememberMeRegister(c === true)}
+                    className="mt-0.5"
+                    checked={!!registerForm.watch("terms")}
+                    onCheckedChange={(c) =>
+                      registerForm.setValue("terms", (c === true) as true, { shouldValidate: true })
+                    }
                   />
-                  Ține-mă minte
+                  <span className="leading-snug">
+                    Sunt de acord cu{" "}
+                    <Link to="/termeni" className="text-primary underline-offset-2 hover:underline">
+                      Termenii
+                    </Link>{" "}
+                    și{" "}
+                    <Link to="/confidentialitate" className="text-primary underline-offset-2 hover:underline">
+                      Politica GDPR
+                    </Link>
+                    .
+                  </span>
                 </label>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                {registerForm.formState.errors.terms && (
+                  <p className="text-sm text-destructive">{registerForm.formState.errors.terms.message as string}</p>
+                )}
+                <Button type="submit" size="lg" className="w-full h-12" disabled={isLoading}>
                   {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{copy.auth.creatingAccount}</> : copy.auth.register}
                 </Button>
               </form>
