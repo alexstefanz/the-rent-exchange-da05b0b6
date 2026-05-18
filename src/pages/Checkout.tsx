@@ -15,6 +15,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { createRentalRequest } from "@/features/rentals/rentalsApi";
 import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 import { useKycGate } from "@/hooks/queries/useKycGate";
 import KycGateBanner from "@/components/kyc/KycGateBanner";
 import { PhoneRequiredGate, PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
