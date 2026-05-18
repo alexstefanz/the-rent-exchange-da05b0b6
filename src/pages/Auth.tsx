@@ -612,6 +612,22 @@ const Auth = () => {
                   {registerForm.formState.errors.email && <p className="text-sm text-destructive">{registerForm.formState.errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="register-phone">Număr de telefon</Label>
+                  <Input
+                    id="register-phone"
+                    type="tel"
+                    inputMode="tel"
+                    className="h-12"
+                    placeholder="+40712345678"
+                    autoComplete="tel"
+                    {...registerForm.register("phone")}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Vei primi un SMS cu un cod de 6 cifre pentru a-ți verifica contul.
+                  </p>
+                  {registerForm.formState.errors.phone && <p className="text-sm text-destructive">{registerForm.formState.errors.phone.message}</p>}
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="register-password">{copy.auth.password}</Label>
                   <div className="relative">
                     <Input
