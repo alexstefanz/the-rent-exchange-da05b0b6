@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
 
     const { error: updErr } = await supabase
       .from("profiles")
-      .update({ phone })
+      .update({ phone, phone_verified: true })
       .eq("id", userId);
     if (updErr) {
       console.error("[verify-phone-otp] profile update error", updErr);
