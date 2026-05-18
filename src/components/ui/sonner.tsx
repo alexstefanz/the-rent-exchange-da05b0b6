@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { Toaster as Sonner, toast } from "sonner";
 
@@ -5,12 +6,24 @@ type ToasterProps = React.ComponentProps<typeof Sonner>;
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme();
+  // Responsive offset so toasts always sit above the chat FAB
+  // (mobile: FAB at bottom-20 ≈ 80px + 56px height; desktop: bottom-6 ≈ 24px + 56px).
+  const [offset, setOffset] = useState<{ bottom: number; right: number }>({ bottom: 152, right: 16 });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const apply = () => setOffset({ bottom: mq.matches ? 96 : 152, right: 16 });
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
 
   return (
     <Sonner
       theme={theme as ToasterProps["theme"]}
       className="toaster group"
-      position="bottom-center"
+      position="bottom-right"
+      offset={offset as any}
       duration={6000}
       visibleToasts={1}
       expand={false}
