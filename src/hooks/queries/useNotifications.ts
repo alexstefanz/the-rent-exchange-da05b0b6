@@ -61,10 +61,30 @@ export function useNotifications(userId: string | undefined) {
         if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
           console.warn("[notifications-realtime] status:", status);
         }
+        if (status === "SUBSCRIBED") {
+          // Catch any INSERT that fired between login and channel readiness.
+          queryClient.invalidateQueries({ queryKey: KEY });
+        }
       });
 
     return () => {
       supabase.removeChannel(channel);
+    };
+  }, [userId, queryClient]);
+
+  // Resilience: refetch on tab focus / visibility change so the bell badge
+  // stays correct even if the websocket dropped briefly.
+  useEffect(() => {
+    if (!userId) return;
+    const refetch = () => queryClient.invalidateQueries({ queryKey: KEY });
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refetch();
+    };
+    window.addEventListener("focus", refetch);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", refetch);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [userId, queryClient]);
 
