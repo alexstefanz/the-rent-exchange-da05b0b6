@@ -287,7 +287,12 @@ const RentalDetailPage = () => {
               />
             )}
             <div className="min-w-0">
-              <p className="text-xs font-mono text-muted-foreground">{rental.public_id}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs font-mono text-muted-foreground">{rental.public_id}</p>
+                <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+                  {role === "owner" ? t("Tu esti proprietar", "You are owner") : t("Tu esti chirias", "You are renter")}
+                </span>
+              </div>
               <h1 className="sm:text-3xl font-bold tracking-tight mt-1 text-lg">
                 {t("Inchiriere", "Rental")} — {rental.product_title}
               </h1>
@@ -302,10 +307,6 @@ const RentalDetailPage = () => {
                 />
               </p>
             </div>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <StatusBadge status={rental.status as any} />
-            <Badge variant="outline">{role === "owner" ? t("Tu esti proprietar", "You are owner") : t("Tu esti chirias", "You are renter")}</Badge>
           </div>
         </div>
 
