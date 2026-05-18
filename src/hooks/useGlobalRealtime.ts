@@ -252,40 +252,22 @@ export function useGlobalRealtime(userId: string | undefined) {
       void pollRecent();
     }, 10_000);
 
-    return () => {
-      supabase.removeChannel(channel);
-      window.clearInterval(interval);
-    };
-  }, [userId, qc]);
-
-  // Resilience: refetch messaging + notification caches when the tab regains focus.
-  useEffect(() => {
-    if (!userId) return;
-
+    // Resilience: refetch messaging + notification caches when the tab regains focus.
     const refresh = () => {
       qc.invalidateQueries({ queryKey: ["conversations", userId] });
       qc.invalidateQueries({ queryKey: ["unread-messages", userId] });
       qc.invalidateQueries({ queryKey: ["notifications", userId] });
-      // Also surface any toast we may have missed while the tab was hidden.
-      const cutoff = new Date(Date.now() - 60_000).toISOString();
-      supabase
-        .from("notifications")
-        .select("id, type, title_ro, title_en, description_ro, description_en, created_at")
-        .eq("user_id", userId)
-        .eq("is_read", false)
-        .gte("created_at", cutoff)
-        .order("created_at", { ascending: true })
-        .limit(20)
-        .then(({ data }) => {
-          for (const n of data ?? []) showOnce(n as ToastableNotification, shown);
-        });
+      void pollRecent(60_000);
     };
     const onVisible = () => {
       if (document.visibilityState === "visible") refresh();
     };
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", onVisible);
+
     return () => {
+      supabase.removeChannel(channel);
+      window.clearInterval(interval);
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", onVisible);
     };
