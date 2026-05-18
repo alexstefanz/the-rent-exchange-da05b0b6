@@ -95,7 +95,7 @@ const RentalTimeline = ({ rental, className }: Props) => {
                 <div className={cn(
                   "relative z-10 flex h-7 w-7 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300",
                   isPast && "bg-emerald-500 border-emerald-500 text-white",
-                  isActive && "bg-[#F98715] border-[#F98715] text-white animate-[soft-pulse_3.2s_ease-in-out_infinite]",
+                  isActive && "bg-[#F98715] border-[#F98715] text-white animate-[soft-pulse_5s_ease-in-out_infinite]",
                   isCancel && "bg-rose-500 border-rose-500 text-white",
                   isFuture && "bg-muted border-border text-muted-foreground",
                 )}>

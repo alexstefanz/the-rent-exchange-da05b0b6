@@ -100,8 +100,8 @@ export default {
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
         "soft-pulse": {
-          "0%, 100%": { boxShadow: "0 0 0 0 hsl(var(--primary) / 0.25)" },
-          "50%": { boxShadow: "0 0 0 10px hsl(var(--primary) / 0)" },
+          "0%, 100%": { boxShadow: "0 0 0 0 hsl(var(--primary) / 0.18)", transform: "scale(1)" },
+          "50%": { boxShadow: "0 0 0 8px hsl(var(--primary) / 0)", transform: "scale(1.04)" },
         },
       },
       animation: {
@@ -112,7 +112,7 @@ export default {
         "ring-pulse": "ring-pulse 0.6s ease-out",
         "shimmer-pass": "shimmer-pass 1.4s ease-in-out infinite",
         "fade-in-up": "fade-in-up 0.4s ease-out both",
-        "soft-pulse": "soft-pulse 3.2s ease-in-out infinite",
+        "soft-pulse": "soft-pulse 5s ease-in-out infinite",
       },
     },
   },
