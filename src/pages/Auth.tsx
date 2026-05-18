@@ -498,6 +498,7 @@ const Auth = () => {
             </TabsContent>
             
             <TabsContent value="register" className="space-y-4">
+              <OnboardingStepper current={1} className="mb-2" />
               <CardTitle className="text-xl">{copy.auth.createAccount}</CardTitle>
               <CardDescription>{copy.auth.registerSubtitle}</CardDescription>
               
