@@ -54,6 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      supabase.realtime.setAuth(session?.access_token ?? null);
       setLoading(false);
     });
 
@@ -65,6 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         setSession(session);
         setUser(session?.user ?? null);
+        supabase.realtime.setAuth(session?.access_token ?? null);
         setLoading(false);
       }
     );
