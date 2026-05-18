@@ -278,21 +278,30 @@ const RentalDetailPage = () => {
 
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
-          <div>
-            <p className="text-xs font-mono text-muted-foreground">{rental.public_id}</p>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mt-1">
-              {t("Inchiriere", "Rental")} — {rental.product_title}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-              <span>
-                {format(new Date(rental.start_date), "d MMM yyyy", { locale: roLocale })} – {format(new Date(rental.end_date), "d MMM yyyy", { locale: roLocale })} · {rental.rental_days} {t("zile", "days")}
-              </span>
-              <ReturnCountdownBadge
-                startDate={rental.start_date}
-                endDate={rental.end_date}
-                hidden={returnDoneEarly || rental.status === "completed" || rental.status === "cancelled"}
+          <div className="flex items-start gap-4 min-w-0">
+            {rental.product_image && (
+              <img
+                src={rental.product_image}
+                alt={rental.product_title || ""}
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover border border-border shrink-0"
               />
-            </p>
+            )}
+            <div className="min-w-0">
+              <p className="text-xs font-mono text-muted-foreground">{rental.public_id}</p>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mt-1">
+                {t("Inchiriere", "Rental")} — {rental.product_title}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span>
+                  {format(new Date(rental.start_date), "d MMM yyyy", { locale: roLocale })} – {format(new Date(rental.end_date), "d MMM yyyy", { locale: roLocale })} · {rental.rental_days} {t("zile", "days")}
+                </span>
+                <ReturnCountdownBadge
+                  startDate={rental.start_date}
+                  endDate={rental.end_date}
+                  hidden={returnDoneEarly || rental.status === "completed" || rental.status === "cancelled"}
+                />
+              </p>
+            </div>
           </div>
           <div className="flex flex-col items-end gap-2">
             <StatusBadge status={rental.status as any} />
@@ -304,6 +313,105 @@ const RentalDetailPage = () => {
         <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
           <RentalTimeline rental={tlRental} />
         </section>
+
+        {/* Step 5 — Renter must confirm physical receipt of the product */}
+        {handoverDoneEarly && !rental.handover_confirmed_at && rental.status !== "cancelled" && rental.status !== "completed" && (
+          <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="h-10 w-10 rounded-full bg-primary/15 grid place-items-center shrink-0">
+                <Package className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-heading text-base font-semibold text-foreground">
+                  {t("Pasul 5 — Preia produsul", "Step 5 — Pick up the product")}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {isOwner
+                    ? t(
+                        "PV-ul a fost semnat de ambele parti. Asteptam chiriasul sa confirme primirea produsului.",
+                        "The handover document is signed by both parties. Waiting for the renter to confirm receipt.",
+                      )
+                    : t(
+                        `PV-ul a fost semnat de ambele parti. Mergi la ${rental.product_location_city || "locatia stabilita"} si confirma primirea dupa ce ai produsul in mana.`,
+                        `The handover document is signed by both parties. Go to ${rental.product_location_city || "the agreed location"} and confirm receipt after you have the product in hand.`,
+                      )}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+              <Button variant="outline" onClick={() => setPvOpen("handover")}>
+                <FileSignature className="h-4 w-4 mr-2" />
+                {t("Vezi PV", "View PV")}
+              </Button>
+              {!isOwner && (
+                <Button
+                  onClick={() => setReceiptDialogOpen(true)}
+                  disabled={confirmingReceipt}
+                  className="shadow-lg shadow-primary/20"
+                >
+                  {confirmingReceipt ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <PackageCheck className="h-4 w-4 mr-2" />}
+                  {t("Am primit produsul", "I received the product")}
+                </Button>
+              )}
+              {isOwner && (
+                <div className="inline-flex items-center gap-2 rounded-lg bg-amber-100 text-amber-900 text-xs font-medium px-3 py-2">
+                  <Clock className="h-3.5 w-3.5" />
+                  {t("Asteptam confirmarea chiriasului", "Waiting for renter confirmation")}
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Step 6 — Renter must initiate the return phase */}
+        {handoverDoneEarly && rental.handover_confirmed_at && !returnInitiated && !returnDoneEarly && rental.status !== "cancelled" && rental.status !== "completed" && (
+          <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="h-10 w-10 rounded-full bg-primary/15 grid place-items-center shrink-0">
+                <PackageOpen className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-heading text-base font-semibold text-foreground">
+                  {t("Pasul 6 — Produsul este in folosire", "Step 6 — Product is in use")}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {isOwner
+                    ? t(
+                        "Asteptam chiriasul sa initieze returnarea cand este gata.",
+                        "Waiting for the renter to initiate the return when ready.",
+                      )
+                    : t(
+                        "Bucura-te de produs! Cand termini, initiaza returnarea — tot tu vei fotografia produsul si vei genera PV-ul de returnare.",
+                        "Enjoy the product! When you're done, initiate the return — you'll photograph the product and complete the return PV.",
+                      )}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+              {isOwner ? (
+                <>
+                  <div className="inline-flex items-center gap-2 rounded-lg bg-amber-100 text-amber-900 text-xs font-medium px-3 py-2">
+                    <Clock className="h-3.5 w-3.5" />
+                    {t("Asteptam chiriasul sa initieze returnarea", "Waiting for renter to initiate return")}
+                  </div>
+                  <Button variant="outline" onClick={handleChat}>
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    {t("Discuta in chat", "Chat with renter")}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={() => setReturnDialogOpen(true)}
+                  disabled={initiatingReturn}
+                  className="shadow-lg shadow-primary/20"
+                >
+                  {initiatingReturn ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-2" />}
+                  {t("Initiaza returnarea", "Initiate return")}
+                </Button>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* Owner: waiting for renter payment */}
         {isOwner && rental.status === "confirmed" && rental.payment_status === "pending" && (
@@ -481,105 +589,6 @@ const RentalDetailPage = () => {
           </section>
         )}
 
-        {/* Step 5 — Renter must confirm physical receipt of the product */}
-        {handoverDoneEarly && !rental.handover_confirmed_at && rental.status !== "cancelled" && rental.status !== "completed" && (
-          <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="h-10 w-10 rounded-full bg-primary/15 grid place-items-center shrink-0">
-                <Package className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-heading text-base font-semibold text-foreground">
-                  {t("Pasul 5 — Preia produsul", "Step 5 — Pick up the product")}
-                </h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {isOwner
-                    ? t(
-                        "PV-ul a fost semnat de ambele parti. Asteptam chiriasul sa confirme primirea produsului.",
-                        "The handover document is signed by both parties. Waiting for the renter to confirm receipt.",
-                      )
-                    : t(
-                        `PV-ul a fost semnat de ambele parti. Mergi la ${rental.product_location_city || "locatia stabilita"} si confirma primirea dupa ce ai produsul in mana.`,
-                        `The handover document is signed by both parties. Go to ${rental.product_location_city || "the agreed location"} and confirm receipt after you have the product in hand.`,
-                      )}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-              <Button variant="outline" onClick={() => setPvOpen("handover")}>
-                <FileSignature className="h-4 w-4 mr-2" />
-                {t("Vezi PV", "View PV")}
-              </Button>
-              {!isOwner && (
-                <Button
-                  onClick={() => setReceiptDialogOpen(true)}
-                  disabled={confirmingReceipt}
-                  className="shadow-lg shadow-primary/20"
-                >
-                  {confirmingReceipt ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <PackageCheck className="h-4 w-4 mr-2" />}
-                  {t("Am primit produsul", "I received the product")}
-                </Button>
-              )}
-              {isOwner && (
-                <div className="inline-flex items-center gap-2 rounded-lg bg-amber-100 text-amber-900 text-xs font-medium px-3 py-2">
-                  <Clock className="h-3.5 w-3.5" />
-                  {t("Asteptam confirmarea chiriasului", "Waiting for renter confirmation")}
-                </div>
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* Step 6 — Renter must initiate the return phase */}
-        {handoverDoneEarly && rental.handover_confirmed_at && !returnInitiated && !returnDoneEarly && rental.status !== "cancelled" && rental.status !== "completed" && (
-          <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="h-10 w-10 rounded-full bg-primary/15 grid place-items-center shrink-0">
-                <PackageOpen className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-heading text-base font-semibold text-foreground">
-                  {t("Pasul 6 — Produsul este in folosire", "Step 6 — Product is in use")}
-                </h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {isOwner
-                    ? t(
-                        "Asteptam chiriasul sa initieze returnarea cand este gata.",
-                        "Waiting for the renter to initiate the return when ready.",
-                      )
-                    : t(
-                        "Bucura-te de produs! Cand termini, initiaza returnarea — tot tu vei fotografia produsul si vei genera PV-ul de returnare.",
-                        "Enjoy the product! When you're done, initiate the return — you'll photograph the product and complete the return PV.",
-                      )}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-              {isOwner ? (
-                <>
-                  <div className="inline-flex items-center gap-2 rounded-lg bg-amber-100 text-amber-900 text-xs font-medium px-3 py-2">
-                    <Clock className="h-3.5 w-3.5" />
-                    {t("Asteptam chiriasul sa initieze returnarea", "Waiting for renter to initiate return")}
-                  </div>
-                  <Button variant="outline" onClick={handleChat}>
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    {t("Discuta in chat", "Chat with renter")}
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  onClick={() => setReturnDialogOpen(true)}
-                  disabled={initiatingReturn}
-                  className="shadow-lg shadow-primary/20"
-                >
-                  {initiatingReturn ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-2" />}
-                  {t("Initiaza returnarea", "Initiate return")}
-                </Button>
-              )}
-            </div>
-          </section>
-        )}
-
         {/* Pay-now CTA: owner accepted, renter hasn't paid yet */}
         {needsPayment && (
           <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
@@ -665,31 +674,6 @@ const RentalDetailPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left: product + parties */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Product */}
-            <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-              <h3 className="font-heading font-semibold mb-3 flex items-center gap-2"><Package className="h-4 w-4 text-primary" />{t("Produs inchiriat", "Rented product")}</h3>
-              <div className="flex gap-4">
-                <img src={rental.product_image || "/placeholder.svg"} alt={rental.product_title || ""} className="w-28 h-28 rounded-xl object-cover" />
-                <div className="flex-1 min-w-0">
-                  <Link to={`/produs/${rental.product_id}`} className="font-semibold hover:text-primary transition-colors flex items-center gap-1">
-                    {rental.product_title} <ExternalLink className="h-3 w-3" />
-                  </Link>
-                  {rental.product_category && <p className="text-xs text-muted-foreground mt-1">{rental.product_category}</p>}
-                  {rental.product_location_city && (
-                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1"><MapPin className="h-3 w-3" />{rental.product_location_city}</p>
-                  )}
-                  {rental.product_included_items && rental.product_included_items.length > 0 && (
-                    <div className="mt-2">
-                      <p className="text-xs text-muted-foreground mb-1">{t("Incluse:", "Included:")}</p>
-                      <ul className="text-xs list-disc list-inside space-y-0.5">
-                        {rental.product_included_items.map((it, i) => <li key={i}>{it}</li>)}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </section>
-
             {/* Counterparty */}
             <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
               <h3 className="font-heading font-semibold mb-3">{counterparty.label}</h3>
