@@ -139,6 +139,7 @@ const AdminNotifications = () => {
 
   const filtered = notifications.filter((n) => {
     if (typeFilter !== "all" && n.type !== typeFilter) return false;
+    if (category !== "all" && getCategory(n.type) !== category) return false;
     if (readFilter === "unread" && n.is_read) return false;
     return true;
   });
@@ -355,7 +356,11 @@ const AdminNotifications = () => {
             ) : (
               <div className="px-4 py-16 text-sm text-muted-foreground text-center">
                 <Bell className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                Nu există notificări care să corespundă filtrelor.
+                {readFilter === "unread" && typeFilter === "all" && category === "all"
+                  ? "Inbox curat 🎉 — nu ai notificări necitite."
+                  : typeFilter !== "all"
+                  ? `Nu există notificări de tip „${TYPE_LABELS[typeFilter] || prettifyType(typeFilter)}".`
+                  : "Nu există notificări care să corespundă filtrelor."}
               </div>
             )}
           </CardContent>
