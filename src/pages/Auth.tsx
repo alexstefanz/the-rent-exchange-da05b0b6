@@ -19,6 +19,8 @@ import logoImage from "@/assets/rentli_logo.webp";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 import { strongPasswordSchema, isWeakPasswordError } from "@/lib/passwordValidation";
+import OnboardingStepper from "@/components/onboarding/OnboardingStepper";
+import AccountTypeToggle from "@/components/onboarding/AccountTypeToggle";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -57,32 +59,15 @@ const Auth = () => {
   });
 
   const registerSchema = z.object({
-    fullName: z.string().min(2, copy.auth.nameMin),
     email: z.string().email(copy.auth.invalidEmail),
     password: strongPasswordSchema,
     confirmPassword: z.string(),
-    companyName: z.string().max(100).optional().or(z.literal("")),
-    cui: z.string().max(20).optional().or(z.literal("")),
-    regCom: z.string().max(30).optional().or(z.literal("")),
+    terms: z.literal(true, {
+      errorMap: () => ({ message: "Trebuie să accepți termenii" }),
+    }),
   }).refine((data) => data.password === data.confirmPassword, {
     message: copy.auth.passwordMismatch,
     path: ["confirmPassword"],
-  }).refine((data) => {
-    if (accountType === "business") {
-      return !!data.companyName && data.companyName.length >= 2;
-    }
-    return true;
-  }, {
-    message: "Denumirea firmei este obligatorie",
-    path: ["companyName"],
-  }).refine((data) => {
-    if (accountType === "business") {
-      return !!data.cui && data.cui.length >= 2;
-    }
-    return true;
-  }, {
-    message: "CUI-ul este obligatoriu",
-    path: ["cui"],
   });
 
   const resetPasswordSchema = z.object({
@@ -160,7 +145,7 @@ const Auth = () => {
 
   const registerForm = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { fullName: "", email: "", password: "", confirmPassword: "", companyName: "", cui: "", regCom: "" },
+    defaultValues: { email: "", password: "", confirmPassword: "", terms: false as unknown as true },
   });
 
   const resetForm = useForm<ResetPasswordFormData>({
@@ -197,14 +182,7 @@ const Auth = () => {
 
   const handleRegister = async (data: RegisterFormData) => {
     setIsLoading(true);
-    const metadata: Record<string, string> = { full_name: data.fullName };
-    if (accountType === "business") {
-      metadata.account_type = "business";
-      metadata.company_name = data.companyName || "";
-      metadata.cui = data.cui || "";
-      metadata.reg_com = data.regCom || "";
-    }
-    const { error } = await signUp(data.email, data.password, data.fullName);
+    const { error } = await signUp(data.email, data.password, undefined);
     setIsLoading(false);
     if (error) {
       let message = error.message;
@@ -236,20 +214,15 @@ const Auth = () => {
       toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
       return;
     } else {
-      // Update profile with business data after signup
+      // Mark account type early (company details collected in /onboarding/business)
       if (accountType === "business") {
         try {
           const { data: { user: newUser } } = await supabase.auth.getUser();
           if (newUser) {
-            await supabase.from("profiles").update({
-              account_type: "business",
-              company_name: data.companyName || null,
-              cui: data.cui || null,
-              reg_com: data.regCom || null,
-            }).eq("id", newUser.id);
+            await supabase.from("profiles").update({ account_type: "business" }).eq("id", newUser.id);
           }
         } catch (e) {
-          console.error("Failed to save business data:", e);
+          console.error("Failed to set account_type:", e);
         }
       }
       setOtpEmail(data.email);
