@@ -10,7 +10,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { requestMutualCancellation, withdrawCancellationRequest } from "@/features/rentals/rentalsApi";
+import { requestMutualCancellation, withdrawCancellationRequest, renterCancelUnpaidRental } from "@/features/rentals/rentalsApi";
 
 interface Props {
   rentalId: string;
@@ -19,16 +19,20 @@ interface Props {
   cancelRequestSubject?: string | null;
   cancelRequestReason?: string | null;
   currentUserId: string;
+  isRenter?: boolean;
+  paymentStatus?: string | null;
+  rentalStatus?: string | null;
   onChanged: () => void | Promise<void>;
 }
 
 const MutualCancellationCard = ({
   rentalId, cancelRequestStatus, cancelRequestInitiator,
   cancelRequestSubject, cancelRequestReason,
-  currentUserId, onChanged,
+  currentUserId, isRenter, paymentStatus, rentalStatus, onChanged,
 }: Props) => {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [subject, setSubject] = useState("");
   const [reason, setReason] = useState("");
   const [accepted, setAccepted] = useState(false);
@@ -36,6 +40,20 @@ const MutualCancellationCard = ({
 
   const isPending = cancelRequestStatus === "pending";
   const iAmInitiator = isPending && cancelRequestInitiator === currentUserId;
+  const unpaid = !paymentStatus || ["pending", "failed", "canceled", "cancelled"].includes(paymentStatus);
+  const canRenterSelfCancel = !!isRenter && unpaid && rentalStatus !== "cancelled" && rentalStatus !== "completed";
+
+  async function selfCancelUnpaid() {
+    setBusy(true);
+    try {
+      await renterCancelUnpaidRental(rentalId);
+      toast.success(t("Cererea a fost anulată.", "Request cancelled."));
+      setConfirmOpen(false);
+      await onChanged();
+    } catch (e: any) {
+      toast.error(e?.message || t("Eroare la anulare.", "Error cancelling."));
+    } finally { setBusy(false); }
+  }
 
   async function submitRequest() {
     if (subject.trim().length < 3) {
@@ -110,6 +128,55 @@ const MutualCancellationCard = ({
   }
 
   // No pending request
+  if (canRenterSelfCancel) {
+    return (
+      <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-muted grid place-items-center shrink-0">
+            <Ban className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-sm">
+              {t("Anulează cererea", "Cancel request")}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t(
+                "Plata nu a fost efectuată — poți anula cererea instant, fără aprobarea unui admin.",
+                "Payment hasn't been processed — you can cancel the request instantly, without admin approval.",
+              )}
+            </p>
+          </div>
+          <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <DialogTrigger asChild>
+              <Button variant="destructive" size="sm">
+                {t("Anulează cererea", "Cancel request")}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t("Confirmi anularea?", "Confirm cancellation?")}</DialogTitle>
+                <DialogDescription>
+                  {t(
+                    "Cererea va fi anulată imediat. Proprietarul va fi notificat.",
+                    "The request will be cancelled immediately. The owner will be notified.",
+                  )}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setConfirmOpen(false)} disabled={busy}>
+                  {t("Înapoi", "Back")}
+                </Button>
+                <Button variant="destructive" onClick={selfCancelUnpaid} disabled={busy}>
+                  {busy ? t("Se anulează…", "Cancelling…") : t("Da, anulează", "Yes, cancel")}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-start gap-3">
