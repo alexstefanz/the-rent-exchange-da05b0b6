@@ -23,12 +23,6 @@ export function useGlobalRealtime(userId: string | undefined) {
 
     const channel = supabase
       .channel(`global-realtime-${userId}`)
-      // Notifications — also covered by useNotifications, but kept as safety net
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
-        () => invalidate([["notifications"], ["admin-notifications"]]),
-      )
       // Messaging
       .on(
         "postgres_changes",

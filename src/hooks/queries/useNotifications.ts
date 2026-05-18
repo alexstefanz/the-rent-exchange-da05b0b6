@@ -57,7 +57,11 @@ export function useNotifications(userId: string | undefined) {
           );
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.warn("[notifications-realtime] status:", status);
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
