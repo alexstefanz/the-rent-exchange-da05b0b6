@@ -36,6 +36,8 @@ const Toaster = ({ ...props }: ToasterProps) => {
         position="bottom-center"
         duration={6000}
         visibleToasts={1}
+        expand={false}
+        gap={0}
         toastOptions={{
           unstyled: true,
           classNames: {

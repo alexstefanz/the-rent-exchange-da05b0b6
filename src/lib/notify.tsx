@@ -168,6 +168,12 @@ function show(variant: NotifyVariant, opts: NotifyOptions) {
   const duration =
     opts.duration ??
     (variant === "cancellation" || variant === "warning" ? 10000 : 6000);
+  const slug = (opts.title || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+  const stableId = `notif:${variant}:${slug}`;
   return toast.custom(
     (id) => (
       <NotificationToast
@@ -179,6 +185,7 @@ function show(variant: NotifyVariant, opts: NotifyOptions) {
       />
     ),
     {
+      id: stableId,
       duration,
       position: "bottom-center",
     },
