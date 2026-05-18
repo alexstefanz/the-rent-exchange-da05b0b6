@@ -712,8 +712,7 @@ const AccountTab = () => {
                     <Trash2 className="h-5 w-5 text-destructive" />
                   </div>
                   <div>
-                    <p className="font-semibold">{t("Zonă sensibilă", "Danger zone")}</p>
-                    <p className="text-xs text-muted-foreground">{t("Acțiuni ireversibile asupra contului.", "Irreversible account actions.")}</p>
+                    <p className="font-semibold">{t("Dezactivează contul", "Deactivate account")}</p>
                   </div>
                 </div>
                 <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
@@ -721,11 +720,7 @@ const AccountTab = () => {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="border-t border-border px-5 py-5">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <p className="font-medium text-sm">{t("Dezactivează contul", "Deactivate account")}</p>
-                    <p className="text-xs text-muted-foreground">{t("Vei primi un email pentru a confirma dezactivarea.", "You'll receive an email to confirm deactivation.")}</p>
-                  </div>
+                <div className="flex justify-end">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" size="sm">{t("Dezactivează contul", "Deactivate account")}</Button>
