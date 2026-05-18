@@ -20,6 +20,23 @@ import { useUxCopy } from "@/hooks/useUxCopy";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 import { strongPasswordSchema, isWeakPasswordError } from "@/lib/passwordValidation";
 import AccountTypeToggle from "@/components/onboarding/AccountTypeToggle";
+import PhoneOtpDialog from "@/components/profile/PhoneOtpDialog";
+
+// TEMP: while notify.rentli.ro DNS isn't propagated, we verify accounts via SMS
+// instead of email. Set USE_SMS_OTP=false to revert to email OTP confirmation.
+const USE_SMS_OTP = true;
+
+// Romanian phone: +40XXXXXXXXX, 0040XXXXXXXXX, 40XXXXXXXXX or 07XXXXXXXX (also 02/03 landline)
+const RO_PHONE_REGEX = /^(\+40|0040|40|0)[0-9]{9}$/;
+const normalizePhoneRO = (raw: string): string | null => {
+  if (!raw) return null;
+  const p = raw.trim().replace(/[\s()-]/g, "");
+  if (/^\+40[0-9]{9}$/.test(p)) return p;
+  if (/^0040[0-9]{9}$/.test(p)) return "+" + p.slice(2);
+  if (/^40[0-9]{9}$/.test(p)) return "+" + p;
+  if (/^0[0-9]{9}$/.test(p)) return "+40" + p.slice(1);
+  return null;
+};
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -35,6 +52,10 @@ const Auth = () => {
   const [otpCode, setOtpCode] = useState("");
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isResendingOtp, setIsResendingOtp] = useState(false);
+  const [phoneOtpOpen, setPhoneOtpOpen] = useState(false);
+  const [pendingPhone, setPendingPhone] = useState("");
+  const [postVerifyTarget, setPostVerifyTarget] = useState<"/" | "/onboarding/business">("/");
+  const [gatingLogin, setGatingLogin] = useState(false);
   const [accountType, setAccountType] = useState<"individual" | "business">("individual");
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -59,6 +80,11 @@ const Auth = () => {
 
   const registerSchema = z.object({
     email: z.string().email(copy.auth.invalidEmail),
+    phone: z.string()
+      .trim()
+      .refine((v) => normalizePhoneRO(v) !== null, {
+        message: "Număr de telefon invalid. Format: +40712345678 sau 0712345678",
+      }),
     password: strongPasswordSchema,
     confirmPassword: z.string(),
     terms: z.literal(true, {
@@ -144,7 +170,7 @@ const Auth = () => {
 
   const registerForm = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { email: "", password: "", confirmPassword: "", terms: false as unknown as true },
+    defaultValues: { email: "", phone: "", password: "", confirmPassword: "", terms: false as unknown as true },
   });
 
   const resetForm = useForm<ResetPasswordFormData>({
@@ -153,8 +179,8 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    if (user && !isResetMode) navigate("/", { replace: true });
-  }, [user, navigate, isResetMode]);
+    if (user && !isResetMode && !phoneOtpOpen && !gatingLogin) navigate("/", { replace: true });
+  }, [user, navigate, isResetMode, phoneOtpOpen, gatingLogin]);
 
   const handleLogin = async (data: LoginFormData) => {
     setIsLoading(true);
@@ -166,7 +192,9 @@ const Auth = () => {
         description: copy.auth.invalidCredentials,
         variant: "destructive",
       });
-    } else {
+      return;
+    }
+
       if (rememberMe) {
         localStorage.setItem("rentli_remember_me", "1");
         localStorage.setItem("rentli_remembered_email", data.email);
@@ -174,9 +202,42 @@ const Auth = () => {
         localStorage.removeItem("rentli_remember_me");
         localStorage.removeItem("rentli_remembered_email");
       }
+
+      // SMS gate: if account hasn't completed phone verification, block login
+      // and trigger PhoneOtpDialog. Existing accounts are backfilled as verified.
+      if (USE_SMS_OTP) {
+        try {
+          const { data: { user: signedIn } } = await supabase.auth.getUser();
+          if (signedIn) {
+            const { data: prof } = await supabase
+              .from("profiles")
+              .select("phone, phone_verified")
+              .eq("id", signedIn.id)
+              .maybeSingle();
+            if (prof && prof.phone_verified === false) {
+              if (!prof.phone) {
+                toast({
+                  title: "Verificare necesară",
+                  description: "Contul tău nu are un număr de telefon. Te rugăm să creezi contul din nou cu un număr valid.",
+                  variant: "destructive",
+                });
+                await supabase.auth.signOut();
+                return;
+              }
+              setGatingLogin(true);
+              setPendingPhone(prof.phone);
+              setPostVerifyTarget("/");
+              setPhoneOtpOpen(true);
+              return;
+            }
+          }
+        } catch (e) {
+          console.error("phone gate check failed:", e);
+        }
+      }
+
       toast({ title: copy.auth.loginSuccess, description: copy.auth.welcomeBackToast });
       navigate("/", { replace: true });
-    }
   };
 
   const handleRegister = async (data: RegisterFormData) => {
@@ -212,20 +273,31 @@ const Auth = () => {
       if (isWeakPasswordError(error.message)) message = copy.auth.passwordTooWeak;
       toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
       return;
-    } else {
+    }
       // Mark account type early (company details collected in /onboarding/business)
+      const normalizedPhone = normalizePhoneRO(data.phone) as string;
+      try {
+        const { data: { user: newUser } } = await supabase.auth.getUser();
+        if (newUser) {
+          const updates: Record<string, unknown> = { phone: normalizedPhone };
       if (accountType === "business") {
-        try {
-          const { data: { user: newUser } } = await supabase.auth.getUser();
-          if (newUser) {
-            await supabase.from("profiles").update({ account_type: "business" }).eq("id", newUser.id);
-          }
-        } catch (e) {
-          console.error("Failed to set account_type:", e);
+            updates.account_type = "business";
         }
+          await supabase.from("profiles").update(updates).eq("id", newUser.id);
+        }
+      } catch (e) {
+        console.error("Failed to set profile after signup:", e);
       }
-      setOtpEmail(data.email);
-      setShowOtpVerification(true);
+
+      if (USE_SMS_OTP) {
+        setPendingPhone(normalizedPhone);
+        setPostVerifyTarget(accountType === "business" ? "/onboarding/business" : "/");
+        setPhoneOtpOpen(true);
+      } else {
+        setOtpEmail(data.email);
+        setShowOtpVerification(true);
+      }
+
       if (rememberMeRegister) {
         localStorage.setItem("rentli_remember_me", "1");
         localStorage.setItem("rentli_remembered_email", data.email);
@@ -233,7 +305,28 @@ const Auth = () => {
         localStorage.removeItem("rentli_remember_me");
         localStorage.removeItem("rentli_remembered_email");
       }
+  };
+
+  const handlePhoneVerified = async () => {
+    // Fire-and-forget welcome email (will queue until domain is live)
+    try {
+      const { data: { user: verifiedUser } } = await supabase.auth.getUser();
+      if (verifiedUser?.email) {
+        await supabase.functions.invoke("send-general-notification", {
+          body: {
+            type: "welcome",
+            email: verifiedUser.email,
+            full_name: verifiedUser?.user_metadata?.full_name || "",
+          },
+        });
+      }
+    } catch (e) {
+      console.error("welcome email failed:", e);
     }
+    toast({ title: "Cont verificat!", description: "Bun venit pe Rentli." });
+    setPhoneOtpOpen(false);
+    setGatingLogin(false);
+    navigate(postVerifyTarget, { replace: true });
   };
 
   const handleVerifyOtp = async () => {
