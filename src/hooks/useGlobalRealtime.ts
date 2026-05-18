@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyFromDb } from "@/lib/notify";
@@ -42,11 +42,20 @@ type ToastableNotification = {
  * window. Backends sometimes write 2 rows for a single rental event
  * (e.g. notify-rental-event + send-rental-notification). */
 const lastShownByType = new Map<string, number>();
-const TYPE_DEDUP_MS = 5000;
+const TYPE_DEDUP_MS = 30_000;
+
+function signatureFor(n: ToastableNotification) {
+  return [n.type, n.title_ro, n.title_en, n.description_ro, n.description_en]
+    .filter(Boolean)
+    .join("|")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 function showOnce(n: ToastableNotification, shown: Set<string>) {
   if (n.id && shown.has(n.id)) return;
-  const key = n.type || "_";
+  const key = signatureFor(n) || n.type || "_";
   const now = Date.now();
   const last = lastShownByType.get(key) ?? 0;
   if (now - last < TYPE_DEDUP_MS) {
@@ -78,11 +87,13 @@ function showOnce(n: ToastableNotification, shown: Set<string>) {
  */
 export function useGlobalRealtime(userId: string | undefined) {
   const qc = useQueryClient();
+  const shownRef = useRef<Set<string> | null>(null);
+  if (!shownRef.current) shownRef.current = loadShown();
+  const shown = shownRef.current;
 
   useEffect(() => {
     if (!userId) return;
 
-    const shown = loadShown();
     // Only surface notifications created shortly before / after mount, so
     // we don't re-toast historical rows on every page load. Realtime INSERTs
     // are still deduped through the same `shown` set.
@@ -251,7 +262,6 @@ export function useGlobalRealtime(userId: string | undefined) {
   useEffect(() => {
     if (!userId) return;
 
-    const shown = loadShown();
     const refresh = () => {
       qc.invalidateQueries({ queryKey: ["conversations", userId] });
       qc.invalidateQueries({ queryKey: ["unread-messages", userId] });
