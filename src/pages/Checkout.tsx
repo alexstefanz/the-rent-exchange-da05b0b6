@@ -15,6 +15,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { createRentalRequest } from "@/features/rentals/rentalsApi";
 import { toast } from "sonner";
+import { notify } from "@/lib/notify";
 import { useKycGate } from "@/hooks/queries/useKycGate";
 import KycGateBanner from "@/components/kyc/KycGateBanner";
 import { PhoneRequiredGate, PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
@@ -119,9 +120,13 @@ const Checkout = () => {
         platformFeePercent: product.platformFeePercent,
         paymentMethod: "stripe",
       });
-      toast.success(language === "ro"
-        ? "Cererea a fost trimisă! Vei fi notificat când proprietarul răspunde."
-        : "Request sent! You'll be notified when the owner responds.");
+      notify.rental({
+        image: product.images?.[0],
+        title: product.title,
+        message: language === "ro"
+          ? "Cererea a fost trimisă! Vei fi notificat când proprietarul răspunde."
+          : "Request sent! You'll be notified when the owner responds.",
+      });
       const target = (rental as any)?.public_id
         ? `/rezervari/${(rental as any).public_id}`
         : "/rezervari";
