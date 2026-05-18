@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { notifyFromDb } from "@/lib/notify";
 
 /**
  * Global realtime subscriptions for the signed-in user.
@@ -111,6 +112,26 @@ export function useGlobalRealtime(userId: string | undefined) {
             ["user-tickets"],
             ...(m?.ticket_id ? [["ticket-messages", m.ticket_id], ["ticket", m.ticket_id]] : []),
           ]);
+        },
+      )
+      // Notifications — show a toast for every new row
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
+        (payload) => {
+          const n = payload.new as {
+            type: string;
+            title_ro: string;
+            title_en?: string | null;
+            description_ro?: string | null;
+            description_en?: string | null;
+          };
+          invalidate([["notifications", userId]]);
+          try {
+            notifyFromDb(n);
+          } catch (e) {
+            console.error("notifyFromDb failed", e);
+          }
         },
       )
       .subscribe((status) => {
