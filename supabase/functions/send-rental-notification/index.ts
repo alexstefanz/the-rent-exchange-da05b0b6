@@ -20,15 +20,6 @@ function checkRateLimit(key: string, maxRequests = 5, windowSec = 60): boolean {
   return true;
 }
 
-function formatDateRo(dateStr: string): string {
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" });
-  } catch {
-    return dateStr;
-  }
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -70,52 +61,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Idempotency guard: if we already notified the owner about this rental,
-    // skip everything (verify-stripe-payment may run again on success-page refresh).
-    const { data: existingNotification } = await supabaseAdmin
-      .from("notifications")
-      .select("id")
-      .eq("user_id", rental.owner_id)
-      .eq("type", "rental_request")
-      .ilike("link", `%rental_id=${rental.id}%`)
-      .limit(1)
+    const { data: product } = await supabaseAdmin
+      .from("products")
+      .select("title")
+      .eq("id", rental.product_id)
       .maybeSingle();
-
-    if (existingNotification) {
-      console.log(`[send-rental-notification] Already notified for rental ${rental.id} — skipping.`);
-      return new Response(JSON.stringify({ success: true, skipped: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const [productRes, renterRes, ownerRes] = await Promise.all([
-      supabaseAdmin.from("products").select("title, images, location").eq("id", rental.product_id).single(),
-      supabaseAdmin.from("profiles").select("full_name, email").eq("id", rental.renter_id).single(),
-      supabaseAdmin.from("profiles").select("full_name, email").eq("id", rental.owner_id).single(),
-    ]);
-
-    const product = productRes.data;
-    const renter = renterRes.data;
-    const owner = ownerRes.data;
-
-    const getEmail = async (userId: string, profileEmail: string | null): Promise<string | null> => {
-      if (profileEmail) return profileEmail;
-      try {
-        const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
-        if (data?.user?.email) {
-          await supabaseAdmin.from("profiles").update({ email: data.user.email }).eq("id", userId);
-          return data.user.email;
-        }
-      } catch (e) {
-        console.error("Error fetching auth user email:", e);
-      }
-      return null;
-    };
-
-    const [ownerEmail, renterEmail] = await Promise.all([
-      getEmail(rental.owner_id, owner?.email || null),
-      getEmail(rental.renter_id, renter?.email || null),
-    ]);
 
     // Insert transaction (status reflects the Stripe authorization hold).
     {
