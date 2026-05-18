@@ -1,27 +1,29 @@
 ## Problem
 
-When a new notification arrives, the data updates only after the user opens the bell. The badge counter on the closed bell stays at 0 until the popover opens. That means the Realtime INSERT event isn't reaching the `useNotifications` subscription that powers `NotificationBell`; the count only refreshes because opening the popover mounts `NotificationCenter` and triggers a refetch (stale-after-30s).
+The chat unread badge (navbar bell next to Messages, plus the "Rezervări / De Închiriat" tab counts and the per-conversation dot) only refreshes when the user opens the messaging area. New incoming messages don't bump the badge live — same root cause we just fixed for notifications:
 
-Root cause is a race between Supabase Realtime auth and the channel subscription:
-- `NotificationBell` mounts very early (in the navbar) and calls `useNotifications(user.id)`.
-- The channel `notifications-realtime-${userId}` subscribes immediately, often **before** `supabase.realtime.setAuth(access_token)` has propagated.
-- RLS on `notifications` then drops the INSERT payload server-side, so the bell never sees the new row.
-- When the user opens the popover, `NotificationCenter` re-renders and React Query refetches (data is stale), so the badge appears retroactively.
+1. `useGlobalRealtime` subscribes to `messages` INSERT events, but the channel reaches `SUBSCRIBED` **before** `supabase.realtime.setAuth(access_token)` has fully propagated. Any INSERT that fires in that window is dropped by RLS and never invalidates the `["conversations", userId]` cache.
+2. There is no fallback: if the websocket briefly drops (tab backgrounded, network blip), the cache stays stale until the user manually navigates back to `/messages`.
 
-## Fix
+## Fix (UI / data-layer only — no backend, no schema)
 
-1. **`src/hooks/queries/useNotifications.ts`**
-   - When the channel reaches `SUBSCRIBED` status, immediately call `queryClient.invalidateQueries({ queryKey: KEY })`. This catches any notification that arrived between login and subscription readiness, so the bell badge updates without any user interaction.
-   - Add a lightweight resilience layer: refetch on `window` focus and on `document` `visibilitychange` → `visible`. This guarantees the badge updates the moment the user returns to the tab, even if the websocket dropped briefly.
-   - Re-create the channel when `userId` changes (already handled) and ensure `supabase.realtime.setAuth(...)` is awaited via a small effect that resubscribes once a token is present (defensive — we already set it in `AuthContext`, this just retries the subscribe after a tick if the first SUBSCRIBED came back without auth).
+**`src/hooks/useGlobalRealtime.ts`**
 
-2. **`src/components/layout/NotificationBell.tsx`** — no logic changes needed. It already reads from the React Query cache, so once the hook updates the cache the badge re-renders automatically.
+1. In the `.subscribe((status) => …)` callback, when `status === "SUBSCRIBED"` immediately invalidate the messaging-related caches once:
+   - `["conversations", userId]`
+   - `["unread-messages", userId]`
+   This catches any INSERT that fired between login and channel readiness — exact mirror of the notifications fix.
+
+2. Add a second `useEffect` with `window` `focus` and `document` `visibilitychange` listeners. When the tab becomes visible, invalidate:
+   - `["conversations", userId]`
+   - `["unread-messages", userId]`
+   - `["notifications", userId]` (consolidate — currently lives only in `useNotifications`; keeping it here too is harmless and guarantees both badges refresh on tab return even if the user is not on a page that mounts `useNotifications`).
+
+That's it. No changes to `Navbar.tsx`, `ConversationList`, `NotificationBell`, or any messaging component — they all read from the React Query cache, so the badges re-render automatically once the cache updates.
 
 ## Validation
 
-- Trigger a new rental request from another account against `alesso.cwalk@yahoo.com`.
-- Without clicking anything, the bell badge should show `1` within ~1s.
-- Open the popover → notification is already visible (no extra fetch flicker).
-- Switch tabs away and back → badge stays correct.
-
-No backend, schema, or copy changes. UI/data-layer only.
+From a second account, send a chat message to `alesso.cwalk@yahoo.com` while that user is on the homepage (not on `/messages`):
+- The Navbar Messages icon should show the unread badge within ~1s, no click required.
+- Opening the panel shows the new message already there (no fetch flicker).
+- Switch tabs away and back → badge state stays correct.

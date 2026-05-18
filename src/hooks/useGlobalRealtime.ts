@@ -113,10 +113,39 @@ export function useGlobalRealtime(userId: string | undefined) {
           ]);
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          // Catch any events that fired between login and channel readiness
+          // (RLS can drop INSERTs that arrive before realtime auth propagates).
+          invalidate([
+            ["conversations", userId],
+            ["unread-messages", userId],
+          ]);
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
+    };
+  }, [userId, qc]);
+
+  // Resilience: refetch messaging + notification caches when the tab regains focus.
+  useEffect(() => {
+    if (!userId) return;
+
+    const refresh = () => {
+      qc.invalidateQueries({ queryKey: ["conversations", userId] });
+      qc.invalidateQueries({ queryKey: ["unread-messages", userId] });
+      qc.invalidateQueries({ queryKey: ["notifications", userId] });
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [userId, qc]);
 }
