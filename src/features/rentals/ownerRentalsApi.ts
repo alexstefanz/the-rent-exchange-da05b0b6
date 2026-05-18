@@ -53,6 +53,10 @@ export async function confirmHandover(rentalId: string) {
     .update({ handover_confirmed_at: now, status: "active" })
     .eq("id", rentalId);
   if (error) throw mapPvError(error);
+  // Best-effort: notify both parties that handover is confirmed.
+  supabase.functions
+    .invoke("notify-rental-event", { body: { rental_id: rentalId, event_key: "handover_confirmed" } })
+    .catch((e) => console.warn("notify handover_confirmed failed", e));
 }
 
 export async function confirmReturn(rentalId: string) {
