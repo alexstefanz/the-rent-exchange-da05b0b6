@@ -102,11 +102,17 @@ Deno.serve(async (req) => {
     const today = new Date().toISOString().slice(0, 10);
     const anafRes = await fetch(ANAF_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "Rentli/1.0 (+https://rentli.ro)",
+      },
       body: JSON.stringify([{ cui: Number(cui), data: today }]),
     });
 
     if (!anafRes.ok) {
+      const txt = await anafRes.text().catch(() => "");
+      console.error("ANAF non-OK", anafRes.status, txt.slice(0, 300));
       return new Response(
         JSON.stringify({ found: false, error: "ANAF indisponibil. Încearcă din nou." }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
