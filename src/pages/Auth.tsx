@@ -184,9 +184,12 @@ const Auth = () => {
 
   const handleLogin = async (data: LoginFormData) => {
     setIsLoading(true);
+    // Block redirect-on-user-set while we check phone verification gate
+    if (USE_SMS_OTP) setGatingLogin(true);
     const { error } = await signIn(data.email, data.password);
     setIsLoading(false);
     if (error) {
+      setGatingLogin(false);
       toast({
         title: copy.auth.loginError,
         description: copy.auth.invalidCredentials,
@@ -222,9 +225,9 @@ const Auth = () => {
                   variant: "destructive",
                 });
                 await supabase.auth.signOut();
+                setGatingLogin(false);
                 return;
               }
-              setGatingLogin(true);
               setPendingPhone(prof.phone);
               setPostVerifyTarget("/");
               setPhoneOtpOpen(true);
@@ -234,6 +237,7 @@ const Auth = () => {
         } catch (e) {
           console.error("phone gate check failed:", e);
         }
+        setGatingLogin(false);
       }
 
       toast({ title: copy.auth.loginSuccess, description: copy.auth.welcomeBackToast });
@@ -242,9 +246,12 @@ const Auth = () => {
 
   const handleRegister = async (data: RegisterFormData) => {
     setIsLoading(true);
+    // Block redirect-on-user-set while we open the SMS OTP dialog
+    if (USE_SMS_OTP) setGatingLogin(true);
     const { error } = await signUp(data.email, data.password, undefined);
     setIsLoading(false);
     if (error) {
+      setGatingLogin(false);
       let message = error.message;
       const alreadyRegistered =
         error.message?.includes("already registered") ||
