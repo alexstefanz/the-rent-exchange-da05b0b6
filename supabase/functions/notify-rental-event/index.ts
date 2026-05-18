@@ -240,11 +240,16 @@ const EVENTS: Record<EventKey, EventConfig> = {
     link: (c) => `/rezervari/${c.rental.public_id}`,
   },
   request_cancelled_by_renter: {
-    recipients: "owner", channels: ["in_app", "email", "sms"], critical: true,
+    recipients: "both", channels: ["in_app", "email", "sms"], critical: true,
     emailTemplate: { owner: "rental-rejected" },
     smsTemplate: "rental_rejected",
-    inAppTitle: { ro: "Cerere de închiriere anulată", en: "Rental request cancelled" },
-    inAppDesc: (c) => ({ ro: `Chiriașul a anulat cererea pentru "${c.product?.title}" înainte de plată`, en: `The renter cancelled the request for "${c.product?.title}" before payment` }),
+    smsRoles: ["owner"],
+    inAppTitle: (c) => c.recipientRole === "renter"
+      ? { ro: "Ai anulat cererea", en: "You cancelled the request" }
+      : { ro: "Cerere de închiriere anulată", en: "Rental request cancelled" },
+    inAppDesc: (c) => c.recipientRole === "renter"
+      ? { ro: `Ai anulat cererea pentru "${c.product?.title}"`, en: `You cancelled the request for "${c.product?.title}"` }
+      : { ro: `Chiriașul a anulat cererea pentru "${c.product?.title}" înainte de plată`, en: `The renter cancelled the request for "${c.product?.title}" before payment` },
     link: (c) => `/rezervari/${c.rental.public_id}`,
     smsPurpose: "view_rental",
   },
