@@ -1,38 +1,27 @@
-## Probleme identificate
+## Problem
 
-**A. Notificare eronată "Plată primită — începe chatul"** la creare cerere
-- `supabase/functions/send-rental-notification/index.ts` inserează o notificare către proprietar cu textul „Plată primită — începe chatul" și descriere „X a efectuat plata pentru produsul…". În realitate la acest moment plata este DOAR autorizată (hold Stripe), capture-ul se face abia după ce proprietarul acceptă cererea.
-- În plus, `notify-rental-event` cu `request_created` deja trimite notificarea corectă „Cerere nouă de închiriere" către ambii utilizatori → notificarea din `send-rental-notification` este și **duplicată**, și **greșită semantic**.
-- Același lucru se întâmplă cu emailul: `rental-request-owner.tsx` are titlu „Plată primită — începe chatul" — confuz.
+When a new notification arrives, the data updates only after the user opens the bell. The badge counter on the closed bell stays at 0 until the popover opens. That means the Realtime INSERT event isn't reaching the `useNotifications` subscription that powers `NotificationBell`; the count only refreshes because opening the popover mounts `NotificationCenter` and triggers a refetch (stale-after-30s).
 
-**B. Rezervarea nu apare REALTIME pentru proprietar pe pagina /inchirieri**
-- `useGlobalRealtime` invalidează cheile `["owner-rentals"]` și `["my-rentals"]` la INSERT/UPDATE pe `rentals` cu `owner_id=eq.${userId}`.
-- Dar `src/components/dashboard/RentalsOutTab.tsx` folosește cheia **`["ownerRentals", user?.id]`** (camelCase), care **niciodată** nu este invalidată → lista cererilor primite nu se actualizează decât după refresh manual.
-- Tabela `rentals` este în publication, RLS OK, JWT-ul Realtime e deja sincronizat (fix din turul precedent). Singura cauză rămasă: mismatch cheie cache.
+Root cause is a race between Supabase Realtime auth and the channel subscription:
+- `NotificationBell` mounts very early (in the navbar) and calls `useNotifications(user.id)`.
+- The channel `notifications-realtime-${userId}` subscribes immediately, often **before** `supabase.realtime.setAuth(access_token)` has propagated.
+- RLS on `notifications` then drops the INSERT payload server-side, so the bell never sees the new row.
+- When the user opens the popover, `NotificationCenter` re-renders and React Query refetches (data is stale), so the badge appears retroactively.
 
-## Modificări
+## Fix
 
-### 1. `supabase/functions/send-rental-notification/index.ts`
-- Șterg complet blocul `await supabaseAdmin.from("notifications").insert([...])` (cele 2 notificări duplicate).
-- Șterg blocurile `sendBranded("rental-request-owner", …)` și `sendBranded("rental-request-renter", …)` — emailurile sunt deja trimise de `notify-rental-event request_created`.
-- Păstrez: inserția în `transactions` (status `authorized`) și apelul RPC `get_or_create_rental_conversation` (utile pentru chat + tracking financiar).
-- Funcția devine un "side-effects worker" curat: tranzacție + conversație. Fără notificări/emailuri duplicate.
+1. **`src/hooks/queries/useNotifications.ts`**
+   - When the channel reaches `SUBSCRIBED` status, immediately call `queryClient.invalidateQueries({ queryKey: KEY })`. This catches any notification that arrived between login and subscription readiness, so the bell badge updates without any user interaction.
+   - Add a lightweight resilience layer: refetch on `window` focus and on `document` `visibilitychange` → `visible`. This guarantees the badge updates the moment the user returns to the tab, even if the websocket dropped briefly.
+   - Re-create the channel when `userId` changes (already handled) and ensure `supabase.realtime.setAuth(...)` is awaited via a small effect that resubscribes once a token is present (defensive — we already set it in `AuthContext`, this just retries the subscribe after a tick if the first SUBSCRIBED came back without auth).
 
-### 2. `supabase/functions/_shared/transactional-email-templates/rental-request-owner.tsx`
-- Schimb titlul `H1` și `subject`/`displayName` din „Plată primită — începe chatul" în **„Cerere nouă de închiriere"** / subject: „Cerere nouă pentru {produs}".
-- Schimb `preview` și `Lead` ca să spună clar: „X dorește să închirieze produsul tău. Plata este autorizată (blocată) și va fi încasată după ce acceptați cererea."
-- CTA rămâne „Vezi cererea" → `/rezervari/{publicId}` (sau `/inchirieri` dacă nu avem public_id).
-- Această schimbare se reflectă oricum prin canalul `notify-rental-event` care folosește același template.
+2. **`src/components/layout/NotificationBell.tsx`** — no logic changes needed. It already reads from the React Query cache, so once the hook updates the cache the badge re-renders automatically.
 
-### 3. `src/hooks/useGlobalRealtime.ts`
-- Pe handler-ele de `rentals` (owner_id și renter_id), adaug în lista de chei și `["ownerRentals"]` respectiv `["myRentals"]` ca să acopere ambele convenții.
-- Restul cheilor (`account-dashboard`, `earnings`, `wallet-balance`, `rental`, `rental-payment-status`) rămân.
+## Validation
 
-### 4. QA
-- Curăț notificările vechi greșite pentru testarea finală (opțional, doar pentru claritate vizuală — nu se modifică DB, las în viață).
-- Cu user `alesso.cwalk@yahoo.com` logat pe `/inchirieri`, dintr-o altă sesiune creez o cerere → verific:
-  - Rezervarea apare instant în listă (fără refresh).
-  - Notificarea „Cerere nouă de închiriere" apare în clopoțel (fără cea de „Plată primită").
-  - Emailul are subiect „Cerere nouă pentru …".
+- Trigger a new rental request from another account against `alesso.cwalk@yahoo.com`.
+- Without clicking anything, the bell badge should show `1` within ~1s.
+- Open the popover → notification is already visible (no extra fetch flicker).
+- Switch tabs away and back → badge stays correct.
 
-Niciun edit la RLS, schema DB, sau la fluxul Stripe.
+No backend, schema, or copy changes. UI/data-layer only.
