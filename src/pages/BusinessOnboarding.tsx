@@ -128,8 +128,6 @@ const BusinessOnboarding = () => {
           <img src={logoImage} alt="Rentli" className="h-10 w-auto" />
         </Link>
 
-        <OnboardingStepper current={3} className="mb-8" />
-
         <div className="mb-6 space-y-2">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
             Completează datele companiei
