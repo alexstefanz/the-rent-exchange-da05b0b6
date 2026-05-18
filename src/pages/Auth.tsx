@@ -19,7 +19,6 @@ import logoImage from "@/assets/rentli_logo.webp";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 import { strongPasswordSchema, isWeakPasswordError } from "@/lib/passwordValidation";
-import OnboardingStepper from "@/components/onboarding/OnboardingStepper";
 import AccountTypeToggle from "@/components/onboarding/AccountTypeToggle";
 
 const Auth = () => {
