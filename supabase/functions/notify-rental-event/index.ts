@@ -232,6 +232,15 @@ const EVENTS: Record<EventKey, EventConfig> = {
     inAppDesc: (c) => ({ ro: `Anularea pentru "${c.product?.title}" a fost confirmată`, en: `Cancellation for "${c.product?.title}" was confirmed` }),
     link: (c) => `/rezervari/${c.rental.public_id}`,
   },
+  request_cancelled_by_renter: {
+    recipients: "owner", channels: ["in_app", "email", "sms"], critical: true,
+    emailTemplate: { owner: "rental-rejected" },
+    smsTemplate: "rental_rejected",
+    inAppTitle: { ro: "Cerere de închiriere anulată", en: "Rental request cancelled" },
+    inAppDesc: (c) => ({ ro: `Chiriașul a anulat cererea pentru "${c.product?.title}" înainte de plată`, en: `The renter cancelled the request for "${c.product?.title}" before payment` }),
+    link: (c) => `/rezervari/${c.rental.public_id}`,
+    smsPurpose: "view_rental",
+  },
 };
 
 function genToken(): string {
