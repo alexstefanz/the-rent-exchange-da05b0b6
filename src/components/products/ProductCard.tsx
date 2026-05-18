@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
-import { MapPin, CheckCircle, Heart, Star } from "lucide-react";
+import { MapPin, ShieldCheck, Heart, Star } from "lucide-react";
 import { Product, calculateClientPrice } from "@/features/products/productsApi";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -152,48 +152,47 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
           decoding="async"
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
-        <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 shadow-sm">
-          <CheckCircle className="h-3.5 w-3.5 text-[#F98715]" />
-        </div>
+        {product.category && (
+          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm">
+            <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+            <span className="truncate max-w-[120px]">{displayCategory}</span>
+          </span>
+        )}
         <button
           onClick={handleFavoriteClick}
-          className={cn("absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full transition-colors shadow-sm", isFavorite ? "bg-[#F98715] hover:bg-[#e07a12]" : "bg-white/90 hover:bg-white")}
+          aria-label={isFavorite ? t("Elimină din favorite", "Remove from favorites") : t("Adaugă la favorite", "Add to favorites")}
+          className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-sm transition-colors hover:bg-white"
         >
           <Heart
             className={cn(
-              "h-3.5 w-3.5 drop-shadow-sm transition-colors",
-              isFavorite ? "text-white fill-white" : "text-[#F98715]"
+              "h-4 w-4 transition-colors",
+              isFavorite ? "fill-primary text-primary" : "text-muted-foreground"
             )}
           />
         </button>
         {rating && rating.avg > 0 && (
-          <div className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-white text-xs font-medium shadow-sm">
+          <div className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-white/95 px-2 py-0.5 text-xs font-semibold text-foreground shadow-sm">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
             <span>{rating.avg.toFixed(1)}</span>
-            {rating.count > 0 && <span className="opacity-75">({rating.count})</span>}
+            {rating.count > 0 && <span className="font-normal text-muted-foreground">({rating.count})</span>}
           </div>
         )}
       </div>
 
       {/* Info section */}
-      <div className="p-3 md:p-4 flex flex-col">
-        {product.category && (
-          <span className="inline-flex w-fit max-w-max self-start rounded-sm bg-primary px-1.5 py-0.5 text-[9px] md:text-[11px] font-semibold text-primary-foreground mb-2 whitespace-nowrap">
-            {displayCategory}
-          </span>
-        )}
-        <h3 className="font-heading text-base md:text-lg font-semibold text-foreground line-clamp-2 min-h-[2.75rem] md:min-h-[3.5rem]">
+      <div className="p-3 flex flex-col">
+        <h3 className="font-heading text-sm md:text-base font-semibold text-foreground line-clamp-1">
           {displayTitle}
         </h3>
-        <div className="mt-2.5 flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
-          <MapPin className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
+        <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+          <MapPin className="h-3 w-3 shrink-0" />
           <span className="truncate">{location}</span>
         </div>
-        <div className="mt-auto pt-3.5">
-          <span className="font-heading text-lg md:text-xl font-bold text-primary">
+        <div className="mt-2">
+          <span className="font-heading text-base md:text-lg font-bold text-foreground">
             {clientPrice} RON
           </span>
-          <span className="text-xs md:text-sm text-muted-foreground"> / {t("zi", "day")}</span>
+          <span className="text-xs text-muted-foreground"> / {t("zi", "day")}</span>
         </div>
       </div>
     </Link>

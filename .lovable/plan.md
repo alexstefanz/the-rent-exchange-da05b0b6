@@ -1,22 +1,41 @@
-Plan de remediere pentru notificările bottom-center la închirieri:
+## Obiectiv
 
-1. **Corectez livrarea realtime pentru toast-uri**
-   - Înlocuiesc dependența exclusivă de evenimentul realtime `INSERT notifications`, deoarece rândurile există în DB pentru RNT-000101, dar toast-ul nu se afișează.
-   - Adaug un mecanism de fallback în `useGlobalRealtime`: la conectare, focus sau schimbări pe `rentals`, verifică notificările noi necitite ale utilizatorului și afișează bottom-center doar pe cele care nu au mai fost afișate în sesiune.
-   - Păstrez realtime-ul existent, dar îl fac rezilient când websocket-ul ratează evenimentul sau tab-ul nu era pregătit.
+Aliniază aspectul cardului de produs cu exemplul din imagine, pe toate paginile care îl folosesc (Homepage „Închirieri populare", Favorite, Search, Category, Subcategory, DiscoveryRails).
 
-2. **Elimin cauza dublării/confuziei între toast-uri**
-   - Ajustez configurația Sonner ca toate notificările custom din `notifyFromDb` să ajungă sigur în viewport-ul bottom-center.
-   - Păstrez toast-urile legacy normale fără să le afectez.
+## Schimbări vizuale în `src/components/products/ProductCard.tsx`
 
-3. **Acopăr toți pașii din timeline-ul închirierii**
-   - Mă asigur că `notify-rental-event` este apelat pentru pașii discutați: cerere creată, acceptată/refuzată, plată confirmată, pickup stabilit, PV predare, predare confirmată, închiriere activă, returnare, PV retur, finalizare, review, dispute/anulări.
-   - Pentru accept/refuz verific și completez flow-ul `respond-rental-request`, astfel încât proprietarul și chiriașul primesc notificări in-app adaptate rolului.
-   - Pentru plata Stripe, înlocuiesc notificarea veche `send-rental-notification` cu evenimentul centralizat `payment_succeeded`, ca să fie consistent cu restul timeline-ului.
+Toate modificările sunt în varianta `gallery` (cea principală). Varianta `list` rămâne neschimbată.
 
-4. **Verific pe cazul real RNT-000101**
-   - Confirm că notificările in-app sunt create pentru ambii utilizatori.
-   - Verific logurile funcției și tabela `notification_audit_log` după remediere.
-   - Testez că un utilizator conectat vede toast bottom-center chiar dacă notificarea a fost creată înainte ca realtime-ul să prindă evenimentul.
+1. **Badge de categorie (stânga-sus pe imagine)**
+   - Mutat din zona de info peste imagine, în colțul stânga-sus.
+   - Pill alb (`bg-white/95`), text închis (`text-foreground`), shadow subtil, `rounded-full`, padding `px-2.5 py-1`.
+   - Prefix cu iconiță scut mic portocaliu (`ShieldCheck` din lucide, `text-primary`, `h-3.5 w-3.5`) urmat de numele categoriei (`text-xs font-medium`).
+   - Înlocuiește actualul `CheckCircle` flotant separat (se elimină).
 
-Fișiere vizate: `src/hooks/useGlobalRealtime.ts`, `src/components/ui/sonner.tsx`, `supabase/functions/verify-stripe-payment/index.ts`, `supabase/functions/respond-rental-request/index.ts` și, dacă este necesar, `supabase/functions/notify-rental-event/index.ts`.
+2. **Buton favorite (dreapta-sus)**
+   - Cerc alb mai mare (`h-8 w-8`), `bg-white/95`, shadow subtil.
+   - Inimă goală gri (`text-muted-foreground`) când nu e favorit; portocaliu plin (`fill-primary text-primary`) când e favorit. Fără fundal portocaliu pe buton.
+
+3. **Badge rating (dreapta-jos pe imagine)**
+   - Fără fundal negru. Pill alb compact (`bg-white/95 rounded-full px-2 py-0.5 shadow-sm`).
+   - Stea galbenă mică + valoare bold + count în paranteze, text închis (`text-foreground text-xs`).
+
+4. **Zona de info sub imagine**
+   - Elimină badge-ul de categorie din această zonă (a urcat pe imagine).
+   - Titlu: `text-sm md:text-base font-semibold`, `line-clamp-1`, fără `min-h` mare — card mai compact.
+   - Rând locație: pin mic + text `text-xs text-muted-foreground truncate`, marginea redusă (`mt-1`).
+   - Preț: `text-foreground` (negru, nu portocaliu), `font-bold text-base md:text-lg`, urmat de `/ zi` în `text-xs text-muted-foreground`. Margine `mt-2`.
+
+5. **Container card**
+   - Păstrează `rounded-xl`, `bg-card`, `shadow-card`, hover lift.
+   - Padding info redus la `p-3` pentru densitate similară referinței.
+
+## Detalii tehnice
+
+- Import nou: `ShieldCheck` din `lucide-react`; păstrează `Heart`, `Star`, `MapPin`; elimină `CheckCircle` dacă nu mai e folosit în acest fișier.
+- Nu se schimbă props, API sau logică (favorite, rating fetch, i18n). Doar JSX + Tailwind classes în ramura `gallery`.
+- Nu se ating: `RentalProductCard`, `ProductCardSkeleton` (skeleton-ul rămâne compatibil dimensional), paginile consumatoare.
+
+## Verificare
+
+După modificare, vizitează `/` (secțiunea „Închirieri populare") și `/profile` → tab Favorite, plus o pagină de categorie, pentru a confirma că noul layout se aplică uniform și că rating-ul/favorite/categoria se afișează corect.
