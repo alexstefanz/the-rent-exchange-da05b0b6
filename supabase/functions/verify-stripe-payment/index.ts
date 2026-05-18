@@ -261,6 +261,16 @@ serve(async (req) => {
       console.error("Post-payment notification error (non-blocking):", notifyErr);
     }
 
+    // Also fire the centralized timeline event so both parties get an in-app
+    // toast + email through the unified notify-rental-event pipeline.
+    try {
+      await supabaseAdmin.functions.invoke("notify-rental-event", {
+        body: { rental_id: rentalId, event_key: "payment_succeeded" },
+      });
+    } catch (evErr) {
+      console.error("Post-payment notify-rental-event error (non-blocking):", evErr);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
