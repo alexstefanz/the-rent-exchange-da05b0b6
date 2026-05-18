@@ -15,6 +15,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         position="top-center"
         duration={3000}
         closeButton
+        visibleToasts={1}
         toastOptions={{
           classNames: {
             toast:
@@ -34,6 +35,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         className="toaster-bottom group"
         position="bottom-center"
         duration={6000}
+        visibleToasts={1}
         toastOptions={{
           unstyled: true,
           classNames: {
