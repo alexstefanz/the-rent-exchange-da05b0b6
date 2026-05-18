@@ -42,7 +42,8 @@ export const createUserReview = async (
   reviewedUserId: string,
   rating: number,
   comment?: string,
-  productTitle?: string
+  productTitle?: string,
+  rentalId?: string
 ): Promise<UserReview> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
@@ -54,6 +55,7 @@ export const createUserReview = async (
       reviewed_user_id: reviewedUserId,
       rating,
       comment: comment || null,
+      rental_id: rentalId || null,
     })
     .select()
     .single();
