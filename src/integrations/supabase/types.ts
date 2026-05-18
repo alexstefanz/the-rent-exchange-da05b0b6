@@ -1486,6 +1486,7 @@ export type Database = {
           kyc_level: string
           kyc_status: string
           phone: string | null
+          phone_verified: boolean
           reg_com: string | null
           sms_notifications_enabled: boolean
           whatsapp: string | null
@@ -1513,6 +1514,7 @@ export type Database = {
           kyc_level?: string
           kyc_status?: string
           phone?: string | null
+          phone_verified?: boolean
           reg_com?: string | null
           sms_notifications_enabled?: boolean
           whatsapp?: string | null
@@ -1540,6 +1542,7 @@ export type Database = {
           kyc_level?: string
           kyc_status?: string
           phone?: string | null
+          phone_verified?: boolean
           reg_com?: string | null
           sms_notifications_enabled?: boolean
           whatsapp?: string | null
