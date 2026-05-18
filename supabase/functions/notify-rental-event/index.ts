@@ -304,6 +304,7 @@ Deno.serve(async (req) => {
 
       const ctx: Ctx = { rental, product, owner, renter, extra: extra || {}, recipientRole: role };
       const desc = cfg.inAppDesc(ctx);
+      const title = typeof cfg.inAppTitle === "function" ? cfg.inAppTitle(ctx) : cfg.inAppTitle;
       const linkPath = cfg.link(ctx);
 
       // Load preferences
@@ -325,8 +326,8 @@ Deno.serve(async (req) => {
         await supabase.from("notifications").insert({
           user_id: userObj.id,
           type: event_key,
-          title_ro: cfg.inAppTitle.ro,
-          title_en: cfg.inAppTitle.en,
+          title_ro: title.ro,
+          title_en: title.en,
           description_ro: desc.ro,
           description_en: desc.en,
           link: linkPath,
@@ -393,7 +394,7 @@ Deno.serve(async (req) => {
       }
 
       // 3) SMS
-      if (cfg.channels.includes("sms") && cfg.smsTemplate) {
+      if (cfg.channels.includes("sms") && cfg.smsTemplate && (!cfg.smsRoles || cfg.smsRoles.includes(role))) {
         if (!smsAllowed) {
           await supabase.from("notification_audit_log").insert({ rental_id, user_id: userObj.id, event_key, channel: "sms", status: "skipped", error: "opt_out" });
         } else if (!(await alreadySent("sms"))) {
