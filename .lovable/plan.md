@@ -1,52 +1,19 @@
 ## Cauză
 
-Funcția `renter_cancel_unpaid_rental` verifică `v_rental.handover_pv_owner_signed_at`, dar coloana nu există pe `rentals` (există doar `handover_confirmed_at`). Postgres aruncă `record "v_rental" has no field "handover_pv_owner_signed_at"` în momentul în care RPC-ul este invocat.
+Funcția edge `notify-rental-event` nu cunoaște event_key-ul `request_cancelled_by_renter` (nu apare în tipul `EventKey` și nici în map-ul `EVENTS`), deci apelul făcut de `renterCancelUnpaidRental` returnează 400 și nu se trimite nicio notificare. Pentru RNT-000093 anularea a avut loc (status `cancelled`, `cancellation_reason = renter_self_unpaid`), dar proprietarul nu a fost informat.
 
 ## Fix
 
-Migration care înlocuiește definiția funcției și elimină referința la coloana inexistentă, păstrând doar verificarea pe `handover_confirmed_at`:
+1) **Adaug eventul în `supabase/functions/notify-rental-event/index.ts`:**
+   - Adaug `"request_cancelled_by_renter"` în `type EventKey`.
+   - Adaug intrare în `EVENTS`:
+     - `recipients: "owner"` (chiriașul a inițiat acțiunea, doar proprietarul trebuie notificat)
+     - `channels: ["in_app", "email", "sms"]`, `critical: true`
+     - `emailTemplate: { owner: "rental-rejected" }` (reutilizez template-ul existent „cerere refuzată / anulată" — același mesaj transmite anularea înainte de plată); dacă nu există, fallback pe in-app + sms.
+     - `smsTemplate: "rental_rejected"`
+     - Titlu/desc RO: „Cerere de închiriere anulată" / „Chiriașul a anulat cererea pentru „{product}" înainte de plată".
+     - `link`: `/rezervari/{public_id}`
 
-```sql
-CREATE OR REPLACE FUNCTION public.renter_cancel_unpaid_rental(_rental_id uuid)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_uid uuid := auth.uid();
-  v_rental rentals%ROWTYPE;
-BEGIN
-  IF v_uid IS NULL THEN RAISE EXCEPTION 'UNAUTHENTICATED'; END IF;
+2) **Re-trimit notificarea pentru RNT-000093** după ce funcția este deployată (apel manual `curl_edge_functions` cu `rental_id` și `event_key: "request_cancelled_by_renter"`), astfel încât proprietarul rentalului existent să primească în‑app + email + SMS.
 
-  SELECT * INTO v_rental FROM rentals WHERE id = _rental_id FOR UPDATE;
-  IF NOT FOUND THEN RAISE EXCEPTION 'RENTAL_NOT_FOUND'; END IF;
-  IF v_rental.renter_id <> v_uid THEN RAISE EXCEPTION 'NOT_RENTER'; END IF;
-  IF v_rental.status NOT IN ('pending', 'confirmed') THEN
-    RAISE EXCEPTION 'INVALID_STATUS: %', v_rental.status;
-  END IF;
-  IF v_rental.handover_confirmed_at IS NOT NULL THEN
-    RAISE EXCEPTION 'HANDOVER_ALREADY_SIGNED';
-  END IF;
-  IF v_rental.payment_status IS NOT NULL
-     AND v_rental.payment_status NOT IN ('pending','failed','canceled','cancelled') THEN
-    RAISE EXCEPTION 'PAYMENT_ACTIVE: %', v_rental.payment_status;
-  END IF;
-
-  UPDATE rentals SET
-    status = 'cancelled',
-    cancellation_reason = 'renter_self_unpaid',
-    cancelled_at = now(),
-    cancel_request_status = NULL,
-    cancel_request_initiator = NULL,
-    cancel_request_subject = NULL,
-    cancel_request_reason = NULL,
-    updated_at = now()
-  WHERE id = _rental_id;
-
-  RETURN jsonb_build_object('ok', true);
-END;
-$$;
-```
-
-Nicio modificare în UI.
+Niciun alt cod nu se schimbă: `renterCancelUnpaidRental` deja invocă funcția cu acest event_key, deci viitoarele anulări vor declanșa automat notificarea.
