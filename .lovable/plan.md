@@ -1,35 +1,55 @@
-## Problem
+## Problema
 
-In `supabase/functions/notify-rental-event/index.ts`, two cancellation-related events only notify one party:
+În `src/pages/admin/AdminNotifications.tsx`, filtrele de tip afișează cheia brută din DB (`cancellation_requested`, `sla_breach`) când nu există în `TYPE_LABELS`, și nu arată câte notificări sunt în fiecare categorie. Adminii nu pot scana rapid ce e important.
 
-- **`request_rejected`** → `recipients: "renter"` (owner who rejected gets nothing)
-- **`request_cancelled_by_renter`** → `recipients: "owner"` (renter who cancelled gets nothing)
+## Schimbări (un singur fișier: `src/pages/admin/AdminNotifications.tsx`)
 
-All other cancellation events (`cancel_request_submitted/withdrawn/approved/rejected`, `cancellation_confirmed`, `mutual_cancel_approved`) already correctly use `"both"`.
+### 1. Completez `TYPE_LABELS` cu toate cheile reale
 
-## Change
+Adaug etichete RO clare pentru toate tipurile emise de backend:
 
-Edit `supabase/functions/notify-rental-event/index.ts` only — flip both events to `recipients: "both"` and split the in-app copy per role so each party sees a natural message.
+- `cancellation_requested` → "Cerere de anulare"
+- `cancellation_approved` → "Anulare aprobată"
+- `cancellation_rejected` → "Anulare respinsă"
+- `sla_breach` → "SLA depășit"
+- `dispute_opened` → "Dispută deschisă"
+- `payout_failed` → "Plată eșuată"
+- `refund_requested` → "Cerere refund"
+- `kyc_rejected` → "KYC respins"
+- `product_reported` → "Produs raportat"
+- `user_reported` → "Utilizator raportat"
+- Fallback pentru orice cheie necunoscută: transform `snake_case` în "Snake Case" (în loc să afișez cheia brută).
 
-### `request_rejected` → both
+### 2. Numărători pe fiecare chip de tip
 
-- **Renter** title: "Cererea a fost refuzată" / desc: "Cererea pentru \"X\" a fost refuzată"
-- **Owner** title: "Ai refuzat cererea" / desc: "Ai refuzat cererea pentru \"X\""
+Calculez `countsByType` (Record<string, number>) din lista completă de notificări și afișez `Eticheta (N)` pe fiecare chip — la fel cum apare deja "Necitite (4)". Chip-urile cu zero notificări nu se mai randează.
 
-### `request_cancelled_by_renter` → both
+### 3. Grupare vizuală în 3 categorii (taburi în loc de o singură rolă lungă de chip-uri)
 
-- **Owner** title: "Cerere de închiriere anulată" / desc: "Chiriașul a anulat cererea pentru \"X\""
-- **Renter** title: "Ai anulat cererea" / desc: "Ai anulat cererea pentru \"X\""
+Pe ecran sunt deja 7+ chip-uri și vor crește. Introduc o grupare simplă pe categorii ca să nu se aglomereze rândul:
 
-### Implementation detail
+- **Urgent / SLA**: `sla_breach`, `dispute_opened`, `cancellation_requested`, `payout_failed`
+- **Moderare**: `product_pending`, `kyc_submitted`, `kyc_needs_review`, `kyc_rejected`, `product_reported`, `user_reported`
+- **Operațional**: `ticket_opened`, `ticket_message`, `withdrawal_requested`, `refund_requested`, `cancellation_approved`, `cancellation_rejected`, `new_user_signup`
 
-The event config currently uses single `inAppTitle` / `inAppDesc` objects shared by both recipients. To support per-role copy, change `inAppTitle` and `inAppDesc` for these two events into functions/objects that read the recipient role and return appropriate text. The downstream insert loop (where `recipients` is iterated and a `notifications` row is created per recipient) needs to pass the role to the title/desc resolver.
+Implementare: un rând cu 3 taburi de categorie + chip "Toate" (cu contoare la fiecare tab). Sub tabul activ se randează doar chip-urile cu type-uri din acea categorie. Tipurile necunoscute apar într-o categorie implicită "Altele".
 
-Keep `emailTemplate.renter` / `smsTemplate` unchanged so the rejected/cancelling counterpart still gets the same email + SMS — the second in-app entry is in-app only (no extra email/SMS) to avoid duplicate channel noise.
+### 4. Iconițe + culori coerente pe chip
 
-## Files touched
+Fiecare chip primește un mic dot colorat (`bg-red-500`, `bg-orange-500`, `bg-blue-500`, `bg-purple-500`, `bg-green-500`) prin aceeași mapare folosită deja în `getIcon`, ca să recunoști vizual tipul fără să citești textul. Pentru `cancellation_*` și `sla_breach`, dot roșu/portocaliu. Adaug și mapările lipsă din `getIcon`.
 
-- `supabase/functions/notify-rental-event/index.ts` — only file changed
-- No DB migration, no frontend changes
+### 5. Iconițe în pastila urgentă
 
-After deploy, the cancellation realtime → bottom-center toast pipeline (already wired in `useGlobalRealtime` + `notify.tsx`) will deliver red toasts to both parties.
+Chip-urile din categoria "Urgent / SLA" primesc fundal `bg-destructive/10 text-destructive` și un `AlertTriangle` mic la stânga, ca adminul să scaneze instant ce arde.
+
+### 6. Empty state per filtru
+
+Mesaj diferit: "Nu există notificări de tip *Eticheta*" sau "Inbox curat 🎉" când nu sunt necitite.
+
+## Ce NU schimb
+
+- Logica de fetch (`useAdminNotifications`), DB, RLS — neatinse.
+- Schema `admin_notifications`.
+- Restul layout-ului paginii (header, lista de notificări).
+
+Modificările sunt strict frontend/prezentare, într-un singur fișier.
