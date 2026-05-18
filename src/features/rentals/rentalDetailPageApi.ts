@@ -216,6 +216,13 @@ export async function updatePvPdfPath(rentalId: string, phase: "handover" | "ret
 export async function initiateReturn(rentalId: string) {
   const { error } = await supabase.rpc("initiate_return" as never, { _rental_id: rentalId } as never);
   if (error) throw error;
+  // Notify owner (and renter) that the return phase has started.
+  const { data: userData } = await supabase.auth.getUser();
+  supabase.functions
+    .invoke("notify-rental-event", {
+      body: { rental_id: rentalId, event_key: "return_in_progress", actor_id: userData?.user?.id },
+    })
+    .catch((e) => console.warn("notify return_in_progress failed", e));
 }
 
 /** Check if the return phase has been initiated (= return PV row exists). */
