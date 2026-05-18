@@ -49,7 +49,8 @@ export async function createProductReview(
   productId: string,
   reviewType: "owner" | "renter",
   ratings: { condition: number; communication: number; punctuality: number },
-  comment: string
+  comment: string,
+  rentalId?: string
 ) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
@@ -65,6 +66,7 @@ export async function createProductReview(
     rating_punctuality: ratings.punctuality,
     review_type: reviewType,
     comment: comment || null,
+    rental_id: rentalId || null,
   });
 
   if (error) throw error;
