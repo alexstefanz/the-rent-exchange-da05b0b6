@@ -36,6 +36,7 @@ type ToastableNotification = {
   title_en?: string | null;
   description_ro?: string | null;
   description_en?: string | null;
+  link?: string | null;
 };
 
 /** Suppress duplicate inserts of the same notification type within a short
@@ -106,7 +107,7 @@ export function useGlobalRealtime(userId: string | undefined) {
           : since;
         const { data, error } = await supabase
           .from("notifications")
-          .select("id, type, title_ro, title_en, description_ro, description_en, created_at")
+          .select("id, type, title_ro, title_en, description_ro, description_en, link, created_at")
           .eq("user_id", userId)
           .eq("is_read", false)
           .gte("created_at", cutoff)
