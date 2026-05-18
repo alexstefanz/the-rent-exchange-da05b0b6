@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyFromDb } from "@/lib/notify";
@@ -87,7 +87,9 @@ function showOnce(n: ToastableNotification, shown: Set<string>) {
  */
 export function useGlobalRealtime(userId: string | undefined) {
   const qc = useQueryClient();
-  const shown = loadShown();
+  const shownRef = useRef<Set<string> | null>(null);
+  if (!shownRef.current) shownRef.current = loadShown();
+  const shown = shownRef.current;
 
   useEffect(() => {
     if (!userId) return;
