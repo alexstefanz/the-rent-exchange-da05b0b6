@@ -39,6 +39,7 @@ const ListItem = lazy(() => import("./pages/ListItem"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const Auth = lazy(() => import("./pages/Auth"));
+const BusinessOnboarding = lazy(() => import("./pages/BusinessOnboarding"));
 const Profile = lazy(() => import("./pages/Profile"));
 const NewProduct = lazy(() => import("./pages/NewProduct"));
 const EditProduct = lazy(() => import("./pages/EditProduct"));
@@ -129,6 +130,7 @@ const App = () => (
                 <Route path="/adauga-anunt" element={<Navigate to="/owner/new-product" replace />} />
                 <Route path="/utilizator/:id" element={<UserProfile />} />
                 <Route path="/auth" element={<Auth />} />
+               <Route path="/onboarding/business" element={<BusinessOnboarding />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/contul-meu" element={<AccountDetailsPage />} />
                 <Route path="/owner" element={<Navigate to="/anunturi" replace />} />
