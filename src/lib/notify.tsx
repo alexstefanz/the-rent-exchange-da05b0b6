@@ -180,7 +180,7 @@ function show(variant: NotifyVariant, opts: NotifyOptions) {
     ),
     {
       duration,
-      position: "top-center",
+      position: "bottom-center",
       unstyled: true,
       classNames: {
         toast: "!bg-transparent !border-0 !shadow-none !p-0",
