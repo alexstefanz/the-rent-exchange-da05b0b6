@@ -500,58 +500,18 @@ const Auth = () => {
               </div>
 
               <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
-                {/* Account type toggle */}
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    type="button"
-                    variant={accountType === "individual" ? "default" : "outline"}
-                    className="w-full gap-2"
-                    onClick={() => setAccountType("individual")}
-                  >
-                    <User className="h-4 w-4" />
-                    Persoană fizică
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={accountType === "business" ? "default" : "outline"}
-                    className="w-full gap-2"
-                    onClick={() => setAccountType("business")}
-                  >
-                    <Building2 className="h-4 w-4" />
-                    Persoană juridică
-                  </Button>
-                </div>
+                {/* Account type toggle (premium segmented control) */}
+                <AccountTypeToggle value={accountType} onChange={setAccountType} />
 
-                <div className="space-y-2">
-                  <Label htmlFor="register-name">{copy.auth.fullName}</Label>
-                  <Input id="register-name" type="text" placeholder="Ion Popescu" {...registerForm.register("fullName")} />
-                  {registerForm.formState.errors.fullName && <p className="text-sm text-destructive">{registerForm.formState.errors.fullName.message}</p>}
-                </div>
-
-                {accountType === "business" && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="register-company">Denumire firmă *</Label>
-                      <Input id="register-company" type="text" placeholder="SC Exemplu SRL" maxLength={100} {...registerForm.register("companyName")} />
-                      {registerForm.formState.errors.companyName && <p className="text-sm text-destructive">{registerForm.formState.errors.companyName.message}</p>}
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="register-cui">CUI *</Label>
-                        <Input id="register-cui" type="text" placeholder="RO12345678" maxLength={20} {...registerForm.register("cui")} />
-                        {registerForm.formState.errors.cui && <p className="text-sm text-destructive">{registerForm.formState.errors.cui.message}</p>}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="register-regcom">Nr. Reg. Comerț</Label>
-                        <Input id="register-regcom" type="text" placeholder="J40/1234/2024" maxLength={30} {...registerForm.register("regCom")} />
-                      </div>
-                    </div>
-                  </>
-                )}
+                <p className="text-xs text-muted-foreground -mt-1">
+                  {accountType === "business"
+                    ? "Vei completa datele firmei (CUI, IBAN) în pasul următor — durează 1 minut."
+                    : "Cont gratuit, fără card de credit."}
+                </p>
 
                 <div className="space-y-2">
                   <Label htmlFor="register-email">{copy.auth.email}</Label>
-                  <Input id="register-email" type="email" placeholder="email@exemplu.ro" {...registerForm.register("email")} />
+                  <Input id="register-email" type="email" className="h-12" placeholder="email@exemplu.ro" {...registerForm.register("email")} />
                   {registerForm.formState.errors.email && <p className="text-sm text-destructive">{registerForm.formState.errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">
@@ -561,7 +521,7 @@ const Auth = () => {
                       id="register-password"
                       type={showRegisterPassword ? "text" : "password"}
                       placeholder="••••••••"
-                      className="pr-10"
+                      className="pr-10 h-12"
                       {...registerForm.register("password")}
                     />
                     <button
@@ -584,7 +544,7 @@ const Auth = () => {
                       id="register-confirm"
                       type={showRegisterConfirm ? "text" : "password"}
                       placeholder="••••••••"
-                      className="pr-10"
+                      className="pr-10 h-12"
                       {...registerForm.register("confirmPassword")}
                     />
                     <button
@@ -599,14 +559,30 @@ const Auth = () => {
                   </div>
                   {registerForm.formState.errors.confirmPassword && <p className="text-sm text-destructive">{registerForm.formState.errors.confirmPassword.message}</p>}
                 </div>
-                <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+                <label className="flex items-start gap-2 text-sm text-muted-foreground cursor-pointer select-none">
                   <Checkbox
-                    checked={rememberMeRegister}
-                    onCheckedChange={(c) => setRememberMeRegister(c === true)}
+                    className="mt-0.5"
+                    checked={!!registerForm.watch("terms")}
+                    onCheckedChange={(c) =>
+                      registerForm.setValue("terms", (c === true) as true, { shouldValidate: true })
+                    }
                   />
-                  Ține-mă minte
+                  <span className="leading-snug">
+                    Sunt de acord cu{" "}
+                    <Link to="/termeni" className="text-primary underline-offset-2 hover:underline">
+                      Termenii
+                    </Link>{" "}
+                    și{" "}
+                    <Link to="/confidentialitate" className="text-primary underline-offset-2 hover:underline">
+                      Politica GDPR
+                    </Link>
+                    .
+                  </span>
                 </label>
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                {registerForm.formState.errors.terms && (
+                  <p className="text-sm text-destructive">{registerForm.formState.errors.terms.message as string}</p>
+                )}
+                <Button type="submit" size="lg" className="w-full h-12" disabled={isLoading}>
                   {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{copy.auth.creatingAccount}</> : copy.auth.register}
                 </Button>
               </form>
