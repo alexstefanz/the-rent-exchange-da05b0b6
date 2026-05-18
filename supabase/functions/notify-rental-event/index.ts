@@ -42,10 +42,12 @@ interface EventConfig {
   critical: boolean;
   emailTemplate?: { renter?: string; owner?: string; both?: string };
   smsTemplate?: string;
-  inAppTitle: { ro: string; en: string };
+  inAppTitle: { ro: string; en: string } | ((ctx: Ctx) => { ro: string; en: string });
   inAppDesc: (ctx: Ctx) => { ro: string; en: string };
   link: (ctx: Ctx) => string;
   smsPurpose?: string;
+  // Optional per-channel role gating. If unset, the channel fires for every recipient role.
+  smsRoles?: ("owner" | "renter")[];
 }
 
 interface Ctx {
