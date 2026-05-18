@@ -279,7 +279,7 @@ interface DbNotification {
 export function notifyFromDb(n: DbNotification, image?: string | null) {
   const lang = (typeof window !== "undefined" && localStorage.getItem("app_language")) || "ro";
   const rawTitle = lang === "en" ? (n.title_en || n.title_ro) : n.title_ro;
-  const title = rawTitle || n.title_ro || (n.type ? n.type.replaceAll("_", " ") : "Notificare");
+  const title = rawTitle || n.title_ro || (n.type ? n.type.replace(/_/g, " ") : "Notificare");
   const message =
     (lang === "en" ? (n.description_en || n.description_ro) : n.description_ro) || "";
   const variant = variantFromNotificationType(n.type);
