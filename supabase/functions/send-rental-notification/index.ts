@@ -140,98 +140,24 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Resolve (or create) the rental conversation so the owner notification can deep-link to chat.
-    let ownerLink = `/inchirieri?rental_id=${rental.id}`;
+    // Resolve (or create) the rental conversation up-front so chat is ready when the owner clicks the notification.
     try {
       const { data: convId, error: convErr } = await supabaseAdmin.rpc(
         "get_or_create_rental_conversation",
         { p_rental_id: rental.id }
       );
-      if (!convErr && convId) {
-        ownerLink = `/mesaje?conv=${convId}`;
-      } else if (convErr) {
+      if (convErr) {
         console.error("[send-rental-notification] get_or_create_rental_conversation error:", convErr);
       }
     } catch (e) {
       console.error("[send-rental-notification] conversation RPC threw:", e);
     }
 
-    // Insert notifications (in-app)
-    await supabaseAdmin.from("notifications").insert([
-      {
-        user_id: rental.owner_id,
-        type: "rental_request",
-        title_ro: `Plată primită — începe chatul`,
-        title_en: `Payment received — start the chat`,
-        description_ro: `${renter?.full_name || "Un utilizator"} a efectuat plata pentru produsul „${product?.title || "—"}". Începeți discuția pe chat.`,
-        description_en: `${renter?.full_name || "A user"} paid for "${product?.title || "—"}". Start the chat.`,
-        link: ownerLink,
-      },
-      {
-        user_id: rental.renter_id,
-        type: "rental_confirmation",
-        title_ro: `Cerere trimisă cu succes`,
-        title_en: `Request sent successfully`,
-        description_ro: `Plata ta a fost autorizată. Cererea pentru "${product?.title}" a fost trimisă proprietarului.`,
-        description_en: `Your payment has been authorized. The request for "${product?.title}" has been sent to the owner.`,
-        link: `/rezervari?rental_id=${rental.id}`,
-      },
-    ]);
-
-    // Send branded transactional emails via Lovable Cloud queue
-    const productTitle = product?.title || "Produs";
-    const renterName = renter?.full_name || "Un utilizator";
-    const startStr = formatDateRo(rental.start_date);
-    const endStr = formatDateRo(rental.end_date);
-    const productImage = Array.isArray((product as any)?.images) && (product as any).images.length > 0 ? (product as any).images[0] : undefined;
-    const location = (product as any)?.location || undefined;
-    const totalPrice = typeof rental.subtotal === "number" ? rental.subtotal : undefined;
-
-    const sendBranded = async (templateName: string, recipientEmail: string, templateData: Record<string, unknown>, idempotencyKey: string) => {
-      try {
-        const { error } = await supabaseAdmin.functions.invoke("send-transactional-email", {
-          body: { templateName, recipientEmail, idempotencyKey, templateData },
-        });
-        if (error) console.error(`[send-rental-notification] ${templateName} -> ${recipientEmail} failed:`, error);
-        else console.log(`[send-rental-notification] ${templateName} queued for ${recipientEmail}`);
-      } catch (e) {
-        console.error(`[send-rental-notification] invoke error for ${templateName}:`, e);
-      }
-    };
-
-    const tasks: Promise<void>[] = [];
-    if (ownerEmail) {
-      tasks.push(sendBranded(
-        "rental-request-owner",
-        ownerEmail,
-        { renterName, productTitle, productImage, location, startDate: startStr, endDate: endStr, totalPrice, currency: "RON", rentalId: rental.id },
-        `rental-req-owner-${rental.id}`
-      ));
-    }
-    if (renterEmail) {
-      tasks.push(sendBranded(
-        "rental-request-renter",
-        renterEmail,
-        { productTitle, productImage, location, startDate: startStr, endDate: endStr, totalPrice, currency: "RON", rentalId: rental.id },
-        `rental-req-renter-${rental.id}`
-      ));
-    }
-    await Promise.all(tasks);
-
-    // SMS to owner (best-effort, never blocks main flow)
-    try {
-      await supabaseAdmin.functions.invoke("send-sms-notification", {
-        body: {
-          templateKey: "rental_request_owner",
-          userId: rental.owner_id,
-          rentalId: rental.id,
-          variables: { productTitle, renterName },
-          idempotencyKey: `rental_request_owner:${rental.id}`,
-        },
-      });
-    } catch (e) {
-      console.error("[send-rental-notification] SMS invoke failed:", e);
-    }
+    // Note: in-app notifications, branded emails and SMS for request_created
+    // are sent by `notify-rental-event` (event_key: "request_created").
+    // We do NOT duplicate them here — the previous wording incorrectly said
+    // "Plată primită" while at this point the payment is only AUTHORIZED
+    // (Stripe hold). Capture happens after the owner accepts the request.
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
