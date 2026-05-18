@@ -33,7 +33,8 @@ type EventKey =
   | "cancel_request_rejected"
   | "cancellation_confirmed"
   | "mutual_cancel_approved"
-  | "payment_succeeded";
+  | "payment_succeeded"
+  | "request_cancelled_by_renter";
 
 interface EventConfig {
   recipients: Recipient;
