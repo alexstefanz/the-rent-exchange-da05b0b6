@@ -20,15 +20,6 @@ function checkRateLimit(key: string, maxRequests = 5, windowSec = 60): boolean {
   return true;
 }
 
-function formatDateRo(dateStr: string): string {
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("ro-RO", { day: "2-digit", month: "short", year: "numeric" });
-  } catch {
-    return dateStr;
-  }
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -70,52 +61,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Idempotency guard: if we already notified the owner about this rental,
-    // skip everything (verify-stripe-payment may run again on success-page refresh).
-    const { data: existingNotification } = await supabaseAdmin
-      .from("notifications")
-      .select("id")
-      .eq("user_id", rental.owner_id)
-      .eq("type", "rental_request")
-      .ilike("link", `%rental_id=${rental.id}%`)
-      .limit(1)
+    const { data: product } = await supabaseAdmin
+      .from("products")
+      .select("title")
+      .eq("id", rental.product_id)
       .maybeSingle();
-
-    if (existingNotification) {
-      console.log(`[send-rental-notification] Already notified for rental ${rental.id} — skipping.`);
-      return new Response(JSON.stringify({ success: true, skipped: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const [productRes, renterRes, ownerRes] = await Promise.all([
-      supabaseAdmin.from("products").select("title, images, location").eq("id", rental.product_id).single(),
-      supabaseAdmin.from("profiles").select("full_name, email").eq("id", rental.renter_id).single(),
-      supabaseAdmin.from("profiles").select("full_name, email").eq("id", rental.owner_id).single(),
-    ]);
-
-    const product = productRes.data;
-    const renter = renterRes.data;
-    const owner = ownerRes.data;
-
-    const getEmail = async (userId: string, profileEmail: string | null): Promise<string | null> => {
-      if (profileEmail) return profileEmail;
-      try {
-        const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
-        if (data?.user?.email) {
-          await supabaseAdmin.from("profiles").update({ email: data.user.email }).eq("id", userId);
-          return data.user.email;
-        }
-      } catch (e) {
-        console.error("Error fetching auth user email:", e);
-      }
-      return null;
-    };
-
-    const [ownerEmail, renterEmail] = await Promise.all([
-      getEmail(rental.owner_id, owner?.email || null),
-      getEmail(rental.renter_id, renter?.email || null),
-    ]);
 
     // Insert transaction (status reflects the Stripe authorization hold).
     {
@@ -140,98 +90,24 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Resolve (or create) the rental conversation so the owner notification can deep-link to chat.
-    let ownerLink = `/inchirieri?rental_id=${rental.id}`;
+    // Resolve (or create) the rental conversation up-front so chat is ready when the owner clicks the notification.
     try {
       const { data: convId, error: convErr } = await supabaseAdmin.rpc(
         "get_or_create_rental_conversation",
         { p_rental_id: rental.id }
       );
-      if (!convErr && convId) {
-        ownerLink = `/mesaje?conv=${convId}`;
-      } else if (convErr) {
+      if (convErr) {
         console.error("[send-rental-notification] get_or_create_rental_conversation error:", convErr);
       }
     } catch (e) {
       console.error("[send-rental-notification] conversation RPC threw:", e);
     }
 
-    // Insert notifications (in-app)
-    await supabaseAdmin.from("notifications").insert([
-      {
-        user_id: rental.owner_id,
-        type: "rental_request",
-        title_ro: `Plată primită — începe chatul`,
-        title_en: `Payment received — start the chat`,
-        description_ro: `${renter?.full_name || "Un utilizator"} a efectuat plata pentru produsul „${product?.title || "—"}". Începeți discuția pe chat.`,
-        description_en: `${renter?.full_name || "A user"} paid for "${product?.title || "—"}". Start the chat.`,
-        link: ownerLink,
-      },
-      {
-        user_id: rental.renter_id,
-        type: "rental_confirmation",
-        title_ro: `Cerere trimisă cu succes`,
-        title_en: `Request sent successfully`,
-        description_ro: `Plata ta a fost autorizată. Cererea pentru "${product?.title}" a fost trimisă proprietarului.`,
-        description_en: `Your payment has been authorized. The request for "${product?.title}" has been sent to the owner.`,
-        link: `/rezervari?rental_id=${rental.id}`,
-      },
-    ]);
-
-    // Send branded transactional emails via Lovable Cloud queue
-    const productTitle = product?.title || "Produs";
-    const renterName = renter?.full_name || "Un utilizator";
-    const startStr = formatDateRo(rental.start_date);
-    const endStr = formatDateRo(rental.end_date);
-    const productImage = Array.isArray((product as any)?.images) && (product as any).images.length > 0 ? (product as any).images[0] : undefined;
-    const location = (product as any)?.location || undefined;
-    const totalPrice = typeof rental.subtotal === "number" ? rental.subtotal : undefined;
-
-    const sendBranded = async (templateName: string, recipientEmail: string, templateData: Record<string, unknown>, idempotencyKey: string) => {
-      try {
-        const { error } = await supabaseAdmin.functions.invoke("send-transactional-email", {
-          body: { templateName, recipientEmail, idempotencyKey, templateData },
-        });
-        if (error) console.error(`[send-rental-notification] ${templateName} -> ${recipientEmail} failed:`, error);
-        else console.log(`[send-rental-notification] ${templateName} queued for ${recipientEmail}`);
-      } catch (e) {
-        console.error(`[send-rental-notification] invoke error for ${templateName}:`, e);
-      }
-    };
-
-    const tasks: Promise<void>[] = [];
-    if (ownerEmail) {
-      tasks.push(sendBranded(
-        "rental-request-owner",
-        ownerEmail,
-        { renterName, productTitle, productImage, location, startDate: startStr, endDate: endStr, totalPrice, currency: "RON", rentalId: rental.id },
-        `rental-req-owner-${rental.id}`
-      ));
-    }
-    if (renterEmail) {
-      tasks.push(sendBranded(
-        "rental-request-renter",
-        renterEmail,
-        { productTitle, productImage, location, startDate: startStr, endDate: endStr, totalPrice, currency: "RON", rentalId: rental.id },
-        `rental-req-renter-${rental.id}`
-      ));
-    }
-    await Promise.all(tasks);
-
-    // SMS to owner (best-effort, never blocks main flow)
-    try {
-      await supabaseAdmin.functions.invoke("send-sms-notification", {
-        body: {
-          templateKey: "rental_request_owner",
-          userId: rental.owner_id,
-          rentalId: rental.id,
-          variables: { productTitle, renterName },
-          idempotencyKey: `rental_request_owner:${rental.id}`,
-        },
-      });
-    } catch (e) {
-      console.error("[send-rental-notification] SMS invoke failed:", e);
-    }
+    // Note: in-app notifications, branded emails and SMS for request_created
+    // are sent by `notify-rental-event` (event_key: "request_created").
+    // We do NOT duplicate them here — the previous wording incorrectly said
+    // "Plată primită" while at this point the payment is only AUTHORIZED
+    // (Stripe hold). Capture happens after the owner accepts the request.
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

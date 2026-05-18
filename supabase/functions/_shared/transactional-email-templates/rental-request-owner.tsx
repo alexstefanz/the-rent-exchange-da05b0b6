@@ -20,11 +20,12 @@ const RentalRequestOwnerEmail = (p: Props) => {
   const cta = p.rentalId ? `${APP_URL}/inchirieri?rental_id=${p.rentalId}` : `${APP_URL}/inchirieri`
   const productLabel = p.productTitle ?? 'produsul tău'
   return (
-    <BaseLayout preview={`${p.renterName ?? 'Un utilizator'} a plătit pentru ${productLabel} — începe chatul`}>
-      <H1>Plată primită — începe chatul</H1>
+    <BaseLayout preview={`${p.renterName ?? 'Un utilizator'} dorește să închirieze ${productLabel}`}>
+      <H1>Cerere nouă de închiriere</H1>
       <Lead>
-        <strong>{p.renterName ?? 'Un utilizator'}</strong> a făcut plata pentru închirierea produsului
-        „{productLabel}". Începeți discuția pe chat.
+        <strong>{p.renterName ?? 'Un utilizator'}</strong> dorește să închirieze produsul
+        „{productLabel}". Plata a fost <strong>autorizată (blocată)</strong> pe cardul chiriașului
+        și va fi încasată automat după ce acceptați cererea.
       </Lead>
       <ProductCard
         image={p.productImage}
@@ -35,13 +36,14 @@ const RentalRequestOwnerEmail = (p: Props) => {
         currency={p.currency}
         status="pending"
       />
-      <CTAButton href={cta}>Deschide chatul</CTAButton>
+      <CTAButton href={cta}>Vezi cererea</CTAButton>
       <Para>
-        După ce ați stabilit data și ora predării produsului, completați procesele verbale.
+        Acceptați sau refuzați cererea cât mai repede. După acceptare, plata se va încasa și veți putea
+        discuta cu chiriașul pe chat pentru a stabili data și ora predării.
       </Para>
       <Para>
-        Este nevoie de câteva poze înainte din partea ambelor părți pentru a ne asigura că produsul
-        se predă și se întoarce la fel.
+        La predare și la returnare este obligatoriu să completați procesele verbale cu poze, ca să ne
+        asigurăm că produsul se predă și se întoarce în aceeași stare.
       </Para>
     </BaseLayout>
   )
@@ -49,8 +51,8 @@ const RentalRequestOwnerEmail = (p: Props) => {
 
 export const template = {
   component: RentalRequestOwnerEmail,
-  subject: 'Plată primită — începe chatul cu chiriașul',
-  displayName: 'Plată primită (Owner)',
+  subject: 'Cerere nouă de închiriere',
+  displayName: 'Cerere nouă (Owner)',
   previewData: {
     renterName: 'Ion Popescu',
     productTitle: 'Bicicletă Mountain Bike Trek',
