@@ -51,9 +51,9 @@ export const notify = {
   success: (message: string) => toast.success(message),
   error: (message: string) => toast.error(message),
   info: (message: string) => toast(message),
-  rental: ({ image, title, message, duration = 3000 }: RentalNotifyOptions) =>
+  rental: ({ image, title, message, duration = 10000 }: RentalNotifyOptions) =>
     toast.custom(
       (id) => <RentalToast id={id} image={image} title={title} message={message} />,
-      { duration },
+      { duration, position: "bottom-center" },
     ),
 };
