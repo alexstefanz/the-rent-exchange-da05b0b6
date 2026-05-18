@@ -1,18 +1,21 @@
-## Changes in `src/pages/RentalDetailPage.tsx` (header block, ~lines 280–301)
+## Goal
+Face animația pasului activ ("Produs predat" etc.) din timeline-ul rezervării mai lentă și mai blândă, ca un "slow motion".
 
-**1. Move the role badge ("Tu esti chirias" / "Tu esti proprietar") next to the RNT ID on mobile**
-- Currently the badge sits in the right-side column, below the status pill — so on mobile it falls under the title.
-- Render it inline next to `rental.public_id` (the `RNT-000114` line) so they share the same row at the top of the header.
-- Make it more prominent on mobile: switch from the outline `Badge` to a solid primary chip (`bg-primary/10 text-primary border-primary/20`, `font-semibold`, slightly larger text), so it visually pops next to the muted mono ID.
-- Keep the desktop layout intact — the chip simply sits next to the ID on every breakpoint, which also reads well on desktop.
+## Changes
 
-**2. Remove the tiny empty shape above the role badge**
-- That shape is `<StatusBadge status={rental.status} />` rendering an empty label when `rental.status === "confirmed"` (the `StatusBadge` map has no entry for `confirmed`, so it shows just the pill background with no text — visible in image 2).
-- Remove the `StatusBadge` from the header entirely. Rental status is already communicated by the timeline + action cards below, so no replacement is needed.
-- The right-side flex column that only contained the status pill and the role badge can be removed since the role badge now lives next to the ID.
+**`src/components/dashboard/RentalTimeline.tsx`** (line 98)
+- Schimbă `animate-[soft-pulse_3.2s_ease-in-out_infinite]` în `animate-[soft-pulse_5s_ease-in-out_infinite]` pentru a încetini ritmul pulsului.
+
+**`tailwind.config.ts`** (keyframe + animation `soft-pulse`)
+- Mărește durata default de la `3.2s` la `5s`.
+- Înmoaie pulsul: începe de la un halo deja vizibil și se extinde mai puțin abrupt, ca să pulseze "ușor":
+  ```ts
+  "soft-pulse": {
+    "0%, 100%": { boxShadow: "0 0 0 0 hsl(var(--primary) / 0.18)", transform: "scale(1)" },
+    "50%":      { boxShadow: "0 0 0 8px hsl(var(--primary) / 0)",   transform: "scale(1.04)" },
+  },
+  ```
+- Scade scale-ul (1.04 în loc de orice salt brusc) și raza halo-ului (8px), pentru o respirație fină, nu un puls accentuat.
 
 ## Result
-- Mobile: `← Inapoi la lista` → image + (`RNT-000114`  `Tu esti chirias` chip) + title + date row. No mystery empty pill.
-- Desktop: same arrangement, role chip sits inline with the ID instead of being pushed to the right column.
-
-No other files change.
+Iconița portocalie a pasului activ va respira lent (~5s pe ciclu), cu un halo subtil și o ușoară mărire/micșorare, în loc de pulsul rapid actual. Restul timeline-ului rămâne neschimbat.
