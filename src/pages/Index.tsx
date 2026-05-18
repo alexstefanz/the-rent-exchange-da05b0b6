@@ -7,7 +7,7 @@ import HeroDynamic from "@/components/home/HeroDynamic";
 import TrustBarPremium from "@/components/home/TrustBarPremium";
 import SocialProofLive from "@/components/home/SocialProofLive";
 const FeaturedListings = lazy(() => import("@/components/home/FeaturedListings"));
-const WhyRentli = lazy(() => import("@/components/home/WhyRentli"));
+const WhyChooseUsBento = lazy(() => import("@/components/home/WhyChooseUsBento"));
 const HowItWorksMini = lazy(() => import("@/components/home/HowItWorksMini"));
 const Footer = lazy(() => import("@/components/layout/Footer"));
 import { categories } from "@/data/categories";
@@ -73,7 +73,7 @@ const Index = () => {
       </Suspense>
 
       <Suspense fallback={<div className="py-12" />}>
-        <WhyRentli />
+        <WhyChooseUsBento />
       </Suspense>
 
       {/* CTA Banner */}
