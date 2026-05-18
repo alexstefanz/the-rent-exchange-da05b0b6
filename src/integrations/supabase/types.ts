@@ -80,6 +80,24 @@ export type Database = {
         }
         Relationships: []
       }
+      anaf_cache: {
+        Row: {
+          cui: string
+          data: Json
+          fetched_at: string
+        }
+        Insert: {
+          cui: string
+          data: Json
+          fetched_at?: string
+        }
+        Update: {
+          cui?: string
+          data?: Json
+          fetched_at?: string
+        }
+        Relationships: []
+      }
       banned_identifiers: {
         Row: {
           banned_by: string | null
