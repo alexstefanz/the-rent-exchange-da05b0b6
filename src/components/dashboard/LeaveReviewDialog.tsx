@@ -116,7 +116,7 @@ export default function LeaveReviewDialog({
                 .from("product_reviews")
                 .select("id", { count: "exact", head: true })
                 .eq("reviewer_id", user.id)
-                .eq("product_id", rental.product_id)
+                .eq("rental_id", rental.id)
                 .eq("review_type", reviewType)
             : Promise.resolve({ count: 0 } as any),
           rental.counterparty_id
@@ -125,6 +125,7 @@ export default function LeaveReviewDialog({
                 .select("id", { count: "exact", head: true })
                 .eq("reviewer_id", user.id)
                 .eq("reviewed_user_id", rental.counterparty_id)
+                .eq("rental_id", rental.id)
             : Promise.resolve({ count: 0 } as any),
         ]);
         setProductReviewExists((prCount || 0) > 0);
@@ -163,7 +164,8 @@ export default function LeaveReviewDialog({
             rental.product_id,
             reviewType,
             { condition, communication, punctuality },
-            productComment.trim()
+            productComment.trim(),
+            rental.id
           );
           productOk = true;
         } catch (e: any) {
@@ -177,7 +179,8 @@ export default function LeaveReviewDialog({
             rental.counterparty_id,
             userRating,
             userComment.trim() || undefined,
-            rental.product_title
+            rental.product_title,
+            rental.id
           );
           userOk = true;
         } catch (e: any) {

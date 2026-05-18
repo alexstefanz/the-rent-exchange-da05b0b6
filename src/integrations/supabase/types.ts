@@ -1247,6 +1247,7 @@ export type Database = {
           rating_communication: number | null
           rating_product_condition: number | null
           rating_punctuality: number | null
+          rental_id: string | null
           review_type: string
           reviewer_id: string
         }
@@ -1259,6 +1260,7 @@ export type Database = {
           rating_communication?: number | null
           rating_product_condition?: number | null
           rating_punctuality?: number | null
+          rental_id?: string | null
           review_type?: string
           reviewer_id: string
         }
@@ -1271,6 +1273,7 @@ export type Database = {
           rating_communication?: number | null
           rating_product_condition?: number | null
           rating_punctuality?: number | null
+          rental_id?: string | null
           review_type?: string
           reviewer_id?: string
         }
@@ -1280,6 +1283,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_reviews_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
             referencedColumns: ["id"]
           },
           {
@@ -2291,6 +2301,7 @@ export type Database = {
           created_at: string
           id: string
           rating: number
+          rental_id: string | null
           reviewed_user_id: string
           reviewer_id: string
         }
@@ -2299,6 +2310,7 @@ export type Database = {
           created_at?: string
           id?: string
           rating: number
+          rental_id?: string | null
           reviewed_user_id: string
           reviewer_id: string
         }
@@ -2307,10 +2319,18 @@ export type Database = {
           created_at?: string
           id?: string
           rating?: number
+          rental_id?: string | null
           reviewed_user_id?: string
           reviewer_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_reviews_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_reviews_reviewed_user_id_fkey"
             columns: ["reviewed_user_id"]
