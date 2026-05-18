@@ -37,8 +37,26 @@ type ToastableNotification = {
   description_ro?: string | null;
   description_en?: string | null;
 };
+
+/** Suppress duplicate inserts of the same notification type within a short
+ * window. Backends sometimes write 2 rows for a single rental event
+ * (e.g. notify-rental-event + send-rental-notification). */
+const lastShownByType = new Map<string, number>();
+const TYPE_DEDUP_MS = 5000;
+
 function showOnce(n: ToastableNotification, shown: Set<string>) {
   if (n.id && shown.has(n.id)) return;
+  const key = n.type || "_";
+  const now = Date.now();
+  const last = lastShownByType.get(key) ?? 0;
+  if (now - last < TYPE_DEDUP_MS) {
+    if (n.id) {
+      shown.add(n.id);
+      persistShown(shown);
+    }
+    return;
+  }
+  lastShownByType.set(key, now);
   try {
     notifyFromDb(n);
   } catch (e) {
