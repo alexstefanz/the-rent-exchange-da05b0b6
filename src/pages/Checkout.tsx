@@ -120,9 +120,13 @@ const Checkout = () => {
         platformFeePercent: product.platformFeePercent,
         paymentMethod: "stripe",
       });
-      toast.success(language === "ro"
-        ? "Cererea a fost trimisă! Vei fi notificat când proprietarul răspunde."
-        : "Request sent! You'll be notified when the owner responds.");
+      notify.rental({
+        image: product.images?.[0],
+        title: product.title,
+        message: language === "ro"
+          ? "Cererea a fost trimisă! Vei fi notificat când proprietarul răspunde."
+          : "Request sent! You'll be notified when the owner responds.",
+      });
       const target = (rental as any)?.public_id
         ? `/rezervari/${(rental as any).public_id}`
         : "/rezervari";
