@@ -1,39 +1,26 @@
-## Audit — sistemul există deja, doar îl curățăm
+## Goal
 
-Infrastructura de notificări către **ambele părți** la fiecare schimbare din timeline e deja completă:
+Replace the current "De ce Rentli?" row on the homepage (`WhyRentli`) with the bento section from the "Cum funcționează" page ("DIFERENȚA RENTLI / De ce ne aleg utilizatorii" — protected payments big card + 4 stat cards), and reuse the exact same section on both pages.
 
-```text
-acțiune → notify-rental-event (recipients: "both")
-        → INSERT public.notifications (un rând per user)
-        → realtime INSERT → useGlobalRealtime → notify card (bottom-center)
-```
+## Steps
 
-Evenimente care fac deja insert în `notifications` pentru ambii utilizatori (verificat în `notify-rental-event/index.ts`):
+1. **Create a shared component** `src/components/home/WhyChooseUsBento.tsx`
+   - Move the JSX from `src/pages/HowItWorks.tsx` lines 155–246 (the entire `<section>` "Why users choose us — bento") into this new component.
+   - Move the `bentoCards` array (line 31–36) inside the component.
+   - Import needed icons (`ShieldCheck`, `UserCheck`, `Tag`, `Headphones`) and `useUxCopy`.
+   - Keep all existing copy keys (`whyBadge`, `whyTitle`, `whySubtitle`, `escrowPill`, `escrowBigTitle`, `escrowBigTitleAccent`, `escrowBigDesc`, `escrowAmountLabel`, `escrowAmount`, `escrowSecuredBadge`, `escrowStage1/2/3`, plus all `bento*` keys) from `howItWorksPage` — no copy duplication needed.
 
-- `request_created`, `request_accepted`, `payment_succeeded`, `pickup_scheduled`
-- `pv_pickup_pending`, `pv_pickup_completed_by_party`, `handover_confirmed`, `active_rental_started`
-- `return_in_progress`, `pv_return_pending`, `pv_return_completed_by_party`, `rental_completed`
-- `cancel_request_submitted`, `cancel_request_withdrawn`, `cancel_request_approved`, `cancel_request_rejected`, `cancellation_confirmed`, `mutual_cancel_approved`
-- excepții (singura parte): `request_rejected` → doar renter, `request_cancelled_by_renter` → doar owner
+2. **Use it on `HowItWorks.tsx`**
+   - Replace the inlined section (lines 155–246) with `<WhyChooseUsBento />`.
+   - Remove the now-unused `bentoCards` const and unused icon imports if no longer referenced elsewhere on the page.
 
-Tranziții automate (handover, active, return_pending, completed) sunt emise dintr-un trigger DB (`rentals_notify_status`) — deci se aplică indiferent dacă acțiunea vine din UI sau cron.
+3. **Use it on `Index.tsx` (homepage)**
+   - Replace `<WhyRentli />` (line 76) with `<Suspense>`-lazy `WhyChooseUsBento` following the same lazy-loading pattern as siblings.
+   - Remove the `WhyRentli` lazy import (line 10).
+   - Leave `src/components/home/WhyRentli.tsx` in place (unused) — safe to delete since nothing else references it.
 
-### Schimbarea concretă necesară
+## Notes
 
-**1. Eliminăm toast-ul local din `src/pages/Checkout.tsx` (`notify.rental(...)`)** — chiriașul îl primește deja prin realtime din `request_created`, iar acum apare de două ori. Înlocuim doar cu `navigate(...)` direct către `/rezervari/:id`. Confirmarea vizuală a trimiterii rămâne prin toast-ul realtime + redirecționarea spre pagina rezervării.
-
-**2. Adăugăm câteva chei lipsă pentru toast-ul realtime** în `src/lib/notify.tsx` → `variantFromNotificationType`:
-
-- `active_rental_started`, `handover_confirmed`, `rental_completed`, `review_reminder` → `confirmation` (verde)
-- `return_reminder_24h`, `return_in_progress`, `pv_pickup_pending`, `pv_return_pending`, `pv_pickup_completed_by_party`, `pv_return_completed_by_party`, `pickup_scheduled` → `system` (albastru)
-- `dispute_opened` → `cancellation` (roșu)
-
-Tot ce e deja mapat (cancel/reject/payment/etc.) rămâne neschimbat.
-
-### Verificare după implementare
-
-- Test manual: o cerere nouă din Checkout → renter vede UN singur toast (din realtime), owner vede toast la `request_created`.
-- Owner acceptă/refuză → ambele părți primesc toast corespunzător (verde / roșu).
-- PV-uri și tranziții status — emise de trigger-ul DB existent, ambele părți primesc toast din realtime.
-
-Nu sunt necesare modificări la edge functions, la baza de date sau la `notify-rental-event` — toate evenimentele sunt deja configurate cu `recipients: "both"` acolo unde trebuie.
+- No copy changes, no new translations needed — the section already exists fully bilingual under `howItWorksPage`.
+- No business-logic changes.
+- Visual output on homepage will exactly mirror the section on `/cum-functioneaza`.
