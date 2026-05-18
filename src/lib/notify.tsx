@@ -54,6 +54,13 @@ export const notify = {
   rental: ({ image, title, message, duration = 10000 }: RentalNotifyOptions) =>
     toast.custom(
       (id) => <RentalToast id={id} image={image} title={title} message={message} />,
-      { duration, position: "bottom-center" },
+      {
+        duration,
+        position: "bottom-center",
+        unstyled: true,
+        classNames: {
+          toast: "!bg-transparent !border-0 !shadow-none !p-0",
+        },
+      },
     ),
 };
