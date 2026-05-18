@@ -8,7 +8,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import OnboardingStepper from "@/components/onboarding/OnboardingStepper";
 import CuiLookupField, { CuiLookupResult } from "@/components/onboarding/CuiLookupField";
 import CompanyAutofillCard, { CompanyData } from "@/components/onboarding/CompanyAutofillCard";
 import TrustStrip from "@/components/onboarding/TrustStrip";
@@ -128,8 +127,6 @@ const BusinessOnboarding = () => {
         <Link to="/" className="mb-6 inline-block">
           <img src={logoImage} alt="Rentli" className="h-10 w-auto" />
         </Link>
-
-        <OnboardingStepper current={3} className="mb-8" />
 
         <div className="mb-6 space-y-2">
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
