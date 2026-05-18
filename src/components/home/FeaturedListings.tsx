@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
-import { MapPin, ArrowRight, CheckCircle, Loader2, Heart, Star } from "lucide-react";
+import { MapPin, ArrowRight, ShieldCheck, Loader2, Heart, Star } from "lucide-react";
 import { useProducts } from "@/hooks/queries/useProducts";
 import { calculateClientPrice } from "@/features/products/productsApi";
 import { getProductUrl } from "@/lib/slugUtils";
@@ -15,37 +15,6 @@ import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 
-const SeeAllCard = ({ images, copy }: { images: string[]; copy: any }) => {
-  const thumbs = images.slice(0, 3).map(img => getOptimizedImageUrl(img, "thumb"));
-
-  return (
-    <Link
-      to="/cauta"
-      className="group block overflow-hidden rounded-xl bg-muted/40 border border-border transition-all hover:-translate-y-1 hover:shadow-card-hover"
-    >
-      <div className="flex flex-col items-center justify-center aspect-[4/3] relative overflow-hidden">
-        <div className="relative h-20 w-28 md:h-24 md:w-32">
-          {thumbs[0] && (
-            <img src={thumbs[0]} alt="" className="absolute left-1/2 top-1/2 h-16 w-16 md:h-20 md:w-20 -translate-x-[70%] -translate-y-[55%] rotate-[-8deg] rounded-lg object-cover shadow-md border border-border" />
-          )}
-          {thumbs[1] && (
-            <img src={thumbs[1]} alt="" className="absolute left-1/2 top-1/2 h-16 w-16 md:h-20 md:w-20 -translate-x-[30%] -translate-y-[45%] rotate-[6deg] rounded-lg object-cover shadow-md border border-border" />
-          )}
-          {thumbs[2] && (
-            <img src={thumbs[2]} alt="" className="absolute left-1/2 top-1/2 h-14 w-14 md:h-16 md:w-16 -translate-x-[50%] -translate-y-[50%] rotate-[2deg] rounded-lg object-cover shadow-lg border border-border z-10" />
-          )}
-        </div>
-      </div>
-      <div className="p-3 md:p-4 text-center">
-        <span className="font-heading text-sm md:text-base font-semibold text-foreground group-hover:text-primary transition-colors">
-          {copy.common.viewAll}
-        </span>
-        <ArrowRight className="inline-block ml-1.5 h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-      </div>
-    </Link>
-  );
-};
-
 const FeaturedListings = () => {
   const { data: products, isLoading, isError, refetch } = useProducts();
   const copy = useUxCopy();
@@ -54,7 +23,7 @@ const FeaturedListings = () => {
   const isMobile = useIsMobile();
 
   const allProducts = products || [];
-  const displayProducts = allProducts.slice(0, 7);
+  const displayProducts = allProducts.slice(0, 8);
 
   const [ratings, setRatings] = useState<Record<string, number>>({});
   const [reviewCounts, setReviewCounts] = useState<Record<string, number>>({});
@@ -118,8 +87,6 @@ const FeaturedListings = () => {
     }
   };
 
-  const allImages = allProducts.flatMap((p) => p.images || []).filter(Boolean).slice(0, 10);
-
   if (isLoading) {
     return (
       <section className="py-12">
@@ -154,7 +121,16 @@ const FeaturedListings = () => {
   return (
     <section className="pt-6 pb-12 md:pt-8 md:pb-16">
       <div className="container">
-        <h2 className="font-heading text-2xl font-semibold text-foreground md:text-2xl mb-6">{sectionTitle}</h2>
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <h2 className="font-heading text-2xl font-semibold text-foreground md:text-2xl">{sectionTitle}</h2>
+          <Link
+            to="/cauta"
+            className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 whitespace-nowrap"
+          >
+            {copy.common.viewAll}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {displayProducts.map((product, index) => {
             const clientPrice = calculateClientPrice(product.daily_price_owner, product.platform_fee_percent);
@@ -168,9 +144,9 @@ const FeaturedListings = () => {
               <Link
                 key={product.id}
                 to={getProductUrl(product)}
-                className="group block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover"
+                className="group block transition-all hover:-translate-y-0.5"
               >
-                <div className="relative aspect-[4/3] overflow-hidden">
+                <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
                   <img
                     src={imageUrl}
                     alt={getDisplayTitle(product, language)}
@@ -180,46 +156,42 @@ const FeaturedListings = () => {
                     decoding="async"
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
-                  <div className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/90 shadow-sm">
-                    <CheckCircle className="h-3.5 w-3.5 text-[#F98715]" />
-                  </div>
+                  {product.category && (
+                    <span className="absolute left-2 top-2 inline-flex items-center gap-1.5 rounded-full bg-white/95 pl-1 pr-2.5 py-1 text-xs font-medium text-foreground shadow-sm">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/15">
+                        <ShieldCheck className="h-3 w-3 text-primary" />
+                      </span>
+                      <span className="truncate max-w-[100px]">{getDisplayCategory(product.category, language)}</span>
+                    </span>
+                  )}
                   <button
                     onClick={(e) => handleFavoriteClick(e, product.id)}
-                    className={cn(
-                      "absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full transition-colors shadow-sm",
-                      isFav ? "bg-[#F98715] hover:bg-[#e07a12]" : "bg-white/90 hover:bg-white"
-                    )}
+                    className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 shadow-sm transition-colors hover:bg-white"
                   >
-                    <Heart className={cn("h-3.5 w-3.5 drop-shadow-sm transition-colors", isFav ? "text-white fill-white" : "text-[#F98715]")} />
+                    <Heart className={cn("h-[18px] w-[18px] transition-colors", isFav ? "fill-primary text-primary" : "text-foreground/70")} />
                   </button>
                   {rating > 0 && (
-                    <div className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-white text-xs font-medium shadow-sm">
+                    <div className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-foreground shadow-sm">
                       <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                       <span>{rating.toFixed(1)}</span>
-                      {count > 0 && <span className="opacity-75">({count})</span>}
+                      {count > 0 && <span className="font-normal text-foreground/70">({count})</span>}
                     </div>
                   )}
                 </div>
-                <div className="p-3 md:p-4 flex flex-col">
-                  {product.category && (
-                    <span className="inline-flex w-fit max-w-max self-start rounded bg-primary px-2 py-0.5 text-[10px] md:text-xs font-semibold text-primary-foreground mb-1.5 whitespace-nowrap">
-                      {getDisplayCategory(product.category, language)}
-                    </span>
-                  )}
-                  <h3 className="text-sm md:text-base text-foreground line-clamp-2 font-medium min-h-[2.5rem] md:min-h-[3rem]">{getDisplayTitle(product, language)}</h3>
-                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground md:text-sm">
+                <div className="pt-2 px-1 pb-1 flex flex-col">
+                  <h3 className="font-heading text-sm md:text-[15px] font-semibold text-foreground line-clamp-1">{getDisplayTitle(product, language)}</h3>
+                  <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
                     <MapPin className="h-3 w-3 shrink-0" />
                     <span className="truncate">{location}</span>
                   </div>
-                  <div className="mt-auto pt-3.5">
-                    <span className="font-heading text-lg md:text-xl font-bold text-primary">{clientPrice} RON</span>
-                    <span className="text-xs md:text-sm text-muted-foreground"> {copy.common.perDay}</span>
+                  <div className="mt-1.5">
+                    <span className="font-heading text-base font-bold text-foreground">{clientPrice} RON</span>
+                    <span className="text-xs text-muted-foreground"> {copy.common.perDay}</span>
                   </div>
                 </div>
               </Link>
             );
           })}
-          <SeeAllCard images={allImages} copy={copy} />
         </div>
       </div>
     </section>
