@@ -126,6 +126,7 @@ export function useGlobalRealtime(userId: string | undefined) {
             description_ro?: string | null;
             description_en?: string | null;
           };
+          console.log("[realtime] notification INSERT", n);
           invalidate([["notifications", userId]]);
           try {
             notifyFromDb(n);

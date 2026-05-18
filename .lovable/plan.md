@@ -1,26 +1,53 @@
-## Goal
+## Problem
 
-Replace the current "De ce Rentli?" row on the homepage (`WhyRentli`) with the bento section from the "Cum funcționează" page ("DIFERENȚA RENTLI / De ce ne aleg utilizatorii" — protected payments big card + 4 stat cards), and reuse the exact same section on both pages.
+Notification bell shows the new in-app notification ("Cerere nouă de închiriere") in the DB, but no bottom-center toast appears. So the DB row is inserted correctly — the issue is between the Realtime delivery and the Sonner toast render.
 
-## Steps
+## Likely causes
 
-1. **Create a shared component** `src/components/home/WhyChooseUsBento.tsx`
-   - Move the JSX from `src/pages/HowItWorks.tsx` lines 155–246 (the entire `<section>` "Why users choose us — bento") into this new component.
-   - Move the `bentoCards` array (line 31–36) inside the component.
-   - Import needed icons (`ShieldCheck`, `UserCheck`, `Tag`, `Headphones`) and `useUxCopy`.
-   - Keep all existing copy keys (`whyBadge`, `whyTitle`, `whySubtitle`, `escrowPill`, `escrowBigTitle`, `escrowBigTitleAccent`, `escrowBigDesc`, `escrowAmountLabel`, `escrowAmount`, `escrowSecuredBadge`, `escrowStage1/2/3`, plus all `bento*` keys) from `howItWorksPage` — no copy duplication needed.
+Three independent suspects, in order of probability:
 
-2. **Use it on `HowItWorks.tsx`**
-   - Replace the inlined section (lines 155–246) with `<WhyChooseUsBento />`.
-   - Remove the now-unused `bentoCards` const and unused icon imports if no longer referenced elsewhere on the page.
+1. **Renter-side: page redirect to Stripe kills the realtime event.** On `Checkout`, the edge function creates the rental → inserts the `request_created` notification (for both parties) → then returns the Stripe URL → the renter's browser leaves the SPA. Sonner has no time to render. When the renter returns to `/checkout/success`, the realtime channel re-subscribes but does NOT replay missed `INSERT`s.
 
-3. **Use it on `Index.tsx` (homepage)**
-   - Replace `<WhyRentli />` (line 76) with `<Suspense>`-lazy `WhyChooseUsBento` following the same lazy-loading pattern as siblings.
-   - Remove the `WhyRentli` lazy import (line 10).
-   - Leave `src/components/home/WhyRentli.tsx` in place (unused) — safe to delete since nothing else references it.
+2. **Owner-side: realtime callback fires but Sonner doesn't render the bottom-center toast.** Our `<Sonner Toaster>` is mounted with `position="top-center"` at the container, while `notify.tsx` passes `position: "bottom-center"` per toast. Sonner 1.7 supports per-toast position, but combined with our `unstyled: true` + the Toaster-level `closeButton` + `toastOptions.classNames` it sometimes fails to mount a second region. No console error — the toast just never appears.
 
-## Notes
+3. **Realtime payload missing required fields.** `notifyFromDb` reads `title_ro`/`description_ro`. If the trigger or edge function inserts a row with `null` `title_ro`, `notifyFromDb` would throw and be swallowed by the `try/catch` (only logged). The bell still shows the row because it has fallback text.
 
-- No copy changes, no new translations needed — the section already exists fully bilingual under `howItWorksPage`.
-- No business-logic changes.
-- Visual output on homepage will exactly mirror the section on `/cum-functioneaza`.
+## Plan
+
+### Step 1 — Add diagnostic logs (temporary)
+
+In `src/hooks/useGlobalRealtime.ts`, log every notification INSERT payload received so we can confirm in the next user message whether the event reached the client at all:
+
+```ts
+.on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` },
+  (payload) => {
+    console.log("[realtime] notification INSERT", payload.new);
+    ...
+  }
+)
+```
+
+In `src/lib/notify.tsx` → `notifyFromDb`, log when it fires and what variant is chosen.
+
+### Step 2 — Add a dedicated bottom-center Sonner viewport
+
+Mount a SECOND `<Sonner />` in `src/App.tsx` configured explicitly for `position="bottom-center"` and remove the per-toast `position` override in `notify.tsx`. This eliminates the "two positions on one Toaster" ambiguity. The top-center Sonner stays for any legacy `toast.*` calls.
+
+### Step 3 — Render a renter-side toast on `/checkout/success`
+
+Because the Stripe redirect breaks realtime delivery for the renter, on `CheckoutSuccess` mount, explicitly fire a confirmation toast ("Cerere trimisă"/"Plată reușită") using `notify.confirmation(...)`. Idempotent — only fires once per rental id via `sessionStorage`. This guarantees the renter always sees feedback after returning from Stripe.
+
+### Step 4 — Harden `notifyFromDb`
+
+Add a safer fallback: if `title_ro` is empty, fall back to a generic title derived from `type` so the toast still shows (and log a warning). Prevents silent failure on malformed rows.
+
+### Step 5 — Ask user to retry and share console output
+
+After the diagnostic logs and fixes ship, ask the user to repeat the test rental. The `[realtime] notification INSERT` console line will tell us definitively whether the event is reaching the browser, and which fix path resolved it. Once confirmed, the diagnostic `console.log`s will be removed.
+
+## Files touched
+
+- `src/hooks/useGlobalRealtime.ts` — add log
+- `src/lib/notify.tsx` — log + safer fallback + remove per-toast position override
+- `src/components/ui/sonner.tsx` (or `src/App.tsx`) — add second Sonner instance at bottom-center
+- `src/pages/CheckoutSuccess.tsx` — fire confirmation toast once per rental

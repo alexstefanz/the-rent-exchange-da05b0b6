@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { format } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
+import { notify } from "@/lib/notify";
 
 const CheckoutSuccess = () => {
   const [searchParams] = useSearchParams();
@@ -46,6 +47,26 @@ const CheckoutSuccess = () => {
         if (data?.error) throw new Error(data.error);
 
         setRentalData(data.rental);
+        // Stripe redirect kills the realtime INSERT for the renter, so fire
+        // a confirmation toast here once per rental id.
+        try {
+          const rid = data?.rental?.id;
+          if (rid) {
+            const key = `checkout-toast-${rid}`;
+            if (!sessionStorage.getItem(key)) {
+              sessionStorage.setItem(key, "1");
+              notify.payment({
+                title: language === "en" ? "Payment successful" : "Plată reușită",
+                message:
+                  language === "en"
+                    ? "Your rental request was sent to the owner."
+                    : "Cererea ta a fost trimisă proprietarului.",
+              });
+            }
+          }
+        } catch {
+          /* noop */
+        }
       } catch (e: any) {
         console.error("Verification error:", e);
         setError(e?.message || "Eroare la verificarea plății.");
