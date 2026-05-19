@@ -57,7 +57,7 @@ const Footer = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-16">
+          <div className="space-y-8">
             <div className="space-y-4">
               <h4 className="font-heading text-sm font-semibold">{language === "en" ? "Company" : "Companie"}</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
