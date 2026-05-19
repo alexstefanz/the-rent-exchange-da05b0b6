@@ -4,6 +4,7 @@ export interface RentalPopupItem {
   id: string;
   public_id: string | null;
   mode: "owner" | "renter";
+  outcome: "pending" | "confirmed" | "rejected" | string;
   status: string;
   start_date: string;
   end_date: string;
@@ -19,6 +20,7 @@ export interface RentalPopupItem {
   product_title: string | null;
   product_image: string | null;
   product_slug: string | null;
+  category_slug: string | null;
 }
 
 function mapRow(row: any): RentalPopupItem {
@@ -26,6 +28,7 @@ function mapRow(row: any): RentalPopupItem {
     id: row.id,
     public_id: row.public_id,
     mode: row.mode === "owner" ? "owner" : "renter",
+    outcome: row.outcome || row.status,
     status: row.status,
     start_date: row.start_date,
     end_date: row.end_date,
@@ -41,6 +44,7 @@ function mapRow(row: any): RentalPopupItem {
     product_title: row.product_title,
     product_image: row.product_image,
     product_slug: row.product_slug,
+    category_slug: row.category_slug ?? null,
   };
 }
 
