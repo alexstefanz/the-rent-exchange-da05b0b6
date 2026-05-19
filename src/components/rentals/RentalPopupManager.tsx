@@ -68,7 +68,13 @@ export default function RentalPopupManager() {
         async (payload: any) => {
           const row = payload.new;
           const old = payload.old;
-          if (row?.status === "confirmed" && old?.status !== "confirmed" && !row.renter_seen_confirmation) {
+          const becameConfirmed = row?.status === "confirmed" && old?.status !== "confirmed";
+          const becameRejectedByOwner =
+            row?.status === "cancelled" &&
+            old?.status !== "cancelled" &&
+            row?.cancelled_by &&
+            row.cancelled_by === row.owner_id;
+          if ((becameConfirmed || becameRejectedByOwner) && !row.renter_seen_confirmation) {
             const item = await fetchRentalPopupById(row.id);
             if (item) pushItem(item);
           }
