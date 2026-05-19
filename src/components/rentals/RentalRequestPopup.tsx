@@ -66,7 +66,7 @@ export default function RentalRequestPopup({ item, mode, onAccept, onReject, onC
     <div
       role="dialog"
       aria-modal="false"
-      className="pointer-events-auto w-[min(420px,calc(100vw-2rem))] rounded-2xl border bg-card shadow-2xl ring-1 ring-black/5 animate-in fade-in slide-in-from-bottom-6 duration-300"
+      className="pointer-events-auto w-[min(420px,calc(100vw-2rem))] rounded-2xl border bg-card shadow-2xl ring-1 ring-black/5 animate-in fade-in zoom-in-95 duration-300"
     >
       <div className="relative p-4 sm:p-5">
         <button

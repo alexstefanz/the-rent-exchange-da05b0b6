@@ -137,16 +137,21 @@ export default function RentalPopupManager() {
   };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[120] flex justify-center px-4 sm:bottom-6 sm:right-6 sm:left-auto sm:justify-end sm:px-0">
-      <RentalRequestPopup
-        key={current.id}
-        item={current}
-        mode={current.mode}
-        onAccept={handleAccept}
-        onReject={handleReject}
-        onChat={handleChat}
-        onDismiss={handleDismiss}
-      />
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200"
+      onClick={handleDismiss}
+    >
+      <div onClick={(e) => e.stopPropagation()}>
+        <RentalRequestPopup
+          key={current.id}
+          item={current}
+          mode={current.mode}
+          onAccept={handleAccept}
+          onReject={handleReject}
+          onChat={handleChat}
+          onDismiss={handleDismiss}
+        />
+      </div>
     </div>
   );
 }
