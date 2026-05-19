@@ -100,7 +100,7 @@ export function DrawerQuickActions({
         }
       />
       <StatCard
-        to="/inchirieri"
+        to="/anunturi?tab=cereri"
         icon={Package}
         label={t("cereri (proprietar)", "requests (owner)")}
         value={activeRentalsAsOwner}

@@ -82,7 +82,7 @@ const Footer = () => {
               <li><Link to="/auth" className="transition-colors hover:text-foreground">{language === "en" ? "Sign in / Register" : "Intră în cont / Înregistrează-te"}</Link></li>
               <li><Link to="/mesaje" className="transition-colors hover:text-foreground">Chat</Link></li>
               <li><Link to="/anunturi" className="transition-colors hover:text-foreground">{language === "en" ? "My listings" : "Anunțurile mele"}</Link></li>
-              <li><Link to="/inchirieri" className="transition-colors hover:text-foreground">{language === "en" ? "Rentals out" : "Închirieri"}</Link></li>
+              <li><Link to="/anunturi?tab=cereri" className="transition-colors hover:text-foreground">{language === "en" ? "Rentals out" : "Închirieri"}</Link></li>
               <li><Link to="/rezervari" className="transition-colors hover:text-foreground">{language === "en" ? "Bookings" : "Rezervări"}</Link></li>
               <li><Link to="/favorite" className="transition-colors hover:text-foreground">{language === "en" ? "Favorites" : "Favorite"}</Link></li>
               <li><Link to="/adauga-anunt" className="transition-colors hover:text-foreground">{language === "en" ? "Post a listing" : "Adaugă un anunț"}</Link></li>

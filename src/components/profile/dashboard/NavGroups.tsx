@@ -85,7 +85,7 @@ const GROUPS: Group[] = [
         hintEn: "Products you rent out",
       },
       {
-        to: "/inchirieri",
+        to: "/anunturi?tab=cereri",
         icon: PackageCheck,
         ro: "Cereri primite",
         en: "Bookings received",

@@ -89,7 +89,7 @@ export function QuickActions({ unreadMessages, activeRentalsAsRenter, activeRent
         highlight
       />
       <Secondary
-        to="/inchirieri"
+        to="/anunturi?tab=cereri"
         icon={PackageCheck}
         label={t("Cereri primite", "Bookings received")}
         badge={activeRentalsAsOwner}

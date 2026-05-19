@@ -55,7 +55,7 @@ export function SmartCards({ data }: { data: AccountDashboardData }) {
       ),
       description: t("Confirmă returul produselor tale", "Confirm the return of your items"),
       cta: t("Vezi închirierile", "View lendings"),
-      href: "/inchirieri",
+      href: "/anunturi?tab=cereri",
     });
   }
   if (s.actionableHandover > 0) {
@@ -69,7 +69,7 @@ export function SmartCards({ data }: { data: AccountDashboardData }) {
       ),
       description: t("Confirmă predarea către chiriaș", "Confirm handover to renter"),
       cta: t("Deschide", "Open"),
-      href: "/inchirieri",
+      href: "/anunturi?tab=cereri",
     });
   }
   if (s.unreadMessages > 0) {
