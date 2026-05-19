@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, MessageCircle, CalendarDays, Sparkles } from "lucide-react";
+import { X, MessageCircle, CalendarDays, Sparkles, XCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -14,7 +14,8 @@ interface Props {
   mode: PopupMode;
   onAccept?: () => Promise<void> | void;
   onReject?: () => Promise<void> | void;
-  onChat?: () => Promise<void> | void;
+  onViewProduct?: () => Promise<void> | void;
+  onViewSimilar?: () => Promise<void> | void;
   onDismiss: () => void;
 }
 
@@ -27,16 +28,19 @@ const initials = (name: string | null | undefined) =>
     .join("")
     .toUpperCase();
 
-export default function RentalRequestPopup({ item, mode, onAccept, onReject, onChat, onDismiss }: Props) {
+export default function RentalRequestPopup({ item, mode, onAccept, onReject, onViewProduct, onViewSimilar, onDismiss }: Props) {
   const { language } = useLanguage();
   const locale = language === "ro" ? ro : enUS;
-  const [busy, setBusy] = useState<null | "accept" | "reject" | "chat">(null);
+  const [busy, setBusy] = useState<null | "accept" | "reject" | "product" | "similar">(null);
 
   const t = (ro: string, en: string) => (language === "ro" ? ro : en);
 
+  const isRejected = mode === "renter" && item.outcome === "rejected";
   const badgeLabel = mode === "owner"
     ? t("CERERE NOUĂ", "NEW REQUEST")
-    : t("CERERE APROBATĂ", "REQUEST APPROVED");
+    : isRejected
+      ? t("CERERE REFUZATĂ", "REQUEST DECLINED")
+      : t("CERERE APROBATĂ", "REQUEST APPROVED");
 
   const since = (() => {
     const stamp = mode === "owner" ? item.created_at : (item.confirmed_at || item.created_at);
@@ -56,7 +60,7 @@ export default function RentalRequestPopup({ item, mode, onAccept, onReject, onC
 
   const totalLabel = `${Math.round(item.subtotal).toLocaleString("ro-RO")} RON ${t("total", "total")}`;
 
-  const handle = async (kind: "accept" | "reject" | "chat", fn?: () => Promise<void> | void) => {
+  const handle = async (kind: "accept" | "reject" | "product" | "similar", fn?: () => Promise<void> | void) => {
     if (!fn) return;
     setBusy(kind);
     try { await fn(); } finally { setBusy(null); }
@@ -78,8 +82,14 @@ export default function RentalRequestPopup({ item, mode, onAccept, onReject, onC
           <X className="h-4 w-4" />
         </button>
 
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-primary">
-          <Sparkles className="h-3 w-3" />
+        <div
+          className={
+            isRejected
+              ? "inline-flex items-center gap-1.5 rounded-full bg-destructive/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-destructive"
+              : "inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-primary"
+          }
+        >
+          {isRejected ? <XCircle className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
           {badgeLabel}
         </div>
 
@@ -118,12 +128,26 @@ export default function RentalRequestPopup({ item, mode, onAccept, onReject, onC
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-foreground">{item.product_title}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">{periodLabel}</p>
-            <p className="mt-0.5 text-sm font-bold text-primary">{totalLabel}</p>
+            {!isRejected && (
+              <p className="mt-0.5 text-sm font-bold text-primary">{totalLabel}</p>
+            )}
           </div>
         </div>
 
-        {/* Optional message */}
-        {item.message_to_owner && (
+        {/* Rejection explainer */}
+        {isRejected && (
+          <div className="mt-3 rounded-xl bg-muted/60 p-3">
+            <p className="text-xs text-foreground/80">
+              {t(
+                "Din păcate, proprietarul nu a putut accepta cererea ta pentru acest produs. Îți recomandăm să cauți produse similare disponibile.",
+                "Unfortunately, the owner could not accept your request for this item. We recommend looking for similar items available.",
+              )}
+            </p>
+          </div>
+        )}
+
+        {/* Optional message (owner mode only) */}
+        {!isRejected && mode === "owner" && item.message_to_owner && (
           <div className="mt-3 rounded-xl bg-primary/5 p-3">
             <p className="flex items-start gap-2 text-xs text-foreground/80">
               <MessageCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-primary" />
@@ -152,6 +176,24 @@ export default function RentalRequestPopup({ item, mode, onAccept, onReject, onC
                 {busy === "accept" ? t("Se trimite…", "Sending…") : t("Acceptă", "Accept")}
               </Button>
             </>
+          ) : isRejected ? (
+            <>
+              <Button
+                variant="outline"
+                className="rounded-full w-full order-2 sm:order-none"
+                disabled={busy !== null}
+                onClick={onDismiss}
+              >
+                {t("Închide", "Close")}
+              </Button>
+              <Button
+                className="rounded-full w-full order-1 sm:order-none"
+                disabled={busy !== null}
+                onClick={() => handle("similar", onViewSimilar)}
+              >
+                {busy === "similar" ? t("Se deschide…", "Opening…") : t("Vezi produse similare", "See similar items")}
+              </Button>
+            </>
           ) : (
             <>
               <Button
@@ -165,9 +207,9 @@ export default function RentalRequestPopup({ item, mode, onAccept, onReject, onC
               <Button
                 className="rounded-full w-full order-1 sm:order-none"
                 disabled={busy !== null}
-                onClick={() => handle("chat", onChat)}
+                onClick={() => handle("product", onViewProduct)}
               >
-                {busy === "chat" ? t("Se deschide…", "Opening…") : t("Discută cu proprietarul", "Chat with owner")}
+                {busy === "product" ? t("Se deschide…", "Opening…") : t("Vezi produsul", "View item")}
               </Button>
             </>
           )}
