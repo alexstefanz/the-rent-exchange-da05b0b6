@@ -27,14 +27,35 @@ const SELECT_COLS = `
   id, public_id, status, start_date, end_date, rental_days, subtotal,
   message_to_owner, created_at, confirmed_at,
   owner_id, renter_id,
-  product:products!rentals_product_id_fkey ( id, title, images, slug ),
-  renter:profiles!rentals_renter_id_fkey ( id, full_name, avatar_url ),
-  owner:profiles!rentals_owner_id_fkey ( id, full_name, avatar_url )
+  product:products!rentals_product_id_fkey ( id, title, images, slug )
 `;
 
-function mapRow(row: any, mode: "owner" | "renter"): RentalPopupItem {
+async function attachCounterparties(rows: any[], mode: "owner" | "renter"): Promise<RentalPopupItem[]> {
+  if (!rows.length) return [];
+  const ids = Array.from(
+    new Set(
+      rows
+        .map((r) => (mode === "owner" ? r.renter_id : r.owner_id))
+        .filter((v): v is string => !!v),
+    ),
+  );
+  let profileMap = new Map<string, { full_name: string | null; avatar_url: string | null }>();
+  if (ids.length) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url")
+      .in("id", ids);
+    (profiles || []).forEach((p: any) => profileMap.set(p.id, { full_name: p.full_name, avatar_url: p.avatar_url }));
+  }
+  return rows.map((row) => mapRow(row, mode, profileMap.get(mode === "owner" ? row.renter_id : row.owner_id) || null));
+}
+
+function mapRow(
+  row: any,
+  mode: "owner" | "renter",
+  profile: { full_name: string | null; avatar_url: string | null } | null = null,
+): RentalPopupItem {
   const product = row.product || {};
-  const counter = mode === "owner" ? row.renter : row.owner;
   return {
     id: row.id,
     public_id: row.public_id,
@@ -46,9 +67,9 @@ function mapRow(row: any, mode: "owner" | "renter"): RentalPopupItem {
     message_to_owner: row.message_to_owner,
     created_at: row.created_at,
     confirmed_at: row.confirmed_at,
-    counterparty_id: counter?.id ?? null,
-    counterparty_name: counter?.full_name ?? null,
-    counterparty_avatar: counter?.avatar_url ?? null,
+    counterparty_id: mode === "owner" ? row.renter_id : row.owner_id,
+    counterparty_name: profile?.full_name ?? null,
+    counterparty_avatar: profile?.avatar_url ?? null,
     counterparty_city: null,
     product_id: product?.id ?? null,
     product_title: product?.title ?? null,
@@ -69,7 +90,7 @@ export async function fetchPendingForOwner(ownerId: string): Promise<RentalPopup
     console.warn("fetchPendingForOwner", error);
     return [];
   }
-  return (data || []).map((r) => mapRow(r, "owner"));
+  return attachCounterparties(data || [], "owner");
 }
 
 export async function fetchUnseenConfirmedForRenter(renterId: string): Promise<RentalPopupItem[]> {
@@ -85,7 +106,7 @@ export async function fetchUnseenConfirmedForRenter(renterId: string): Promise<R
     console.warn("fetchUnseenConfirmedForRenter", error);
     return [];
   }
-  return (data || []).map((r) => mapRow(r, "renter"));
+  return attachCounterparties(data || [], "renter");
 }
 
 export async function fetchRentalForPopup(
@@ -98,7 +119,8 @@ export async function fetchRentalForPopup(
     .eq("id", rentalId)
     .maybeSingle();
   if (error || !data) return null;
-  return mapRow(data, mode);
+  const [item] = await attachCounterparties([data], mode);
+  return item || null;
 }
 
 export async function markRenterConfirmationSeen(rentalId: string): Promise<void> {
