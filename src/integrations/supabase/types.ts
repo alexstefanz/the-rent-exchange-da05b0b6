@@ -1758,6 +1758,7 @@ export type Database = {
           rejection_reason: string | null
           rental_days: number
           renter_id: string | null
+          renter_seen_confirmation: boolean
           return_confirmed_at: string | null
           start_date: string
           status: string
@@ -1828,6 +1829,7 @@ export type Database = {
           rejection_reason?: string | null
           rental_days: number
           renter_id?: string | null
+          renter_seen_confirmation?: boolean
           return_confirmed_at?: string | null
           start_date: string
           status?: string
@@ -1898,6 +1900,7 @@ export type Database = {
           rejection_reason?: string | null
           rental_days?: number
           renter_id?: string | null
+          renter_seen_confirmation?: boolean
           return_confirmed_at?: string | null
           start_date?: string
           status?: string
