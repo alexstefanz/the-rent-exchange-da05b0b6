@@ -2956,6 +2956,7 @@ export type Database = {
       get_rental_popup_by_id: {
         Args: { _rental_id: string }
         Returns: {
+          category_slug: string
           confirmed_at: string
           counterparty_avatar: string
           counterparty_id: string
@@ -2965,6 +2966,7 @@ export type Database = {
           id: string
           message_to_owner: string
           mode: string
+          outcome: string
           product_id: string
           product_image: string
           product_slug: string
@@ -2979,6 +2981,7 @@ export type Database = {
       get_rental_popups: {
         Args: never
         Returns: {
+          category_slug: string
           confirmed_at: string
           counterparty_avatar: string
           counterparty_id: string
@@ -2988,6 +2991,7 @@ export type Database = {
           id: string
           message_to_owner: string
           mode: string
+          outcome: string
           product_id: string
           product_image: string
           product_slug: string
