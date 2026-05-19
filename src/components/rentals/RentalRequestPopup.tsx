@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, MessageCircle, CalendarDays, Sparkles, MapPin, Star } from "lucide-react";
+import { X, MessageCircle, CalendarDays, Sparkles } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
