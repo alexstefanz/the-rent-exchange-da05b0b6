@@ -138,7 +138,7 @@ export default function RentalPopupManager() {
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-[120] flex items-end justify-center p-4 pb-24 sm:items-center sm:pb-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200"
       onClick={handleDismiss}
     >
       <div onClick={(e) => e.stopPropagation()}>

@@ -133,19 +133,19 @@ export default function RentalRequestPopup({ item, mode, onAccept, onReject, onC
         )}
 
         {/* Actions */}
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
           {mode === "owner" ? (
             <>
               <Button
                 variant="outline"
-                className="rounded-full"
+                className="rounded-full w-full order-2 sm:order-none"
                 disabled={busy !== null}
                 onClick={() => handle("reject", onReject)}
               >
                 {busy === "reject" ? t("Se trimite…", "Sending…") : t("Refuză", "Decline")}
               </Button>
               <Button
-                className="rounded-full"
+                className="rounded-full w-full order-1 sm:order-none"
                 disabled={busy !== null}
                 onClick={() => handle("accept", onAccept)}
               >
@@ -156,14 +156,14 @@ export default function RentalRequestPopup({ item, mode, onAccept, onReject, onC
             <>
               <Button
                 variant="outline"
-                className="rounded-full"
+                className="rounded-full w-full order-2 sm:order-none"
                 disabled={busy !== null}
                 onClick={onDismiss}
               >
                 {t("Mai târziu", "Later")}
               </Button>
               <Button
-                className="rounded-full"
+                className="rounded-full w-full order-1 sm:order-none"
                 disabled={busy !== null}
                 onClick={() => handle("chat", onChat)}
               >
