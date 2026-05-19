@@ -36,7 +36,7 @@ const Footer = () => {
 
   return <footer className="border-t border-border bg-secondary/30">
       <div className="container py-12">
-        <div className="grid gap-8 md:grid-cols-4">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">
               <img src={logoImage} alt="Rentli" width={96} height={36} className="h-8 w-auto" />
@@ -58,80 +58,53 @@ const Footer = () => {
           </div>
 
           <div className="space-y-4">
-            <h4 className="font-heading text-sm font-semibold">Quicklinks</h4>
+            <h4 className="font-heading text-sm font-semibold">{language === "en" ? "Company" : "Companie"}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                <Link to="/categorii" className="transition-colors hover:text-foreground">
-                  {copy.footer.allCategories}
-                </Link>
-              </li>
-              <li>
-                <Link to="/cauta" className="transition-colors hover:text-foreground">
-                  {copy.footer.searchProducts}
-                </Link>
-              </li>
-              <li>
-                <Link to="/despre-noi" className="transition-colors hover:text-foreground">
-                  {language === "en" ? "About Us" : "Despre Noi"}
-                </Link>
-              </li>
-              <li>
-                <a href="https://rentli.ro/contact" className="transition-colors hover:text-foreground">
-                  Contact
-                </a>
-              </li>
+              <li><Link to="/despre-noi" className="transition-colors hover:text-foreground">{language === "en" ? "About us" : "Despre noi"}</Link></li>
+              <li><a href="https://rentli.ro/contact" className="transition-colors hover:text-foreground">{language === "en" ? "Contact us" : "Contactează-ne"}</a></li>
+              <li><Link to="/despre-noi" className="transition-colors hover:text-foreground">{language === "en" ? "CSR - Circular economy" : "CSR - Economie circulară"}</Link></li>
             </ul>
           </div>
 
           <div className="space-y-4">
-            <h4 className="font-heading text-sm font-semibold">{copy.footer.support}</h4>
+            <h4 className="font-heading text-sm font-semibold">{language === "en" ? "Useful" : "Utile"}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                <Link to="/intrebari-frecvente" className="transition-colors hover:text-foreground">
-                  {language === "en" ? "FAQ" : "Întrebări frecvente"}
-                </Link>
-              </li>
-              <li>
-                <Link to="/centru-asistenta" className="transition-colors hover:text-foreground">
-                  {copy.footer.helpCenter}
-                </Link>
-              </li>
-              <li>
-                <Link to="/termeni-si-conditii" className="transition-colors hover:text-foreground">
-                  {copy.footer.terms}
-                </Link>
-              </li>
-              <li>
-                <Link to="/politica-confidentialitate" className="transition-colors hover:text-foreground">
-                  {language === "en" ? "Privacy" : "Confidențialitate"}
-                </Link>
-              </li>
-              <li>
-                <Link to="/politica-anulare" className="transition-colors hover:text-foreground">
-                  {language === "en" ? "Cancellation Policy" : "Politica de anulare"}
-                </Link>
-              </li>
-              <li>
-                <Link to="/politica-cookies" className="transition-colors hover:text-foreground">
-                  {language === "en" ? "Cookies" : "Cookie-uri"}
-                </Link>
-              </li>
+              <li><Link to="/categorii" className="transition-colors hover:text-foreground">{language === "en" ? "All categories" : "Vezi toate categoriile"}</Link></li>
+              <li><Link to="/cauta" className="transition-colors hover:text-foreground">{language === "en" ? "Search products" : "Caută produse"}</Link></li>
+              <li><Link to="/adauga-anunt" className="transition-colors hover:text-foreground">{language === "en" ? "Post a listing" : "Publică un anunț"}</Link></li>
             </ul>
           </div>
 
           <div className="space-y-4">
-            <h4 className="font-heading text-sm font-semibold">{copy.footer.publish}</h4>
+            <h4 className="font-heading text-sm font-semibold">{language === "en" ? "Your account" : "Contul tău"}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                <Link to="/adauga-anunt" className="transition-colors hover:text-foreground">
-                  {copy.footer.addListing}
-                </Link>
-              </li>
-              <li>
-                <Link to="/cum-functioneaza" className="transition-colors hover:text-foreground">
-                  {copy.footer.howItWorks}
-                </Link>
-              </li>
+              <li><Link to="/auth" className="transition-colors hover:text-foreground">{language === "en" ? "Sign in / Register" : "Intră în cont / Înregistrează-te"}</Link></li>
+              <li><Link to="/mesaje" className="transition-colors hover:text-foreground">Chat</Link></li>
+              <li><Link to="/anunturi" className="transition-colors hover:text-foreground">{language === "en" ? "My listings" : "Anunțurile mele"}</Link></li>
+              <li><Link to="/inchirieri" className="transition-colors hover:text-foreground">{language === "en" ? "Rentals out" : "Închirieri"}</Link></li>
+              <li><Link to="/rezervari" className="transition-colors hover:text-foreground">{language === "en" ? "Bookings" : "Rezervări"}</Link></li>
+              <li><Link to="/favorite" className="transition-colors hover:text-foreground">{language === "en" ? "Favorites" : "Favorite"}</Link></li>
+              <li><Link to="/adauga-anunt" className="transition-colors hover:text-foreground">{language === "en" ? "Post a listing" : "Adaugă un anunț"}</Link></li>
+              <li><Link to="/verificare" className="transition-colors hover:text-foreground">{language === "en" ? "eKYC verification" : "Verificare eKYC"}</Link></li>
+              <li><Link to="/suport" className="transition-colors hover:text-foreground">{language === "en" ? "Support & Tickets" : "Suport & Tickete"}</Link></li>
+            </ul>
+          </div>
+
+          <div className="space-y-4">
+            <h4 className="font-heading text-sm font-semibold">{language === "en" ? "Customer support" : "Suport clienți"}</h4>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><Link to="/cum-functioneaza" className="transition-colors hover:text-foreground">{language === "en" ? "How it works" : "Cum funcționează"}</Link></li>
+              <li><Link to="/intrebari-frecvente" className="transition-colors hover:text-foreground">{language === "en" ? "FAQ" : "Întrebări frecvente"}</Link></li>
+              <li><Link to="/centru-asistenta" className="transition-colors hover:text-foreground">{language === "en" ? "Help center" : "Centru de ajutor"}</Link></li>
+              <li><Link to="/termeni-si-conditii" className="transition-colors hover:text-foreground">{language === "en" ? "Terms and conditions" : "Termeni și condiții"}</Link></li>
+              <li><Link to="/politica-confidentialitate" className="transition-colors hover:text-foreground">{language === "en" ? "Privacy policy" : "Politica de confidențialitate"}</Link></li>
+              <li><Link to="/politica-anulare" className="transition-colors hover:text-foreground">{language === "en" ? "Cancellation policy" : "Politica de anulare"}</Link></li>
+              <li><Link to="/politica-cookies" className="transition-colors hover:text-foreground">{language === "en" ? "Cookie policy" : "Politica de cookies"}</Link></li>
+              <li><Link to="/centru-asistenta" className="transition-colors hover:text-foreground">{language === "en" ? "Security tips" : "Sfaturi de securitate"}</Link></li>
+              <li><Link to="/politica-confidentialitate" className="transition-colors hover:text-foreground">GDPR</Link></li>
+              <li><Link to="/verificare" className="transition-colors hover:text-foreground">Electronic Know Your Customer (eKYC)</Link></li>
+              <li><Link to="/cum-functioneaza" className="transition-colors hover:text-foreground">{language === "en" ? "RentProtect - Safe rentals" : "RentProtect - Închiriere sigură"}</Link></li>
+              <li><a href="https://anpc.ro" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-foreground">ANPC</a></li>
             </ul>
           </div>
         </div>
