@@ -377,69 +377,112 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
 
   const MiddleZone = (
     <div className="flex-1 min-h-0 overflow-y-auto px-3 pb-2 [scrollbar-width:thin]">
-      {/* Account Health */}
-      {!isLoading && health && (
-        <div className="rounded-xl border border-border/60 bg-card p-3">
-          {incompleteHealth.length === 0 ? (
-            <div className="flex items-center gap-2 text-xs text-emerald-700">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-              {t("Cont complet verificat", "Account fully verified")}
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  {t("Finalizează contul", "Finish setup")}
-                </span>
-                <span className="text-[10.5px] text-muted-foreground">
-                  {(health.items || []).filter((i) => i.done).length}/{health.items?.length || 0}
-                </span>
-              </div>
-              <div className="space-y-0.5">
-                {incompleteHealth.map((item) => (
-                  <button
-                    key={item.key}
-                    onClick={() => handleNav(item.href)}
-                    className="group flex w-full items-center gap-2 rounded-md px-1.5 py-1.5 text-xs text-foreground transition-colors hover:bg-amber-50"
-                  >
-                    <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                    <span className="flex-1 text-left">
-                      {t(item.labelRo, item.labelEn)}
-                    </span>
-                    <ChevronRight className="h-3 w-3 text-muted-foreground/50 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      )}
+      <div className="space-y-2">
+        {/* Produsele mele */}
+        <button
+          onClick={() => handleNav("/anunturi")}
+          className="group flex w-full items-center gap-3 rounded-xl bg-card border border-border/60 px-3 py-3 text-left shadow-sm transition hover:border-primary/40 hover:shadow"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">
+            <Package className="h-5 w-5 text-primary" />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-semibold text-foreground">
+              {t("Produsele mele", "My products")}
+            </span>
+            <span className="block text-[11px] text-muted-foreground">
+              {t("Gestionează anunțurile și cererile", "Manage listings and requests")}
+            </span>
+          </span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition" />
+        </button>
 
-      <div className="space-y-2 mt-2">
-        {!trust?.verified && (
+        {/* Închirieri */}
+        {(totalActive > 0 || (trust?.completedRentals || 0) > 0) && (
           <button
-            onClick={() => handleNav("/verificare")}
-            className="flex w-full items-center gap-3 rounded-xl border border-amber-300/70 bg-amber-50 px-3.5 py-3 text-left transition hover:bg-amber-100/70"
+            onClick={() => handleNav("/rezervari")}
+            className="group flex w-full items-center gap-3 rounded-xl bg-card border border-border/60 px-3 py-3 text-left shadow-sm transition hover:border-primary/40 hover:shadow"
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-500/15">
-              <ShieldCheck className="h-5 w-5 text-amber-600" />
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">
+              <CalendarCheck className="h-5 w-5 text-primary" />
             </span>
             <span className="flex-1 min-w-0">
-              <span className="block text-sm font-semibold text-amber-900">
-                {t("Verifică-ți identitatea", "Verify your identity")}
+              <span className="block text-sm font-semibold text-foreground">
+                {t("Închirieri", "Rentals")}
               </span>
-              <span className="block text-[11px] text-amber-700/80">
-                {signals?.kycPending
-                  ? t("Documentele tale sunt în verificare.", "Your documents are under review.")
-                  : t("Necesar pentru rezervări și încasări.", "Required for bookings and payouts.")}
+              <span className="block text-[11px] text-muted-foreground">
+                {t("Active și istoric", "Active and history")}
               </span>
             </span>
-            <ChevronRight className="h-4 w-4 text-amber-700/60" />
+            <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition" />
           </button>
         )}
+
+        {/* Balance card */}
+        <div className="rounded-2xl bg-zinc-900 text-white p-4 shadow-md">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60">
+              {t("Balanță disponibilă", "Available balance")}
+            </span>
+            <button
+              onClick={() => handleNav("/castiguri")}
+              className="inline-flex items-center gap-1 rounded-full bg-primary hover:bg-[#F98715] text-primary-foreground px-3 py-1.5 text-xs font-semibold transition-colors"
+            >
+              {t("Retrage", "Withdraw")}
+              <ArrowUpRight className="h-3 w-3" />
+            </button>
+          </div>
+          <div className="mt-2 text-2xl font-bold tabular-nums">
+            {(signals?.availableBalance || 0).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
+            <span className="ml-1 text-sm font-medium text-white/70">RON</span>
+          </div>
+          {(signals?.monthlyEarnings || 0) > 0 && (
+            <div className="mt-1 text-[11px] text-emerald-400">
+              +{(signals?.monthlyEarnings || 0).toFixed(0)} RON {t("luna aceasta", "this month")}
+            </div>
+          )}
+          <div className="mt-3 pt-3 border-t border-white/10 text-[11px]">
+            {profile?.iban ? (
+              <span className="text-white/70 tracking-wider">
+                IBAN •••{profile.iban.slice(-4)}
+              </span>
+            ) : (
+              <button
+                onClick={() => handleNav("/castiguri")}
+                className="text-amber-300 hover:text-amber-200 font-medium"
+              >
+                {t("IBAN neadăugat — adaugă acum", "IBAN not added — add now")}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Finalizează contul */}
+        {!isLoading && health && incompleteHealth.length > 0 && (
+          <button
+            onClick={() => handleNav(incompleteHealth[0].href)}
+            className="group flex w-full items-center gap-3 rounded-xl bg-card border border-border/60 px-3 py-2.5 text-left shadow-sm transition hover:border-primary/40"
+          >
+            <span className="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {t("Finalizează contul", "Finish setup")}
+            </span>
+            <span className="text-xs font-semibold text-primary">
+              {(health.items || []).filter((i) => i.done).length}/{health.items?.length || 0}
+            </span>
+            <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition" />
+          </button>
+        )}
+        {!isLoading && health && incompleteHealth.length === 0 && (
+          <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs text-emerald-700">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            {t("Cont complet verificat", "Account fully verified")}
+          </div>
+        )}
+
+        {/* Support */}
         <button
           onClick={() => handleNav("/suport")}
-          className="flex w-full items-center gap-3 h-12 px-4 rounded-xl bg-white border border-border/60 shadow-sm hover:bg-white/90 transition-colors"
+          className="flex w-full items-center gap-3 h-12 px-4 rounded-xl bg-card border border-border/60 shadow-sm hover:border-primary/40 transition-colors"
         >
           <LifeBuoy className="h-5 w-5 text-foreground" />
           <span className="flex-1 text-sm font-medium text-foreground text-left">
