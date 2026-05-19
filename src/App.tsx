@@ -12,6 +12,7 @@ import { useGlobalRealtime } from "@/hooks/useGlobalRealtime";
 
 const SupportChatWidget = lazy(() => import("./components/support/SupportChatWidget"));
 const CookieConsent = lazy(() => import("./components/CookieConsent"));
+const RentalPopupManager = lazy(() => import("./components/rentals/RentalPopupManager"));
 
 const ConditionalWidgets = () => {
   const { pathname } = useLocation();
@@ -114,6 +115,7 @@ const App = () => (
             <Suspense fallback={null}>
               <ConditionalWidgets />
               <CookieConsent />
+              <RentalPopupManager />
             </Suspense>
             <GlobalRealtime />
             <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>}>
