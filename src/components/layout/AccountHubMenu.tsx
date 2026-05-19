@@ -352,65 +352,6 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
         />
       )}
 
-      {/* Quick status */}
-      <div className="grid grid-cols-2 gap-2">
-        {isLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-[68px] rounded-xl bg-muted/40 animate-pulse" />
-          ))
-        ) : (
-          <>
-            <StatusCard
-              icon={CalendarCheck}
-              label={t("active (chiriaș)", "active (renter)")}
-              value={totalActive}
-              highlight={totalActive > 0}
-              onClick={() => handleNav("/rezervari")}
-            />
-            <StatusCard
-              icon={Wallet}
-              label={t("balanță", "balance")}
-              value={
-                <span className="inline-flex items-center gap-1">
-                  {showBalance
-                    ? `${(signals?.availableBalance || 0).toFixed(0)} RON`
-                    : "•••"}
-                  <span
-                    role="button"
-                    onClick={toggleBalance}
-                    className="inline-flex items-center justify-center"
-                    aria-label={
-                      showBalance ? t("Ascunde", "Hide") : t("Arată", "Show")
-                    }
-                  >
-                    {showBalance ? (
-                      <EyeOff className="h-3 w-3 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-3 w-3 text-muted-foreground" />
-                    )}
-                  </span>
-                </span>
-              }
-              tone="success"
-              onClick={() => handleNav("/castiguri")}
-            />
-            <StatusCard
-              icon={Package}
-              label={t("cereri (proprietar)", "requests (owner)")}
-              value={signals?.activeRentalsAsOwner || 0}
-              highlight={(signals?.activeRentalsAsOwner || 0) > 0}
-              onClick={() => handleNav("/inchirieri")}
-            />
-            <StatusCard
-              icon={FileText}
-              label={t("anunțurile mele", "my listings")}
-              value={t("Vezi", "View")}
-              onClick={() => handleNav("/anunturi")}
-            />
-          </>
-        )}
-      </div>
-
       {/* Primary CTA */}
       <div className="flex items-center gap-2">
         <button
