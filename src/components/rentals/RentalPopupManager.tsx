@@ -10,7 +10,6 @@ import {
   type RentalPopupItem,
 } from "@/features/rentals/popupApi";
 import { respondToRental } from "@/features/rentals/ownerRentalsApi";
-import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import RentalRequestPopup from "./RentalRequestPopup";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -113,20 +112,20 @@ export default function RentalPopupManager() {
     }
   };
 
-  const handleChat = async () => {
-    try {
-      await markRenterConfirmationSeen(current.id);
-      const convId = await getOrCreateRentalConversation(current.id);
-      removeItem(current.id);
-      if (convId) {
-        navigate(`/mesaje?conv=${convId}`);
-      } else {
-        navigate(`/mesaje`);
-      }
-    } catch (e) {
-      console.warn("open chat failed", e);
-      navigate("/mesaje");
-    }
+  const handleViewProduct = async () => {
+    try { await markRenterConfirmationSeen(current.id); } catch {}
+    const slug = current.product_slug;
+    removeItem(current.id);
+    if (slug) navigate(`/produs/${slug}`);
+  };
+
+  const handleViewSimilar = async () => {
+    try { await markRenterConfirmationSeen(current.id); } catch {}
+    const cat = current.category_slug;
+    const title = current.product_title || "";
+    removeItem(current.id);
+    if (cat) navigate(`/categorie/${cat}`);
+    else navigate(`/cautare?q=${encodeURIComponent(title)}`);
   };
 
   const handleDismiss = async () => {
@@ -148,7 +147,8 @@ export default function RentalPopupManager() {
           mode={current.mode}
           onAccept={handleAccept}
           onReject={handleReject}
-          onChat={handleChat}
+          onViewProduct={handleViewProduct}
+          onViewSimilar={handleViewSimilar}
           onDismiss={handleDismiss}
         />
       </div>
