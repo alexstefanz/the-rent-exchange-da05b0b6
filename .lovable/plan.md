@@ -1,36 +1,64 @@
-## Reparare sticky pe coloana de booking
+## Footer restructure
 
-### Cauza
-În `src/index.css` avem:
-```css
-html, body { overflow-x: hidden; }
-```
-`overflow-x: hidden` pe `html` transformă `html` în scroll-container, ceea ce dezactivează `position: sticky` pe descendenți (sau, în cazul de față, îi blochează contextul de stickiness). De aceea coloana cu calendarul cade jos în loc să rămână ancorată.
+Update `src/components/layout/Footer.tsx` from current 4-column grid (logo + Quicklinks + Support + Publish) to a 5-column grid: **logo/social block + 4 link columns** matching the attached Excel image.
 
-Markup-ul în `ProductDetail.tsx` este deja corect:
-```tsx
-<div className="grid ... lg:items-start">
-  ...
-  <div className="order-1 lg:order-2 lg:self-stretch">
-    <div className="lg:sticky lg:top-24">
-      <PremiumBookingCard ... />
-    </div>
-  </div>
-</div>
-```
-Nu schimb structura.
+Keep unchanged: logo, description text, Facebook/Instagram/TikTok social icons, copyright row at the bottom.
 
-### Modificare
-Înlocuiesc `overflow-x: hidden` cu `overflow-x: clip` în `src/index.css`. `clip` previne scroll-ul orizontal fără a crea un scroll-container, deci `sticky` redevine funcțional. Toate browserele moderne (Chrome 90+, Safari 16+, Firefox 81+) suportă `clip`.
+### New column structure
 
-```css
-html, body { overflow-x: clip; }
-```
+**Col 1 — Logo + description + social** (as today)
 
-### De ce funcționează
-- `overflow-x: clip` pe `<html>` nu generează un nou containing block pentru sticky și nu interferează cu calculul `top: 6rem` față de viewport.
-- Coloana booking are deja `lg:self-stretch`, deci e suficient de înaltă să permită scroll-ul cardului sticky până la finalul coloanei.
+**Col 2 — Companie**
+- Despre noi → `/despre-noi`
+- Contactează-ne → `https://rentli.ro/contact`
+- CSR - Economie circulară → `/despre-noi` *(no dedicated page exists; reuse About; will flag for user)*
 
-### Ce NU include
-- Nu modific `ProductDetail.tsx`, `PremiumBookingCard`, sau alte componente.
-- Nu schimb breakpoint-ul `top-24` și nu adaug margine suplimentară.
+**Col 3 — Utile**
+- Vezi toate categoriile → `/categorii`
+- Caută produse → `/cauta`
+- Publică un anunț → `/adauga-anunt`
+
+**Col 4 — Contul tău** (auth-aware — when logged out, only show "Intră în cont"; when logged in, show the rest)
+- Intră în cont / Înregistrează-te → `/auth`
+- Chat → `/mesaje`
+- Anunțurile mele → `/anunturile-mele` (route: `/anunțuri` per ListingsPage; will verify exact path)
+- Închirieri → `/inchirieri`
+- Rezervări → `/rezervari`
+- Favorite → `/favorite`
+- Adaugă un anunț → `/adauga-anunt`
+- Verificare eKYC → `/verificare-kyc`
+- Suport & Tickete → `/tichetele-mele`
+
+**Col 5 — Suport clienți**
+- Cum funcționează → `/cum-functioneaza`
+- Întrebări frecvente → `/intrebari-frecvente`
+- Centru de ajutor → `/centru-asistenta`
+- Termeni și condiții → `/termeni-si-conditii`
+- Politica de confidențialitate → `/politica-confidentialitate`
+- Politica de anulare → `/politica-anulare`
+- Politica de cookies → `/politica-cookies`
+- Sfaturi de securitate → `/centru-asistenta` *(no dedicated page; will flag)*
+- GDPR → `/politica-confidentialitate` *(no dedicated page; will flag)*
+- Electronic Know Your Customer (eKYC) → `/verificare-kyc`
+- RentProtect - Închiriere sigură → `/cum-functioneaza` *(no dedicated page; will flag)*
+- ANPC → `https://anpc.ro` (external)
+
+### Layout
+
+- Grid: `md:grid-cols-2 lg:grid-cols-5`, gap-8
+- Logo column spans 1 (or full row on mobile)
+- All link columns: `space-y-2 text-sm text-muted-foreground` (same styling as today)
+- All RO labels also wired through `useLanguage` for EN fallback (mirror existing pattern: RO default, EN inline ternary)
+- Copyright row preserved as-is
+
+### Open items to confirm before coding
+
+1. **Missing pages** — "CSR - Economie circulară", "Sfaturi de securitate", "GDPR", "RentProtect" don't have dedicated routes. Should I (a) point them to the closest existing page as above, (b) omit them, or (c) create placeholder pages?
+2. **"Contul tău" column when logged out** — show all links anyway (clicking redirects to `/auth`), or only show "Intră în cont"?
+3. **ANPC** — link to https://anpc.ro or to the SAL/SOL pages (https://anpc.ro/ce-este-sal/ and https://ec.europa.eu/consumers/odr)?
+
+### Technical notes
+
+- Only `src/components/layout/Footer.tsx` is touched.
+- No new routes, no business logic changes — pure presentation.
+- EN translations added inline (same pattern as the existing "About Us / Despre Noi").
