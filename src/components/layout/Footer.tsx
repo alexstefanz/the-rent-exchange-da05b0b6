@@ -36,7 +36,7 @@ const Footer = () => {
 
   return <footer className="border-t border-border bg-secondary/30">
       <div className="container py-12">
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">
               <img src={logoImage} alt="Rentli" width={96} height={36} className="h-8 w-auto" />
@@ -57,22 +57,23 @@ const Footer = () => {
             </div>
           </div>
 
-          <div className="space-y-4">
-            <h4 className="font-heading text-sm font-semibold">{language === "en" ? "Company" : "Companie"}</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/despre-noi" className="transition-colors hover:text-foreground">{language === "en" ? "About us" : "Despre noi"}</Link></li>
-              <li><a href="https://rentli.ro/contact" className="transition-colors hover:text-foreground">{language === "en" ? "Contact us" : "Contactează-ne"}</a></li>
-              <li><Link to="/despre-noi" className="transition-colors hover:text-foreground">{language === "en" ? "CSR - Circular economy" : "CSR - Economie circulară"}</Link></li>
-            </ul>
-          </div>
-
-          <div className="space-y-4">
-            <h4 className="font-heading text-sm font-semibold">{language === "en" ? "Useful" : "Utile"}</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/categorii" className="transition-colors hover:text-foreground">{language === "en" ? "All categories" : "Vezi toate categoriile"}</Link></li>
-              <li><Link to="/cauta" className="transition-colors hover:text-foreground">{language === "en" ? "Search products" : "Caută produse"}</Link></li>
-              <li><Link to="/adauga-anunt" className="transition-colors hover:text-foreground">{language === "en" ? "Post a listing" : "Publică un anunț"}</Link></li>
-            </ul>
+          <div className="grid grid-cols-2 gap-16">
+            <div className="space-y-4">
+              <h4 className="font-heading text-sm font-semibold">{language === "en" ? "Company" : "Companie"}</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link to="/despre-noi" className="transition-colors hover:text-foreground">{language === "en" ? "About us" : "Despre noi"}</Link></li>
+                <li><a href="https://rentli.ro/contact" className="transition-colors hover:text-foreground">{language === "en" ? "Contact us" : "Contactează-ne"}</a></li>
+                <li><Link to="/despre-noi" className="transition-colors hover:text-foreground">{language === "en" ? "CSR - Circular economy" : "CSR - Economie circulară"}</Link></li>
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <h4 className="font-heading text-sm font-semibold">{language === "en" ? "Useful" : "Utile"}</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li><Link to="/categorii" className="transition-colors hover:text-foreground">{language === "en" ? "All categories" : "Vezi toate categoriile"}</Link></li>
+                <li><Link to="/cauta" className="transition-colors hover:text-foreground">{language === "en" ? "Search products" : "Caută produse"}</Link></li>
+                <li><Link to="/adauga-anunt" className="transition-colors hover:text-foreground">{language === "en" ? "Post a listing" : "Publică un anunț"}</Link></li>
+              </ul>
+            </div>
           </div>
 
           <div className="space-y-4">
