@@ -1758,6 +1758,7 @@ export type Database = {
           rejection_reason: string | null
           rental_days: number
           renter_id: string | null
+          renter_seen_confirmation: boolean
           return_confirmed_at: string | null
           start_date: string
           status: string
@@ -1828,6 +1829,7 @@ export type Database = {
           rejection_reason?: string | null
           rental_days: number
           renter_id?: string | null
+          renter_seen_confirmation?: boolean
           return_confirmed_at?: string | null
           start_date: string
           status?: string
@@ -1898,6 +1900,7 @@ export type Database = {
           rejection_reason?: string | null
           rental_days?: number
           renter_id?: string | null
+          renter_seen_confirmation?: boolean
           return_confirmed_at?: string | null
           start_date?: string
           status?: string
@@ -2950,6 +2953,52 @@ export type Database = {
           subtotal: number
         }[]
       }
+      get_rental_popup_by_id: {
+        Args: { _rental_id: string }
+        Returns: {
+          confirmed_at: string
+          counterparty_avatar: string
+          counterparty_id: string
+          counterparty_name: string
+          created_at: string
+          end_date: string
+          id: string
+          message_to_owner: string
+          mode: string
+          product_id: string
+          product_image: string
+          product_slug: string
+          product_title: string
+          public_id: string
+          rental_days: number
+          start_date: string
+          status: string
+          subtotal: number
+        }[]
+      }
+      get_rental_popups: {
+        Args: never
+        Returns: {
+          confirmed_at: string
+          counterparty_avatar: string
+          counterparty_id: string
+          counterparty_name: string
+          created_at: string
+          end_date: string
+          id: string
+          message_to_owner: string
+          mode: string
+          product_id: string
+          product_image: string
+          product_slug: string
+          product_title: string
+          public_id: string
+          rental_days: number
+          start_date: string
+          status: string
+          subtotal: number
+        }[]
+      }
       get_rental_pv_signed_url: {
         Args: { _phase: string; _rental_id: string }
         Returns: string
@@ -3145,6 +3194,10 @@ export type Database = {
       }
       mark_ops_ticket_read: {
         Args: { p_ticket_id: string }
+        Returns: undefined
+      }
+      mark_renter_confirmation_seen: {
+        Args: { _rental_id: string }
         Returns: undefined
       }
       mark_ticket_messages_read: {
