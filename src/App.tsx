@@ -64,7 +64,6 @@ const ReviewsPage = lazy(() => import("./pages/ReviewsPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const AccountDetailsPage = lazy(() => import("./pages/AccountDetailsPage"));
 const RentalsPage = lazy(() => import("./pages/RentalsPage"));
-const RentalsOutPage = lazy(() => import("./pages/RentalsOutPage"));
 const RentalDetailPage = lazy(() => import("./pages/RentalDetailPage"));
 const ListingsPage = lazy(() => import("./pages/ListingsPage"));
 const ActivityLogPage = lazy(() => import("./pages/ActivityLogPage"));
@@ -145,7 +144,7 @@ const App = () => (
                 <Route path="/notificari" element={<NotificationsPage />} />
                 <Route path="/cereri" element={<Navigate to="/rezervari" replace />} />
                 <Route path="/rezervari" element={<RentalsPage />} />
-                <Route path="/inchirieri" element={<RentalsOutPage />} />
+                <Route path="/inchirieri" element={<Navigate to="/anunturi?tab=cereri" replace />} />
                 <Route path="/rezervari/:publicId" element={<RentalDetailPage />} />
                 <Route path="/inchirieri/:publicId" element={<RentalDetailPage />} />
                 <Route path="/anunturi" element={<ListingsPage />} />

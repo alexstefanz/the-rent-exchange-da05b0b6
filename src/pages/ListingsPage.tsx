@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Loader2, ArrowLeft, Plus } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Loader2, ArrowLeft, Plus, Package, Inbox } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from "@/components/layout/Navbar";
@@ -19,12 +19,13 @@ import ListingCard from "@/components/listings/ListingCard";
 import ListingsEmptyState from "@/components/listings/ListingsEmptyState";
 import ListingAvailabilityDialog from "@/components/listings/ListingAvailabilityDialog";
 import type { ListingStatus } from "@/components/listings/ListingStatusBadge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { deleteProduct, updateProduct, type Product } from "@/features/products/productsApi";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import RentalsOutTab from "@/components/dashboard/RentalsOutTab";
 
 const deriveStatus = (p: Product): ListingStatus => {
   const a = (p as any).approval_status as string | undefined;
@@ -37,6 +38,14 @@ const deriveStatus = (p: Product): ListingStatus => {
 
 const ListingsPage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const topTab = searchParams.get("tab") === "cereri" ? "cereri" : "anunturi";
+  const setTopTab = (v: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (v === "cereri") next.set("tab", "cereri");
+    else next.delete("tab");
+    setSearchParams(next, { replace: true });
+  };
   const qc = useQueryClient();
   const { user, loading } = useAuth();
   const { language } = useLanguage();
@@ -144,14 +153,27 @@ const ListingsPage = () => {
           <ArrowLeft className="h-4 w-4" /> {t("Înapoi la Contul Meu", "Back to My Account")}
         </Button>
 
-        <ListingsHeader totalCount={stats?.total ?? products.length} />
+        <Tabs value={topTab} onValueChange={setTopTab} className="space-y-6">
+          <TabsList className="h-auto bg-muted/60 p-1">
+            <TabsTrigger value="anunturi" className="gap-2 px-4 py-2">
+              <Package className="h-4 w-4" />
+              {t("Anunțuri", "Listings")}
+            </TabsTrigger>
+            <TabsTrigger value="cereri" className="gap-2 px-4 py-2">
+              <Inbox className="h-4 w-4" />
+              {t("Cereri primite", "Requests received")}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="anunturi" className="space-y-6 mt-0">
+            <ListingsHeader totalCount={stats?.total ?? products.length} />
 
         {!hasNoProducts && stats && (
           <ListingsStatsBar
             stats={stats}
             activeStatus={filters.status}
             onSelectStatus={(s) => setFilters((f) => ({ ...f, status: s }))}
-            onOpenRentals={() => navigate("/inchirieri")}
+            onOpenRentals={() => setTopTab("cereri")}
           />
         )}
 
@@ -217,6 +239,23 @@ const ListingsPage = () => {
             )}
           </>
         )}
+          </TabsContent>
+
+          <TabsContent value="cereri" className="space-y-4 mt-0">
+            <div className="flex items-start gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <Inbox className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h2 className="font-bold tracking-tight text-lg">{t("Cereri primite", "Bookings received")}</h2>
+                <p className="text-muted-foreground mt-1 text-xs">
+                  {t("Rezervări pentru anunțurile tale", "Bookings on your listings")}
+                </p>
+              </div>
+            </div>
+            <RentalsOutTab />
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Mobile sticky CTA */}
