@@ -39,7 +39,7 @@ const Footer = () => {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">
-              <img src={logoImage} alt="Rentli" width={96} height={36} className="h-8 w-auto" />
+              <img src={logoImage} alt="Rentli" width={120} height={40} className="h-10 w-auto" />
             </Link>
             <p className="text-sm text-muted-foreground">
               {copy.footer.description}
