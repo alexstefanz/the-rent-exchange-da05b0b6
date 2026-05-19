@@ -153,19 +153,19 @@ const ListingsPage = () => {
           <ArrowLeft className="h-4 w-4" /> {t("Înapoi la Contul Meu", "Back to My Account")}
         </Button>
 
-        <TopTabs value={topTab} onValueChange={setTopTab} className="space-y-6">
-          <TopTabsList className="h-auto bg-muted/60 p-1">
-            <TopTabsTrigger value="anunturi" className="gap-2 px-4 py-2">
+        <Tabs value={topTab} onValueChange={setTopTab} className="space-y-6">
+          <TabsList className="h-auto bg-muted/60 p-1">
+            <TabsTrigger value="anunturi" className="gap-2 px-4 py-2">
               <Package className="h-4 w-4" />
               {t("Anunțuri", "Listings")}
-            </TopTabsTrigger>
-            <TopTabsTrigger value="cereri" className="gap-2 px-4 py-2">
+            </TabsTrigger>
+            <TabsTrigger value="cereri" className="gap-2 px-4 py-2">
               <Inbox className="h-4 w-4" />
               {t("Cereri primite", "Requests received")}
-            </TopTabsTrigger>
-          </TopTabsList>
+            </TabsTrigger>
+          </TabsList>
 
-          <TopTabsContent value="anunturi" className="space-y-6 mt-0">
+          <TabsContent value="anunturi" className="space-y-6 mt-0">
             <ListingsHeader totalCount={stats?.total ?? products.length} />
 
         {!hasNoProducts && stats && (
@@ -239,9 +239,9 @@ const ListingsPage = () => {
             )}
           </>
         )}
-          </TopTabsContent>
+          </TabsContent>
 
-          <TopTabsContent value="cereri" className="space-y-4 mt-0">
+          <TabsContent value="cereri" className="space-y-4 mt-0">
             <div className="flex items-start gap-3">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
                 <Inbox className="h-6 w-6 text-primary" />
@@ -254,8 +254,8 @@ const ListingsPage = () => {
               </div>
             </div>
             <RentalsOutTab />
-          </TopTabsContent>
-        </TopTabs>
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Mobile sticky CTA */}
