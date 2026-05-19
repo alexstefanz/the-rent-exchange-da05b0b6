@@ -10,28 +10,17 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
-  CalendarCheck,
-  Wallet,
-  Package,
-  User,
-  FileText,
-  Shield,
-  HelpCircle,
   ShieldCheck,
   PlusCircle,
   LogOut,
-  Eye,
-  EyeOff,
   Star,
   ChevronRight,
   AlertTriangle,
   CheckCircle2,
-  CreditCard,
-  ShoppingBag,
-  Heart,
-  PackageCheck,
-  Store,
   LifeBuoy,
+  Package,
+  CalendarCheck,
+  ArrowUpRight,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
