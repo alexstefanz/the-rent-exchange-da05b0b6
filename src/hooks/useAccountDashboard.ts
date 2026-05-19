@@ -35,6 +35,8 @@ export interface AccountDashboardData {
     pendingReturns: number; // active rentals to confirm return as owner
     unreadMessages: number;
     availableBalance: number;
+    monthlyEarnings: number;
+    totalCompletedRentals: number;
     newReviews: number;
     kycPending: boolean;
     ibanMissing: boolean;
@@ -118,13 +120,20 @@ export function useAccountDashboard() {
       // available balance
       const { data: txs } = await supabase
         .from("transactions")
-        .select("amount, type")
+        .select("amount, type, created_at")
         .eq("user_id", uid)
         .eq("status", "completed");
       let availableBalance = 0;
+      let monthlyEarnings = 0;
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
       for (const t of txs || []) {
         if (t.type === "owner_payout") availableBalance += Number(t.amount);
         else if (t.type === "withdrawal") availableBalance -= Number(t.amount);
+        if (t.type === "owner_payout" && t.created_at && new Date(t.created_at) >= startOfMonth) {
+          monthlyEarnings += Number(t.amount);
+        }
       }
       availableBalance = Math.max(0, availableBalance);
 
@@ -197,6 +206,8 @@ export function useAccountDashboard() {
           pendingReturns,
           unreadMessages,
           availableBalance,
+          monthlyEarnings,
+          totalCompletedRentals: completedRentals,
           newReviews,
           kycPending: p.kyc_status !== "VERIFIED",
           ibanMissing: !p.iban,
