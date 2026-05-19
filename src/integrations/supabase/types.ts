@@ -3150,6 +3150,10 @@ export type Database = {
         Args: { p_ticket_id: string }
         Returns: undefined
       }
+      mark_renter_confirmation_seen: {
+        Args: { _rental_id: string }
+        Returns: undefined
+      }
       mark_ticket_messages_read: {
         Args: { p_ticket_id: string }
         Returns: undefined
