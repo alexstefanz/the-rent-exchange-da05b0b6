@@ -263,7 +263,7 @@ function ChatBubble({ msg, userId }: { msg: OpsTicketMessage; userId?: string })
         ) : (
           <div
             className={cn(
-              "rounded-2xl px-3.5 py-2 text-sm shadow-[0_1px_2px_rgba(0,0,0,0.04)] whitespace-pre-wrap break-words",
+              "rounded-2xl px-3.5 py-2 text-sm shadow-[0_1px_2px_rgba(0,0,0,0.04)] whitespace-pre-wrap break-words [overflow-wrap:anywhere]",
               isOwn
                 ? "bg-primary text-primary-foreground rounded-br-md"
                 : "bg-card border border-border/60 rounded-bl-md text-foreground"
