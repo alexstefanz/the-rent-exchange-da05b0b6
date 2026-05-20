@@ -763,6 +763,45 @@ const SupportChatWidget = () => {
                 {headerSubtitle}
               </p>
             </div>
+            {isAdmin && ticketId && !isClosed && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors"
+                    aria-label={t("Acțiuni ticket", "Ticket actions")}
+                    title={t("Acțiuni ticket", "Ticket actions")}
+                  >
+                    <MoreVertical className="h-5 w-5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    {t("Status ticket", "Ticket status")}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setPendingAdminAction("RESOLVE")}
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" />
+                    {t("Marchează rezolvat", "Mark resolved")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setPendingAdminAction("INVESTIGATE")}
+                  >
+                    <AlertCircle className="h-4 w-4 mr-2 text-amber-600" />
+                    {t("Necesită investigații", "Needs investigation")}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setPendingAdminAction("CANCEL")}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Ban className="h-4 w-4 mr-2" />
+                    {t("Anulează ticket", "Cancel ticket")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <button
               onClick={() => setIsOpen(false)}
               className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors"
