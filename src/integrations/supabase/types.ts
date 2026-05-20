@@ -2793,7 +2793,6 @@ export type Database = {
           email: string
           full_name: string
           phone: string
-          whatsapp: string
         }[]
       }
       get_homepage_activity: { Args: never; Returns: Json }
