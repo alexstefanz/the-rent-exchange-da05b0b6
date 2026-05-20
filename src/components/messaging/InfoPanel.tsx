@@ -347,6 +347,12 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, classN
           </AlertDialogContent>
         </AlertDialog>
       </div>
+      <MediaLightbox
+        attachments={media}
+        startIndex={lightbox.index}
+        open={lightbox.open}
+        onClose={() => setLightbox((s) => ({ ...s, open: false }))}
+      />
     </div>
   );
 }
