@@ -1,8 +1,10 @@
 ## Fix
 
-În `src/pages/RentalDetailPage.tsx` linia 336-337, scoate numele orașului din mesajul pasului 5 (vizibil pentru chiriaș):
+În `src/lib/notificationCategory.ts`, funcția `getTypeIcon()` returnează iconul implicit al categoriei `urgent` (`AlertTriangle`) pentru `cancel_request_submitted`. Înlocuim cu un ceas (`Clock` din `lucide-react`) pentru a sugera „în revizuire / în așteptare".
 
-- RO: `"PV-ul a fost semnat de ambele parti. Mergi la locatia stabilita si confirma primirea dupa ce ai produsul in mana."`
-- EN: `"The handover document is signed by both parties. Go to the agreed location and confirm receipt after you have the product in hand."`
+Modificări:
+1. Adaugă `Clock` în importul din `lucide-react`.
+2. În `getTypeIcon()`, înainte de fallback, adaugă: dacă `t === "cancel_request_submitted"` → `Clock`.
+3. Restul (categorizarea în `urgent` cu accent roșu) rămâne neschimbat — doar iconul se schimbă.
 
-Fără interpolare cu `rental.product_location_city`. Restul componentei rămâne neschimbat.
+Nicio modificare în backend / edge functions.
