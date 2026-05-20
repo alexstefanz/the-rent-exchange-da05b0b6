@@ -230,6 +230,7 @@ export function useAccountDashboard() {
       };
     },
     staleTime: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   // realtime
@@ -243,6 +244,8 @@ export function useAccountDashboard() {
       .on("postgres_changes", { event: "*", schema: "public", table: "rentals", filter: `owner_id=eq.${userId}` }, invalidate)
       .on("postgres_changes", { event: "*", schema: "public", table: "rentals", filter: `renter_id=eq.${userId}` }, invalidate)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${userId}` }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "transactions", filter: `user_id=eq.${userId}` }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "withdrawal_requests", filter: `user_id=eq.${userId}` }, invalidate)
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
