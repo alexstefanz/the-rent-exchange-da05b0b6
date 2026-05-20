@@ -226,7 +226,6 @@ const Auth = () => {
                 return;
               }
               setPendingPhone(prof.phone);
-              setPostVerifyTarget("/");
               setPhoneOtpOpen(true);
               return;
             }
@@ -324,7 +323,7 @@ const Auth = () => {
     toast({ title: "Cont verificat!", description: "Bun venit pe Rentli." });
     setPhoneOtpOpen(false);
     setGatingLogin(false);
-    navigate(postVerifyTarget, { replace: true });
+    navigate("/", { replace: true });
   };
 
   const handleVerifyOtp = async () => {
