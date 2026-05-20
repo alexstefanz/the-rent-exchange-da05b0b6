@@ -327,50 +327,6 @@ const SupportChatWidget = () => {
       );
   }, [isAdmin, ticketId, queryClient]);
 
-  // -------- Conversations (Chat tab) --------
-  const { data: conversations = [], isLoading: isLoadingConvs } = useQuery<
-    Conversation[]
-  >({
-    queryKey: ["conversations", user?.id],
-    queryFn: getConversations,
-    enabled: isOpen && !!user,
-    refetchInterval: 30000,
-  });
-
-  const totalUnread = conversations.reduce(
-    (acc, c) => acc + (c.unread_count || 0),
-    0,
-  );
-
-  const rezervariUnread = conversations
-    .filter((c) => c.buyer_id === user?.id)
-    .reduce((acc, c) => acc + (c.unread_count || 0), 0);
-  const deInchiriatUnread = conversations
-    .filter((c) => c.owner_id === user?.id)
-    .reduce((acc, c) => acc + (c.unread_count || 0), 0);
-
-  const filteredConvs = conversations.filter((c) =>
-    chatSubTab === "rezervari"
-      ? c.buyer_id === user?.id
-      : c.owner_id === user?.id,
-  );
-  const sortedConvs = [...filteredConvs].sort((a, b) => {
-    const ta = a.last_message?.created_at
-      ? new Date(a.last_message.created_at).getTime()
-      : 0;
-    const tb = b.last_message?.created_at
-      ? new Date(b.last_message.created_at).getTime()
-      : 0;
-    return tb - ta;
-  });
-
-  const formatConvTime = (dateString: string) => {
-    const d = new Date(dateString);
-    if (isToday(d)) return format(d, "HH:mm");
-    if (isYesterday(d)) return t("Ieri", "Yesterday");
-    return format(d, "d MMM", { locale: dateLocale });
-  };
-
   // -------- Tickets (Tickete tab) --------
   const { data: userTickets = [], isLoading: isLoadingTickets } = useQuery<
     OpsTicket[]
