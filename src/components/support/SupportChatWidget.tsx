@@ -759,9 +759,18 @@ const SupportChatWidget = () => {
             )}
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm truncate">{headerTitle}</p>
-              <p className="text-xs opacity-70 lg:text-muted-foreground truncate">
-                {headerSubtitle}
-              </p>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <p className="text-xs opacity-70 lg:text-muted-foreground truncate">
+                  {headerSubtitle}
+                </p>
+                {isAdmin && ticketId && ticketInfo?.status && (
+                  <StatusPill
+                    status={ticketInfo.status}
+                    size="xs"
+                    className="shrink-0"
+                  />
+                )}
+              </div>
             </div>
             {isAdmin && ticketId && !isClosed && (
               <DropdownMenu>
@@ -774,7 +783,7 @@ const SupportChatWidget = () => {
                     <MoreVertical className="h-5 w-5" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-56 z-[80]">
                   <DropdownMenuLabel>
                     {t("Status ticket", "Ticket status")}
                   </DropdownMenuLabel>
@@ -1212,7 +1221,7 @@ const SupportChatWidget = () => {
           if (!open && !adminStatusMutation.isPending) setPendingAdminAction(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[90]">
           <AlertDialogHeader>
             <AlertDialogTitle>
               {pendingAdminAction === "RESOLVE" &&
