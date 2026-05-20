@@ -159,11 +159,16 @@ Deno.serve(async (req) => {
     // Validation
     const allowedTemplates: TemplateKey[] = [
       "rental_request_owner",
+      "rental_request_renter",
       "rental_accepted",
+      "rental_accepted_owner",
       "rental_rejected",
       "rental_cancelled",
+      "rental_cancelled_owner",
       "return_reminder",
+      "return_reminder_owner",
       "return_deadline_2h",
+      "return_deadline_2h_owner",
       "pickup_scheduled",
       "pv_pending",
       "pv_other_done",
