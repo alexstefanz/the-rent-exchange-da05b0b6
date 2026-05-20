@@ -400,7 +400,8 @@ Deno.serve(async (req) => {
       }
 
       // 3) SMS
-      if (cfg.channels.includes("sms") && cfg.smsTemplate && (!cfg.smsRoles || cfg.smsRoles.includes(role))) {
+      const smsTpl = cfg.smsTemplate ? (cfg.smsTemplate[role] || cfg.smsTemplate.both) : undefined;
+      if (cfg.channels.includes("sms") && smsTpl) {
         if (!smsAllowed) {
           await supabase.from("notification_audit_log").insert({ rental_id, user_id: userObj.id, event_key, channel: "sms", status: "skipped", error: "opt_out" });
         } else if (!(await alreadySent("sms"))) {
@@ -419,7 +420,7 @@ Deno.serve(async (req) => {
           try {
             const { error: smsErr } = await supabase.functions.invoke("send-sms-notification", {
               body: {
-                templateKey: cfg.smsTemplate,
+                templateKey: smsTpl,
                 userId: userObj.id,
                 rentalId: rental.id,
                 idempotencyKey: `${event_key}:${rental_id}:${userObj.id}`,
