@@ -69,6 +69,7 @@ const Auth = () => {
     return localStorage.getItem("rentli_remember_me") === "1";
   });
   const copy = useUxCopy();
+  const { language } = useLanguage();
 
   const isResetMode = isPasswordRecovery || searchParams.get("reset") === "true";
 
