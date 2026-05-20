@@ -16,7 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  CheckCircle2, AlertCircle, Lock, CreditCard, Wallet, Shield, Trash2, User, Phone, Mail,
+  CheckCircle2, AlertCircle, Lock, Wallet, Shield, Trash2, User, Phone, Mail,
   MessageCircle, Camera, Loader2, LifeBuoy, Bell, ChevronDown, Star, Calendar, Sparkles,
   ShieldCheck, KeyRound, Smartphone, History, Globe, BadgeCheck, ChevronRight, Landmark, Pencil, Plus, X,
 } from "lucide-react";
@@ -56,7 +56,6 @@ const SECTIONS = [
   { id: "personal", labelRo: "Profil", labelEn: "Profile", icon: User },
   { id: "verification", labelRo: "Verificare", labelEn: "Verification", icon: ShieldCheck },
   { id: "security", labelRo: "Securitate", labelEn: "Security", icon: Lock },
-  { id: "payments", labelRo: "Plăți", labelEn: "Payments", icon: CreditCard },
   { id: "payout", labelRo: "Încasări", labelEn: "Payouts", icon: Wallet },
   { id: "notifications", labelRo: "Notificări", labelEn: "Notifications", icon: Bell },
   { id: "support", labelRo: "Suport", labelEn: "Support", icon: LifeBuoy },
