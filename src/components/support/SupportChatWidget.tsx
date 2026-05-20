@@ -671,7 +671,7 @@ const SupportChatWidget = () => {
                             className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
                           >
                             <div
-                              className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
+                              className={`min-w-0 max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
                                 isInternalNote
                                   ? "bg-yellow-100 border border-yellow-300 text-foreground"
                                   : isOwn
