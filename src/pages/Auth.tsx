@@ -181,16 +181,43 @@ const Auth = () => {
   }, [user, navigate, isResetMode, phoneOtpOpen, gatingLogin]);
 
   const handleLogin = async (data: LoginFormData) => {
+    setLoginError(null);
     setIsLoading(true);
     // Block redirect-on-user-set while we check phone verification gate
     if (USE_SMS_OTP) setGatingLogin(true);
-    const { error } = await signIn(data.email, data.password);
-    setIsLoading(false);
+    const email = (data.email || "").trim().toLowerCase();
+    let error: any = null;
+    try {
+      const res = await signIn(email, data.password);
+      error = res?.error ?? null;
+    } catch (e: any) {
+      error = e;
+    } finally {
+      setIsLoading(false);
+    }
     if (error) {
       setGatingLogin(false);
+      const code = (error?.code || "").toString();
+      const status = Number(error?.status || 0);
+      const raw = (error?.message || "").toString();
+      let msg = copy.auth.invalidCredentials;
+      if (code === "invalid_credentials" || /invalid login credentials/i.test(raw)) {
+        msg = copy.auth.invalidCredentials;
+      } else if (code === "email_not_confirmed" || /not confirmed/i.test(raw)) {
+        msg = language === "ro"
+          ? "Verifică-ți emailul pentru a-ți confirma contul."
+          : "Please verify your email to confirm your account.";
+      } else if (status === 429 || /rate limit|too many/i.test(raw)) {
+        msg = language === "ro"
+          ? "Prea multe încercări. Așteaptă câteva minute și reîncearcă."
+          : "Too many attempts. Wait a few minutes and try again.";
+      } else if (raw) {
+        msg = raw;
+      }
+      setLoginError(msg);
       toast({
         title: copy.auth.loginError,
-        description: copy.auth.invalidCredentials,
+        description: msg,
         variant: "destructive",
       });
       return;
