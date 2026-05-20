@@ -181,6 +181,10 @@ export default function EarlyReturnCard({ rentalId, role, startDate, endDate, da
   // Dacă suntem deja peste sau în ultima zi a perioadei, nu mai e „early" — ascundem.
   if (today >= maxDate) return null;
 
+  // Only the renter can initiate an early return request.
+  // The owner can only respond (approve/reject) to a request started by the renter.
+  if (role !== "renter") return null;
+
   const newDays = selectedDate
     ? Math.max(1, differenceInCalendarDays(selectedDate, start) + 1)
     : 0;
@@ -213,12 +217,8 @@ export default function EarlyReturnCard({ rentalId, role, startDate, endDate, da
     }
   };
 
-  const promptTitle = role === "renter"
-    ? t("Vrei să predai produsul înainte de termen?", "Want to return the product earlier than planned?")
-    : t("Vrei să ceri înapoi produsul înainte de termen?", "Want to ask for the product back earlier than planned?");
-  const promptHint = role === "renter"
-    ? t("Discută cu proprietarul, apoi solicită returnarea anticipată cu data și prețul recalculat.", "Chat with the owner first, then send an early-return request with the new date and recalculated price.")
-    : t("Discută cu chiriașul, apoi solicită returnarea anticipată cu data și prețul recalculat.", "Chat with the renter first, then send an early-return request with the new date and recalculated price.");
+  const promptTitle = t("Vrei să predai produsul înainte de termen?", "Want to return the product earlier than planned?");
+  const promptHint = t("Discută cu proprietarul, apoi solicită returnarea anticipată cu data și prețul recalculat.", "Chat with the owner first, then send an early-return request with the new date and recalculated price.");
 
   return (
     <>
@@ -236,9 +236,7 @@ export default function EarlyReturnCard({ rentalId, role, startDate, endDate, da
           <div className="flex flex-col gap-2">
             <Button variant="outline" onClick={onOpenChat} className="w-full">
               <MessageSquare className="h-4 w-4 mr-2" />
-              {role === "renter"
-                ? t("Discută cu Proprietarul", "Chat with Owner")
-                : t("Discută cu Chiriașul", "Chat with Renter")}
+              {t("Discută cu Proprietarul", "Chat with Owner")}
             </Button>
             <Button onClick={() => setDialogOpen(true)} className="w-full bg-[#F59E0B] hover:bg-[#F98715]">
               <CalendarIcon className="h-4 w-4 mr-2" />

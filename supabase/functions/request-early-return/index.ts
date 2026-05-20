@@ -78,6 +78,13 @@ serve(async (req) => {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    // Only the renter can initiate an early return request.
+    // The owner can only approve/reject via respond-early-return.
+    if (isOwner) {
+      return new Response(JSON.stringify({ error: "owner_cannot_initiate" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     if (!rental.handover_confirmed_at) {
       return new Response(JSON.stringify({ error: "not_active" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -134,7 +141,7 @@ serve(async (req) => {
       early_return_decided_at: null,
       early_return_owner_response: null,
       early_return_renter_approved_at: isRenter ? now : null,
-      early_return_owner_approved_at: isOwner ? now : null,
+      early_return_owner_approved_at: null,
     };
     const { error: uErr } = await admin
       .from("rentals")
@@ -147,7 +154,7 @@ serve(async (req) => {
     }
 
     admin.functions.invoke("notify-rental-event", {
-      body: { rental_id: rentalId, event_key: "early_return_proposed", actor_id: userId, extra: { reason, newEndDate, refundAmount, initiatorRole: isRenter ? "renter" : "owner" } },
+      body: { rental_id: rentalId, event_key: "early_return_proposed", actor_id: userId, extra: { reason, newEndDate, refundAmount, initiatorRole: "renter" } },
     }).catch((e) => console.warn("notify early_return_proposed failed", e));
 
     return new Response(JSON.stringify({ ok: true }), {
