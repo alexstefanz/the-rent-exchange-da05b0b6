@@ -229,7 +229,7 @@ const CategoryDetail = () => {
 
         {/* Discovery rails (browse mode only) */}
         {!hasActiveFilters && !isLoading && products.length > 0 && (
-          <DiscoveryRailsTop newArrivals={newArrivals} />
+          <DiscoveryRailsTop newArrivals={newArrivals} viewMode={viewMode} />
         )}
 
         {/* Results header (only in filter mode) */}
@@ -304,7 +304,7 @@ const CategoryDetail = () => {
 
         {/* Discovery rails - bottom (Trending + Aproape de tine, 2 per row) */}
         {!hasActiveFilters && !isLoading && products.length > 0 && (
-          <DiscoveryRailsBottom trending={trending} nearby={nearby} />
+          <DiscoveryRailsBottom trending={trending} nearby={nearby} viewMode={viewMode} />
         )}
       </main>
 
