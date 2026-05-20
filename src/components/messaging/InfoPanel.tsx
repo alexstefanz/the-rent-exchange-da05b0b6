@@ -28,6 +28,7 @@ import {
 import { extractUrls } from "@/lib/urlScanner";
 import { getOwnerContactInfo } from "@/features/messaging/messagingApi";
 import { supabase } from "@/integrations/supabase/client";
+import { MediaLightbox } from "./MediaLightbox";
 import { cn } from "@/lib/utils";
 
 interface Props {
