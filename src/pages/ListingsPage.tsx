@@ -127,7 +127,10 @@ const ListingsPage = () => {
   const handleDelete = async (p: Product) => {
     if (!user) return;
     await deleteProduct(p.id, user.id);
-    toast({ title: t("Anunț șters", "Listing deleted") });
+    toast({
+      title: t("Anunț șters", "Listing deleted"),
+      description: t(`Produsul „${p.title}" a fost șters.`, `"${p.title}" has been deleted.`),
+    });
     refresh();
     setConfirmDelete(null);
   };
