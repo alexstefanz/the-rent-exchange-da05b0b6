@@ -19,7 +19,6 @@ import logoImage from "@/assets/rentli_logo.webp";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 import { strongPasswordSchema, isWeakPasswordError } from "@/lib/passwordValidation";
-import AccountTypeToggle from "@/components/onboarding/AccountTypeToggle";
 import PhoneOtpDialog from "@/components/profile/PhoneOtpDialog";
 
 // TEMP: while notify.rentli.ro DNS isn't propagated, we verify accounts via SMS
@@ -54,9 +53,7 @@ const Auth = () => {
   const [isResendingOtp, setIsResendingOtp] = useState(false);
   const [phoneOtpOpen, setPhoneOtpOpen] = useState(false);
   const [pendingPhone, setPendingPhone] = useState("");
-  const [postVerifyTarget, setPostVerifyTarget] = useState<"/" | "/onboarding/business">("/");
   const [gatingLogin, setGatingLogin] = useState(false);
-  const [accountType, setAccountType] = useState<"individual" | "business">("individual");
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
@@ -281,16 +278,11 @@ const Auth = () => {
       toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
       return;
     }
-      // Mark account type early (company details collected in /onboarding/business)
       const normalizedPhone = normalizePhoneRO(data.phone) as string;
       try {
         const { data: { user: newUser } } = await supabase.auth.getUser();
         if (newUser) {
-          const updates: Record<string, unknown> = { phone: normalizedPhone };
-      if (accountType === "business") {
-            updates.account_type = "business";
-        }
-          await supabase.from("profiles").update(updates).eq("id", newUser.id);
+          await supabase.from("profiles").update({ phone: normalizedPhone }).eq("id", newUser.id);
         }
       } catch (e) {
         console.error("Failed to set profile after signup:", e);
@@ -298,7 +290,6 @@ const Auth = () => {
 
       if (USE_SMS_OTP) {
         setPendingPhone(normalizedPhone);
-        setPostVerifyTarget(accountType === "business" ? "/onboarding/business" : "/");
         setPhoneOtpOpen(true);
       } else {
         setOtpEmail(data.email);
@@ -362,12 +353,7 @@ const Auth = () => {
       } catch (e) {
         console.error("Failed to send welcome email:", e);
       }
-      // Business accounts go to the company setup step; individuals to home.
-      if (accountType === "business") {
-        navigate("/onboarding/business", { replace: true });
-      } else {
-        navigate("/", { replace: true });
-      }
+      navigate("/", { replace: true });
     }
   };
 
@@ -604,13 +590,8 @@ const Auth = () => {
               </div>
 
               <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
-                {/* Account type toggle (premium segmented control) */}
-                <AccountTypeToggle value={accountType} onChange={setAccountType} />
-
-                <p className="text-xs text-muted-foreground -mt-1">
-                  {accountType === "business"
-                    ? "Vei completa datele firmei (CUI, IBAN) în pasul următor — durează 1 minut."
-                    : "Cont gratuit, fără card de credit."}
+                <p className="text-xs text-muted-foreground">
+                  Cont gratuit, fără card de credit.
                 </p>
 
                 <div className="space-y-2">
