@@ -257,7 +257,7 @@ export default function LeaveReviewDialog({
                 </p>
               </header>
 
-              <div className="flex flex-col items-center gap-3">
+              <div className="flex flex-col items-start gap-3">
                 <StarPicker value={rating} onChange={setRating} disabled={submitting} />
                 <Textarea
                   placeholder={t("Comentariu opțional", "Optional comment")}
