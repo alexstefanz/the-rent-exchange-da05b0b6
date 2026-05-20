@@ -1489,7 +1489,6 @@ export type Database = {
           phone_verified: boolean
           reg_com: string | null
           sms_notifications_enabled: boolean
-          whatsapp: string | null
         }
         Insert: {
           account_holder_name?: string | null
@@ -1517,7 +1516,6 @@ export type Database = {
           phone_verified?: boolean
           reg_com?: string | null
           sms_notifications_enabled?: boolean
-          whatsapp?: string | null
         }
         Update: {
           account_holder_name?: string | null
@@ -1545,7 +1543,6 @@ export type Database = {
           phone_verified?: boolean
           reg_com?: string | null
           sms_notifications_enabled?: boolean
-          whatsapp?: string | null
         }
         Relationships: []
       }

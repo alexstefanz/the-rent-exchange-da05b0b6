@@ -1,29 +1,32 @@
-## Evidențiere cereri noi pe tabul „Cereri primite"
+# Eliminare completă WhatsApp
 
-### Problemă
-- `stats.new_requests` (cereri în status `pending`) e deja calculat de `get_owner_listings_stats` și disponibil în `ListingsPage`.
-- Tabul de sus „Cereri primite" nu îl arată — userul nu vede că are cereri noi decât dacă schimbă tab-ul.
-- Există deja popup-ul global de cerere nouă (mem rental-request-popup), dar tabul însuși rămâne mut.
+Scop: înlăturăm orice urmă de WhatsApp din platformă. În contextul închirierilor rămân doar **email** și **telefon** ca metode de contact.
 
-### Modificări (doar `src/pages/ListingsPage.tsx`)
+## Modificări UI
 
-1. **Badge pe tabul „Cereri primite"** (lângă iconul Inbox):
-   - Când `stats.new_requests > 0`: badge rotund primary (`bg-primary text-primary-foreground`) cu numărul (sau `9+` peste 9).
-   - Când `= 0`: fără badge.
-   - Adaug un mic `dot` pulsatil (`animate-pulse`) pe tabul inactiv ca semnal periferic.
+- **`src/components/messaging/ContactInfoCard.tsx`** — elimin prop-ul `whatsapp`, butonul WhatsApp și handler-ul `handleWhatsApp`. Rămân doar telefon + email.
+- **`src/components/messaging/InfoPanel.tsx`** — elimin câmpul `whatsapp` din state, din interogare și butonul "WhatsApp: …" din panou.
+- **`src/pages/RentalDetailPage.tsx`** — elimin butonul "Trimite mesaj pe WhatsApp" din secțiunea de contact a închirierii (rămân Sună + Email + Chat intern).
+- **`src/components/profile/AccountTab.tsx`** — scot câmpul WhatsApp din schema Zod, defaults, reset, submit și UI (Field cu icoană MessageCircle).
+- **`src/components/profile/ProfileTab.tsx`** — la fel: schema, defaults, UI Label/Input.
+- **`src/pages/admin/AdminUserDetail.tsx`** — scot rândul de afișare `userDetail.whatsapp`.
+- **`src/components/product/ShareDialog.tsx`** — elimin canalul WhatsApp (`wa.me`) din lista de share. Rămân Facebook, Telegram, Email + Copy link.
 
-2. **Realtime invalidation pentru cereri**:
-   - Canalul realtime existent ascultă doar `products`. Adaug un al doilea subscribe pe `rentals` filtrat după `owner_id=eq.${user.id}` care invalidează `owner-listings-stats` la INSERT/UPDATE.
-   - Astfel badge-ul se actualizează instant când vine o cerere nouă, fără refresh manual.
+## Modificări tipuri / API
 
-3. **Sincronizare cu butonul „Cereri noi" din filtre**:
-   - Păstrez butonul existent, dar îi adaug același styling primary când `new_requests > 0` (ring/border primary + text primary), ca să fie vizibil.
+- **`src/features/profile/profileApi.ts`** — scot `whatsapp` din `ProfileData` și din semnătura funcției de update.
 
-### Tehnic
-- Tabs din shadcn permit children în `TabsTrigger`; badge-ul intră în același flex `gap-2`.
-- Nimic în logica de date sau RLS nu se schimbă — doar prezentare + un canal realtime în plus.
+## Migrare DB
 
-### Fișiere
-- `src/pages/ListingsPage.tsx` — badge pe tab + realtime pe `rentals` + accent pe butonul „Cereri noi".
+- `ALTER TABLE public.profiles DROP COLUMN IF EXISTS whatsapp;`
+  (coloana este folosită doar pentru afișarea contactului; nu există FK / index dedicat în afară de definiția coloanei.)
 
-Nu schimb nimic în `RentalsOutTab` sau în RPC.
+## Neschimbat
+
+- `supabase/functions/generate-product-description/index.ts` — păstrăm mențiunea "WhatsApp" din prompt: ea **interzice** AI-ului să sugereze WhatsApp în descrieri, deci susține eliminarea, nu o contrazice.
+- Vechile migrări istorice care au creat coloana rămân ca atare (nu rescriem istoric).
+
+## Verificare
+
+- `rg -i "whatsapp|wa\.me"` trebuie să returneze doar fișierul edge function de mai sus (+ migrările istorice).
+- Build TypeScript pasează după regenerarea `types.ts` post-migrare.
