@@ -345,7 +345,14 @@ const ProductDetail = () => {
 
             <ProductInfoAccordion
               description={displayDescription}
-              includedItems={(product as any).included_items}
+              includedItems={
+                language === "en" &&
+                Array.isArray((product as any).included_items_en) &&
+                (product as any).included_items_en.length === ((product as any).included_items?.length ?? -1) &&
+                (product as any).included_items_en.length > 0
+                  ? (product as any).included_items_en
+                  : (product as any).included_items
+              }
             />
 
             <RentalProtection />
