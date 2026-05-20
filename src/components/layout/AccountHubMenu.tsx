@@ -580,8 +580,7 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
         className="rounded-t-3xl p-0 pb-[env(safe-area-inset-bottom)] max-h-[92dvh] bg-background flex flex-col overflow-hidden"
       >
         <div className="mx-auto mt-2 mb-1 h-1 w-9 shrink-0 rounded-full bg-muted-foreground/30" />
-        {TopZone}
-        {MiddleZone}
+        {BodyContent}
         {FooterZone}
       </SheetContent>
     </Sheet>
