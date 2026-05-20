@@ -1016,7 +1016,7 @@ const SupportChatWidget = () => {
             ) : (
               isAdmin ? (
                   /* ----- Admin inbox list ----- */
-                  <ScrollArea className="flex-1 px-3 py-3">
+                  <div className="flex-1 overflow-y-auto px-3 py-3 min-w-0">
                     {isLoadingAdminInbox ? (
                       <div className="flex items-center justify-center py-10">
                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -1091,10 +1091,10 @@ const SupportChatWidget = () => {
                         ))}
                       </div>
                     )}
-                  </ScrollArea>
+                  </div>
                 ) : showTicketArchive ? (
                   /* ----- Archive list ----- */
-                  <ScrollArea className="flex-1 px-3 py-3">
+                  <div className="flex-1 overflow-y-auto px-3 py-3 min-w-0">
                     {isLoadingTickets ? (
                       <div className="flex items-center justify-center py-10">
                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -1146,7 +1146,7 @@ const SupportChatWidget = () => {
                         ))}
                       </div>
                     )}
-                  </ScrollArea>
+                  </div>
                 ) : (
                   /* ----- Tickete: welcome / direct chat with admin ----- */
                   <>
