@@ -1,31 +1,62 @@
 ## Scop
 
-Pe pagina **Cum funcționează**, secțiunea „Cum decurge o închiriere" — adăugăm animații legate de scroll pe timeline-ul zigzag desktop (și o versiune simplificată pe mobil).
+1. **Desktop** — Înlocuim butonul rotund portocaliu de chat (FAB) cu un card-pill „Live Help · Online" similar primei imagini (avatar + status dot verde + titlu + subtitlu „Bună! Te putem ajuta?").
+2. **Mobil** — Ascundem complet FAB-ul de suport, iar în pagina `/mesaje` adăugăm un al treilea tab **„Suport"** lângă „Rezervări" / „De Închiriat", care randează același flux de tickete folosit azi în widget (listă tickete + buton „Ticket nou" + chat ticket).
 
 ## Comportament
 
-1. **Bara verticală (timeline)** — gradient-ul static din `bg-gradient-to-b` se înlocuiește cu o bară de fundal `bg-primary/15` plus o bară de „fill" portocalie (`bg-primary`) a cărei înălțime crește pe măsură ce utilizatorul derulează prin secțiune (0% → 100% pe lungimea timeline-ului).
-2. **Carduri (text)** — fiecare card glisează în poziție cu fade-in: cele de pe stânga vin din stânga (`-translate-x-8 → 0`), cele de pe dreapta vin din dreapta (`translate-x-8 → 0`), `opacity 0 → 1`. Trigger când rândul intră în viewport (~60% jos).
-3. **Iconițe** — fiecare iconiță are 2 stări:
-   - **inactivă**: `bg-card` + border + `text-primary` (actual).
-   - **activă**: `bg-primary` + `text-primary-foreground` (alb), fără border, cu un mic „pop" (scale 0.95→1) și ring portocaliu subtil.
-   Tranziția spre „activă" se declanșează când fill-ul barei verticale ajunge la nivelul vertical al iconiței respective (centrul cardului depășește progresul de scroll).
-4. **Punctele centrale** (dot-urile de pe axă) — devin pline portocaliu când fill-ul le atinge; altfel rămân `primary/30`.
-5. **Mobil** — aceeași logică simplificată: bara stângă se umple pe scroll, dot-urile + iconițele cardurilor devin portocalii când fill-ul le atinge, iar cardurile fac fade-in-up.
+### Desktop FAB (card „Live Help")
+- Container fix `bottom-6 right-6`, doar `lg:flex` (ascuns sub `lg`).
+- Card alb cu shadow-lg, rounded-2xl, padding ~12-14px:
+  - Avatar 36-40px (poză agent — folosim un asset existent din `src/assets/` cu o reprezentantă; dacă nu există, generăm un avatar realist și îl importăm).
+  - Punct status verde `bg-green-500` ring-2 alb, poziționat top-left peste avatar.
+  - Text dreapta:
+    - Rând 1: `Live Help` (bold) + chip mic verde „Online".
+    - Rând 2: `Bună! Te putem ajuta?` (text-muted-foreground, text-sm).
+- Pe hover: scale subtil (`hover:scale-[1.02]`) + shadow mai pronunțat.
+- Badge cu `fabBadgeCount` rămâne (cerc roșu mic în colț top-right) când există mesaje necitite.
+- Click → `setIsOpen(true)` (același comportament).
+
+### FAB mobil
+- Se elimină varianta mobilă a butonului flotant (clasă `bottom-20` + `flex` pe sub `lg`). Widget-ul pe mobil se va deschide DOAR din noul tab „Suport" în pagina `/mesaje`. Restul (rute non-`/mesaje`) — fără FAB pe mobil.
+
+### Tab „Suport" în `/mesaje` (mobil)
+- În `ConversationList.tsx`, `TabsList` capătă a treia opțiune `value="suport"` cu icon `LifeBuoy` + text „Suport" / „Support".
+- Când `activeTab === "suport"`, în loc de lista de conversații, se randează un panou nou `SupportTabPanel`:
+  - Listă tickete existente (din `useSupportTickets` deja folosit în `SupportChatWidget`) cu status badge, ultimul mesaj, timp.
+  - Buton primary fix sus „Ticket nou" → deschide formular inline (subiect + descriere + atașament opțional), exact ca în widget.
+  - Tap pe un ticket deschide chat-ul ticketului (folosim `TicketChat` deja existent în `src/components/support/center/TicketChat.tsx`) full-screen în interiorul layout-ului mobil (fluxul actual de `Messages.tsx` cu split-view).
+- Tabul „Suport" e vizibil pe orice formă (nu îl ascundem pe desktop — e consistent), dar pe desktop suportul rămâne accesibil și prin card-ul „Live Help".
+- Badge roșu pe tab cu numărul total de mesaje suport necitite (`supportUnread` din același hook).
 
 ## Implementare tehnică
 
-Fișier modificat: `src/pages/HowItWorks.tsx` (secțiunea „Cycle" — zigzag desktop + listă mobil).
+**Fișiere modificate:**
 
-- Folosim `framer-motion` (deja în dependențe) cu `useScroll({ target: sectionRef, offset: ["start 80%", "end 20%"] })` pentru a obține `scrollYProgress` pe înălțimea timeline-ului.
-- Bara de fill: `motion.div` cu `style={{ height: useTransform(scrollYProgress, [0, 1], ["0%", "100%"]) }}`, poziționată peste bara de fundal.
-- Pentru fiecare pas, calculăm un prag `threshold = (idx + 0.5) / cycleSteps.length`. Folosim `useTransform(scrollYProgress, [threshold - 0.05, threshold], [0, 1])` → un `MotionValue` per pas; aplicăm pe dot + iconiță (background + culoare icon) prin `useMotionTemplate` sau `animate` condiționat.
-- Pentru carduri folosim `whileInView={{ opacity: 1, x: 0 }}` cu `initial={{ opacity: 0, x: left ? -32 : 32 }}` și `viewport={{ once: true, amount: 0.5 }}`.
-- Tranzițiile CSS pe iconițe: `transition-colors duration-300` ca fallback estetic.
-- `prefers-reduced-motion`: respectăm via `useReducedMotion()` — dezactivăm translate-urile, păstrăm doar fill-ul.
+1. `src/components/support/SupportChatWidget.tsx`
+   - Înlocuiește blocul FAB (`{!isOpen && (...)}`) cu un nou subcomponent `LiveHelpCard` afișat `hidden lg:flex` (cu badge unread păstrat).
+   - Eliminăm complet apariția pe mobil (`< lg`).
+   - Restul panoului (când `isOpen`) rămâne neschimbat.
+
+2. `src/components/messaging/ConversationList.tsx`
+   - Adaugă al 3-lea `TabsTrigger value="suport"` cu icon `LifeBuoy` + badge `supportUnread`.
+   - Props noi: `supportUnread?: number`.
+   - Când `activeTab === "suport"`, NU randa lista convorbirilor — randa `<SupportTabPanel />` (componentă nouă) sau lasă conditional în `Messages.tsx`.
+
+3. `src/pages/Messages.tsx`
+   - Adaugă state pentru suport (ticket selectat).
+   - Când `activeTab === "suport"`, înlocuiește panoul de conversații cu noul `SupportTabPanel`.
+   - Tipăm `activeTab: "rezervari" | "de-inchiriat" | "suport"`.
+
+4. **Nou:** `src/components/support/SupportTabPanel.tsx`
+   - Extras din logica existentă a widget-ului: listă tickete, formular ticket nou, deschiderea chat-ului. Reutilizează cât mai mult din helperele deja existente în `SupportChatWidget.tsx` (sau extrage într-un `useSupportTickets` separat dacă deja există — verificăm).
+   - Layout responsive: pe mobil ocupă tot panoul listei; pe desktop, când pagina e afișată, randa la fel ca celelalte taburi.
+
+5. **Asset nou (opțional):** `src/assets/live-help-avatar.jpg` (avatar realist agent) — dacă nu există ceva potrivit deja, îl generăm cu `imagegen` (foto profesional, fundal neutru, headshot).
 
 ## Ce NU se modifică
 
-- Conținut, copy, structura datelor (`cycleSteps`).
-- Restul paginii (`WhyChooseUsBento`, FAQ etc.).
-- Tokenii de design (folosim `primary` / `primary-foreground` existenți).
+- Funcționalitatea de tickete (creare, mesagerie, hooks) — doar mutată/împărtășită.
+- Conversațiile chiriaș-proprietar — rămân pe taburile existente.
+- Logica de notificări/badge — folosim aceleași hookuri/contoare deja existente.
+- Restul paginii `Messages.tsx` (split view desktop) — neschimbat în afară de noul tab.
