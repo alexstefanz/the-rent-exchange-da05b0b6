@@ -167,7 +167,7 @@ const SupportImage = ({ path }: { path: string }) => {
 const renderMessageContent = (text: string) => {
   const path = extractSupportPath(text);
   if (path) return <SupportImage path={path} />;
-  return <p className="whitespace-pre-wrap break-words">{text}</p>;
+  return <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{text}</p>;
 };
 
 const SupportChatWidget = () => {
