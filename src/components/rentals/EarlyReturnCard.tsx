@@ -236,9 +236,7 @@ export default function EarlyReturnCard({ rentalId, role, startDate, endDate, da
           <div className="flex flex-col gap-2">
             <Button variant="outline" onClick={onOpenChat} className="w-full">
               <MessageSquare className="h-4 w-4 mr-2" />
-              {role === "renter"
-                ? t("Discută cu Proprietarul", "Chat with Owner")
-                : t("Discută cu Chiriașul", "Chat with Renter")}
+              {t("Discută cu Proprietarul", "Chat with Owner")}
             </Button>
             <Button onClick={() => setDialogOpen(true)} className="w-full bg-[#F59E0B] hover:bg-[#F98715]">
               <CalendarIcon className="h-4 w-4 mr-2" />
