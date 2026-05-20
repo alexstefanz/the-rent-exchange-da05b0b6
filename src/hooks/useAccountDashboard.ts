@@ -117,25 +117,31 @@ export function useAccountDashboard() {
         unreadMessages = count || 0;
       }
 
-      // available balance
-      const { data: txs } = await supabase
-        .from("transactions")
-        .select("amount, type, created_at")
-        .eq("user_id", uid)
-        .eq("status", "completed");
-      let availableBalance = 0;
-      let monthlyEarnings = 0;
+      // Available balance — single source of truth via RPC. Includes
+      // earnings from paid/captured/authorized rentals minus withdrawals
+      // plus wallet_ledger net (so wallet-paid rentals credit the owner
+      // and debit the renter immediately, without needing rows in `transactions`).
+      const { data: walletData } = await supabase.rpc(
+        "get_user_wallet_balance" as any,
+        { _user_id: uid }
+      );
+      const walletRow: any = Array.isArray(walletData) ? walletData[0] : walletData;
+      const availableBalance = Number(walletRow?.available ?? 0);
+
+      // Monthly earnings: paid/captured/authorized rentals as owner in current month
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
-      for (const t of txs || []) {
-        if (t.type === "owner_payout") availableBalance += Number(t.amount);
-        else if (t.type === "withdrawal") availableBalance -= Number(t.amount);
-        if (t.type === "owner_payout" && t.created_at && new Date(t.created_at) >= startOfMonth) {
-          monthlyEarnings += Number(t.amount);
+      let monthlyEarnings = 0;
+      for (const r of (rentalsAsOwner || []) as any[]) {
+        if (
+          ["paid", "captured", "authorized"].includes(r.payment_status) &&
+          r.created_at &&
+          new Date(r.created_at) >= startOfMonth
+        ) {
+          monthlyEarnings += Number(r.owner_payout || 0);
         }
       }
-      availableBalance = Math.max(0, availableBalance);
 
       // signals
       const ownerActive = (rentalsAsOwner || []).filter((r: any) =>
@@ -236,7 +242,10 @@ export function useAccountDashboard() {
   // realtime
   useEffect(() => {
     if (!userId) return;
-    const invalidate = () => qc.invalidateQueries({ queryKey: ["accountDashboard", userId] });
+    const invalidate = () => {
+      qc.invalidateQueries({ queryKey: ["accountDashboard", userId] });
+      qc.invalidateQueries({ queryKey: ["walletBalance", userId] });
+    };
     const ch = supabase
       .channel(`account-dashboard-${userId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` }, invalidate)
@@ -246,6 +255,7 @@ export function useAccountDashboard() {
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${userId}` }, invalidate)
       .on("postgres_changes", { event: "*", schema: "public", table: "transactions", filter: `user_id=eq.${userId}` }, invalidate)
       .on("postgres_changes", { event: "*", schema: "public", table: "withdrawal_requests", filter: `user_id=eq.${userId}` }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "wallet_ledger", filter: `user_id=eq.${userId}` }, invalidate)
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
