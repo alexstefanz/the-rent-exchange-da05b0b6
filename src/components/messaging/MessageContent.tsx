@@ -141,7 +141,7 @@ export function MessageContent({ text, messageId, isOwn = false }: Props) {
 
   return (
     <>
-      <p className="text-sm whitespace-pre-wrap break-words">
+      <p className="text-sm whitespace-pre-wrap [overflow-wrap:anywhere]">
         {tokens.map((tk, i) =>
           tk.type === "text" ? <span key={i}>{tk.value}</span> : renderUrl(tk.value, i),
         )}
