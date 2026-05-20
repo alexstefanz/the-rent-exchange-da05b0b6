@@ -567,7 +567,14 @@ const Auth = () => {
               <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="login-email">{copy.auth.email}</Label>
-                  <Input id="login-email" type="email" placeholder="email@exemplu.ro" {...loginForm.register("email")} />
+                  <Input
+                    id="login-email"
+                    type="email"
+                    placeholder="email@exemplu.ro"
+                    {...loginForm.register("email", {
+                      onChange: () => { if (loginError) setLoginError(null); },
+                    })}
+                  />
                   {loginForm.formState.errors.email && <p className="text-sm text-destructive">{loginForm.formState.errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">
@@ -578,7 +585,9 @@ const Auth = () => {
                       type={showLoginPassword ? "text" : "password"}
                       placeholder="••••••••"
                       className="pr-10"
-                      {...loginForm.register("password")}
+                      {...loginForm.register("password", {
+                        onChange: () => { if (loginError) setLoginError(null); },
+                      })}
                     />
                     <button
                       type="button"
@@ -604,6 +613,15 @@ const Auth = () => {
                     </Button>
                   </div>
                 </div>
+                {loginError && (
+                  <div
+                    role="alert"
+                    className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    <span>{loginError}</span>
+                  </div>
+                )}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{copy.auth.loggingIn}</> : copy.auth.login}
                 </Button>
