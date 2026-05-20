@@ -145,6 +145,17 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
     updated_at: string;
   } | null>(null);
 
+  // Edit mode: land directly on the Summary step so the user can jump to any
+  // section instead of re-walking the whole wizard.
+  useEffect(() => {
+    if (mode === "edit" && initialProduct) {
+      setStep(5);
+      setMaxReached(5);
+    }
+    // run once when the product is loaded
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialProduct?.id, mode]);
+
   // load fee
   useEffect(() => {
     if (!user) return;
