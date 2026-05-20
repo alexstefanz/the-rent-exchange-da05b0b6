@@ -1,10 +1,5 @@
 ## Fix
 
-În `src/lib/notificationCategory.ts`, funcția `getTypeIcon()` returnează iconul implicit al categoriei `urgent` (`AlertTriangle`) pentru `cancel_request_submitted`. Înlocuim cu un ceas (`Clock` din `lucide-react`) pentru a sugera „în revizuire / în așteptare".
+În `src/components/dashboard/LeaveReviewDialog.tsx` (linia 182), scoate toast-ul `toast.success("Mulțumim pentru feedback!")` care apare în colțul dreapta-jos după trimiterea unui review. Restul logicii (invalidate queries, închidere dialog, toast de eroare) rămâne intact — confirmarea vizuală e deja dată prin închiderea dialogului.
 
-Modificări:
-1. Adaugă `Clock` în importul din `lucide-react`.
-2. În `getTypeIcon()`, înainte de fallback, adaugă: dacă `t === "cancel_request_submitted"` → `Clock`.
-3. Restul (categorizarea în `urgent` cu accent roșu) rămâne neschimbat — doar iconul se schimbă.
-
-Nicio modificare în backend / edge functions.
+Nicio altă modificare.

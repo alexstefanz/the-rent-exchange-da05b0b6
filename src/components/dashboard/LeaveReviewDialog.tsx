@@ -179,7 +179,6 @@ export default function LeaveReviewDialog({
       }
 
       if (productOk && userOk) {
-        toast.success(t("Mulțumim pentru feedback!", "Thanks for your feedback!"));
         queryClient.invalidateQueries({ queryKey: ["accountDashboard"] });
         queryClient.invalidateQueries({ queryKey: ["my-rentals"] });
         queryClient.invalidateQueries({ queryKey: ["ownerRentals"] });
