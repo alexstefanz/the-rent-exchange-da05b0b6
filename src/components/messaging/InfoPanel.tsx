@@ -98,6 +98,8 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, classN
 
   const images = useMemo(() => attachments.filter((a) => a.kind === "image"), [attachments]);
   const videos = useMemo(() => attachments.filter((a) => a.kind === "video"), [attachments]);
+  const media = useMemo(() => [...images, ...videos], [images, videos]);
+  const [lightbox, setLightbox] = useState<{ open: boolean; index: number }>({ open: false, index: 0 });
 
   const handleBlock = async () => {
     const ok = await blockUser(peerId);
