@@ -993,9 +993,9 @@ const SupportChatWidget = () => {
                       </p>
                     </div>
                   </>
-                )}
-              </>
-            )}
+                )
+              )
+            }
           </div>
         </div>
       )}
