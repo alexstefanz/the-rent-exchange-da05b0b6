@@ -21,11 +21,10 @@ interface Props {
   filters: ListingsFilters;
   onChange: (next: ListingsFilters) => void;
   categories: string[];
-  cities: string[];
   resultCount: number;
 }
 
-const ListingsFilterBar = ({ filters, onChange, categories, cities, resultCount }: Props) => {
+const ListingsFilterBar = ({ filters, onChange, categories, resultCount }: Props) => {
   const { language } = useLanguage();
   const t = (ro: string, en: string) => (language === "ro" ? ro : en);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -34,7 +33,6 @@ const ListingsFilterBar = ({ filters, onChange, categories, cities, resultCount 
   const reset = () => onChange({ search: "", status: filters.status, category: "all", city: "all", sort: "recent" });
   const activeCount = [
     filters.category !== "all",
-    filters.city !== "all",
     filters.sort !== "recent",
   ].filter(Boolean).length;
 
@@ -44,15 +42,6 @@ const ListingsFilterBar = ({ filters, onChange, categories, cities, resultCount 
       <SelectContent>
         <SelectItem value="all">{t("Toate categoriile", "All categories")}</SelectItem>
         {categories.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-      </SelectContent>
-    </Select>
-  );
-  const CitySelect = (
-    <Select value={filters.city} onValueChange={(v) => set("city", v)}>
-      <SelectTrigger className="h-10 w-full sm:w-[160px]"><SelectValue placeholder={t("Oraș", "City")} /></SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">{t("Toate orașele", "All cities")}</SelectItem>
-        {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
       </SelectContent>
     </Select>
   );
@@ -82,7 +71,7 @@ const ListingsFilterBar = ({ filters, onChange, categories, cities, resultCount 
         </div>
 
         <div className="hidden lg:flex items-center gap-2">
-          {CategorySelect}{CitySelect}{SortSelect}
+          {CategorySelect}{SortSelect}
         </div>
 
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
@@ -99,7 +88,6 @@ const ListingsFilterBar = ({ filters, onChange, categories, cities, resultCount 
             <SheetHeader><SheetTitle>{t("Filtre și sortare", "Filters & sorting")}</SheetTitle></SheetHeader>
             <div className="mt-4 space-y-3">
               <div><label className="mb-1 block text-xs font-medium text-muted-foreground">{t("Categorie", "Category")}</label>{CategorySelect}</div>
-              <div><label className="mb-1 block text-xs font-medium text-muted-foreground">{t("Oraș", "City")}</label>{CitySelect}</div>
               <div><label className="mb-1 block text-xs font-medium text-muted-foreground">{t("Sortare", "Sort")}</label>{SortSelect}</div>
               <div className="flex gap-2 pt-2">
                 <Button variant="outline" className="flex-1" onClick={reset}>{t("Resetează", "Reset")}</Button>

@@ -12,8 +12,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useMyProducts } from "@/hooks/queries/useProducts";
 import { useOwnerListingsStats } from "@/hooks/queries/useOwnerListingsStats";
-import ListingsHeader from "@/components/listings/ListingsHeader";
-import ListingsStatsBar from "@/components/listings/ListingsStatsBar";
 import ListingsFilterBar, { type ListingsFilters } from "@/components/listings/ListingsFilterBar";
 import ListingCard from "@/components/listings/ListingCard";
 import ListingsEmptyState from "@/components/listings/ListingsEmptyState";
@@ -84,17 +82,12 @@ const ListingsPage = () => {
     () => Array.from(new Set(products.map((p) => p.category).filter(Boolean) as string[])).sort(),
     [products],
   );
-  const cities = useMemo(
-    () => Array.from(new Set(products.map((p) => p.location_city).filter(Boolean) as string[])).sort(),
-    [products],
-  );
 
   const filtered = useMemo(() => {
     let list = [...products];
     const s = filters.search.trim().toLowerCase();
     if (s) list = list.filter((p) => p.title.toLowerCase().includes(s) || (p.title_en || "").toLowerCase().includes(s));
     if (filters.category !== "all") list = list.filter((p) => p.category === filters.category);
-    if (filters.city !== "all") list = list.filter((p) => p.location_city === filters.city);
     if (filters.status !== "all") list = list.filter((p) => {
       const st = deriveStatus(p);
       if (filters.status === "active") return st === "active" || st === "unavailable";
@@ -154,6 +147,23 @@ const ListingsPage = () => {
         </Button>
 
         <Tabs value={topTab} onValueChange={setTopTab} className="space-y-6">
+          <div className="flex items-end justify-between gap-3 flex-wrap">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("Produsele mele", "My listings")}
+              </p>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {t(
+                  `Gestionează cele ${stats?.total ?? products.length} anunțuri ale tale.`,
+                  `Manage your ${stats?.total ?? products.length} listings.`,
+                )}
+              </p>
+            </div>
+            <Button asChild className="hidden sm:inline-flex">
+              <Link to="/owner/new-product"><Plus className="h-4 w-4" /> {t("Adaugă produs", "Add product")}</Link>
+            </Button>
+          </div>
+
           <TabsList className="h-auto bg-muted/60 p-1">
             <TabsTrigger value="anunturi" className="gap-2 px-4 py-2">
               <Package className="h-4 w-4" />
@@ -166,17 +176,6 @@ const ListingsPage = () => {
           </TabsList>
 
           <TabsContent value="anunturi" className="space-y-6 mt-0">
-            <ListingsHeader totalCount={stats?.total ?? products.length} />
-
-        {!hasNoProducts && stats && (
-          <ListingsStatsBar
-            stats={stats}
-            activeStatus={filters.status}
-            onSelectStatus={(s) => setFilters((f) => ({ ...f, status: s }))}
-            onOpenRentals={() => setTopTab("cereri")}
-          />
-        )}
-
         {hasNoProducts ? (
           <ListingsEmptyState />
         ) : (
@@ -206,6 +205,15 @@ const ListingsPage = () => {
                   {t("Respinse", "Rejected")}
                   <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">{stats?.rejected ?? 0}</Badge>
                 </TabsTrigger>
+                <button
+                  type="button"
+                  onClick={() => setTopTab("cereri")}
+                  className="inline-flex items-center gap-2 whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all hover:text-foreground"
+                >
+                  <Inbox className="h-4 w-4" />
+                  {t("Cereri noi", "New requests")}
+                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">{stats?.new_requests ?? 0}</Badge>
+                </button>
               </TabsList>
             </Tabs>
 
@@ -213,7 +221,6 @@ const ListingsPage = () => {
               filters={filters}
               onChange={setFilters}
               categories={categories}
-              cities={cities}
               resultCount={filtered.length}
             />
 
