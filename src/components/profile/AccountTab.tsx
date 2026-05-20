@@ -16,7 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
-  CheckCircle2, AlertCircle, Lock, CreditCard, Wallet, Shield, Trash2, User, Phone, Mail,
+  CheckCircle2, AlertCircle, Lock, Wallet, Shield, Trash2, User, Phone, Mail,
   MessageCircle, Camera, Loader2, LifeBuoy, Bell, ChevronDown, Star, Calendar, Sparkles,
   ShieldCheck, KeyRound, Smartphone, History, Globe, BadgeCheck, ChevronRight, Landmark, Pencil, Plus, X,
 } from "lucide-react";
@@ -56,7 +56,6 @@ const SECTIONS = [
   { id: "personal", labelRo: "Profil", labelEn: "Profile", icon: User },
   { id: "verification", labelRo: "Verificare", labelEn: "Verification", icon: ShieldCheck },
   { id: "security", labelRo: "Securitate", labelEn: "Security", icon: Lock },
-  { id: "payments", labelRo: "Plăți", labelEn: "Payments", icon: CreditCard },
   { id: "payout", labelRo: "Încasări", labelEn: "Payouts", icon: Wallet },
   { id: "notifications", labelRo: "Notificări", labelEn: "Notifications", icon: Bell },
   { id: "support", labelRo: "Suport", labelEn: "Support", icon: LifeBuoy },
@@ -618,27 +617,6 @@ const AccountTab = () => {
             {/* Coming soon */}
             <ComingSoonCard icon={Smartphone} title={t("Autentificare în 2 pași (2FA)", "Two-factor auth (2FA)")} description={t("Strat suplimentar de protecție via SMS sau aplicație.", "Extra protection via SMS or authenticator app.")} />
             <ComingSoonCard icon={Globe} title={t("Sesiuni active & dispozitive", "Active sessions & devices")} description={t("Vezi unde ești conectat și deconectează dispozitive.", "See where you're signed in and revoke devices.")} />
-          </div>
-        </Section>
-
-        {/* ============ PAYMENT METHODS (placeholder) ============ */}
-        <Section id="payments" icon={CreditCard} title={t("Metode de plată", "Payment methods")} description={t("Carduri salvate pentru rezervări rapide.", "Saved cards for fast bookings.")}>
-          <div className="rounded-xl border border-dashed border-border p-8 text-center bg-muted/20">
-            <div className="mx-auto h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
-              <CreditCard className="h-7 w-7 text-primary" />
-            </div>
-            <p className="font-medium mb-1">{t("Niciun card salvat", "No saved cards")}</p>
-            <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
-              {t("La checkout poți plăti în siguranță cu cardul. Salvarea cardurilor pentru plăți rapide va fi disponibilă în curând.", "At checkout you can pay securely by card. Saved cards for one-tap payments coming soon.")}
-            </p>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-block">
-                  <Button variant="outline" disabled>{t("Adaugă card", "Add card")}</Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>{t("Disponibil curând", "Coming soon")}</TooltipContent>
-            </Tooltip>
           </div>
         </Section>
 
