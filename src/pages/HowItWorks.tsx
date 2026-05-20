@@ -6,8 +6,8 @@ import { useUxCopy } from "@/hooks/useUxCopy";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { cn } from "@/lib/utils";
 import WhyChooseUsBento from "@/components/home/WhyChooseUsBento";
+import CycleTimeline from "@/components/howitworks/CycleTimeline";
 
 const HowItWorks = () => {
   const copy = useUxCopy();
@@ -78,70 +78,7 @@ const HowItWorks = () => {
             <p className="mx-auto mt-3 max-w-xl text-muted-foreground">{p.processSubtitle}</p>
           </div>
 
-          {/* Desktop zigzag */}
-          <div className="relative mx-auto hidden max-w-4xl md:block">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-gradient-to-b from-primary/0 via-primary/60 to-primary/0"
-            />
-            <div className="space-y-14">
-              {cycleSteps.map((step, idx) => {
-                const left = idx % 2 === 0;
-                return (
-                  <div key={idx} className="relative grid grid-cols-2 items-center gap-12">
-                    {/* Center node */}
-                    <span
-                      aria-hidden
-                      className="absolute left-1/2 top-1/2 z-10 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-4 ring-background"
-                    />
-
-                    {/* Text side */}
-                    <div className={cn(left ? "text-right pr-6" : "col-start-2 text-left pl-6")}>
-                      <span className="inline-block rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
-                        {`PAS · ${String(idx + 1).padStart(2, "0")}`}
-                      </span>
-                      <h3 className="mt-3 font-heading text-xl font-semibold text-foreground">{step.title}</h3>
-                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
-                    </div>
-
-                    {/* Icon side */}
-                    <div className={cn(left ? "col-start-2 pl-6" : "row-start-1 pr-6")}>
-                      <div className={cn("flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-card shadow-card", left ? "" : "ml-auto")}>
-                        <step.icon className="h-7 w-7 text-primary" />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Mobile vertical */}
-          <div className="relative md:hidden">
-            <div aria-hidden className="absolute left-5 top-2 h-[calc(100%-1rem)] w-px bg-primary/30" />
-            <div className="space-y-6">
-              {cycleSteps.map((step, idx) => (
-                <div key={idx} className="relative pl-14">
-                  <span
-                    aria-hidden
-                    className="absolute left-5 top-5 z-10 h-3 w-3 -translate-x-1/2 rounded-full bg-primary ring-4 ring-background"
-                  />
-                  <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
-                    <div className="mb-2 flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10">
-                        <step.icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-                        {`PAS · ${String(idx + 1).padStart(2, "0")}`}
-                      </span>
-                    </div>
-                    <h3 className="font-heading text-base font-semibold text-foreground">{step.title}</h3>
-                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <CycleTimeline steps={cycleSteps} />
 
         </div>
       </section>
