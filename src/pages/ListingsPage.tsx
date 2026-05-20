@@ -74,6 +74,10 @@ const ListingsPage = () => {
           qc.invalidateQueries({ queryKey: ["my-products", user.id] });
           qc.invalidateQueries({ queryKey: ["owner-listings-stats", user.id] });
         })
+      .on("postgres_changes", { event: "*", schema: "public", table: "rentals", filter: `owner_id=eq.${user.id}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["owner-listings-stats", user.id] });
+        })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user?.id, qc]);
@@ -169,9 +173,22 @@ const ListingsPage = () => {
               <Package className="h-4 w-4" />
               {t("Anunțuri", "Listings")}
             </TabsTrigger>
-            <TabsTrigger value="cereri" className="gap-2 px-4 py-2">
+            <TabsTrigger value="cereri" className="relative gap-2 px-4 py-2">
               <Inbox className="h-4 w-4" />
               {t("Cereri primite", "Requests received")}
+              {(stats?.new_requests ?? 0) > 0 && (
+                <>
+                  <Badge className="h-5 min-w-5 px-1.5 text-[10px] bg-primary text-primary-foreground hover:bg-primary">
+                    {(stats?.new_requests ?? 0) > 9 ? "9+" : stats?.new_requests}
+                  </Badge>
+                  {topTab !== "cereri" && (
+                    <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                    </span>
+                  )}
+                </>
+              )}
             </TabsTrigger>
           </TabsList>
 
@@ -208,11 +225,23 @@ const ListingsPage = () => {
                 <button
                   type="button"
                   onClick={() => setTopTab("cereri")}
-                  className="inline-flex items-center gap-2 whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium text-muted-foreground transition-all hover:text-foreground"
+                  className={`inline-flex items-center gap-2 whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all ${
+                    (stats?.new_requests ?? 0) > 0
+                      ? "bg-primary/10 text-primary ring-1 ring-primary/30 hover:bg-primary/15"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
                 >
                   <Inbox className="h-4 w-4" />
                   {t("Cereri noi", "New requests")}
-                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">{stats?.new_requests ?? 0}</Badge>
+                  <Badge
+                    className={`h-5 px-1.5 text-[10px] ${
+                      (stats?.new_requests ?? 0) > 0
+                        ? "bg-primary text-primary-foreground hover:bg-primary"
+                        : "bg-secondary text-secondary-foreground"
+                    }`}
+                  >
+                    {stats?.new_requests ?? 0}
+                  </Badge>
                 </button>
               </TabsList>
             </Tabs>
