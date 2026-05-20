@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Ban,
   Maximize2,
+  Headphones,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -65,7 +66,6 @@ import { ro as roLocale, enUS } from "date-fns/locale";
 import { toast } from "sonner";
 import { StatusPill } from "@/components/support/center/StatusPill";
 import { cn } from "@/lib/utils";
-import supportAgentAvatar from "@/assets/support-agent-avatar.jpg";
 
 const MAX_DIMENSION = 1920;
 const JPEG_QUALITY = 0.8;
