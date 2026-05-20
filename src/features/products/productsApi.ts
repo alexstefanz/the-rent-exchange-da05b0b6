@@ -97,6 +97,7 @@ export const getProductBySlug = async (slug: string): Promise<Product | null> =>
     .from("products")
     .select("*")
     .eq("slug", slug)
+    .is("deleted_at", null)
     .maybeSingle();
 
   if (error) {
@@ -129,6 +130,7 @@ export const getPublicUserProducts = async (ownerId: string): Promise<Product[]>
     .eq("owner_id", ownerId)
     .eq("is_active", true)
     .eq("approval_status", "approved")
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -285,6 +287,7 @@ export const getNearbyProducts = async (
     .select("*") as any)
     .eq("is_active", true)
     .eq("approval_status", "approved")
+    .is("deleted_at", null)
     .neq("id", currentProductId)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -308,6 +311,7 @@ export const getNearbyProducts = async (
       .select("*") as any)
       .eq("is_active", true)
       .eq("approval_status", "approved")
+      .is("deleted_at", null)
       .eq("category", category)
       .not("id", "in", `(${[currentProductId, ...existingIds].join(",")})`)
       .order("created_at", { ascending: false })
