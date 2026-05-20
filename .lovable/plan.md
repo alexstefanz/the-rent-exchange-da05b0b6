@@ -1,13 +1,23 @@
 ## Problem
 
-Confirmation pop-up already exists when deleting a product (AlertDialog in `ListingsPage.tsx`). The real bug: deleted products still appear in the list because `deleteProduct` is a **soft delete** (sets `deleted_at`), but `getMyProducts` does not filter out rows where `deleted_at` is set.
+Cererile `pending` cu `start_date` deja trecut pot fi încă acceptate, ceea ce creează rezervări pentru date din trecut.
 
-## Fix
+## Soluție (doar frontend, scop minim)
 
-In `src/features/products/productsApi.ts` → `getMyProducts`, add `.is("deleted_at", null)` to the query so soft-deleted listings disappear from "Anunțurile mele" immediately after deletion.
+În `src/components/dashboard/RentalsOutTab.tsx`, în cardul cererilor de închiriere:
 
-No other changes needed — the existing AlertDialog confirm flow stays as-is.
+1. Calculează `isExpired = isPending && new Date(rental.start_date) < startOfToday()`.
+2. Înlocuiește badge-ul "Cerere nouă" cu badge **"Expirată"** (`bg-muted text-muted-foreground`) când `isExpired`.
+3. Pentru cererile expirate:
+   - Ascunde butonul **Acceptă** (sau îl dezactivează cu tooltip "Perioada a expirat").
+   - Lasă vizibil butonul **Refuză** ca singura acțiune.
+4. Adaugă un mesaj subtil sub butoane: "Data de început a trecut. Cererea nu mai poate fi acceptată."
+5. La sortare/grupare: cererile expirate rămân în secțiunea "Cereri de închiriere" până sunt refuzate manual (vizibilitate pentru proprietar).
 
 ## Files
 
-- `src/features/products/productsApi.ts` (1 line added in `getMyProducts`)
+- `src/components/dashboard/RentalsOutTab.tsx` (~15 linii)
+
+## Out of scope
+
+- Auto-expirare în DB / cron job — poate fi o îmbunătățire ulterioară dacă vrei să dispară automat.

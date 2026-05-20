@@ -174,6 +174,8 @@ const RentalsOutTab = () => {
             {[...pendingRentals, ...premiumActiveRentals].map((rental) => {
               const isPending = rental.status === "pending";
               const canRequestCancel = !isPending && !rental.handover_confirmed_at;
+              const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+              const isExpired = isPending && new Date(rental.start_date) < startOfToday;
               return (
                 <div
                   key={rental.id}
@@ -198,7 +200,9 @@ const RentalsOutTab = () => {
                         </div>
                       )}
                     <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
-                      {isPending ? (
+                      {isExpired ? (
+                        <Badge className="bg-muted text-muted-foreground border border-border shadow-md text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">Expirată</Badge>
+                      ) : isPending ? (
                         <Badge className="bg-primary text-primary-foreground animate-pulse shadow-md text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">Cerere nouă</Badge>
                       ) : (
                         <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-md text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">Confirmată</Badge>
@@ -253,14 +257,16 @@ const RentalsOutTab = () => {
                     <div className="mt-3 sm:mt-4">
                       {isPending ? (
                         <div className="flex flex-col gap-1.5 sm:gap-2">
-                          <Button
-                            onClick={() => handleAccept(rental)}
-                            disabled={respondingId === rental.id}
-                            className="w-full h-9 text-xs sm:text-sm bg-gradient-to-r from-primary to-primary/90 shadow-md"
-                          >
-                            {respondingId === rental.id ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Check className="h-3.5 w-3.5 mr-1" />}
-                            Acceptă
-                          </Button>
+                          {!isExpired && (
+                            <Button
+                              onClick={() => handleAccept(rental)}
+                              disabled={respondingId === rental.id}
+                              className="w-full h-9 text-xs sm:text-sm bg-gradient-to-r from-primary to-primary/90 shadow-md"
+                            >
+                              {respondingId === rental.id ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Check className="h-3.5 w-3.5 mr-1" />}
+                              Acceptă
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             onClick={() => setRejectDialogRental(rental)}
@@ -269,6 +275,11 @@ const RentalsOutTab = () => {
                           >
                             <X className="h-3.5 w-3.5 mr-1" />Refuză
                           </Button>
+                          {isExpired && (
+                            <p className="text-[10px] sm:text-[11px] text-muted-foreground text-center mt-0.5">
+                              Data de început a trecut. Cererea nu mai poate fi acceptată.
+                            </p>
+                          )}
                         </div>
                       ) : (
                         <Button asChild className="w-full h-9 text-xs sm:text-sm">
