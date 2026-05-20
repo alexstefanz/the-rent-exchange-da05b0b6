@@ -843,11 +843,11 @@ const SupportChatWidget = () => {
                               setTicketPublicId(ticket.public_id ?? null);
                             }}
                             className={cn(
-                              "w-full text-left rounded-xl border bg-card p-3 hover:border-primary/50 hover:bg-primary/5 transition-colors",
+                              "w-full min-w-0 overflow-hidden text-left rounded-xl border bg-card p-3 hover:border-primary/50 hover:bg-primary/5 transition-colors",
                               ticket.unread_count > 0 && "border-primary/40 bg-primary/5",
                             )}
                           >
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-1 min-w-0">
                               <span
                                 className={cn(
                                   "h-2 w-2 rounded-full shrink-0",
@@ -856,30 +856,30 @@ const SupportChatWidget = () => {
                                     : "bg-primary",
                                 )}
                               />
-                              <span className="text-[11px] font-mono font-medium text-muted-foreground">
+                              <span className="text-[11px] font-mono font-medium text-muted-foreground truncate">
                                 {ticket.public_id || `#${ticket.id.slice(0, 6)}`}
                               </span>
                               <StatusPill
                                 status={ticket.status}
                                 size="xs"
-                                className="ml-auto"
+                                className="ml-auto shrink-0"
                               />
                               {ticket.unread_count > 0 && (
-                                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-primary text-primary-foreground">
+                                <span className="shrink-0 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-primary text-primary-foreground">
                                   {ticket.unread_count}
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm font-medium line-clamp-1 mb-0.5">
+                            <p className="text-sm font-medium line-clamp-1 break-all mb-0.5">
                               {ticket.title}
                             </p>
                             {ticket.requester_name && (
-                              <p className="text-[11px] text-muted-foreground truncate">
+                              <p className="text-[11px] text-muted-foreground truncate break-all">
                                 {ticket.requester_name}
                               </p>
                             )}
                             {ticket.last_message && (
-                              <p className="text-[11px] text-muted-foreground line-clamp-1 mt-0.5">
+                              <p className="text-[11px] text-muted-foreground line-clamp-1 break-all mt-0.5">
                                 {ticket.last_message}
                               </p>
                             )}
@@ -909,20 +909,20 @@ const SupportChatWidget = () => {
                             key={ticket.id}
                             type="button"
                             onClick={() => handleSelectArchivedTicket(ticket)}
-                            className="w-full text-left rounded-xl border bg-card p-3 hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                            className="w-full min-w-0 overflow-hidden text-left rounded-xl border bg-card p-3 hover:border-primary/50 hover:bg-primary/5 transition-colors"
                           >
-                            <div className="flex items-center gap-2 mb-1">
+                            <div className="flex items-center gap-2 mb-1 min-w-0">
                               <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
-                              <span className="text-[11px] font-mono font-medium text-muted-foreground">
+                              <span className="text-[11px] font-mono font-medium text-muted-foreground truncate">
                                 {ticket.public_id || `#${ticket.id.slice(0, 6)}`}
                               </span>
                               <StatusPill
                                 status={ticket.status}
                                 size="xs"
-                                className="ml-auto"
+                                className="ml-auto shrink-0"
                               />
                             </div>
-                            <p className="text-sm font-medium line-clamp-2 mb-1">
+                            <p className="text-sm font-medium line-clamp-2 break-all mb-1">
                               {ticket.title}
                             </p>
                             <p className="text-[11px] text-muted-foreground">

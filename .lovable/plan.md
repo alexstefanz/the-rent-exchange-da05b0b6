@@ -1,62 +1,24 @@
-## Scop
+## Problem
+In the support widget admin inbox (image attached), each ticket card stretches horizontally beyond the widget container because ticket titles/last_message contain long unbroken strings (e.g. `@@@@@@…`). `line-clamp-1` only truncates wrapped lines — it does not break unbreakable words, so the card grows past its parent width.
 
-1. **Desktop** — Înlocuim butonul rotund portocaliu de chat (FAB) cu un card-pill „Live Help · Online" similar primei imagini (avatar + status dot verde + titlu + subtitlu „Bună! Te putem ajuta?").
-2. **Mobil** — Ascundem complet FAB-ul de suport, iar în pagina `/mesaje` adăugăm un al treilea tab **„Suport"** lângă „Rezervări" / „De Închiriat", care randează același flux de tickete folosit azi în widget (listă tickete + buton „Ticket nou" + chat ticket).
+## Fix
+In `src/components/support/SupportChatWidget.tsx`, constrain the ticket cards so long unbroken content can't push them wider than the widget:
 
-## Comportament
+1. **Admin inbox cards (lines ~837–887)**
+   - Add `min-w-0 overflow-hidden` to the `<button>` so its content is bounded.
+   - Add `min-w-0 flex-1` to the public_id span / header row item that needs to shrink, and ensure the header `<div className="flex items-center gap-2 mb-1">` uses `min-w-0`.
+   - Replace `line-clamp-1` / `line-clamp-1` on `ticket.title` and `ticket.last_message` paragraphs with `truncate break-all` (or `line-clamp-1 break-all`) so long unbroken `@@@…` strings are clipped instead of expanding the card.
+   - Same treatment for `requester_name` (`truncate break-all`).
 
-### Desktop FAB (card „Live Help")
-- Container fix `bottom-6 right-6`, doar `lg:flex` (ascuns sub `lg`).
-- Card alb cu shadow-lg, rounded-2xl, padding ~12-14px:
-  - Avatar 36-40px (poză agent — folosim un asset existent din `src/assets/` cu o reprezentantă; dacă nu există, generăm un avatar realist și îl importăm).
-  - Punct status verde `bg-green-500` ring-2 alb, poziționat top-left peste avatar.
-  - Text dreapta:
-    - Rând 1: `Live Help` (bold) + chip mic verde „Online".
-    - Rând 2: `Bună! Te putem ajuta?` (text-muted-foreground, text-sm).
-- Pe hover: scale subtil (`hover:scale-[1.02]`) + shadow mai pronunțat.
-- Badge cu `fabBadgeCount` rămâne (cerc roșu mic în colț top-right) când există mesaje necitite.
-- Click → `setIsOpen(true)` (același comportament).
+2. **Archive list cards (lines ~907–935)**
+   - Same `min-w-0 overflow-hidden` on the button.
+   - `break-all` on the title `<p>` (keep `line-clamp-2`).
+   - `min-w-0` on the header row.
 
-### FAB mobil
-- Se elimină varianta mobilă a butonului flotant (clasă `bottom-20` + `flex` pe sub `lg`). Widget-ul pe mobil se va deschide DOAR din noul tab „Suport" în pagina `/mesaje`. Restul (rute non-`/mesaje`) — fără FAB pe mobil.
+3. **Parent container check**
+   - Confirm the `ScrollArea` and its `space-y-2` wrapper don't need `min-w-0` themselves; if cards still bleed, add `min-w-0` to the wrapping `<div className="space-y-2">`.
 
-### Tab „Suport" în `/mesaje` (mobil)
-- În `ConversationList.tsx`, `TabsList` capătă a treia opțiune `value="suport"` cu icon `LifeBuoy` + text „Suport" / „Support".
-- Când `activeTab === "suport"`, în loc de lista de conversații, se randează un panou nou `SupportTabPanel`:
-  - Listă tickete existente (din `useSupportTickets` deja folosit în `SupportChatWidget`) cu status badge, ultimul mesaj, timp.
-  - Buton primary fix sus „Ticket nou" → deschide formular inline (subiect + descriere + atașament opțional), exact ca în widget.
-  - Tap pe un ticket deschide chat-ul ticketului (folosim `TicketChat` deja existent în `src/components/support/center/TicketChat.tsx`) full-screen în interiorul layout-ului mobil (fluxul actual de `Messages.tsx` cu split-view).
-- Tabul „Suport" e vizibil pe orice formă (nu îl ascundem pe desktop — e consistent), dar pe desktop suportul rămâne accesibil și prin card-ul „Live Help".
-- Badge roșu pe tab cu numărul total de mesaje suport necitite (`supportUnread` din același hook).
+No business-logic / data changes — purely CSS classNames in the widget component.
 
-## Implementare tehnică
-
-**Fișiere modificate:**
-
-1. `src/components/support/SupportChatWidget.tsx`
-   - Înlocuiește blocul FAB (`{!isOpen && (...)}`) cu un nou subcomponent `LiveHelpCard` afișat `hidden lg:flex` (cu badge unread păstrat).
-   - Eliminăm complet apariția pe mobil (`< lg`).
-   - Restul panoului (când `isOpen`) rămâne neschimbat.
-
-2. `src/components/messaging/ConversationList.tsx`
-   - Adaugă al 3-lea `TabsTrigger value="suport"` cu icon `LifeBuoy` + badge `supportUnread`.
-   - Props noi: `supportUnread?: number`.
-   - Când `activeTab === "suport"`, NU randa lista convorbirilor — randa `<SupportTabPanel />` (componentă nouă) sau lasă conditional în `Messages.tsx`.
-
-3. `src/pages/Messages.tsx`
-   - Adaugă state pentru suport (ticket selectat).
-   - Când `activeTab === "suport"`, înlocuiește panoul de conversații cu noul `SupportTabPanel`.
-   - Tipăm `activeTab: "rezervari" | "de-inchiriat" | "suport"`.
-
-4. **Nou:** `src/components/support/SupportTabPanel.tsx`
-   - Extras din logica existentă a widget-ului: listă tickete, formular ticket nou, deschiderea chat-ului. Reutilizează cât mai mult din helperele deja existente în `SupportChatWidget.tsx` (sau extrage într-un `useSupportTickets` separat dacă deja există — verificăm).
-   - Layout responsive: pe mobil ocupă tot panoul listei; pe desktop, când pagina e afișată, randa la fel ca celelalte taburi.
-
-5. **Asset nou (opțional):** `src/assets/live-help-avatar.jpg` (avatar realist agent) — dacă nu există ceva potrivit deja, îl generăm cu `imagegen` (foto profesional, fundal neutru, headshot).
-
-## Ce NU se modifică
-
-- Funcționalitatea de tickete (creare, mesagerie, hooks) — doar mutată/împărtășită.
-- Conversațiile chiriaș-proprietar — rămân pe taburile existente.
-- Logica de notificări/badge — folosim aceleași hookuri/contoare deja existente.
-- Restul paginii `Messages.tsx` (split view desktop) — neschimbat în afară de noul tab.
+## Verification
+- Reload widget as admin, confirm cards stay within the panel width with long `@@@@…` titles, and short titles still look identical to before.
