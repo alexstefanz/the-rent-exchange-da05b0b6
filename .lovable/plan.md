@@ -1,28 +1,18 @@
-# Eliminare opțiune „Persoană juridică" / Companie din platformă
+## Fix: Click pe imagini/video în tabul Media deschide lightbox-ul
 
-Funcționalitatea de cont business rămâne pe viitor — o ascundem din UI și forțăm toate conturile noi/existente pe flow-ul de persoană fizică. Nu atingem schema DB (coloanele `account_type`, `company_name`, `cui`, `reg_com`, `company_address` rămân pentru când va fi reintrodusă).
+În `src/components/messaging/InfoPanel.tsx`, thumbnail-urile din tabul Media sunt simple `<div>` fără handler. Le facem clickable și deschidem același `MediaLightbox` folosit deja la click-ul pe atașamentele din mesaje.
 
-## Modificări
+### Modificări într-un singur fișier: `src/components/messaging/InfoPanel.tsx`
 
-### 1. `src/pages/Auth.tsx` (înregistrare)
-- Elimin import-ul și render-ul `<AccountTypeToggle …/>`.
-- Elimin state-ul `accountType` și textul condițional „Vei completa datele firmei (CUI, IBAN)…".
-- În `handleRegister`, scot ramura `if (accountType === "business") updates.account_type = "business"` și redirect-ul condiționat către `/onboarding/business`. Toate conturile noi rămân `individual` (default-ul din DB) și merg pe flow-ul standard.
+1. Import `MediaLightbox` și `useState`.
+2. State nou: `const [lightbox, setLightbox] = useState<{ open: boolean; index: number }>({ open: false, index: 0 })`.
+3. Combin imaginile și video-urile într-un singur array `media = [...images, ...videos]` (în această ordine) ca să poată fi navigate împreună în lightbox cu săgeți.
+4. Înlocuiesc `<div>` wrapper-ul fiecărui thumbnail (imagine și video) cu `<button type="button" onClick={() => setLightbox({ open: true, index: mediaIndex })}>` păstrând clasele actuale + `hover:opacity-90 transition cursor-zoom-in`.
+5. La sfârșitul componentei, randez `<MediaLightbox attachments={media} startIndex={lightbox.index} open={lightbox.open} onClose={() => setLightbox(s => ({ ...s, open: false }))} />`.
 
-### 2. `src/App.tsx`
-- Scot ruta `/onboarding/business` și import-ul lazy `BusinessOnboarding`. Pagina rămâne pe disk (`src/pages/BusinessOnboarding.tsx`) pentru viitor, dar nu mai e accesibilă.
+Nu se modifică `MediaLightbox.tsx` (deja gestionează ambele tipuri image/video și signed URLs prin `getSignedChatMedia`).
 
-### 3. `src/components/profile/ProfileTab.tsx` (My Account)
-- Elimin switch-ul „Persoană juridică" și întreg blocul `{isBusiness && (…)}` cu inputurile `company_name`, `cui`, `reg_com`, `company_address`.
-- Scot state-ul `isBusiness` + `setIsBusiness`, citirea `account_type === 'business'` și payload-ul de salvare aferent. `updateProfile` trimite doar `full_name`, `phone`, `email`.
-- Las câmpurile zod din schema formularului ca optional (nu mai sunt folosite) sau le scot pentru curățenie — opțiune curată: scot și câmpurile.
-
-### 4. Fișiere lăsate intenționat
-- `src/components/onboarding/AccountTypeToggle.tsx`, `src/components/onboarding/CuiLookupField.tsx`, `src/components/onboarding/CompanyAutofillCard.tsx`, `src/pages/BusinessOnboarding.tsx` — rămân ca cod „dormant" pentru reintroducere viitoare.
-- `src/pages/admin/AdminUserDetail.tsx` — afișarea CUI/RegCom pentru conturile existente marcate `business` rămâne (admin info, nu UI public).
-- `src/features/profile/profileApi.ts` — semnătura cu câmpurile business rămâne (DB neschimbat).
-
-## Verificare
-- Pagina `/autentificare` → tab Înregistrare nu mai afișează toggle-ul Persoană fizică / Companie și nici textul „Vei completa datele firmei".
-- `/cont` → tab Profil nu mai are switch-ul „Persoană juridică" și nici inputurile companie.
-- Navigarea directă la `/onboarding/business` cade pe NotFound.
+### Verificare
+- Click pe miniatură imagine în tab Media → se deschide lightbox la imaginea corectă, săgeți funcționale.
+- Click pe miniatură video → deschide lightbox cu video player.
+- Esc / X / săgeți tastatură funcționează (din comportamentul existent al lightbox-ului).
