@@ -552,14 +552,33 @@ const SupportChatWidget = () => {
         onChange={handleImageUpload}
       />
 
-      {/* FAB */}
+      {/* Live Help card — desktop only */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className={`fixed bottom-20 lg:bottom-6 right-4 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-all duration-200 items-center justify-center hover:scale-105 active:scale-95 ${pathname.startsWith("/mesaje") ? "hidden lg:flex" : "flex"}`}
-          aria-label={t("Suport", "Support")}
+          className="fixed bottom-6 right-6 z-50 hidden lg:flex items-center gap-3 rounded-2xl bg-background border border-border pl-2 pr-4 py-2 shadow-xl hover:shadow-2xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.99] text-left"
+          aria-label={t("Suport live", "Live support")}
         >
-          <MessageCircle className="h-6 w-6" />
+          <div className="relative shrink-0">
+            <img
+              src={supportAgentAvatar}
+              alt=""
+              width={40}
+              height={40}
+              loading="lazy"
+              className="h-10 w-10 rounded-full object-cover"
+            />
+            <span className="absolute -top-0.5 -left-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-background" aria-hidden />
+          </div>
+          <div className="flex flex-col leading-tight min-w-0">
+            <span className="flex items-center gap-1.5 text-sm font-bold text-foreground">
+              {t("Live Help", "Live Help")}
+              <span className="text-xs font-semibold text-green-600">{t("Online", "Online")}</span>
+            </span>
+            <span className="text-xs text-muted-foreground truncate">
+              {t("Bună! Te putem ajuta?", "Hi! Can we help?")}
+            </span>
+          </div>
           {fabBadgeCount > 0 && (
             <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center border-2 border-background">
               {fabBadgeCount > 99 ? "99+" : fabBadgeCount}
