@@ -54,12 +54,6 @@ export default function CycleTimeline({ steps }: Props) {
 
         <div className="space-y-14">
           {steps.map((step, idx) => {
-            const threshold = (idx + 0.5) / steps.length;
-            const active = useTransform(
-              scrollYProgress,
-              [Math.max(0, threshold - 0.04), threshold],
-              [0, 1]
-            );
             const left = idx % 2 === 0;
             return (
               <DesktopRow
@@ -67,7 +61,8 @@ export default function CycleTimeline({ steps }: Props) {
                 idx={idx}
                 step={step}
                 left={left}
-                active={active}
+                progress={scrollYProgress}
+                threshold={(idx + 0.5) / steps.length}
                 reduce={!!reduce}
               />
             );
@@ -85,14 +80,15 @@ export default function CycleTimeline({ steps }: Props) {
         />
         <div className="space-y-6">
           {steps.map((step, idx) => {
-            const threshold = (idx + 0.5) / steps.length;
-            const active = useTransform(
-              mobileProgress,
-              [Math.max(0, threshold - 0.04), threshold],
-              [0, 1]
-            );
             return (
-              <MobileRow key={idx} idx={idx} step={step} active={active} reduce={!!reduce} />
+              <MobileRow
+                key={idx}
+                idx={idx}
+                step={step}
+                progress={mobileProgress}
+                threshold={(idx + 0.5) / steps.length}
+                reduce={!!reduce}
+              />
             );
           })}
         </div>
@@ -105,18 +101,26 @@ function DesktopRow({
   idx,
   step,
   left,
-  active,
+  progress,
+  threshold,
   reduce,
 }: {
   idx: number;
   step: CycleStep;
   left: boolean;
-  active: MotionValue<number>;
+  progress: MotionValue<number>;
+  threshold: number;
   reduce: boolean;
 }) {
   const Icon = step.icon;
+  const active = useTransform(
+    progress,
+    [Math.max(0, threshold - 0.04), threshold],
+    [0, 1]
+  );
   const dotScale = useTransform(active, [0, 1], [1, 1.35]);
   const iconScale = useTransform(active, [0, 1], [1, 1.05]);
+  const inactiveOpacity = useTransform(active, [0, 1], [1, 0]);
 
   return (
     <div className="relative grid grid-cols-2 items-center gap-12">
@@ -159,7 +163,7 @@ function DesktopRow({
           />
           {/* Inactive icon */}
           <motion.span
-            style={{ opacity: useTransform(active, [0, 1], [1, 0]) }}
+            style={{ opacity: inactiveOpacity }}
             className="absolute inset-0 flex items-center justify-center"
           >
             <Icon className="h-7 w-7 text-primary" />
@@ -180,16 +184,24 @@ function DesktopRow({
 function MobileRow({
   idx,
   step,
-  active,
+  progress,
+  threshold,
   reduce,
 }: {
   idx: number;
   step: CycleStep;
-  active: MotionValue<number>;
+  progress: MotionValue<number>;
+  threshold: number;
   reduce: boolean;
 }) {
   const Icon = step.icon;
+  const active = useTransform(
+    progress,
+    [Math.max(0, threshold - 0.04), threshold],
+    [0, 1]
+  );
   const dotScale = useTransform(active, [0, 1], [1, 1.35]);
+  const inactiveOpacity = useTransform(active, [0, 1], [1, 0]);
 
   return (
     <motion.div
@@ -217,7 +229,7 @@ function MobileRow({
               className="absolute inset-0 bg-primary"
             />
             <motion.span
-              style={{ opacity: useTransform(active, [0, 1], [1, 0]) }}
+              style={{ opacity: inactiveOpacity }}
               className="absolute inset-0 flex items-center justify-center"
             >
               <Icon className="h-5 w-5 text-primary" />
