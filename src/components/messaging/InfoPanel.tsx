@@ -177,14 +177,19 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, classN
                 <p className="text-xs text-muted-foreground">{t("Nicio imagine partajată", "No shared images")}</p>
               ) : (
                 <div className="grid grid-cols-3 gap-1.5">
-                  {images.map((a) => (
-                    <div key={a.id} className="aspect-square rounded-lg overflow-hidden bg-muted">
+                  {images.map((a, i) => (
+                    <button
+                      type="button"
+                      key={a.id}
+                      onClick={() => setLightbox({ open: true, index: i })}
+                      className="aspect-square rounded-lg overflow-hidden bg-muted hover:opacity-90 transition cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
                       {thumbs[a.id] ? (
                         <img src={thumbs[a.id]} alt="" className="w-full h-full object-cover" loading="lazy" />
                       ) : (
                         <div className="w-full h-full animate-pulse" />
                       )}
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -197,15 +202,20 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, classN
                 <p className="text-xs text-muted-foreground">{t("Niciun video partajat", "No shared videos")}</p>
               ) : (
                 <div className="grid grid-cols-3 gap-1.5">
-                  {videos.map((a) => (
-                    <div key={a.id} className="aspect-square rounded-lg overflow-hidden bg-muted relative">
+                  {videos.map((a, i) => (
+                    <button
+                      type="button"
+                      key={a.id}
+                      onClick={() => setLightbox({ open: true, index: images.length + i })}
+                      className="aspect-square rounded-lg overflow-hidden bg-muted relative hover:opacity-90 transition cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
                       {thumbs[a.id] && (
                         <img src={thumbs[a.id]} alt="" className="w-full h-full object-cover" loading="lazy" />
                       )}
                       <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
                         <Video className="h-5 w-5 text-white" />
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
