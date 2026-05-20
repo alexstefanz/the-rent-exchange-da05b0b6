@@ -183,6 +183,9 @@ const SupportChatWidget = () => {
   const [userLeftTicket, setUserLeftTicket] = useState(false);
   const [ticketPublicId, setTicketPublicId] = useState<string | null>(null);
   const [showTicketArchive, setShowTicketArchive] = useState(false);
+  // When true, user explicitly asked to open a brand new ticket — skip
+  // auto-resume of the existing open ticket for this widget session.
+  const [userRequestedNewTicket, setUserRequestedNewTicket] = useState(false);
 
   const [messageText, setMessageText] = useState("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -202,6 +205,7 @@ const SupportChatWidget = () => {
       setMessageText("");
       setIsInternal(false);
       setUserLeftTicket(false);
+      setUserRequestedNewTicket(false);
     }
   }, [isOpen]);
 
@@ -361,14 +365,43 @@ const SupportChatWidget = () => {
   );
   const openTicketsCount = openTickets.length;
 
-  // Welcome screen rămâne starea implicită pe tabul Suport.
-  // User-ul reintră într-un ticket explicit din lista "Tickete anterioare".
+  // Auto-resume: dacă userul are un ticket deschis, îl reia automat la
+  // deschiderea widget-ului (sau imediat ce lista se încarcă), astfel încât
+  // back/close să nu îl arunce înapoi pe ecranul de welcome. Sare peste
+  // auto-resume dacă userul a cerut explicit un ticket nou.
+  useEffect(() => {
+    if (!isOpen || !user || isAdmin) return;
+    if (ticketId || showTicketArchive || userRequestedNewTicket) return;
+    if (openTickets.length === 0) return;
+    const mostRecent = [...openTickets].sort(
+      (a, b) =>
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+    )[0];
+    setTicketId(mostRecent.id);
+    setTicketPublicId(mostRecent.public_id ?? null);
+  }, [
+    isOpen,
+    user,
+    isAdmin,
+    ticketId,
+    showTicketArchive,
+    userRequestedNewTicket,
+    openTickets,
+  ]);
 
   const handleSelectArchivedTicket = (ticket: OpsTicket) => {
     setTicketId(ticket.id);
     setTicketPublicId(ticket.public_id ?? null);
     setShowTicketArchive(false);
     setUserLeftTicket(false);
+  };
+
+  const handleStartNewTicket = () => {
+    setTicketId(null);
+    setTicketPublicId(null);
+    setShowTicketArchive(false);
+    setMessageText("");
+    setUserRequestedNewTicket(true);
   };
 
   // -------- Active ticket conversation --------
@@ -446,6 +479,7 @@ const SupportChatWidget = () => {
       setTicketPublicId(ticket.public_id);
       setMessageText("");
       setUserLeftTicket(false);
+      setUserRequestedNewTicket(false);
       queryClient.invalidateQueries({ queryKey: ["userTickets"] });
       queryClient.invalidateQueries({
         queryKey: ["supportChatMessages", ticket.id],
@@ -499,6 +533,11 @@ const SupportChatWidget = () => {
     // If user has other open tickets, show archive toggle path; otherwise welcome screen
     setShowTicketArchive(false);
     setUserLeftTicket(true);
+    // Back from a closed/archived ticket → return to archive list if it was
+    // opened from there, so user doesn't land on welcome unexpectedly.
+    if (isClosed) {
+      setShowTicketArchive(true);
+    }
   };
 
   // Hide on admin route only for non-admins (so plain users don't see widget there).
@@ -515,7 +554,12 @@ const SupportChatWidget = () => {
     isAdmin && ticketId ? adminInbox.find((t) => t.id === ticketId) : null;
 
   // Header content
-  const showBack = !!ticketId || showTicketArchive;
+  // Back is hidden for non-admin while viewing an ACTIVE ticket — userul
+  // nu trebuie să iasă accidental din conversația de suport în curs.
+  // Pentru tickete închise / arhivă / admin păstrăm back-ul.
+  const showBack =
+    showTicketArchive ||
+    (!!ticketId && (isAdmin || isClosed));
   const headerTitle = ticketId
     ? isAdmin
       ? ticketPublicId || t("Ticket", "Ticket")
