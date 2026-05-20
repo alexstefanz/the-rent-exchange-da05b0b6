@@ -702,14 +702,9 @@ const SupportChatWidget = () => {
           aria-label={t("Suport live", "Live support")}
         >
           <div className="relative shrink-0">
-            <img
-              src={supportAgentAvatar}
-              alt=""
-              width={40}
-              height={40}
-              loading="lazy"
-              className="h-10 w-10 rounded-full object-cover"
-            />
+            <div className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center">
+              <Headphones className="h-5 w-5 text-primary" aria-hidden />
+            </div>
             <span className="absolute -top-0.5 -left-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-background" aria-hidden />
           </div>
           <div className="flex flex-col leading-tight min-w-0">
