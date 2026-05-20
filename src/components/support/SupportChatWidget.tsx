@@ -774,6 +774,22 @@ const SupportChatWidget = () => {
                 )}
               </div>
             </div>
+            {ticketId && (
+              <button
+                onClick={() => {
+                  const target = isAdmin
+                    ? `/admin/tickets?id=${ticketId}`
+                    : `/suport?open=${ticketId}`;
+                  setIsOpen(false);
+                  navigate(target);
+                }}
+                className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors"
+                aria-label={t("Deschide în pagina de suport", "Open in support page")}
+                title={t("Deschide în pagina de suport", "Open in support page")}
+              >
+                <Maximize2 className="h-5 w-5" />
+              </button>
+            )}
             {isAdmin && ticketId && !isClosed && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
