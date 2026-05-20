@@ -229,7 +229,7 @@ export async function getRentalContext(rentalId: string): Promise<RentalContextR
   };
 }
 
-const MAX_MESSAGE_LENGTH = 5000;
+const MAX_MESSAGE_LENGTH = 1000;
 
 export async function sendMessage(conversationId: string, content: string): Promise<Message | null> {
   const trimmed = content.trim();
