@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   MessageCircle,
   Send,
@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Ban,
+  Maximize2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -196,6 +197,7 @@ const renderMessageContent = (text: string) => {
 
 const SupportChatWidget = () => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
@@ -772,6 +774,22 @@ const SupportChatWidget = () => {
                 )}
               </div>
             </div>
+            {ticketId && (
+              <button
+                onClick={() => {
+                  const target = isAdmin
+                    ? `/admin/tickets?id=${ticketId}`
+                    : `/suport?open=${ticketId}`;
+                  setIsOpen(false);
+                  navigate(target);
+                }}
+                className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors"
+                aria-label={t("Deschide în pagina de suport", "Open in support page")}
+                title={t("Deschide în pagina de suport", "Open in support page")}
+              >
+                <Maximize2 className="h-5 w-5" />
+              </button>
+            )}
             {isAdmin && ticketId && !isClosed && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
