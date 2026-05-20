@@ -1,24 +1,33 @@
-## Problem
-In the support widget admin inbox (image attached), each ticket card stretches horizontally beyond the widget container because ticket titles/last_message contain long unbroken strings (e.g. `@@@@@@…`). `line-clamp-1` only truncates wrapped lines — it does not break unbreakable words, so the card grows past its parent width.
+## Goal
 
-## Fix
-In `src/components/support/SupportChatWidget.tsx`, constrain the ticket cards so long unbroken content can't push them wider than the widget:
+În widget-ul de suport (`SupportChatWidget.tsx`), când userul are un ticket deschis (status ≠ RESOLVED/CLOSED), conversația cu suportul trebuie să rămână activă. Apăsarea pe back sau închiderea/redeschiderea widget-ului nu trebuie să arunce userul înapoi pe ecranul de "mesaj inițial". Un ticket nou se creează doar la cererea explicită a userului.
 
-1. **Admin inbox cards (lines ~837–887)**
-   - Add `min-w-0 overflow-hidden` to the `<button>` so its content is bounded.
-   - Add `min-w-0 flex-1` to the public_id span / header row item that needs to shrink, and ensure the header `<div className="flex items-center gap-2 mb-1">` uses `min-w-0`.
-   - Replace `line-clamp-1` / `line-clamp-1` on `ticket.title` and `ticket.last_message` paragraphs with `truncate break-all` (or `line-clamp-1 break-all`) so long unbroken `@@@…` strings are clipped instead of expanding the card.
-   - Same treatment for `requester_name` (`truncate break-all`).
+## Schimbări
 
-2. **Archive list cards (lines ~907–935)**
-   - Same `min-w-0 overflow-hidden` on the button.
-   - `break-all` on the title `<p>` (keep `line-clamp-2`).
-   - `min-w-0` on the header row.
+1. **Auto-resume ticket deschis la deschiderea widget-ului**
+   - În efectul care rulează când `isOpen` devine true (pentru useri non-admin), dacă `userTickets` conține un ticket cu status ∈ {NEW, IN_PROGRESS, WAITING_CUSTOMER, WAITING_OWNER, WAITING_INTERNAL}, se selectează cel mai recent (`updated_at` desc) și se setează `ticketId` + `ticketPublicId` automat.
+   - Welcome screen-ul ("Echipa Rentli – Bună! Suntem aici să te ajutăm…") se afișează doar dacă userul **nu** are niciun ticket deschis.
 
-3. **Parent container check**
-   - Confirm the `ScrollArea` and its `space-y-2` wrapper don't need `min-w-0` themselves; if cards still bleed, add `min-w-0` to the wrapping `<div className="space-y-2">`.
+2. **Schimbarea comportamentului butonului back din header-ul ticketului activ**
+   - Pentru tickete cu status deschis: ascundem butonul back (săgeata din imaginea 1). Headerul rămâne doar cu avatar + "Suport Rentli / TCK-xxxxx" + X (închide widget). Astfel userul nu mai poate "părăsi" un ticket activ accidental.
+   - Pentru tickete arhivate (RESOLVED/CLOSED) deschise din "Vezi tickete anterioare", butonul back rămâne și revine la lista de arhivă.
 
-No business-logic / data changes — purely CSS classNames in the widget component.
+3. **Crearea unui ticket nou doar explicit**
+   - Eliminăm flow-ul în care, după back, primul mesaj scris generează automat alt ticket.
+   - Adăugăm un buton explicit "Ticket nou" / "New ticket" în două locuri:
+     - În welcome screen (cum este deja, prin scrierea primului mesaj — rămâne valabil pentru userii fără tickete deschise).
+     - În ecranul "Vezi tickete anterioare" (lista de arhivă), ca acțiune secundară "+ Deschide ticket nou" care duce userul în welcome screen (curăță `ticketId`, ignoră auto-resume printr-un flag `userRequestedNewTicket`).
+   - `userLeftTicket` și `handleBackFromTicket` se refactorizează: back nu mai e disponibil pe ticket activ; pe ticket arhivat back duce la lista de arhivă.
 
-## Verification
-- Reload widget as admin, confirm cards stay within the panel width with long `@@@@…` titles, and short titles still look identical to before.
+4. **Reset la închidere**
+   - La închiderea widget-ului (`isOpen` false) păstrăm comportamentul de reset al state-ului local, dar la următoarea deschidere auto-resume preia ticketul activ din DB, deci UX-ul rămâne continuu.
+   - Flagul `userRequestedNewTicket` se resetează la închidere.
+
+## Fișiere atinse
+
+- `src/components/support/SupportChatWidget.tsx` — auto-resume effect, header conditional back button, buton "Ticket nou" în arhivă, flag pentru a sări peste auto-resume.
+
+## Out of scope
+
+- Logica admin (inbox-ul de tickete pentru admini) rămâne neschimbată.
+- Nicio modificare de schemă DB sau RPC.
