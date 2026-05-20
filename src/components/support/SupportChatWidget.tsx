@@ -592,20 +592,11 @@ const SupportChatWidget = () => {
                 <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background" />
               </div>
             )}
-            {showBack && (activeConv || ticketId) && (
+            {showBack && ticketId && (
               <Avatar className="h-9 w-9 shrink-0">
-                {activeConv ? (
-                  <>
-                    <AvatarImage src={activeConv.other_user?.avatar_url || undefined} />
-                    <AvatarFallback>
-                      {activeConv.other_user?.full_name?.charAt(0) || "U"}
-                    </AvatarFallback>
-                  </>
-                ) : (
-                  <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                    R
-                  </AvatarFallback>
-                )}
+                <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                  R
+                </AvatarFallback>
               </Avatar>
             )}
             <div className="flex-1 min-w-0">
@@ -640,19 +631,6 @@ const SupportChatWidget = () => {
                   </Button>
                 </div>
               </div>
-            ) : activeConv ? (
-              /* ----- User↔User conversation inline ----- */
-              <ChatPanel
-                conversationId={activeConv.id}
-                otherUserName={activeConv.other_user?.full_name || null}
-                otherUserAvatar={activeConv.other_user?.avatar_url || null}
-                productTitle={activeConv.product?.title || ""}
-                ownerId={activeConv.owner_id}
-                buyerId={activeConv.buyer_id}
-                rentalsId={activeConv.rentals_id || null}
-                hideHeader
-                defaultRentalContextOpen={false}
-              />
             ) : ticketId ? (
               /* ----- Active ticket conversation ----- */
               <>
