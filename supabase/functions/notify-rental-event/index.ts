@@ -21,6 +21,7 @@ type EventKey =
   | "handover_confirmed"
   | "active_rental_started"
   | "return_reminder_24h"
+  | "return_reminder_2h"
   | "return_in_progress"
   | "pv_return_pending"
   | "pv_return_completed_by_party"
@@ -147,6 +148,15 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsTemplate: "return_reminder",
     inAppTitle: { ro: "Reminder returnare", en: "Return reminder" },
     inAppDesc: (c) => ({ ro: `Returnarea pentru "${c.product?.title}" se apropie`, en: `Return for "${c.product?.title}" approaching` }),
+    link: (c) => `/rezervari/${c.rental.public_id}`,
+    smsPurpose: "view_rental",
+  },
+  return_reminder_2h: {
+    recipients: "both", channels: ["in_app", "email", "sms"], critical: true,
+    emailTemplate: { both: "return-deadline-2h" },
+    smsTemplate: "return_deadline_2h",
+    inAppTitle: { ro: "⏰ Mai sunt 2 ore până la deadline", en: "⏰ 2 hours left until deadline" },
+    inAppDesc: (c) => ({ ro: `Returnează "${c.product?.title}" până la miezul nopții pentru a evita penalizările.`, en: `Return "${c.product?.title}" before midnight to avoid penalties.` }),
     link: (c) => `/rezervari/${c.rental.public_id}`,
     smsPurpose: "view_rental",
   },

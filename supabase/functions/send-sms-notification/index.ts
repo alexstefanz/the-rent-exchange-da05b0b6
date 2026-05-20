@@ -15,6 +15,7 @@ type TemplateKey =
   | "rental_rejected"
   | "rental_cancelled"
   | "return_reminder"
+  | "return_deadline_2h"
   | "pickup_scheduled"
   | "pv_pending"
   | "pv_other_done"
@@ -57,6 +58,8 @@ function renderTemplate(key: TemplateKey, v: TemplateVars): string {
       return `Rentli: rezervarea pt "${title}" a fost anulata. Detalii: ${PLATFORM_URL}/rezervari`;
     case "return_reminder":
       return `Rentli: returneaza azi "${title}". Contacteaza ${owner} pt predare.`;
+    case "return_deadline_2h":
+      return `Rentli: URGENT - 2h pana la deadline pt "${title}". Finalizeaza returnarea: ${link}`;
     case "pickup_scheduled":
       return `Rentli: predare "${title}"${when ? ` pe ${when}` : ""}${place ? ` la ${place}` : ""}. Detalii: ${link}`;
     case "pv_pending":
@@ -145,6 +148,7 @@ Deno.serve(async (req) => {
       "rental_rejected",
       "rental_cancelled",
       "return_reminder",
+      "return_deadline_2h",
       "pickup_scheduled",
       "pv_pending",
       "pv_other_done",

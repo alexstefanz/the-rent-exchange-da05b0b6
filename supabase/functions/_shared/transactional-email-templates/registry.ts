@@ -39,6 +39,7 @@ import { template as pvPending } from './pv-pending.tsx'
 import { template as pvOtherDone } from './pv-other-done.tsx'
 import { template as handoverConfirmed } from './handover-confirmed.tsx'
 import { template as returnReminder } from './return-reminder.tsx'
+import { template as returnDeadline2h } from './return-deadline-2h.tsx'
 import { template as returnInProgress } from './return-in-progress.tsx'
 import { template as rentalCompletedOwner } from './rental-completed-owner.tsx'
 import { template as rentalCompletedRenter } from './rental-completed-renter.tsx'
@@ -76,6 +77,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'pv-other-done': pvOtherDone,
   'handover-confirmed': handoverConfirmed,
   'return-reminder': returnReminder,
+  'return-deadline-2h': returnDeadline2h,
   'return-in-progress': returnInProgress,
   'rental-completed-owner': rentalCompletedOwner,
   'rental-completed-renter': rentalCompletedRenter,
