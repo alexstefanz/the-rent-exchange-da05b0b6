@@ -966,7 +966,7 @@ const SupportChatWidget = () => {
                         )}
                       </div>
                     )}
-                    <div className="flex items-center gap-2 px-3 py-2.5">
+                    <div className="flex items-end gap-2 px-3 py-2.5">
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
@@ -979,12 +979,17 @@ const SupportChatWidget = () => {
                           <ImagePlus className="h-4 w-4 text-muted-foreground" />
                         )}
                       </button>
-                      <Input
+                      <Textarea
+                        ref={messageTextareaRef}
                         value={messageText}
-                        onChange={(e) => setMessageText(e.target.value.slice(0, MAX_MESSAGE_LENGTH))}
+                        onChange={(e) => {
+                          setMessageText(e.target.value.slice(0, MAX_MESSAGE_LENGTH));
+                          autoGrow(e.target as HTMLTextAreaElement);
+                        }}
                         maxLength={MAX_MESSAGE_LENGTH}
+                        rows={1}
                         placeholder={t("Scrie mesajul tău...", "Write your message...")}
-                        className="h-9 text-sm flex-1 rounded-full"
+                        className="text-sm flex-1 rounded-2xl resize-none overflow-y-auto min-h-9 max-h-40 py-2"
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !e.shiftKey) {
                             e.preventDefault();
