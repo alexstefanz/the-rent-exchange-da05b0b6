@@ -1,57 +1,24 @@
-## Ce am verificat
+Am găsit cauza: apelul `get_rental_popups` eșuează cu `operator does not exist: text = uuid`, deci componenta nu primește niciun item de afișat. Problema vine din RPC-urile pop-up-ului: `rentals.cancelled_by` este `text`, iar funcțiile îl compară direct cu `owner_id` (`uuid`). Această eroare oprește tot RPC-ul, inclusiv ramura pentru cereri `pending`, de aceea pop-up-ul din imagine nu apare nici când există închirieri noi.
 
-- `RentalPopupManager` e montat global în `src/App.tsx` (în `Suspense`), arată corect.
-- Tabelul `rentals` este în publicația `supabase_realtime` cu `REPLICA IDENTITY FULL` și RLS-ul permite SELECT pentru renter și owner.
-- RPC `get_rental_popups` arată ok și există o rezervare `pending` în baza de date (id `458f5edc...`, owner `74835c82...`) — popup-ul ar trebui să apară pentru acel owner la login / refresh.
+Plan de implementare:
 
-## Probleme găsite
+1. Repar RPC-urile pop-up-ului
+   - Actualizez `get_rental_popups()` și `get_rental_popup_by_id()` prin migrație.
+   - Schimb comparația problematică din `cancelled_by = owner_id` în comparație sigură pe text, de tip `cancelled_by = owner_id::text`.
+   - Păstrez comportamentul existent:
+     - proprietarul vede cererile `pending`;
+     - chiriașul vede cererile `confirmed`/`active` nevăzute;
+     - chiriașul vede refuzurile doar când `cancelled_by` este proprietarul.
 
-1. **Bug în `respond-rental-request`** — la refuz, edge function-ul setează `status='cancelled'`, `cancelled_at`, `rejection_reason`, dar **NU** setează `cancelled_by = owner_id`. Pop-up-ul pentru chiriaș (ramura „refuzat") depinde exact de condiția `cancelled_by = owner_id`, deci nu se mai declanșează niciodată. Toate rezervările recente cancelled din DB au `cancelled_by = NULL` — confirmă bug-ul.
+2. Repar edge function-ul de refuz ca să scrie același tip de date
+   - În `respond-rental-request`, păstrez `cancelled_by`, dar îl setez explicit ca string (`user.id`), compatibil cu schema actuală.
+   - Nu schimb fluxul de acceptare/refuz sau notificările.
 
-2. **Pop-up de „confirmat" se poate pierde dacă rezervarea trece rapid de `confirmed`** — `get_rental_popups` filtrează strict `status = 'confirmed'`. Dacă între acceptare și deschiderea aplicației de către chiriaș, rezervarea ajunge la `active`/`completed` (ex. handover confirmat), chiriașul nu mai vede niciodată popup-ul, chiar dacă `renter_seen_confirmation = false`.
+3. Fac UI-ul mai rezilient la erori RPC temporare
+   - În `RentalPopupManager`, evit dublarea apelului inițial cauzată de re-render-uri/dev strict mode printr-un guard per utilizator.
+   - Opțional, adaug o reîncercare scurtă după o eroare RPC, ca pop-up-ul să apară când cache-ul API-ului se stabilizează după migrații.
 
-3. **Realtime sigur doar dacă chiriașul e online în acel moment** — dacă pierde evenimentul UPDATE și apoi rezervarea iese din `confirmed`, popup-ul e pierdut definitiv (combinat cu #2).
-
-## Plan de remediere
-
-### A. Setează `cancelled_by` la refuz (fix principal)
-
-În `supabase/functions/respond-rental-request/index.ts`, în ramura `action !== "accept"` (linia ~152), adaugă:
-```ts
-updateData.cancelled_by = user.id;
-```
-Astfel, refuzul proprietarului satisface condiția RPC-ului și pop-up-ul „refuzat" apare la chiriaș.
-
-### B. Mărește fereastra de afișare pentru chiriaș (pop-up „confirmat")
-
-Modificare RPC `get_rental_popups` și `get_rental_popup_by_id`:
-- Pentru ramura renter „confirmed", acceptă și statusurile ulterioare cât timp `renter_seen_confirmation = false` și `confirmed_at IS NOT NULL`:
-  ```sql
-  (r.renter_id = uid
-   AND r.confirmed_at IS NOT NULL
-   AND r.renter_seen_confirmation = false
-   AND r.status IN ('confirmed','active'))
-  ```
-- Outcome rămâne `'confirmed'` în acest caz.
-
-Astfel, chiriașul vede popup-ul chiar și dacă a fost offline când proprietarul a acceptat sau dacă procesul a avansat la `active`.
-
-### C. (Opțional) Trigger pe acceptare pentru notificarea chiriașului
-
-Realtime-ul deja funcționează; B acoperă cazul edge. Nu adaug nimic în plus.
-
-## Fișiere atinse
-
-- `supabase/functions/respond-rental-request/index.ts` — adăugare `cancelled_by`.
-- Migrație SQL nouă pentru rescrierea funcțiilor `get_rental_popups` și `get_rental_popup_by_id`.
-- Actualizare memorie `mem/features/rental-request-popup.md` cu noua semantică „confirmed | active".
-
-## Verificare post-fix
-
-1. Login ca owner `74835c82...` → popup-ul cu rezervarea pending `458f5edc...` trebuie să apară imediat.
-2. Refuz dintr-un alt cont owner → reîncărcare ca chiriaș → popup „refuzat" apare.
-3. Acceptare → ieșire chiriaș offline → refresh ulterior → popup „confirmat" încă apare (datorită extensiei la `active`).
-
-## Confirmare necesară
-
-Spune-mi cu ce cont ai testat (sau confirmă că vrei să aplic fix-urile așa cum sunt descrise) și implementez direct.
+4. Verificare
+   - Reîncarc pagina ca utilizator autentificat.
+   - Confirm în Network că `rpc/get_rental_popups` revine cu 200, nu 404.
+   - Confirm vizual că apare pop-up-ul pentru cererile `pending` existente ale proprietarului, ca în imaginea atașată.
