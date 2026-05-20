@@ -12,6 +12,20 @@ import {
 import { respondToRental } from "@/features/rentals/ownerRentalsApi";
 import RentalRequestPopup from "./RentalRequestPopup";
 import { useQueryClient } from "@tanstack/react-query";
+import { categories } from "@/data/categories";
+
+function resolveCategorySlug(input?: string | null): string | null {
+  if (!input) return null;
+  const norm = (s: string) =>
+    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const target = norm(input);
+  const direct = categories.find((c) => c.slug === target);
+  if (direct) return direct.slug;
+  const byName = categories.find(
+    (c) => norm(c.name) === target || norm(c.nameEn) === target,
+  );
+  return byName ? byName.slug : null;
+}
 
 export default function RentalPopupManager() {
   const { user } = useAuth();
@@ -129,7 +143,7 @@ export default function RentalPopupManager() {
 
   const handleViewSimilar = async () => {
     try { await markRenterConfirmationSeen(current.id); } catch {}
-    const cat = current.category_slug;
+    const cat = resolveCategorySlug(current.category_slug);
     const title = current.product_title || "";
     removeItem(current.id);
     if (cat) navigate(`/categorie/${cat}`);

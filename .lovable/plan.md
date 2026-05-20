@@ -1,37 +1,20 @@
-## Obiectiv
+## Problem
 
-Când există mai multe cereri în coadă, popup-ul principal rămâne în prim-plan, iar în spatele lui apar 1-2 carduri "preview" mai mici (stivuite), care sugerează vizual că mai sunt cereri în așteptare. La închiderea celui din față, următorul urcă pe poziția principală cu o animație subtilă, iar stiva din spate se reașează.
+Când chiriașul primește pop-up-ul "Cerere refuzată" și apasă "Vezi produse similare", navigarea nu deschide categoria corectă.
 
-Butoanele rămân **Refuză** / **Acceptă** (deja sunt astfel pentru modul owner — nu se schimbă textul).
+Cauza: RPC `get_rental_popups` returnează `category_slug = p.category`, dar `products.category` conține numele afișat (ex. "Electronice", "Jucării și Petrecere Copii"), nu slug-ul rutei (ex. `electronice`, `jucarii-petrecere-copii`). Ruta `/categorie/:slug` din `App.tsx` rezolvă slug-ul prin `getCategoryBySlug` din `src/data/categories.ts` → nu găsește categoria și afișează "Category not found".
 
-## Comportament
+## Soluție (doar frontend)
 
-- 1 cerere → exact ca acum (un singur card).
-- 2+ cereri → cardul principal + max 2 carduri "ghost" în spate, ușor scalate (≈0.95, 0.9), translatate în jos (≈10px, 20px) și cu opacitate redusă (≈0.6, 0.35). Nu sunt interactive (pointer-events-none).
-- Badge cu numărul rămas ("+N") pe colțul cardului principal (subtil, nu intruziv), vizibil doar când queue.length > 1.
-- La accept/refuz/close pe cardul din față: cardul iese cu fade-out + scale-down (≈180ms), cardurile din spate "urcă" simultan (translate/scale tranziție ≈220ms ease-out), iar al doilea preia poziția principală.
-- Click pe backdrop închide doar cardul din față (ca acum).
+În `src/components/rentals/RentalPopupManager.tsx`, funcția `handleViewSimilar`:
 
-## Implementare tehnică
+1. Import lista locală `categories` din `@/data/categories`.
+2. Convertesc `current.category_slug` (de fapt numele) în slug real căutând prin `categories` un match pe `name` sau `nameEn` (case-insensitive, trim).
+3. Dacă găsesc match → `navigate('/categorie/' + cat.slug)`.
+4. Altfel fallback la căutare: `navigate('/cautare?q=' + encodeURIComponent(title))`.
 
-Modificări limitate la frontend, fără atingere de RPC/edge/business logic.
+Nu modific RPC-ul sau backend-ul — fix-ul este pur de prezentare. Comportamentul pentru `handleViewProduct` rămâne neschimbat.
 
-**`src/components/rentals/RentalPopupManager.tsx`**
-- Calculează `visible = queue.slice(0, 3)` (top + max 2 ghosts).
-- Render: un container relativ; pentru fiecare element din `visible` cu `index > 0` randează un `<div>` ghost (skeleton-like: aceleași dimensiuni ca popup-ul, fără conținut interactiv — doar avatar + titlu produs estompate sau pur și simplu o copie a cardului cu `pointer-events-none` și `aria-hidden`).
-- Stilare ghosts: `absolute inset-0`, `transform: translateY(${i*10}px) scale(${1 - i*0.05})`, `opacity: ${0.6 - (i-1)*0.25}`, `z-index: ${10 - i}`, `transition-all duration-300 ease-out`.
-- Cardul principal: `relative z-10`, animație de intrare existentă păstrată; la dismiss aplicăm o stare locală `exitingId` care adaugă `animate-out fade-out zoom-out-95 duration-200` înainte de `removeItem`.
-- Badge "+N" în colțul dreapta-sus al cardului principal (lângă X) când `queue.length > 1`, ex: `+2`. Stil discret: pill mic `bg-muted text-muted-foreground text-[10px]`.
+## Verificare
 
-**`src/components/rentals/RentalRequestPopup.tsx`**
-- Acceptă prop opțional `stackCount?: number` (folosit doar pentru badge-ul "+N").
-- Fără alte modificări de conținut/butoane (rămân Refuză/Acceptă).
-
-**Animații** — folosesc clasele Tailwind/`tailwindcss-animate` deja prezente (`animate-in`, `animate-out`, `fade-in`, `zoom-in-95`, `fade-out`, `zoom-out-95`) plus `transition-all` pentru tranziția ghost→front.
-
-## Ce NU se schimbă
-
-- RPC-uri, edge functions, schema DB.
-- Logica de accept/reject/markSeen.
-- Layout/poziționarea generală (bottom-right desktop / bottom mobil, backdrop).
-- Textul butoanelor (deja Refuză/Acceptă pentru owner).
+După implementare, simulez un refuz al unei cereri (ex. produs din "Electronice") și verific că butonul "Vezi produse similare" duce la `/categorie/electronice`.
