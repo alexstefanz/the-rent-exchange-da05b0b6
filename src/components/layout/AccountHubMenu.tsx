@@ -371,9 +371,23 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
 
         <div className="rounded-2xl bg-zinc-900 text-white p-4 shadow-md">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60">
-              {t("Balanță disponibilă", "Available balance")}
-            </span>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60">
+                {t("Balanță disponibilă", "Available balance")}
+              </span>
+              <button
+                type="button"
+                onClick={() => setHideBalance((v) => !v)}
+                aria-label={
+                  hideBalance
+                    ? t("Afișează balanța", "Show balance")
+                    : t("Ascunde balanța", "Hide balance")
+                }
+                className="inline-flex h-6 w-6 items-center justify-center rounded-full text-white/60 hover:text-white hover:bg-white/10 transition"
+              >
+                {hideBalance ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              </button>
+            </div>
             <button
               onClick={() => onNavigate("/castiguri")}
               className="inline-flex items-center gap-1 rounded-full bg-primary hover:bg-[#F98715] text-primary-foreground px-3 py-1.5 text-xs font-semibold transition-colors"
@@ -383,18 +397,22 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
             </button>
           </div>
           <div className="mt-2 text-2xl font-bold tabular-nums">
-            {(signals?.availableBalance || 0).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
+            {hideBalance
+              ? "••••"
+              : (signals?.availableBalance || 0)
+                  .toFixed(0)
+                  .replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
             <span className="ml-1 text-sm font-medium text-white/70">RON</span>
           </div>
           {(signals?.monthlyEarnings || 0) > 0 && (
             <div className="mt-1 text-[11px] text-emerald-400">
-              +{(signals?.monthlyEarnings || 0).toFixed(0)} RON {t("luna aceasta", "this month")}
+              +{hideBalance ? "•••" : (signals?.monthlyEarnings || 0).toFixed(0)} RON {t("luna aceasta", "this month")}
             </div>
           )}
           <div className="mt-3 pt-3 border-t border-white/10 text-[11px]">
             {profile?.iban ? (
               <span className="text-white/70 tracking-wider">
-                IBAN •••{profile.iban.slice(-4)}
+                IBAN {hideBalance ? "••••••••" : `•••${profile.iban.slice(-4)}`}
               </span>
             ) : (
               <button
