@@ -1,39 +1,33 @@
-## Goal
-Merge "Cereri primite" (`/inchirieri`, RentalsOutPage) into "Produsele mele" (`/anunturi`, ListingsPage) as a single page with two tabs at the top: **Anunțuri** (current listings management) and **Cereri** (received bookings — currently RentalsOutTab).
+# Fix: header dispare la deschiderea meniului user
 
-## Behavior
+## Cauza bugului
 
-- `/anunturi` — default page, opens **Anunțuri** tab.
-- `/anunturi?tab=cereri` — opens **Cereri** tab directly. Tab state is synced to the URL query param so deep-links and back/forward navigation work.
-- `/inchirieri` route now redirects to `/anunturi?tab=cereri` (kept for old links and detail-page back-button compatibility).
-- `/inchirieri/:publicId` (rental detail) **remains unchanged** — only the list page is merged.
+Header-ul din `src/components/layout/Navbar.tsx` folosește `className="fixed lg:sticky top-0 z-50 ..."` — deci pe desktop este `position: sticky`.
 
-## UI
+`AccountHubMenu` (desktop) folosește `<DropdownMenu>` de la Radix care, **implicit, este modal** (`modal={true}`). Asta înseamnă că la deschidere blochează scroll-ul pe `<body>` (prin `RemoveScroll` → `overflow: hidden` pe body/html).
 
-- Page wrapper with the existing back-to-account button and a new top-level `<Tabs>` (shadcn) with two triggers: "Anunțuri" / "Cereri primite". A small `Badge` next to "Cereri" shows count of pending/actionable requests when > 0 (reuse RentalsOutTab's existing query or `useOwnerListingsStats` if it exposes a count — otherwise just count `RentalsOutTab` items via the same hook the tab uses).
-- **Anunțuri** tab: keeps everything currently in `ListingsPage` (header, stats bar, status sub-tabs, filter bar, grid of `ListingCard`s, dialogs, mobile sticky "Adaugă produs" CTA).
-- **Cereri** tab: renders `<RentalsOutTab />` (current component, unchanged) plus a small header strip ("Cereri primite — Rezervări pentru anunțurile tale").
-- The "Vezi cereri primite" link inside `ListingsStatsBar` (`onOpenRentals`) now switches to the Cereri tab in-page instead of navigating away.
+Efect secundar: când body-ul nu mai poate fi scrollat, `position: sticky` al header-ului degenerează la poziția sa naturală în flux. Dacă pagina era scrollată în jos, header-ul "sare" la poziția lui reală din document (sus, în afara viewport-ului) → **header dispare**. În același timp, conținutul dropdown-ului — poziționat de Radix Popper relativ la trigger — apare ancorat sus și o parte iese deasupra viewport-ului → **cardul de cont nu mai e accesibil**.
 
-## Updates to internal links
+## Soluția
 
-Update all current `to="/inchirieri"` references so they continue to land on the right place after the merge:
+Setăm `modal={false}` pe `<DropdownMenu>` în `AccountHubMenu`. Asta:
+- păstrează scroll-ul pe body activ → header-ul `sticky` rămâne fixat sus
+- păstrează poziționarea corectă a dropdown-ului sub trigger
+- nu afectează închiderea pe click-outside / Escape (funcționează în continuare)
 
-- `src/components/layout/Footer.tsx` → `/anunturi?tab=cereri`
-- `src/components/profile/dashboard/SmartCards.tsx` (2 occurrences) → `/anunturi?tab=cereri`
-- `src/components/profile/dashboard/QuickActions.tsx` → `/anunturi?tab=cereri`
-- `src/components/profile/dashboard/NavGroups.tsx` → `/anunturi?tab=cereri`
-- `src/components/layout/mobile-drawer/DrawerQuickActions.tsx` → `/anunturi?tab=cereri`
-- `src/components/layout/AccountHubMenu.tsx` "Închirieri" row → `/anunturi?tab=cereri`
-- `src/pages/RentalDetailPage.tsx` back button stays `/inchirieri` (handled by the redirect, or change to `/anunturi?tab=cereri`).
+## Modificări (1 fișier)
 
-`TransactionDetailDrawer`, `TransactionCard`, and `RentalsOutTab` detail links to `/inchirieri/:publicId` stay unchanged.
+**`src/components/layout/AccountHubMenu.tsx`** (linia ~540):
+```diff
+- <DropdownMenu open={open} onOpenChange={setOpen}>
++ <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
+```
 
-## Files
+Atât. Versiunea mobile (Sheet) nu e afectată — Sheet-ul e intenționat modal și header-ul nu trebuie să rămână vizibil acolo.
 
-- `src/pages/ListingsPage.tsx` — wrap content in `<Tabs>` with `value` driven by `useSearchParams`; render `RentalsOutTab` inside the second tab; update `ListingsStatsBar.onOpenRentals` to set `?tab=cereri`.
-- `src/App.tsx` — replace `<Route path="/inchirieri" element={<RentalsOutPage />} />` with `<Navigate to="/anunturi?tab=cereri" replace />`. Keep `/inchirieri/:publicId` for rental detail.
-- Delete `src/pages/RentalsOutPage.tsx` (no longer routed). `RentalsOutTab` component stays.
-- Update the 6 link references listed above.
+## Verificare după implementare
 
-No backend / data changes.
+Deschid preview-ul, scrolez pagina puțin în jos, dau click pe avatarul din header și confirm că:
+1. Header-ul rămâne vizibil sus
+2. Dropdown-ul se deschide complet sub trigger
+3. Header card (avatar + nume + progres profil) e vizibil și clickable
