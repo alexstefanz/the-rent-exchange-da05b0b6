@@ -203,6 +203,14 @@ const SupportChatWidget = () => {
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
   const dateLocale = language === "ro" ? roLocale : enUS;
+  const messageTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const resetTextareaHeight = () => {
+    if (messageTextareaRef.current) messageTextareaRef.current.style.height = "auto";
+  };
+  const autoGrow = (el: HTMLTextAreaElement) => {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 160) + "px";
+  };
 
   const [isOpen, setIsOpen] = useState(false);
   const [ticketId, setTicketId] = useState<string | null>(null);
