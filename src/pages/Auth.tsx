@@ -14,9 +14,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Mail, Eye, EyeOff } from "lucide-react";
+import { Loader2, Mail, Eye, EyeOff, AlertCircle } from "lucide-react";
 import logoImage from "@/assets/rentli_logo.webp";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import { useLanguage } from "@/contexts/LanguageContext";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 import { strongPasswordSchema, isWeakPasswordError } from "@/lib/passwordValidation";
 import PhoneOtpDialog from "@/components/profile/PhoneOtpDialog";
@@ -56,6 +57,7 @@ const Auth = () => {
   const [gatingLogin, setGatingLogin] = useState(false);
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showRegisterConfirm, setShowRegisterConfirm] = useState(false);
   const [rememberMeRegister, setRememberMeRegister] = useState<boolean>(() => {
@@ -67,6 +69,7 @@ const Auth = () => {
     return localStorage.getItem("rentli_remember_me") === "1";
   });
   const copy = useUxCopy();
+  const { language } = useLanguage();
 
   const isResetMode = isPasswordRecovery || searchParams.get("reset") === "true";
 
@@ -180,16 +183,43 @@ const Auth = () => {
   }, [user, navigate, isResetMode, phoneOtpOpen, gatingLogin]);
 
   const handleLogin = async (data: LoginFormData) => {
+    setLoginError(null);
     setIsLoading(true);
     // Block redirect-on-user-set while we check phone verification gate
     if (USE_SMS_OTP) setGatingLogin(true);
-    const { error } = await signIn(data.email, data.password);
-    setIsLoading(false);
+    const email = (data.email || "").trim().toLowerCase();
+    let error: any = null;
+    try {
+      const res = await signIn(email, data.password);
+      error = res?.error ?? null;
+    } catch (e: any) {
+      error = e;
+    } finally {
+      setIsLoading(false);
+    }
     if (error) {
       setGatingLogin(false);
+      const code = (error?.code || "").toString();
+      const status = Number(error?.status || 0);
+      const raw = (error?.message || "").toString();
+      let msg = copy.auth.invalidCredentials;
+      if (code === "invalid_credentials" || /invalid login credentials/i.test(raw)) {
+        msg = copy.auth.invalidCredentials;
+      } else if (code === "email_not_confirmed" || /not confirmed/i.test(raw)) {
+        msg = language === "ro"
+          ? "Verifică-ți emailul pentru a-ți confirma contul."
+          : "Please verify your email to confirm your account.";
+      } else if (status === 429 || /rate limit|too many/i.test(raw)) {
+        msg = language === "ro"
+          ? "Prea multe încercări. Așteaptă câteva minute și reîncearcă."
+          : "Too many attempts. Wait a few minutes and try again.";
+      } else if (raw) {
+        msg = raw;
+      }
+      setLoginError(msg);
       toast({
         title: copy.auth.loginError,
-        description: copy.auth.invalidCredentials,
+        description: msg,
         variant: "destructive",
       });
       return;
@@ -537,7 +567,14 @@ const Auth = () => {
               <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="login-email">{copy.auth.email}</Label>
-                  <Input id="login-email" type="email" placeholder="email@exemplu.ro" {...loginForm.register("email")} />
+                  <Input
+                    id="login-email"
+                    type="email"
+                    placeholder="email@exemplu.ro"
+                    {...loginForm.register("email", {
+                      onChange: () => { if (loginError) setLoginError(null); },
+                    })}
+                  />
                   {loginForm.formState.errors.email && <p className="text-sm text-destructive">{loginForm.formState.errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">
@@ -548,7 +585,9 @@ const Auth = () => {
                       type={showLoginPassword ? "text" : "password"}
                       placeholder="••••••••"
                       className="pr-10"
-                      {...loginForm.register("password")}
+                      {...loginForm.register("password", {
+                        onChange: () => { if (loginError) setLoginError(null); },
+                      })}
                     />
                     <button
                       type="button"
@@ -574,6 +613,15 @@ const Auth = () => {
                     </Button>
                   </div>
                 </div>
+                {loginError && (
+                  <div
+                    role="alert"
+                    className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    <span>{loginError}</span>
+                  </div>
+                )}
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{copy.auth.loggingIn}</> : copy.auth.login}
                 </Button>
