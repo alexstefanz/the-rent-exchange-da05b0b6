@@ -204,6 +204,13 @@ const SupportChatWidget = () => {
     }
   }, [isOpen]);
 
+  // Allow other parts of the app (e.g. mobile Messages tab) to open the widget
+  useEffect(() => {
+    const handler = () => setIsOpen(true);
+    window.addEventListener("open-support-chat", handler);
+    return () => window.removeEventListener("open-support-chat", handler);
+  }, []);
+
   // -------- Admin role detection --------
   const { data: isAdmin = false } = useQuery({
     queryKey: ["isAdmin", user?.id],
