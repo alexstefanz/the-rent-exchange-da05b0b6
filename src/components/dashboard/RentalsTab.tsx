@@ -201,7 +201,7 @@ const RentalsTab = () => {
         sortBy={sortBy}
         onSortChange={setSortBy}
         counts={counts}
-        amountLabel="Total"
+        amountLabel="Preț"
       />
 
       {/* Premium reservation cards */}
