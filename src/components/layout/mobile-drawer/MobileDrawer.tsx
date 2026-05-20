@@ -1,29 +1,13 @@
 import { useEffect, useRef, useState, TouchEvent } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import {
-  X,
-  PlusCircle,
-  LogOut,
-  User,
-  Shield,
-  LifeBuoy,
-  ShieldCheck,
-} from "lucide-react";
+import { X, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useCurrentUserProfile } from "@/hooks/queries/useCurrentUserProfile";
-import { useIsAdmin } from "@/hooks/queries/useAdminStats";
-import { useAccountDashboard } from "@/hooks/useAccountDashboard";
-import { useDrawerStats } from "@/hooks/queries/useDrawerStats";
 import logoImage from "@/assets/rentli_logo.webp";
 import { cn } from "@/lib/utils";
-import { DrawerProfileHero } from "./DrawerProfileHero";
-import { DrawerQuickActions } from "./DrawerQuickActions";
-import { DrawerKycPill } from "./DrawerKycPill";
-import { DrawerNavGroup, DrawerNavItem } from "./DrawerNavGroup";
 import { DrawerCategoryExplorer } from "./DrawerCategoryExplorer";
-import { DrawerAccountHealth } from "./DrawerAccountHealth";
+import { AccountHubBody } from "../AccountHubMenu";
 
 interface Props {
   open: boolean;
@@ -34,24 +18,6 @@ interface Props {
 export function MobileDrawer({ open, onClose, onLogout }: Props) {
   const { user } = useAuth();
   const { t, language, setLanguage } = useLanguage();
-  const { data: profile } = useCurrentUserProfile();
-  const { data: isAdmin } = useIsAdmin(user?.id);
-  const { data: dashboard } = useAccountDashboard();
-  const { data: stats } = useDrawerStats(user?.id);
-
-  const activeRentalsAsRenter = dashboard?.signals.activeRentalsAsRenter ?? 0;
-  const activeRentalsAsOwner = dashboard?.signals.activeRentalsAsOwner ?? 0;
-  const balance = dashboard?.signals.availableBalance ?? stats?.balance ?? 0;
-  const openTickets = stats?.openTickets ?? 0;
-  const kycStatus = profile?.kyc_status;
-
-  const getInitials = () => {
-    if (profile?.full_name) {
-      return profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
-    }
-    if (user?.email) return user.email.slice(0, 2).toUpperCase();
-    return "U";
-  };
 
   // Body scroll lock
   useEffect(() => {
@@ -83,25 +49,6 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
     setDragX(0);
     touchStart.current = null;
   };
-
-  const accountItems: DrawerNavItem[] =
-    kycStatus === "VERIFIED"
-      ? []
-      : [{ to: "/verificare", label: t("Verificare KYC", "KYC Verification"), icon: Shield }];
-
-  const supportItems: DrawerNavItem[] = [
-    {
-      to: "/suport",
-      label: t("Suport & Tickete", "Support & Tickets"),
-      icon: LifeBuoy,
-      badge: openTickets,
-    },
-  ];
-
-  const stagger = (i: number): React.CSSProperties => ({
-    animationDelay: `${i * 40}ms`,
-    animationFillMode: "both",
-  });
 
   const LangButton = ({ code, label }: { code: "ro" | "en"; label: string }) => (
     <button
@@ -174,105 +121,9 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
             className="flex-1 overflow-y-auto overscroll-contain pb-24"
             style={{ WebkitOverflowScrolling: "touch" }}
           >
-            <div className="flex flex-col gap-4 py-4">
-              {user && profile && (
-                <div className="px-2 animate-fade-in" style={stagger(0)}>
-                  <DrawerProfileHero
-                    fullName={profile.full_name || user.email?.split("@")[0] || "User"}
-                    email={user.email || ""}
-                    avatarUrl={profile.avatar_url}
-                    initials={getInitials()}
-                    kycStatus={kycStatus}
-                    activeRentals={activeRentalsAsRenter}
-                    onNavigate={onClose}
-                  />
-                </div>
-              )}
-
-              {user && (
-                <div className="animate-fade-in" style={stagger(1)}>
-                  <DrawerQuickActions
-                    activeRentalsAsRenter={activeRentalsAsRenter}
-                    activeRentalsAsOwner={activeRentalsAsOwner}
-                    balance={balance}
-                    onNavigate={onClose}
-                  />
-                </div>
-              )}
-
-              {user && (
-                <div className="px-2 animate-fade-in" style={stagger(2)}>
-                  <DrawerKycPill onNavigate={onClose} />
-                </div>
-              )}
-
-              {user && profile && (
-                <div className="animate-fade-in" style={stagger(3)}>
-                  <DrawerAccountHealth
-                    emailVerified={!!user.email_confirmed_at}
-                    hasPhone={!!profile.phone}
-                    hasIban={!!profile.iban}
-                    onNavigate={onClose}
-                  />
-                </div>
-              )}
-
-              {/* Primary CTA row */}
-              {user && (
-                <div className="px-4 flex items-center gap-2 animate-fade-in" style={stagger(4)}>
-                  <Link
-                    to="/owner/new-product"
-                    onClick={onClose}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[#F98715] px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-md transition-all active:scale-[.98]"
-                  >
-                    <PlusCircle className="h-4 w-4" />
-                    {t("Adaugă anunț", "Add a listing")}
-                  </Link>
-                  {isAdmin && (
-                    <Link
-                      to="/admin"
-                      onClick={onClose}
-                      className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-3 py-2.5 text-sm font-semibold text-white shadow-md transition-all active:scale-[.98]"
-                      aria-label={t("Panou Admin", "Admin Panel")}
-                    >
-                      <ShieldCheck className="h-4 w-4" />
-                      <span className="whitespace-nowrap">{t("Admin", "Admin")}</span>
-                    </Link>
-                  )}
-                </div>
-              )}
-
-              {user && accountItems.length > 0 && (
-                <div className="animate-fade-in" style={stagger(5)}>
-                  <DrawerNavGroup
-                    title={t("Cont", "Account")}
-                    items={accountItems}
-                    onNavigate={onClose}
-                  />
-                </div>
-              )}
-
-              <div className="animate-fade-in" style={stagger(6)}>
-                <DrawerCategoryExplorer onNavigate={onClose} />
-              </div>
-
-              <div className="animate-fade-in" style={stagger(7)}>
-                <Link
-                  to="/suport"
-                  onClick={onClose}
-                  className="flex items-center gap-3 w-full h-12 px-4 rounded-xl bg-white border border-border/60 shadow-sm hover:bg-white/90 transition-colors"
-                >
-                  <LifeBuoy className="h-5 w-5 text-foreground" />
-                  <span className="flex-1 text-sm font-medium text-foreground text-left">
-                    {t("Suport & Tickete", "Support & Tickets")}
-                  </span>
-                  {openTickets > 0 && (
-                    <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-                      {openTickets}
-                    </span>
-                  )}
-                </Link>
-              </div>
+            <div className="flex flex-col gap-2 py-2">
+              {user && <AccountHubBody onNavigate={onClose} />}
+              <DrawerCategoryExplorer onNavigate={onClose} />
             </div>
           </div>
 
