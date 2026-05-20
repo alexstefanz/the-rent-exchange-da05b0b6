@@ -433,6 +433,16 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         onNext={goNext}
         isLoading={isPublishing}
         isFinal={step === STEPS.length}
+        nextLabel={
+          mode === "edit" && editingFromSummary && step !== 5
+            ? "Salvează și înapoi la rezumat"
+            : undefined
+        }
+        secondaryAction={
+          mode === "edit" && editingFromSummary && step !== 5
+            ? { label: "Anulează și înapoi la rezumat", onClick: () => { setEditingFromSummary(false); setStep(5); window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); } }
+            : undefined
+        }
       />
 
       <AlertDialog open={!!pendingDraft}>
