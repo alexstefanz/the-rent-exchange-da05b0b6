@@ -501,19 +501,14 @@ const SupportChatWidget = () => {
 
   // FAB & tab badges (role-aware)
   const fabBadgeCount = isAdmin
-    ? totalUnread + adminInboxUnread + adminNewCount
-    : totalUnread + openTicketsCount;
-  const ticketsTabBadge = isAdmin
     ? adminInboxUnread + adminNewCount
     : openTicketsCount;
   const activeAdminTicket =
     isAdmin && ticketId ? adminInbox.find((t) => t.id === ticketId) : null;
 
   // Header content
-  const showBack = !!activeConv || !!ticketId || showTicketArchive;
-  const headerTitle = activeConv
-    ? activeConv.other_user?.full_name || t("Conversație", "Conversation")
-    : ticketId
+  const showBack = !!ticketId || showTicketArchive;
+  const headerTitle = ticketId
     ? isAdmin
       ? ticketPublicId || t("Ticket", "Ticket")
       : t("Suport Rentli", "Rentli Support")
@@ -521,20 +516,14 @@ const SupportChatWidget = () => {
     ? t("Tickete anterioare", "Previous tickets")
     : isAdmin
     ? t("Inbox suport", "Support inbox")
-    : t("Mesajele mele", "My messages");
-  const headerSubtitle = activeConv
-    ? activeConv.product?.title || ""
-    : ticketId
+    : t("Suport Rentli", "Rentli Support");
+  const headerSubtitle = ticketId
     ? isAdmin
       ? activeAdminTicket?.requester_name || activeAdminTicket?.title || "Online"
       : ticketPublicId || "Online"
     : "Online";
 
   const handleBack = () => {
-    if (activeConv) {
-      setActiveConv(null);
-      return;
-    }
     if (ticketId) {
       handleBackFromTicket();
       return;
