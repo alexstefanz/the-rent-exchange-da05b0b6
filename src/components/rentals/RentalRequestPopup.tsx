@@ -12,6 +12,7 @@ export type PopupMode = "owner" | "renter";
 interface Props {
   item: RentalPopupItem;
   mode: PopupMode;
+  stackCount?: number;
   onAccept?: () => Promise<void> | void;
   onReject?: () => Promise<void> | void;
   onViewProduct?: () => Promise<void> | void;
@@ -28,7 +29,7 @@ const initials = (name: string | null | undefined) =>
     .join("")
     .toUpperCase();
 
-export default function RentalRequestPopup({ item, mode, onAccept, onReject, onViewProduct, onViewSimilar, onDismiss }: Props) {
+export default function RentalRequestPopup({ item, mode, stackCount, onAccept, onReject, onViewProduct, onViewSimilar, onDismiss }: Props) {
   const { language } = useLanguage();
   const locale = language === "ro" ? ro : enUS;
   const [busy, setBusy] = useState<null | "accept" | "reject" | "product" | "similar">(null);
@@ -81,6 +82,12 @@ export default function RentalRequestPopup({ item, mode, onAccept, onReject, onV
         >
           <X className="h-4 w-4" />
         </button>
+
+        {stackCount && stackCount > 1 ? (
+          <span className="absolute right-12 top-3.5 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+            +{stackCount - 1}
+          </span>
+        ) : null}
 
         <div
           className={
