@@ -42,7 +42,7 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, classN
   const { t } = useLanguage();
   const [attachments, setAttachments] = useState<AttachmentRow[]>([]);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
-  const [contact, setContact] = useState<{ phone: string | null; email: string | null; whatsapp: string | null } | null>(null);
+  const [contact, setContact] = useState<{ phone: string | null; email: string | null } | null>(null);
   const [linkUrls, setLinkUrls] = useState<string[]>([]);
   const [kycLevel, setKycLevel] = useState<string | null>(null);
   const [memberSince, setMemberSince] = useState<string | null>(null);
@@ -80,7 +80,7 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, classN
   useEffect(() => {
     if (!peerId) return;
     getOwnerContactInfo(peerId).then((info) =>
-      setContact(info ? { phone: info.phone, email: info.email, whatsapp: info.whatsapp } : null)
+      setContact(info ? { phone: info.phone, email: info.email } : null)
     );
     supabase
       .from("profiles")
@@ -232,7 +232,7 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, classN
           </TabsContent>
 
           <TabsContent value="contact" className="mt-0 space-y-2">
-            {!contact || (!contact.phone && !contact.email && !contact.whatsapp) ? (
+            {!contact || (!contact.phone && !contact.email) ? (
               <p className="text-xs text-muted-foreground">
                 {t(
                   "Datele de contact devin vizibile după o rezervare confirmată.",
@@ -251,17 +251,6 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, classN
                   <a href={`mailto:${contact.email}`} className="flex items-center gap-2 p-2.5 rounded-lg border border-border/60 hover:bg-muted text-sm truncate">
                     <Mail className="h-4 w-4 text-primary" />
                     <span className="truncate">{contact.email}</span>
-                  </a>
-                )}
-                {contact.whatsapp && (
-                  <a
-                    href={`https://wa.me/${contact.whatsapp.replace(/\D/g, "")}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 p-2.5 rounded-lg border border-border/60 hover:bg-muted text-sm text-emerald-600"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    WhatsApp: {contact.whatsapp}
                   </a>
                 )}
               </>
