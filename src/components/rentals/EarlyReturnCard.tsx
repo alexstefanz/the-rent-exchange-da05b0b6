@@ -217,12 +217,8 @@ export default function EarlyReturnCard({ rentalId, role, startDate, endDate, da
     }
   };
 
-  const promptTitle = role === "renter"
-    ? t("Vrei să predai produsul înainte de termen?", "Want to return the product earlier than planned?")
-    : t("Vrei să ceri înapoi produsul înainte de termen?", "Want to ask for the product back earlier than planned?");
-  const promptHint = role === "renter"
-    ? t("Discută cu proprietarul, apoi solicită returnarea anticipată cu data și prețul recalculat.", "Chat with the owner first, then send an early-return request with the new date and recalculated price.")
-    : t("Discută cu chiriașul, apoi solicită returnarea anticipată cu data și prețul recalculat.", "Chat with the renter first, then send an early-return request with the new date and recalculated price.");
+  const promptTitle = t("Vrei să predai produsul înainte de termen?", "Want to return the product earlier than planned?");
+  const promptHint = t("Discută cu proprietarul, apoi solicită returnarea anticipată cu data și prețul recalculat.", "Chat with the owner first, then send an early-return request with the new date and recalculated price.");
 
   return (
     <>
