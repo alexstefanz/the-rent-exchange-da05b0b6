@@ -620,27 +620,6 @@ const AccountTab = () => {
           </div>
         </Section>
 
-        {/* ============ PAYMENT METHODS (placeholder) ============ */}
-        <Section id="payments" icon={CreditCard} title={t("Metode de plată", "Payment methods")} description={t("Carduri salvate pentru rezervări rapide.", "Saved cards for fast bookings.")}>
-          <div className="rounded-xl border border-dashed border-border p-8 text-center bg-muted/20">
-            <div className="mx-auto h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
-              <CreditCard className="h-7 w-7 text-primary" />
-            </div>
-            <p className="font-medium mb-1">{t("Niciun card salvat", "No saved cards")}</p>
-            <p className="text-sm text-muted-foreground mb-4 max-w-sm mx-auto">
-              {t("La checkout poți plăti în siguranță cu cardul. Salvarea cardurilor pentru plăți rapide va fi disponibilă în curând.", "At checkout you can pay securely by card. Saved cards for one-tap payments coming soon.")}
-            </p>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <span className="inline-block">
-                  <Button variant="outline" disabled>{t("Adaugă card", "Add card")}</Button>
-                </span>
-              </TooltipTrigger>
-              <TooltipContent>{t("Disponibil curând", "Coming soon")}</TooltipContent>
-            </Tooltip>
-          </div>
-        </Section>
-
         {/* ============ PAYOUT (IBAN) ============ */}
         <Section id="payout" icon={Wallet} title={t("Cum primești banii", "How you get paid")} description={t("IBAN-ul trebuie să fie pe numele tău (titularul contului). Folosirea contului altei persoane nu este permisă și poate duce la suspendarea contului.", "The IBAN must be in your name (the account holder). Using someone else's account is not allowed and may result in account suspension.")}>
           <PayoutForm
