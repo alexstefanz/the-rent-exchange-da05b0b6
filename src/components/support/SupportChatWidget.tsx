@@ -178,12 +178,6 @@ const SupportChatWidget = () => {
   const dateLocale = language === "ro" ? roLocale : enUS;
 
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"chat" | "tickets">("chat");
-  const [chatSubTab, setChatSubTab] = useState<"rezervari" | "de-inchiriat">(
-    "rezervari",
-  );
-  // In-memory only — no localStorage persistence so reopen always lands on the list.
-  const [activeConv, setActiveConv] = useState<Conversation | null>(null);
   const [ticketId, setTicketId] = useState<string | null>(null);
   const [userLeftTicket, setUserLeftTicket] = useState(false);
   const [ticketPublicId, setTicketPublicId] = useState<string | null>(null);
@@ -201,8 +195,6 @@ const SupportChatWidget = () => {
   // Reset transient state on close
   useEffect(() => {
     if (!isOpen) {
-      setActiveTab("chat");
-      setActiveConv(null);
       setTicketId(null);
       setTicketPublicId(null);
       setShowTicketArchive(false);
