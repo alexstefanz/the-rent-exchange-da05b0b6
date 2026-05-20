@@ -748,7 +748,8 @@ const SupportChatWidget = () => {
                       </button>
                       <Input
                         value={messageText}
-                        onChange={(e) => setMessageText(e.target.value)}
+                        onChange={(e) => setMessageText(e.target.value.slice(0, MAX_MESSAGE_LENGTH))}
+                        maxLength={MAX_MESSAGE_LENGTH}
                         placeholder={t("Scrie mesajul tău...", "Write your message...")}
                         className="h-9 text-sm flex-1 rounded-full"
                         onKeyDown={(e) => {
@@ -962,7 +963,8 @@ const SupportChatWidget = () => {
                         </button>
                         <Input
                           value={messageText}
-                          onChange={(e) => setMessageText(e.target.value)}
+                          onChange={(e) => setMessageText(e.target.value.slice(0, MAX_MESSAGE_LENGTH))}
+                          maxLength={MAX_MESSAGE_LENGTH}
                           placeholder={t(
                             "Scrie mesajul tău...",
                             "Write your message...",
