@@ -83,15 +83,9 @@ export default function LeaveReviewDialog({
   const [productReviewExists, setProductReviewExists] = useState(false);
   const [userReviewExists, setUserReviewExists] = useState(false);
 
-  // Product review state (multi-criteria)
-  const [condition, setCondition] = useState(0);
-  const [communication, setCommunication] = useState(0);
-  const [punctuality, setPunctuality] = useState(0);
-  const [productComment, setProductComment] = useState("");
-
-  // User review state (single rating)
-  const [userRating, setUserRating] = useState(0);
-  const [userComment, setUserComment] = useState("");
+  // Single transaction rating + optional comment
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
 
   const reviewType: "owner" | "renter" =
     currentUserRole === "renter" ? "owner" : "renter";
@@ -101,12 +95,8 @@ export default function LeaveReviewDialog({
     if (!open || !rental || !user) return;
 
     setLoading(true);
-    setCondition(0);
-    setCommunication(0);
-    setPunctuality(0);
-    setProductComment("");
-    setUserRating(0);
-    setUserComment("");
+    setRating(0);
+    setComment("");
 
     (async () => {
       try {
@@ -142,12 +132,10 @@ export default function LeaveReviewDialog({
 
   const t = (ro: string, en: string) => (language === "ro" ? ro : en);
 
-  const productReady =
-    productReviewExists ||
-    (condition > 0 && communication > 0 && punctuality > 0);
-  const userReady = userReviewExists || userRating > 0;
   const canSubmit =
-    !loading && !submitting && productReady && userReady &&
+    !loading &&
+    !submitting &&
+    rating > 0 &&
     !(productReviewExists && userReviewExists);
 
   const handleSubmit = async () => {
@@ -163,8 +151,8 @@ export default function LeaveReviewDialog({
           await createProductReview(
             rental.product_id,
             reviewType,
-            { condition, communication, punctuality },
-            productComment.trim(),
+            { condition: rating, communication: rating, punctuality: rating },
+            comment.trim(),
             rental.id
           );
           productOk = true;
@@ -177,8 +165,8 @@ export default function LeaveReviewDialog({
         try {
           await createUserReview(
             rental.counterparty_id,
-            userRating,
-            userComment.trim() || undefined,
+            rating,
+            comment.trim() || undefined,
             rental.product_title,
             rental.id
           );
@@ -257,86 +245,30 @@ export default function LeaveReviewDialog({
             </Button>
           </div>
         ) : (
-          <div className="space-y-6">
-            {/* Product / experience */}
+          <div className="space-y-4">
             <section className="rounded-xl border border-border p-4">
-              <header className="mb-3">
+              <header className="mb-4">
                 <h3 className="font-semibold text-foreground">
-                  {t("Despre produs", "About the product")}
-                </h3>
-                <p className="text-xs text-muted-foreground">{rental.product_title}</p>
-              </header>
-
-              {productReviewExists ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                  {t("Review trimis pentru acest produs.", "Review already sent for this product.")}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {[
-                    { key: "condition", labelRo: "Stare produs", labelEn: "Product condition", value: condition, set: setCondition },
-                    { key: "communication", labelRo: "Comunicare", labelEn: "Communication", value: communication, set: setCommunication },
-                    { key: "punctuality", labelRo: "Punctualitate", labelEn: "Punctuality", value: punctuality, set: setPunctuality },
-                  ].map((c) => (
-                    <div key={c.key} className="flex items-center justify-between gap-3">
-                      <span className="text-sm text-muted-foreground">
-                        {t(c.labelRo, c.labelEn)}
-                      </span>
-                      <StarPicker value={c.value} onChange={c.set} disabled={submitting} />
-                    </div>
-                  ))}
-                  <Textarea
-                    placeholder={t("Comentariu opțional", "Optional comment")}
-                    value={productComment}
-                    onChange={(e) => setProductComment(e.target.value)}
-                    maxLength={500}
-                    disabled={submitting}
-                    rows={3}
-                  />
-                </div>
-              )}
-            </section>
-
-            {/* Counterparty user */}
-            <section className="rounded-xl border border-border p-4">
-              <header className="mb-3">
-                <h3 className="font-semibold text-foreground">
-                  {t(
-                    `Despre ${rental.counterparty_name}`,
-                    `About ${rental.counterparty_name}`
-                  )}
+                  {t("Evaluează această tranzacție", "Rate this transaction")}
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  {currentUserRole === "renter"
-                    ? t("Proprietarul produsului", "The product owner")
-                    : t("Chiriașul", "The renter")}
+                  {rental.product_title}
+                  {rental.counterparty_name ? ` · ${rental.counterparty_name}` : ""}
                 </p>
               </header>
 
-              {userReviewExists ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
-                  {t("Review trimis pentru acest utilizator.", "Review already sent for this user.")}
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm text-muted-foreground">
-                      {t("Evaluare generală", "Overall rating")}
-                    </span>
-                    <StarPicker value={userRating} onChange={setUserRating} disabled={submitting} />
-                  </div>
-                  <Textarea
-                    placeholder={t("Comentariu opțional", "Optional comment")}
-                    value={userComment}
-                    onChange={(e) => setUserComment(e.target.value)}
-                    maxLength={500}
-                    disabled={submitting}
-                    rows={3}
-                  />
-                </div>
-              )}
+              <div className="flex flex-col items-center gap-3">
+                <StarPicker value={rating} onChange={setRating} disabled={submitting} />
+                <Textarea
+                  placeholder={t("Comentariu opțional", "Optional comment")}
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  maxLength={500}
+                  disabled={submitting}
+                  rows={3}
+                  className="w-full"
+                />
+              </div>
             </section>
           </div>
         )}
