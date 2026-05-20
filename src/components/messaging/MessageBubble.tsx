@@ -45,7 +45,7 @@ export function MessageBubble({
     >
       <div
         className={cn(
-          "max-w-[78%] sm:max-w-[68%] flex flex-col",
+          "max-w-[78%] sm:max-w-[68%] min-w-0 flex flex-col",
           isOwn ? "items-end" : "items-start"
         )}
       >
