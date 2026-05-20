@@ -11,11 +11,16 @@ const PLATFORM_URL = "rentli.ro";
 
 type TemplateKey =
   | "rental_request_owner"
+  | "rental_request_renter"
   | "rental_accepted"
+  | "rental_accepted_owner"
   | "rental_rejected"
   | "rental_cancelled"
+  | "rental_cancelled_owner"
   | "return_reminder"
+  | "return_reminder_owner"
   | "return_deadline_2h"
+  | "return_deadline_2h_owner"
   | "pickup_scheduled"
   | "pv_pending"
   | "pv_other_done"
@@ -50,16 +55,26 @@ function renderTemplate(key: TemplateKey, v: TemplateVars): string {
   switch (key) {
     case "rental_request_owner":
       return `Rentli: cerere noua pt "${title}" de la ${renter}. Detalii: ${PLATFORM_URL}/inchirieri`;
+    case "rental_request_renter":
+      return `Rentli: cererea ta pt "${title}" a fost trimisa. Astepti raspuns de la ${owner}. ${PLATFORM_URL}/rezervari`;
     case "rental_accepted":
       return `Rentli: cererea ta pt "${title}" a fost ACCEPTATA. Detalii: ${PLATFORM_URL}/rezervari`;
+    case "rental_accepted_owner":
+      return `Rentli: ai acceptat cererea lui ${renter} pt "${title}". Urmeaza plata. ${PLATFORM_URL}/inchirieri`;
     case "rental_rejected":
       return `Rentli: cererea pt "${title}" a fost refuzata. Cauta alte produse pe ${PLATFORM_URL}`;
     case "rental_cancelled":
       return `Rentli: rezervarea pt "${title}" a fost anulata. Detalii: ${PLATFORM_URL}/rezervari`;
+    case "rental_cancelled_owner":
+      return `Rentli: ${renter} a anulat cererea pt "${title}" inainte de plata.`;
     case "return_reminder":
       return `Rentli: returneaza azi "${title}". Contacteaza ${owner} pt predare.`;
+    case "return_reminder_owner":
+      return `Rentli: ${renter} trebuie sa returneze azi "${title}".`;
     case "return_deadline_2h":
       return `Rentli: URGENT - 2h pana la deadline pt "${title}". Finalizeaza returnarea: ${link}`;
+    case "return_deadline_2h_owner":
+      return `Rentli: 2h pana ${renter} returneaza "${title}". ${link}`;
     case "pickup_scheduled":
       return `Rentli: predare "${title}"${when ? ` pe ${when}` : ""}${place ? ` la ${place}` : ""}. Detalii: ${link}`;
     case "pv_pending":
@@ -144,11 +159,16 @@ Deno.serve(async (req) => {
     // Validation
     const allowedTemplates: TemplateKey[] = [
       "rental_request_owner",
+      "rental_request_renter",
       "rental_accepted",
+      "rental_accepted_owner",
       "rental_rejected",
       "rental_cancelled",
+      "rental_cancelled_owner",
       "return_reminder",
+      "return_reminder_owner",
       "return_deadline_2h",
+      "return_deadline_2h_owner",
       "pickup_scheduled",
       "pv_pending",
       "pv_other_done",
