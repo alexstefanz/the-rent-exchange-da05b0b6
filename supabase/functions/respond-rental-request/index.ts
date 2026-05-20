@@ -152,6 +152,7 @@ Deno.serve(async (req) => {
       updateData.cancelled_at = new Date().toISOString();
       updateData.cancellation_reason = reason || "Refuzat de proprietar";
       updateData.rejection_reason = reason || "Refuzat de proprietar";
+      updateData.cancelled_by = user.id;
 
       // If renter already paid (authorized or captured), refund/cancel via Stripe
       if (rental.payment_intent_id) {
