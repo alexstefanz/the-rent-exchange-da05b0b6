@@ -153,83 +153,25 @@ Deno.serve(async (req) => {
       updateData.cancellation_reason = reason || "Refuzat de proprietar";
       updateData.rejection_reason = reason || "Refuzat de proprietar";
       updateData.cancelled_by = user.id;
-
-      // If renter already paid (authorized or captured), refund/cancel via Stripe
+      // Mark refund as pending; the actual Stripe call runs in background below.
       if (rental.payment_intent_id) {
-        const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-        if (stripeKey) {
-          try {
-            const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-            if (rental.payment_status === "captured") {
-              await stripe.refunds.create({ payment_intent: rental.payment_intent_id });
-            } else {
-              // authorized / requires_capture / requires_payment_method etc.
-              await stripe.paymentIntents.cancel(rental.payment_intent_id).catch(async (e) => {
-                // Fallback to refund if cancel not allowed
-                if (String(e?.message || "").includes("cannot be canceled")) {
-                  await stripe.refunds.create({ payment_intent: rental.payment_intent_id });
-                } else { throw e; }
-              });
-            }
-            updateData.refunded_at = new Date().toISOString();
-            updateData.payment_status = "refunded";
-          } catch (e) {
-            console.error("Stripe refund/cancel error:", e);
-          }
-        }
+        updateData.payment_status = "refund_pending";
       }
     }
 
     await supabaseAdmin.from("rentals").update(updateData).eq("id", rental_id);
 
-    const [productRes, renterRes, ownerRes] = await Promise.all([
-      supabaseAdmin.from("products").select("title, slug").eq("id", rental.product_id).single(),
-      supabaseAdmin.from("profiles").select("full_name, email").eq("id", rental.renter_id).single(),
-      supabaseAdmin.from("profiles").select("full_name, email").eq("id", rental.owner_id).single(),
-    ]);
-
-    const product = productRes.data;
-    const renter = renterRes.data;
-    const owner = ownerRes.data;
-
-    const getEmail = async (userId: string, profileEmail: string | null): Promise<string | null> => {
-      if (profileEmail) return profileEmail;
-      try {
-        const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
-        if (data?.user?.email) {
-          await supabaseAdmin.from("profiles").update({ email: data.user.email }).eq("id", userId);
-          return data.user.email;
-        }
-      } catch (e) {
-        console.error("Error fetching auth email:", e);
-      }
-      return null;
-    };
-
-    const renterEmail = await getEmail(rental.renter_id, renter?.email || null);
-    const productTitle = escapeHtml(product?.title || "Produs");
-    const ownerName = escapeHtml(owner?.full_name || "Proprietarul");
-    const productLink = product?.slug ? `/produs/${product.slug}` : "/rezervari";
-    const rentalLink = rental.public_id ? `/rezervari/${rental.public_id}` : "/rezervari";
-
-    const rows = [
-      { label: "📦 Produs", value: productTitle },
-      { label: "📅 Perioadă", value: `${rental.start_date} → ${rental.end_date}` },
-      { label: "⏱ Durată", value: `${rental.rental_days} zile` },
-      { label: "💰 Total", value: `${rental.subtotal} RON` },
-    ];
-
+    // Insert in-app notification + transactions update synchronously (fast, single-table writes)
     if (action === "accept") {
       await supabaseAdmin.from("notifications").insert({
         user_id: rental.renter_id,
         type: "rental_confirmation",
         title_ro: "Cererea ta a fost acceptată! Plătește acum 💳",
         title_en: "Your request was accepted! Pay now 💳",
-        description_ro: `${ownerName} a acceptat cererea ta pentru "${productTitle}". Plătește acum pentru a confirma rezervarea.`,
-        description_en: `${ownerName} accepted your request for "${productTitle}". Pay now to confirm the booking.`,
-        link: rentalLink,
+        description_ro: `Cererea ta a fost acceptată. Plătește acum pentru a confirma rezervarea.`,
+        description_en: `Your request was accepted. Pay now to confirm the booking.`,
+        link: rental.public_id ? `/rezervari/${rental.public_id}` : "/rezervari",
       });
-
       await supabaseAdmin
         .from("transactions")
         .update({ status: "confirmed" })
@@ -241,118 +183,166 @@ Deno.serve(async (req) => {
         type: "rental_confirmation",
         title_ro: "Cererea ta a fost refuzată",
         title_en: "Your request was declined",
-        description_ro: `${ownerName} a refuzat cererea pentru "${productTitle}".${reason ? ` Motiv: ${reason}` : ""}`,
-        description_en: `${ownerName} declined your request for "${productTitle}".${reason ? ` Reason: ${reason}` : ""}`,
+        description_ro: `Cererea ta a fost refuzată.${reason ? ` Motiv: ${reason}` : ""}`,
+        description_en: `Your request was declined.${reason ? ` Reason: ${reason}` : ""}`,
         link: `/rezervari`,
       });
     }
 
-    // Send emails to both renter and owner
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    const ownerEmail = await getEmail(rental.owner_id, owner?.email || null);
-    const renterName = escapeHtml(renter?.full_name || "Chiriașul");
-
-    if (resendApiKey) {
-      const emailPromises: Promise<unknown>[] = [];
-
-      // Email to renter
-      if (renterEmail) {
-        let renterHtml: string;
-        let renterSubject: string;
-
-        if (action === "accept") {
-          renterSubject = `Cererea ta a fost acceptată - plătește acum ${productTitle}`;
-          renterHtml = buildEmailTemplate({
-            title: "Cererea ta a fost acceptată! Plătește acum 💳",
-            greeting: `<strong>${ownerName}</strong> a acceptat cererea ta pentru <strong>${productTitle}</strong>. Plătește acum pentru a confirma rezervarea — suma este blocată pe card și debitată doar după predarea produsului.`,
-            rows,
-            ctaText: "Plătește acum",
-            ctaLink: rentalLink,
-            footerText: "Cardul nu este debitat acum. Banii ajung la proprietar doar după predarea produsului.",
-          });
-        } else {
-          renterSubject = `Cererea ta a fost refuzată - ${productTitle}`;
-          const reasonRow = reason ? [{ label: "📝 Motiv", value: escapeHtml(reason) }] : [];
-          renterHtml = buildEmailTemplate({
-            title: "Cererea ta a fost refuzată",
-            greeting: `<strong>${ownerName}</strong> a refuzat cererea pentru <strong>${productTitle}</strong>.`,
-            rows: [...rows, ...reasonRow],
-            ctaText: "Caută alte produse",
-            ctaLink: "/search",
-            footerText: "Poți căuta alte produse similare pe platformă.",
-          });
+    // Background: emails, Stripe refund, notify-rental-event (SMS + push).
+    // These should not block the popup response.
+    const runBackground = async () => {
+      try {
+        // Stripe refund/cancel on reject
+        if (action === "reject" && rental.payment_intent_id) {
+          const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+          if (stripeKey) {
+            try {
+              const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+              if (rental.payment_status === "captured") {
+                await stripe.refunds.create({ payment_intent: rental.payment_intent_id });
+              } else {
+                await stripe.paymentIntents.cancel(rental.payment_intent_id).catch(async (e) => {
+                  if (String(e?.message || "").includes("cannot be canceled")) {
+                    await stripe.refunds.create({ payment_intent: rental.payment_intent_id });
+                  } else { throw e; }
+                });
+              }
+              await supabaseAdmin
+                .from("rentals")
+                .update({ payment_status: "refunded", refunded_at: new Date().toISOString() })
+                .eq("id", rental_id);
+            } catch (e) {
+              console.error("[bg] Stripe refund/cancel error:", e);
+            }
+          }
         }
 
-        emailPromises.push(
-          fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              from: "Rentli <noreply@rentli.ro>",
-              to: [renterEmail],
-              subject: renterSubject,
-              html: renterHtml,
-            }),
-          }).catch((e) => console.error("Renter email error:", e))
-        );
-      }
+        // Fetch profiles + product for emails
+        const [productRes, renterRes, ownerRes] = await Promise.all([
+          supabaseAdmin.from("products").select("title, slug").eq("id", rental.product_id).single(),
+          supabaseAdmin.from("profiles").select("full_name, email").eq("id", rental.renter_id).single(),
+          supabaseAdmin.from("profiles").select("full_name, email").eq("id", rental.owner_id).single(),
+        ]);
+        const product = productRes.data;
+        const renter = renterRes.data;
+        const owner = ownerRes.data;
 
-      // Email to owner (confirmation)
-      if (ownerEmail) {
-        let ownerHtml: string;
-        let ownerSubject: string;
+        const getEmail = async (userId: string, profileEmail: string | null): Promise<string | null> => {
+          if (profileEmail) return profileEmail;
+          try {
+            const { data } = await supabaseAdmin.auth.admin.getUserById(userId);
+            if (data?.user?.email) {
+              await supabaseAdmin.from("profiles").update({ email: data.user.email }).eq("id", userId);
+              return data.user.email;
+            }
+          } catch (e) {
+            console.error("[bg] Error fetching auth email:", e);
+          }
+          return null;
+        };
 
-        if (action === "accept") {
-          ownerSubject = `Ai acceptat cererea - ${productTitle}`;
-          ownerHtml = buildEmailTemplate({
-            title: "Ai acceptat cererea! ✅",
-            greeting: `Ai acceptat cererea lui <strong>${renterName}</strong> pentru <strong>${productTitle}</strong>. Contactează chiriașul pentru detaliile de predare.`,
-            rows,
-            ctaText: "Vezi închirierile tale",
-            ctaLink: "/profile?tab=lendings",
-            footerText: "Stabilește detaliile de predare cu chiriașul.",
-          });
-        } else {
-          ownerSubject = `Ai refuzat cererea - ${productTitle}`;
-          const reasonRow = reason ? [{ label: "📝 Motiv", value: escapeHtml(reason) }] : [];
-          ownerHtml = buildEmailTemplate({
-            title: "Ai refuzat cererea",
-            greeting: `Ai refuzat cererea lui <strong>${renterName}</strong> pentru <strong>${productTitle}</strong>.`,
-            rows: [...rows, ...reasonRow],
-            ctaText: "Vezi anunțurile tale",
-            ctaLink: "/profile?tab=lendings",
-            footerText: "Produsul tău rămâne disponibil pentru alte cereri.",
-          });
+        const renterEmail = await getEmail(rental.renter_id, renter?.email || null);
+        const ownerEmail = await getEmail(rental.owner_id, owner?.email || null);
+        const productTitle = escapeHtml(product?.title || "Produs");
+        const ownerName = escapeHtml(owner?.full_name || "Proprietarul");
+        const renterName = escapeHtml(renter?.full_name || "Chiriașul");
+        const rentalLink = rental.public_id ? `/rezervari/${rental.public_id}` : "/rezervari";
+        const rows = [
+          { label: "📦 Produs", value: productTitle },
+          { label: "📅 Perioadă", value: `${rental.start_date} → ${rental.end_date}` },
+          { label: "⏱ Durată", value: `${rental.rental_days} zile` },
+          { label: "💰 Total", value: `${rental.subtotal} RON` },
+        ];
+
+        const resendApiKey = Deno.env.get("RESEND_API_KEY");
+        const emailPromises: Promise<unknown>[] = [];
+        if (resendApiKey && renterEmail) {
+          let renterHtml: string, renterSubject: string;
+          if (action === "accept") {
+            renterSubject = `Cererea ta a fost acceptată - plătește acum ${productTitle}`;
+            renterHtml = buildEmailTemplate({
+              title: "Cererea ta a fost acceptată! Plătește acum 💳",
+              greeting: `<strong>${ownerName}</strong> a acceptat cererea ta pentru <strong>${productTitle}</strong>. Plătește acum pentru a confirma rezervarea — suma este blocată pe card și debitată doar după predarea produsului.`,
+              rows,
+              ctaText: "Plătește acum",
+              ctaLink: rentalLink,
+              footerText: "Cardul nu este debitat acum. Banii ajung la proprietar doar după predarea produsului.",
+            });
+          } else {
+            renterSubject = `Cererea ta a fost refuzată - ${productTitle}`;
+            const reasonRow = reason ? [{ label: "📝 Motiv", value: escapeHtml(reason) }] : [];
+            renterHtml = buildEmailTemplate({
+              title: "Cererea ta a fost refuzată",
+              greeting: `<strong>${ownerName}</strong> a refuzat cererea pentru <strong>${productTitle}</strong>.`,
+              rows: [...rows, ...reasonRow],
+              ctaText: "Caută alte produse",
+              ctaLink: "/search",
+              footerText: "Poți căuta alte produse similare pe platformă.",
+            });
+          }
+          emailPromises.push(
+            fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ from: "Rentli <noreply@rentli.ro>", to: [renterEmail], subject: renterSubject, html: renterHtml }),
+            }).catch((e) => console.error("[bg] Renter email error:", e))
+          );
         }
+        if (resendApiKey && ownerEmail) {
+          let ownerHtml: string, ownerSubject: string;
+          if (action === "accept") {
+            ownerSubject = `Ai acceptat cererea - ${productTitle}`;
+            ownerHtml = buildEmailTemplate({
+              title: "Ai acceptat cererea! ✅",
+              greeting: `Ai acceptat cererea lui <strong>${renterName}</strong> pentru <strong>${productTitle}</strong>. Contactează chiriașul pentru detaliile de predare.`,
+              rows,
+              ctaText: "Vezi închirierile tale",
+              ctaLink: "/profile?tab=lendings",
+              footerText: "Stabilește detaliile de predare cu chiriașul.",
+            });
+          } else {
+            ownerSubject = `Ai refuzat cererea - ${productTitle}`;
+            const reasonRow = reason ? [{ label: "📝 Motiv", value: escapeHtml(reason) }] : [];
+            ownerHtml = buildEmailTemplate({
+              title: "Ai refuzat cererea",
+              greeting: `Ai refuzat cererea lui <strong>${renterName}</strong> pentru <strong>${productTitle}</strong>.`,
+              rows: [...rows, ...reasonRow],
+              ctaText: "Vezi anunțurile tale",
+              ctaLink: "/profile?tab=lendings",
+              footerText: "Produsul tău rămâne disponibil pentru alte cereri.",
+            });
+          }
+          emailPromises.push(
+            fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ from: "Rentli <noreply@rentli.ro>", to: [ownerEmail], subject: ownerSubject, html: ownerHtml }),
+            }).catch((e) => console.error("[bg] Owner email error:", e))
+          );
+        }
+        await Promise.all(emailPromises);
 
-        emailPromises.push(
-          fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: { Authorization: `Bearer ${resendApiKey}`, "Content-Type": "application/json" },
-            body: JSON.stringify({
-              from: "Rentli <noreply@rentli.ro>",
-              to: [ownerEmail],
-              subject: ownerSubject,
-              html: ownerHtml,
-            }),
-          }).catch((e) => console.error("Owner email error:", e))
-        );
+        // SMS + push notifications
+        await supabaseAdmin.functions.invoke("notify-rental-event", {
+          body: {
+            rental_id: rental.id,
+            event_key: action === "accept" ? "request_accepted" : "request_rejected",
+            actor_id: user.id,
+          },
+        }).catch((e) => console.error("[bg] notify-rental-event failed:", e));
+      } catch (e) {
+        console.error("[bg] respond-rental-request background error:", e);
       }
+    };
 
-      await Promise.all(emailPromises);
-    }
-
-    // SMS to renter (best-effort)
-    try {
-      await supabaseAdmin.functions.invoke("notify-rental-event", {
-        body: {
-          rental_id: rental.id,
-          event_key: action === "accept" ? "request_accepted" : "request_rejected",
-          actor_id: user.id,
-        },
-      });
-    } catch (e) {
-      console.error("[respond-rental-request] notify-rental-event failed:", e);
+    // @ts-ignore — EdgeRuntime is provided by Supabase Edge runtime
+    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
+      // @ts-ignore
+      EdgeRuntime.waitUntil(runBackground());
+    } else {
+      // Fallback for local: fire and forget
+      runBackground();
     }
 
     return new Response(JSON.stringify({ success: true, status: newStatus }), {

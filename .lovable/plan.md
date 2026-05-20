@@ -1,20 +1,39 @@
 ## Problem
 
-Când chiriașul primește pop-up-ul "Cerere refuzată" și apasă "Vezi produse similare", navigarea nu deschide categoria corectă.
+După apăsarea "Acceptă"/"Refuză" în pop-up, butonul rămâne pe "Se trimite…" 5–10+ secunde. Cauza este în edge function-ul `respond-rental-request`: răspunsul către client e trimis abia după ce se termină **toate** operațiunile secundare:
 
-Cauza: RPC `get_rental_popups` returnează `category_slug = p.category`, dar `products.category` conține numele afișat (ex. "Electronice", "Jucării și Petrecere Copii"), nu slug-ul rutei (ex. `electronice`, `jucarii-petrecere-copii`). Ruta `/categorie/:slug` din `App.tsx` rezolvă slug-ul prin `getCategoryBySlug` din `src/data/categories.ts` → nu găsește categoria și afișează "Category not found".
+1. Update `rentals` (rapid)
+2. (la reject) apel Stripe `refunds.create` sau `paymentIntents.cancel` — sincron
+3. 3× query-uri profile/produs
+4. Insert notification + update transactions
+5. `await Promise.all(emailPromises)` — 2 emailuri Resend (rețea externă)
+6. `await supabaseAdmin.functions.invoke("notify-rental-event", …)` — încă un edge function (SMS + în-app)
 
-## Soluție (doar frontend)
+Doar pasul 1 contează pentru UX-ul pop-up-ului. Restul sunt notificări/efecte colaterale care pot rula în background.
 
-În `src/components/rentals/RentalPopupManager.tsx`, funcția `handleViewSimilar`:
+## Soluție (doar edge function, fără UI/business logic)
 
-1. Import lista locală `categories` din `@/data/categories`.
-2. Convertesc `current.category_slug` (de fapt numele) în slug real căutând prin `categories` un match pe `name` sau `nameEn` (case-insensitive, trim).
-3. Dacă găsesc match → `navigate('/categorie/' + cat.slug)`.
-4. Altfel fallback la căutare: `navigate('/cautare?q=' + encodeURIComponent(title))`.
+Refactor `supabase/functions/respond-rental-request/index.ts`:
 
-Nu modific RPC-ul sau backend-ul — fix-ul este pur de prezentare. Comportamentul pentru `handleViewProduct` rămâne neschimbat.
+1. **Calea critică sincronă** (rapid, sub ~500ms):
+   - Validări auth + ownership + status
+   - Update `rentals` cu noul status + `confirmed_at`/`cancelled_at`
+   - Update `transactions` la accept
+   - Insert `notifications` pentru chiriaș
+   - Return `{ success: true, status }`
+
+2. **Background via `EdgeRuntime.waitUntil(...)`** (nu blochează response-ul):
+   - Stripe refund/cancel (la reject)
+   - Fetch produs + profile owner/renter
+   - Trimiterea celor 2 emailuri Resend
+   - Apelul `notify-rental-event` (SMS + push)
+
+Toate cele de mai sus deja sunt "best-effort" cu `.catch(...)` așa că ratarea lor nu trebuie să blocheze răspunsul.
+
+Notă pentru Stripe la reject: mutăm refund-ul în background, dar setăm imediat `payment_status='refund_pending'` pe rental, iar la finalul refund-ului în background actualizăm la `refunded` + `refunded_at`. Asta păstrează UI-ul corect și debloacheză butonul.
 
 ## Verificare
 
-După implementare, simulez un refuz al unei cereri (ex. produs din "Electronice") și verific că butonul "Vezi produse similare" duce la `/categorie/electronice`.
+- Deploy `respond-rental-request`.
+- Apel `curl_edge_functions` pe o cerere de test + măsurare latency.
+- În browser, click "Acceptă" pe un pop-up și verificat că starea "Se trimite…" durează <1s, iar emailul + SMS-ul tot ajung (verificat în `edge_function_logs` pentru `notify-rental-event`).
