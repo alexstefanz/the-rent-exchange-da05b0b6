@@ -759,9 +759,18 @@ const SupportChatWidget = () => {
             )}
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm truncate">{headerTitle}</p>
-              <p className="text-xs opacity-70 lg:text-muted-foreground truncate">
-                {headerSubtitle}
-              </p>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <p className="text-xs opacity-70 lg:text-muted-foreground truncate">
+                  {headerSubtitle}
+                </p>
+                {isAdmin && ticketId && ticketInfo?.status && (
+                  <StatusPill
+                    status={ticketInfo.status}
+                    size="xs"
+                    className="shrink-0"
+                  />
+                )}
+              </div>
             </div>
             {isAdmin && ticketId && !isClosed && (
               <DropdownMenu>
