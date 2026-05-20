@@ -527,17 +527,15 @@ const SupportChatWidget = () => {
   };
 
   const handleBackFromTicket = () => {
+    const wasClosed =
+      ticketInfo?.status === "CLOSED" || ticketInfo?.status === "RESOLVED";
     setTicketId(null);
     setTicketPublicId(null);
     setMessageText("");
-    // If user has other open tickets, show archive toggle path; otherwise welcome screen
-    setShowTicketArchive(false);
     setUserLeftTicket(true);
-    // Back from a closed/archived ticket → return to archive list if it was
-    // opened from there, so user doesn't land on welcome unexpectedly.
-    if (isClosed) {
-      setShowTicketArchive(true);
-    }
+    // Back dintr-un ticket închis → revine la lista arhivă (sursa).
+    // Back dintr-un ticket activ (cazul admin) → ascunde arhiva.
+    setShowTicketArchive(wasClosed);
   };
 
   // Hide on admin route only for non-admins (so plain users don't see widget there).
