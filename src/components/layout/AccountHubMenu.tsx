@@ -241,33 +241,16 @@ interface AccountHubMenuProps {
   onLogout: () => void;
 }
 
-export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
-  const isDesktop = useIsDesktop();
-  const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
+/* ---------- shared body (desktop dropdown + mobile drawer) ---------- */
+
+export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => void }) {
   const { user } = useAuth();
-  const { t, language, setLanguage } = useLanguage();
+  const { t } = useLanguage();
   const { data, isLoading } = useAccountDashboard();
   const { data: isAdmin } = useIsAdmin(user?.id);
-  const { data: adminSummary } = useAdminNotificationSummary();
   const { data: drawerStats } = useDrawerStats(user?.id);
   const openTickets = drawerStats?.openTickets ?? 0;
   const { isBanned } = useIsBanned();
-  const adminUnread = isAdmin ? adminSummary?.unread_total ?? 0 : 0;
-
-  const [showBalance, setShowBalance] = useState(
-    () => typeof window !== "undefined" && localStorage.getItem("show_balance") !== "false",
-  );
-
-  const toggleBalance = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setShowBalance((prev) => {
-      const next = !prev;
-      localStorage.setItem("show_balance", String(next));
-      return next;
-    });
-  };
 
   const profile = data?.profile;
   const signals = data?.signals;
@@ -276,16 +259,197 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
 
   const totalActive =
     (signals?.activeRentalsAsOwner || 0) + (signals?.activeRentalsAsRenter || 0);
-  const urgentActions = (signals?.actionableHandover || 0) + (signals?.pendingReturns || 0);
-
-  const hasActivity =
-    !!signals &&
-    (signals.unreadMessages > 0 || totalActive > 0 || signals.kycPending || signals.ibanMissing);
 
   const incompleteHealth = useMemo(
     () => (health?.items || []).filter((i) => !i.done).slice(0, 3),
     [health],
   );
+
+  const displayName =
+    profile?.full_name || user?.email?.split("@")[0] || t("Utilizator", "User");
+  const displayEmail = profile?.email || user?.email || "";
+
+  return (
+    <>
+      <div className="shrink-0 p-3 pb-2 space-y-2">
+        {isBanned && <BannedBanner />}
+        {isLoading || !profile ? (
+          <div className="rounded-2xl bg-muted/40 p-4 animate-pulse">
+            <div className="flex items-center gap-3">
+              <div className="h-14 w-14 rounded-full bg-muted" />
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-24 rounded bg-muted" />
+                <div className="h-2.5 w-32 rounded bg-muted" />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <HeaderCard
+            name={displayName}
+            email={displayEmail}
+            avatarUrl={profile.avatar_url}
+            verified={!!trust?.verified}
+            rating={trust?.rating || 0}
+            reviewsCount={trust?.reviewsCount || 0}
+            memberSince={trust?.memberSince || null}
+            completion={health?.completion || 0}
+            onNav={onNavigate}
+          />
+        )}
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onNavigate("/owner/new-product")}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-[#F98715] px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_8px_20px_-8px_hsl(var(--primary)/0.55)] transition-all hover:shadow-[0_10px_24px_-6px_hsl(var(--primary)/0.65)] hover:-translate-y-0.5 active:translate-y-0"
+          >
+            <PlusCircle className="h-4 w-4" />
+            {t("Adaugă anunț", "Add a listing")}
+          </button>
+          {isAdmin && (
+            <button
+              onClick={() => onNavigate("/admin")}
+              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-3 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(16,185,129,0.55)] transition-all hover:shadow-[0_10px_24px_-6px_rgba(16,185,129,0.65)] hover:-translate-y-0.5 active:translate-y-0"
+              aria-label={t("Panou Admin", "Admin Panel")}
+            >
+              <ShieldCheck className="h-4 w-4" />
+              <span className="whitespace-nowrap">{t("Panou Admin", "Admin Panel")}</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="px-3 pb-2 space-y-2">
+        <button
+          onClick={() => onNavigate("/anunturi")}
+          className="group flex w-full items-center gap-3 rounded-xl bg-card border border-border/60 px-3 py-3 text-left shadow-sm transition hover:border-primary/40 hover:shadow"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">
+            <Package className="h-5 w-5 text-primary" />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-semibold text-foreground">
+              {t("Produsele mele", "My products")}
+            </span>
+            <span className="block text-[11px] text-muted-foreground">
+              {t("Gestionează anunțurile și cererile", "Manage listings and requests")}
+            </span>
+          </span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition" />
+        </button>
+
+        {(totalActive > 0 || (trust?.completedRentals || 0) > 0) && (
+          <button
+            onClick={() => onNavigate("/rezervari")}
+            className="group flex w-full items-center gap-3 rounded-xl bg-card border border-border/60 px-3 py-3 text-left shadow-sm transition hover:border-primary/40 hover:shadow"
+          >
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">
+              <CalendarCheck className="h-5 w-5 text-primary" />
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-sm font-semibold text-foreground">
+                {t("Închirieri", "Rentals")}
+              </span>
+              <span className="block text-[11px] text-muted-foreground">
+                {t("Active și istoric", "Active and history")}
+              </span>
+            </span>
+            <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition" />
+          </button>
+        )}
+
+        <div className="rounded-2xl bg-zinc-900 text-white p-4 shadow-md">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60">
+              {t("Balanță disponibilă", "Available balance")}
+            </span>
+            <button
+              onClick={() => onNavigate("/castiguri")}
+              className="inline-flex items-center gap-1 rounded-full bg-primary hover:bg-[#F98715] text-primary-foreground px-3 py-1.5 text-xs font-semibold transition-colors"
+            >
+              {t("Retrage", "Withdraw")}
+              <ArrowUpRight className="h-3 w-3" />
+            </button>
+          </div>
+          <div className="mt-2 text-2xl font-bold tabular-nums">
+            {(signals?.availableBalance || 0).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
+            <span className="ml-1 text-sm font-medium text-white/70">RON</span>
+          </div>
+          {(signals?.monthlyEarnings || 0) > 0 && (
+            <div className="mt-1 text-[11px] text-emerald-400">
+              +{(signals?.monthlyEarnings || 0).toFixed(0)} RON {t("luna aceasta", "this month")}
+            </div>
+          )}
+          <div className="mt-3 pt-3 border-t border-white/10 text-[11px]">
+            {profile?.iban ? (
+              <span className="text-white/70 tracking-wider">
+                IBAN •••{profile.iban.slice(-4)}
+              </span>
+            ) : (
+              <button
+                onClick={() => onNavigate("/castiguri")}
+                className="text-amber-300 hover:text-amber-200 font-medium"
+              >
+                {t("IBAN neadăugat — adaugă acum", "IBAN not added — add now")}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {!isLoading && health && incompleteHealth.length > 0 && (
+          <button
+            onClick={() => onNavigate(incompleteHealth[0].href)}
+            className="group flex w-full items-center gap-3 rounded-xl bg-card border border-border/60 px-3 py-2.5 text-left shadow-sm transition hover:border-primary/40"
+          >
+            <span className="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {t("Finalizează contul", "Finish setup")}
+            </span>
+            <span className="text-xs font-semibold text-primary">
+              {(health.items || []).filter((i) => i.done).length}/{health.items?.length || 0}
+            </span>
+            <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition" />
+          </button>
+        )}
+
+        <button
+          onClick={() => onNavigate("/suport")}
+          className="flex w-full items-center gap-3 h-12 px-4 rounded-xl bg-card border border-border/60 shadow-sm hover:border-primary/40 transition-colors"
+        >
+          <LifeBuoy className="h-5 w-5 text-foreground" />
+          <span className="flex-1 text-sm font-medium text-foreground text-left">
+            {t("Suport & Tickete", "Support & Tickets")}
+          </span>
+          {openTickets > 0 && (
+            <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+              {openTickets}
+            </span>
+          )}
+        </button>
+      </div>
+    </>
+  );
+}
+
+export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
+  const isDesktop = useIsDesktop();
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { t, language, setLanguage } = useLanguage();
+  const { data } = useAccountDashboard();
+  const { data: isAdmin } = useIsAdmin(user?.id);
+  const { data: adminSummary } = useAdminNotificationSummary();
+  const { isBanned } = useIsBanned();
+  const adminUnread = isAdmin ? adminSummary?.unread_total ?? 0 : 0;
+
+  const profile = data?.profile;
+  const signals = data?.signals;
+
+  const totalActive =
+    (signals?.activeRentalsAsOwner || 0) + (signals?.activeRentalsAsRenter || 0);
+
+  const hasActivity =
+    !!signals &&
+    (signals.unreadMessages > 0 || totalActive > 0 || signals.kycPending || signals.ibanMissing);
 
   const handleNav = (path: string) => {
     setOpen(false);
