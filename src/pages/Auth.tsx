@@ -56,6 +56,7 @@ const Auth = () => {
   const [gatingLogin, setGatingLogin] = useState(false);
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showRegisterConfirm, setShowRegisterConfirm] = useState(false);
   const [rememberMeRegister, setRememberMeRegister] = useState<boolean>(() => {
