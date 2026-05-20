@@ -73,6 +73,7 @@ export function TicketChat({ ticketId, isClosed }: Props) {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useTicketRealtime(ticketId);
 
@@ -95,6 +96,7 @@ export function TicketChat({ ticketId, isClosed }: Props) {
     mutationFn: (txt: string) => addUserTicketMessage(ticketId, txt),
     onSuccess: () => {
       setText("");
+      if (textareaRef.current) textareaRef.current.style.height = "auto";
       qc.invalidateQueries({ queryKey: ["userTicketMessages", ticketId] });
     },
     onError: () => toast.error(t("Nu s-a putut trimite mesajul.", "Could not send message.")),
@@ -180,8 +182,14 @@ export function TicketChat({ ticketId, isClosed }: Props) {
             </Button>
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
             <Textarea
+              ref={textareaRef}
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => {
+                setText(e.target.value);
+                const el = e.target as HTMLTextAreaElement;
+                el.style.height = "auto";
+                el.style.height = Math.min(el.scrollHeight, 160) + "px";
+              }}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -190,7 +198,7 @@ export function TicketChat({ ticketId, isClosed }: Props) {
               }}
               placeholder={t("Scrie un mesaj…", "Write a message…")}
               rows={1}
-              className="min-h-9 max-h-32 resize-none"
+              className="min-h-9 max-h-40 resize-none overflow-y-auto"
             />
             <Button
               type="button"
@@ -255,7 +263,7 @@ function ChatBubble({ msg, userId }: { msg: OpsTicketMessage; userId?: string })
         ) : (
           <div
             className={cn(
-              "rounded-2xl px-3.5 py-2 text-sm shadow-[0_1px_2px_rgba(0,0,0,0.04)] whitespace-pre-wrap break-words",
+              "rounded-2xl px-3.5 py-2 text-sm shadow-[0_1px_2px_rgba(0,0,0,0.04)] whitespace-pre-wrap break-words [overflow-wrap:anywhere]",
               isOwn
                 ? "bg-primary text-primary-foreground rounded-br-md"
                 : "bg-card border border-border/60 rounded-bl-md text-foreground"
