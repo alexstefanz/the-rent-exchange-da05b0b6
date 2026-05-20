@@ -183,6 +183,7 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
         >
           <Paperclip className="h-5 w-5" />
         </Button>
+        <div className="relative flex-1">
         <Textarea
           ref={textareaRef}
           rows={1}
@@ -195,9 +196,24 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
           disabled={effectiveDisabled || sending}
           placeholder={isBanned ? "Cont suspendat" : t("Scrie un mesaj...", "Write a message...")}
           className={cn(
-            "min-h-[40px] max-h-[140px] resize-none rounded-2xl border-border/60 bg-muted/40 focus-visible:ring-1 focus-visible:ring-primary/40 px-4 py-2.5 text-base md:text-sm"
+            "min-h-[40px] max-h-[140px] resize-none rounded-2xl border-border/60 bg-muted/40 focus-visible:ring-1 focus-visible:ring-primary/40 px-4 py-2.5 text-base md:text-sm w-full"
           )}
         />
+        {text.length >= MAX_MESSAGE_LENGTH * 0.8 && (
+          <span
+            className={cn(
+              "pointer-events-none absolute bottom-1 right-3 text-[10px] tabular-nums",
+              text.length >= MAX_MESSAGE_LENGTH
+                ? "text-destructive font-medium"
+                : text.length >= MAX_MESSAGE_LENGTH * 0.9
+                ? "text-primary"
+                : "text-muted-foreground"
+            )}
+          >
+            {text.length}/{MAX_MESSAGE_LENGTH}
+          </span>
+        )}
+        </div>
         <Button
           type="button"
           size="icon"
