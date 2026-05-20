@@ -10,9 +10,10 @@ interface RailProps {
   icon: React.ReactNode;
   products: Product[];
   slidesPerView?: 2 | 4;
+  viewMode?: "gallery" | "list";
 }
 
-const Rail = ({ title, icon, products, slidesPerView = 4 }: RailProps) => {
+const Rail = ({ title, icon, products, slidesPerView = 4, viewMode = "gallery" }: RailProps) => {
   const { t } = useLanguage();
   const [emblaRef, emblaApi] = useEmblaCarousel({ align: "start", dragFree: true, containScroll: "trimSnaps" });
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
@@ -24,6 +25,8 @@ const Rail = ({ title, icon, products, slidesPerView = 4 }: RailProps) => {
     ? "shrink-0 basis-[48%] sm:basis-[42%] md:basis-[32%] lg:basis-[24%]"
     : "shrink-0 basis-[68%] sm:basis-[42%] md:basis-[32%] lg:basis-[24%]";
 
+  const isList = viewMode === "list";
+
   return (
     <section className="space-y-3 motion-safe:animate-fade-in-up">
       <div className="flex items-center justify-between">
@@ -31,6 +34,7 @@ const Rail = ({ title, icon, products, slidesPerView = 4 }: RailProps) => {
           {icon}
           {title}
         </h2>
+        {!isList && (
         <div className="hidden md:flex items-center gap-1.5">
           <button onClick={scrollPrev} aria-label={t("Anterior", "Previous")}
             className="h-9 w-9 rounded-full border border-border bg-card flex items-center justify-center hover:bg-muted transition-colors">
@@ -41,21 +45,30 @@ const Rail = ({ title, icon, products, slidesPerView = 4 }: RailProps) => {
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
+        )}
       </div>
-      <div ref={emblaRef} className="overflow-hidden -mx-1">
-        <div className="flex gap-4 px-1">
+      {isList ? (
+        <div className="flex flex-col gap-4">
           {products.map((p) => (
-            <div key={p.id} className={basisClass}>
-              <ProductCard product={p} />
-            </div>
+            <ProductCard key={p.id} product={p} viewMode="list" />
           ))}
         </div>
-      </div>
+      ) : (
+        <div ref={emblaRef} className="overflow-hidden -mx-1">
+          <div className="flex gap-4 px-1">
+            {products.map((p) => (
+              <div key={p.id} className={basisClass}>
+                <ProductCard product={p} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 };
 
-export const DiscoveryRailsTop = ({ newArrivals }: { newArrivals: Product[] }) => {
+export const DiscoveryRailsTop = ({ newArrivals, viewMode }: { newArrivals: Product[]; viewMode?: "gallery" | "list" }) => {
   const { t } = useLanguage();
   return (
     <div className="space-y-10">
@@ -63,12 +76,13 @@ export const DiscoveryRailsTop = ({ newArrivals }: { newArrivals: Product[] }) =
         title={t("Adăugate recent", "Newly added")}
         icon={<Sparkles className="h-5 w-5 text-primary" />}
         products={newArrivals}
+        viewMode={viewMode}
       />
     </div>
   );
 };
 
-export const DiscoveryRailsBottom = ({ trending, nearby }: { trending: Product[]; nearby: Product[] }) => {
+export const DiscoveryRailsBottom = ({ trending, nearby, viewMode }: { trending: Product[]; nearby: Product[]; viewMode?: "gallery" | "list" }) => {
   const { t } = useLanguage();
   return (
     <div className="space-y-10">
@@ -77,12 +91,14 @@ export const DiscoveryRailsBottom = ({ trending, nearby }: { trending: Product[]
         icon={<Flame className="h-5 w-5 text-primary" />}
         products={trending}
         slidesPerView={2}
+        viewMode={viewMode}
       />
       <Rail
         title={t("Aproape de tine", "Near you")}
         icon={<MapPin className="h-5 w-5 text-primary" />}
         products={nearby}
         slidesPerView={2}
+        viewMode={viewMode}
       />
     </div>
   );
