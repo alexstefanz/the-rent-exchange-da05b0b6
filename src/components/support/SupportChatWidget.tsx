@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -202,6 +203,14 @@ const SupportChatWidget = () => {
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
   const dateLocale = language === "ro" ? roLocale : enUS;
+  const messageTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const resetTextareaHeight = () => {
+    if (messageTextareaRef.current) messageTextareaRef.current.style.height = "auto";
+  };
+  const autoGrow = (el: HTMLTextAreaElement) => {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 160) + "px";
+  };
 
   const [isOpen, setIsOpen] = useState(false);
   const [ticketId, setTicketId] = useState<string | null>(null);
@@ -232,7 +241,7 @@ const SupportChatWidget = () => {
       setTicketId(null);
       setTicketPublicId(null);
       setShowTicketArchive(false);
-      setMessageText("");
+      setMessageText(""); resetTextareaHeight();
       setIsInternal(false);
       setUserLeftTicket(false);
       setUserRequestedNewTicket(false);
@@ -430,7 +439,7 @@ const SupportChatWidget = () => {
     setTicketId(null);
     setTicketPublicId(null);
     setShowTicketArchive(false);
-    setMessageText("");
+    setMessageText(""); resetTextareaHeight();
     setUserRequestedNewTicket(true);
   };
 
@@ -475,7 +484,7 @@ const SupportChatWidget = () => {
       return addUserTicketMessage(ticketId!, text);
     },
     onSuccess: () => {
-      setMessageText("");
+      setMessageText(""); resetTextareaHeight();
       setIsInternal(false);
       queryClient.invalidateQueries({
         queryKey: ["supportChatMessages", ticketId],
@@ -568,7 +577,7 @@ const SupportChatWidget = () => {
       await addUserTicketMessage(ticket.id, text);
       setTicketId(ticket.id);
       setTicketPublicId(ticket.public_id);
-      setMessageText("");
+      setMessageText(""); resetTextareaHeight();
       setUserLeftTicket(false);
       setUserRequestedNewTicket(false);
       queryClient.invalidateQueries({ queryKey: ["userTickets"] });
@@ -622,7 +631,7 @@ const SupportChatWidget = () => {
       ticketInfo?.status === "CLOSED" || ticketInfo?.status === "RESOLVED";
     setTicketId(null);
     setTicketPublicId(null);
-    setMessageText("");
+    setMessageText(""); resetTextareaHeight();
     setUserLeftTicket(true);
     // Back dintr-un ticket închis → revine la lista arhivă (sursa).
     // Back dintr-un ticket activ (cazul admin) → ascunde arhiva.
@@ -957,7 +966,7 @@ const SupportChatWidget = () => {
                         )}
                       </div>
                     )}
-                    <div className="flex items-center gap-2 px-3 py-2.5">
+                    <div className="flex items-end gap-2 px-3 py-2.5">
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
@@ -970,12 +979,17 @@ const SupportChatWidget = () => {
                           <ImagePlus className="h-4 w-4 text-muted-foreground" />
                         )}
                       </button>
-                      <Input
+                      <Textarea
+                        ref={messageTextareaRef}
                         value={messageText}
-                        onChange={(e) => setMessageText(e.target.value.slice(0, MAX_MESSAGE_LENGTH))}
+                        onChange={(e) => {
+                          setMessageText(e.target.value.slice(0, MAX_MESSAGE_LENGTH));
+                          autoGrow(e.target as HTMLTextAreaElement);
+                        }}
                         maxLength={MAX_MESSAGE_LENGTH}
+                        rows={1}
                         placeholder={t("Scrie mesajul tău...", "Write your message...")}
-                        className="h-9 text-sm flex-1 rounded-full"
+                        className="text-sm flex-1 rounded-2xl resize-none overflow-y-auto min-h-9 max-h-40 py-2"
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !e.shiftKey) {
                             e.preventDefault();
@@ -1179,7 +1193,7 @@ const SupportChatWidget = () => {
                     </ScrollArea>
 
                     <div className="shrink-0 border-t pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:pb-0">
-                      <div className="flex items-center gap-2 px-3 py-2.5">
+                      <div className="flex items-end gap-2 px-3 py-2.5">
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
@@ -1192,15 +1206,20 @@ const SupportChatWidget = () => {
                             <ImagePlus className="h-4 w-4 text-muted-foreground" />
                           )}
                         </button>
-                        <Input
+                        <Textarea
+                          ref={messageTextareaRef}
                           value={messageText}
-                          onChange={(e) => setMessageText(e.target.value.slice(0, MAX_MESSAGE_LENGTH))}
+                          onChange={(e) => {
+                            setMessageText(e.target.value.slice(0, MAX_MESSAGE_LENGTH));
+                            autoGrow(e.target as HTMLTextAreaElement);
+                          }}
                           maxLength={MAX_MESSAGE_LENGTH}
+                          rows={1}
                           placeholder={t(
                             "Scrie mesajul tău...",
                             "Write your message...",
                           )}
-                          className="h-9 text-sm flex-1 rounded-full"
+                          className="text-sm flex-1 rounded-2xl resize-none overflow-y-auto min-h-9 max-h-40 py-2"
                           onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
                               e.preventDefault();

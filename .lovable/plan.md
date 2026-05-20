@@ -1,19 +1,16 @@
-# Open ticket in full support page from widget
+# Auto-grow user input in SupportChatWidget
 
-Add a button in the `SupportChatWidget` header (visible when a ticket conversation is open) that navigates the user to the full support page with that ticket pre-opened, then closes the floating widget.
+Replace the single-line `<Input>` used for the user-side message input with an auto-resizing `<Textarea>`, mirroring the behavior already implemented in `TicketChat.tsx`.
 
-## Changes
+## Changes — `src/components/support/SupportChatWidget.tsx`
 
-**File:** `src/components/support/SupportChatWidget.tsx`
+1. Import `Textarea` from `@/components/ui/textarea`.
+2. Add a `useRef<HTMLTextAreaElement>` (one ref is enough — both input blocks render conditionally and never simultaneously).
+3. In both input blocks (lines ~973 and ~1195), swap `<Input>` → `<Textarea>`:
+   - `rows={1}`, `className="text-sm flex-1 rounded-2xl resize-none overflow-y-auto min-h-9 max-h-40 py-2"`.
+   - `onChange`: update state AND set `el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, 160) + "px"`.
+   - Keep `onKeyDown` Enter-to-send (Shift+Enter for newline).
+   - Align container to `items-end` so the send button stays at the bottom as the textarea grows.
+4. In `handleSendTicketMessage` success / after `setMessageText("")`, reset `textareaRef.current.style.height = "auto"`.
 
-1. In the active-ticket header (next to the 3-dot menu / close button), add a new icon button using `Maximize2` (or `ExternalLink`) from `lucide-react`.
-2. On click:
-   - `navigate(\`/suport?open=${ticketId}\`)` using `useNavigate` (already imported elsewhere in the file, or add it).
-   - Close the widget panel (call the same handler used by the `X` button).
-3. Tooltip / aria-label: RO `"Deschide în pagina de suport"`, EN `"Open in support page"`.
-4. Visible for both customer and admin views as long as a `ticketId` is active. Hidden in the inbox/empty state.
-
-`UserTickets.tsx` already reads `?open=<id>` into `selectedId`, so no changes needed there.
-
-## Out of scope
-- No new routes, no admin redirect to `/admin/tickete`, no design system changes.
+No backend or business-logic changes.
