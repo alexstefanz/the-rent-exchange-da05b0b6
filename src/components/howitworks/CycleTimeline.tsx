@@ -72,11 +72,11 @@ export default function CycleTimeline({ steps }: Props) {
 
       {/* Mobile vertical */}
       <div ref={mobileRef} className="relative md:hidden">
-        <div aria-hidden className="absolute left-5 top-2 h-[calc(100%-1rem)] w-px bg-primary/15" />
+        <div aria-hidden className="absolute left-5 top-2 h-[calc(100%-1rem)] w-0.5 -translate-x-1/2 bg-primary/15" />
         <motion.div
           aria-hidden
           style={{ height: mobileFill }}
-          className="absolute left-5 top-2 w-px bg-primary"
+          className="absolute left-5 top-2 w-0.5 -translate-x-1/2 bg-primary"
         />
         <div className="space-y-6">
           {steps.map((step, idx) => {
