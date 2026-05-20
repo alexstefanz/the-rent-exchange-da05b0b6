@@ -1,36 +1,53 @@
-# Live-update the available balance container
+# Comasare pași 4 + 5 din timeline-ul rezervării
 
-## Problem
-The wallet/balance widget in the header (`AccountHubMenu`) reads `signals.availableBalance` from `useAccountDashboard`. That value is computed from `public.transactions` rows of type `owner_payout` (plus minus `withdrawal`). When a rental completes and a new `owner_payout` transaction is inserted, the widget keeps showing the old amount until the user manually refreshes — because:
+Momentan timeline-ul are 7 pași, dintre care doi sunt aproape duplicați: **Semnături PV** și **Produs predat**. Le unim într-un singur pas **„Predare produs"** care acoperă tot procesul de predare (semnare PV + confirmarea primirii de către chiriaș).
 
-1. The realtime channel in `useAccountDashboard.ts` subscribes to `rentals`, `messages`, `notifications`, `profiles` — but **not** to `transactions` or `withdrawals`.
-2. The `transactions` table is **not** part of the `supabase_realtime` publication, so even if we subscribed, no events would fire.
+## Comportament nou
 
-## Changes
+Timeline nou (6 pași):
 
-### 1. Migration — add tables to realtime publication
-```sql
-ALTER PUBLICATION supabase_realtime ADD TABLE public.transactions;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.withdrawals;
+```text
+1. Cerere trimisă
+2. Confirmat
+3. Plată efectuată
+4. Predare produs        ← pas combinat
+5. Returnare
+6. Finalizat
 ```
-(Wrap each in a guard so a re-run doesn't fail if already present.)
 
-### 2. `src/hooks/useAccountDashboard.ts`
-In the realtime `useEffect`, add two more `.on("postgres_changes", …)` subscriptions on the same channel:
-- `{ event: "*", schema: "public", table: "transactions", filter: \`user_id=eq.${userId}\` }` → `invalidate`
-- `{ event: "*", schema: "public", table: "withdrawals", filter: \`user_id=eq.${userId}\` }` → `invalidate`
+Pasul 4 „Predare produs":
+- **Activ (portocaliu)** din momentul în care plata e autorizată și până când chiriașul confirmă primirea produsului.
+- În interiorul pasului există în continuare două sub-acțiuni vizibile în card-ul de acțiune și în secțiunea „Procese verbale":
+  1. Semnare PV de predare (de către ambele părți)
+  2. După ce PV-ul e semnat de ambele părți, chiriașul vede butonul **„Confirmă primirea produsului"** (proprietarul vede stare „Așteptăm chiriașul să confirme primirea")
+- **Bifat (verde)** doar după ce chiriașul a apăsat „Confirmă primirea" (adică `handover_confirmed_at` e setat). Abia atunci se deblochează pasul **Returnare**.
 
-This makes the balance refetch the moment an `owner_payout` row is inserted (rental completion) or a `withdrawal` row is created/updated.
+Toată logica existentă pentru semnarea PV-ului și pentru confirmarea primirii rămâne identică — singura schimbare e că în bara de stare apare un singur pas în loc de două.
 
-### 3. Belt-and-suspenders refetch on focus
-Add `refetchOnWindowFocus: true` to the `useQuery` so returning to the tab also refreshes the balance even if a realtime event was missed.
+## Modificări de cod
+
+Doar prezentare (frontend). Fără migrații, fără edge functions, fără schimbări de business logic.
+
+**`src/components/dashboard/RentalTimeline.tsx`**
+- Elimin pasul `Produs predat` din `STEPS` (rămân 6 pași). Pictograma pasului combinat: `Package` (mai potrivită ca metaforă „predare").
+- Actualizez `getTimelineStep`:
+  - `return_pv_owner_signed` → step 6 (Finalizat)
+  - `status === "completed" || return_confirmed_at` → step 6
+  - `return_pv_renter_signed` sau `return_initiated` sau `handover_confirmed_at` sau `status === "active"` → step 5 (Returnare)
+  - `payment_status` autorizat/plătit (cu sau fără PV semnat) → step 4 (Predare produs, activ)
+  - restul rămâne la fel, doar renumerotare.
+- Actualizez comentariul JSDoc cu noua listă de 6 pași.
+- Etichete:
+  - RO: „Predare produs" / scurt „Predare"
+  - EN: „Handover" / scurt „Handover"
+
+**`src/pages/RentalDetailPage.tsx`**
+- Nicio schimbare de logică, doar verific că textele care fac referire explicită la „pasul 4/5" rămân coerente (ex. `Pasul 5 — Preia produsul` din captură). Le actualizez la `Pasul 4 — Predare produs` cu același conținut și același CTA „Confirmă primirea produsului" pentru chiriaș / status „Așteptăm confirmarea chiriașului" pentru proprietar.
+
+**Fără modificări** în: `RentalsTab`, `RentalsOutTab`, `NextActionCard`, `MainActionCard`, edge functions, baza de date.
 
 ## Out of scope
-- The arithmetic itself (`owner_payout - withdrawal`) is already correct — confirmed it matches the 4 RON the user has.
-- `useWalletBalance` (RPC-based, used on `/castiguri`) — already invalidates correctly there; no change needed.
-- No UI changes to the balance container.
 
-## Verification
-1. After deploy, complete a rental as owner → within ~1s the header balance updates from old value to new value without a page refresh.
-2. Initiate a withdrawal → balance decrements in the header immediately.
-3. Switch tabs and back → balance re-syncs even if the realtime event was missed.
+- Nu modificăm fluxul de semnare PV.
+- Nu schimbăm cine poate confirma primirea (rămâne doar chiriașul).
+- Nu atingem pasul de Returnare / Finalizat.
