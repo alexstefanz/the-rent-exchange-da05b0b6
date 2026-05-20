@@ -66,6 +66,7 @@ export function NotificationCenter({ variant = "popover", onClose }: Props) {
       payment: 0,
       support: 0,
       system: 0,
+      success: 0,
       urgent: 0,
     };
     c.all = visibleNotifications.length;
