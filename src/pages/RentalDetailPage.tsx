@@ -683,17 +683,6 @@ const RentalDetailPage = () => {
                 <div className="mt-2 space-y-1 text-sm">
                   {counterparty.email && <p className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-muted-foreground" />{counterparty.email}</p>}
                   {counterparty.phone && <p className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-muted-foreground" />{counterparty.phone}</p>}
-                  {counterparty.phone && (
-                    <a
-                      href={`https://wa.me/${counterparty.phone.replace(/[^\d]/g, "")}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 text-[#25D366] hover:underline"
-                    >
-                      <MessageCircle className="h-3.5 w-3.5" />
-                      {t("Trimite mesaj pe WhatsApp", "Send WhatsApp message")}
-                    </a>
-                  )}
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground mt-2">{t("Datele de contact se vor afisa dupa confirmarea platii.", "Contact info appears after payment is confirmed.")}</p>
