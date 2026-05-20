@@ -29,6 +29,7 @@ function StarRating({ value, readonly = false }: { value: number; readonly?: boo
 }
 
 function ReviewCard({ review }: { review: ProductReview }) {
+  const { language } = useLanguage();
   return (
     <div className="border-b border-border pb-4 last:border-b-0 last:pb-0">
       <div className="flex items-center gap-3 mb-2">
@@ -38,20 +39,15 @@ function ReviewCard({ review }: { review: ProductReview }) {
         </Avatar>
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm text-foreground">{review.reviewer_name || "Utilizator"}</p>
-          <span className="text-xs text-muted-foreground">{format(new Date(review.created_at), "d MMM yyyy", { locale: ro })}</span>
+          <span className="text-xs text-muted-foreground">
+            {format(new Date(review.created_at), "d MMM yyyy", language === "ro" ? { locale: ro } : undefined)}
+          </span>
         </div>
+        <StarRating value={review.rating} readonly />
       </div>
-      <div className="space-y-1 ml-12 text-sm">
-        {review.rating_product_condition && (
-          <div className="flex items-center gap-2"><span className="text-muted-foreground w-28">Stare produs</span><StarRating value={review.rating_product_condition} readonly /></div>
-        )}
-        {review.rating_communication && (
-          <div className="flex items-center gap-2"><span className="text-muted-foreground w-28">Comunicare</span><StarRating value={review.rating_communication} readonly /></div>
-        )}
-        {review.rating_punctuality && (
-          <div className="flex items-center gap-2"><span className="text-muted-foreground w-28">Punctualitate</span><StarRating value={review.rating_punctuality} readonly /></div>
-        )}
-      </div>
+      {review.comment && (
+        <p className="ml-12 text-sm text-foreground whitespace-pre-wrap">{review.comment}</p>
+      )}
     </div>
   );
 }
