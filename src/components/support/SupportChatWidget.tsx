@@ -1212,7 +1212,7 @@ const SupportChatWidget = () => {
           if (!open && !adminStatusMutation.isPending) setPendingAdminAction(null);
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="z-[90]">
           <AlertDialogHeader>
             <AlertDialogTitle>
               {pendingAdminAction === "RESOLVE" &&
