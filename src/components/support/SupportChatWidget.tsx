@@ -11,12 +11,34 @@ import {
   ArrowLeft,
   History,
   Lock,
+  MoreVertical,
+  CheckCircle2,
+  AlertCircle,
+  Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -31,6 +53,7 @@ import {
   fetchOpsTickets,
   fetchTicketMessages,
   createTicketMessage,
+  updateOpsTicketField,
   type OpsTicket as AdminOpsTicket,
 } from "@/features/admin/opsTicketsApi";
 import { MAX_MESSAGE_LENGTH } from "@/features/messaging/messagingApi";
@@ -191,6 +214,11 @@ const SupportChatWidget = () => {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
   const [isInternal, setIsInternal] = useState(false);
+
+  // Admin status-change confirmation
+  type AdminAction = "RESOLVE" | "INVESTIGATE" | "CANCEL";
+  const [pendingAdminAction, setPendingAdminAction] =
+    useState<AdminAction | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -456,6 +484,67 @@ const SupportChatWidget = () => {
     },
   });
 
+  const adminStatusMutation = useMutation({
+    mutationFn: async (action: AdminAction) => {
+      if (!ticketId) throw new Error("no ticket");
+      const oldStatus = (ticketInfo?.status as string) ?? null;
+      const map: Record<AdminAction, string> = {
+        RESOLVE: "RESOLVED",
+        INVESTIGATE: "WAITING_INTERNAL",
+        CANCEL: "CLOSED",
+      };
+      const newStatus = map[action];
+      await updateOpsTicketField(
+        ticketId,
+        "status",
+        oldStatus,
+        newStatus,
+        "STATUS_CHANGED",
+      );
+      if (action === "CANCEL") {
+        try {
+          await createTicketMessage(
+            ticketId,
+            t("Ticket anulat de admin.", "Ticket cancelled by admin."),
+            true,
+            "ADMIN",
+          );
+        } catch (e) {
+          console.error("[support] cancel note failed:", e);
+        }
+      }
+    },
+    onSuccess: (_d, action) => {
+      queryClient.invalidateQueries({
+        queryKey: ["supportTicketInfo", ticketId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["supportChatMessages", ticketId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["adminOpsInbox"] });
+      queryClient.invalidateQueries({ queryKey: ["opsTickets"] });
+      const labels: Record<AdminAction, string> = {
+        RESOLVE: t("Ticket marcat ca rezolvat.", "Ticket marked as resolved."),
+        INVESTIGATE: t(
+          "Ticket marcat: necesită investigații.",
+          "Ticket marked: needs investigation.",
+        ),
+        CANCEL: t("Ticket anulat.", "Ticket cancelled."),
+      };
+      toast.success(labels[action]);
+      setPendingAdminAction(null);
+    },
+    onError: () => {
+      toast.error(
+        t(
+          "Eroare la actualizarea ticketului.",
+          "Failed to update ticket.",
+        ),
+      );
+      setPendingAdminAction(null);
+    },
+  });
+
   const ensureTicketAndSend = async (text: string) => {
     if (!user || !text.trim()) return;
     if (ticketId) {
@@ -674,6 +763,45 @@ const SupportChatWidget = () => {
                 {headerSubtitle}
               </p>
             </div>
+            {isAdmin && ticketId && !isClosed && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors"
+                    aria-label={t("Acțiuni ticket", "Ticket actions")}
+                    title={t("Acțiuni ticket", "Ticket actions")}
+                  >
+                    <MoreVertical className="h-5 w-5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    {t("Status ticket", "Ticket status")}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setPendingAdminAction("RESOLVE")}
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" />
+                    {t("Marchează rezolvat", "Mark resolved")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setPendingAdminAction("INVESTIGATE")}
+                  >
+                    <AlertCircle className="h-4 w-4 mr-2 text-amber-600" />
+                    {t("Necesită investigații", "Needs investigation")}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setPendingAdminAction("CANCEL")}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Ban className="h-4 w-4 mr-2" />
+                    {t("Anulează ticket", "Cancel ticket")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <button
               onClick={() => setIsOpen(false)}
               className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors"
@@ -1077,6 +1205,69 @@ const SupportChatWidget = () => {
           </div>
         </div>
       )}
+
+      <AlertDialog
+        open={!!pendingAdminAction}
+        onOpenChange={(open) => {
+          if (!open && !adminStatusMutation.isPending) setPendingAdminAction(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingAdminAction === "RESOLVE" &&
+                t("Marchezi ticketul ca rezolvat?", "Mark ticket as resolved?")}
+              {pendingAdminAction === "INVESTIGATE" &&
+                t(
+                  "Marchezi ticketul: necesită investigații?",
+                  "Mark ticket: needs investigation?",
+                )}
+              {pendingAdminAction === "CANCEL" &&
+                t("Anulezi acest ticket?", "Cancel this ticket?")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingAdminAction === "RESOLVE" &&
+                t(
+                  "Clientul va primi un email că ticketul a fost rezolvat. Va putea redeschide trimițând un nou mesaj.",
+                  "The customer will be notified by email. They can reopen by sending a new message.",
+                )}
+              {pendingAdminAction === "INVESTIGATE" &&
+                t(
+                  "Ticketul rămâne deschis, dar marcat ca necesitând investigații suplimentare din partea echipei.",
+                  "The ticket stays open but is flagged as needing further internal investigation.",
+                )}
+              {pendingAdminAction === "CANCEL" &&
+                t(
+                  "Ticketul va fi închis și marcat ca anulat. Acțiunea poate fi anulată din ERP-ul de admin.",
+                  "The ticket will be closed and marked as cancelled. This can be reverted from the admin ERP.",
+                )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={adminStatusMutation.isPending}>
+              {t("Renunță", "Cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (pendingAdminAction)
+                  adminStatusMutation.mutate(pendingAdminAction);
+              }}
+              disabled={adminStatusMutation.isPending}
+              className={cn(
+                pendingAdminAction === "CANCEL" &&
+                  "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+              )}
+            >
+              {adminStatusMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                t("Confirmă", "Confirm")
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
