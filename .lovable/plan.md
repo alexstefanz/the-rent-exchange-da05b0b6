@@ -1,36 +1,36 @@
-# Show clear feedback when login password is wrong
+# Live-update the available balance container
 
 ## Problem
-On the `/autentificare` page, submitting a wrong password leaves the user without any visible feedback — the spinner finishes, no toast is perceived, and the form just sits there. Today the only feedback path is a destructive toast, which can be missed (auto-dismisses, can overlap with other UI, or is suppressed when there's a quickly-following navigation/re-render).
+The wallet/balance widget in the header (`AccountHubMenu`) reads `signals.availableBalance` from `useAccountDashboard`. That value is computed from `public.transactions` rows of type `owner_payout` (plus minus `withdrawal`). When a rental completes and a new `owner_payout` transaction is inserted, the widget keeps showing the old amount until the user manually refreshes — because:
 
-## Changes (frontend only)
+1. The realtime channel in `useAccountDashboard.ts` subscribes to `rentals`, `messages`, `notifications`, `profiles` — but **not** to `transactions` or `withdrawals`.
+2. The `transactions` table is **not** part of the `supabase_realtime` publication, so even if we subscribed, no events would fire.
 
-### 1. `src/pages/Auth.tsx`
-- Add a local `loginError: string | null` state.
-- In `handleLogin`:
-  - Wrap `signIn(...)` in `try/catch/finally` so `setIsLoading(false)` and `setGatingLogin(false)` always run, even if the SDK throws (e.g. transient network/rate-limit error).
-  - Trim the email (`data.email.trim().toLowerCase()`) before calling `signIn` to avoid silent mismatches from autofill whitespace.
-  - On error: set `loginError` to a friendly message derived from the Supabase error:
-    - `invalid_credentials` / "Invalid login credentials" → "Email sau parolă incorecte." / "Invalid email or password."
-    - `email_not_confirmed` → existing "verifică emailul" copy.
-    - rate-limit (`over_request_rate_limit`, status 429) → "Prea multe încercări. Așteaptă câteva minute." / "Too many attempts. Wait a few minutes."
-    - fallback → original error message or generic copy.
-  - Keep the existing destructive toast as a secondary channel.
-  - Clear `loginError` at the start of each submit and when the user edits email or password (`loginForm.watch` subscription or `onChange` on the inputs).
-- Render an inline error block immediately under the password field (before the submit button) when `loginError` is set:
-  - Uses `bg-destructive/10 text-destructive border border-destructive/30 rounded-lg px-3 py-2 text-sm`, with an `AlertCircle` icon and `role="alert"` for accessibility.
-  - Persistent until the user retypes — does not auto-dismiss like the toast.
+## Changes
 
-### 2. No backend / no schema / no Auth provider changes
-The Supabase auth API already returns the correct 400 with `invalid_credentials`; only the UI surfacing needs work. `signIn` in `AuthContext` already returns `{ error }` and doesn't need to change.
+### 1. Migration — add tables to realtime publication
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE public.transactions;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.withdrawals;
+```
+(Wrap each in a guard so a re-run doesn't fail if already present.)
+
+### 2. `src/hooks/useAccountDashboard.ts`
+In the realtime `useEffect`, add two more `.on("postgres_changes", …)` subscriptions on the same channel:
+- `{ event: "*", schema: "public", table: "transactions", filter: \`user_id=eq.${userId}\` }` → `invalidate`
+- `{ event: "*", schema: "public", table: "withdrawals", filter: \`user_id=eq.${userId}\` }` → `invalidate`
+
+This makes the balance refetch the moment an `owner_payout` row is inserted (rental completion) or a `withdrawal` row is created/updated.
+
+### 3. Belt-and-suspenders refetch on focus
+Add `refetchOnWindowFocus: true` to the `useQuery` so returning to the tab also refreshes the balance even if a realtime event was missed.
 
 ## Out of scope
-- Register / password reset / OTP flows (already have their own feedback).
-- Social login buttons.
-- Any change to `AuthContext`, RLS, or email templates.
+- The arithmetic itself (`owner_payout - withdrawal`) is already correct — confirmed it matches the 4 RON the user has.
+- `useWalletBalance` (RPC-based, used on `/castiguri`) — already invalidates correctly there; no change needed.
+- No UI changes to the balance container.
 
 ## Verification
-1. Enter a valid email + wrong password → spinner stops, inline red alert appears under the password field reading "Email sau parolă incorecte." and a destructive toast also fires.
-2. Edit the password field → inline alert disappears.
-3. Trigger 6+ rapid failed attempts → inline alert switches to the rate-limit copy.
-4. Successful login still navigates to `/` with the welcome toast.
+1. After deploy, complete a rental as owner → within ~1s the header balance updates from old value to new value without a page refresh.
+2. Initiate a withdrawal → balance decrements in the header immediately.
+3. Switch tabs and back → balance re-syncs even if the realtime event was missed.
