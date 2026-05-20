@@ -181,6 +181,10 @@ export default function EarlyReturnCard({ rentalId, role, startDate, endDate, da
   // Dacă suntem deja peste sau în ultima zi a perioadei, nu mai e „early" — ascundem.
   if (today >= maxDate) return null;
 
+  // Only the renter can initiate an early return request.
+  // The owner can only respond (approve/reject) to a request started by the renter.
+  if (role !== "renter") return null;
+
   const newDays = selectedDate
     ? Math.max(1, differenceInCalendarDays(selectedDate, start) + 1)
     : 0;
