@@ -6,7 +6,6 @@ export interface Profile {
   full_name: string | null;
   phone: string | null;
   email: string | null;
-  whatsapp: string | null;
   avatar_url: string | null;
   created_at: string;
   kyc_status: string;
@@ -61,7 +60,7 @@ export const createProfile = async (
 
 export const updateProfile = async (
   userId: string,
-  data: { full_name?: string; phone?: string; email?: string; whatsapp?: string; avatar_url?: string; account_type?: string; company_name?: string; cui?: string; reg_com?: string; company_address?: string; sms_notifications_enabled?: boolean }
+  data: { full_name?: string; phone?: string; email?: string; avatar_url?: string; account_type?: string; company_name?: string; cui?: string; reg_com?: string; company_address?: string; sms_notifications_enabled?: boolean }
 ): Promise<Profile> => {
   const { data: profile, error } = await supabase
     .from("profiles")
