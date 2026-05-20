@@ -241,7 +241,7 @@ const SupportChatWidget = () => {
       setTicketId(null);
       setTicketPublicId(null);
       setShowTicketArchive(false);
-      setMessageText("");
+      setMessageText(""); resetTextareaHeight();
       setIsInternal(false);
       setUserLeftTicket(false);
       setUserRequestedNewTicket(false);
@@ -439,7 +439,7 @@ const SupportChatWidget = () => {
     setTicketId(null);
     setTicketPublicId(null);
     setShowTicketArchive(false);
-    setMessageText("");
+    setMessageText(""); resetTextareaHeight();
     setUserRequestedNewTicket(true);
   };
 
@@ -484,7 +484,7 @@ const SupportChatWidget = () => {
       return addUserTicketMessage(ticketId!, text);
     },
     onSuccess: () => {
-      setMessageText("");
+      setMessageText(""); resetTextareaHeight();
       setIsInternal(false);
       queryClient.invalidateQueries({
         queryKey: ["supportChatMessages", ticketId],
@@ -577,7 +577,7 @@ const SupportChatWidget = () => {
       await addUserTicketMessage(ticket.id, text);
       setTicketId(ticket.id);
       setTicketPublicId(ticket.public_id);
-      setMessageText("");
+      setMessageText(""); resetTextareaHeight();
       setUserLeftTicket(false);
       setUserRequestedNewTicket(false);
       queryClient.invalidateQueries({ queryKey: ["userTickets"] });
@@ -631,7 +631,7 @@ const SupportChatWidget = () => {
       ticketInfo?.status === "CLOSED" || ticketInfo?.status === "RESOLVED";
     setTicketId(null);
     setTicketPublicId(null);
-    setMessageText("");
+    setMessageText(""); resetTextareaHeight();
     setUserLeftTicket(true);
     // Back dintr-un ticket închis → revine la lista arhivă (sursa).
     // Back dintr-un ticket activ (cazul admin) → ascunde arhiva.
