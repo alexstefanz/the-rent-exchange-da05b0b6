@@ -111,6 +111,7 @@ export const getMyProducts = async (ownerId: string): Promise<Product[]> => {
     .from("products")
     .select("*")
     .eq("owner_id", ownerId)
+    .is("deleted_at", null)
     .order("created_at", { ascending: false });
 
   if (error) {
