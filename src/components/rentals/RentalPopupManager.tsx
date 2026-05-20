@@ -136,9 +136,10 @@ export default function RentalPopupManager() {
 
   const handleViewProduct = async () => {
     try { await markRenterConfirmationSeen(current.id); } catch {}
-    const slug = current.product_slug;
+    const publicId = current.public_id;
     removeItem(current.id);
-    if (slug) navigate(`/produs/${slug}`);
+    if (publicId) navigate(`/rezervari/${publicId}`);
+    else navigate(`/inchirierile-mele`);
   };
 
   const handleViewSimilar = async () => {
