@@ -27,6 +27,9 @@ import { MediaLightbox } from "@/components/messaging/MediaLightbox";
 import { isSameDay } from "date-fns";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { getProductUrlFromTitle } from "@/lib/slugUtils";
+import { ExternalLink } from "lucide-react";
 
 interface ChatPanelProps {
   conversationId: string;
@@ -317,6 +320,43 @@ export function ChatPanel({
 
       {rentalCtx && (
         <div className="border-b bg-background shrink-0">
+          {(() => {
+            const isPaid = !!rentalCtx.paid_at || rentalCtx.payment_status === "paid";
+            if (!isPaid) {
+              const productUrl = rentalCtx.product_slug
+                ? `/produs/${rentalCtx.product_slug}`
+                : getProductUrlFromTitle(rentalCtx.product_title || productTitle, rentalCtx.product_id);
+              return (
+                <div className="w-full flex items-center gap-2 px-3 py-2">
+                  {rentalCtx.product_image ? (
+                    <img
+                      src={rentalCtx.product_image}
+                      alt=""
+                      className="h-8 w-8 rounded-md object-cover shrink-0"
+                    />
+                  ) : (
+                    <div className="h-8 w-8 rounded-md bg-muted shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium truncate">
+                      {rentalCtx.product_title || productTitle}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {rentalCtx.public_id} ·{" "}
+                      {t("În așteptarea plății", "Awaiting payment")}
+                    </p>
+                  </div>
+                  <Button asChild variant="outline" size="sm" className="shrink-0">
+                    <Link to={productUrl}>
+                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                      {t("Vezi produs", "View product")}
+                    </Link>
+                  </Button>
+                </div>
+              );
+            }
+            return (
+              <>
           <button
             type="button"
             onClick={() => setRentalCtxOpen((v) => !v)}
@@ -367,6 +407,9 @@ export function ChatPanel({
               />
             </div>
           )}
+              </>
+            );
+          })()}
         </div>
       )}
 
