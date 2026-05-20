@@ -1168,7 +1168,7 @@ const SupportChatWidget = () => {
                         </div>
                       </div>
 
-                      {archivedTickets.length > 0 && (
+                      {userTickets.length > 0 && (
                         <div className="mt-4 flex justify-center">
                           <button
                             type="button"
@@ -1177,8 +1177,8 @@ const SupportChatWidget = () => {
                           >
                             <History className="h-3 w-3" />
                             {t(
-                              `Vezi tickete anterioare (${archivedTickets.length})`,
-                              `View previous tickets (${archivedTickets.length})`,
+                              `Vezi conversațiile mele (${userTickets.length})`,
+                              `View my conversations (${userTickets.length})`,
                             )}
                           </button>
                         </div>
