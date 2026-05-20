@@ -9,9 +9,10 @@ interface Props {
   isLoading?: boolean;
   nextLabel?: string;
   isFinal?: boolean;
+  secondaryAction?: { label: string; onClick: () => void };
 }
 
-const PublishFooter = ({ current, total, onBack, onNext, isLoading, nextLabel, isFinal }: Props) => {
+const PublishFooter = ({ current, total, onBack, onNext, isLoading, nextLabel, isFinal, secondaryAction }: Props) => {
   return (
     <div className="sticky bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3 md:py-4">
@@ -24,6 +25,16 @@ const PublishFooter = ({ current, total, onBack, onNext, isLoading, nextLabel, i
           <ArrowLeft className="mr-1 h-4 w-4" />
           Înapoi
         </Button>
+        {secondaryAction && (
+          <Button
+            variant="ghost"
+            onClick={secondaryAction.onClick}
+            disabled={isLoading}
+            className="min-h-11 text-muted-foreground"
+          >
+            {secondaryAction.label}
+          </Button>
+        )}
         <Button
           onClick={onNext}
           disabled={isLoading}

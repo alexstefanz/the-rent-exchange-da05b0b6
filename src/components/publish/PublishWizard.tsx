@@ -89,6 +89,9 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
 
   const [step, setStep] = useState(1);
   const [maxReached, setMaxReached] = useState(1);
+  // In edit mode, true while user is editing one section from the Summary;
+  // next/save returns to Summary instead of advancing to the next step.
+  const [editingFromSummary, setEditingFromSummary] = useState(false);
   const [data, setData] = useState<PublishFormData>(() => {
     if (initialProduct) {
       const p = initialProduct as any;
@@ -141,6 +144,17 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
     step: number;
     updated_at: string;
   } | null>(null);
+
+  // Edit mode: land directly on the Summary step so the user can jump to any
+  // section instead of re-walking the whole wizard.
+  useEffect(() => {
+    if (mode === "edit" && initialProduct) {
+      setStep(5);
+      setMaxReached(5);
+    }
+    // run once when the product is loaded
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialProduct?.id, mode]);
 
   // load fee
   useEffect(() => {
@@ -275,6 +289,14 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       return;
     }
     if (!validateStep(step)) return;
+    // Edit mode: after editing one section from the Summary, jump back to it.
+    if (mode === "edit" && editingFromSummary) {
+      setEditingFromSummary(false);
+      setStep(5);
+      setMaxReached((m) => Math.max(m, 5));
+      window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+      return;
+    }
     const next = step + 1;
     setStep(next);
     setMaxReached((m) => Math.max(m, next));
@@ -289,6 +311,10 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
 
   const jump = (s: number) => {
     if (s <= maxReached) {
+      // If we jump out from the Summary into an earlier step (edit mode),
+      // remember so that "Continuă" returns to the Summary after saving.
+      if (mode === "edit" && step === 5 && s !== 5) setEditingFromSummary(true);
+      if (s === 5) setEditingFromSummary(false);
       setStep(s);
       window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     }
@@ -407,6 +433,16 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         onNext={goNext}
         isLoading={isPublishing}
         isFinal={step === STEPS.length}
+        nextLabel={
+          mode === "edit" && editingFromSummary && step !== 5
+            ? "Salvează și înapoi la rezumat"
+            : undefined
+        }
+        secondaryAction={
+          mode === "edit" && editingFromSummary && step !== 5
+            ? { label: "Anulează și înapoi la rezumat", onClick: () => { setEditingFromSummary(false); setStep(5); window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); } }
+            : undefined
+        }
       />
 
       <AlertDialog open={!!pendingDraft}>
