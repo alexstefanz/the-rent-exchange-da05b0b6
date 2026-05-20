@@ -627,15 +627,13 @@ const SupportChatWidget = () => {
   };
 
   const handleBackFromTicket = () => {
-    const wasClosed =
-      ticketInfo?.status === "CLOSED" || ticketInfo?.status === "RESOLVED";
     setTicketId(null);
     setTicketPublicId(null);
     setMessageText(""); resetTextareaHeight();
     setUserLeftTicket(true);
-    // Back dintr-un ticket închis → revine la lista arhivă (sursa).
-    // Back dintr-un ticket activ (cazul admin) → ascunde arhiva.
-    setShowTicketArchive(wasClosed);
+    // Non-admin: Back întotdeauna → lista cu toate conversațiile userului.
+    // Admin: Back → inbox-ul de admin (fără arhivă).
+    setShowTicketArchive(!isAdmin);
   };
 
   // Hide on admin route only for non-admins (so plain users don't see widget there).
@@ -657,13 +655,13 @@ const SupportChatWidget = () => {
   // Pentru tickete închise / arhivă / admin păstrăm back-ul.
   const showBack =
     showTicketArchive ||
-    (!!ticketId && (isAdmin || isClosed));
+    !!ticketId;
   const headerTitle = ticketId
     ? isAdmin
       ? ticketPublicId || t("Ticket", "Ticket")
       : t("Suport Rentli", "Rentli Support")
     : showTicketArchive
-    ? t("Tickete anterioare", "Previous tickets")
+    ? t("Conversațiile mele", "My conversations")
     : isAdmin
     ? t("Inbox suport", "Support inbox")
     : t("Suport Rentli", "Rentli Support");
