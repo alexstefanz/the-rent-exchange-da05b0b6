@@ -215,6 +215,11 @@ const SupportChatWidget = () => {
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
   const [isInternal, setIsInternal] = useState(false);
 
+  // Admin status-change confirmation
+  type AdminAction = "RESOLVE" | "INVESTIGATE" | "CANCEL";
+  const [pendingAdminAction, setPendingAdminAction] =
+    useState<AdminAction | null>(null);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isAdminRoute = pathname.startsWith("/admin");
@@ -476,6 +481,67 @@ const SupportChatWidget = () => {
       if (isAdmin) {
         queryClient.invalidateQueries({ queryKey: ["adminOpsInbox"] });
       }
+    },
+  });
+
+  const adminStatusMutation = useMutation({
+    mutationFn: async (action: AdminAction) => {
+      if (!ticketId) throw new Error("no ticket");
+      const oldStatus = (ticketInfo?.status as string) ?? null;
+      const map: Record<AdminAction, string> = {
+        RESOLVE: "RESOLVED",
+        INVESTIGATE: "WAITING_INTERNAL",
+        CANCEL: "CLOSED",
+      };
+      const newStatus = map[action];
+      await updateOpsTicketField(
+        ticketId,
+        "status",
+        oldStatus,
+        newStatus,
+        "STATUS_CHANGED",
+      );
+      if (action === "CANCEL") {
+        try {
+          await createTicketMessage(
+            ticketId,
+            t("Ticket anulat de admin.", "Ticket cancelled by admin."),
+            true,
+            "ADMIN",
+          );
+        } catch (e) {
+          console.error("[support] cancel note failed:", e);
+        }
+      }
+    },
+    onSuccess: (_d, action) => {
+      queryClient.invalidateQueries({
+        queryKey: ["supportTicketInfo", ticketId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["supportChatMessages", ticketId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["adminOpsInbox"] });
+      queryClient.invalidateQueries({ queryKey: ["opsTickets"] });
+      const labels: Record<AdminAction, string> = {
+        RESOLVE: t("Ticket marcat ca rezolvat.", "Ticket marked as resolved."),
+        INVESTIGATE: t(
+          "Ticket marcat: necesită investigații.",
+          "Ticket marked: needs investigation.",
+        ),
+        CANCEL: t("Ticket anulat.", "Ticket cancelled."),
+      };
+      toast.success(labels[action]);
+      setPendingAdminAction(null);
+    },
+    onError: () => {
+      toast.error(
+        t(
+          "Eroare la actualizarea ticketului.",
+          "Failed to update ticket.",
+        ),
+      );
+      setPendingAdminAction(null);
     },
   });
 
