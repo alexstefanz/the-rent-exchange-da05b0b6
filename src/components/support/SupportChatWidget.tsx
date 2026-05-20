@@ -33,13 +33,9 @@ import {
   createTicketMessage,
   type OpsTicket as AdminOpsTicket,
 } from "@/features/admin/opsTicketsApi";
-import {
-  getConversations,
-  type Conversation,
-} from "@/features/messaging/messagingApi";
-import { ChatPanel } from "@/components/messaging/ChatPanel";
+import { MAX_MESSAGE_LENGTH } from "@/features/messaging/messagingApi";
 import { supabase } from "@/integrations/supabase/client";
-import { format, isToday, isYesterday } from "date-fns";
+import { format } from "date-fns";
 import { ro as roLocale, enUS } from "date-fns/locale";
 import { toast } from "sonner";
 import { StatusPill } from "@/components/support/center/StatusPill";
@@ -171,7 +167,7 @@ const SupportImage = ({ path }: { path: string }) => {
 const renderMessageContent = (text: string) => {
   const path = extractSupportPath(text);
   if (path) return <SupportImage path={path} />;
-  return <p className="whitespace-pre-wrap break-words">{text}</p>;
+  return <p className="whitespace-pre-wrap [overflow-wrap:anywhere]">{text}</p>;
 };
 
 const SupportChatWidget = () => {
@@ -182,12 +178,6 @@ const SupportChatWidget = () => {
   const dateLocale = language === "ro" ? roLocale : enUS;
 
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"chat" | "tickets">("chat");
-  const [chatSubTab, setChatSubTab] = useState<"rezervari" | "de-inchiriat">(
-    "rezervari",
-  );
-  // In-memory only — no localStorage persistence so reopen always lands on the list.
-  const [activeConv, setActiveConv] = useState<Conversation | null>(null);
   const [ticketId, setTicketId] = useState<string | null>(null);
   const [userLeftTicket, setUserLeftTicket] = useState(false);
   const [ticketPublicId, setTicketPublicId] = useState<string | null>(null);
@@ -205,8 +195,6 @@ const SupportChatWidget = () => {
   // Reset transient state on close
   useEffect(() => {
     if (!isOpen) {
-      setActiveTab("chat");
-      setActiveConv(null);
       setTicketId(null);
       setTicketPublicId(null);
       setShowTicketArchive(false);
@@ -339,50 +327,6 @@ const SupportChatWidget = () => {
       );
   }, [isAdmin, ticketId, queryClient]);
 
-  // -------- Conversations (Chat tab) --------
-  const { data: conversations = [], isLoading: isLoadingConvs } = useQuery<
-    Conversation[]
-  >({
-    queryKey: ["conversations", user?.id],
-    queryFn: getConversations,
-    enabled: isOpen && !!user,
-    refetchInterval: 30000,
-  });
-
-  const totalUnread = conversations.reduce(
-    (acc, c) => acc + (c.unread_count || 0),
-    0,
-  );
-
-  const rezervariUnread = conversations
-    .filter((c) => c.buyer_id === user?.id)
-    .reduce((acc, c) => acc + (c.unread_count || 0), 0);
-  const deInchiriatUnread = conversations
-    .filter((c) => c.owner_id === user?.id)
-    .reduce((acc, c) => acc + (c.unread_count || 0), 0);
-
-  const filteredConvs = conversations.filter((c) =>
-    chatSubTab === "rezervari"
-      ? c.buyer_id === user?.id
-      : c.owner_id === user?.id,
-  );
-  const sortedConvs = [...filteredConvs].sort((a, b) => {
-    const ta = a.last_message?.created_at
-      ? new Date(a.last_message.created_at).getTime()
-      : 0;
-    const tb = b.last_message?.created_at
-      ? new Date(b.last_message.created_at).getTime()
-      : 0;
-    return tb - ta;
-  });
-
-  const formatConvTime = (dateString: string) => {
-    const d = new Date(dateString);
-    if (isToday(d)) return format(d, "HH:mm");
-    if (isYesterday(d)) return t("Ieri", "Yesterday");
-    return format(d, "d MMM", { locale: dateLocale });
-  };
-
   // -------- Tickets (Tickete tab) --------
   const { data: userTickets = [], isLoading: isLoadingTickets } = useQuery<
     OpsTicket[]
@@ -512,7 +456,7 @@ const SupportChatWidget = () => {
   };
 
   const handleSendTicketMessage = () => {
-    const text = messageText.trim();
+    const text = messageText.trim().slice(0, MAX_MESSAGE_LENGTH);
     if (!text) return;
     ensureTicketAndSend(text);
   };
@@ -557,19 +501,14 @@ const SupportChatWidget = () => {
 
   // FAB & tab badges (role-aware)
   const fabBadgeCount = isAdmin
-    ? totalUnread + adminInboxUnread + adminNewCount
-    : totalUnread + openTicketsCount;
-  const ticketsTabBadge = isAdmin
     ? adminInboxUnread + adminNewCount
     : openTicketsCount;
   const activeAdminTicket =
     isAdmin && ticketId ? adminInbox.find((t) => t.id === ticketId) : null;
 
   // Header content
-  const showBack = !!activeConv || !!ticketId || showTicketArchive;
-  const headerTitle = activeConv
-    ? activeConv.other_user?.full_name || t("Conversație", "Conversation")
-    : ticketId
+  const showBack = !!ticketId || showTicketArchive;
+  const headerTitle = ticketId
     ? isAdmin
       ? ticketPublicId || t("Ticket", "Ticket")
       : t("Suport Rentli", "Rentli Support")
@@ -577,20 +516,14 @@ const SupportChatWidget = () => {
     ? t("Tickete anterioare", "Previous tickets")
     : isAdmin
     ? t("Inbox suport", "Support inbox")
-    : t("Mesajele mele", "My messages");
-  const headerSubtitle = activeConv
-    ? activeConv.product?.title || ""
-    : ticketId
+    : t("Suport Rentli", "Rentli Support");
+  const headerSubtitle = ticketId
     ? isAdmin
       ? activeAdminTicket?.requester_name || activeAdminTicket?.title || "Online"
       : ticketPublicId || "Online"
     : "Online";
 
   const handleBack = () => {
-    if (activeConv) {
-      setActiveConv(null);
-      return;
-    }
     if (ticketId) {
       handleBackFromTicket();
       return;
@@ -659,20 +592,11 @@ const SupportChatWidget = () => {
                 <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background" />
               </div>
             )}
-            {showBack && (activeConv || ticketId) && (
+            {showBack && ticketId && (
               <Avatar className="h-9 w-9 shrink-0">
-                {activeConv ? (
-                  <>
-                    <AvatarImage src={activeConv.other_user?.avatar_url || undefined} />
-                    <AvatarFallback>
-                      {activeConv.other_user?.full_name?.charAt(0) || "U"}
-                    </AvatarFallback>
-                  </>
-                ) : (
-                  <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                    R
-                  </AvatarFallback>
-                )}
+                <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                  R
+                </AvatarFallback>
               </Avatar>
             )}
             <div className="flex-1 min-w-0">
@@ -707,19 +631,6 @@ const SupportChatWidget = () => {
                   </Button>
                 </div>
               </div>
-            ) : activeConv ? (
-              /* ----- User↔User conversation inline ----- */
-              <ChatPanel
-                conversationId={activeConv.id}
-                otherUserName={activeConv.other_user?.full_name || null}
-                otherUserAvatar={activeConv.other_user?.avatar_url || null}
-                productTitle={activeConv.product?.title || ""}
-                ownerId={activeConv.owner_id}
-                buyerId={activeConv.buyer_id}
-                rentalsId={activeConv.rentals_id || null}
-                hideHeader
-                defaultRentalContextOpen={false}
-              />
             ) : ticketId ? (
               /* ----- Active ticket conversation ----- */
               <>
@@ -760,7 +671,7 @@ const SupportChatWidget = () => {
                             className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
                           >
                             <div
-                              className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
+                              className={`min-w-0 max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
                                 isInternalNote
                                   ? "bg-yellow-100 border border-yellow-300 text-foreground"
                                   : isOwn
@@ -837,7 +748,8 @@ const SupportChatWidget = () => {
                       </button>
                       <Input
                         value={messageText}
-                        onChange={(e) => setMessageText(e.target.value)}
+                        onChange={(e) => setMessageText(e.target.value.slice(0, MAX_MESSAGE_LENGTH))}
+                        maxLength={MAX_MESSAGE_LENGTH}
                         placeholder={t("Scrie mesajul tău...", "Write your message...")}
                         className="h-9 text-sm flex-1 rounded-full"
                         onKeyDown={(e) => {
@@ -871,205 +783,7 @@ const SupportChatWidget = () => {
                 )}
               </>
             ) : (
-              <>
-                {/* Tabs */}
-                <div className="shrink-0 flex items-center gap-2 px-3 pt-2 pb-2 border-b bg-background">
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("chat")}
-                    className={cn(
-                      "flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-full text-xs font-medium transition-colors relative",
-                      activeTab === "chat"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-primary/10 text-primary hover:bg-primary/15",
-                    )}
-                  >
-                    <MessageCircle className="h-3.5 w-3.5" />
-                    {t("Chat", "Chat")}
-                    {totalUnread > 0 && (
-                      <span
-                        className={cn(
-                          "ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold",
-                          activeTab === "chat"
-                            ? "bg-primary-foreground text-primary"
-                            : "bg-primary text-primary-foreground",
-                        )}
-                      >
-                        {totalUnread}
-                      </span>
-                    )}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("tickets")}
-                    className={cn(
-                      "flex-1 inline-flex items-center justify-center gap-1.5 h-8 rounded-full text-xs font-medium transition-colors relative",
-                      activeTab === "tickets"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-primary/10 text-primary hover:bg-primary/15",
-                    )}
-                  >
-                    <Ticket className="h-3.5 w-3.5" />
-                    {isAdmin ? t("Tickete", "Tickets") : t("Suport", "Support")}
-                    {ticketsTabBadge > 0 && (
-                      <span
-                        className={cn(
-                          "ml-0.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold",
-                          activeTab === "tickets"
-                            ? "bg-primary-foreground text-primary"
-                            : "bg-primary text-primary-foreground",
-                        )}
-                      >
-                        {ticketsTabBadge}
-                      </span>
-                    )}
-                  </button>
-                </div>
-
-                {activeTab === "chat" ? (
-                  /* ----- Conversations list ----- */
-                  <>
-                    <div className="shrink-0 flex items-center gap-2 px-3 pt-2">
-                      <button
-                        type="button"
-                        onClick={() => setChatSubTab("rezervari")}
-                        className={cn(
-                          "flex-1 h-7 rounded-full text-[11px] font-medium transition-colors inline-flex items-center justify-center gap-1.5",
-                          chatSubTab === "rezervari"
-                            ? "bg-foreground text-background"
-                            : "bg-muted text-muted-foreground hover:bg-muted/70",
-                        )}
-                      >
-                        {t("Rezervări", "Bookings")}
-                        {rezervariUnread > 0 && (
-                          <span className="inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full text-[9px] font-bold bg-destructive text-destructive-foreground">
-                            {rezervariUnread}
-                          </span>
-                        )}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setChatSubTab("de-inchiriat")}
-                        className={cn(
-                          "flex-1 h-7 rounded-full text-[11px] font-medium transition-colors inline-flex items-center justify-center gap-1.5",
-                          chatSubTab === "de-inchiriat"
-                            ? "bg-foreground text-background"
-                            : "bg-muted text-muted-foreground hover:bg-muted/70",
-                        )}
-                      >
-                        {t("De închiriat", "Renting out")}
-                        {deInchiriatUnread > 0 && (
-                          <span className="inline-flex items-center justify-center min-w-[16px] h-[16px] px-1 rounded-full text-[9px] font-bold bg-destructive text-destructive-foreground">
-                            {deInchiriatUnread}
-                          </span>
-                        )}
-                      </button>
-                    </div>
-
-                    <ScrollArea className="flex-1 px-2 py-2">
-                      {isLoadingConvs ? (
-                        <div className="flex items-center justify-center py-10">
-                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                        </div>
-                      ) : sortedConvs.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center text-center py-12 px-4">
-                          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                            <MessageCircle className="h-6 w-6 text-primary" />
-                          </div>
-                          <p className="text-sm font-medium">
-                            {t(
-                              "Nu ai conversații încă",
-                              "No conversations yet",
-                            )}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {chatSubTab === "rezervari"
-                              ? t(
-                                  "Începe o rezervare pentru a discuta cu proprietarul.",
-                                  "Start a booking to chat with the owner.",
-                                )
-                              : t(
-                                  "Vei vedea aici mesajele de la chiriași.",
-                                  "You'll see messages from renters here.",
-                                )}
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-1">
-                          {sortedConvs.map((conv) => {
-                            const isUnread = (conv.unread_count || 0) > 0;
-                            const lastText = conv.last_message?.content || "";
-                            return (
-                              <button
-                                key={conv.id}
-                                type="button"
-                                onClick={() => setActiveConv(conv)}
-                                className={cn(
-                                  "w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-colors hover:bg-muted/60",
-                                  isUnread && "bg-primary/5",
-                                )}
-                              >
-                                <Avatar className="h-10 w-10 shrink-0">
-                                  <AvatarImage
-                                    src={
-                                      conv.other_user?.avatar_url || undefined
-                                    }
-                                  />
-                                  <AvatarFallback>
-                                    {conv.other_user?.full_name?.charAt(0) ||
-                                      "U"}
-                                  </AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <p
-                                      className={cn(
-                                        "text-sm truncate",
-                                        isUnread
-                                          ? "font-semibold"
-                                          : "font-medium",
-                                      )}
-                                    >
-                                      {conv.other_user?.full_name ||
-                                        t("Utilizator", "User")}
-                                    </p>
-                                    {conv.last_message?.created_at && (
-                                      <span className="text-[10px] text-muted-foreground shrink-0">
-                                        {formatConvTime(
-                                          conv.last_message.created_at,
-                                        )}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center justify-between gap-2">
-                                    <p className={cn(
-                                      "text-xs truncate",
-                                      isUnread ? "font-bold text-foreground" : "text-muted-foreground",
-                                    )}>
-                                      {conv.product?.title
-                                        ? `${conv.product.title} · `
-                                        : ""}
-                                      {lastText ||
-                                        t(
-                                          "Fără mesaje",
-                                          "No messages",
-                                        )}
-                                    </p>
-                                    {isUnread && (
-                                      <span className="shrink-0 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold bg-primary text-primary-foreground">
-                                        {conv.unread_count}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </ScrollArea>
-                  </>
-                ) : isAdmin ? (
+              isAdmin ? (
                   /* ----- Admin inbox list ----- */
                   <ScrollArea className="flex-1 px-3 py-3">
                     {isLoadingAdminInbox ? (
@@ -1249,7 +963,8 @@ const SupportChatWidget = () => {
                         </button>
                         <Input
                           value={messageText}
-                          onChange={(e) => setMessageText(e.target.value)}
+                          onChange={(e) => setMessageText(e.target.value.slice(0, MAX_MESSAGE_LENGTH))}
+                          maxLength={MAX_MESSAGE_LENGTH}
                           placeholder={t(
                             "Scrie mesajul tău...",
                             "Write your message...",
@@ -1280,9 +995,9 @@ const SupportChatWidget = () => {
                       </p>
                     </div>
                   </>
-                )}
-              </>
-            )}
+                )
+              )
+            }
           </div>
         </div>
       )}
