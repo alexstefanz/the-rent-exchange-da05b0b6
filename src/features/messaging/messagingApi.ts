@@ -191,6 +191,7 @@ export interface RentalContextRow {
   product_id: string;
   product_title: string | null;
   product_image: string | null;
+  product_slug: string | null;
 }
 
 export async function getRentalContext(rentalId: string): Promise<RentalContextRow | null> {
@@ -200,7 +201,7 @@ export async function getRentalContext(rentalId: string): Promise<RentalContextR
       id, public_id, status, payment_status, paid_at,
       handover_confirmed_at, return_confirmed_at, cancelled_at,
       start_date, end_date, rental_days, subtotal, product_id,
-      product:products(title, images)
+      product:products(title, images, slug)
     `)
     .eq('id', rentalId)
     .maybeSingle();
@@ -226,6 +227,7 @@ export async function getRentalContext(rentalId: string): Promise<RentalContextR
     product_id: data.product_id!,
     product_title: product?.title ?? null,
     product_image: Array.isArray(product?.images) && product.images.length > 0 ? product.images[0] : null,
+    product_slug: product?.slug ?? null,
   };
 }
 

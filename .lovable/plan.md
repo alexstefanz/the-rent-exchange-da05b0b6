@@ -1,17 +1,23 @@
-## Problemă
-Textul Pasului 4 sugerează că PV-ul se semnează ÎNAINTE de întâlnire („PV-ul a fost semnat de ambele parti. Mergi la locatia stabilita..."). În realitate, PV-ul se semnează la fața locului, când chiriașul vede produsul. După semnare, predarea a avut deja loc.
+## Obiectiv
 
-## Soluție (doar copy, fără modificări de flux)
+În chat, pentru o cerere de închiriere care **nu a fost încă plătită**, lângă titlul produsului trebuie să apară un buton **„Vezi produs"** care duce la pagina publică a produsului. Timeline-ul actual (stepper + TransactionCard) rămâne ascuns până când rezervarea este plătită — apoi reapare exact ca acum.
 
-În `src/pages/RentalDetailPage.tsx`, pasul 4 (`handoverDoneEarly && !rental.handover_confirmed_at`):
+## Modificări
 
-- **Titlu** rămâne: „Pasul 4 — Predare produs" / „Step 4 — Handover".
-- **Descriere chiriaș** (înlocuire):
-  - RO: „Ai semnat PV-ul de predare împreună cu proprietarul, la fața locului. Confirmă că ai primit produsul pentru a debloca etapa de utilizare."
-  - EN: „You signed the handover PV together with the owner, in person. Confirm that you received the product to unlock the in-use stage."
-- **Descriere proprietar** (înlocuire):
-  - RO: „PV-ul a fost semnat la predare. Așteptăm chiriașul să confirme că a primit produsul."
-  - EN: „The handover PV was signed in person. Waiting for the renter to confirm receipt."
-- Restul (butonul „Am primit produsul", „Vezi PV", badge „Asteptam confirmarea chiriasului") rămâne identic.
+### 1. `src/features/messaging/messagingApi.ts`
+- În `RentalContextRow` adaug câmpul `product_slug: string | null`.
+- În `getRentalContext`, extind select-ul produsului la `product:products(title, images, slug)` și populez `product_slug` în obiectul returnat.
 
-Nu se modifică logica, RPC-urile sau timeline-ul — doar textele care creau confuzia.
+### 2. `src/components/messaging/ChatPanel.tsx`
+- Derivez `isPaid = !!rentalCtx?.paid_at || rentalCtx?.payment_status === 'paid'`.
+- Construiesc `productUrl` cu helperul existent `getProductUrlFromTitle(rentalCtx.product_title, rentalCtx.product_id)` dacă `product_slug` lipsește, altfel `/produs/<slug>`.
+- Blocul `rentalCtx && (...)` se ramifică:
+  - **Dacă `!isPaid`**: randez o bară simplă (fără toggle, fără stepper, fără TransactionCard) — imagine + titlu produs + cod `RNT-…` în stânga, iar în dreapta un buton `<Button asChild variant="outline" size="sm">` cu `<Link to={productUrl}>Vezi produs / View product</Link>` (bilingual prin `t()`).
+  - **Dacă `isPaid`**: păstrez exact comportamentul curent (toggle + `RentalStageStepper` + `TransactionCard`).
+- Fără alte schimbări de logică, RPC, sau realtime.
+
+## Acoperire
+
+- Funcționează identic pentru proprietar și chiriaș (ambele văd link spre produs până la plată).
+- După plată, UI-ul revine la timeline-ul deja existent, fără regresii.
+- Pe mobil bara rămâne pe lățime, butonul „Vezi produs" se păstrează la dreapta.
