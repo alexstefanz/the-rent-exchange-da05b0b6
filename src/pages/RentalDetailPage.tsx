@@ -315,7 +315,7 @@ const RentalDetailPage = () => {
           <RentalTimeline rental={tlRental} />
         </section>
 
-        {/* Step 5 — Renter must confirm physical receipt of the product */}
+        {/* Step 4 — Renter must confirm physical receipt of the product (combined handover step) */}
         {handoverDoneEarly && !rental.handover_confirmed_at && rental.status !== "cancelled" && rental.status !== "completed" && (
           <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
             <div className="flex items-start gap-3 mb-4">
@@ -324,7 +324,7 @@ const RentalDetailPage = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-heading text-base font-semibold text-foreground">
-                  {t("Pasul 5 — Preia produsul", "Step 5 — Pick up the product")}
+                  {t("Pasul 4 — Predare produs", "Step 4 — Handover")}
                 </h3>
                 <p className="text-sm text-muted-foreground mt-1">
                   {isOwner
@@ -364,7 +364,7 @@ const RentalDetailPage = () => {
           </section>
         )}
 
-        {/* Step 6 — Renter must initiate the return phase */}
+        {/* Step 5 — Renter must initiate the return phase */}
         {handoverDoneEarly && rental.handover_confirmed_at && !returnInitiated && !returnDoneEarly && rental.status !== "cancelled" && rental.status !== "completed" && (
           <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
             <div className="flex items-start gap-3 mb-4">
@@ -373,7 +373,7 @@ const RentalDetailPage = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-heading text-base font-semibold text-foreground">
-                  {t("Pasul 6 — Produsul este in folosire", "Step 6 — Product is in use")}
+                  {t("Pasul 5 — Produsul este in folosire", "Step 5 — Product is in use")}
                 </h3>
                 <p className="text-sm text-muted-foreground mt-1">
                   {isOwner

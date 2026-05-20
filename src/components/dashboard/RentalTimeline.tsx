@@ -1,4 +1,4 @@
-import { Check, Send, ThumbsUp, CreditCard, FileSignature, Package, RotateCcw, CheckCircle2, X } from "lucide-react";
+import { Check, Send, ThumbsUp, CreditCard, Package, RotateCcw, CheckCircle2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -25,26 +25,26 @@ export interface RentalForTimeline {
 function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
 
 /**
- * 7-step rental timeline.
+ * 6-step rental timeline.
  * 1. Cerere trimisă        — pending, owner has not responded yet
  * 2. Confirmat             — owner accepted the request, payment not yet captured/authorized
  * 3. Plată efectuată       — payment authorized (Stripe hold) OR paid
- * 4. Semnături PV          — handover PV is being signed by both parties
- * 5. Produs predat         — handover_confirmed_at set, item with renter
- * 6. Returnare             — return phase started (end of period or early-return)
- * 7. Finalizat             — completed OR return_confirmed_at set
+ * 4. Predare produs        — PV is being signed AND renter must confirm receipt (handover_confirmed_at)
+ * 5. Returnare             — return phase started (end of period or early-return)
+ * 6. Finalizat             — completed OR return_confirmed_at set
  */
 export function getTimelineStep(rental: RentalForTimeline): { current: number; cancelled: boolean } {
   if (rental.status === "cancelled") return { current: 2, cancelled: true };
-  if (rental.return_pv_owner_signed) return { current: 7, cancelled: false };
-  if (rental.status === "completed" || rental.return_confirmed_at) return { current: 7, cancelled: false };
-  if (rental.return_pv_renter_signed) return { current: 6, cancelled: false };
+  if (rental.return_pv_owner_signed) return { current: 6, cancelled: false };
+  if (rental.status === "completed" || rental.return_confirmed_at) return { current: 6, cancelled: false };
+  if (rental.return_pv_renter_signed) return { current: 5, cancelled: false };
   if (rental.handover_confirmed_at || rental.status === "active") {
-    if (rental.return_initiated) return { current: 6, cancelled: false };
+    if (rental.return_initiated) return { current: 5, cancelled: false };
     return { current: 5, cancelled: false };
   }
   if (rental.status === "confirmed") {
-    if (rental.handover_pv_signed) return { current: 5, cancelled: false };
+    // PV signed but renter hasn't confirmed receipt yet → still in handover step
+    if (rental.handover_pv_signed) return { current: 4, cancelled: false };
     if (rental.payment_status === "authorized" || rental.payment_status === "paid") return { current: 4, cancelled: false };
     return { current: 2, cancelled: false };
   }
@@ -58,8 +58,7 @@ const STEPS = [
   { icon: Send, ro: "Cerere trimisă", en: "Request sent", roShort: "Cerere", enShort: "Request" },
   { icon: ThumbsUp, ro: "Confirmat", en: "Confirmed", roShort: "Confirmat", enShort: "Confirmed" },
   { icon: CreditCard, ro: "Plată efectuată", en: "Payment done", roShort: "Plată", enShort: "Payment" },
-  { icon: FileSignature, ro: "Semnături PV", en: "PV signatures", roShort: "Semnături", enShort: "Signatures" },
-  { icon: Package, ro: "Produs predat", en: "Handed over", roShort: "Predat", enShort: "Handover" },
+  { icon: Package, ro: "Predare produs", en: "Handover", roShort: "Predare", enShort: "Handover" },
   { icon: RotateCcw, ro: "Returnare", en: "Return", roShort: "Returnare", enShort: "Return" },
   { icon: CheckCircle2, ro: "Finalizat", en: "Completed", roShort: "Finalizat", enShort: "Done" },
 ] as const;
