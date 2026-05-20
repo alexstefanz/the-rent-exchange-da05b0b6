@@ -689,18 +689,6 @@ const RentalDetailPage = () => {
               )}
             </section>
 
-            {/* Payment status */}
-            <Collapsible className="rounded-2xl border border-border bg-card shadow-sm">
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-between p-5 h-auto font-semibold">
-                  {t("Detalii plata", "Payment details")}
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="px-5 pb-5">
-                <RentalPaymentStatus rentalId={rental.id} mode="user" />
-              </CollapsibleContent>
-            </Collapsible>
-
             {/* Mutual cancellation — visible until owner signs handover PV */}
             {user?.id && rental.status !== "cancelled" && rental.status !== "completed" && rental.status !== "rejected" && !rental.handover_pv_owner_signed_at && (
               <MutualCancellationCard
