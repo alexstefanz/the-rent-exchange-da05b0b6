@@ -1205,6 +1205,69 @@ const SupportChatWidget = () => {
           </div>
         </div>
       )}
+
+      <AlertDialog
+        open={!!pendingAdminAction}
+        onOpenChange={(open) => {
+          if (!open && !adminStatusMutation.isPending) setPendingAdminAction(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingAdminAction === "RESOLVE" &&
+                t("Marchezi ticketul ca rezolvat?", "Mark ticket as resolved?")}
+              {pendingAdminAction === "INVESTIGATE" &&
+                t(
+                  "Marchezi ticketul: necesită investigații?",
+                  "Mark ticket: needs investigation?",
+                )}
+              {pendingAdminAction === "CANCEL" &&
+                t("Anulezi acest ticket?", "Cancel this ticket?")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingAdminAction === "RESOLVE" &&
+                t(
+                  "Clientul va primi un email că ticketul a fost rezolvat. Va putea redeschide trimițând un nou mesaj.",
+                  "The customer will be notified by email. They can reopen by sending a new message.",
+                )}
+              {pendingAdminAction === "INVESTIGATE" &&
+                t(
+                  "Ticketul rămâne deschis, dar marcat ca necesitând investigații suplimentare din partea echipei.",
+                  "The ticket stays open but is flagged as needing further internal investigation.",
+                )}
+              {pendingAdminAction === "CANCEL" &&
+                t(
+                  "Ticketul va fi închis și marcat ca anulat. Acțiunea poate fi anulată din ERP-ul de admin.",
+                  "The ticket will be closed and marked as cancelled. This can be reverted from the admin ERP.",
+                )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={adminStatusMutation.isPending}>
+              {t("Renunță", "Cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                if (pendingAdminAction)
+                  adminStatusMutation.mutate(pendingAdminAction);
+              }}
+              disabled={adminStatusMutation.isPending}
+              className={cn(
+                pendingAdminAction === "CANCEL" &&
+                  "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+              )}
+            >
+              {adminStatusMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                t("Confirmă", "Confirm")
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
