@@ -20,6 +20,7 @@ export type NotificationCategory =
   | "payment"
   | "support"
   | "system"
+  | "success"
   | "urgent";
 
 export interface CategoryStyle {
@@ -91,11 +92,27 @@ const STYLES: Record<NotificationCategory, Omit<CategoryStyle, "Icon"> & { Icon:
     labelRo: "Acțiune necesară",
     labelEn: "Action needed",
   },
+  success: {
+    category: "success",
+    Icon: ShieldCheck,
+    haloClass: "bg-emerald-100",
+    iconClass: "text-emerald-600",
+    accentClass: "bg-emerald-500",
+    labelRo: "Verificat",
+    labelEn: "Verified",
+  },
 };
 
 /** Map a backend notification `type` to a presentation category. */
 export function categorize(type: string): NotificationCategory {
   const t = (type || "").toLowerCase();
+  if (
+    t === "kyc_approved" ||
+    t === "kyc_verified" ||
+    (t.includes("kyc") && (t.includes("approved") || t.includes("verified")))
+  ) {
+    return "success";
+  }
   if (t.includes("message") || t.includes("chat")) return "message";
   if (
     t.includes("rental") ||
