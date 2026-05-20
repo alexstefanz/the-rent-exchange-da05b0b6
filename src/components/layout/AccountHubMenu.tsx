@@ -537,7 +537,7 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
   /* ----- desktop ----- */
   if (isDesktop) {
     return (
-      <DropdownMenu open={open} onOpenChange={setOpen}>
+      <DropdownMenu open={open} onOpenChange={setOpen} modal={false}>
         <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
         <DropdownMenuContent
           align="end"
