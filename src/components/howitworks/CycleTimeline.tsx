@@ -43,13 +43,13 @@ export default function CycleTimeline({ steps }: Props) {
         {/* Spine background */}
         <div
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-primary/15"
+          className="pointer-events-none absolute left-1/2 top-0 h-full w-0.5 -translate-x-1/2 bg-primary/15"
         />
         {/* Spine fill */}
         <motion.div
           aria-hidden
           style={{ height: fillHeight }}
-          className="pointer-events-none absolute left-1/2 top-0 w-px -translate-x-1/2 bg-primary"
+          className="pointer-events-none absolute left-1/2 top-0 w-0.5 -translate-x-1/2 bg-primary"
         />
 
         <div className="space-y-14">
@@ -123,13 +123,15 @@ function DesktopRow({
   const inactiveOpacity = useTransform(active, [0, 1], [1, 0]);
 
   return (
-    <div className="relative grid grid-cols-2 items-center gap-12">
-      {/* Center dot */}
-      <motion.span
-        aria-hidden
-        style={{ scale: dotScale }}
-        className="absolute left-1/2 top-1/2 z-10 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-4 ring-background"
-      />
+    <div className="relative grid grid-cols-[1fr_24px_1fr] items-center gap-6">
+      {/* Center dot — lives in the middle 24px column so it always sits on the spine */}
+      <div className="col-start-2 flex items-center justify-center">
+        <motion.span
+          aria-hidden
+          style={{ scale: dotScale }}
+          className="block h-3 w-3 rounded-full bg-primary ring-4 ring-background"
+        />
+      </div>
 
       {/* Text side — slides in from its side */}
       <motion.div
@@ -137,7 +139,10 @@ function DesktopRow({
         whileInView={{ opacity: 1, x: 0 }}
         viewport={{ once: true, amount: 0.5 }}
         transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-        className={cn(left ? "text-right pr-6" : "col-start-2 text-left pl-6")}
+        className={cn(
+          "row-start-1",
+          left ? "col-start-1 text-right pr-2" : "col-start-3 text-left pl-2"
+        )}
       >
         <span className="inline-block rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
           {`PAS · ${String(idx + 1).padStart(2, "0")}`}
@@ -147,7 +152,12 @@ function DesktopRow({
       </motion.div>
 
       {/* Icon side */}
-      <div className={cn(left ? "col-start-2 pl-6" : "row-start-1 pr-6")}>
+      <div
+        className={cn(
+          "row-start-1",
+          left ? "col-start-3 pl-2" : "col-start-1 pr-2"
+        )}
+      >
         <motion.div
           style={{ scale: iconScale }}
           className={cn(
