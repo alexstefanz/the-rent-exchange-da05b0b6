@@ -1,53 +1,26 @@
-# Comasare pași 4 + 5 din timeline-ul rezervării
+# Fix: balanța proprietarului nu reflectă rentalurile plătite din wallet
 
-Momentan timeline-ul are 7 pași, dintre care doi sunt aproape duplicați: **Semnături PV** și **Produs predat**. Le unim într-un singur pas **„Predare produs"** care acoperă tot procesul de predare (semnare PV + confirmarea primirii de către chiriaș).
+## Cauza reală (confirmată în DB pentru RNT-000124)
 
-## Comportament nou
+`useAccountDashboard.ts` calculează `availableBalance` sumând rândurile din tabela `transactions`. Dar `pay_rental_with_wallet` **nu inserează nimic în `transactions`** — actualizează doar `rentals` (payment_status='paid', payment_method='wallet') și inserează un debit în `wallet_ledger` pentru chiriaș.
 
-Timeline nou (6 pași):
+Rezultat: proprietarul X (gps@primaconstruct.ro) are real 4 RON disponibili (confirmat: `get_user_wallet_balance` returnează `available: 4`), dar dashboardul afișează 0 pentru că nu există nicio tranzacție de tip `owner_payout` în `transactions`.
 
-```text
-1. Cerere trimisă
-2. Confirmat
-3. Plată efectuată
-4. Predare produs        ← pas combinat
-5. Returnare
-6. Finalizat
-```
+## Modificări
 
-Pasul 4 „Predare produs":
-- **Activ (portocaliu)** din momentul în care plata e autorizată și până când chiriașul confirmă primirea produsului.
-- În interiorul pasului există în continuare două sub-acțiuni vizibile în card-ul de acțiune și în secțiunea „Procese verbale":
-  1. Semnare PV de predare (de către ambele părți)
-  2. După ce PV-ul e semnat de ambele părți, chiriașul vede butonul **„Confirmă primirea produsului"** (proprietarul vede stare „Așteptăm chiriașul să confirme primirea")
-- **Bifat (verde)** doar după ce chiriașul a apăsat „Confirmă primirea" (adică `handover_confirmed_at` e setat). Abia atunci se deblochează pasul **Returnare**.
+### `src/hooks/useAccountDashboard.ts`
 
-Toată logica existentă pentru semnarea PV-ului și pentru confirmarea primirii rămâne identică — singura schimbare e că în bara de stare apare un singur pas în loc de două.
+1. **Înlocuiește calculul din `transactions`** cu apel RPC `get_user_wallet_balance(_user_id)` — singura sursă de adevăr, care include: `owner_payout` din rentalurile paid/captured/authorized − withdrawals − pending + `wallet_ledger`.
+2. **`monthlyEarnings`** se calculează din `rentalsAsOwner` (rentaluri cu `payment_status ∈ {paid, captured, authorized}` create luna curentă), nu din `transactions`.
+3. **Realtime**: în callback-ul `invalidate`, invalidez și `["walletBalance", userId]` (folosit de `useWalletBalance`), nu doar `["accountDashboard", userId]`. Adaug subscription nou pe `wallet_ledger` filtrat pe `user_id`, ca să prind debitele/creditele de wallet (cancel-refund, plată wallet).
 
-## Modificări de cod
+### Migrație DB
 
-Doar prezentare (frontend). Fără migrații, fără edge functions, fără schimbări de business logic.
-
-**`src/components/dashboard/RentalTimeline.tsx`**
-- Elimin pasul `Produs predat` din `STEPS` (rămân 6 pași). Pictograma pasului combinat: `Package` (mai potrivită ca metaforă „predare").
-- Actualizez `getTimelineStep`:
-  - `return_pv_owner_signed` → step 6 (Finalizat)
-  - `status === "completed" || return_confirmed_at` → step 6
-  - `return_pv_renter_signed` sau `return_initiated` sau `handover_confirmed_at` sau `status === "active"` → step 5 (Returnare)
-  - `payment_status` autorizat/plătit (cu sau fără PV semnat) → step 4 (Predare produs, activ)
-  - restul rămâne la fel, doar renumerotare.
-- Actualizez comentariul JSDoc cu noua listă de 6 pași.
-- Etichete:
-  - RO: „Predare produs" / scurt „Predare"
-  - EN: „Handover" / scurt „Handover"
-
-**`src/pages/RentalDetailPage.tsx`**
-- Nicio schimbare de logică, doar verific că textele care fac referire explicită la „pasul 4/5" rămân coerente (ex. `Pasul 5 — Preia produsul` din captură). Le actualizez la `Pasul 4 — Predare produs` cu același conținut și același CTA „Confirmă primirea produsului" pentru chiriaș / status „Așteptăm confirmarea chiriașului" pentru proprietar.
-
-**Fără modificări** în: `RentalsTab`, `RentalsOutTab`, `NextActionCard`, `MainActionCard`, edge functions, baza de date.
+Adaug `wallet_ledger` în publicația `supabase_realtime` (dacă nu e deja) pentru ca subscription-ul de mai sus să primească evenimente.
 
 ## Out of scope
+- Nu modific `pay_rental_with_wallet` și nu introduc înregistrări în `transactions` pentru plățile din wallet — RPC-ul `get_user_wallet_balance` deja gestionează corect ambele căi (Stripe + wallet).
+- Nu schimb UI-ul casetei de balanță; doar sursa de date din hook.
 
-- Nu modificăm fluxul de semnare PV.
-- Nu schimbăm cine poate confirma primirea (rămâne doar chiriașul).
-- Nu atingem pasul de Returnare / Finalizat.
+## Verificare
+După deploy, pentru owner `gps@primaconstruct.ro` dashboardul trebuie să afișeze **4 RON disponibili** (în loc de 0), iar la finalizarea unui rental plătit din wallet balanța proprietarului trebuie să se actualizeze în realtime fără refresh.
