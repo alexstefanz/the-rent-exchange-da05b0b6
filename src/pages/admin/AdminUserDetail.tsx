@@ -242,12 +242,6 @@ const AdminUserDetail = () => {
                     <Phone className="h-4 w-4 text-muted-foreground" />
                     <span>{userDetail.phone || '-'}</span>
                   </div>
-                  {userDetail.whatsapp && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <MessageCircle className="h-4 w-4 text-muted-foreground" />
-                      <span>WhatsApp: {userDetail.whatsapp}</span>
-                    </div>
-                  )}
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span>{userDetail.created_at ? format(new Date(userDetail.created_at), "d MMM yyyy", { locale: ro }) : '-'}</span>

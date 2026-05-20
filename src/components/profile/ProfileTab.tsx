@@ -28,11 +28,6 @@ const profileSchema = z.object({
     .max(100, "Email-ul nu poate depăși 100 caractere")
     .optional()
     .or(z.literal("")),
-  whatsapp: z.string()
-    .regex(/^[+0-9() -]*$/, "Format telefon invalid (doar cifre, +, (), spații, -)")
-    .max(20, "Numărul de WhatsApp nu poate depăși 20 caractere")
-    .optional()
-    .or(z.literal("")),
   company_name: z.string().max(100, "Max 100 caractere").optional().or(z.literal("")),
   cui: z.string().max(20, "Max 20 caractere").optional().or(z.literal("")),
   reg_com: z.string().max(30, "Max 30 caractere").optional().or(z.literal("")),
@@ -59,7 +54,7 @@ const ProfileTab = ({ onProfileLoaded }: ProfileTabProps) => {
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { full_name: "", phone: "", email: "", whatsapp: "", company_name: "", cui: "", reg_com: "", company_address: "" },
+    defaultValues: { full_name: "", phone: "", email: "", company_name: "", cui: "", reg_com: "", company_address: "" },
   });
 
   // Get user initials for avatar fallback
@@ -98,7 +93,6 @@ const ProfileTab = ({ onProfileLoaded }: ProfileTabProps) => {
           full_name: profileData.full_name || "",
           phone: profileData.phone || "",
           email: profileData.email || "",
-          whatsapp: profileData.whatsapp || "",
           company_name: profileData.company_name || "",
           cui: profileData.cui || "",
           reg_com: profileData.reg_com || "",
@@ -128,7 +122,6 @@ const ProfileTab = ({ onProfileLoaded }: ProfileTabProps) => {
         full_name: data.full_name || undefined,
         phone: data.phone || undefined,
         email: data.email || undefined,
-        whatsapp: data.whatsapp || undefined,
         account_type: isBusiness ? 'business' : 'individual',
         company_name: isBusiness ? (data.company_name || undefined) : undefined,
         cui: isBusiness ? (data.cui || undefined) : undefined,
@@ -311,23 +304,6 @@ const ProfileTab = ({ onProfileLoaded }: ProfileTabProps) => {
                   "This email will be visible to potential clients"
                 )}
               </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="whatsapp" className="flex items-center gap-2">
-                <MessageCircle className="h-4 w-4" />
-                WhatsApp
-              </Label>
-              <Input
-                id="whatsapp"
-                type="tel"
-                placeholder="+40 7XX XXX XXX"
-                maxLength={20}
-                {...form.register("whatsapp")}
-              />
-              {form.formState.errors.whatsapp && (
-                <p className="text-sm text-destructive">{form.formState.errors.whatsapp.message}</p>
-              )}
             </div>
 
             {/* Business account toggle & fields */}

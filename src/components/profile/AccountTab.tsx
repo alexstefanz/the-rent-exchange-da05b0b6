@@ -46,7 +46,6 @@ const profileSchema = z.object({
   full_name: z.string().min(2, "Min 2 caractere").optional().or(z.literal("")),
   phone: z.string().regex(/^[+0-9() -]*$/, "Format invalid").max(20).optional().or(z.literal("")),
   email: z.string().email("Format email invalid").max(100).optional().or(z.literal("")),
-  whatsapp: z.string().regex(/^[+0-9() -]*$/, "Format invalid").max(20).optional().or(z.literal("")),
 });
 type ProfileFormData = z.infer<typeof profileSchema>;
 
@@ -102,7 +101,7 @@ const AccountTab = () => {
 
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
-    defaultValues: { full_name: "", phone: "", email: "", whatsapp: "" },
+    defaultValues: { full_name: "", phone: "", email: "" },
   });
 
   /* ---- statistics ---- */
@@ -135,7 +134,6 @@ const AccountTab = () => {
           full_name: profileData.full_name || "",
           phone: profileData.phone || "",
           email: profileData.email || "",
-          whatsapp: profileData.whatsapp || "",
         });
       } catch (error) {
         console.error("Error loading profile:", error);
@@ -245,7 +243,6 @@ const AccountTab = () => {
         full_name: data.full_name || undefined,
         phone: phoneChanged ? undefined : (normalizedPhone || undefined),
         email: data.email || undefined,
-        whatsapp: data.whatsapp || undefined,
       });
       setProfile(updated);
       await queryClient.invalidateQueries({ queryKey: ["currentUserProfile", user.id] });
@@ -516,9 +513,6 @@ const AccountTab = () => {
               </Field>
               <Field label={t("Email contact (public)", "Contact email (public)")} icon={<Mail className="h-4 w-4" />} error={form.formState.errors.email?.message}>
                 <Input type="email" placeholder="contact@exemplu.ro" maxLength={100} {...form.register("email")} />
-              </Field>
-              <Field label="WhatsApp" icon={<MessageCircle className="h-4 w-4" />} error={form.formState.errors.whatsapp?.message}>
-                <Input type="tel" placeholder="+40 7XX XXX XXX" maxLength={20} {...form.register("whatsapp")} />
               </Field>
             </div>
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Copy, Check, Mail, MessageCircle, Facebook, Send } from "lucide-react";
+import { Copy, Check, Mail, Facebook, Send } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "@/hooks/use-toast";
 
@@ -32,7 +32,6 @@ const ShareDialog = ({ open, onOpenChange, url, title, image }: Props) => {
   const encTitle = encodeURIComponent(title);
 
   const channels = [
-    { name: "WhatsApp", icon: MessageCircle, color: "bg-green-500", href: `https://wa.me/?text=${encTitle}%20${encUrl}` },
     { name: "Facebook", icon: Facebook, color: "bg-blue-600", href: `https://www.facebook.com/sharer/sharer.php?u=${encUrl}` },
     { name: "Telegram", icon: Send, color: "bg-sky-500", href: `https://t.me/share/url?url=${encUrl}&text=${encTitle}` },
     { name: "Email", icon: Mail, color: "bg-muted-foreground", href: `mailto:?subject=${encTitle}&body=${encUrl}` },
@@ -53,7 +52,7 @@ const ShareDialog = ({ open, onOpenChange, url, title, image }: Props) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-3 mt-2">
+        <div className="grid grid-cols-3 gap-3 mt-2">
           {channels.map((c) => (
             <a
               key={c.name}

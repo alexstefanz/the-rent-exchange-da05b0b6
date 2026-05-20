@@ -1,4 +1,4 @@
-import { Phone, Mail, MessageCircle } from "lucide-react";
+import { Phone, Mail } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,17 +9,11 @@ interface ContactInfoCardProps {
   avatarUrl: string | null;
   phone: string | null;
   email: string | null;
-  whatsapp: string | null;
 }
 
-export function ContactInfoCard({ ownerName, avatarUrl, phone, email, whatsapp }: ContactInfoCardProps) {
+export function ContactInfoCard({ ownerName, avatarUrl, phone, email }: ContactInfoCardProps) {
   const { t } = useLanguage();
-  const hasContactInfo = phone || email || whatsapp;
-
-  const handleWhatsApp = () => {
-    const number = whatsapp?.replace(/\D/g, '');
-    window.open(`https://wa.me/${number}`, '_blank');
-  };
+  const hasContactInfo = phone || email;
 
   const handleCall = () => {
     window.open(`tel:${phone}`, '_self');
@@ -65,16 +59,6 @@ export function ContactInfoCard({ ownerName, avatarUrl, phone, email, whatsapp }
               >
                 <Mail className="h-4 w-4 text-primary" />
                 <span className="truncate">{email}</span>
-              </Button>
-            )}
-            {whatsapp && (
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3 text-green-600 hover:text-green-700"
-                onClick={handleWhatsApp}
-              >
-                <MessageCircle className="h-4 w-4" />
-                <span>WhatsApp: {whatsapp}</span>
               </Button>
             )}
           </>
