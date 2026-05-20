@@ -11,12 +11,34 @@ import {
   ArrowLeft,
   History,
   Lock,
+  MoreVertical,
+  CheckCircle2,
+  AlertCircle,
+  Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -31,6 +53,7 @@ import {
   fetchOpsTickets,
   fetchTicketMessages,
   createTicketMessage,
+  updateOpsTicketField,
   type OpsTicket as AdminOpsTicket,
 } from "@/features/admin/opsTicketsApi";
 import { MAX_MESSAGE_LENGTH } from "@/features/messaging/messagingApi";
