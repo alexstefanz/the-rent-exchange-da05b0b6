@@ -33,13 +33,9 @@ import {
   createTicketMessage,
   type OpsTicket as AdminOpsTicket,
 } from "@/features/admin/opsTicketsApi";
-import {
-  getConversations,
-  type Conversation,
-} from "@/features/messaging/messagingApi";
-import { ChatPanel } from "@/components/messaging/ChatPanel";
+import { MAX_MESSAGE_LENGTH } from "@/features/messaging/messagingApi";
 import { supabase } from "@/integrations/supabase/client";
-import { format, isToday, isYesterday } from "date-fns";
+import { format } from "date-fns";
 import { ro as roLocale, enUS } from "date-fns/locale";
 import { toast } from "sonner";
 import { StatusPill } from "@/components/support/center/StatusPill";
