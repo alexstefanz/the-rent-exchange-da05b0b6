@@ -229,9 +229,16 @@ export function ChatPanel({
         attachments = (data || []) as AttachmentRow[];
       }
       setLocalMessages((prev) => {
-        // Replace the optimistic placeholder (if any) with the real message; dedup if realtime already inserted it.
+        // Replace the optimistic placeholder (if any) with the real message;
+        // if realtime already inserted it (without attachments), merge attachments in.
         const withoutTmp = prev.filter((m) => m.id !== tmpId);
-        if (withoutTmp.some((m) => m.id === sent.id)) return withoutTmp;
+        const existingIdx = withoutTmp.findIndex((m) => m.id === sent.id);
+        if (existingIdx >= 0) {
+          if (attachments.length === 0) return withoutTmp;
+          const merged = [...withoutTmp];
+          merged[existingIdx] = { ...merged[existingIdx], ...sent, attachments };
+          return merged;
+        }
         return [...withoutTmp, { ...sent, attachments }];
       });
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
@@ -419,6 +426,7 @@ export function ChatPanel({
         </div>
       ) : (
         <MessageInput
+          key={conversationId}
           conversationId={conversationId}
           onSend={handleSend}
           onTyping={() => setTyping(true)}
