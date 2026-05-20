@@ -216,7 +216,7 @@ export default function RentalRequestPopup({ item, mode, stackCount, onAccept, o
                 disabled={busy !== null}
                 onClick={() => handle("product", onViewProduct)}
               >
-                {busy === "product" ? t("Se deschide…", "Opening…") : t("Vezi produsul", "View item")}
+                {busy === "product" ? t("Se deschide…", "Opening…") : t("Vezi închirierea", "View rental")}
               </Button>
             </>
           )}
