@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Mail, Eye, EyeOff } from "lucide-react";
+import { Loader2, Mail, Eye, EyeOff, AlertCircle } from "lucide-react";
 import logoImage from "@/assets/rentli_logo.webp";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
