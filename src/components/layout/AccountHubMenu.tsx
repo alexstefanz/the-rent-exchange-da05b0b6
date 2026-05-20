@@ -21,6 +21,8 @@ import {
   Package,
   CalendarCheck,
   ArrowUpRight,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -251,6 +253,16 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
   const { data: drawerStats } = useDrawerStats(user?.id);
   const openTickets = drawerStats?.openTickets ?? 0;
   const { isBanned } = useIsBanned();
+
+  const [hideBalance, setHideBalance] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("rentli:hideBalance") === "1";
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("rentli:hideBalance", hideBalance ? "1" : "0");
+    } catch {}
+  }, [hideBalance]);
 
   const profile = data?.profile;
   const signals = data?.signals;
