@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
 
     const { data: product, error: fetchErr } = await supabase
       .from('products')
-      .select('id, title, description, title_en, description_en')
+      .select('id, title, description, included_items, title_en, description_en, included_items_en')
       .eq('id', productId)
       .maybeSingle()
 
@@ -46,22 +46,13 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Skip if already translated and not forced
-    if (
-      !force &&
-      (product.title_en || !product.title) &&
-      (product.description_en || !product.description)
-    ) {
-      return new Response(JSON.stringify({ skipped: true }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
     const needTitle = !!product.title && (force || !product.title_en)
     const needDesc = !!product.description && (force || !product.description_en)
+    const hasIncluded = Array.isArray(product.included_items) && product.included_items.length > 0
+    const needIncluded =
+      hasIncluded && (force || !Array.isArray(product.included_items_en) || product.included_items_en.length !== product.included_items.length)
 
-    if (!needTitle && !needDesc) {
+    if (!needTitle && !needDesc && !needIncluded) {
       return new Response(JSON.stringify({ skipped: true }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -105,7 +96,34 @@ Deno.serve(async (req) => {
       return content.trim()
     }
 
-    const updates: Record<string, string> = {}
+    async function translateItems(items: string[]): Promise<string[]> {
+      const userPrompt =
+        `Translate each item in this JSON array from Romanian to short English (1-3 words each, lowercase unless proper noun). Preserve order and length. Return ONLY a JSON array of strings, no prose.\n\n${JSON.stringify(items)}`
+
+      const resp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${lovableKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+        }),
+      })
+      if (!resp.ok) throw new Error(`AI gateway ${resp.status}: ${await resp.text()}`)
+      const data = await resp.json()
+      const content = data?.choices?.[0]?.message?.content
+      if (!content || typeof content !== 'string') throw new Error('Empty AI response')
+      const cleaned = content.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
+      const parsed = JSON.parse(cleaned)
+      if (!Array.isArray(parsed) || parsed.length !== items.length || !parsed.every((s) => typeof s === 'string')) {
+        throw new Error('Invalid translated array')
+      }
+      return parsed.map((s) => s.trim())
+    }
+
+    const updates: Record<string, string | string[]> = {}
 
     if (needTitle) {
       try {
@@ -119,6 +137,13 @@ Deno.serve(async (req) => {
         updates.description_en = await translate(product.description!, 'description')
       } catch (e) {
         console.error('Description translation failed', e)
+      }
+    }
+    if (needIncluded) {
+      try {
+        updates.included_items_en = await translateItems(product.included_items as string[])
+      } catch (e) {
+        console.error('Included items translation failed', e)
       }
     }
 
