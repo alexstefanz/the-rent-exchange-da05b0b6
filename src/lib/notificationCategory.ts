@@ -11,6 +11,7 @@ import {
   AlertTriangle,
   Send,
   Camera,
+  Clock,
   type LucideIcon,
 } from "lucide-react";
 
@@ -151,6 +152,7 @@ export function getTypeIcon(type: string): LucideIcon {
   if (t === "view") return Eye;
   if (t === "review_received") return Star;
   if (t === "kyc_approved") return ShieldCheck;
+  if (t === "cancel_request_submitted") return Clock;
   if (t.includes("inspection") || t.includes("handover")) return Camera;
   return getCategoryStyle(type).Icon;
 }
