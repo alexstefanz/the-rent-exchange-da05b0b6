@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Mail, Eye, EyeOff, AlertCircle } from "lucide-react";
 import logoImage from "@/assets/rentli_logo.webp";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import { useLanguage } from "@/contexts/LanguageContext";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 import { strongPasswordSchema, isWeakPasswordError } from "@/lib/passwordValidation";
 import PhoneOtpDialog from "@/components/profile/PhoneOtpDialog";
