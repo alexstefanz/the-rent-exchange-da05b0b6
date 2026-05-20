@@ -89,6 +89,8 @@ export default function RentalPopupManager() {
   if (!user || queue.length === 0) return null;
 
   const current = queue[0];
+  const visible = queue.slice(0, 3);
+  const stackCount = queue.length;
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["ownerRentals"] });
@@ -146,17 +148,45 @@ export default function RentalPopupManager() {
       className="fixed inset-0 z-[120] flex items-end justify-center p-4 pb-24 sm:items-center sm:pb-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200"
       onClick={handleDismiss}
     >
-      <div onClick={(e) => e.stopPropagation()}>
-        <RentalRequestPopup
-          key={current.id}
-          item={current}
-          mode={current.mode}
-          onAccept={handleAccept}
-          onReject={handleReject}
-          onViewProduct={handleViewProduct}
-          onViewSimilar={handleViewSimilar}
-          onDismiss={handleDismiss}
-        />
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-[min(420px,calc(100vw-2rem))]"
+        style={{ minHeight: 1 }}
+      >
+        {/* Ghost previews behind the main card */}
+        {visible.slice(1).map((it, idx) => {
+          const i = idx + 1; // 1 or 2
+          const translate = i * 8;
+          const scale = 1 - i * 0.05;
+          const opacity = i === 1 ? 0.55 : 0.3;
+          return (
+            <div
+              key={`ghost-${it.id}`}
+              aria-hidden
+              className="absolute inset-x-0 top-0 rounded-2xl border bg-card shadow-xl ring-1 ring-black/5 pointer-events-none transition-all duration-300 ease-out"
+              style={{
+                transform: `translateY(${translate}px) scale(${scale})`,
+                opacity,
+                zIndex: 10 - i,
+                height: "100%",
+              }}
+            />
+          );
+        })}
+
+        <div className="relative" style={{ zIndex: 10 }}>
+          <RentalRequestPopup
+            key={current.id}
+            item={current}
+            mode={current.mode}
+            stackCount={stackCount}
+            onAccept={handleAccept}
+            onReject={handleReject}
+            onViewProduct={handleViewProduct}
+            onViewSimilar={handleViewSimilar}
+            onDismiss={handleDismiss}
+          />
+        </div>
       </div>
     </div>
   );
