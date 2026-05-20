@@ -197,6 +197,7 @@ const renderMessageContent = (text: string) => {
 
 const SupportChatWidget = () => {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { t, language } = useLanguage();
   const queryClient = useQueryClient();
