@@ -74,6 +74,7 @@ const ReviewsTab = () => {
         .from("product_reviews")
         .select("*, profiles:reviewer_id(full_name, avatar_url)")
         .in("product_id", productIds)
+        .neq("reviewer_id", user!.id)
         .order("created_at", { ascending: false });
 
       return (reviews || []).map((r: any) => ({
