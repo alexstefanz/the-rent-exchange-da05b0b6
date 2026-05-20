@@ -456,7 +456,7 @@ const SupportChatWidget = () => {
   };
 
   const handleSendTicketMessage = () => {
-    const text = messageText.trim();
+    const text = messageText.trim().slice(0, MAX_MESSAGE_LENGTH);
     if (!text) return;
     ensureTicketAndSend(text);
   };
