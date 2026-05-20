@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, MessageCircle } from "lucide-react";
+import { Loader2, MessageCircle, LifeBuoy } from "lucide-react";
 import { Conversation } from "@/features/messaging/messagingApi";
 import { format, isToday, isYesterday } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
@@ -28,6 +28,15 @@ export function ConversationList({
 }: ConversationListProps) {
   const { language, t } = useLanguage();
   const dateLocale = language === "ro" ? ro : enUS;
+  const handleTabChange = (value: string) => {
+    if (value === "suport") {
+      // Open the global support widget instead of changing the tab.
+      window.dispatchEvent(new CustomEvent("open-support-chat"));
+      return;
+    }
+    onTabChange(value);
+  };
+
   const rezervariUnread = conversations
     .filter(c => c.buyer_id === userId)
     .reduce((acc, c) => acc + (c.unread_count || 0), 0);
@@ -128,7 +137,7 @@ export function ConversationList({
     <div className="flex flex-col h-full">
       <div className="p-4 pb-2">
         <h1 className="text-xl font-bold mb-3">{t("Mesaje", "Messages")}</h1>
-        <Tabs value={activeTab} onValueChange={onTabChange}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="w-full">
             <TabsTrigger value="rezervari" className="flex-1 gap-1.5">
               {t("Rezervări", "Reservations")}
@@ -145,6 +154,10 @@ export function ConversationList({
                   {deInchiriatUnread}
                 </Badge>
               )}
+            </TabsTrigger>
+            <TabsTrigger value="suport" className="flex-1 gap-1.5 lg:hidden">
+              <LifeBuoy className="h-3.5 w-3.5" />
+              {t("Suport", "Support")}
             </TabsTrigger>
           </TabsList>
         </Tabs>
