@@ -333,8 +333,8 @@ const RentalDetailPage = () => {
                         "The handover document is signed by both parties. Waiting for the renter to confirm receipt.",
                       )
                     : t(
-                        `PV-ul a fost semnat de ambele parti. Mergi la ${rental.product_location_city || "locatia stabilita"} si confirma primirea dupa ce ai produsul in mana.`,
-                        `The handover document is signed by both parties. Go to ${rental.product_location_city || "the agreed location"} and confirm receipt after you have the product in hand.`,
+                        "PV-ul a fost semnat de ambele parti. Mergi la locatia stabilita si confirma primirea dupa ce ai produsul in mana.",
+                        "The handover document is signed by both parties. Go to the agreed location and confirm receipt after you have the product in hand.",
                       )}
                 </p>
               </div>
