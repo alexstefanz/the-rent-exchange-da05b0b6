@@ -329,12 +329,12 @@ const RentalDetailPage = () => {
                 <p className="text-sm text-muted-foreground mt-1">
                   {isOwner
                     ? t(
-                        "PV-ul a fost semnat de ambele parti. Asteptam chiriasul sa confirme primirea produsului.",
-                        "The handover document is signed by both parties. Waiting for the renter to confirm receipt.",
+                        "PV-ul a fost semnat la predare. Așteptăm chiriașul să confirme că a primit produsul.",
+                        "The handover PV was signed in person. Waiting for the renter to confirm receipt.",
                       )
                     : t(
-                        "PV-ul a fost semnat de ambele parti. Mergi la locatia stabilita si confirma primirea dupa ce ai produsul in mana.",
-                        "The handover document is signed by both parties. Go to the agreed location and confirm receipt after you have the product in hand.",
+                        "Ai semnat PV-ul de predare împreună cu proprietarul, la fața locului. Confirmă că ai primit produsul pentru a debloca etapa de utilizare.",
+                        "You signed the handover PV together with the owner, in person. Confirm that you received the product to unlock the in-use stage.",
                       )}
                 </p>
               </div>

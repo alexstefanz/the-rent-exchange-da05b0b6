@@ -1,23 +1,17 @@
-## Obiectiv
-În popup-ul global care îi apare chiriașului când proprietarul i-a aprobat cererea, butonul principal nu va mai duce la pagina produsului, ci la pagina închirierii respective (`/rezervari/<public_id>`).
+## Problemă
+Textul Pasului 4 sugerează că PV-ul se semnează ÎNAINTE de întâlnire („PV-ul a fost semnat de ambele parti. Mergi la locatia stabilita..."). În realitate, PV-ul se semnează la fața locului, când chiriașul vede produsul. După semnare, predarea a avut deja loc.
 
-## Modificări
+## Soluție (doar copy, fără modificări de flux)
 
-### 1. `src/components/rentals/RentalRequestPopup.tsx`
-- Schimbă eticheta butonului din modul renter (`outcome === "confirmed"`) din **„Vezi produsul" / „View item"** în **„Vezi închirierea" / „View rental"**.
-- Restul comportamentului (loading state, dismiss, „Mai târziu") rămâne identic.
-- Cazul `isRejected` (Vezi produse similare) și modul `owner` (Acceptă/Refuză) nu se modifică.
+În `src/pages/RentalDetailPage.tsx`, pasul 4 (`handoverDoneEarly && !rental.handover_confirmed_at`):
 
-### 2. `src/components/rentals/RentalPopupManager.tsx`
-- În `handleViewProduct`, înlocuiește navigarea către `/produs/<slug>` cu navigare către `/rezervari/<public_id>`.
-- Dacă `public_id` lipsește din vreun motiv, fallback la `/inchirierile-mele` (lista chiriașului) — nu mai cădem niciodată pe pagina produsului în acest flux.
-- Opțional: redenumire internă a callback-ului în `handleViewRental` pentru claritate (păstrând prop-ul `onViewProduct` în componentă pentru compatibilitate minimă, sau redenumindu-l în `onViewRental` consistent în ambele fișiere — vom alege redenumirea completă fiindcă singurul consumator este `RentalPopupManager`).
+- **Titlu** rămâne: „Pasul 4 — Predare produs" / „Step 4 — Handover".
+- **Descriere chiriaș** (înlocuire):
+  - RO: „Ai semnat PV-ul de predare împreună cu proprietarul, la fața locului. Confirmă că ai primit produsul pentru a debloca etapa de utilizare."
+  - EN: „You signed the handover PV together with the owner, in person. Confirm that you received the product to unlock the in-use stage."
+- **Descriere proprietar** (înlocuire):
+  - RO: „PV-ul a fost semnat la predare. Așteptăm chiriașul să confirme că a primit produsul."
+  - EN: „The handover PV was signed in person. Waiting for the renter to confirm receipt."
+- Restul (butonul „Am primit produsul", „Vezi PV", badge „Asteptam confirmarea chiriasului") rămâne identic.
 
-## Ce NU se schimbă
-- RPC-urile (`get_rental_popups`, `get_rental_popup_by_id`) — `public_id` este deja inclus în payload.
-- Logica pentru cererile refuzate (rămâne „Vezi produse similare").
-- Logica owner (Acceptă/Refuză).
-- Notificările/realtime.
-
-## Memory
-Voi actualiza `mem/features/rental-request-popup.md` ca să reflecte că butonul renter `confirmed` duce la `/rezervari/<public_id>`, nu la `/produs/<slug>`.
+Nu se modifică logica, RPC-urile sau timeline-ul — doar textele care creau confuzia.
