@@ -1,39 +1,13 @@
-## Problem
+## Schimbare
 
-După apăsarea "Acceptă"/"Refuză" în pop-up, butonul rămâne pe "Se trimite…" 5–10+ secunde. Cauza este în edge function-ul `respond-rental-request`: răspunsul către client e trimis abia după ce se termină **toate** operațiunile secundare:
+În `src/components/support/SupportChatWidget.tsx`, butonul "Live Help" afișează în prezent avatarul `supportAgentAvatar` (poza unui agent). Înlocuiesc cu un icon de Support (Lucide `Headphones`) plasat într-un cerc colorat primar.
 
-1. Update `rentals` (rapid)
-2. (la reject) apel Stripe `refunds.create` sau `paymentIntents.cancel` — sincron
-3. 3× query-uri profile/produs
-4. Insert notification + update transactions
-5. `await Promise.all(emailPromises)` — 2 emailuri Resend (rețea externă)
-6. `await supabaseAdmin.functions.invoke("notify-rental-event", …)` — încă un edge function (SMS + în-app)
+## Modificări
 
-Doar pasul 1 contează pentru UX-ul pop-up-ului. Restul sunt notificări/efecte colaterale care pot rula în background.
+`src/components/support/SupportChatWidget.tsx`:
+- Import `Headphones` din `lucide-react`.
+- Înlocuiesc `<img src={supportAgentAvatar} … />` (liniile 705–712) cu un container `h-10 w-10 rounded-full bg-primary/10 grid place-items-center` ce conține `<Headphones className="h-5 w-5 text-primary" />`.
+- Păstrez intacte: status dot verde, badge-ul de notificări, textele "Live Help / Online / Bună! Te putem ajuta?".
+- Șterg importul `supportAgentAvatar` dacă nu mai e folosit nicăieri (verificat: nu este).
 
-## Soluție (doar edge function, fără UI/business logic)
-
-Refactor `supabase/functions/respond-rental-request/index.ts`:
-
-1. **Calea critică sincronă** (rapid, sub ~500ms):
-   - Validări auth + ownership + status
-   - Update `rentals` cu noul status + `confirmed_at`/`cancelled_at`
-   - Update `transactions` la accept
-   - Insert `notifications` pentru chiriaș
-   - Return `{ success: true, status }`
-
-2. **Background via `EdgeRuntime.waitUntil(...)`** (nu blochează response-ul):
-   - Stripe refund/cancel (la reject)
-   - Fetch produs + profile owner/renter
-   - Trimiterea celor 2 emailuri Resend
-   - Apelul `notify-rental-event` (SMS + push)
-
-Toate cele de mai sus deja sunt "best-effort" cu `.catch(...)` așa că ratarea lor nu trebuie să blocheze răspunsul.
-
-Notă pentru Stripe la reject: mutăm refund-ul în background, dar setăm imediat `payment_status='refund_pending'` pe rental, iar la finalul refund-ului în background actualizăm la `refunded` + `refunded_at`. Asta păstrează UI-ul corect și debloacheză butonul.
-
-## Verificare
-
-- Deploy `respond-rental-request`.
-- Apel `curl_edge_functions` pe o cerere de test + măsurare latency.
-- În browser, click "Acceptă" pe un pop-up și verificat că starea "Se trimite…" durează <1s, iar emailul + SMS-ul tot ajung (verificat în `edge_function_logs` pentru `notify-rental-event`).
+Nicio modificare la business logic, chat, sau alte componente.
