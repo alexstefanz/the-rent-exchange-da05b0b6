@@ -1,40 +1,27 @@
-## Goal
+## Diagnoză
 
-Adminul trebuie să poată închide / marca un ticket direct din widget-ul de suport (`SupportChatWidget.tsx`), fără să meargă în ERP-ul de admin. Acțiunile disponibile: **Rezolvat**, **Necesită investigații suplimentare**, **Anulat** (plus rămâne și redeschiderea, dacă userul revine cu mesaj).
+Meniul de 3 puncte din header-ul widget-ului de suport are toate cele 3 opțiuni în cod (Marchează rezolvat / Necesită investigații / Anulează ticket), dar **`DropdownMenuContent` din shadcn folosește `z-50`** iar panoul widget-ului are `z-[60]` (fixed). Astfel popoverul portalat e renderat sub panoul widget, iar adminul vede vizibil doar partea de jos a meniului — itemul roșu "Anulează ticket", care iese în afara marginii panoului în jos. De aceea pare că "doar Anulează" funcționează.
 
-## Mapare pe statusurile existente
+În plus, în widget nu se afișează statusul curent al ticketului în header, așa că adminul nu vede confirmarea vizuală că `RESOLVED` / `WAITING_INTERNAL` / `CLOSED` s-au aplicat.
 
-Schema `ops_tickets` are deja enumul: NEW, IN_PROGRESS, WAITING_CUSTOMER, WAITING_OWNER, WAITING_INTERNAL, RESOLVED, CLOSED. Pentru a evita migrare DB:
+## Schimbări
 
-- **Rezolvat** → `RESOLVED` (trimite și email "ticket-resolved" prin logica existentă).
-- **Necesită investigații suplimentare** → `WAITING_INTERNAL` (ticket-ul rămâne deschis, dar marcat).
-- **Anulat** → `CLOSED` + notă internă auto "Anulat de admin" (sau cu motiv opțional). Folosește `closed_at` deja setat de `updateOpsTicketField`.
+1. **Fix z-index dropdown** (`src/components/support/SupportChatWidget.tsx`)
+   - Pe `<DropdownMenuContent>` adăugăm `className="z-[70] w-56"` ca să fie deasupra panoului widget-ului (`z-[60]`).
+   - Verificăm și `AlertDialog`-ul; `AlertDialogContent` shadcn folosește deja `z-50` într-un portal cu overlay propriu, dar pentru consistență adăugăm `z-[80]` pe overlay + content ca să apară peste widget când e nevoie.
 
-Audit log-ul actual ("STATUS_CHANGED") rămâne neschimbat. Eticheta "Anulat" e doar UI — în DB este `CLOSED`.
+2. **Status vizibil în header (admin)** (`src/components/support/SupportChatWidget.tsx`)
+   - Sub titlul ticketului (lângă `headerSubtitle`), pentru admin pe ticket activ, afișăm `<StatusPill status={ticketInfo?.status} size="xs" />` ca să se vadă instant noul status după acțiune.
+   - Pentru tickete `RESOLVED`/`CLOSED`, StatusPill rămâne afișat (banner-ul "ticket închis" deja apare jos).
 
-## Schimbări UI (`SupportChatWidget.tsx`)
-
-1. **Header admin pe ticket activ**: lângă butonul X, adăugăm un buton "Acțiuni" (icon `MoreVertical` sau `CheckCircle`) care deschide un `DropdownMenu` (shadcn) cu 3 opțiuni:
-   - Marchează rezolvat
-   - Necesită investigații
-   - Anulează ticket
-2. Click pe oricare → `AlertDialog` de confirmare cu textul potrivit (ireversibil pentru "Anulat" / "Rezolvat", reversibil pentru "Necesită investigații").
-3. Pe confirm:
-   - Apel `updateOpsTicketField(ticketId, 'status', oldStatus, newStatus, 'STATUS_CHANGED')` din `opsTicketsApi`.
-   - Pentru "Anulat", trimitem suplimentar un mesaj de tip internal note ("Ticket anulat de admin") prin `createTicketMessage(ticketId, text, true, 'ADMIN')`.
-   - Invalidate query-urile: `["supportTicketInfo", ticketId]`, `["supportChatMessages", ticketId]`, `["adminOpsInbox"]`, `["opsTickets"]`.
-   - Toast de succes.
-4. **Comportament după acțiune**:
-   - `RESOLVED` / `CLOSED` → `isClosed` devine true → input-ul existent se ascunde și apare deja banner-ul "Acest ticket a fost închis" (logica e prezentă). Adminul se întoarce la inbox cu back.
-   - `WAITING_INTERNAL` → ticket-ul rămâne deschis, header-ul afișează status nou (folosim `StatusPill` din header dacă vrem; opțional).
-5. Butonul nu apare pentru useri non-admin, nu apare pentru tickete deja `RESOLVED`/`CLOSED`.
+3. **Verificare propagare în ERP admin**
+   - Mutația `updateOpsTicketField` deja invalidează `opsTickets` în query client; adăugăm și un `refetch` pe AdminTickets nu este necesar — `useAdminTicketsRealtime` ascultă deja schimbările pe `ops_tickets`. Nu mai sunt schimbări de cod necesare pentru ca statusul setat din widget să apară imediat în `/admin/tickete` (cu același status badge: Nou / În lucru / Așteptare client / Așteptare internă / Rezolvat / Închis).
 
 ## Fișiere atinse
 
-- `src/components/support/SupportChatWidget.tsx` — meniu acțiuni admin + dialog confirmare + mutații.
-- Niciun fișier API nou: refolosim `updateOpsTicketField` și `createTicketMessage` din `src/features/admin/opsTicketsApi.ts`.
+- `src/components/support/SupportChatWidget.tsx` — z-index dropdown/dialog + StatusPill în header.
 
 ## Out of scope
 
-- Fără modificări de schemă DB (nu adăugăm status `CANCELLED` dedicat; tratarea e prin etichetă + audit).
-- Fără modificări la pagina admin ERP `AdminTicketDetail` — selectul de status de acolo rămâne sursa de adevăr exhaustivă.
+- Nu adăugăm un widget de tickete pe `AdminDashboard` (overview-ul). Lista de tickete este în secțiunea dedicată `/admin/tickete` și deja afișează statusul.
+- Niciun status DB nou — folosim mapările existente (RESOLVED, WAITING_INTERNAL, CLOSED) discutate anterior.
