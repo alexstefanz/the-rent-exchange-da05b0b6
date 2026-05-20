@@ -24,6 +24,19 @@ export const getDisplayDescription = (
   return product.description;
 };
 
+/**
+ * Returns the localized included_items list with fallback to the original.
+ */
+export const getDisplayIncludedItems = (
+  product: { included_items?: string[] | null; included_items_en?: string[] | null },
+  language: "ro" | "en"
+): string[] => {
+  const ro = product.included_items ?? [];
+  const en = product.included_items_en ?? [];
+  if (language === "en" && en.length === ro.length && en.length > 0) return en;
+  return ro;
+};
+
 // Build a fast lookup table from RO category name to EN counterpart.
 const categoryNameMap = new Map<string, string>();
 const subcategoryNameMap = new Map<string, string>();
