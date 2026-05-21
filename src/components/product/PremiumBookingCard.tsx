@@ -93,6 +93,7 @@ const PremiumBookingCard = ({
             head_row: "booking-cal-headrow flex justify-between",
             row: "booking-cal-row flex w-full mt-2 justify-between",
             day_selected: "!bg-[#FA8729] !text-white !rounded-[10px] !opacity-100",
+            day_outside: "!text-foreground !opacity-100",
             day_range_start: "!rounded-[10px]",
             day_range_end: "!rounded-[10px]",
             day_range_middle: "!rounded-[10px] !bg-[#FA8729] !text-white",
