@@ -71,7 +71,6 @@ const PremiumBookingCard = ({
           selected={endDate || startDate}
           onSelect={onSelectDate}
           fromMonth={new Date()}
-          className="rdp-hide-past-weeks"
           disabled={d => isBefore(d, new Date()) || isDateBooked(d, bookedDates)}
           modifiers={{
             start: startDate,
@@ -92,7 +91,7 @@ const PremiumBookingCard = ({
             day_range_middle: "!rounded-[10px] !bg-[#FA8729] !text-white",
             cell: "flex-1 h-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
           }}
-          className="rounded-md border w-full pointer-events-auto [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-caption]:text-sm [&_.rdp-head_cell]:text-xs [&_.rdp-cell]:p-0 [&_.rdp-day]:h-8 [&_.rdp-day]:w-8 [&_.rdp-day]:text-xs [&_.rdp-day]:rounded-[10px]"
+          className="rdp-hide-past-weeks rounded-md border w-full pointer-events-auto [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-caption]:text-sm [&_.rdp-head_cell]:text-xs [&_.rdp-cell]:p-0 [&_.rdp-day]:h-8 [&_.rdp-day]:w-8 [&_.rdp-day]:text-xs [&_.rdp-day]:rounded-[10px]"
         />
       </div>
 
