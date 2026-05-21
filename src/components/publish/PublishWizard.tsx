@@ -1203,6 +1203,7 @@ const Step6Review = ({
   mode: "create" | "edit";
 }) => {
   const score = computeQualityScore(data);
+  const owner = data.daily_price_owner ?? 0;
 
   return (
     <div>
