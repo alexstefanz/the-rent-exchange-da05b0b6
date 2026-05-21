@@ -13,7 +13,7 @@ import {
   type PreparedAttachment,
   type UploadedAttachment,
 } from "@/lib/chatMedia";
-import { MAX_MESSAGE_LENGTH, MAX_SPECIAL_CHARS, countSpecialChars } from "@/features/messaging/messagingApi";
+import { MAX_MESSAGE_LENGTH, MAX_SPECIAL_CHARS, countSpecialChars, clampChatInput } from "@/features/messaging/messagingApi";
 import { cn } from "@/lib/utils";
 import { containsProfanity } from "@/lib/profanityFilter";
 import { useIsBanned } from "@/hooks/useIsBanned";
@@ -36,6 +36,18 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lastSymbolToastRef = useRef(0);
+  const notifySymbolBlocked = () => {
+    const now = Date.now();
+    if (now - lastSymbolToastRef.current < 1500) return;
+    lastSymbolToastRef.current = now;
+    toast.error(
+      t(
+        `Maxim ${MAX_SPECIAL_CHARS} simboluri speciale per mesaj.`,
+        `Maximum ${MAX_SPECIAL_CHARS} special symbols per message.`,
+      ),
+    );
+  };
 
   // Autosize textarea
   useEffect(() => {
@@ -198,7 +210,9 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
           rows={1}
           value={text}
           onChange={(e) => {
-            setText(e.target.value.slice(0, MAX_MESSAGE_LENGTH));
+            const { value, blockedSpecial } = clampChatInput(e.target.value);
+            setText(value);
+            if (blockedSpecial) notifySymbolBlocked();
             onTyping?.();
           }}
           onKeyDown={handleKey}
