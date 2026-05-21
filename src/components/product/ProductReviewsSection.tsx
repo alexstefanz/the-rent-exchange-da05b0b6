@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Star, User } from "lucide-react";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
@@ -71,6 +72,21 @@ export default function ProductReviewsSection({ productId, isOwnProduct }: Props
   };
 
   useEffect(() => { fetchReviews(); }, [productId]);
+
+  // Realtime: refresh when a review for this product is added/updated/removed
+  useEffect(() => {
+    if (!productId) return;
+    const ch = supabase
+      .channel(`product-reviews-${productId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "product_reviews", filter: `product_id=eq.${productId}` },
+        () => { void fetchReviews(); },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productId]);
 
   const totalCount = ownerReviews.length + renterReviews.length;
   const avgRating = totalCount > 0
