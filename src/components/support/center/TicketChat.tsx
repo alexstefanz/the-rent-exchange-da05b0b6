@@ -106,6 +106,19 @@ export function TicketChat({ ticketId, isClosed }: Props) {
   const handleSend = () => {
     const txt = text.trim();
     if (!txt || sendMutation.isPending) return;
+    if (txt.length > MAX_MESSAGE_LENGTH) {
+      toast.error(t(`Maxim ${MAX_MESSAGE_LENGTH} caractere.`, `Maximum ${MAX_MESSAGE_LENGTH} characters.`));
+      return;
+    }
+    if (countSpecialChars(txt) > MAX_SPECIAL_CHARS) {
+      toast.error(
+        t(
+          `Maxim ${MAX_SPECIAL_CHARS} simboluri speciale per mesaj.`,
+          `Maximum ${MAX_SPECIAL_CHARS} special symbols per message.`
+        )
+      );
+      return;
+    }
     sendMutation.mutate(txt);
   };
 
@@ -186,7 +199,7 @@ export function TicketChat({ ticketId, isClosed }: Props) {
               ref={textareaRef}
               value={text}
               onChange={(e) => {
-                setText(e.target.value);
+                setText(e.target.value.slice(0, MAX_MESSAGE_LENGTH));
                 const el = e.target as HTMLTextAreaElement;
                 el.style.height = "auto";
                 el.style.height = Math.min(el.scrollHeight, 160) + "px";
@@ -199,6 +212,7 @@ export function TicketChat({ ticketId, isClosed }: Props) {
               }}
               placeholder={t("Scrie un mesaj…", "Write a message…")}
               rows={1}
+              maxLength={MAX_MESSAGE_LENGTH}
               className="min-h-9 max-h-40 resize-none overflow-y-auto"
             />
             <Button
