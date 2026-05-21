@@ -478,6 +478,9 @@ const SupportChatWidget = () => {
 
   const sendMutation = useMutation({
     mutationFn: async (text: string) => {
+      if (countSpecialChars(text) > MAX_SPECIAL_CHARS) {
+        throw new Error("TOO_MANY_SPECIAL_CHARS");
+      }
       if (isAdmin) {
         return createTicketMessage(ticketId!, text, isInternal, "ADMIN");
       }
@@ -491,6 +494,19 @@ const SupportChatWidget = () => {
       });
       if (isAdmin) {
         queryClient.invalidateQueries({ queryKey: ["adminOpsInbox"] });
+      }
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg === "TOO_MANY_SPECIAL_CHARS") {
+        toast.error(
+          t(
+            `Maxim ${MAX_SPECIAL_CHARS} simboluri speciale per mesaj.`,
+            `Maximum ${MAX_SPECIAL_CHARS} special symbols per message.`,
+          ),
+        );
+      } else {
+        toast.error(t("Eroare la trimiterea mesajului.", "Failed to send message."));
       }
     },
   });
