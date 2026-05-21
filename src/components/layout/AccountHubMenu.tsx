@@ -27,6 +27,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAccountDashboard } from "@/hooks/useAccountDashboard";
+import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { useIsAdmin } from "@/hooks/queries/useAdminStats";
 import { useAdminNotificationSummary } from "@/hooks/queries/useAdminNotifications";
 import { useDrawerStats } from "@/hooks/queries/useDrawerStats";
@@ -249,6 +250,7 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
   const { user } = useAuth();
   const { t } = useLanguage();
   const { data, isLoading } = useAccountDashboard();
+  const { data: walletBalance } = useWalletBalance();
   const { data: isAdmin } = useIsAdmin(user?.id);
   const { data: drawerStats } = useDrawerStats(user?.id);
   const openTickets = drawerStats?.openTickets ?? 0;
@@ -270,7 +272,7 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
   const signals = data?.signals;
   const trust = data?.trust;
   const health = data?.health;
-  const availableBalance = drawerStats?.balance ?? signals?.availableBalance ?? 0;
+  const availableBalance = walletBalance?.available ?? signals?.availableBalance ?? drawerStats?.balance ?? 0;
 
   const totalActive =
     (signals?.activeRentalsAsOwner || 0) + (signals?.activeRentalsAsRenter || 0);
@@ -414,7 +416,7 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
             {hideBalance
               ? "••••"
               : availableBalance
-                  .toFixed(0)
+                  .toFixed(2)
                   .replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
             <span className="ml-1 text-sm font-medium text-white/70">RON</span>
           </div>

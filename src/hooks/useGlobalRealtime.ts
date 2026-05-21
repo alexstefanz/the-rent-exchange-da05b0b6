@@ -160,9 +160,9 @@ export function useGlobalRealtime(userId: string | undefined) {
             ["myRentals"],
             ["owner-rentals"],
             ["ownerRentals"],
-            ["account-dashboard"],
+            ["accountDashboard"],
             ["earnings"],
-            ["wallet-balance"],
+            ["walletBalance"],
             ...(r?.id ? [["rental", r.id], ["rental-payment-status", r.id]] : []),
           ]);
         },
@@ -178,9 +178,9 @@ export function useGlobalRealtime(userId: string | undefined) {
             ["myRentals"],
             ["owner-rentals"],
             ["ownerRentals"],
-            ["account-dashboard"],
+            ["accountDashboard"],
             ["earnings"],
-            ["wallet-balance"],
+            ["walletBalance"],
             ...(r?.id ? [["rental", r.id], ["rental-payment-status", r.id]] : []),
           ]);
         },
@@ -281,5 +281,5 @@ export function useGlobalRealtime(userId: string | undefined) {
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [userId, qc]);
+  }, [userId, qc, shown]);
 }
