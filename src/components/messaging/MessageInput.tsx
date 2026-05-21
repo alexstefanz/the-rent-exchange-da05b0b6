@@ -13,7 +13,7 @@ import {
   type PreparedAttachment,
   type UploadedAttachment,
 } from "@/lib/chatMedia";
-import { MAX_MESSAGE_LENGTH } from "@/features/messaging/messagingApi";
+import { MAX_MESSAGE_LENGTH, MAX_SPECIAL_CHARS, countSpecialChars } from "@/features/messaging/messagingApi";
 import { cn } from "@/lib/utils";
 import { containsProfanity } from "@/lib/profanityFilter";
 import { useIsBanned } from "@/hooks/useIsBanned";
@@ -87,6 +87,15 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
         t(
           "Limbajul licențios nu este permis. Conturile care încalcă această regulă pot fi suspendate.",
           "Offensive language is not allowed. Accounts that break this rule can be suspended."
+        )
+      );
+      return;
+    }
+    if (content && countSpecialChars(content) > MAX_SPECIAL_CHARS) {
+      toast.error(
+        t(
+          `Maxim ${MAX_SPECIAL_CHARS} simboluri speciale per mesaj.`,
+          `Maximum ${MAX_SPECIAL_CHARS} special symbols per message.`
         )
       );
       return;
