@@ -59,7 +59,15 @@ export async function respondToRental(rentalId: string, action: "accept" | "reje
   const { data, error } = await supabase.functions.invoke("respond-rental-request", {
     body: { rental_id: rentalId, action, reason },
   });
-  if (error) throw error;
+  if (error) {
+    try {
+      const body = await (error as any).context?.json?.();
+      if (body?.error) throw new Error(body.error);
+    } catch (_parseErr) {
+      // fall back to original error below
+    }
+    throw error;
+  }
   return data;
 }
 
