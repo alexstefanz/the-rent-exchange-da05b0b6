@@ -72,6 +72,8 @@ const PremiumBookingCard = ({
           onSelect={onSelectDate}
           fromMonth={new Date()}
           disabled={d => isBefore(d, new Date()) || isDateBooked(d, bookedDates)}
+          numberOfMonths={2}
+          fixedWeeks
           modifiers={{
             start: startDate,
             end: endDate,
@@ -85,6 +87,8 @@ const PremiumBookingCard = ({
             today: { backgroundColor: "#000", color: "#fff", borderRadius: "10px", fontWeight: 700 },
           }}
           classNames={{
+            months: "flex flex-col gap-0 w-full",
+            month: "space-y-2 w-full",
             day_selected: "!bg-[#FA8729] !text-white !rounded-[10px] !opacity-100",
             day_range_start: "!rounded-[10px]",
             day_range_end: "!rounded-[10px]",

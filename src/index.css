@@ -232,3 +232,12 @@ html, body {
 .rdp-hide-past-weeks .rdp-row:not(:has(.rdp-day:not([disabled]))) {
   display: none;
 }
+
+/* In the 2-month stacked booking calendar, hide the second month's caption
+   (June header) so the grid reads as one continuous calendar, and trim the
+   duplicate first week (May 31 – Jun 6, already present at end of May) and
+   the trailing week that spills into July. */
+.rdp-hide-past-weeks .rdp-month:nth-child(2) .rdp-caption { display: none; }
+.rdp-hide-past-weeks .rdp-month:nth-child(2) .rdp-head_row { display: none; }
+.rdp-hide-past-weeks .rdp-month:nth-child(2) .rdp-row:first-child { display: none; }
+.rdp-hide-past-weeks .rdp-month:nth-child(2) .rdp-row:last-child { display: none; }
