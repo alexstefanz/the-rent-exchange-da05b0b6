@@ -25,7 +25,6 @@ import PremiumBookingCard from "@/components/product/PremiumBookingCard";
 import MobileStickyBookingBar from "@/components/product/MobileStickyBookingBar";
 import OwnerTrustCard from "@/components/product/OwnerTrustCard";
 import ProductInfoAccordion from "@/components/product/ProductInfoAccordion";
-import RentalProtection from "@/components/product/RentalProtection";
 import SocialProofStrip from "@/components/product/SocialProofStrip";
 import LocationCard from "@/components/product/LocationCard";
 import ReviewSummaryCard from "@/components/product/ReviewSummaryCard";
@@ -354,8 +353,6 @@ const ProductDetail = () => {
                   : (product as any).included_items
               }
             />
-
-            <RentalProtection />
 
             <LocationCard address={product.pickup_address || location} city={product.location_city} />
 
