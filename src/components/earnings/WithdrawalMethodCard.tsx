@@ -98,6 +98,11 @@ export const WithdrawalMethodCard = ({ method }: { method: PayoutMethod | null }
               <p className="text-xs text-muted-foreground mt-0.5 truncate">{method.accountHolder}</p>
             )}
           </div>
+          <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" size="sm" onClick={goToAccount} className="w-full sm:w-auto">
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            {t("Adaugă", "Add")}
+          </Button>
           <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
             <AlertDialogTrigger asChild>
               <Button
@@ -131,6 +136,7 @@ export const WithdrawalMethodCard = ({ method }: { method: PayoutMethod | null }
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+          </div>
         </div>
       ) : (
         <div className="rounded-xl border-2 border-dashed border-muted-foreground/20 p-6 text-center">
