@@ -268,6 +268,7 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
   const signals = data?.signals;
   const trust = data?.trust;
   const health = data?.health;
+  const availableBalance = drawerStats?.balance ?? signals?.availableBalance ?? 0;
 
   const totalActive =
     (signals?.activeRentalsAsOwner || 0) + (signals?.activeRentalsAsRenter || 0);
@@ -369,7 +370,18 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
           </button>
         )}
 
-        <div className="rounded-2xl bg-zinc-900 text-white p-4 shadow-md">
+        <div
+          role="link"
+          tabIndex={0}
+          onClick={() => onNavigate("/castiguri")}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onNavigate("/castiguri");
+            }
+          }}
+          className="rounded-2xl bg-zinc-900 text-white p-4 shadow-md cursor-pointer transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60">
@@ -377,7 +389,10 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
               </span>
               <button
                 type="button"
-                onClick={() => setHideBalance((v) => !v)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setHideBalance((v) => !v);
+                }}
                 aria-label={
                   hideBalance
                     ? t("Afișează balanța", "Show balance")
@@ -388,18 +403,15 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
                 {hideBalance ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
               </button>
             </div>
-            <button
-              onClick={() => onNavigate("/castiguri")}
-              className="inline-flex items-center gap-1 rounded-full bg-primary hover:bg-[#F98715] text-primary-foreground px-3 py-1.5 text-xs font-semibold transition-colors"
-            >
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-xs font-semibold transition-colors group-hover:bg-primary/90">
               {t("Retrage", "Withdraw")}
               <ArrowUpRight className="h-3 w-3" />
-            </button>
+            </span>
           </div>
           <div className="mt-2 text-2xl font-bold tabular-nums">
             {hideBalance
               ? "••••"
-              : (signals?.availableBalance || 0)
+              : availableBalance
                   .toFixed(0)
                   .replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
             <span className="ml-1 text-sm font-medium text-white/70">RON</span>
