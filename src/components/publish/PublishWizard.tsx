@@ -276,7 +276,21 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       });
       setErrors(flat);
       const firstMsg = Object.values(flat)[0];
-      if (firstMsg) toast({ title: "Verifică datele", description: firstMsg, variant: "destructive" });
+      if (flat.subcategory) {
+        toast({
+          title: "Alege o subcategorie",
+          description:
+            "Te rugăm să alegi și o subcategorie din lista de mai jos înainte de a continua.",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          document
+            .getElementById("subcategory-section")
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 50);
+      } else if (firstMsg) {
+        toast({ title: "Verifică datele", description: firstMsg, variant: "destructive" });
+      }
       return false;
     }
     setErrors({});
@@ -405,7 +419,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       <main className="flex-1">
         <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-8 md:px-6 lg:grid-cols-[1fr_360px]">
           <div className="min-w-0">
-            {step === 1 && <Step1Category data={data} update={update} />}
+            {step === 1 && <Step1Category data={data} update={update} errors={errors} />}
             {step === 2 && user && (
               <Step2Details data={data} update={update} errors={errors} feePercent={feePercent} userId={user.id} />
             )}
@@ -491,9 +505,11 @@ export default PublishWizard;
 const Step1Category = ({
   data,
   update,
+  errors,
 }: {
   data: PublishFormData;
   update: <K extends keyof PublishFormData>(k: K, v: PublishFormData[K]) => void;
+  errors: Record<string, string>;
 }) => {
   const [search, setSearch] = useState("");
   const filtered = useMemo(() => {
@@ -558,7 +574,13 @@ const Step1Category = ({
       </div>
 
       {selectedCat && selectedCat.subcategories.length > 0 && (
-        <div className="mt-8 rounded-2xl border border-border bg-card p-5">
+        <div
+          id="subcategory-section"
+          className={cn(
+            "mt-8 rounded-2xl border bg-card p-5 transition-colors",
+            errors.subcategory ? "border-destructive ring-2 ring-destructive/20" : "border-border",
+          )}
+        >
           <Label className="text-sm font-semibold text-foreground">
             Subcategorie <span className="text-destructive">*</span>
           </Label>
@@ -582,6 +604,11 @@ const Step1Category = ({
               );
             })}
           </div>
+          {errors.subcategory && (
+            <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-destructive">
+              <AlertCircle className="h-4 w-4" /> {errors.subcategory}
+            </p>
+          )}
         </div>
       )}
     </div>
