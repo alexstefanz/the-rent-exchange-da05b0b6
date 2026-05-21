@@ -1,8 +1,17 @@
-import { Landmark, Pencil, Plus, ShieldCheck } from "lucide-react";
+import { useState } from "react";
+import { Landmark, Plus, ShieldCheck, Trash2, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import type { PayoutMethod } from "@/hooks/useEarnings";
 
 const maskIban = (iban: string) => {
@@ -17,8 +26,49 @@ const maskIban = (iban: string) => {
 export const WithdrawalMethodCard = ({ method }: { method: PayoutMethod | null }) => {
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const goToAccount = () => navigate("/contul-meu?section=payout");
+
+  const handleDelete = async () => {
+    if (!user) return;
+    setDeleting(true);
+    try {
+      const { data: pending, error: pendingErr } = await supabase
+        .from("withdrawal_requests" as any)
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "pending")
+        .limit(1);
+      if (pendingErr) throw pendingErr;
+      if (pending && pending.length > 0) {
+        toast.error(t(
+          "Ai o cerere de retragere în așteptare. Așteaptă procesarea ei înainte să ștergi IBAN-ul.",
+          "You have a pending withdrawal request. Wait for it to be processed before deleting your IBAN."
+        ));
+        setConfirmOpen(false);
+        return;
+      }
+      const { error } = await supabase
+        .from("profiles")
+        .update({ iban: null, account_holder: null } as any)
+        .eq("id", user.id);
+      if (error) throw error;
+      toast.success(t("IBAN șters", "IBAN deleted"));
+      setConfirmOpen(false);
+      qc.invalidateQueries({ queryKey: ["earnings"] });
+      qc.invalidateQueries({ queryKey: ["walletBalance"] });
+      qc.invalidateQueries({ queryKey: ["profile"] });
+    } catch (e: any) {
+      console.error(e);
+      toast.error(t("Nu s-a putut șterge IBAN-ul", "Could not delete IBAN"));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="rounded-2xl border bg-card p-5 sm:p-6">
@@ -48,10 +98,39 @@ export const WithdrawalMethodCard = ({ method }: { method: PayoutMethod | null }
               <p className="text-xs text-muted-foreground mt-0.5 truncate">{method.accountHolder}</p>
             )}
           </div>
-          <Button variant="outline" size="sm" onClick={goToAccount} className="w-full sm:w-auto">
-            <Pencil className="h-3.5 w-3.5 mr-1.5" />
-            {t("Editează", "Edit")}
-          </Button>
+          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full sm:w-auto text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                {t("Șterge", "Delete")}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("Șterge IBAN-ul?", "Delete IBAN?")}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t(
+                    "După ștergere nu vei mai putea solicita retrageri până când adaugi un alt IBAN.",
+                    "After deletion you won't be able to request withdrawals until you add a new IBAN."
+                  )}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleting}>{t("Anulează", "Cancel")}</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => { e.preventDefault(); handleDelete(); }}
+                  disabled={deleting}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {deleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("Se șterge...", "Deleting...")}</> : t("Șterge IBAN", "Delete IBAN")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       ) : (
         <div className="rounded-xl border-2 border-dashed border-muted-foreground/20 p-6 text-center">
