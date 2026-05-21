@@ -1029,10 +1029,7 @@ const SupportChatWidget = () => {
                       <Textarea
                         ref={messageTextareaRef}
                         value={messageText}
-                        onChange={(e) => {
-                          setMessageText(e.target.value.slice(0, MAX_MESSAGE_LENGTH));
-                          autoGrow(e.target as HTMLTextAreaElement);
-                        }}
+                        onChange={handleMessageChange}
                         maxLength={MAX_MESSAGE_LENGTH}
                         rows={1}
                         placeholder={t("Scrie mesajul tău...", "Write your message...")}
@@ -1061,6 +1058,16 @@ const SupportChatWidget = () => {
                         )}
                       </Button>
                     </div>
+                    {(messageText.length >= MAX_MESSAGE_LENGTH * 0.8 || countSpecialChars(messageText) > 0) && (
+                      <div className="flex justify-between px-3 pb-1 text-[10px] tabular-nums">
+                        <span className={countSpecialChars(messageText) >= MAX_SPECIAL_CHARS ? "text-destructive font-medium" : "text-muted-foreground"}>
+                          {countSpecialChars(messageText) > 0 ? `${t("simboluri", "symbols")}: ${countSpecialChars(messageText)}/${MAX_SPECIAL_CHARS}` : ""}
+                        </span>
+                        <span className={messageText.length >= MAX_MESSAGE_LENGTH ? "text-destructive font-medium" : "text-muted-foreground"}>
+                          {messageText.length}/{MAX_MESSAGE_LENGTH}
+                        </span>
+                      </div>
+                    )}
                     <p className="hidden lg:block text-[10px] text-muted-foreground text-center pb-2">
                       Chat Rentli
                     </p>
