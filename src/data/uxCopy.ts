@@ -355,7 +355,7 @@ const createUxCopy = () => ({
   home: {
     heroTitle: { ro: "Închiriază orice,", en: "Rent anything," },
     heroTitleHighlight: { ro: "oriunde în România", en: "anywhere in Romania" },
-     heroSubtitle: { ro: "Mii de produse verificate. Plăți sigure. Suport 24/7 zile pe săptămână.", en: "Thousands of verified items. Secure payments. 24/7 support." },
+     heroSubtitle: { ro: "Mii de produse verificate. Plăți sigure. Suport 24/7.", en: "Thousands of verified items. Secure payments. 24/7 support." },
     popularCategories: { ro: "Categorii principale", en: "Main categories" },
     featuredListings: { ro: "Populare în zona ta", en: "Popular in your area" },
     howItWorks: { ro: "Cum Funcționează", en: "How It Works" },
@@ -371,7 +371,7 @@ const createUxCopy = () => ({
     step3Desc: { ro: "Fiecare închiriere este protejată. Returnează produsul și lasă o recenzie când termini.", en: "Every rental is protected. Return the product and leave a review when you're done." },
   },
   footer: {
-     description: { ro: "Mii de produse verificate. Plăți sigure. Suport 24/7 zile pe săptămână.", en: "Thousands of verified items. Secure payments. 24/7 support." },
+     description: { ro: "Mii de produse verificate. Plăți sigure. Suport 24/7.", en: "Thousands of verified items. Secure payments. 24/7 support." },
     explore: { ro: "Explorează", en: "Explore" },
     allCategories: { ro: "Toate Categoriile", en: "All Categories" },
     searchProducts: { ro: "Caută Produse", en: "Search Products" },

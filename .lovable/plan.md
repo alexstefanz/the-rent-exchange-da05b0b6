@@ -1,28 +1,35 @@
-## Problema
+## Plan: Actualizare mesaje suport la "24/7"
 
-Funcția RPC `get_contact_info_if_in_conversation` (folosită în panoul de chat „Contact" și pentru butonul de telefon din header) deblochează numărul de telefon și emailul când:
+### Context
+Utilizatorul a cerut ca peste tot în aplicație unde apare referire la suport "7 zile pe săptămână" / "7-day support" / "7/7" să fie schimbat cu "24/7".
 
-- `payment_status IN ('authorized','paid')`, **SAU**
-- `status IN ('confirmed','active','completed')`
+### Fișiere afectate (6 locații)
 
-Asta înseamnă că de îndată ce proprietarul dă **Accept** pe cerere (status devine `confirmed`, dar `payment_status` rămâne `pending` până când chiriașul plătește), datele de contact devin deja vizibile în chat. Date reale în DB: 22 rezervări `confirmed` au `payment_status = pending`.
+1. **`src/components/home/HeroDynamic.tsx` (linia 87-88)**
+   - RO: `Suport 7 zile pe săptămână.` → `Suport 24/7.`
+   - EN: `7-day support.` → `24/7 support.`
 
-## Soluție
+2. **`src/data/uxCopy.ts` (linia 358)**
+   - RO: `Suport 24/7 zile pe săptămână.` → `Suport 24/7.` (corectează pleonasmul)
+   - EN: deja corect `24/7 support.`
 
-Actualizez funcția să deblocheze contactul **doar după ce plata este cel puțin autorizată** (cardul a fost validat / banii sunt blocați sau încasați).
+3. **`src/data/uxCopy.ts` (linia 374)**
+   - RO: `Suport 24/7 zile pe săptămână.` → `Suport 24/7.` (corectează pleonasmul)
+   - EN: deja corect `24/7 support.`
 
-Condiția nouă:
-```
-payment_status IN ('authorized', 'paid', 'captured', 'partially_refunded', 'refunded')
-```
+4. **`src/components/home/TrustBarPremium.tsx` (linia 52-55)**
+   - Valoare: `Suport Dedicat` (rămâne)
+   - Label RO: `Echipă reală 7 zile pe săptămână` → `Echipă reală 24/7`
+   - Label EN: `Real team 7 days a week` → `Real team 24/7`
 
-Nu mai folosim `status` ca cale alternativă de deblocare — există rezervări cu `status = active/completed` dar `payment_status = pending` (legacy), iar regula cerută este strict legată de plată.
+5. **`src/components/home/WhyRentli.tsx` (linia 11)**
+   - Title RO: `Suport dedicat` (rămâne)
+   - Desc RO: `Echipă reală 7 zile pe săptămână.` → `Echipă reală 24/7.`
+   - Desc EN: `Real team 7 days a week.` → `Real team 24/7.`
 
-## Migrație
+6. **`src/components/product/RentalProtection.tsx` (linia 10)**
+   - Title RO: `Suport 7/7` → `Suport 24/7`
+   - Title EN: `7-day support` → `24/7 support`
 
-`CREATE OR REPLACE FUNCTION public.get_contact_info_if_in_conversation(owner_uuid uuid)` cu noul `WHERE` care cere existența unei rezervări între cei doi cu `payment_status` în lista de mai sus. Restul (semnătura, `SECURITY DEFINER`, `search_path`) rămân identice, deci frontendul (ChatPanel, InfoPanel) nu necesită modificări.
-
-## Efect vizibil
-
-- Înainte de plată: tab-ul „Contact" din chat afișează „Datele de contact vor fi vizibile după plată." și butonul de apel din header nu mai apare.
-- După ce chiriașul plătește (`authorized`/`captured`/`paid`): contactul devine vizibil normal, în ambele sensuri (proprietar ↔ chiriaș).
+### Notă
+Nu sunt afectate mențiunile "1-7 zile" din `supportFaq.ts` (termeni de rambursare Stripe) sau "weeks (7 days)" din `rentalPricing.ts` (logică de calcul durată), deoarece acestea nu se referă la suportul clienți.
