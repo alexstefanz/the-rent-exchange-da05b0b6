@@ -1,17 +1,47 @@
-## Plan: Elimin blocul „Câștig estimat" din pasul 5
+## Plan: KYC status în timp real (fără refresh)
 
-### Fix — `src/components/publish/PublishWizard.tsx` (liniile 1222–1228)
+### Problemă
+`KycInlineFlow` (folosit în pagina `/verificare` și inline pe alte pagini) încarcă o singură dată `kyc_cases` într-un state local cu `useEffect`. Când adminul aprobă/respinge dosarul:
+- `useKycGate` se actualizează în realtime (subscriere pe `profiles`),
+- DAR `KycInlineFlow` continuă să afișeze ecranul vechi (ex: „Documente trimise") până la refresh, pentru că nimic nu re-citește `kyc_cases`.
 
-Șterg cardul:
+Realtime trebuie adăugat și pe `kyc_cases` pentru userul curent.
+
+### Fix — `src/components/kyc/KycInlineFlow.tsx`
+
+1. **Extrag `load()` în afara `useEffect`** într-un callback `refreshKycCase` (folosind `useCallback`) ca să poată fi reapelat.
+
+2. **Adaug o subscriere realtime pe `kyc_cases`** filtrată după `user_id=eq.${user.id}`, ascultând `event: "*"` (INSERT/UPDATE/DELETE). La orice eveniment → re-rulez `refreshKycCase()` + invalidez `kycGate` în React Query.
+
 ```tsx
-<div className="rounded-2xl border border-border bg-card p-5">
-  <p ...>Câștig estimat</p>
-  <p ...>~{monthlyEstimate} RON / lună</p>
-  <p ...>La 8 zile închiriate, fără comisioane suplimentare. Plata e săptămânală în contul tău.</p>
-</div>
+useEffect(() => {
+  if (!user?.id) return;
+  const channel = supabase
+    .channel(`kyc-cases-${user.id}`)
+    .on("postgres_changes", {
+      event: "*",
+      schema: "public",
+      table: "kyc_cases",
+      filter: `user_id=eq.${user.id}`,
+    }, () => {
+      refreshKycCase();
+      queryClient.invalidateQueries({ queryKey: ["kycGate", user.id] });
+    })
+    .subscribe();
+  return () => { supabase.removeChannel(channel); };
+}, [user?.id, queryClient, refreshKycCase]);
 ```
 
-Rămâne `QualityScoreCard` + lista `ReviewRow`-uri. Dacă `monthlyEstimate` nu mai e folosit nicăieri, șterg și calculul/variabila respectivă pentru a evita warning-uri de lint.
+3. **Activez realtime pe tabela `kyc_cases`** prin migrare SQL:
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE public.kyc_cases;
+ALTER TABLE public.kyc_cases REPLICA IDENTITY FULL;
+```
+(verific întâi dacă nu e deja adăugată).
+
+### Efect
+- Imediat ce adminul aprobă/respinge un dosar, ecranul utilizatorului din `/verificare` și badge-urile din alte pagini (`useKycGate` deja are realtime pe `profiles`) trec automat în noua stare, fără refresh manual.
 
 ### Ce nu modific
-Restul pasului 5 (header, calitate, review rows, footer).
+- Logica de upload documente, fluxul de aprobare admin, RLS-ul existent.
+- `useKycGate` rămâne neschimbat (deja are realtime pe `profiles`).
