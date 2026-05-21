@@ -1,50 +1,35 @@
 ## Problem
+Pe pagina `/inchirieri/:id` butonul „Discută cu proprietarul / chiriașul” apare doar după ce plata este autorizată (`isPaidEarly`). Înainte de plată secțiunea de chat dispare complet, deși utilizatorii au nevoie să comunice și înainte (ex: clarificări înainte de a plăti).
 
-În panoul de chat (tab „Contact" din `InfoPanel`), telefonul și emailul peer-ului apar imediat ce există o conversație. RPC-ul `get_contact_info_if_in_conversation` returnează datele bazându-se DOAR pe existența unei conversații, nu pe o plată efectivă. Conform regulii `gated-contact-flow-v2`, contactul trebuie deblocat doar după plată (booking confirmat).
+Datele de contact în chat sunt deja restricționate la nivel de RPC (`get_contact_info_if_in_conversation` — doar după `payment_status` authorized/paid sau `status` confirmed/active/completed), iar placeholder-ul din `InfoPanel` afișează „Datele de contact vor fi vizibile după plată.” Nu e nevoie de modificări suplimentare aici.
 
 ## Plan
 
-### 1. Migrație DB — restrânge RPC-ul existent
+### `src/pages/RentalDetailPage.tsx`
+Elimin gating-ul `isPaidEarly` de pe secțiunea de chat CTA (linia 475), astfel încât butonul să fie vizibil în orice stare a închirierii, mai puțin după finalizare (unde e înlocuit de Review CTA) și după anulare/respingere.
 
-Înlocuiesc `public.get_contact_info_if_in_conversation(owner_uuid)` astfel încât să returneze contactul doar dacă există o închiriere între `auth.uid()` și `owner_uuid` (în orice direcție) cu plata efectuată / autorizată sau cu status avansat:
-
-- `payment_status IN ('authorized', 'paid')`, SAU
-- `status IN ('confirmed', 'active', 'completed')`
-
-În plus, `auth.uid() = owner_uuid` rămâne (utilizatorul își vede propriile date).
-
-```sql
-CREATE OR REPLACE FUNCTION public.get_contact_info_if_in_conversation(owner_uuid uuid)
-RETURNS TABLE(full_name text, phone text, email text, avatar_url text)
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public'
-AS $$
-  SELECT p.full_name, p.phone, p.email, p.avatar_url
-  FROM profiles p
-  WHERE p.id = owner_uuid
-  AND (
-    auth.uid() = owner_uuid
-    OR EXISTS (
-      SELECT 1 FROM rentals r
-      WHERE ((r.owner_id = owner_uuid AND r.renter_id = auth.uid())
-          OR (r.renter_id = owner_uuid AND r.owner_id = auth.uid()))
-        AND (
-          r.payment_status IN ('authorized','paid')
-          OR r.status IN ('confirmed','active','completed')
-        )
-    )
-  );
-$$;
+Condiție nouă:
+```ts
+{rental.status !== "completed" 
+  && rental.status !== "cancelled" 
+  && rental.status !== "rejected" 
+  && (
+    <section ...> ... </section>
+)}
 ```
 
-### 2. UI — `src/components/messaging/InfoPanel.tsx`
+Pentru stările pre-plată adaug un subtext contextual:
+- Dacă `!isPaidEarly`: „Poți discuta cu proprietarul și înainte de plată. Datele de contact devin vizibile după ce plata este efectuată.”
+- Dacă `isPaidEarly`: textul actual „Coordonati predarea, locatia si detaliile direct in chat.”
 
-Actualizez placeholderul din tab-ul „Contact" la textul cerut:
-- RO: „Datele de contact vor fi vizibile după plată."
-- EN: „Contact info will be visible after payment."
+Restul logicii (`handleChat`, `getOrCreateRentalConversation`, navigare către `/mesaje?conv=...`) rămâne neschimbat.
 
-Restul logicii rămâne (când RPC-ul nu returnează nimic, se afișează placeholderul; după plată, RPC-ul va întoarce telefonul/emailul și se afișează cardurile cu `tel:` / `mailto:`).
+### Verificare contact info în chat
+Deja implementat anterior:
+- RPC `get_contact_info_if_in_conversation` returnează contact doar pentru rentale plătite/active.
+- `InfoPanel.tsx` tab „Contact” arată placeholder-ul „Datele de contact vor fi vizibile după plată.” când RPC nu returnează nimic.
 
-### Note
+Nu sunt necesare modificări suplimentare în chat.
 
-- Nu modific UI-ul altor pagini (cardul de proprietar de pe pagina produs are deja gating-ul corect, conform memoriei).
-- Nu ating logica pentru self (utilizatorul își vede întotdeauna datele proprii).
+## Files
+- `src/pages/RentalDetailPage.tsx` — relaxat condiția de afișare a secțiunii Chat CTA + subtext condiționat de starea plății.
