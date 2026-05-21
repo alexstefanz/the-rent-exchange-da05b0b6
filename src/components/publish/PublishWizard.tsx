@@ -419,7 +419,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       <main className="flex-1">
         <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-8 md:px-6 lg:grid-cols-[1fr_360px]">
           <div className="min-w-0">
-            {step === 1 && <Step1Category data={data} update={update} />}
+            {step === 1 && <Step1Category data={data} update={update} errors={errors} />}
             {step === 2 && user && (
               <Step2Details data={data} update={update} errors={errors} feePercent={feePercent} userId={user.id} />
             )}
