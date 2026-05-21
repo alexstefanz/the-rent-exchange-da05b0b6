@@ -59,7 +59,7 @@ import {
   updateOpsTicketField,
   type OpsTicket as AdminOpsTicket,
 } from "@/features/admin/opsTicketsApi";
-import { MAX_MESSAGE_LENGTH, MAX_SPECIAL_CHARS, countSpecialChars } from "@/features/messaging/messagingApi";
+import { MAX_MESSAGE_LENGTH, MAX_SPECIAL_CHARS, countSpecialChars, clampChatInput } from "@/features/messaging/messagingApi";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ro as roLocale, enUS } from "date-fns/locale";
