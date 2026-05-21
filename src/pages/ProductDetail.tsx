@@ -354,8 +354,6 @@ const ProductDetail = () => {
               }
             />
 
-            <RentalProtection />
-
             <LocationCard address={product.pickup_address || location} city={product.location_city} />
 
             <ReviewSummaryCard productId={product.id} />
