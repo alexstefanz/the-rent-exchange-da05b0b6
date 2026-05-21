@@ -74,11 +74,15 @@ const RentalsOutTab = () => {
   const filtered = useMemo(() => sortRentals(rentals.filter(matchesStatus)), [rentals, statusFilter, sortBy]);
 
   const FINALIZED = new Set(["completed", "cancelled", "rejected"]);
+  const isFinalized = (r: OwnerRental) =>
+    FINALIZED.has(r.status) ||
+    !!r.return_confirmed_at ||
+    (!!r.return_pv_owner_signed_at && !!r.return_pv_renter_signed_at);
   const pendingRentals = filtered.filter(r => r.status === "pending");
   const premiumActiveRentals = filtered.filter(
-    r => r.status !== "pending" && !FINALIZED.has(r.status)
+    r => r.status !== "pending" && !isFinalized(r)
   );
-  const historyRentals = filtered.filter(r => FINALIZED.has(r.status));
+  const historyRentals = filtered.filter(isFinalized);
 
   const handleAccept = async (rental: OwnerRental) => {
     setRespondingId(rental.id);
