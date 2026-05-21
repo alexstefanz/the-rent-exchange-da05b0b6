@@ -303,6 +303,21 @@ const ProductDetail = () => {
           </div>
         </div>
 
+        {/* Title block mobile/tablet — appears above booking card */}
+        <div className="lg:hidden mb-5">
+          <h1 className="font-heading text-2xl font-semibold text-foreground">{displayTitle}</h1>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+            <MapPin className="h-4 w-4 text-primary" />{location}
+          </div>
+          <div className="mt-3">
+            <SocialProofStrip
+              timesRented={extendedStats?.times_rented}
+              watchersCount={extendedStats?.watchers_count}
+              lastBookingAt={extendedStats?.last_booking_at}
+            />
+          </div>
+        </div>
+
         <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start">
           <div className="space-y-5 order-2 lg:order-1">
             <ProductImageGallery
@@ -313,20 +328,6 @@ const ProductDetail = () => {
               onToggleFavorite={handleToggleFavorite}
               onOpenLightbox={openLightbox}
             />
-
-            <div className="lg:hidden">
-              <h1 className="font-heading text-2xl font-semibold text-foreground">{displayTitle}</h1>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                <MapPin className="h-4 w-4 text-primary" />{location}
-              </div>
-              <div className="mt-3">
-                <SocialProofStrip
-                  timesRented={extendedStats?.times_rented}
-                  watchersCount={extendedStats?.watchers_count}
-                  lastBookingAt={extendedStats?.last_booking_at}
-                />
-              </div>
-            </div>
 
             <OwnerTrustCard
               ownerId={product.owner_id}
