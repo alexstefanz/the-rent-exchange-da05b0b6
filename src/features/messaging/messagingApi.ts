@@ -69,6 +69,25 @@ export async function getOrCreateConversation(productId: string, ownerId: string
     return null;
   }
 
+  // Best-effort: insert a system "product inquiry" card so the owner
+  // immediately sees which product the new organic conversation is about.
+  try {
+    const { data: prod } = await supabase
+      .from('products')
+      .select('title')
+      .eq('id', productId)
+      .maybeSingle();
+    const title = (prod?.title ?? 'Produs').replace(/\|/g, '/');
+    await supabase.from('messages').insert({
+      conversation_id: (newConv as Conversation).id,
+      sender_id: null,
+      message_type: 'system',
+      content: `product_inquiry|${title}`,
+    });
+  } catch (e) {
+    console.warn('product_inquiry system message insert failed', e);
+  }
+
   return newConv as Conversation;
 }
 

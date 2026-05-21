@@ -9,6 +9,7 @@ import {
   Package,
   RotateCcw,
   ThumbsUp,
+  MessageCircleQuestion,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -40,6 +41,11 @@ interface ParsedTimeline {
 }
 
 type ParsedSystem = ParsedTimeline | { kind: "raw"; text: string };
+
+interface ParsedInquiry {
+  kind: "product_inquiry";
+  productTitle: string;
+}
 
 const TIMELINE_KINDS: TimelineKind[] = [
   "booking_confirmed",
