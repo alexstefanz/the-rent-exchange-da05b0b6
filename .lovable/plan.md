@@ -1,28 +1,17 @@
-## Plan: Buton X pentru închidere pe popup-ul "Ai un anunț nesalvat"
+## Plan: Elimin blocul „Câștig estimat" din pasul 5
 
-### Fix — `src/components/publish/PublishWizard.tsx` (în jurul liniei 463)
+### Fix — `src/components/publish/PublishWizard.tsx` (liniile 1222–1228)
 
-Adaug un buton X absolut poziționat în colțul dreapta-sus al `AlertDialogContent`. Click pe X = închide popup-ul fără a șterge draftul (echivalent „mai decid mai târziu") prin `setPendingDraft(null)`.
-
+Șterg cardul:
 ```tsx
-<AlertDialogContent className="relative">
-  <button
-    type="button"
-    onClick={() => setPendingDraft(null)}
-    aria-label="Închide"
-    className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-  >
-    <X className="h-4 w-4" />
-  </button>
-  ...
+<div className="rounded-2xl border border-border bg-card p-5">
+  <p ...>Câștig estimat</p>
+  <p ...>~{monthlyEstimate} RON / lună</p>
+  <p ...>La 8 zile închiriate, fără comisioane suplimentare. Plata e săptămânală în contul tău.</p>
+</div>
 ```
 
-`X` e deja exportat din `lucide-react` (folosit în restul fișierului — verific la import; dacă lipsește îl adaug în lista existentă).
-
-### Comportament
-- Continuă draftul → restaurează (neschimbat)
-- Începe anunț nou → șterge draft (neschimbat)
-- **X (nou)** → doar închide popup-ul; draftul rămâne în DB și va apărea din nou la următoarea vizită
+Rămâne `QualityScoreCard` + lista `ReviewRow`-uri. Dacă `monthlyEstimate` nu mai e folosit nicăieri, șterg și calculul/variabila respectivă pentru a evita warning-uri de lint.
 
 ### Ce nu modific
-- Logica de salvare/ștergere draft, restul wizard-ului.
+Restul pasului 5 (header, calitate, review rows, footer).
