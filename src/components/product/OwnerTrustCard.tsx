@@ -67,13 +67,6 @@ const OwnerTrustCard = ({ ownerName, ownerAvatar, stats }: Props) => {
           </p>
         </div>
       </div>
-
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <Stat icon={TrendingUp} value={`${totalRentals}`} label={t("închirieri", "rentals")} />
-        <Stat icon={Clock} value={respLabel} label={t("timp răspuns", "response time")} />
-        <Stat icon={MessageCircle} value={respRate} label={t("rată răspuns", "response rate")} />
-        <Stat icon={Calendar} value={memberSince} label={t("din", "since")} />
-      </div>
     </div>
   );
 };
