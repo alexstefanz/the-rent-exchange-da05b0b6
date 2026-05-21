@@ -45,6 +45,10 @@ import { template as rentalCompletedOwner } from './rental-completed-owner.tsx'
 import { template as rentalCompletedRenter } from './rental-completed-renter.tsx'
 import { template as reviewReminder } from './review-reminder.tsx'
 import { template as disputeOpened } from './dispute-opened.tsx'
+import { template as requestReminder2hOwner } from './request-reminder-2h-owner.tsx'
+import { template as requestReminder2hRenter } from './request-reminder-2h-renter.tsx'
+import { template as requestExpiredOwner } from './request-expired-owner.tsx'
+import { template as requestExpiredRenter } from './request-expired-renter.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'welcome': welcomeEmail,
@@ -83,4 +87,8 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'rental-completed-renter': rentalCompletedRenter,
   'review-reminder': reviewReminder,
   'dispute-opened': disputeOpened,
+  'request-reminder-2h-owner': requestReminder2hOwner,
+  'request-reminder-2h-renter': requestReminder2hRenter,
+  'request-expired-owner': requestExpiredOwner,
+  'request-expired-renter': requestExpiredRenter,
 }
