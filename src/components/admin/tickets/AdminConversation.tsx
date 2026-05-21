@@ -10,6 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTicketMessages, useTicketAttachments } from "@/hooks/queries/useOpsTickets";
 import { createTicketMessage, uploadTicketAttachment } from "@/features/admin/opsTicketsApi";
 import type { OpsTicket, OpsTicketMessage } from "@/features/admin/opsTicketsApi";
+import { MAX_MESSAGE_LENGTH, MAX_SPECIAL_CHARS, countSpecialChars } from "@/features/messaging/messagingApi";
 
 const dayLabel = (d: Date) => {
   if (isToday(d)) return "Astăzi";
@@ -41,7 +42,16 @@ export function AdminConversation({ ticket, onAiAssist, draftReply, setDraftRepl
   const isClosed = ticket.status === "CLOSED";
 
   const send = async () => {
-    if (!draftReply.trim()) return;
+    const trimmed = draftReply.trim();
+    if (!trimmed) return;
+    if (trimmed.length > MAX_MESSAGE_LENGTH) {
+      toast.error(`Maxim ${MAX_MESSAGE_LENGTH} caractere.`);
+      return;
+    }
+    if (countSpecialChars(trimmed) > MAX_SPECIAL_CHARS) {
+      toast.error(`Maxim ${MAX_SPECIAL_CHARS} simboluri speciale per mesaj.`);
+      return;
+    }
     setSending(true);
     try {
       await createTicketMessage(ticket.id, draftReply, isInternal);
@@ -216,7 +226,8 @@ export function AdminConversation({ ticket, onAiAssist, draftReply, setDraftRepl
           </div>
           <Textarea
             value={draftReply}
-            onChange={(e) => setDraftReply(e.target.value)}
+            onChange={(e) => setDraftReply(e.target.value.slice(0, MAX_MESSAGE_LENGTH))}
+            maxLength={MAX_MESSAGE_LENGTH}
             placeholder={isInternal ? "Notă internă (vizibilă doar admin)…" : "Răspunde clientului…"}
             rows={3}
             className="resize-none text-sm"
@@ -224,6 +235,28 @@ export function AdminConversation({ ticket, onAiAssist, draftReply, setDraftRepl
               if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); }
             }}
           />
+          {(draftReply.length >= MAX_MESSAGE_LENGTH * 0.8 || countSpecialChars(draftReply) > 0) && (
+            <div className="flex items-center justify-between text-[10px] tabular-nums">
+              <span className={cn(
+                countSpecialChars(draftReply) >= MAX_SPECIAL_CHARS
+                  ? "text-destructive font-medium"
+                  : countSpecialChars(draftReply) >= MAX_SPECIAL_CHARS * 0.8
+                  ? "text-primary"
+                  : "text-muted-foreground"
+              )}>
+                simboluri: {countSpecialChars(draftReply)}/{MAX_SPECIAL_CHARS}
+              </span>
+              <span className={cn(
+                draftReply.length >= MAX_MESSAGE_LENGTH
+                  ? "text-destructive font-medium"
+                  : draftReply.length >= MAX_MESSAGE_LENGTH * 0.9
+                  ? "text-primary"
+                  : "text-muted-foreground"
+              )}>
+                {draftReply.length}/{MAX_MESSAGE_LENGTH}
+              </span>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <label className="cursor-pointer flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
               <input type="file" className="hidden" onChange={onFile} />
@@ -231,7 +264,16 @@ export function AdminConversation({ ticket, onAiAssist, draftReply, setDraftRepl
             </label>
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-muted-foreground hidden sm:inline">⌘+Enter</span>
-              <Button size="sm" onClick={send} disabled={sending || !draftReply.trim()}>
+              <Button
+                size="sm"
+                onClick={send}
+                disabled={
+                  sending ||
+                  !draftReply.trim() ||
+                  draftReply.length > MAX_MESSAGE_LENGTH ||
+                  countSpecialChars(draftReply) > MAX_SPECIAL_CHARS
+                }
+              >
                 {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Send className="h-3.5 w-3.5 mr-1" />}
                 Trimite
               </Button>
