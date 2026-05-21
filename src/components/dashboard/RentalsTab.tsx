@@ -38,6 +38,8 @@ interface MyRental {
   return_confirmed_at: string | null;
   message_to_owner: string | null;
   created_at: string | null;
+  return_pv_owner_signed_at: string | null;
+  return_pv_renter_signed_at: string | null;
 }
 
 const fetchMyRentals = async (userId: string): Promise<MyRental[]> => {
@@ -59,6 +61,19 @@ const fetchMyRentals = async (userId: string): Promise<MyRental[]> => {
     ownerMap = Object.fromEntries((profiles || []).map((p: any) => [p.id, p.full_name || "Proprietar"]));
   }
 
+  // Fetch return-phase PV signatures so we can move "Finalizat" rentals to history
+  // even when the rental status hasn't yet transitioned to "completed".
+  const rentalIds = (data || []).map((r: any) => r.id);
+  let pvMap: Record<string, { owner: string | null; renter: string | null }> = {};
+  if (rentalIds.length > 0) {
+    const { data: pvs } = await supabase
+      .from("rental_pv_documents")
+      .select("rental_id, owner_signed_at, renter_signed_at")
+      .eq("phase", "return")
+      .in("rental_id", rentalIds);
+    pvMap = Object.fromEntries((pvs || []).map((p: any) => [p.rental_id, { owner: p.owner_signed_at, renter: p.renter_signed_at }]));
+  }
+
   return (data || []).map((r: any) => ({
     id: r.id,
     public_id: r.public_id,
@@ -77,6 +92,8 @@ const fetchMyRentals = async (userId: string): Promise<MyRental[]> => {
     return_confirmed_at: r.return_confirmed_at,
     message_to_owner: r.message_to_owner,
     created_at: r.created_at,
+    return_pv_owner_signed_at: pvMap[r.id]?.owner ?? null,
+    return_pv_renter_signed_at: pvMap[r.id]?.renter ?? null,
   }));
 };
 
@@ -132,7 +149,11 @@ const RentalsTab = () => {
   const filtered = useMemo(() => sortRentals(rentals.filter(matchesStatus)), [rentals, statusFilter, sortBy]);
 
   const FINALIZED = new Set(["completed", "cancelled", "rejected"]);
-  const isPremium = (r: MyRental) => !FINALIZED.has(r.status);
+  const isFinalized = (r: MyRental) =>
+    FINALIZED.has(r.status) ||
+    !!r.return_confirmed_at ||
+    (!!r.return_pv_owner_signed_at && !!r.return_pv_renter_signed_at);
+  const isPremium = (r: MyRental) => !isFinalized(r);
   // Keep the filtered sort order (default: newest first) so the most recent rental
   // always shows up as the first card, regardless of status.
   const premiumRentals = filtered.filter(isPremium);

@@ -27,6 +27,8 @@ export interface OwnerRental {
   pickup_agreed_at?: string | null;
   rejection_reason?: string | null;
   message_to_owner?: string | null;
+  return_pv_owner_signed_at?: string | null;
+  return_pv_renter_signed_at?: string | null;
 }
 
 export async function getOwnerRentals(ownerId: string): Promise<OwnerRental[]> {
@@ -35,7 +37,22 @@ export async function getOwnerRentals(ownerId: string): Promise<OwnerRental[]> {
   });
 
   if (error) throw error;
-  return (data || []) as OwnerRental[];
+  const rentals = (data || []) as OwnerRental[];
+  const ids = rentals.map((r) => r.id);
+  if (ids.length > 0) {
+    const { data: pvs } = await supabase
+      .from("rental_pv_documents")
+      .select("rental_id, owner_signed_at, renter_signed_at")
+      .eq("phase", "return")
+      .in("rental_id", ids);
+    const pvMap: Record<string, { owner: string | null; renter: string | null }> =
+      Object.fromEntries((pvs || []).map((p: any) => [p.rental_id, { owner: p.owner_signed_at, renter: p.renter_signed_at }]));
+    for (const r of rentals) {
+      r.return_pv_owner_signed_at = pvMap[r.id]?.owner ?? null;
+      r.return_pv_renter_signed_at = pvMap[r.id]?.renter ?? null;
+    }
+  }
+  return rentals;
 }
 
 export async function respondToRental(rentalId: string, action: "accept" | "reject", reason?: string) {
