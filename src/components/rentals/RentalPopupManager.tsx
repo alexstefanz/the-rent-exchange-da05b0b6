@@ -86,6 +86,19 @@ export default function RentalPopupManager() {
       )
       .on(
         "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "rentals", filter: `owner_id=eq.${user.id}` },
+        (payload: any) => {
+          const row = payload.new;
+          // If a rental we may be displaying is no longer pending (renter cancelled,
+          // or owner responded from another tab/device), remove it from the queue
+          // so it can't be accepted from a stale popup.
+          if (row?.id && row.status !== "pending") {
+            removeItem(row.id);
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
         { event: "UPDATE", schema: "public", table: "rentals", filter: `renter_id=eq.${user.id}` },
         async (payload: any) => {
           const row = payload.new;
@@ -135,7 +148,14 @@ export default function RentalPopupManager() {
         window.open(url, "_blank", "noopener,noreferrer");
       }
     } catch (e: any) {
-      toast.error(e?.message || "Eroare la confirmare");
+      const raw = String(e?.message || "");
+      if (raw.includes("not pending") || raw.includes("non-2xx") || raw.includes("not found")) {
+        toast.error("Cererea nu mai este disponibilă (a fost anulată sau procesată).");
+        removeItem(current.id);
+        invalidate();
+      } else {
+        toast.error(raw || "Eroare la confirmare");
+      }
     }
   };
 
@@ -146,7 +166,14 @@ export default function RentalPopupManager() {
       invalidate();
       removeItem(current.id);
     } catch (e: any) {
-      toast.error(e?.message || "Eroare la refuz");
+      const raw = String(e?.message || "");
+      if (raw.includes("not pending") || raw.includes("non-2xx") || raw.includes("not found")) {
+        toast.error("Cererea nu mai este disponibilă (a fost anulată sau procesată).");
+        removeItem(current.id);
+        invalidate();
+      } else {
+        toast.error(raw || "Eroare la refuz");
+      }
     }
   };
 
