@@ -48,8 +48,8 @@ const MobileBottomNav = () => {
             >
               <div className="relative">
                 {tab.highlight ? (
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center -mt-3 shadow-md ${isDisabled ? "bg-muted" : "bg-[#F98715]"}`}>
-                    {isDisabled ? <Ban className="h-5 w-5 text-destructive" strokeWidth={2.5} /> : <tab.icon className="h-6 w-6 text-white" />}
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shadow-sm ${isDisabled ? "bg-muted" : "bg-[#F98715]"}`}>
+                    {isDisabled ? <Ban className="h-4 w-4 text-destructive" strokeWidth={2.5} /> : <tab.icon className="h-4 w-4 text-white" />}
                   </div>
                 ) : (
                   <>
