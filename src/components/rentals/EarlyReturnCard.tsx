@@ -40,6 +40,8 @@ interface EarlyReturnState {
 }
 
 export default function EarlyReturnCard({ rentalId, role, startDate, endDate, dailyPrice, subtotal, onOpenChat, t }: Props) {
+  // TEMPORAR: optiunea de returnare anticipata este dezactivata
+  return null;
   const qc = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
