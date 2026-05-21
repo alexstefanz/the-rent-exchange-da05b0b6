@@ -126,8 +126,8 @@ const PremiumBookingCard = ({
         </div>
       )}
 
-      {/* CTA */}
-      <div className="border-t border-border bg-card p-4 space-y-2">
+      {/* CTA — hidden on mobile/tablet since sticky bar covers it */}
+      <div className="border-t border-border bg-card p-4 space-y-2 hidden lg:block">
         <Button
           className="w-full h-12 text-base font-semibold transition-all hover:shadow-lg hover:-translate-y-0.5"
           size="lg"
