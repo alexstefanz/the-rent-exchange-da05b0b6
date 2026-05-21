@@ -248,8 +248,8 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, classN
             {!contact || (!contact.phone && !contact.email) ? (
               <p className="text-xs text-muted-foreground">
                 {t(
-                  "Datele de contact devin vizibile după o rezervare confirmată.",
-                  "Contact info becomes visible after a confirmed booking."
+                  "Datele de contact vor fi vizibile după plată.",
+                  "Contact info will be visible after payment."
                 )}
               </p>
             ) : (
