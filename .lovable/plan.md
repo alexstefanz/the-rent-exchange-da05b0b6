@@ -1,24 +1,50 @@
+## Problem
+
+În panoul de chat (tab „Contact" din `InfoPanel`), telefonul și emailul peer-ului apar imediat ce există o conversație. RPC-ul `get_contact_info_if_in_conversation` returnează datele bazându-se DOAR pe existența unei conversații, nu pe o plată efectivă. Conform regulii `gated-contact-flow-v2`, contactul trebuie deblocat doar după plată (booking confirmat).
+
 ## Plan
 
-Cauza: RNT-000053 are status `active` în DB, dar timeline-ul îl afișează „Finalizat" pentru că ambele semnături PV de retur sunt prezente (`rental_pv_documents.phase='return'`, owner_signed_at și renter_signed_at). Tranziția în `status='completed'` se face server-side doar prin `confirmReturn`, care capturează plata — deci o închiriere poate rămâne `active` deși vizual e „Finalizat".
+### 1. Migrație DB — restrânge RPC-ul existent
 
-Voi alinia logica de „istoric" cu timeline-ul: o închiriere e considerată finalizată dacă:
-- `status` ∈ {`completed`, `cancelled`, `rejected`}, SAU
-- ambele semnături din PV-ul de retur există (echivalentul pasului 6 „Finalizat" din timeline).
+Înlocuiesc `public.get_contact_info_if_in_conversation(owner_uuid)` astfel încât să returneze contactul doar dacă există o închiriere între `auth.uid()` și `owner_uuid` (în orice direcție) cu plata efectuată / autorizată sau cu status avansat:
 
-### Modificări
+- `payment_status IN ('authorized', 'paid')`, SAU
+- `status IN ('confirmed', 'active', 'completed')`
 
-1. **`src/components/dashboard/RentalsTab.tsx`** (chiriaș)
-   - Extind `fetchMyRentals` cu un al doilea query către `rental_pv_documents` filtrat pe `phase='return'` și rental_id-urile încărcate, ca să adaug pe fiecare `MyRental` câmpurile `return_pv_owner_signed_at` și `return_pv_renter_signed_at`.
-   - `isFinalized(r)` = status finalizat SAU ambele semnături retur prezente.
-   - `isPremium = !isFinalized`. `historyRentals = filtered.filter(isFinalized)`.
+În plus, `auth.uid() = owner_uuid` rămâne (utilizatorul își vede propriile date).
 
-2. **`src/components/dashboard/RentalsOutTab.tsx`** (proprietar)
-   - Aceeași abordare: în `getOwnerRentals` (sau imediat după apel, în componentă) adaug un fetch suplimentar din `rental_pv_documents` pentru rental_id-urile primite, pentru `phase='return'`.
-   - Atașez flag-urile pe fiecare `OwnerRental` (extind interface-ul cu câmpuri opționale).
-   - Aplic exact aceeași regulă `isFinalized` pentru a separa `pendingRentals` / `premiumActiveRentals` de `historyRentals`.
+```sql
+CREATE OR REPLACE FUNCTION public.get_contact_info_if_in_conversation(owner_uuid uuid)
+RETURNS TABLE(full_name text, phone text, email text, avatar_url text)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public'
+AS $$
+  SELECT p.full_name, p.phone, p.email, p.avatar_url
+  FROM profiles p
+  WHERE p.id = owner_uuid
+  AND (
+    auth.uid() = owner_uuid
+    OR EXISTS (
+      SELECT 1 FROM rentals r
+      WHERE ((r.owner_id = owner_uuid AND r.renter_id = auth.uid())
+          OR (r.renter_id = owner_uuid AND r.owner_id = auth.uid()))
+        AND (
+          r.payment_status IN ('authorized','paid')
+          OR r.status IN ('confirmed','active','completed')
+        )
+    )
+  );
+$$;
+```
 
-3. **Realtime**: hook-ul `useRentalRealtime` deja invalidează lista la schimbări pe `rentals`. Pentru a reflecta și semnarea PV-ului de retur fără refresh, voi invalida lista și când se actualizează `rental_pv_documents` — verific dacă hook-ul ascultă deja această tabelă; dacă nu, adaug un canal local în cele două tab-uri.
+### 2. UI — `src/components/messaging/InfoPanel.tsx`
 
-### Notă
-Nu modific backend-ul (status `completed` se setează tot prin `confirmReturn` la capturarea plății). Schimbarea e strict UI: mut rezervările „Finalizat" din lista activă în dropdown-ul „Istoric închirieri".
+Actualizez placeholderul din tab-ul „Contact" la textul cerut:
+- RO: „Datele de contact vor fi vizibile după plată."
+- EN: „Contact info will be visible after payment."
+
+Restul logicii rămâne (când RPC-ul nu returnează nimic, se afișează placeholderul; după plată, RPC-ul va întoarce telefonul/emailul și se afișează cardurile cu `tel:` / `mailto:`).
+
+### Note
+
+- Nu modific UI-ul altor pagini (cardul de proprietar de pe pagina produs are deja gating-ul corect, conform memoriei).
+- Nu ating logica pentru self (utilizatorul își vede întotdeauna datele proprii).
