@@ -40,12 +40,10 @@ interface ParsedTimeline {
   total: string;
 }
 
-type ParsedSystem = ParsedTimeline | { kind: "raw"; text: string };
-
-interface ParsedInquiry {
-  kind: "product_inquiry";
-  productTitle: string;
-}
+type ParsedSystem =
+  | ParsedTimeline
+  | { kind: "product_inquiry"; productTitle: string }
+  | { kind: "raw"; text: string };
 
 const TIMELINE_KINDS: TimelineKind[] = [
   "booking_confirmed",
@@ -61,6 +59,12 @@ const TIMELINE_KINDS: TimelineKind[] = [
 function parseContent(content: string): ParsedSystem {
   const parts = content.split("|");
   const head = parts[0] as TimelineKind;
+  if (head === ("product_inquiry" as unknown as TimelineKind)) {
+    return {
+      kind: "product_inquiry",
+      productTitle: parts[1] || "Produs",
+    };
+  }
   if (!TIMELINE_KINDS.includes(head)) {
     return { kind: "raw", text: content };
   }
