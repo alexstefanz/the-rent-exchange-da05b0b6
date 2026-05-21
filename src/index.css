@@ -234,11 +234,3 @@ html, body {
   display: none;
 }
 
-/* Two-month stacked booking calendar: hide June's caption + weekday header
-   so it reads as one continuous grid; drop the duplicate first row
-   (May 31 – Jun 6, already shown at end of May) and the trailing row
-   that spills into July. */
-.rdp-hide-past-weeks .booking-cal-month:nth-child(2) .booking-cal-caption { display: none; }
-.rdp-hide-past-weeks .booking-cal-month:nth-child(2) .booking-cal-headrow { display: none; }
-.rdp-hide-past-weeks .booking-cal-month:nth-child(2) .booking-cal-row:first-of-type { display: none; }
-.rdp-hide-past-weeks .booking-cal-month:nth-child(2) .booking-cal-row:last-of-type { display: none; }
