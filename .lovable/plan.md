@@ -1,10 +1,14 @@
-## Schimbări
-1. **Revine la zilele trecute gri în săptămâna curentă** — scot prop-ul `hidden`, păstrez `disabled`. Săpt. 17-23 va arăta 17-20 în gri, 21-23 activ. Regula CSS existentă continuă să ascundă rândurile complet trecute (3-9, 10-16).
-2. **Calendarul afișează 2 luni stacked** — adaug `numberOfMonths={2}` pe `<CalendarComponent>` ca să umple spațiul vertical din card și să arate și luna următoare (June 2026) sub mai.
+## Problemă
+`numberOfMonths={2}` afișează lunile **una lângă alta** (shadcn Calendar are `flex-col sm:flex-row` în clasele default). Utilizatorul vrea cele 2 luni **stacked vertical** — iunie să apară sub mai.
+
+## Fix
+În `src/components/product/PremiumBookingCard.tsx`, în `classNames` pe `<CalendarComponent>` adaug override:
+```ts
+months: "flex flex-col gap-6 w-full"
+```
+Aceasta forțează coloana indiferent de breakpoint, cu spațiu între luni.
+
+Restul comportamentului rămâne neschimbat: zilele trecute din săpt. curentă apar gri (disabled), săpt. complet trecute ascunse, iunie sub mai.
 
 ## Fișier
-`src/components/product/PremiumBookingCard.tsx` — elimin `hidden={...}` + `startOfToday` import, adaug `numberOfMonths={2}`.
-
-## Note
-- shadcn Calendar deja face stack pe coloană pentru viewport mic (`flex-col sm:flex-row`). În card sidebar (lățime ~400px) va rămâne pe coloană → cele 2 luni una sub alta.
-- Bookings/preț/buton rămân neschimbate dedesubt.
+- `src/components/product/PremiumBookingCard.tsx` (1 linie adăugată în `classNames`)

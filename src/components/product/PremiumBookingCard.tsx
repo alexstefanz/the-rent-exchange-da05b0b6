@@ -86,6 +86,7 @@ const PremiumBookingCard = ({
             today: { backgroundColor: "#000", color: "#fff", borderRadius: "10px", fontWeight: 700 },
           }}
           classNames={{
+            months: "flex flex-col gap-6 w-full",
             day_selected: "!bg-[#FA8729] !text-white !rounded-[10px] !opacity-100",
             day_range_start: "!rounded-[10px]",
             day_range_end: "!rounded-[10px]",
