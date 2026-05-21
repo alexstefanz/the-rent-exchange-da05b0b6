@@ -574,6 +574,17 @@ const SupportChatWidget = () => {
 
   const ensureTicketAndSend = async (text: string) => {
     if (!user || !text.trim()) return;
+    // Allow attachment URLs (image upload uses this path) — only validate plain text
+    const looksLikeUrl = /^https?:\/\//i.test(text.trim());
+    if (!looksLikeUrl && countSpecialChars(text) > MAX_SPECIAL_CHARS) {
+      toast.error(
+        t(
+          `Maxim ${MAX_SPECIAL_CHARS} simboluri speciale per mesaj.`,
+          `Maximum ${MAX_SPECIAL_CHARS} special symbols per message.`,
+        ),
+      );
+      return;
+    }
     if (ticketId) {
       sendMutation.mutate(text);
       return;
