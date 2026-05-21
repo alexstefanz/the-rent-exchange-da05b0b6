@@ -8,7 +8,7 @@ const sectionsRo = [
     title: "Politica de anulare pentru chiriași",
     content: (
       <div className="space-y-4">
-        <p>Chiriașii pot anula o rezervare <strong>doar înainte de predarea produsului</strong> (semnarea procesului verbal de predare). După predare, anularea nu mai este posibilă — există doar opțiunea de <em>returnare anticipată</em>, deschiderea unei dispute sau contactarea echipei de suport.</p>
+        <p>Chiriașii pot anula o rezervare <strong>doar înainte de predarea produsului</strong> (semnarea procesului verbal de predare). După predare, anularea nu mai este posibilă — există doar opțiunea de deschidere a unei dispute sau contactarea echipei de suport.</p>
         <p>Eligibilitatea pentru rambursare depinde de momentul anulării raportat la ora de start a rezervării:</p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border border-border rounded-lg">
@@ -29,13 +29,13 @@ const sectionsRo = [
               </tr>
               <tr>
                 <td className="p-3">După predarea produsului (semnarea PV de predare)</td>
-                <td className="p-3 text-destructive font-medium">Anulare blocată — folosește returnarea anticipată sau dispută</td>
+                <td className="p-3 text-destructive font-medium">Anulare blocată — folosește dispută sau contactează suportul</td>
               </tr>
             </tbody>
           </table>
         </div>
         <p className="text-sm"><strong>Excepție:</strong> se acordă rambursare integrală dacă bunul nu corespunde descrierii sau prezintă defecte majore. Chiriașul trebuie să notifice proprietarul și platforma în maximum 30 de minute de la preluare, furnizând dovezi (fotografii, video, descriere detaliată).</p>
-        <p className="text-sm"><strong>Returnare anticipată:</strong> după predare, poți cere proprietarului să accepte returnarea înainte de termen. Decizia (și o eventuală rambursare parțială) aparține proprietarului. Dacă refuză, închirierea continuă normal.</p>
+        <p className="text-sm"><strong>Returnare anticipată:</strong> momentan opțiunea de returnare anticipată este suspendată. După predare, închirierea continuă conform termenului convenit. Pentru situații excepționale, contactează echipa de suport.</p>
       </div>
     ),
   },
@@ -147,7 +147,7 @@ const sectionsEn = [
     title: "Cancellation policy for renters",
     content: (
       <div className="space-y-4">
-        <p>Renters can cancel a booking <strong>only before the item is handed over</strong> (handover PV signed). After handover, cancellation is no longer available — only <em>early return</em>, opening a dispute, or contacting support.</p>
+        <p>Renters can cancel a booking <strong>only before the item is handed over</strong> (handover PV signed). After handover, cancellation is no longer available — only opening a dispute or contacting support.</p>
         <p>Refund eligibility depends on when the cancellation is made relative to the booking start time:</p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border border-border rounded-lg">
@@ -168,13 +168,13 @@ const sectionsEn = [
               </tr>
               <tr>
                 <td className="p-3">After the item is handed over (handover PV signed)</td>
-                <td className="p-3 text-destructive font-medium">Cancellation locked — use early return or dispute</td>
+                <td className="p-3 text-destructive font-medium">Cancellation locked — use dispute or contact support</td>
               </tr>
             </tbody>
           </table>
         </div>
         <p className="text-sm"><strong>Exception:</strong> a full refund is granted if the item does not match the description or has major defects. The renter must notify the owner and the platform within 30 minutes of pickup, providing evidence (photos, videos, detailed description).</p>
-        <p className="text-sm"><strong>Early return:</strong> after handover, you may ask the owner to accept an early return. The decision (and any partial refund) is at the owner's discretion. If declined, the rental continues as planned.</p>
+        <p className="text-sm"><strong>Early return:</strong> this option is currently suspended. After handover, the rental continues as agreed. For exceptional situations, contact the support team.</p>
       </div>
     ),
   },
