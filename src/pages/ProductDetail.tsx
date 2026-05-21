@@ -26,7 +26,6 @@ import OwnerTrustCard from "@/components/product/OwnerTrustCard";
 import ProductInfoAccordion from "@/components/product/ProductInfoAccordion";
 import SocialProofStrip from "@/components/product/SocialProofStrip";
 import LocationCard from "@/components/product/LocationCard";
-import ReviewSummaryCard from "@/components/product/ReviewSummaryCard";
 import StickyProductHeader from "@/components/product/StickyProductHeader";
 import PremiumLightbox from "@/components/product/PremiumLightbox";
 import ProductDetailSkeleton from "@/components/product/ProductDetailSkeleton";
