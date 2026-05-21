@@ -28,6 +28,11 @@ export function useRentalRealtime(
         { event: "INSERT", schema: "public", table: "rental_inspections" },
         () => invalidateKeys.forEach((k) => qc.invalidateQueries({ queryKey: k })),
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "rental_pv_documents" },
+        () => invalidateKeys.forEach((k) => qc.invalidateQueries({ queryKey: k })),
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
