@@ -976,10 +976,6 @@ const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: an
             {savedHolder && <p className="text-xs text-muted-foreground mt-0.5 truncate">{savedHolder}</p>}
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <Button variant="outline" size="sm" onClick={() => { setIban(""); setEditing(true); }} className="flex-1 sm:flex-none">
-              <Pencil className="h-3.5 w-3.5 mr-1.5" />
-              {t("Schimbă", "Change")}
-            </Button>
             <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" size="sm" className="flex-1 sm:flex-none text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30">
@@ -1058,12 +1054,6 @@ const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: an
         <Button onClick={handleSave} disabled={saving || !iban} className="w-full sm:w-auto">
           {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("Se salvează...", "Saving...")}</> : (hasIban ? t("Salvează modificările", "Save changes") : t("Salvează IBAN", "Save IBAN"))}
         </Button>
-        {hasIban && (
-          <Button variant="ghost" onClick={() => { setEditing(false); setIban(""); }} disabled={saving} className="w-full sm:w-auto">
-            <X className="h-4 w-4 mr-1.5" />
-            {t("Anulează", "Cancel")}
-          </Button>
-        )}
       </div>
     </div>
   );
