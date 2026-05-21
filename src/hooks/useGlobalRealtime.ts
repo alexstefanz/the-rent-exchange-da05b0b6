@@ -201,11 +201,12 @@ export function useGlobalRealtime(userId: string | undefined) {
       // Support tickets (user-visible)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "ops_tickets", filter: `user_id=eq.${userId}` },
+        { event: "*", schema: "public", table: "ops_tickets", filter: `requester_user_id=eq.${userId}` },
         (payload) => {
           const t = (payload.new ?? payload.old) as { id?: string };
           invalidate([
             ["user-tickets"],
+            ["userTickets"],
             ...(t?.id ? [["ticket", t.id]] : []),
           ]);
         },
@@ -217,9 +218,72 @@ export function useGlobalRealtime(userId: string | undefined) {
           const m = payload.new as { ticket_id?: string };
           invalidate([
             ["user-tickets"],
+            ["userTickets"],
             ...(m?.ticket_id ? [["ticket-messages", m.ticket_id], ["ticket", m.ticket_id]] : []),
           ]);
         },
+      )
+      // Reviews — received as reviewed user (user_reviews)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "user_reviews", filter: `reviewed_user_id=eq.${userId}` },
+        () => invalidate([
+          ["user-reviews", userId],
+          ["user-given-reviews", userId],
+          ["accountDashboard", userId],
+          ["userStatistics", userId],
+        ]),
+      )
+      // Reviews — given by user (user_reviews)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "user_reviews", filter: `reviewer_id=eq.${userId}` },
+        () => invalidate([
+          ["user-given-reviews", userId],
+          ["user-reviews", userId],
+        ]),
+      )
+      // Product reviews — invalidate broadly; UI keys are scoped by query factories
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "product_reviews" },
+        (payload) => {
+          const r = (payload.new ?? payload.old) as { product_id?: string; reviewer_id?: string };
+          invalidate([
+            ["product-reviews-received", userId],
+            ["product-reviews-given", userId],
+            ["accountDashboard", userId],
+            ["userStatistics", userId],
+            ...(r?.product_id ? [["product-reviews", r.product_id]] : []),
+          ]);
+        },
+      )
+      // Favorites — products
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "favorite_products", filter: `user_id=eq.${userId}` },
+        () => invalidate([
+          ["favorite-products", userId],
+          ["favoriteProducts", userId],
+        ]),
+      )
+      // Favorites — users (followed)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "favorite_users", filter: `user_id=eq.${userId}` },
+        () => invalidate([
+          ["favorite-users", userId],
+          ["favoriteUsers", userId],
+        ]),
+      )
+      // Favorites — users (when someone favorites me)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "favorite_users", filter: `favorite_user_id=eq.${userId}` },
+        () => invalidate([
+          ["followers", userId],
+          ["userStatistics", userId],
+        ]),
       )
       // Notifications — show a toast for every new row
       .on(
