@@ -13,6 +13,11 @@ const MobileBottomNav = () => {
   const { isBanned } = useIsBanned();
   const unreadCount = conversations?.reduce((sum: number, c: any) => sum + (c.unread_count || 0), 0) || 0;
 
+  // Hide on product detail pages — sticky booking bar takes over
+  if (location.pathname.startsWith("/produs/") || location.pathname.startsWith("/product/")) {
+    return null;
+  }
+
   const tabs: Array<{ to: string; icon: any; label: string; highlight?: boolean; badge?: number; disabled?: boolean }> = [
     { to: "/cauta", icon: Search, label: t("Explorează", "Explore") },
     { to: "/favorite", icon: Heart, label: t("Favorite", "Favorites") },
