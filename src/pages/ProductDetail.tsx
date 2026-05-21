@@ -18,7 +18,6 @@ import { getOrCreateConversation, sendMessage } from "@/features/messaging/messa
 
 import NearbyProductsSlider from "@/components/products/NearbyProductsSlider";
 import ProductImageGallery from "@/components/product/ProductImageGallery";
-import FreeCancellationNotice from "@/components/product/FreeCancellationNotice";
 import OwnerOtherListings from "@/components/product/OwnerOtherListings";
 import ProductReviewsSection from "@/components/product/ProductReviewsSection";
 import PremiumBookingCard from "@/components/product/PremiumBookingCard";
@@ -271,9 +270,6 @@ const ProductDetail = () => {
         onBack={() => navigate(-1)}
         onOpenLightbox={openLightbox}
       />
-      <div className="lg:hidden px-[10px] mt-3">
-        <FreeCancellationNotice />
-      </div>
 
       <main className="w-full max-w-7xl mx-auto py-6 px-[10px] md:px-6 lg:px-8">
         <nav className="mb-4 hidden md:flex items-center gap-2 text-sm text-muted-foreground overflow-x-auto">
@@ -331,8 +327,6 @@ const ProductDetail = () => {
                 />
               </div>
             </div>
-
-            <FreeCancellationNotice />
 
             <OwnerTrustCard
               ownerId={product.owner_id}
