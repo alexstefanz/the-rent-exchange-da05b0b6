@@ -1,51 +1,45 @@
-# Limită simboluri speciale în chat-uri
+## Card informativ "Întrebare despre produs" în chat
 
-## Problemă
-Limita `MAX_SPECIAL_CHARS = 20` (din `src/features/messaging/messagingApi.ts`) este definită, dar:
-1. **Chat proprietar/chiriaș** (`MessageInput.tsx`): are contor vizual, dar nu blochează tastarea — doar la send aruncă toast (corect, dar UX-ul permite să scrii 500 caractere fără feedback puternic).
-2. **Suport — Centrul de tichete** (`TicketChat.tsx`): la fel — validare doar la send.
-3. **Suport — Widget plutitor** (`SupportChatWidget.tsx`): nu are contor vizual de simboluri deloc, doar verificarea la send. Plus, fluxul de admin (`createTicketMessage`) și fluxul de creare ticket nou (`createUserTicket` cu `description`) **nu validează** simbolurile speciale înainte de insert — un admin sau un user nou poate scăpa de limită prin crearea unui ticket cu 500 caractere `#%^`.
-4. **Server-side**: niciun guard la nivel de DB / API — dacă cineva ocolește UI-ul, mesajul intră.
+### Obiectiv
+Când un utilizator inițiază o conversație organică despre un produs (înainte de rezervare), proprietarul vede un card system în chat care specifică despre ce produs e vorba. Conversațiile per rezervare rămân separate (deja funcționează prin `rentals_id UNIQUE`).
 
-## Soluție
+### Modificări
 
-### 1. Centralizare helper
-În `src/features/messaging/messagingApi.ts`:
-- exportă `MAX_SPECIAL_CHARS` (deja exportat) + adaugă util `enforceSpecialCharLimit(text)` care întoarce `{ ok: boolean, count: number }`.
+**1. `src/features/messaging/messagingApi.ts`**
+- În `getOrCreateConversation`, după `insert` reușit al unei conversații organice noi:
+  - Fetch `products.title` pentru `product_id`
+  - Insert mesaj system: `conversation_id = newConv.id`, `sender_id = NULL`, `message_type = 'system'`, `content = "product_inquiry|" + title`
+- Failure-ul inserării mesajului system nu blochează crearea conversației (best-effort).
 
-### 2. Blocare la tastare în toate input-urile
-- `src/components/messaging/MessageInput.tsx`
-- `src/components/support/center/TicketChat.tsx`
-- `src/components/support/SupportChatWidget.tsx` (ambele textarea: creare ticket nou + reply în ticket)
+**2. `src/components/messaging/SystemMessageBubble.tsx`**
+- Adaugă variantă nouă `product_inquiry`:
+  - Icon `MessageCircleQuestion` (lucide)
+  - Titlu: "Întrebare despre produs"
+  - Subtitlu: numele produsului (parsat din `content.split("|")[1]`)
+  - Notă: "Răspunsul proprietarului apare aici"
+  - Stil similar cu cardul de booking_confirmed (border subtil, fundal accent).
 
-Comportament: dacă noul text depășește 20 simboluri speciale, **nu permite update-ul state-ului** (refuză caracterul în plus) și afișează scurt un toast / indicator roșu „Maxim 20 simboluri speciale". Contorul `simboluri: X/20` apare permanent pe toate cele 3 input-uri (acum lipsește în SupportChatWidget).
+**3. Backfill retroactiv (migrare SQL)**
+- Pentru toate conversațiile organice (`rentals_id IS NULL`, `product_id IS NOT NULL`) care **nu au niciun mesaj system de tip `product_inquiry`**, inserează un mesaj system la `created_at = conversations.created_at` (apare primul în fir).
 
-### 3. Validare în toate căile de send
-În `SupportChatWidget.tsx`:
-- `ensureTicketAndSend` (creare ticket): validează `text` (title + description + first message) înainte de `createUserTicket`.
-- `sendMutation.mutationFn` (atât `createTicketMessage` admin/notă internă, cât și `addUserTicketMessage`): validează înainte de insert. Acum validarea e doar în `handleSendTicketMessage`, dar `ensureTicketAndSend(url)` la upload imagine sărise oricum (URL-ul de imagine e exempt — ok).
+### Detalii tehnice
 
-### 4. Guard server-side (DB)
-Adaugă funcție + trigger în Postgres:
-- `public.count_special_chars(text)` — replică regex-ul `[^\p{L}\p{N}\s.,!?;:\-'"()…–]` (Postgres `regexp_matches` cu `g`).
-- Trigger `BEFORE INSERT OR UPDATE` pe `public.messages` (chat proprietar/chiriaș) și pe `public.ops_ticket_messages` (suport) care:
-  - respinge dacă `length(message) > 500`
-  - respinge dacă `count_special_chars(message) > 20`
-  - exceptă rândurile unde `message_text` e un URL de attachment (regex `^https?://`), ca să nu blocheze imaginile.
+Format content: `product_inquiry|<product_title>` — simplu, fără JSON pentru consistență cu pattern-ul existent.
 
-Astfel limita e respectată indiferent de UI.
+Conversațiile per rezervare (`rentals_id NOT NULL`) sunt deja separate și au cardul `booking_confirmed` — nu necesită schimbări.
 
-## Fișiere modificate
-
-```text
-src/features/messaging/messagingApi.ts      # helper enforceSpecialCharLimit
-src/components/messaging/MessageInput.tsx   # blocare la tastare
-src/components/support/center/TicketChat.tsx # blocare la tastare
-src/components/support/SupportChatWidget.tsx # contor + blocare + validare în toate send-urile
-supabase/migrations/<new>.sql               # count_special_chars + triggere
+Migrarea de backfill:
+```sql
+INSERT INTO public.messages (conversation_id, sender_id, message_type, content, created_at)
+SELECT c.id, NULL, 'system', 'product_inquiry|' || COALESCE(p.title, 'Produs'), c.created_at
+FROM public.conversations c
+LEFT JOIN public.products p ON p.id = c.product_id
+WHERE c.rentals_id IS NULL
+  AND c.product_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM public.messages m
+    WHERE m.conversation_id = c.id
+      AND m.message_type = 'system'
+      AND m.content LIKE 'product_inquiry|%'
+  );
 ```
-
-## Nu se modifică
-- Limitele actuale (500 / 20) rămân.
-- Lista de caractere permise rămâne aceeași.
-- Nu modificăm regulile anti-contact (URL/email/telefon) — sunt separate.

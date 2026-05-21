@@ -9,6 +9,7 @@ import {
   Package,
   RotateCcw,
   ThumbsUp,
+  MessageCircleQuestion,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -39,7 +40,10 @@ interface ParsedTimeline {
   total: string;
 }
 
-type ParsedSystem = ParsedTimeline | { kind: "raw"; text: string };
+type ParsedSystem =
+  | ParsedTimeline
+  | { kind: "product_inquiry"; productTitle: string }
+  | { kind: "raw"; text: string };
 
 const TIMELINE_KINDS: TimelineKind[] = [
   "booking_confirmed",
@@ -55,6 +59,12 @@ const TIMELINE_KINDS: TimelineKind[] = [
 function parseContent(content: string): ParsedSystem {
   const parts = content.split("|");
   const head = parts[0] as TimelineKind;
+  if (head === ("product_inquiry" as unknown as TimelineKind)) {
+    return {
+      kind: "product_inquiry",
+      productTitle: parts[1] || "Produs",
+    };
+  }
   if (!TIMELINE_KINDS.includes(head)) {
     return { kind: "raw", text: content };
   }
@@ -80,7 +90,10 @@ export function SystemMessageBubble({ message }: Props) {
   const locale = language === "ro" ? ro : enUS;
   const parsed = parseContent(message.content);
 
-  const variant = parsed.kind === "raw" ? null : getVariant(parsed.kind, t);
+  const variant =
+    parsed.kind === "raw" || parsed.kind === "product_inquiry"
+      ? null
+      : getVariant(parsed.kind, t);
 
   return (
     <motion.div
@@ -98,7 +111,23 @@ export function SystemMessageBubble({ message }: Props) {
               : "border-primary/20 bg-primary/5",
           )}
         >
-          {parsed.kind !== "raw" && variant ? (
+          {parsed.kind === "product_inquiry" ? (
+            <>
+              <div className="flex items-center justify-center gap-1.5 font-semibold text-[13px] mb-1 text-primary">
+                <MessageCircleQuestion className="h-4 w-4" />
+                {t("Întrebare despre produs", "Question about product")}
+              </div>
+              <div className="text-center text-[13px] text-foreground leading-relaxed">
+                <div className="font-medium">„{parsed.productTitle}"</div>
+                <div className="text-[11px] text-muted-foreground mt-1.5 italic">
+                  {t(
+                    "Răspunsul proprietarului apare aici",
+                    "The owner's reply appears here",
+                  )}
+                </div>
+              </div>
+            </>
+          ) : parsed.kind !== "raw" && variant ? (
             <>
               <div
                 className={cn(
