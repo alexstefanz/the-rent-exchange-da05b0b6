@@ -380,7 +380,7 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
               onNavigate("/castiguri");
             }
           }}
-          className="rounded-2xl bg-zinc-900 text-white p-4 shadow-md cursor-pointer transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="group rounded-2xl bg-zinc-900 text-white p-4 shadow-md cursor-pointer transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
