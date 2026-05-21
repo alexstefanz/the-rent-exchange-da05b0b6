@@ -1263,10 +1263,7 @@ const SupportChatWidget = () => {
                         <Textarea
                           ref={messageTextareaRef}
                           value={messageText}
-                          onChange={(e) => {
-                            setMessageText(e.target.value.slice(0, MAX_MESSAGE_LENGTH));
-                            autoGrow(e.target as HTMLTextAreaElement);
-                          }}
+                          onChange={handleMessageChange}
                           maxLength={MAX_MESSAGE_LENGTH}
                           rows={1}
                           placeholder={t(
