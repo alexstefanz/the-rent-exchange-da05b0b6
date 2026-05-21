@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useWalletBalance } from "@/hooks/useWalletBalance";
 
 interface DashboardCardProps {
   icon: React.ElementType;
@@ -46,25 +47,9 @@ const BalanceCard = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
-  // Balance query
-  const { data: balance, isLoading: balanceLoading } = useQuery({
-    queryKey: ["user-balance", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("amount, type")
-        .eq("user_id", user!.id)
-        .eq("status", "completed");
-      if (error) throw error;
-      let total = 0;
-      for (const tx of data || []) {
-        if (tx.type === "owner_payout") total += Number(tx.amount);
-        else if (tx.type === "withdrawal") total -= Number(tx.amount);
-      }
-      return total;
-    },
-    enabled: !!user?.id,
-  });
+  // Balance query — single source of truth via wallet RPC
+  const { data: walletData, isLoading: balanceLoading } = useWalletBalance();
+  const balance = walletData?.available ?? 0;
 
   // Favorites count
   const { data: favCount = 0, isLoading: favLoading } = useQuery({

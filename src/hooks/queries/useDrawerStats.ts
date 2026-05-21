@@ -13,7 +13,7 @@ export function useDrawerStats(userId: string | undefined) {
     queryFn: async () => {
       if (!userId) return { activeRentals: 0, openTickets: 0, balance: 0 };
 
-      const [rentalsRes, ticketsRes, txRes] = await Promise.all([
+      const [rentalsRes, ticketsRes, walletRes] = await Promise.all([
         supabase
           .from("rentals")
           .select("id", { count: "exact", head: true })
@@ -24,18 +24,11 @@ export function useDrawerStats(userId: string | undefined) {
           .select("id", { count: "exact", head: true })
           .eq("requester_user_id", userId)
           .in("status", ["NEW", "OPEN", "IN_PROGRESS", "WAITING_CUSTOMER"]),
-        supabase
-          .from("transactions")
-          .select("amount, type")
-          .eq("user_id", userId)
-          .eq("status", "completed"),
+        supabase.rpc("get_user_wallet_balance" as any, { _user_id: userId }),
       ]);
 
-      let balance = 0;
-      for (const tx of txRes.data || []) {
-        if (tx.type === "owner_payout") balance += Number(tx.amount);
-        else if (tx.type === "withdrawal") balance -= Number(tx.amount);
-      }
+      const walletRow: any = Array.isArray(walletRes.data) ? walletRes.data[0] : walletRes.data;
+      const balance = Number(walletRow?.available ?? 0);
 
       return {
         activeRentals: rentalsRes.count ?? 0,

@@ -64,12 +64,13 @@ interface Props {
   unreadMessages: number;
   activeRentalsAsRenter: number;
   activeRentalsAsOwner: number;
+  availableBalance?: number;
 }
 
-export function QuickActions({ unreadMessages, activeRentalsAsRenter, activeRentalsAsOwner }: Props) {
+export function QuickActions({ unreadMessages, activeRentalsAsRenter, activeRentalsAsOwner, availableBalance = 0 }: Props) {
   const { t } = useLanguage();
   return (
-    <section className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+    <section className="grid grid-cols-2 sm:grid-cols-6 gap-3">
       {/* Primary CTA — spans 2 on mobile */}
       <Link
         to="/owner/new-product"
@@ -102,6 +103,18 @@ export function QuickActions({ unreadMessages, activeRentalsAsRenter, activeRent
         badge={unreadMessages}
       />
       <Secondary to="/castiguri" icon={Wallet} label={t("Câștiguri", "Earnings")} />
+      <Link
+        to="/castiguri"
+        className="group relative flex flex-col items-center justify-center gap-2 rounded-[12px] border bg-card hover:border-primary/40 hover:shadow-sm p-4 transition-all"
+      >
+        <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
+          <Wallet className="h-5 w-5 text-primary" />
+        </div>
+        <span className="text-sm font-semibold tabular-nums">
+          {availableBalance.toFixed(2)} <span className="text-xs font-medium text-muted-foreground">RON</span>
+        </span>
+        <span className="text-[11px] text-muted-foreground -mt-1">{t("Balanță", "Balance")}</span>
+      </Link>
     </section>
   );
 }
