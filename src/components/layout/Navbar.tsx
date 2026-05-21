@@ -44,6 +44,7 @@ import { useIsAdmin } from "@/hooks/queries/useAdminStats";
 import { useIsBanned } from "@/hooks/useIsBanned";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useWalletBalance } from "@/hooks/useWalletBalance";
 import NotificationBell from "./NotificationBell";
 import MobileBottomNav from "./MobileBottomNav";
 import { AccountHubMenu } from "./AccountHubMenu";
@@ -66,25 +67,8 @@ const Navbar = () => {
     return localStorage.getItem("show_balance") !== "false";
   });
 
-  const { data: balance } = useQuery({
-    queryKey: ["user-balance", user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("amount, type")
-        .eq("user_id", user!.id)
-        .eq("status", "completed");
-      if (error) throw error;
-      let total = 0;
-      for (const tx of data || []) {
-        if (tx.type === "owner_payout") total += Number(tx.amount);
-        else if (tx.type === "withdrawal") total -= Number(tx.amount);
-      }
-      return total;
-    },
-    enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: walletData } = useWalletBalance();
+  const balance = walletData?.available ?? 0;
 
   const toggleBalance = (e: React.MouseEvent) => {
     e.preventDefault();
