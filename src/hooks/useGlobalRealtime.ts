@@ -281,5 +281,5 @@ export function useGlobalRealtime(userId: string | undefined) {
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [userId, qc]);
+  }, [userId, qc, shown]);
 }
