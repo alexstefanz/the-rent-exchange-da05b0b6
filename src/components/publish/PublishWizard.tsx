@@ -276,7 +276,21 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       });
       setErrors(flat);
       const firstMsg = Object.values(flat)[0];
-      if (firstMsg) toast({ title: "Verifică datele", description: firstMsg, variant: "destructive" });
+      if (flat.subcategory) {
+        toast({
+          title: "Alege o subcategorie",
+          description:
+            "Te rugăm să alegi și o subcategorie din lista de mai jos înainte de a continua.",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          document
+            .getElementById("subcategory-section")
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 50);
+      } else if (firstMsg) {
+        toast({ title: "Verifică datele", description: firstMsg, variant: "destructive" });
+      }
       return false;
     }
     setErrors({});
