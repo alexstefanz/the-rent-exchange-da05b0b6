@@ -1,35 +1,33 @@
 ## Problem
-Pe pagina `/inchirieri/:id` butonul „Discută cu proprietarul / chiriașul” apare doar după ce plata este autorizată (`isPaidEarly`). Înainte de plată secțiunea de chat dispare complet, deși utilizatorii au nevoie să comunice și înainte (ex: clarificări înainte de a plăti).
-
-Datele de contact în chat sunt deja restricționate la nivel de RPC (`get_contact_info_if_in_conversation` — doar după `payment_status` authorized/paid sau `status` confirmed/active/completed), iar placeholder-ul din `InfoPanel` afișează „Datele de contact vor fi vizibile după plată.” Nu e nevoie de modificări suplimentare aici.
+La acceptarea unei cereri din popup-ul de proprietar (`RentalRequestPopup` via `RentalPopupManager`), proprietarul rămâne pe pagina curentă. Trebuie redirecționat la pagina închirierii (`/rezervari/{public_id}`). Dacă în coadă există mai multe cereri și sunt acceptate consecutiv, prima să facă redirect în tab-ul curent, iar următoarele să se deschidă în tab-uri noi (ca să nu piardă navigarea inițială).
 
 ## Plan
 
-### `src/pages/RentalDetailPage.tsx`
-Elimin gating-ul `isPaidEarly` de pe secțiunea de chat CTA (linia 475), astfel încât butonul să fie vizibil în orice stare a închirierii, mai puțin după finalizare (unde e înlocuit de Review CTA) și după anulare/respingere.
+### `src/components/rentals/RentalPopupManager.tsx`
 
-Condiție nouă:
-```ts
-{rental.status !== "completed" 
-  && rental.status !== "cancelled" 
-  && rental.status !== "rejected" 
-  && (
-    <section ...> ... </section>
-)}
-```
+1. Adaug un `useRef<boolean>(false)` numit `redirectedRef` care marchează dacă deja s-a făcut redirect în tab-ul curent ca urmare a unui Accept.
 
-Pentru stările pre-plată adaug un subtext contextual:
-- Dacă `!isPaidEarly`: „Poți discuta cu proprietarul și înainte de plată. Datele de contact devin vizibile după ce plata este efectuată.”
-- Dacă `isPaidEarly`: textul actual „Coordonati predarea, locatia si detaliile direct in chat.”
+2. Modific `handleAccept`:
+   - Apelez `respondToRental(current.id, "accept")` (neschimbat).
+   - Obțin `publicId` din `current.public_id`. Fallback URL: `publicId ? "/rezervari/" + publicId : "/inchirierile-mele"`.
+   - Dacă `redirectedRef.current === false`:
+     - Marchez `redirectedRef.current = true`.
+     - `removeItem(current.id)`, `invalidate()`, `toast.success(...)`.
+     - `navigate(url)` în tab-ul curent.
+   - Altfel (deja a fost o navigare în această sesiune de popup-uri):
+     - `removeItem(current.id)`, `invalidate()`, `toast.success(...)`.
+     - `window.open(url, "_blank", "noopener,noreferrer")`.
+   - În catch: păstrez toast-ul de eroare existent.
 
-Restul logicii (`handleChat`, `getOrCreateRentalConversation`, navigare către `/mesaje?conv=...`) rămâne neschimbat.
+3. Resetez `redirectedRef.current = false` atunci când coada se golește, ca să nu păstrez starea între sesiuni separate de popup-uri:
+   - Adaug `useEffect` care urmărește `queue.length`; când devine 0, setez `redirectedRef.current = false`.
 
-### Verificare contact info în chat
-Deja implementat anterior:
-- RPC `get_contact_info_if_in_conversation` returnează contact doar pentru rentale plătite/active.
-- `InfoPanel.tsx` tab „Contact” arată placeholder-ul „Datele de contact vor fi vizibile după plată.” când RPC nu returnează nimic.
+4. Nu modific celelalte handler-e (reject, viewProduct, viewSimilar, dismiss).
 
-Nu sunt necesare modificări suplimentare în chat.
+### Considerații
+- `window.open` în handler de click este permis de browser (gest user), așa că nu va fi blocat ca pop-up.
+- Fluxul renter (mode === "renter") nu se modifică.
+- Nu se ating funcțiile RPC sau ownerRentalsApi.
 
 ## Files
-- `src/pages/RentalDetailPage.tsx` — relaxat condiția de afișare a secțiunii Chat CTA + subtext condiționat de starea plății.
+- `src/components/rentals/RentalPopupManager.tsx` — `redirectedRef`, `handleAccept` rescris, reset pe coadă golită.
