@@ -225,3 +225,10 @@ html, body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Hide entire calendar week rows where every day is disabled (past weeks).
+   Used on the product booking calendar so users only see the current week
+   onwards. Current week stays visible because it still contains future days. */
+.rdp-hide-past-weeks .rdp-row:not(:has(.rdp-day:not([disabled]))) {
+  display: none;
+}
