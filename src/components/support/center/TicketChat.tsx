@@ -226,6 +226,30 @@ export function TicketChat({ ticketId, isClosed }: Props) {
               {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
+          {(text.length >= MAX_MESSAGE_LENGTH * 0.8 || countSpecialChars(text) > 0) && (
+            <div className="flex justify-between mt-1 px-1 text-[10px] tabular-nums">
+              <span
+                className={
+                  countSpecialChars(text) >= MAX_SPECIAL_CHARS
+                    ? "text-destructive font-medium"
+                    : "text-muted-foreground"
+                }
+              >
+                {countSpecialChars(text) > 0
+                  ? `${t("simboluri", "symbols")}: ${countSpecialChars(text)}/${MAX_SPECIAL_CHARS}`
+                  : ""}
+              </span>
+              <span
+                className={
+                  text.length >= MAX_MESSAGE_LENGTH
+                    ? "text-destructive font-medium"
+                    : "text-muted-foreground"
+                }
+              >
+                {text.length}/{MAX_MESSAGE_LENGTH}
+              </span>
+            </div>
+          )}
         </div>
       ) : (
         <div className="border-t border-border/60 p-3 bg-muted/30 text-center text-xs text-muted-foreground">
