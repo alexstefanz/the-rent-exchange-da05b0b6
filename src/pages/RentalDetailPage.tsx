@@ -471,8 +471,8 @@ const RentalDetailPage = () => {
           </section>
         )}
 
-        {/* Chat CTA — visible after payment is authorized; replaced by Review CTA when completed */}
-        {isPaidEarly && rental.status !== "completed" && (
+        {/* Chat CTA — visible in all states except completed/cancelled/rejected */}
+        {rental.status !== "completed" && rental.status !== "cancelled" && rental.status !== "rejected" && (
           <section className="rounded-2xl border border-border bg-card p-4 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center">
@@ -485,7 +485,12 @@ const RentalDetailPage = () => {
                     : t("Discuta cu proprietarul", "Chat with the owner")}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {t("Coordonati predarea, locatia si detaliile direct in chat.", "Coordinate handover, location and details directly in chat.")}
+                  {isPaidEarly
+                    ? t("Coordonati predarea, locatia si detaliile direct in chat.", "Coordinate handover, location and details directly in chat.")
+                    : t(
+                        "Poți discuta în chat și înainte de plată. Datele de contact devin vizibile după ce plata este efectuată.",
+                        "You can chat before payment too. Contact details become visible after the payment is completed."
+                      )}
                 </p>
               </div>
             </div>
