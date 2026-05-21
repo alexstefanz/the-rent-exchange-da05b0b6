@@ -1,10 +1,20 @@
-Aplic limita standard de caractere speciale (`MAX_SPECIAL_CHARS = 20`) și limita de lungime (`MAX_MESSAGE_LENGTH = 500`) și pe composer-ul admin de tickete, ca să se comporte ca restul chat-urilor (mesagerie + suport client).
+# Mutare "Anulare gratuită" în cardul "Reguli de utilizare"
 
-Modific `src/components/admin/tickets/AdminConversation.tsx`:
-1. Import `MAX_MESSAGE_LENGTH`, `MAX_SPECIAL_CHARS`, `countSpecialChars` din `@/features/messaging/messagingApi`.
-2. În `send()`: blochez trimiterea dacă mesajul depășește lungimea sau numărul de simboluri speciale și afișez `toast.error` cu același copy bilingv folosit în restul chat-urilor.
-3. Pe `<Textarea>`: adaug `maxLength={MAX_MESSAGE_LENGTH}` și `slice` pe input ca să previn lipirea peste limită.
-4. Sub composer afișez un contor mic, vizibil când utilizatorul se apropie de limită — `{count}/{MAX_SPECIAL_CHARS}` simboluri și `{len}/{MAX_MESSAGE_LENGTH}` caractere, ca în `MessageInput` și `TicketChat`.
-5. Disable buton `Trimite` și pentru `text > MAX_MESSAGE_LENGTH` sau `simboluri > MAX_SPECIAL_CHARS`.
+## Ce se schimbă
 
-Nu se modifică altă logică (notă internă, atașamente, AI assist rămân la fel).
+1. **`src/components/product/UsageRules.tsx`**
+   - Adaug o regulă nouă în `defaultRules` cu iconița `ThumbsUp` și titlul "Anulare gratuită" / "Free cancellation".
+   - Descrierea preia textul din `FreeCancellationNotice` (RO/EN), inclusiv linkul către `/politica-anulare`.
+   - Pentru a păstra linkul activ, schimb tipul `description` din `string` în `React.ReactNode` (sau adaug un câmp opțional `descriptionNode`). Renderul rămâne identic vizual.
+   - O plasez prima în listă, ca să fie vizibilă imediat la deschiderea acordeonului "Reguli & politici".
+
+2. **`src/pages/ProductDetail.tsx`**
+   - Elimin cele două instanțe `<FreeCancellationNotice />` (mobile la linia ~275 și desktop la linia ~335) plus importul.
+   - Nu mai e nevoie de wrapper-ul mobil `<div className="lg:hidden px-[10px] mt-3">`.
+
+3. **`src/components/product/FreeCancellationNotice.tsx`**
+   - Rămâne în repo (nu îl șterg) în caz de reutilizare, dar nu mai e folosit nicăieri. Dacă preferi, îl pot șterge — spune-mi.
+
+## Rezultat
+
+Cardul independent "Anulare gratuită" dispare de pe pagina produs (mobile + desktop). Conținutul apare ca primă intrare în secțiunea "Reguli & politici" din `ProductInfoAccordion`, în același stil ca celelalte reguli (icon rotund portocaliu + titlu + descriere + link "politica de anulare").

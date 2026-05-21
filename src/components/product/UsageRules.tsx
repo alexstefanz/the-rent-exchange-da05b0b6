@@ -1,10 +1,12 @@
-import { AlertCircle, CreditCard, CalendarX, Camera, MessageSquare, PackageCheck, Wallet, ShieldCheck } from "lucide-react";
+import { Link } from "react-router-dom";
+import { AlertCircle, CreditCard, CalendarX, Camera, MessageSquare, PackageCheck, Wallet, ShieldCheck, ThumbsUp } from "lucide-react";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface UsageRule {
   icon: typeof AlertCircle;
   title: string;
-  description: string;
+  description: React.ReactNode;
 }
 
 interface UsageRulesProps {
@@ -14,8 +16,26 @@ interface UsageRulesProps {
 
 const UsageRules = ({ rules, depositAmount }: UsageRulesProps) => {
   const copy = useUxCopy();
+  const { language } = useLanguage();
+
+  const freeCancellationDescription = (
+    <>
+      {language === "ro"
+        ? "Anulare gratuită cu 24h înainte de start. Sub 24h, prima zi și taxa platformei nu se rambursează. După predarea produsului, rezervarea nu mai poate fi anulată — există returnare anticipată sau dispută. Vezi"
+        : "Free cancellation up to 24h before start. Under 24h, the first day and platform fee are non-refundable. After handover, cancellation is no longer possible — only early return or dispute. See the"}{" "}
+      <Link to="/politica-anulare" className="text-primary hover:underline font-medium">
+        {language === "ro" ? "politica de anulare" : "cancellation policy"}
+      </Link>{" "}
+      {language === "ro" ? "pentru mai multe detalii." : "for more details."}
+    </>
+  );
 
   const defaultRules: UsageRule[] = [
+    {
+      icon: ThumbsUp,
+      title: language === "ro" ? "Anulare gratuită" : "Free cancellation",
+      description: freeCancellationDescription,
+    },
     { icon: CreditCard, title: copy.usageRules.payment, description: copy.usageRules.paymentDesc },
     { icon: ShieldCheck, title: copy.usageRules.ownerApproval, description: copy.usageRules.ownerApprovalDesc },
     { icon: MessageSquare, title: copy.usageRules.communication, description: copy.usageRules.communicationDesc },
