@@ -1204,7 +1204,6 @@ const Step6Review = ({
 }) => {
   const score = computeQualityScore(data);
   const owner = data.daily_price_owner ?? 0;
-  const monthlyEstimate = Math.round(owner * 8); // ~8 zile/lună la productivitate medie
 
   return (
     <div>
@@ -1219,14 +1218,6 @@ const Step6Review = ({
       />
 
       <div className="mt-6 space-y-4">
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Câștig estimat</p>
-          <p className="mt-1 text-3xl font-bold text-foreground">~{monthlyEstimate} RON / lună</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            La 8 zile închiriate, fără comisioane suplimentare. Plata e săptămânală în contul tău.
-          </p>
-        </div>
-
         <QualityScoreCard data={data} />
 
         <ReviewRow label="Categorie" value={data.category + (data.subcategory ? ` · ${data.subcategory}` : "")} onEdit={() => onJump(1)} />
