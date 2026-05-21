@@ -1,21 +1,24 @@
 ## Plan
 
-Voi separa clar rezervările active de istoric în `RentalsTab.tsx` (chiriaș) și `RentalsOutTab.tsx` (proprietar):
+Cauza: RNT-000053 are status `active` în DB, dar timeline-ul îl afișează „Finalizat" pentru că ambele semnături PV de retur sunt prezente (`rental_pv_documents.phase='return'`, owner_signed_at și renter_signed_at). Tranziția în `status='completed'` se face server-side doar prin `confirmReturn`, care capturează plata — deci o închiriere poate rămâne `active` deși vizual e „Finalizat".
 
-### Logica nouă
-- **Rezervări active** (card-uri premium cu imagine): status `pending`, `confirmed`, `active`, `early_return_requested`, `overdue` — adică orice tranzacție încă în desfășurare.
-- **Istoric** (dropdown/accordion): DOAR `completed`, `cancelled`, `rejected` — tranzacții finalizate definitiv.
+Voi alinia logica de „istoric" cu timeline-ul: o închiriere e considerată finalizată dacă:
+- `status` ∈ {`completed`, `cancelled`, `rejected`}, SAU
+- ambele semnături din PV-ul de retur există (echivalentul pasului 6 „Finalizat" din timeline).
 
 ### Modificări
 
-1. **`src/components/dashboard/RentalsTab.tsx`**
-   - `isPremium(r)` → `true` dacă `status` ∉ {`completed`, `cancelled`, `rejected`}.
-   - `historyRentals` = doar cele cu status `completed`, `cancelled` sau `rejected`.
-   - Schimb titlul accordion-ului din „Rezervări active & istoric" în „Istoric închirieri".
+1. **`src/components/dashboard/RentalsTab.tsx`** (chiriaș)
+   - Extind `fetchMyRentals` cu un al doilea query către `rental_pv_documents` filtrat pe `phase='return'` și rental_id-urile încărcate, ca să adaug pe fiecare `MyRental` câmpurile `return_pv_owner_signed_at` și `return_pv_renter_signed_at`.
+   - `isFinalized(r)` = status finalizat SAU ambele semnături retur prezente.
+   - `isPremium = !isFinalized`. `historyRentals = filtered.filter(isFinalized)`.
 
-2. **`src/components/dashboard/RentalsOutTab.tsx`** (aceeași logică pentru proprietar, pentru consistență — verific întâi dacă are structură identică; dacă da, aplic aceeași schimbare).
+2. **`src/components/dashboard/RentalsOutTab.tsx`** (proprietar)
+   - Aceeași abordare: în `getOwnerRentals` (sau imediat după apel, în componentă) adaug un fetch suplimentar din `rental_pv_documents` pentru rental_id-urile primite, pentru `phase='return'`.
+   - Atașez flag-urile pe fiecare `OwnerRental` (extind interface-ul cu câmpuri opționale).
+   - Aplic exact aceeași regulă `isFinalized` pentru a separa `pendingRentals` / `premiumActiveRentals` de `historyRentals`.
 
-### De ce RNT-000053 nu se va mai muta singură
-RNT-000053 are status `confirmed` în DB, nu `completed`. După această schimbare, va rămâne tot în „active" (pentru că `confirmed` ∉ istoric). Va trece în istoric automat doar după ce devine `completed` sau `cancelled`.
+3. **Realtime**: hook-ul `useRentalRealtime` deja invalidează lista la schimbări pe `rentals`. Pentru a reflecta și semnarea PV-ului de retur fără refresh, voi invalida lista și când se actualizează `rental_pv_documents` — verific dacă hook-ul ascultă deja această tabelă; dacă nu, adaug un canal local în cele două tab-uri.
 
-Dacă vrei ca RNT-000053 (și similare) să fie marcată acum ca finalizată, e nevoie de o acțiune separată (ex: buton „Marchează ca finalizată" sau marcare manuală). Spune-mi dacă o vrei și pe aceasta.
+### Notă
+Nu modific backend-ul (status `completed` se setează tot prin `confirmReturn` la capturarea plății). Schimbarea e strict UI: mut rezervările „Finalizat" din lista activă în dropdown-ul „Istoric închirieri".
