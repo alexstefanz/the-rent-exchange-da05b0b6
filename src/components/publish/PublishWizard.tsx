@@ -460,7 +460,15 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       />
 
       <AlertDialog open={!!pendingDraft}>
-        <AlertDialogContent>
+        <AlertDialogContent className="relative">
+          <button
+            type="button"
+            onClick={() => setPendingDraft(null)}
+            aria-label="Închide"
+            className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
           <AlertDialogHeader>
             <AlertDialogTitle>Ai un anunț nesalvat</AlertDialogTitle>
             <AlertDialogDescription asChild>
