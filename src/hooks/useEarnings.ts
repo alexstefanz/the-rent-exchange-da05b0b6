@@ -49,6 +49,52 @@ export interface PayoutMethod {
   accountHolder: string;
 }
 
+interface ProfilePayoutRow {
+  iban: string | null;
+  account_holder_name: string | null;
+}
+
+interface WithdrawalRequestRecord {
+  id: string;
+  amount: number | string;
+  iban: string;
+  account_holder: string | null;
+  status: string;
+  created_at: string;
+  processed_at: string | null;
+  admin_note: string | null;
+}
+
+interface RentalRecord {
+  id: string;
+  public_id: string | null;
+  owner_payout: number | string | null;
+  subtotal: number | string | null;
+  platform_fee: number | string | null;
+  payment_status: string | null;
+  status: string | null;
+  created_at: string;
+  start_date: string | null;
+  end_date: string | null;
+  product_id: string | null;
+  renter_id: string | null;
+  is_test_payment: boolean | null;
+  products?: { title?: string | null; images?: string[] | null } | null;
+}
+
+interface RenterProfileRow {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+}
+
+interface WalletRpcRow {
+  total_earnings?: number | string | null;
+  total_withdrawn?: number | string | null;
+  pending_withdrawals?: number | string | null;
+  available?: number | string | null;
+}
+
 const empty: EarningsData = {
   totalThisMonth: 0,
   totalAllTime: 0,
@@ -79,7 +125,7 @@ export const useEarnings = () => {
           .eq("owner_id", user.id)
           .order("created_at", { ascending: false }),
         supabase
-          .from("withdrawal_requests" as any)
+          .from("withdrawal_requests" as never)
           .select("*")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false }),
@@ -88,14 +134,15 @@ export const useEarnings = () => {
           .select("iban, account_holder_name")
           .eq("id", user.id)
           .maybeSingle(),
-        supabase.rpc("get_user_wallet_balance" as any, { _user_id: user.id }),
+        supabase.rpc("get_user_wallet_balance" as never, { _user_id: user.id } as never),
       ]);
 
-      const p: any = profile;
+      const p = profile as ProfilePayoutRow | null;
       if (p?.iban) setMethod({ iban: p.iban, accountHolder: p.account_holder_name || "" });
       else setMethod(null);
 
-      const wlist: WithdrawalRow[] = ((completedWithdrawals || []) as any[]).map((w) => ({
+      const withdrawalRows = (completedWithdrawals || []) as unknown as WithdrawalRequestRecord[];
+      const wlist: WithdrawalRow[] = withdrawalRows.map((w) => ({
         id: w.id,
         amount: Number(w.amount),
         iban: w.iban,
@@ -114,20 +161,21 @@ export const useEarnings = () => {
         .filter((w) => w.status === "pending")
         .reduce((s, w) => s + w.amount, 0);
 
-      const list = (rentals || []).filter(
-        (r: any) =>
+      const rentalRows = (rentals || []) as unknown as RentalRecord[];
+      const list = rentalRows.filter(
+        (r) =>
           ["authorized", "paid", "captured"].includes(r.payment_status) &&
           r.is_test_payment !== true
       );
 
-      const renterIds = [...new Set((list as any[]).map((r) => r.renter_id).filter(Boolean))];
+      const renterIds = [...new Set(list.map((r) => r.renter_id).filter((id): id is string => !!id))];
       const renterMap = new Map<string, { name: string | null; avatar: string | null }>();
       if (renterIds.length > 0) {
         const { data: renters } = await supabase
           .from("profiles")
           .select("id, full_name, avatar_url")
           .in("id", renterIds);
-        (renters || []).forEach((p: any) =>
+        ((renters || []) as RenterProfileRow[]).forEach((p) =>
           renterMap.set(p.id, { name: p.full_name || null, avatar: p.avatar_url || null })
         );
       }
@@ -138,7 +186,7 @@ export const useEarnings = () => {
       let totalThisMonth = 0;
       const txns: EarningsTransaction[] = [];
 
-      for (const r of list as any[]) {
+      for (const r of list) {
         const payout = Number(r.owner_payout) || 0;
         totalAllTime += payout;
         if (new Date(r.created_at) >= monthStart) totalThisMonth += payout;
@@ -167,7 +215,8 @@ export const useEarnings = () => {
         });
       }
 
-      const walletRow: any = Array.isArray(walletData) ? walletData[0] : walletData;
+      const walletRows = walletData as unknown as WalletRpcRow | WalletRpcRow[] | null;
+      const walletRow = Array.isArray(walletRows) ? walletRows[0] : walletRows;
       const walletAvailable = Number(walletRow?.available ?? totalAllTime - totalWithdrawn - pendingWithdrawals);
       const walletTotalEarnings = Number(walletRow?.total_earnings ?? totalAllTime);
       const walletTotalWithdrawn = Number(walletRow?.total_withdrawn ?? totalWithdrawn);
