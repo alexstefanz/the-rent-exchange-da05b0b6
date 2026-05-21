@@ -211,6 +211,24 @@ const SupportChatWidget = () => {
     el.style.height = "auto";
     el.style.height = Math.min(el.scrollHeight, 160) + "px";
   };
+  const lastSymbolToastRef = useRef(0);
+  const notifySymbolBlocked = () => {
+    const now = Date.now();
+    if (now - lastSymbolToastRef.current < 1500) return;
+    lastSymbolToastRef.current = now;
+    toast.error(
+      t(
+        `Maxim ${MAX_SPECIAL_CHARS} simboluri speciale per mesaj.`,
+        `Maximum ${MAX_SPECIAL_CHARS} special symbols per message.`,
+      ),
+    );
+  };
+  const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const { value, blockedSpecial } = clampChatInput(e.target.value);
+    setMessageText(value);
+    if (blockedSpecial) notifySymbolBlocked();
+    autoGrow(e.target);
+  };
 
   const [isOpen, setIsOpen] = useState(false);
   const [ticketId, setTicketId] = useState<string | null>(null);
