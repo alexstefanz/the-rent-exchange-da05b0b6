@@ -505,9 +505,11 @@ export default PublishWizard;
 const Step1Category = ({
   data,
   update,
+  errors,
 }: {
   data: PublishFormData;
   update: <K extends keyof PublishFormData>(k: K, v: PublishFormData[K]) => void;
+  errors: Record<string, string>;
 }) => {
   const [search, setSearch] = useState("");
   const filtered = useMemo(() => {
@@ -572,7 +574,13 @@ const Step1Category = ({
       </div>
 
       {selectedCat && selectedCat.subcategories.length > 0 && (
-        <div className="mt-8 rounded-2xl border border-border bg-card p-5">
+        <div
+          id="subcategory-section"
+          className={cn(
+            "mt-8 rounded-2xl border bg-card p-5 transition-colors",
+            errors.subcategory ? "border-destructive ring-2 ring-destructive/20" : "border-border",
+          )}
+        >
           <Label className="text-sm font-semibold text-foreground">
             Subcategorie <span className="text-destructive">*</span>
           </Label>
@@ -596,6 +604,11 @@ const Step1Category = ({
               );
             })}
           </div>
+          {errors.subcategory && (
+            <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-destructive">
+              <AlertCircle className="h-4 w-4" /> {errors.subcategory}
+            </p>
+          )}
         </div>
       )}
     </div>
