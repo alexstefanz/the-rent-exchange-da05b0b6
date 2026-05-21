@@ -74,6 +74,7 @@ const PremiumBookingCard = ({
           disabled={d => isBefore(d, new Date()) || isDateBooked(d, bookedDates)}
           numberOfMonths={2}
           fixedWeeks
+          showOutsideDays={false}
           modifiers={{
             start: startDate,
             end: endDate,
@@ -87,9 +88,9 @@ const PremiumBookingCard = ({
             today: { backgroundColor: "#000", color: "#fff", borderRadius: "10px", fontWeight: 700 },
           }}
           classNames={{
-            months: "flex flex-col gap-0 w-full booking-cal-months",
-            month: "space-y-2 w-full booking-cal-month",
-            caption: "booking-cal-caption flex justify-center pt-1 relative items-center text-sm font-medium",
+            months: "flex flex-col gap-4 w-full booking-cal-months",
+            month: "space-y-2 w-full booking-cal-month [&:not(:first-child)]:pt-4 [&:not(:first-child)]:border-t [&:not(:first-child)]:border-border",
+            caption: "booking-cal-caption flex justify-center pt-1 relative items-center text-base font-semibold text-foreground",
             head_row: "booking-cal-headrow flex justify-between",
             row: "booking-cal-row flex w-full mt-2 justify-between",
             day_selected: "!bg-[#FA8729] !text-white !rounded-[10px] !opacity-100",
