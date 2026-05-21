@@ -328,8 +328,6 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            <FreeCancellationNotice />
-
             <OwnerTrustCard
               ownerId={product.owner_id}
               ownerName={ownerName}
