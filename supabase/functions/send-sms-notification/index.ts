@@ -27,7 +27,11 @@ type TemplateKey =
   | "return_in_progress"
   | "rental_completed"
   | "dispute_opened"
-  | "review_reminder";
+  | "review_reminder"
+  | "request_reminder_2h_owner"
+  | "request_reminder_2h_renter"
+  | "request_expired_owner"
+  | "request_expired_renter";
 
 type TemplateVars = {
   productTitle?: string;
@@ -89,6 +93,14 @@ function renderTemplate(key: TemplateKey, v: TemplateVars): string {
       return `Rentli: disputa deschisa pt "${title}". Suport: ${link}`;
     case "review_reminder":
       return `Rentli: lasa un review pt "${title}". ${link}`;
+    case "request_reminder_2h_owner":
+      return `Rentli: URGENT - mai ai 2h sa raspunzi la cererea pt "${title}" sau se anuleaza automat. ${link}`;
+    case "request_reminder_2h_renter":
+      return `Rentli: asteptam raspunsul lui ${owner} pt "${title}". Mai are 2h. ${link}`;
+    case "request_expired_owner":
+      return `Rentli: cererea pt "${title}" a expirat (48h fara raspuns) si a fost anulata automat.`;
+    case "request_expired_renter":
+      return `Rentli: cererea pt "${title}" a expirat fara raspuns. Hold-ul a fost eliberat integral.`;
   }
 }
 
@@ -176,6 +188,10 @@ Deno.serve(async (req) => {
       "rental_completed",
       "dispute_opened",
       "review_reminder",
+      "request_reminder_2h_owner",
+      "request_reminder_2h_renter",
+      "request_expired_owner",
+      "request_expired_renter",
     ];
     if (!templateKey || !allowedTemplates.includes(templateKey)) {
       return jsonResponse({ error: "Invalid templateKey" }, 400);

@@ -35,7 +35,9 @@ type EventKey =
   | "cancellation_confirmed"
   | "mutual_cancel_approved"
   | "payment_succeeded"
-  | "request_cancelled_by_renter";
+  | "request_cancelled_by_renter"
+  | "request_reminder_2h"
+  | "request_expired";
 
 interface EventConfig {
   recipients: Recipient;
@@ -259,6 +261,32 @@ const EVENTS: Record<EventKey, EventConfig> = {
     link: (c) => `/rezervari/${c.rental.public_id}`,
     smsPurpose: "view_rental",
   },
+};
+
+EVENTS.request_reminder_2h = {
+  recipients: "both", channels: ["in_app", "email", "sms"], critical: true,
+  emailTemplate: { owner: "request-reminder-2h-owner", renter: "request-reminder-2h-renter" },
+  smsTemplate: { owner: "request_reminder_2h_owner", renter: "request_reminder_2h_renter" },
+  inAppTitle: (c) => c.recipientRole === "owner"
+    ? { ro: "⏰ Mai ai 2 ore să răspunzi la cerere", en: "⏰ 2 hours left to respond" }
+    : { ro: "Cererea ta așteaptă răspuns", en: "Your request awaits a response" },
+  inAppDesc: (c) => c.recipientRole === "owner"
+    ? { ro: `Răspunde la cererea pentru "${c.product?.title}" sau va fi anulată automat.`, en: `Respond to the request for "${c.product?.title}" or it will auto-cancel.` }
+    : { ro: `Așteptăm răspunsul proprietarului pentru "${c.product?.title}". Mai are 2 ore.`, en: `Awaiting owner response for "${c.product?.title}". 2 hours left.` },
+  link: (c) => `/rezervari/${c.rental.public_id ?? ""}`,
+  smsPurpose: "view_rental",
+};
+
+EVENTS.request_expired = {
+  recipients: "both", channels: ["in_app", "email", "sms"], critical: true,
+  emailTemplate: { owner: "request-expired-owner", renter: "request-expired-renter" },
+  smsTemplate: { owner: "request_expired_owner", renter: "request_expired_renter" },
+  inAppTitle: { ro: "Cerere expirată automat", en: "Request auto-expired" },
+  inAppDesc: (c) => c.recipientRole === "renter"
+    ? { ro: `Cererea pentru "${c.product?.title}" a expirat (fără răspuns în 48h). Hold-ul a fost eliberat integral.`, en: `Request for "${c.product?.title}" expired (no response in 48h). Hold fully released.` }
+    : { ro: `Cererea pentru "${c.product?.title}" a expirat fără răspuns și a fost anulată automat.`, en: `Request for "${c.product?.title}" expired without response and was auto-cancelled.` },
+  link: (c) => `/rezervari/${c.rental.public_id ?? ""}`,
+  smsPurpose: "view_rental",
 };
 
 function genToken(): string {
