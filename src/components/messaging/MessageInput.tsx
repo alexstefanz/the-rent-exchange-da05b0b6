@@ -222,6 +222,20 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
             {text.length}/{MAX_MESSAGE_LENGTH}
           </span>
         )}
+        {countSpecialChars(text) > 0 && (
+          <span
+            className={cn(
+              "pointer-events-none absolute bottom-1 left-3 text-[10px] tabular-nums",
+              countSpecialChars(text) >= MAX_SPECIAL_CHARS
+                ? "text-destructive font-medium"
+                : countSpecialChars(text) >= MAX_SPECIAL_CHARS * 0.8
+                ? "text-primary"
+                : "text-muted-foreground"
+            )}
+          >
+            {t("simboluri", "symbols")}: {countSpecialChars(text)}/{MAX_SPECIAL_CHARS}
+          </span>
+        )}
         </div>
         <Button
           type="button"
