@@ -125,7 +125,7 @@ export const useEarnings = () => {
           .eq("owner_id", user.id)
           .order("created_at", { ascending: false }),
         supabase
-          .from("withdrawal_requests" as never)
+          .from("withdrawal_requests")
           .select("*")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false }),
@@ -134,7 +134,7 @@ export const useEarnings = () => {
           .select("iban, account_holder_name")
           .eq("id", user.id)
           .maybeSingle(),
-        supabase.rpc("get_user_wallet_balance" as never, { _user_id: user.id } as never),
+        supabase.rpc("get_user_wallet_balance", { _user_id: user.id }),
       ]);
 
       const p = profile as ProfilePayoutRow | null;
