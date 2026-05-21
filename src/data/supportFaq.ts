@@ -12,8 +12,8 @@ export const SUPPORT_FAQ: SupportFaqEntry[] = [
       en: "How do I cancel a reservation?",
     },
     answer: {
-      ro: "Mergi la **Rezervările mele** → alege rezervarea → apasă **Anulează**. Reguli: **cu 24h+ înainte de start** = rambursare 100%. Sub 24h = prima zi și taxa platformei sunt nerambursabile. După predarea produsului = fără rambursare (folosește returnare anticipată sau dispută). Excepție: dacă produsul nu corespunde descrierii, anunță-ne în 30 min de la preluare cu poze pentru rambursare integrală.",
-      en: "Go to **My Rentals** → pick the reservation → tap **Cancel**. Rules: **24h+ before start** = 100% refund. Under 24h = first day and platform fee are non-refundable. After handover = no refund (use early return or dispute). Exception: if the item doesn't match the listing, report it within 30 min of pickup with photos for a full refund.",
+      ro: "Mergi la **Rezervările mele** → alege rezervarea → apasă **Anulează**. Reguli: **cu 24h+ înainte de start** = rambursare 100%. Sub 24h = prima zi și taxa platformei sunt nerambursabile. După predarea produsului = fără rambursare (folosește dispută sau contactează suportul). Excepție: dacă produsul nu corespunde descrierii, anunță-ne în 30 min de la preluare cu poze pentru rambursare integrală.",
+      en: "Go to **My Rentals** → pick the reservation → tap **Cancel**. Rules: **24h+ before start** = 100% refund. Under 24h = first day and platform fee are non-refundable. After handover = no refund (use dispute or contact support). Exception: if the item doesn't match the listing, report it within 30 min of pickup with photos for a full refund.",
     },
   },
   {
