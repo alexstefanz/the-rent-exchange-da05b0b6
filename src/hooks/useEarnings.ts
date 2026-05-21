@@ -70,7 +70,7 @@ export const useEarnings = () => {
     if (!user) return;
     setLoading(true);
     try {
-      const [{ data: rentals }, { data: completedWithdrawals }, { data: profile }] = await Promise.all([
+      const [{ data: rentals }, { data: completedWithdrawals }, { data: profile }, { data: walletData }] = await Promise.all([
         supabase
           .from("rentals")
           .select(
@@ -88,6 +88,7 @@ export const useEarnings = () => {
           .select("iban, account_holder_name")
           .eq("id", user.id)
           .maybeSingle(),
+        supabase.rpc("get_user_wallet_balance" as any, { _user_id: user.id }),
       ]);
 
       const p: any = profile;
@@ -166,18 +167,19 @@ export const useEarnings = () => {
         });
       }
 
-      const availableBalance = Math.max(
-        0,
-        Math.round((totalAllTime - totalWithdrawn - pendingWithdrawals) * 100) / 100
-      );
+      const walletRow: any = Array.isArray(walletData) ? walletData[0] : walletData;
+      const walletAvailable = Number(walletRow?.available ?? totalAllTime - totalWithdrawn - pendingWithdrawals);
+      const walletTotalEarnings = Number(walletRow?.total_earnings ?? totalAllTime);
+      const walletTotalWithdrawn = Number(walletRow?.total_withdrawn ?? totalWithdrawn);
+      const walletPendingWithdrawals = Number(walletRow?.pending_withdrawals ?? pendingWithdrawals);
 
       setEarnings({
         totalThisMonth: Math.round(totalThisMonth * 100) / 100,
-        totalAllTime: Math.round(totalAllTime * 100) / 100,
+        totalAllTime: Math.round(walletTotalEarnings * 100) / 100,
         totalRentals: list.length,
-        availableBalance,
-        totalWithdrawn: Math.round(totalWithdrawn * 100) / 100,
-        pendingWithdrawals: Math.round(pendingWithdrawals * 100) / 100,
+        availableBalance: Math.max(0, Math.round(walletAvailable * 100) / 100),
+        totalWithdrawn: Math.round(walletTotalWithdrawn * 100) / 100,
+        pendingWithdrawals: Math.round(walletPendingWithdrawals * 100) / 100,
       });
       setTransactions(txns);
     } catch (e) {
@@ -204,6 +206,16 @@ export const useEarnings = () => {
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "rentals", filter: `owner_id=eq.${user.id}` },
+        () => fetchData()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "transactions", filter: `user_id=eq.${user.id}` },
+        () => fetchData()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "wallet_ledger", filter: `user_id=eq.${user.id}` },
         () => fetchData()
       )
       .subscribe();
