@@ -43,8 +43,8 @@ const MobileStickyBookingBar = (props: Props) => {
 
   return (
     <div
-      className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-xl border-t border-border shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.15)]"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="lg:hidden fixed left-0 right-0 z-[60] bg-card/95 backdrop-blur-xl border-t border-border shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.15)]"
+      style={{ bottom: "calc(4rem + env(safe-area-inset-bottom))" }}
     >
       <div className="px-4 pt-3 pb-3 flex flex-col gap-2.5">
         {/* Row 1: dates + total */}
