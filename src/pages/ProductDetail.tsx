@@ -18,7 +18,6 @@ import { getOrCreateConversation, sendMessage } from "@/features/messaging/messa
 
 import NearbyProductsSlider from "@/components/products/NearbyProductsSlider";
 import ProductImageGallery from "@/components/product/ProductImageGallery";
-import FreeCancellationNotice from "@/components/product/FreeCancellationNotice";
 import OwnerOtherListings from "@/components/product/OwnerOtherListings";
 import ProductReviewsSection from "@/components/product/ProductReviewsSection";
 import PremiumBookingCard from "@/components/product/PremiumBookingCard";
