@@ -14,7 +14,7 @@ interface Props {
 }
 
 const OwnerTrustCard = ({ ownerName, ownerAvatar, stats }: Props) => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   const memberSince = stats?.owner_member_since ? new Date(stats.owner_member_since).getFullYear().toString() : "—";
   const rating = stats?.owner_avg_rating ? Number(stats.owner_avg_rating).toFixed(1) : "—";
