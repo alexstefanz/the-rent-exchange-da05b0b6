@@ -70,6 +70,8 @@ const PremiumBookingCard = ({
           mode="single"
           selected={endDate || startDate}
           onSelect={onSelectDate}
+          fromMonth={new Date()}
+          className="rdp-hide-past-weeks"
           disabled={d => isBefore(d, new Date()) || isDateBooked(d, bookedDates)}
           modifiers={{
             start: startDate,
