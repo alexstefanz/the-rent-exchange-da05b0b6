@@ -7,7 +7,7 @@ const RentalProtection = () => {
     { icon: Shield, title: t("Plăți securizate", "Secure payments"), desc: t("Stripe 3D Secure. Suma e blocată, nu retrasă.", "Stripe 3D Secure. Funds held, not withdrawn."), tone: "text-emerald-600 bg-emerald-50" },
     { icon: FileCheck, title: t("Proces verbal digital", "Digital handover"), desc: t("Poze obligatorii la predare și returnare.", "Mandatory photos at pickup and return."), tone: "text-blue-600 bg-blue-50" },
     { icon: AlertCircle, title: t("Protecție dispute", "Dispute protection"), desc: t("Echipa Rentli mediază orice problemă.", "Rentli team mediates any issue."), tone: "text-amber-600 bg-amber-50" },
-    { icon: Headphones, title: t("Suport 7/7", "7-day support"), desc: t("Răspuns sub 1 oră prin chat sau email.", "Reply under 1 hour via chat or email."), tone: "text-primary bg-primary/10" },
+    { icon: Headphones, title: t("Suport 24/7", "24/7 support"), desc: t("Răspuns sub 1 oră prin chat sau email.", "Reply under 1 hour via chat or email."), tone: "text-primary bg-primary/10" },
   ];
 
   return (
