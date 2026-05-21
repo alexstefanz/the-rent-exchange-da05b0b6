@@ -131,9 +131,8 @@ const RentalsTab = () => {
 
   const filtered = useMemo(() => sortRentals(rentals.filter(matchesStatus)), [rentals, statusFilter, sortBy]);
 
-  const isPremium = (r: MyRental) =>
-    r.status === "pending" ||
-    ((r.status === "confirmed" || r.status === "active") && !r.return_confirmed_at);
+  const FINALIZED = new Set(["completed", "cancelled", "rejected"]);
+  const isPremium = (r: MyRental) => !FINALIZED.has(r.status);
   // Keep the filtered sort order (default: newest first) so the most recent rental
   // always shows up as the first card, regardless of status.
   const premiumRentals = filtered.filter(isPremium);
@@ -327,7 +326,7 @@ const RentalsTab = () => {
             <AccordionTrigger className="hover:no-underline">
               <span className="flex items-center gap-2 font-heading text-lg font-semibold">
                 <Package className="h-5 w-5 text-primary" />
-                Rezervări active &amp; istoric
+                Istoric închirieri
                 <Badge variant="secondary">{historyRentals.length}</Badge>
               </span>
             </AccordionTrigger>
