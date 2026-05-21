@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { format, differenceInDays, isBefore, startOfToday } from "date-fns";
+import { format, differenceInDays, isBefore } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
 import { Calendar as CalendarIcon, Shield, Clock, CheckCircle2, MessageCircle, CalendarCheck } from "lucide-react";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -72,7 +72,7 @@ const PremiumBookingCard = ({
           onSelect={onSelectDate}
           fromMonth={new Date()}
           disabled={d => isBefore(d, new Date()) || isDateBooked(d, bookedDates)}
-          hidden={d => isBefore(d, startOfToday())}
+          numberOfMonths={2}
           modifiers={{
             start: startDate,
             end: endDate,

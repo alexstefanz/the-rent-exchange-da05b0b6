@@ -1,24 +1,10 @@
-## Obiectiv
-Pe calendar, prima săptămână afișată = săptămâna curentă, dar **zilele din trecut din această săptămână nu mai apar deloc** (nici măcar gri). Doar zilele de azi înainte sunt vizibile.
+## Schimbări
+1. **Revine la zilele trecute gri în săptămâna curentă** — scot prop-ul `hidden`, păstrez `disabled`. Săpt. 17-23 va arăta 17-20 în gri, 21-23 activ. Regula CSS existentă continuă să ascundă rândurile complet trecute (3-9, 10-16).
+2. **Calendarul afișează 2 luni stacked** — adaug `numberOfMonths={2}` pe `<CalendarComponent>` ca să umple spațiul vertical din card și să arate și luna următoare (June 2026) sub mai.
 
-## Comportament
-- Săpt. curentă (ex. 17-23 mai, azi=21): rândul rămâne, dar celulele 17, 18, 19, 20 sunt **goale** (invizibile). Apar doar 21, 22, 23.
-- Săpt. viitoare: complete, normal.
-- Săpt. complet trecute: deja ascunse (regula existentă).
-- Navigarea înapoi rămâne blocată (`fromMonth`).
+## Fișier
+`src/components/product/PremiumBookingCard.tsx` — elimin `hidden={...}` + `startOfToday` import, adaug `numberOfMonths={2}`.
 
-## Implementare
-Fișier: `src/components/product/PremiumBookingCard.tsx`
-
-Adaug prop `hidden` pe `<CalendarComponent>` care marchează zilele înainte de azi:
-```ts
-hidden={d => isBefore(d, startOfToday())}
-```
-(import `startOfToday` din `date-fns`)
-
-React-day-picker aplică pe zilele "hidden" clasa `.rdp-day_hidden` cu `visibility: hidden` — celula rămâne, dar conținutul dispare. Regula CSS existentă `.rdp-hide-past-weeks .rdp-row:not(:has(.rdp-day:not([disabled])))` continuă să ascundă rândurile complet goale.
-
-Atributul `disabled` rămâne pentru robustețe (zilele hidden nu mai sunt selectabile oricum).
-
-## Fișiere modificate
-- `src/components/product/PremiumBookingCard.tsx` (1 linie adăugată + 1 import)
+## Note
+- shadcn Calendar deja face stack pe coloană pentru viewport mic (`flex-col sm:flex-row`). În card sidebar (lățime ~400px) va rămâne pe coloană → cele 2 luni una sub alta.
+- Bookings/preț/buton rămân neschimbate dedesubt.
