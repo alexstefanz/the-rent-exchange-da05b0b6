@@ -7,7 +7,7 @@ import { ro, enUS } from "date-fns/locale";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { MAX_MESSAGE_LENGTH, MAX_SPECIAL_CHARS, countSpecialChars } from "@/features/messaging/messagingApi";
+import { MAX_MESSAGE_LENGTH, MAX_SPECIAL_CHARS, countSpecialChars, clampChatInput } from "@/features/messaging/messagingApi";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -75,6 +75,18 @@ export function TicketChat({ ticketId, isClosed }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const lastSymbolToastRef = useRef(0);
+  const notifySymbolBlocked = () => {
+    const now = Date.now();
+    if (now - lastSymbolToastRef.current < 1500) return;
+    lastSymbolToastRef.current = now;
+    toast.error(
+      t(
+        `Maxim ${MAX_SPECIAL_CHARS} simboluri speciale per mesaj.`,
+        `Maximum ${MAX_SPECIAL_CHARS} special symbols per message.`,
+      ),
+    );
+  };
 
   useTicketRealtime(ticketId);
 
@@ -199,7 +211,9 @@ export function TicketChat({ ticketId, isClosed }: Props) {
               ref={textareaRef}
               value={text}
               onChange={(e) => {
-                setText(e.target.value.slice(0, MAX_MESSAGE_LENGTH));
+                const { value, blockedSpecial } = clampChatInput(e.target.value);
+                setText(value);
+                if (blockedSpecial) notifySymbolBlocked();
                 const el = e.target as HTMLTextAreaElement;
                 el.style.height = "auto";
                 el.style.height = Math.min(el.scrollHeight, 160) + "px";

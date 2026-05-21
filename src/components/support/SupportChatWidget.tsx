@@ -59,7 +59,7 @@ import {
   updateOpsTicketField,
   type OpsTicket as AdminOpsTicket,
 } from "@/features/admin/opsTicketsApi";
-import { MAX_MESSAGE_LENGTH, MAX_SPECIAL_CHARS, countSpecialChars } from "@/features/messaging/messagingApi";
+import { MAX_MESSAGE_LENGTH, MAX_SPECIAL_CHARS, countSpecialChars, clampChatInput } from "@/features/messaging/messagingApi";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ro as roLocale, enUS } from "date-fns/locale";
@@ -210,6 +210,24 @@ const SupportChatWidget = () => {
   const autoGrow = (el: HTMLTextAreaElement) => {
     el.style.height = "auto";
     el.style.height = Math.min(el.scrollHeight, 160) + "px";
+  };
+  const lastSymbolToastRef = useRef(0);
+  const notifySymbolBlocked = () => {
+    const now = Date.now();
+    if (now - lastSymbolToastRef.current < 1500) return;
+    lastSymbolToastRef.current = now;
+    toast.error(
+      t(
+        `Maxim ${MAX_SPECIAL_CHARS} simboluri speciale per mesaj.`,
+        `Maximum ${MAX_SPECIAL_CHARS} special symbols per message.`,
+      ),
+    );
+  };
+  const handleMessageChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const { value, blockedSpecial } = clampChatInput(e.target.value);
+    setMessageText(value);
+    if (blockedSpecial) notifySymbolBlocked();
+    autoGrow(e.target);
   };
 
   const [isOpen, setIsOpen] = useState(false);
@@ -478,6 +496,9 @@ const SupportChatWidget = () => {
 
   const sendMutation = useMutation({
     mutationFn: async (text: string) => {
+      if (countSpecialChars(text) > MAX_SPECIAL_CHARS) {
+        throw new Error("TOO_MANY_SPECIAL_CHARS");
+      }
       if (isAdmin) {
         return createTicketMessage(ticketId!, text, isInternal, "ADMIN");
       }
@@ -491,6 +512,19 @@ const SupportChatWidget = () => {
       });
       if (isAdmin) {
         queryClient.invalidateQueries({ queryKey: ["adminOpsInbox"] });
+      }
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg === "TOO_MANY_SPECIAL_CHARS") {
+        toast.error(
+          t(
+            `Maxim ${MAX_SPECIAL_CHARS} simboluri speciale per mesaj.`,
+            `Maximum ${MAX_SPECIAL_CHARS} special symbols per message.`,
+          ),
+        );
+      } else {
+        toast.error(t("Eroare la trimiterea mesajului.", "Failed to send message."));
       }
     },
   });
@@ -558,6 +592,17 @@ const SupportChatWidget = () => {
 
   const ensureTicketAndSend = async (text: string) => {
     if (!user || !text.trim()) return;
+    // Allow attachment URLs (image upload uses this path) — only validate plain text
+    const looksLikeUrl = /^https?:\/\//i.test(text.trim());
+    if (!looksLikeUrl && countSpecialChars(text) > MAX_SPECIAL_CHARS) {
+      toast.error(
+        t(
+          `Maxim ${MAX_SPECIAL_CHARS} simboluri speciale per mesaj.`,
+          `Maximum ${MAX_SPECIAL_CHARS} special symbols per message.`,
+        ),
+      );
+      return;
+    }
     if (ticketId) {
       sendMutation.mutate(text);
       return;
@@ -984,10 +1029,7 @@ const SupportChatWidget = () => {
                       <Textarea
                         ref={messageTextareaRef}
                         value={messageText}
-                        onChange={(e) => {
-                          setMessageText(e.target.value.slice(0, MAX_MESSAGE_LENGTH));
-                          autoGrow(e.target as HTMLTextAreaElement);
-                        }}
+                        onChange={handleMessageChange}
                         maxLength={MAX_MESSAGE_LENGTH}
                         rows={1}
                         placeholder={t("Scrie mesajul tău...", "Write your message...")}
@@ -1016,6 +1058,16 @@ const SupportChatWidget = () => {
                         )}
                       </Button>
                     </div>
+                    {(messageText.length >= MAX_MESSAGE_LENGTH * 0.8 || countSpecialChars(messageText) > 0) && (
+                      <div className="flex justify-between px-3 pb-1 text-[10px] tabular-nums">
+                        <span className={countSpecialChars(messageText) >= MAX_SPECIAL_CHARS ? "text-destructive font-medium" : "text-muted-foreground"}>
+                          {countSpecialChars(messageText) > 0 ? `${t("simboluri", "symbols")}: ${countSpecialChars(messageText)}/${MAX_SPECIAL_CHARS}` : ""}
+                        </span>
+                        <span className={messageText.length >= MAX_MESSAGE_LENGTH ? "text-destructive font-medium" : "text-muted-foreground"}>
+                          {messageText.length}/{MAX_MESSAGE_LENGTH}
+                        </span>
+                      </div>
+                    )}
                     <p className="hidden lg:block text-[10px] text-muted-foreground text-center pb-2">
                       Chat Rentli
                     </p>
@@ -1211,10 +1263,7 @@ const SupportChatWidget = () => {
                         <Textarea
                           ref={messageTextareaRef}
                           value={messageText}
-                          onChange={(e) => {
-                            setMessageText(e.target.value.slice(0, MAX_MESSAGE_LENGTH));
-                            autoGrow(e.target as HTMLTextAreaElement);
-                          }}
+                          onChange={handleMessageChange}
                           maxLength={MAX_MESSAGE_LENGTH}
                           rows={1}
                           placeholder={t(
@@ -1242,6 +1291,16 @@ const SupportChatWidget = () => {
                           )}
                         </Button>
                       </div>
+                      {(messageText.length >= MAX_MESSAGE_LENGTH * 0.8 || countSpecialChars(messageText) > 0) && (
+                        <div className="flex justify-between px-3 pb-1 text-[10px] tabular-nums">
+                          <span className={countSpecialChars(messageText) >= MAX_SPECIAL_CHARS ? "text-destructive font-medium" : "text-muted-foreground"}>
+                            {countSpecialChars(messageText) > 0 ? `${t("simboluri", "symbols")}: ${countSpecialChars(messageText)}/${MAX_SPECIAL_CHARS}` : ""}
+                          </span>
+                          <span className={messageText.length >= MAX_MESSAGE_LENGTH ? "text-destructive font-medium" : "text-muted-foreground"}>
+                            {messageText.length}/{MAX_MESSAGE_LENGTH}
+                          </span>
+                        </div>
+                      )}
                       <p className="hidden lg:block text-[10px] text-muted-foreground text-center pb-2">
                         Chat Rentli
                       </p>
