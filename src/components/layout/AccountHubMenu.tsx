@@ -150,7 +150,7 @@ function StatusCard({
   onClick,
   tone = "default",
 }: {
-  icon: any;
+  icon: React.ElementType;
   label: string;
   value: React.ReactNode;
   badge?: number;
@@ -196,7 +196,7 @@ function NavRow({
   className,
 }: {
   to: string;
-  icon: any;
+  icon: React.ElementType;
   label: string;
   badge?: React.ReactNode;
   badgeTone?: "primary" | "warning" | "destructive";
@@ -261,7 +261,9 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
   useEffect(() => {
     try {
       window.localStorage.setItem("rentli:hideBalance", hideBalance ? "1" : "0");
-    } catch {}
+    } catch {
+      // Ignore storage write failures.
+    }
   }, [hideBalance]);
 
   const profile = data?.profile;
