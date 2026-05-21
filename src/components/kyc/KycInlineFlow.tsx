@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,23 +68,50 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
   const phoneGate = usePhoneRequired();
 
   // Load existing KYC case
+  const refreshKycCase = useCallback(async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from("kyc_cases")
+      .select("id, status, level_required, rejection_reason, public_id, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) console.error("Error loading KYC case:", error);
+    setKycCase(data);
+    setIsLoading(false);
+  }, [user]);
+
   useEffect(() => {
     if (!user) return;
-    const load = async () => {
-      const { data, error } = await supabase
-        .from("kyc_cases")
-        .select("id, status, level_required, rejection_reason, public_id, created_at")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+    refreshKycCase();
+  }, [user, refreshKycCase]);
 
-      if (error) console.error("Error loading KYC case:", error);
-      setKycCase(data);
-      setIsLoading(false);
+  // Realtime: reflect admin approval/rejection without page refresh
+  useEffect(() => {
+    if (!user?.id) return;
+    const channel = supabase
+      .channel(`kyc-cases-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "kyc_cases",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          refreshKycCase();
+          queryClient.invalidateQueries({ queryKey: ["kycGate", user.id] });
+          queryClient.invalidateQueries({ queryKey: ["currentUserProfile", user.id] });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
     };
-    load();
-  }, [user]);
+  }, [user?.id, queryClient, refreshKycCase]);
 
   useEffect(() => {
     if (!user?.id) return;
