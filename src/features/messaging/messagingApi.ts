@@ -239,6 +239,34 @@ export function countSpecialChars(text: string): number {
   return (text.match(SPECIAL_CHAR_RE) || []).length;
 }
 
+/**
+ * Returns the input clamped so that it does not exceed MAX_MESSAGE_LENGTH
+ * total characters AND no more than MAX_SPECIAL_CHARS special characters.
+ * When the special-char cap is reached, further special characters are
+ * silently dropped from the new input, but regular characters still go through.
+ * Returns { value, blockedSpecial } so the UI can show feedback.
+ */
+export function clampChatInput(next: string): { value: string; blockedSpecial: boolean } {
+  let value = next.slice(0, MAX_MESSAGE_LENGTH);
+  if (countSpecialChars(value) <= MAX_SPECIAL_CHARS) {
+    return { value, blockedSpecial: false };
+  }
+  // Drop special chars past the cap, keep order of allowed chars
+  let kept = 0;
+  let out = "";
+  for (const ch of value) {
+    if (SPECIAL_CHAR_RE.test(ch)) {
+      SPECIAL_CHAR_RE.lastIndex = 0; // reset because of /g flag
+      if (kept >= MAX_SPECIAL_CHARS) continue;
+      kept++;
+    } else {
+      SPECIAL_CHAR_RE.lastIndex = 0;
+    }
+    out += ch;
+  }
+  return { value: out, blockedSpecial: true };
+}
+
 export async function sendMessage(conversationId: string, content: string): Promise<Message | null> {
   const trimmed = content.trim();
   
