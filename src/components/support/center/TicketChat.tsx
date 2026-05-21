@@ -7,6 +7,7 @@ import { ro, enUS } from "date-fns/locale";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { MAX_MESSAGE_LENGTH, MAX_SPECIAL_CHARS, countSpecialChars } from "@/features/messaging/messagingApi";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -105,6 +106,19 @@ export function TicketChat({ ticketId, isClosed }: Props) {
   const handleSend = () => {
     const txt = text.trim();
     if (!txt || sendMutation.isPending) return;
+    if (txt.length > MAX_MESSAGE_LENGTH) {
+      toast.error(t(`Maxim ${MAX_MESSAGE_LENGTH} caractere.`, `Maximum ${MAX_MESSAGE_LENGTH} characters.`));
+      return;
+    }
+    if (countSpecialChars(txt) > MAX_SPECIAL_CHARS) {
+      toast.error(
+        t(
+          `Maxim ${MAX_SPECIAL_CHARS} simboluri speciale per mesaj.`,
+          `Maximum ${MAX_SPECIAL_CHARS} special symbols per message.`
+        )
+      );
+      return;
+    }
     sendMutation.mutate(txt);
   };
 
@@ -185,7 +199,7 @@ export function TicketChat({ ticketId, isClosed }: Props) {
               ref={textareaRef}
               value={text}
               onChange={(e) => {
-                setText(e.target.value);
+                setText(e.target.value.slice(0, MAX_MESSAGE_LENGTH));
                 const el = e.target as HTMLTextAreaElement;
                 el.style.height = "auto";
                 el.style.height = Math.min(el.scrollHeight, 160) + "px";
@@ -198,6 +212,7 @@ export function TicketChat({ ticketId, isClosed }: Props) {
               }}
               placeholder={t("Scrie un mesaj…", "Write a message…")}
               rows={1}
+              maxLength={MAX_MESSAGE_LENGTH}
               className="min-h-9 max-h-40 resize-none overflow-y-auto"
             />
             <Button
@@ -211,6 +226,30 @@ export function TicketChat({ ticketId, isClosed }: Props) {
               {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
+          {(text.length >= MAX_MESSAGE_LENGTH * 0.8 || countSpecialChars(text) > 0) && (
+            <div className="flex justify-between mt-1 px-1 text-[10px] tabular-nums">
+              <span
+                className={
+                  countSpecialChars(text) >= MAX_SPECIAL_CHARS
+                    ? "text-destructive font-medium"
+                    : "text-muted-foreground"
+                }
+              >
+                {countSpecialChars(text) > 0
+                  ? `${t("simboluri", "symbols")}: ${countSpecialChars(text)}/${MAX_SPECIAL_CHARS}`
+                  : ""}
+              </span>
+              <span
+                className={
+                  text.length >= MAX_MESSAGE_LENGTH
+                    ? "text-destructive font-medium"
+                    : "text-muted-foreground"
+                }
+              >
+                {text.length}/{MAX_MESSAGE_LENGTH}
+              </span>
+            </div>
+          )}
         </div>
       ) : (
         <div className="border-t border-border/60 p-3 bg-muted/30 text-center text-xs text-muted-foreground">

@@ -216,6 +216,15 @@ export function ChatPanel({
         );
         throw e;
       }
+      if (e?.message === "TOO_MANY_SPECIAL_CHARS") {
+        toast.error(
+          t(
+            "Maxim 20 simboluri speciale per mesaj.",
+            "Maximum 20 special symbols per message."
+          )
+        );
+        throw e;
+      }
       throw e;
     }
     if (!sent) {

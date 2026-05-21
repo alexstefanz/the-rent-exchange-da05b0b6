@@ -59,7 +59,7 @@ import {
   updateOpsTicketField,
   type OpsTicket as AdminOpsTicket,
 } from "@/features/admin/opsTicketsApi";
-import { MAX_MESSAGE_LENGTH } from "@/features/messaging/messagingApi";
+import { MAX_MESSAGE_LENGTH, MAX_SPECIAL_CHARS, countSpecialChars } from "@/features/messaging/messagingApi";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ro as roLocale, enUS } from "date-fns/locale";
@@ -600,6 +600,15 @@ const SupportChatWidget = () => {
   const handleSendTicketMessage = () => {
     const text = messageText.trim().slice(0, MAX_MESSAGE_LENGTH);
     if (!text) return;
+    if (countSpecialChars(text) > MAX_SPECIAL_CHARS) {
+      toast.error(
+        t(
+          `Maxim ${MAX_SPECIAL_CHARS} simboluri speciale per mesaj.`,
+          `Maximum ${MAX_SPECIAL_CHARS} special symbols per message.`
+        )
+      );
+      return;
+    }
     ensureTicketAndSend(text);
   };
 
