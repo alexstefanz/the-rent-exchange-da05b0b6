@@ -231,7 +231,13 @@ export async function getRentalContext(rentalId: string): Promise<RentalContextR
   };
 }
 
-const MAX_MESSAGE_LENGTH = 1000;
+const MAX_MESSAGE_LENGTH = 500;
+const MAX_SPECIAL_CHARS = 20;
+const SPECIAL_CHAR_RE = /[^\p{L}\p{N}\s.,!?;:\-'"()…–]/gu;
+
+export function countSpecialChars(text: string): number {
+  return (text.match(SPECIAL_CHAR_RE) || []).length;
+}
 
 export async function sendMessage(conversationId: string, content: string): Promise<Message | null> {
   const trimmed = content.trim();
@@ -240,6 +246,11 @@ export async function sendMessage(conversationId: string, content: string): Prom
   if (trimmed.length === 0 || trimmed.length > MAX_MESSAGE_LENGTH) {
     console.error('Invalid message length: must be between 1 and', MAX_MESSAGE_LENGTH, 'characters');
     return null;
+  }
+
+  if (countSpecialChars(trimmed) > MAX_SPECIAL_CHARS) {
+    console.error('Too many special characters: max', MAX_SPECIAL_CHARS);
+    throw new Error('TOO_MANY_SPECIAL_CHARS');
   }
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -286,7 +297,7 @@ export async function sendMessage(conversationId: string, content: string): Prom
   return data as Message;
 }
 
-export { MAX_MESSAGE_LENGTH };
+export { MAX_MESSAGE_LENGTH, MAX_SPECIAL_CHARS };
 
 export async function markMessagesAsRead(conversationId: string): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
