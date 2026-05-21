@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Star, MessageSquare, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -42,6 +43,25 @@ const ReviewsTab = () => {
   const { language } = useLanguage();
   const t = (roText: string, enText: string) => (language === "ro" ? roText : enText);
   const dateLocale = language === "ro" ? ro : enUS;
+  const qc = useQueryClient();
+
+  // Realtime: refresh both received and given reviews on any change
+  useEffect(() => {
+    if (!user?.id) return;
+    const invalidate = () => {
+      qc.invalidateQueries({ queryKey: ["user-reviews", user.id] });
+      qc.invalidateQueries({ queryKey: ["user-given-reviews", user.id] });
+      qc.invalidateQueries({ queryKey: ["product-reviews-received", user.id] });
+      qc.invalidateQueries({ queryKey: ["product-reviews-given", user.id] });
+    };
+    const ch = supabase
+      .channel(`reviews-tab-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "product_reviews" }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_reviews", filter: `reviewed_user_id=eq.${user.id}` }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_reviews", filter: `reviewer_id=eq.${user.id}` }, invalidate)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user?.id, qc]);
 
   // User reviews received
   const { data: userReceived = [], isLoading: loadingUserReceived } = useQuery({
