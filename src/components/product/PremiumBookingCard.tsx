@@ -87,8 +87,11 @@ const PremiumBookingCard = ({
             today: { backgroundColor: "#000", color: "#fff", borderRadius: "10px", fontWeight: 700 },
           }}
           classNames={{
-            months: "flex flex-col gap-0 w-full",
-            month: "space-y-2 w-full",
+            months: "flex flex-col gap-0 w-full booking-cal-months",
+            month: "space-y-2 w-full booking-cal-month",
+            caption: "booking-cal-caption flex justify-center pt-1 relative items-center text-sm font-medium",
+            head_row: "booking-cal-headrow flex justify-between",
+            row: "booking-cal-row flex w-full mt-2 justify-between",
             day_selected: "!bg-[#FA8729] !text-white !rounded-[10px] !opacity-100",
             day_range_start: "!rounded-[10px]",
             day_range_end: "!rounded-[10px]",

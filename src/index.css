@@ -229,15 +229,16 @@ html, body {
 /* Hide entire calendar week rows where every day is disabled (past weeks).
    Used on the product booking calendar so users only see the current week
    onwards. Current week stays visible because it still contains future days. */
-.rdp-hide-past-weeks .rdp-row:not(:has(.rdp-day:not([disabled]))) {
+/* Hide entirely-past weeks (every day disabled). */
+.rdp-hide-past-weeks .booking-cal-row:not(:has(button:not([disabled]))) {
   display: none;
 }
 
-/* In the 2-month stacked booking calendar, hide the second month's caption
-   (June header) so the grid reads as one continuous calendar, and trim the
-   duplicate first week (May 31 – Jun 6, already present at end of May) and
-   the trailing week that spills into July. */
-.rdp-hide-past-weeks .rdp-month:nth-child(2) .rdp-caption { display: none; }
-.rdp-hide-past-weeks .rdp-month:nth-child(2) .rdp-head_row { display: none; }
-.rdp-hide-past-weeks .rdp-month:nth-child(2) .rdp-row:first-child { display: none; }
-.rdp-hide-past-weeks .rdp-month:nth-child(2) .rdp-row:last-child { display: none; }
+/* Two-month stacked booking calendar: hide June's caption + weekday header
+   so it reads as one continuous grid; drop the duplicate first row
+   (May 31 – Jun 6, already shown at end of May) and the trailing row
+   that spills into July. */
+.rdp-hide-past-weeks .booking-cal-month:nth-child(2) .booking-cal-caption { display: none; }
+.rdp-hide-past-weeks .booking-cal-month:nth-child(2) .booking-cal-headrow { display: none; }
+.rdp-hide-past-weeks .booking-cal-month:nth-child(2) .booking-cal-row:first-of-type { display: none; }
+.rdp-hide-past-weeks .booking-cal-month:nth-child(2) .booking-cal-row:last-of-type { display: none; }
