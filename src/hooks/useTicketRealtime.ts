@@ -30,6 +30,15 @@ export function useTicketRealtime(ticketId: string | null | undefined) {
           qc.invalidateQueries({ queryKey: ["supportTicketInfo", ticketId] });
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "ops_ticket_attachments", filter: `ticket_id=eq.${ticketId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["userTicketMessages", ticketId] });
+          qc.invalidateQueries({ queryKey: ["supportChatMessages", ticketId] });
+          qc.invalidateQueries({ queryKey: ["ticketMessages", ticketId] });
+        }
+      )
       .subscribe();
 
     return () => {
