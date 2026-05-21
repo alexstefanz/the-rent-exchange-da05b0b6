@@ -117,9 +117,26 @@ export function ConversationList({
               isUnread ? "font-bold text-foreground" : "text-muted-foreground"
             }`}
           >
-            {(!conv.last_message.sender_id || conv.last_message.content?.startsWith("booking_confirmed|"))
-              ? `🛎 ${t("Rezervare confirmată", "Booking confirmed")}`
-              : `${conv.last_message.sender_id === userId ? t("Tu: ", "You: ") : ""}${conv.last_message.content}`}
+            {(() => {
+              const m = conv.last_message;
+              const c = m.content ?? "";
+              if (!m.sender_id) {
+                const kind = c.split("|")[0];
+                const map: Record<string, [string, string]> = {
+                  booking_confirmed: ["Rezervare confirmată", "Booking confirmed"],
+                  request_accepted: ["Cerere acceptată", "Request accepted"],
+                  request_declined: ["Cerere refuzată", "Request declined"],
+                  payment_completed: ["Plată efectuată", "Payment completed"],
+                  handover_done: ["Produs predat", "Item handed over"],
+                  return_started: ["Returnare în curs", "Return in progress"],
+                  rental_completed: ["Închiriere finalizată", "Rental completed"],
+                  booking_cancelled: ["Rezervare anulată", "Booking cancelled"],
+                };
+                const label = map[kind];
+                if (label) return `🛎 ${t(label[0], label[1])}`;
+              }
+              return `${m.sender_id === userId ? t("Tu: ", "You: ") : ""}${c}`;
+            })()}
           </p>
         )}
       </div>
