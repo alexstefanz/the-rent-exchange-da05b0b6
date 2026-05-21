@@ -94,7 +94,7 @@ const PremiumBookingSummary = ({ product, startDate, endDate, rentalDays, totalP
         <div className="pt-2 grid grid-cols-1 gap-1.5 text-xs">
           <div className="flex items-center gap-2 text-foreground/80">
             <ShieldCheck className="h-3.5 w-3.5 text-emerald-600" />
-            <span>{t("Plată securizată — bani blocați în escrow", "Secure payment — funds held in escrow")}</span>
+            <span>{t("Plată securizată — bani blocați în custodie", "Secure payment — funds held in escrow")}</span>
           </div>
           <div className="flex items-center gap-2 text-foreground/80">
             <FileCheck2 className="h-3.5 w-3.5 text-emerald-600" />
