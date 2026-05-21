@@ -246,21 +246,18 @@ export function countSpecialChars(text: string): number {
  * silently dropped from the new input, but regular characters still go through.
  * Returns { value, blockedSpecial } so the UI can show feedback.
  */
+const IS_SPECIAL_CHAR = /[^\p{L}\p{N}\s.,!?;:\-'"()…–]/u;
 export function clampChatInput(next: string): { value: string; blockedSpecial: boolean } {
-  let value = next.slice(0, MAX_MESSAGE_LENGTH);
-  if (countSpecialChars(value) <= MAX_SPECIAL_CHARS) {
-    return { value, blockedSpecial: false };
+  const capped = next.slice(0, MAX_MESSAGE_LENGTH);
+  if (countSpecialChars(capped) <= MAX_SPECIAL_CHARS) {
+    return { value: capped, blockedSpecial: false };
   }
-  // Drop special chars past the cap, keep order of allowed chars
   let kept = 0;
   let out = "";
-  for (const ch of value) {
-    if (SPECIAL_CHAR_RE.test(ch)) {
-      SPECIAL_CHAR_RE.lastIndex = 0; // reset because of /g flag
+  for (const ch of capped) {
+    if (IS_SPECIAL_CHAR.test(ch)) {
       if (kept >= MAX_SPECIAL_CHARS) continue;
       kept++;
-    } else {
-      SPECIAL_CHAR_RE.lastIndex = 0;
     }
     out += ch;
   }
