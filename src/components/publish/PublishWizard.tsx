@@ -460,7 +460,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       />
 
       <AlertDialog open={!!pendingDraft}>
-        <AlertDialogContent className="relative">
+        <AlertDialogContent>
           <button
             type="button"
             onClick={() => setPendingDraft(null)}
