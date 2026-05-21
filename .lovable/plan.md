@@ -1,39 +1,28 @@
-## Plan: Alert vizibil pentru subcategoria lipsă la adăugare anunț
+## Plan: Buton X pentru închidere pe popup-ul "Ai un anunț nesalvat"
 
-### Problemă
-La pasul 1 din wizard-ul de publicare, dacă userul alege o categorie cu subcategorii dar nu selectează niciuna, validarea există dar afișează doar un toast discret — userul nu observă și pare că butonul „Continuă" nu reacționează.
+### Fix — `src/components/publish/PublishWizard.tsx` (în jurul liniei 463)
 
-### Fix — un singur fișier: `src/components/publish/PublishWizard.tsx`
+Adaug un buton X absolut poziționat în colțul dreapta-sus al `AlertDialogContent`. Click pe X = închide popup-ul fără a șterge draftul (echivalent „mai decid mai târziu") prin `setPendingDraft(null)`.
 
-**1. Propagă `errors` în `Step1Category`**
-- Linia 408: `<Step1Category data={data} update={update} errors={errors} />`
-- Semnătura componentei (491–497): adaugă `errors: Record<string, string>`.
-
-**2. Mesaj inline roșu + border-destructive pe cardul de subcategorie** (560–586)
-- Adaug `id="subcategory-section"` și clasă `border-destructive` pe wrapper când `errors.subcategory`.
-- Sub lista de pills:
 ```tsx
-{errors.subcategory && (
-  <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-destructive">
-    <AlertCircle className="h-4 w-4" /> {errors.subcategory}
-  </p>
-)}
+<AlertDialogContent className="relative">
+  <button
+    type="button"
+    onClick={() => setPendingDraft(null)}
+    aria-label="Închide"
+    className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+  >
+    <X className="h-4 w-4" />
+  </button>
+  ...
 ```
 
-**3. Toast mai explicit** (linia 279)
-- Mesaj dedicat când eroarea e pe subcategorie: „Te rugăm să alegi și o subcategorie din lista de mai jos înainte de a continua." (variant destructive).
+`X` e deja exportat din `lucide-react` (folosit în restul fișierului — verific la import; dacă lipsește îl adaug în lista existentă).
 
-**4. Auto-scroll la secțiunea subcategorie** (după `setErrors(flat)`)
-```ts
-if (flat.subcategory) {
-  setTimeout(() => {
-    document.getElementById("subcategory-section")
-      ?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, 50);
-}
-```
+### Comportament
+- Continuă draftul → restaurează (neschimbat)
+- Începe anunț nou → șterge draft (neschimbat)
+- **X (nou)** → doar închide popup-ul; draftul rămâne în DB și va apărea din nou la următoarea vizită
 
 ### Ce nu modific
-- Logica de validare existentă (Zod / `stepValidators`).
-- Lista de categorii / subcategorii.
-- Restul wizard-ului (pași 2–6).
+- Logica de salvare/ștergere draft, restul wizard-ului.
