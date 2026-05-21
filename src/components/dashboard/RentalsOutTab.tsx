@@ -73,12 +73,12 @@ const RentalsOutTab = () => {
 
   const filtered = useMemo(() => sortRentals(rentals.filter(matchesStatus)), [rentals, statusFilter, sortBy]);
 
+  const FINALIZED = new Set(["completed", "cancelled", "rejected"]);
   const pendingRentals = filtered.filter(r => r.status === "pending");
   const premiumActiveRentals = filtered.filter(
-    r => (r.status === "confirmed" || r.status === "active") && !r.return_confirmed_at
+    r => r.status !== "pending" && !FINALIZED.has(r.status)
   );
-  const premiumIds = new Set([...pendingRentals, ...premiumActiveRentals].map(r => r.id));
-  const historyRentals = filtered.filter(r => !premiumIds.has(r.id));
+  const historyRentals = filtered.filter(r => FINALIZED.has(r.status));
 
   const handleAccept = async (rental: OwnerRental) => {
     setRespondingId(rental.id);
@@ -320,7 +320,7 @@ const RentalsOutTab = () => {
             <AccordionTrigger className="hover:no-underline">
               <span className="flex items-center gap-2 font-heading text-lg font-semibold">
                 <Package className="h-5 w-5 text-primary" />
-                Închirieri active &amp; istoric
+                Istoric închirieri
                 <Badge variant="secondary">{historyRentals.length}</Badge>
               </span>
             </AccordionTrigger>
