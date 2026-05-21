@@ -1,5 +1,5 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, ShieldCheck, MessageCircle, Calendar, Clock, TrendingUp } from "lucide-react";
+import { Star, ShieldCheck } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ProductExtendedStats } from "@/hooks/queries/useProductExtendedStats";
 
@@ -13,30 +13,12 @@ interface Props {
   isLoading?: boolean;
 }
 
-const Stat = ({ icon: Icon, value, label }: { icon: any; value: string; label: string }) => (
-  <div className="flex items-center gap-2">
-    <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center">
-      <Icon className="h-4 w-4 text-primary" />
-    </div>
-    <div className="min-w-0">
-      <div className="text-sm font-semibold text-foreground leading-tight">{value}</div>
-      <div className="text-muted-foreground leading-tight text-sm font-semibold text-black">{label}</div>
-    </div>
-  </div>
-);
-
 const OwnerTrustCard = ({ ownerName, ownerAvatar, stats }: Props) => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
 
   const memberSince = stats?.owner_member_since ? new Date(stats.owner_member_since).getFullYear().toString() : "—";
   const rating = stats?.owner_avg_rating ? Number(stats.owner_avg_rating).toFixed(1) : "—";
   const reviewCount = stats?.owner_review_count || 0;
-  const totalRentals = stats?.owner_total_rentals || 0;
-  const respMin = stats?.owner_response_minutes;
-  const respLabel = respMin && respMin > 0
-    ? respMin < 60 ? `${Math.round(respMin)} min` : `${Math.round(respMin / 60)} h`
-    : t("Rapid", "Fast");
-  const respRate = stats?.owner_response_rate ? `${Math.round(stats.owner_response_rate)}%` : "—";
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 md:p-6">
@@ -66,13 +48,6 @@ const OwnerTrustCard = ({ ownerName, ownerAvatar, stats }: Props) => {
             {t("Membru din", "Member since")} {memberSince}
           </p>
         </div>
-      </div>
-
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <Stat icon={TrendingUp} value={`${totalRentals}`} label={t("închirieri", "rentals")} />
-        <Stat icon={Clock} value={respLabel} label={t("timp răspuns", "response time")} />
-        <Stat icon={MessageCircle} value={respRate} label={t("rată răspuns", "response rate")} />
-        <Stat icon={Calendar} value={memberSince} label={t("din", "since")} />
       </div>
     </div>
   );
