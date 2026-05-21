@@ -1,23 +1,21 @@
 ## Plan
 
-Voi corecta cardul negru „Balanță disponibilă” din meniul „Contul meu” astfel încât să afișeze aceeași sumă ca pagina `/castiguri`: **8.00 RON**.
+Voi separa clar rezervările active de istoric în `RentalsTab.tsx` (chiriaș) și `RentalsOutTab.tsx` (proprietar):
 
-### Ce voi modifica
+### Logica nouă
+- **Rezervări active** (card-uri premium cu imagine): status `pending`, `confirmed`, `active`, `early_return_requested`, `overdue` — adică orice tranzacție încă în desfășurare.
+- **Istoric** (dropdown/accordion): DOAR `completed`, `cancelled`, `rejected` — tranzacții finalizate definitiv.
 
-1. **`src/components/layout/AccountHubMenu.tsx`**
-   - Voi schimba sursa soldului din card ca să folosească direct `useWalletBalance()`, aceeași sursă RPC ca wallet-ul.
-   - Voi păstra fallback-ul existent doar pentru loading, dar prioritatea va fi soldul oficial din wallet.
-   - Cardul va rămâne complet clickabil și va naviga către `/castiguri`.
-   - Voi afișa suma cu 2 zecimale (`8.00 RON`), ca pe pagina de câștiguri, nu rotunjit (`8 RON`).
+### Modificări
 
-2. **Invalidare cache / realtime**
-   - Voi ajusta inconsistența de cache unde unele invalidări folosesc cheia veche `wallet-balance`, iar hook-ul real folosește `walletBalance`.
-   - Astfel, la schimbări în wallet/rentals/withdrawals, cardul din cont și pagina de câștiguri se actualizează împreună.
+1. **`src/components/dashboard/RentalsTab.tsx`**
+   - `isPremium(r)` → `true` dacă `status` ∉ {`completed`, `cancelled`, `rejected`}.
+   - `historyRentals` = doar cele cu status `completed`, `cancelled` sau `rejected`.
+   - Schimb titlul accordion-ului din „Rezervări active & istoric" în „Istoric închirieri".
 
-### De ce încă vezi 2 RON
+2. **`src/components/dashboard/RentalsOutTab.tsx`** (aceeași logică pentru proprietar, pentru consistență — verific întâi dacă are structură identică; dacă da, aplic aceeași schimbare).
 
-Cardul din screenshot este în `AccountHubMenu.tsx`, nu cardul adăugat anterior în `QuickActions`. El încă poate primi o valoare veche/stale din query-ul de dashboard/drawer, iar pagina `/castiguri` folosește calculul complet. Îl voi lega explicit la `useWalletBalance()` ca sursă finală de adevăr.
+### De ce RNT-000053 nu se va mai muta singură
+RNT-000053 are status `confirmed` în DB, nu `completed`. După această schimbare, va rămâne tot în „active" (pentru că `confirmed` ∉ istoric). Va trece în istoric automat doar după ce devine `completed` sau `cancelled`.
 
-### Verificare
-
-După implementare, verific în cod că toate afișările principale de sold folosesc același RPC și aceeași cheie de cache, iar linkul cardului rămâne către `/castiguri`.
+Dacă vrei ca RNT-000053 (și similare) să fie marcată acum ca finalizată, e nevoie de o acțiune separată (ex: buton „Marchează ca finalizată" sau marcare manuală). Spune-mi dacă o vrei și pe aceasta.
