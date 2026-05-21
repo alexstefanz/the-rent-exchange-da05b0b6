@@ -3236,6 +3236,10 @@ export type Database = {
         Args: { p_group: string }
         Returns: string
       }
+      post_rental_timeline_chat_event: {
+        Args: { _kind: string; _rental_id: string }
+        Returns: undefined
+      }
       propose_pickup: {
         Args: {
           _pickup_place: string
