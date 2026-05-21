@@ -33,6 +33,7 @@ export default function RentalPopupManager() {
   const queryClient = useQueryClient();
   const [queue, setQueue] = useState<RentalPopupItem[]>([]);
   const seenIdsRef = useRef<Set<string>>(new Set());
+  const redirectedRef = useRef<boolean>(false);
 
   const pushItem = (item: RentalPopupItem) => {
     setQueue((q) => {
@@ -44,6 +45,13 @@ export default function RentalPopupManager() {
   const removeItem = (id: string) => {
     setQueue((q) => q.filter((x) => x.id !== id));
   };
+
+  // Reset redirect flag when queue empties (new popup session can redirect again)
+  useEffect(() => {
+    if (queue.length === 0) {
+      redirectedRef.current = false;
+    }
+  }, [queue.length]);
 
   // Initial fetch on login
   useEffect(() => {
@@ -118,6 +126,14 @@ export default function RentalPopupManager() {
       toast.success("Rezervare confirmată");
       invalidate();
       removeItem(current.id);
+      const publicId = current.public_id;
+      const url = publicId ? `/rezervari/${publicId}` : `/inchirierile-mele`;
+      if (!redirectedRef.current) {
+        redirectedRef.current = true;
+        navigate(url);
+      } else {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
     } catch (e: any) {
       toast.error(e?.message || "Eroare la confirmare");
     }
