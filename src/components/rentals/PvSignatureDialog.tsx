@@ -267,7 +267,6 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
         }
       } catch { /* non-blocking */ }
 
-      toast.success("Semnatura inregistrata");
       onSigned?.();
       const finalPv = await getPvDocument(rental.id, phase);
       if (finalPv) setPv(finalPv);
