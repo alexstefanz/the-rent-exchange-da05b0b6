@@ -456,7 +456,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
           <aside className="hidden lg:block">
             <div className="sticky top-24 space-y-4">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Previzualizare live
+                {t("Previzualizare live", "Live preview")}
               </p>
               <LivePreviewCard data={data} feePercent={feePercent} />
               {step >= 2 && <QualityScoreCard data={data} />}
@@ -474,12 +474,12 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         isFinal={step === STEPS.length}
         nextLabel={
           mode === "edit" && editingFromSummary && step !== 5
-            ? "Salvează și înapoi la rezumat"
+            ? t("Salvează și înapoi la rezumat", "Save and back to summary")
             : undefined
         }
         secondaryAction={
           mode === "edit" && editingFromSummary && step !== 5
-            ? { label: "Anulează și înapoi la rezumat", onClick: () => { setEditingFromSummary(false); setStep(5); window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); } }
+            ? { label: t("Anulează și înapoi la rezumat", "Cancel and back to summary"), onClick: () => { setEditingFromSummary(false); setStep(5); window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); } }
             : undefined
         }
       />
@@ -489,27 +489,27 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
           <button
             type="button"
             onClick={() => setPendingDraft(null)}
-            aria-label="Închide"
+            aria-label={t("Închide", "Close")}
             className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
           <AlertDialogHeader>
-            <AlertDialogTitle>Ai un anunț nesalvat</AlertDialogTitle>
+            <AlertDialogTitle>{t("Ai un anunț nesalvat", "You have an unsaved listing")}</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-sm text-muted-foreground">
-                <p>Am găsit un draft început anterior. Vrei să continui de unde ai rămas sau să începi un anunț nou?</p>
+                <p>{t("Am găsit un draft început anterior. Vrei să continui de unde ai rămas sau să începi un anunț nou?", "We found a draft you started earlier. Do you want to continue where you left off or start a new listing?")}</p>
                 {pendingDraft && (
                   <div className="rounded-lg border border-border bg-muted/40 p-3 text-foreground">
                     <p className="font-semibold">
-                      {pendingDraft.payload.title?.trim() || "Anunț fără titlu"}
+                      {pendingDraft.payload.title?.trim() || t("Anunț fără titlu", "Untitled listing")}
                     </p>
                     {pendingDraft.payload.category && (
                       <p className="text-xs text-muted-foreground">{pendingDraft.payload.category}</p>
                     )}
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Ultima modificare:{" "}
-                      {new Date(pendingDraft.updated_at).toLocaleString("ro-RO", {
+                      {t("Ultima modificare:", "Last modified:")}{" "}
+                      {new Date(pendingDraft.updated_at).toLocaleString(language === "en" ? "en-US" : "ro-RO", {
                         day: "2-digit",
                         month: "short",
                         hour: "2-digit",
@@ -522,8 +522,8 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleStartFresh}>Începe anunț nou</AlertDialogCancel>
-            <AlertDialogAction onClick={handleContinueDraft}>Continuă draftul</AlertDialogAction>
+            <AlertDialogCancel onClick={handleStartFresh}>{t("Începe anunț nou", "Start new listing")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleContinueDraft}>{t("Continuă draftul", "Continue draft")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
