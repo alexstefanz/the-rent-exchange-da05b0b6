@@ -318,7 +318,25 @@ export const getNearbyProducts = async (
       .limit(limit - (data?.length || 0));
 
     if (!categoryError && categoryData) {
-      return [...(data || []), ...categoryData];
+      data = [...(data || []), ...categoryData] as any;
+    }
+  }
+
+  // Final fallback: fill remaining slots with any recent active products
+  if ((data?.length || 0) < limit) {
+    const existingIds = data?.map(p => p.id) || [];
+    const { data: anyData } = await (supabase
+      .from("products")
+      .select("*") as any)
+      .eq("is_active", true)
+      .eq("approval_status", "approved")
+      .is("deleted_at", null)
+      .not("id", "in", `(${[currentProductId, ...existingIds].join(",")})`)
+      .order("created_at", { ascending: false })
+      .limit(limit - (data?.length || 0));
+
+    if (anyData) {
+      data = [...(data || []), ...anyData] as any;
     }
   }
 
