@@ -1,24 +1,28 @@
-## Problem
-În popover-ul „Notificări", când se face click pe dropdown-ul „Toate", lista de categorii se deschide în sus, peste header — în loc să se deschidă în jos sub trigger.
+# Plasare comutator de limbă în funcție de stare auth
 
-## Cauză
-`SelectContent` din shadcn (Radix Select) folosește implicit modul `item-aligned`, care încearcă să alinieze item-ul selectat cu trigger-ul. Când component-ul e randat într-un popover cu spațiu redus deasupra/dedesubt, Radix decide să flip-uiască conținutul deasupra trigger-ului → exact ce se vede în imaginea 2.
+## Comportament dorit
 
-## Fix
-În `src/components/notifications/NotificationFilters.tsx`, forțăm `SelectContent` să se deschidă în jos folosind modul `popper` cu `side="bottom"`:
+- **Utilizator neautentificat (Navbar desktop)**: butonul RO/EN apare lângă „Autentificare" / „Adaugă anunț nou".
+- **Utilizator autentificat (Navbar desktop)**: butonul RO/EN dispare din header; apare în dropdown-ul „My Account" (AccountHubMenu), ca o secțiune dedicată „Limbă / Language" cu segmented switch RO | EN, identic ca stil cu cel din drawer-ul mobil.
+- **Pagina `/auth`**: în header-ul paginii (lângă logo) se adaugă același comutator RO/EN, ca utilizatorul să poată schimba limba înainte de login.
+- **Mobile**: drawer-ul mobil are deja switch-ul RO/EN — rămâne neschimbat (vizibil pentru ambele stări, e tot „account-side").
 
-```tsx
-<SelectContent position="popper" side="bottom" sideOffset={6} align="start" className="max-h-64">
-```
+## Modificări
 
-- `position="popper"` → folosește poziționarea bazată pe trigger (nu item-aligned).
-- `side="bottom"` + `sideOffset={6}` → forțează deschiderea sub trigger.
-- `align="start"` → aliniat la stânga trigger-ului.
-- `max-h-64` → previne dropdown-ul prea înalt care ar putea fi acoperit de marginea popover-ului.
+1. `src/components/layout/Navbar.tsx`
+   - Importă `LanguageSwitcher`.
+   - În cluster-ul din dreapta: dacă `!user && !loading`, randează `<LanguageSwitcher />` înainte de butonul „Autentificare".
+   - Dacă `user`, NU se afișează în header (rămâne în AccountHubMenu).
 
-## Fișiere atinse
-```text
-src/components/notifications/NotificationFilters.tsx   (props pe SelectContent)
-```
+2. `src/components/layout/AccountHubMenu.tsx`
+   - În `AccountHubBody` (folosit atât pe desktop dropdown cât și pe mobile drawer), adaugă o secțiune nouă „Limbă / Language" deasupra footer-ului (sau înainte de „Setări"), cu segmented switch RO | EN identic ca în `MobileDrawer.tsx` (`LangButton`).
+   - Folosește `useLanguage()` (deja importat).
 
-Strict fix UI, fără modificări de logică.
+3. `src/pages/Auth.tsx`
+   - În header-ul paginii (zona cu logo-ul), adaugă `<LanguageSwitcher />` în partea dreaptă.
+
+## Note tehnice
+
+- `LanguageSwitcher` și logica `LanguageContext` există deja — fără modificări la storage / persistență.
+- Nu se modifică nimic pe mobile bottom nav sau pe `MobileDrawer` (acolo există deja switch-ul în header-ul drawer-ului).
+- Fără modificări de backend / RLS / DB.
