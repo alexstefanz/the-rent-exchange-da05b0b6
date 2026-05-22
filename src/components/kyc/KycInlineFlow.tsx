@@ -234,6 +234,11 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
 
       await supabase.from("profiles").update({ kyc_status: "SUBMITTED" }).eq("id", user.id);
 
+      // Fire-and-forget: extract ID card data via Lovable AI (non-blocking)
+      supabase.functions
+        .invoke("extract-id-data", { body: { kyc_case_id: caseId } })
+        .catch((e) => console.warn("[extract-id-data] failed:", e));
+
       docs.forEach((d) => URL.revokeObjectURL(d.preview));
       setDocs([]);
 
