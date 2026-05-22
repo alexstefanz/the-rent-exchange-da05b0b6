@@ -36,6 +36,7 @@ type EventKey =
   | "mutual_cancel_approved"
   | "payment_succeeded"
   | "request_cancelled_by_renter"
+  | "request_cancelled_by_owner"
   | "request_reminder_2h"
   | "request_expired";
 
