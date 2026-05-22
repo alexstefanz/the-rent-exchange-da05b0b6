@@ -295,6 +295,28 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <AlertDialog open={contactAlert.open} onOpenChange={(open) => setContactAlert((s) => ({ ...s, open }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {contactAlert.kind === "both"
+                ? t("Date de contact detectate", "Contact info detected")
+                : contactAlert.kind === "phone"
+                ? t("Număr de telefon detectat", "Phone number detected")
+                : t("Adresă de email detectată", "Email address detected")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(
+                "Te rugăm să păstrezi conversația pe Rentli. Dacă apar probleme cu o tranzacție, administratorii pot interveni doar dacă discuția rămâne pe platformă. Schimbul de date de contact înainte de plată este descurajat pentru siguranța ta.",
+                "Please keep the conversation on Rentli. If any issue arises with a transaction, our admins can only step in if the discussion stays on the platform. Sharing contact details before payment is discouraged for your safety."
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>{t("Am înțeles", "Got it")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
