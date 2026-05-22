@@ -1,19 +1,14 @@
-# Buton telefon doar după plată confirmată
+# Buton portocaliu „Vezi produs" în header chat
 
-## Problemă
+## Schimbare
 
-În prezent în `ChatHeader`, butonul de telefon apare ori de câte ori avem numărul proprietarului, indiferent dacă rezervarea a fost plătită sau nu. Butonul "Vezi produsul" apare doar ca fallback când nu există telefon. Rezultat: butonul produsului nu se vede aproape niciodată înainte de plată.
+În `src/components/messaging/ChatHeader.tsx`:
 
-## Modificare
+- Înlocuiește butonul-icon `Package` (varianta `ghost`, doar icon) cu un **buton portocaliu cu text**:
+  - Variant: `default` (folosește `bg-primary` = #F59E0B), `size="sm"`
+  - Conținut: icon `Package` (h-4 w-4) + text `t("Vezi produs", "View product")`
+  - `asChild` pe `Link to={productUrl}`
+- Butonul telefon rămâne cum este (icon ghost), condiționat de `showPhone && phone` — apare doar după ce plata a fost confirmată (logica deja setată în `ChatPanel` prin `!!rentalCtx?.paid_at || rentalCtx?.payment_status === "paid"`).
+- Cele două butoane sunt mutual exclusive: înainte de plată → buton portocaliu „Vezi produs"; după plată → icon telefon.
 
-Logica devine condiționată de starea de plată a închirierii:
-
-- **Înainte de plată** (sau fără context de închiriere): se afișează butonul **„Vezi produsul"** (icon `Package`) care duce la pagina produsului.
-- **După confirmarea plății** (`rental.paid_at` setat sau `payment_status === "paid"`): se afișează butonul **telefon** (`tel:` link) către numărul proprietarului.
-
-## Fișiere afectate
-
-- `src/components/messaging/ChatHeader.tsx` — adaugă prop `showPhone: boolean`. Telefonul se randează doar când `showPhone && phone`; altfel se randează butonul `productUrl`.
-- `src/components/messaging/ChatPanel.tsx` — calculează `const isPaid = !!rentalCtx?.paid_at || rentalCtx?.payment_status === "paid";` și trimite `showPhone={isPaid}` către `ChatHeader`. `productUrl` rămâne calculat ca acum.
-
-Nicio altă schimbare de comportament sau backend.
+Niciun alt fișier nu se modifică.
