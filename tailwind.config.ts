@@ -103,6 +103,14 @@ export default {
           "0%, 100%": { boxShadow: "0 0 0 0 hsl(var(--primary) / 0.18)", transform: "scale(1)" },
           "50%": { boxShadow: "0 0 0 8px hsl(var(--primary) / 0)", transform: "scale(1.04)" },
         },
+        "slide-in-right": {
+          "0%": { transform: "translateX(100%)" },
+          "100%": { transform: "translateX(0)" },
+        },
+        "slide-out-right": {
+          "0%": { transform: "translateX(0)" },
+          "100%": { transform: "translateX(100%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -113,6 +121,8 @@ export default {
         "shimmer-pass": "shimmer-pass 1.4s ease-in-out infinite",
         "fade-in-up": "fade-in-up 0.4s ease-out both",
         "soft-pulse": "soft-pulse 5s ease-in-out infinite",
+        "slide-in-right": "slide-in-right 0.28s ease-out",
+        "slide-out-right": "slide-out-right 0.28s ease-in forwards",
       },
     },
   },
