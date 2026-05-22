@@ -189,6 +189,23 @@ export async function renterCancelUnpaidRental(rentalId: string) {
   return data as { ok: boolean };
 }
 
+/**
+ * Either party (renter or owner) self-cancels a rental that has NOT been paid yet.
+ * Bypasses admin review. Sends notifications (in-app, email, SMS) to both parties.
+ */
+export async function cancelUnpaidRental(rentalId: string) {
+  const { data, error } = await supabase.rpc("cancel_unpaid_rental" as any, {
+    _rental_id: rentalId,
+  });
+  if (error) throw error;
+  const actor = (data as any)?.actor as "renter" | "owner" | undefined;
+  const event_key = actor === "owner" ? "request_cancelled_by_owner" : "request_cancelled_by_renter";
+  supabase.functions.invoke("notify-rental-event", {
+    body: { rental_id: rentalId, event_key },
+  }).catch(() => {});
+  return data as { ok: boolean; actor: "renter" | "owner" };
+}
+
 /** Admin reviews a pending cancellation request: approve (refund) or reject. */
 export async function adminRespondCancellation(
   rentalId: string,
