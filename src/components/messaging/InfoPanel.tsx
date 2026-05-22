@@ -26,7 +26,7 @@ import {
   type AttachmentRow,
 } from "@/lib/chatMedia";
 import { extractUrls } from "@/lib/urlScanner";
-import { getOwnerContactInfo } from "@/features/messaging/messagingApi";
+import { getOwnerContactInfo, isRentalPaidLike } from "@/features/messaging/messagingApi";
 import { supabase } from "@/integrations/supabase/client";
 import { MediaLightbox } from "./MediaLightbox";
 import { cn } from "@/lib/utils";
@@ -60,8 +60,7 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, rental
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return;
-        const paid = !!(data as any)?.paid_at || (data as any)?.payment_status === "paid";
-        setIsPaid(paid);
+        setIsPaid(isRentalPaidLike((data as any)?.payment_status, (data as any)?.paid_at));
       });
     return () => { cancelled = true; };
   }, [rentalsId]);
