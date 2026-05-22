@@ -3012,8 +3012,13 @@ export type Database = {
           handover_pv_renter_signed_at: string
           id: string
           is_test_payment: boolean
+          owner_address: string
+          owner_cnp: string
           owner_email: string
           owner_id: string
+          owner_id_number: string
+          owner_id_series: string
+          owner_identity_verified: boolean
           owner_name: string
           owner_payout: number
           owner_phone: string
@@ -3031,8 +3036,13 @@ export type Database = {
           public_id: string
           rejection_reason: string
           rental_days: number
+          renter_address: string
+          renter_cnp: string
           renter_email: string
           renter_id: string
+          renter_id_number: string
+          renter_id_series: string
+          renter_identity_verified: boolean
           renter_name: string
           renter_phone: string
           return_confirmed_at: string
