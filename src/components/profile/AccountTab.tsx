@@ -510,7 +510,12 @@ const AccountTab = () => {
               <Field label={t("Telefon", "Phone")} icon={<Phone className="h-4 w-4" />} error={form.formState.errors.phone?.message}>
                 <Input type="tel" placeholder="+40 7XX XXX XXX" maxLength={20} {...form.register("phone")} />
               </Field>
-              <Field label={t("Email contact (public)", "Contact email (public)")} icon={<Mail className="h-4 w-4" />} error={form.formState.errors.email?.message}>
+              <Field
+                label={t("Email de contact (opțional)", "Contact email (optional)")}
+                icon={<Mail className="h-4 w-4" />}
+                hint={t("Folosit doar intern, după activarea unei închirieri.", "Used internally only, after a rental becomes active.")}
+                error={form.formState.errors.email?.message}
+              >
                 <Input type="email" placeholder="contact@exemplu.ro" maxLength={100} {...form.register("email")} />
               </Field>
             </div>
@@ -661,6 +666,21 @@ const AccountTab = () => {
               disabled
               comingSoon
             />
+            <Link
+              to="/setari/notificari"
+              className="group flex items-center gap-3 rounded-xl border border-border p-4 hover:border-primary/40 hover:bg-primary/5 transition-all"
+            >
+              <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Bell className="h-5 w-5 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-sm">{t("Setări avansate notificări", "Advanced notification settings")}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t("Personalizează ce notificări primești și pe ce canale.", "Customize which notifications you receive and on which channels.")}
+                </p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+            </Link>
           </div>
         </Section>
 
@@ -1039,7 +1059,7 @@ const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: an
               {t("Titular cont:", "Account holder:")} <span className="font-medium text-foreground">{fullName}</span>
             </span>
           ) : (
-            <button type="button" onClick={() => navigate("/contul-meu?section=profile")} className="text-primary hover:underline">
+            <button type="button" onClick={() => scrollToSection("personal")} className="text-primary hover:underline">
               {t("Completează numele complet în Profil", "Fill in your full name in Profile")}
             </button>
           )}
