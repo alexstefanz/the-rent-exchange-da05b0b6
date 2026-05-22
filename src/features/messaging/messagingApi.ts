@@ -369,6 +369,21 @@ export async function getOwnerContactInfo(ownerId: string) {
   return data && data.length > 0 ? data[0] : null;
 }
 
+/**
+ * Unified "payment effective" check shared by chat surfaces (header, info panel,
+ * input alert). Matches what `get_contact_info_if_in_conversation` accepts so
+ * UI gating and backend gating stay in sync.
+ */
+export function isRentalPaidLike(
+  paymentStatus?: string | null,
+  paidAt?: string | null,
+): boolean {
+  if (paidAt) return true;
+  return ["authorized", "paid", "captured", "partially_refunded"].includes(
+    (paymentStatus || "").toLowerCase(),
+  );
+}
+
 /** @deprecated No longer injected after payment. Chat stays organic (Vinted/OLX style). */
 export interface RentalContext {
   productTitle: string;

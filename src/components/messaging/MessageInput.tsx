@@ -31,11 +31,12 @@ import {
 interface Props {
   conversationId: string;
   disabled?: boolean;
+  isPaid?: boolean;
   onSend: (content: string, uploaded: UploadedAttachment[]) => Promise<void>;
   onTyping?: () => void;
 }
 
-export function MessageInput({ conversationId, disabled, onSend, onTyping }: Props) {
+export function MessageInput({ conversationId, disabled, isPaid, onSend, onTyping }: Props) {
   const { t } = useLanguage();
   const { isBanned } = useIsBanned();
   const effectiveDisabled = disabled || isBanned;
@@ -109,7 +110,7 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
       setProfanityAlertOpen(true);
       return;
     }
-    if (content) {
+    if (content && !isPaid) {
       // Normalize: strip spaces, dots, dashes between digits to catch obfuscated phones
       const normalized = content.replace(/[\s.\-]/g, "");
       const hasPhone = /(?:^|[^\d])07\d{8}(?!\d)/.test(normalized) || /(?:^|[^\d])\+?40\s*7\d{8}/.test(normalized);
