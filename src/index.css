@@ -33,6 +33,13 @@ html, body {
   overflow-x: clip;
 }
 
+/* Previne layout shift cauzat de Radix RemoveScroll când se deschid
+   Select/Popover/Dialog. scrollbar-gutter: stable rezervă deja spațiul. */
+body[data-scroll-locked] {
+  padding-right: 0 !important;
+  margin-right: 0 !important;
+}
+
 @layer base {
   :root {
     --background: 30 40% 98%;
