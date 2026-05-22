@@ -61,7 +61,7 @@ import {
 } from "@/features/admin/opsTicketsApi";
 import { MAX_MESSAGE_LENGTH, MAX_SPECIAL_CHARS, countSpecialChars, clampChatInput } from "@/features/messaging/messagingApi";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { ro as roLocale, enUS } from "date-fns/locale";
 import { toast } from "sonner";
 import { StatusPill } from "@/components/support/center/StatusPill";
@@ -1148,6 +1148,18 @@ const SupportChatWidget = () => {
                                 {ticket.last_message}
                               </p>
                             )}
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                              {format(
+                                new Date(ticket.last_message_at || ticket.updated_at || ticket.created_at),
+                                "d MMM yyyy, HH:mm",
+                                { locale: language === "ro" ? roLocale : enUS },
+                              )}
+                              {" · "}
+                              {formatDistanceToNow(
+                                new Date(ticket.last_message_at || ticket.updated_at || ticket.created_at),
+                                { locale: language === "ro" ? roLocale : enUS, addSuffix: true },
+                              )}
+                            </p>
                           </button>
                         ))}
                       </div>
