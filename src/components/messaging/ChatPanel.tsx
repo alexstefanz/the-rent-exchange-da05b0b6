@@ -496,6 +496,7 @@ export function ChatPanel({
         <MessageInput
           key={conversationId}
           conversationId={conversationId}
+          isPaid={isPaid}
           onSend={handleSend}
           onTyping={() => setTyping(true)}
         />
