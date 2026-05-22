@@ -1,36 +1,24 @@
 ## Problem
-Pe pagina de produs, zilele rezervate apar gri în calendar fără explicație. Când utilizatorul încearcă să selecteze o perioadă care conține zile rezervate, primește doar un toast scurt „Există zile rezervate în interval", fără să știe care zile sunt blocate sau ce să facă.
+În popover-ul „Notificări", când se face click pe dropdown-ul „Toate", lista de categorii se deschide în sus, peste header — în loc să se deschidă în jos sub trigger.
 
-## Soluție
+## Cauză
+`SelectContent` din shadcn (Radix Select) folosește implicit modul `item-aligned`, care încearcă să alinieze item-ul selectat cu trigger-ul. Când component-ul e randat într-un popover cu spațiu redus deasupra/dedesubt, Radix decide să flip-uiască conținutul deasupra trigger-ului → exact ce se vede în imaginea 2.
 
-### 1. Legendă vizibilă sub calendar (`PremiumBookingCard.tsx` + `BookingCard.tsx`)
-Adaugă o mică legendă explicativă chiar sub calendar, vizibilă din start:
-- pătrat gri → „Indisponibil / Rezervat" 
-- pătrat portocaliu → „Selectat"
-- pătrat negru → „Astăzi"
+## Fix
+În `src/components/notifications/NotificationFilters.tsx`, forțăm `SelectContent` să se deschidă în jos folosind modul `popper` cu `side="bottom"`:
 
-Astfel utilizatorul înțelege de la prima vedere ce înseamnă fiecare culoare.
-
-### 2. Alert detaliat la conflict (`ProductDetail.tsx` + `BookingCard.tsx`)
-În `handleDateSelect`, când `hasBookedDateInRange` întoarce `true`:
-- Calculează lista exactă de zile rezervate din interval (filtrare pe `bookedDates`).
-- Înlocuiește toast-ul simplu cu un **AlertDialog** (shadcn) care:
-  - Titlu: „Perioada conține zile rezervate"
-  - Listează maxim 6 zile blocate formatate frumos (ex: „15 mar, 16 mar, 22 mar…"), cu „și încă N zile" dacă sunt mai multe.
-  - Mesaj clar: „Te rugăm să alegi o altă perioadă care nu se suprapune."
-  - Buton „Alege altă perioadă" → resetează `startDate`/`endDate` și închide dialogul.
-
-### 3. Tooltip pe zilele gri (calendar)
-Pe `<DayContent>` custom în `CalendarComponent`, adaugă `title` HTML nativ pe zilele rezervate: „Rezervat — alege altă zi". E un win rapid, accesibil și fără cost de bundle.
-
-### Localizare
-Toate textele noi vor folosi `t(ro, en)` pentru bilingv RO/EN, conform standardului proiectului.
-
-### Fișiere atinse
-```text
-src/pages/ProductDetail.tsx              (alert dialog state + listă zile blocate)
-src/components/product/PremiumBookingCard.tsx  (legendă + tooltip pe zile)
-src/components/product/BookingCard.tsx          (același tratament pentru cardul vechi)
+```tsx
+<SelectContent position="popper" side="bottom" sideOffset={6} align="start" className="max-h-64">
 ```
 
-Nu se modifică nicio logică de business, RLS sau API — strict UX pe frontend.
+- `position="popper"` → folosește poziționarea bazată pe trigger (nu item-aligned).
+- `side="bottom"` + `sideOffset={6}` → forțează deschiderea sub trigger.
+- `align="start"` → aliniat la stânga trigger-ului.
+- `max-h-64` → previne dropdown-ul prea înalt care ar putea fi acoperit de marginea popover-ului.
+
+## Fișiere atinse
+```text
+src/components/notifications/NotificationFilters.tsx   (props pe SelectContent)
+```
+
+Strict fix UI, fără modificări de logică.

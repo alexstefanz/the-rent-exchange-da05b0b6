@@ -62,7 +62,7 @@ export function NotificationFilters({
             </span>
           </SelectValue>
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent position="popper" side="bottom" sideOffset={6} align="start" className="max-h-64">
           {chips.map(({ v, label }) => {
             const count = counts[v] ?? 0;
             return (
