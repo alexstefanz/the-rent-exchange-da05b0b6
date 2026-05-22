@@ -667,6 +667,7 @@ const Step2Details = ({
   feePercent: number;
   userId: string;
 }) => {
+  const { t, language } = useLanguage();
   const [genLoading, setGenLoading] = useState(false);
   const { toast } = useToast();
   const [newItem, setNewItem] = useState("");
@@ -674,7 +675,7 @@ const Step2Details = ({
 
   const handleGenerate = async () => {
     if (!data.title || data.title.length < 5) {
-      toast({ title: "Adaugă mai întâi titlul", variant: "destructive" });
+      toast({ title: t("Adaugă mai întâi titlul", "Add the title first"), variant: "destructive" });
       return;
     }
     setGenLoading(true);
@@ -688,9 +689,9 @@ const Step2Details = ({
         usage_rules: data.usage_rules,
       });
       update("description", desc);
-      toast({ title: "Descriere generată", description: "Ajusteaz-o cum vrei." });
+      toast({ title: t("Descriere generată", "Description generated"), description: t("Ajusteaz-o cum vrei.", "Adjust it however you like.") });
     } catch (e: any) {
-      toast({ title: "Eroare AI", description: e?.message || "Încearcă din nou.", variant: "destructive" });
+      toast({ title: t("Eroare AI", "AI error"), description: e?.message || t("Încearcă din nou.", "Please try again."), variant: "destructive" });
     } finally {
       setGenLoading(false);
     }
@@ -699,16 +700,19 @@ const Step2Details = ({
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 2 din 5"
-        title="Fotografii & detalii"
-        subtitle="Adaugă întâi pozele (6+ recomandat) — apoi completează titlul și descrierea."
+        eyebrow={t("Pasul 2 din 5", "Step 2 of 5")}
+        title={t("Fotografii & detalii", "Photos & details")}
+        subtitle={t(
+          "Adaugă întâi pozele (6+ recomandat) — apoi completează titlul și descrierea.",
+          "Add the photos first (6+ recommended) — then fill in the title and description.",
+        )}
       />
 
       <div className="mt-6 space-y-6">
         {/* Photos */}
         <div className="space-y-2">
           <Label className="text-sm font-semibold">
-            Fotografii <span className="font-normal text-muted-foreground">(prima poză devine coperta)</span>
+            {t("Fotografii", "Photos")} <span className="font-normal text-muted-foreground">{t("(prima poză devine coperta)", "(the first photo becomes the cover)")}</span>
           </Label>
           <div className="rounded-2xl border border-border bg-card p-4">
             <ImageUpload userId={userId} images={data.images} onChange={(imgs) => update("images", imgs)} maxImages={10} />
@@ -718,12 +722,12 @@ const Step2Details = ({
             <div className="flex items-start gap-3">
               <ImageIcon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <div className="space-y-1 text-xs text-muted-foreground">
-                <p className="font-medium text-foreground">Sfaturi pentru poze bune:</p>
+                <p className="font-medium text-foreground">{t("Sfaturi pentru poze bune:", "Tips for good photos:")}</p>
                 <ul className="list-disc space-y-0.5 pl-4">
-                  <li>Lumină naturală, fără bliț</li>
-                  <li>Fundal curat, neutru</li>
-                  <li>Arată produsul din 3-4 unghiuri + detalii</li>
-                  <li>Include accesoriile incluse</li>
+                  <li>{t("Lumină naturală, fără bliț", "Natural light, no flash")}</li>
+                  <li>{t("Fundal curat, neutru", "Clean, neutral background")}</li>
+                  <li>{t("Arată produsul din 3-4 unghiuri + detalii", "Show the product from 3-4 angles + details")}</li>
+                  <li>{t("Include accesoriile incluse", "Include the included accessories")}</li>
                 </ul>
               </div>
             </div>
@@ -733,18 +737,18 @@ const Step2Details = ({
         {/* Title */}
         <div className="space-y-2">
           <Label htmlFor="title" className="text-sm font-semibold">
-            Titlu anunț
+            {t("Titlu anunț", "Listing title")}
           </Label>
           <Input
             id="title"
-            placeholder="Ex: Bicicletă MTB Trek Marlin 7, mărime L"
+            placeholder={t("Ex: Bicicletă MTB Trek Marlin 7, mărime L", "E.g. Trek Marlin 7 MTB bike, size L")}
             value={data.title}
             onChange={(e) => update("title", e.target.value)}
             className="h-12 text-base"
             maxLength={100}
           />
           <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Folosește brand, model și particularități. Fără date de contact.</span>
+            <span className="text-muted-foreground">{t("Folosește brand, model și particularități. Fără date de contact.", "Use brand, model and specifics. No contact info.")}</span>
             <span className={cn(data.title.length > 90 ? "text-amber-600" : "text-muted-foreground")}>{data.title.length}/100</span>
           </div>
           {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
@@ -752,7 +756,7 @@ const Step2Details = ({
 
         {/* Condition */}
         <div className="space-y-2">
-          <Label className="text-sm font-semibold">Starea produsului</Label>
+          <Label className="text-sm font-semibold">{t("Starea produsului", "Product condition")}</Label>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {(Object.keys(CONDITION_LABELS) as ProductCondition[]).map((c) => {
               const active = data.condition === c;
@@ -768,7 +772,7 @@ const Step2Details = ({
                       : "border-border bg-card text-foreground hover:border-primary/40",
                   )}
                 >
-                  {CONDITION_LABELS[c].ro}
+                  {CONDITION_LABELS[c][language]}
                 </button>
               );
             })}
@@ -780,7 +784,7 @@ const Step2Details = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="description" className="text-sm font-semibold">
-              Descriere
+              {t("Descriere", "Description")}
             </Label>
             <Button
               type="button"
@@ -791,12 +795,12 @@ const Step2Details = ({
               className="gap-1.5"
             >
               {genLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-primary" />}
-              Generează cu AI
+              {t("Generează cu AI", "Generate with AI")}
             </Button>
           </div>
           <Textarea
             id="description"
-            placeholder="Descrie pentru ce e potrivit, ce e inclus, particularități sau atenționări..."
+            placeholder={t("Descrie pentru ce e potrivit, ce e inclus, particularități sau atenționări...", "Describe what it's good for, what's included, specifics or warnings...")}
             rows={6}
             value={data.description}
             onChange={(e) => update("description", e.target.value)}
@@ -804,7 +808,7 @@ const Step2Details = ({
             className="resize-none text-base"
           />
           <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Min. 60 caractere recomandate. Fără email/telefon/link-uri.</span>
+            <span className="text-muted-foreground">{t("Min. 60 caractere recomandate. Fără email/telefon/link-uri.", "Min. 60 characters recommended. No email/phone/links.")}</span>
             <span className="text-muted-foreground">{data.description.length}/2000</span>
           </div>
           {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
@@ -813,11 +817,11 @@ const Step2Details = ({
         {/* Included items */}
         <div className="space-y-2">
           <Label className="text-sm font-semibold">
-            Ce este inclus <span className="font-normal text-muted-foreground">(accesorii)</span>
+            {t("Ce este inclus", "What's included")} <span className="font-normal text-muted-foreground">{t("(accesorii)", "(accessories)")}</span>
           </Label>
           <div className="flex gap-2">
             <Input
-              placeholder="Ex: Husă transport, încărcător, manual"
+              placeholder={t("Ex: Husă transport, încărcător, manual", "E.g. Carry case, charger, manual")}
               value={newItem}
               onChange={(e) => setNewItem(e.target.value)}
               onKeyDown={(e) => {
@@ -871,11 +875,11 @@ const Step2Details = ({
         {/* Usage rules */}
         <div className="space-y-2">
           <Label className="text-sm font-semibold">
-            Reguli de utilizare <span className="font-normal text-muted-foreground">(opțional)</span>
+            {t("Reguli de utilizare", "Usage rules")} <span className="font-normal text-muted-foreground">{t("(opțional)", "(optional)")}</span>
           </Label>
           <div className="flex gap-2">
             <Input
-              placeholder="Ex: Doar în interior, fără copii sub 12 ani"
+              placeholder={t("Ex: Doar în interior, fără copii sub 12 ani", "E.g. Indoor only, no children under 12")}
               value={newRule}
               onChange={(e) => setNewRule(e.target.value)}
               onKeyDown={(e) => {
@@ -925,7 +929,7 @@ const Step2Details = ({
                       : "border-border bg-background text-foreground hover:border-primary/40",
                   )}
                 >
-                  {r}
+                  {DEFAULT_USAGE_RULES_I18N[r]?.[language] ?? r}
                 </button>
               );
             })}
