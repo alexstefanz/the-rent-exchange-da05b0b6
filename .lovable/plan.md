@@ -1,24 +1,33 @@
-# Ascunde datele de contact până la plată
+# Alert pentru telefon/email în chat
 
-## Problemă
+## Comportament dorit
 
-În panoul lateral (`InfoPanel.tsx`), tab-ul **Contact** afișează telefonul și emailul proprietarului ori de câte ori `getOwnerContactInfo` returnează date — nu verifică dacă rezervarea este plătită. Rezultat: cumpărătorul vede numărul/emailul înainte de a plăti.
+Când userul încearcă să trimită un mesaj care conține un **număr de telefon românesc** (`07XXXXXXXX`, cu sau fără spații/puncte/cratime) sau un **email**, mesajul NU se trimite și se afișează un `AlertDialog` modal care îi recomandă să păstreze conversația pe platformă, explicând că administratorii nu pot ajuta dacă conversația continuă în alt loc.
 
-## Modificare
+## Detecție
 
-`InfoPanel` primește o stare de plată din `Messages.tsx` și ascunde contactul până la confirmarea plății.
+În `src/components/messaging/MessageInput.tsx` (înaintea `containsProfanity`):
 
-### Fișiere
+- **Telefon RO**: regex care normalizează spații/puncte/cratime, apoi caută `07` urmat de 8 cifre. Implementare: `/(?:^|[^\d])0\s*[.\-]?\s*7(?:\s*[.\-]?\s*\d){8}/` aplicat pe textul brut.
+- **Email**: regex standard `/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/`.
 
-1. **`src/components/messaging/InfoPanel.tsx`**
-   - Adaugă prop `rentalsId?: string | null`.
-   - Query `rentals` (sau folosește `getRentalContext`) pentru a obține `paid_at` și `payment_status`.
-   - `const isPaid = !!rental?.paid_at || rental?.payment_status === "paid";`
-   - În tab-ul Contact: dacă `!isPaid` → afișează exclusiv mesajul existent „Datele de contact vor fi vizibile după plată / Contact info will be visible after payment." (fără telefon/email).
-   - Dacă `isPaid` → afișează contactul ca acum.
-   - Bonus: evită apelul `getOwnerContactInfo` când `!isPaid` (nu mai expune datele inutil).
+Helper local `containsContactInfo(text): { phone: boolean; email: boolean; hit: boolean }`.
 
-2. **`src/pages/Messages.tsx`**
-   - Adaugă `rentalsId={selectedConversation.rentals_id || null}` la ambele instanțe `<InfoPanel ... />` (mobil + desktop).
+## UI
 
-Nicio modificare backend.
+Un singur `AlertDialog` reutilizat (`contactAlertOpen` state) cu titlu și descriere adaptate după ce s-a detectat:
+
+- **Titlu**:
+  - phone+email → „Date de contact detectate / Contact info detected"
+  - doar phone → „Număr de telefon detectat / Phone number detected"
+  - doar email → „Adresă de email detectată / Email address detected"
+- **Descriere (bilingvă)**: „Te rugăm să păstrezi conversația pe Rentli. Dacă apar probleme cu o tranzacție, administratorii pot interveni doar dacă discuția rămâne pe platformă. Schimbul de date de contact înainte de plată este descurajat pentru siguranța ta." / EN echivalent.
+- **Buton**: „Am înțeles / Got it".
+
+În `handleSend`, după check de profanity:
+```
+const contact = containsContactInfo(content);
+if (contact.hit) { setContactAlert({open: true, ...}); return; }
+```
+
+Mesajul rămâne în input pentru a fi corectat. Nicio modificare backend sau în alte fișiere.
