@@ -855,8 +855,8 @@ const NotificationToggle = ({
   </div>
 );
 
-const SupportLink = ({ href, icon: Icon, title, description }: { href: string; icon: any; title: string; description: string }) => (
-  <a href={href} className="group flex items-center gap-3 rounded-xl border border-border p-4 hover:border-primary/40 hover:bg-primary/5 transition-all">
+const SupportLink = ({ to, icon: Icon, title, description }: { to: string; icon: any; title: string; description: string }) => (
+  <Link to={to} className="group flex items-center gap-3 rounded-xl border border-border p-4 hover:border-primary/40 hover:bg-primary/5 transition-all">
     <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
       <Icon className="h-5 w-5 text-primary" />
     </div>
@@ -865,7 +865,7 @@ const SupportLink = ({ href, icon: Icon, title, description }: { href: string; i
       <p className="text-xs text-muted-foreground">{description}</p>
     </div>
     <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
-  </a>
+  </Link>
 );
 
 const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: any; onSaved: (iban: string, holder: string) => void }) => {
