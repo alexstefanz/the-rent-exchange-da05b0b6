@@ -18,6 +18,18 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 /**
+ * Emails granted a temporary bypass for the phone requirement (test accounts).
+ * These users can proceed with reservations / KYC / publishing without a
+ * valid Romanian phone number.
+ */
+const PHONE_REQUIREMENT_BYPASS_EMAILS = new Set<string>([
+  "viteliustin@gmail.com",
+]);
+
+const isPhoneBypassed = (email?: string | null) =>
+  !!email && PHONE_REQUIREMENT_BYPASS_EMAILS.has(email.toLowerCase());
+
+/**
  * Hook + UI primitives that hard-block actions for users who don't have a
  * valid Romanian phone number in their profile. SMS notifications depend on
  * this number, so we require it before publishing/editing a product, paying
@@ -36,7 +48,9 @@ export const usePhoneRequired = () => {
   const hasValidPhone =
     !!user &&
     (isValidRomanianPhone((profile as any)?.phone) ||
-      isValidRomanianPhone(metadataPhone));
+      isValidRomanianPhone(metadataPhone) ||
+      isPhoneBypassed(user.email) ||
+      isPhoneBypassed((profile as any)?.email));
 
   // Always refetch the profile when this hook mounts so a freshly-saved
   // phone number is picked up immediately on Checkout/KYC pages.
@@ -83,6 +97,11 @@ export const PhoneRequiredGate = ({ className = "" }: PhoneRequiredGateProps) =>
   const navigate = useNavigate();
 
   if (!user || isLoading) return null;
+
+  // Test-account bypass: hide the gate entirely.
+  if (isPhoneBypassed(user.email) || isPhoneBypassed((profile as any)?.email)) {
+    return null;
+  }
 
   const profilePhone = (profile as any)?.phone as string | null | undefined;
   const metadataPhone = (user.user_metadata as any)?.phone as string | undefined;
