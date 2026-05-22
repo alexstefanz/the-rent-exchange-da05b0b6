@@ -34,10 +34,16 @@ html, body {
 }
 
 /* Previne layout shift cauzat de Radix RemoveScroll când se deschid
-   Select/Popover/Dialog. scrollbar-gutter: stable rezervă deja spațiul. */
-body[data-scroll-locked] {
+   Select/Popover/Dialog. scrollbar-gutter: stable rezervă deja spațiul.
+   Specificitate mărită ca să batem stylesheet-ul injectat de Radix la runtime. */
+html body[data-scroll-locked],
+html body[data-scroll-locked][data-scroll-locked] {
   padding-right: 0 !important;
   margin-right: 0 !important;
+}
+/* Fallback pt. componente care setează inline `style="padding-right: Npx"` pe body */
+html body[style*="padding-right"] {
+  padding-right: 0 !important;
 }
 
 @layer base {
