@@ -1,33 +1,55 @@
-# Alert pentru telefon/email în chat
+# Hide contact-alert after payment, fix contact visibility, add call button for both roles
 
-## Comportament dorit
+## Context
 
-Când userul încearcă să trimită un mesaj care conține un **număr de telefon românesc** (`07XXXXXXXX`, cu sau fără spații/puncte/cratime) sau un **email**, mesajul NU se trimite și se afișează un `AlertDialog` modal care îi recomandă să păstreze conversația pe platformă, explicând că administratorii nu pot ajuta dacă conversația continuă în alt loc.
+- `InfoPanel` decides `isPaid` from `paid_at || payment_status === "paid"`. But after a successful Stripe authorization the rental is typically `payment_status = 'authorized'` with `paid_at` still null until capture. So contact stays hidden even though the platform RPC `get_contact_info_if_in_conversation` would return it (it already accepts `authorized | paid | captured | partially_refunded`). The screenshot ("Plată efectuată" / "Așteaptă predarea produsului") matches this state.
+- `ChatPanel` uses the same too-narrow check for `showPhone`, and only fetches the **owner's** phone (renter side). The owner never sees a call button for the renter.
+- `MessageInput` always shows the "Date de contact detectate" alert, even after payment when sharing a phone/email is normal.
 
-## Detecție
+## Changes
 
-În `src/components/messaging/MessageInput.tsx` (înaintea `containsProfanity`):
+### 1. Shared "is paid" helper
 
-- **Telefon RO**: regex care normalizează spații/puncte/cratime, apoi caută `07` urmat de 8 cifre. Implementare: `/(?:^|[^\d])0\s*[.\-]?\s*7(?:\s*[.\-]?\s*\d){8}/` aplicat pe textul brut.
-- **Email**: regex standard `/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/`.
+Export a tiny helper from `src/features/messaging/messagingApi.ts` so all three components agree:
 
-Helper local `containsContactInfo(text): { phone: boolean; email: boolean; hit: boolean }`.
-
-## UI
-
-Un singur `AlertDialog` reutilizat (`contactAlertOpen` state) cu titlu și descriere adaptate după ce s-a detectat:
-
-- **Titlu**:
-  - phone+email → „Date de contact detectate / Contact info detected"
-  - doar phone → „Număr de telefon detectat / Phone number detected"
-  - doar email → „Adresă de email detectată / Email address detected"
-- **Descriere (bilingvă)**: „Te rugăm să păstrezi conversația pe Rentli. Dacă apar probleme cu o tranzacție, administratorii pot interveni doar dacă discuția rămâne pe platformă. Schimbul de date de contact înainte de plată este descurajat pentru siguranța ta." / EN echivalent.
-- **Buton**: „Am înțeles / Got it".
-
-În `handleSend`, după check de profanity:
-```
-const contact = containsContactInfo(content);
-if (contact.hit) { setContactAlert({open: true, ...}); return; }
+```ts
+export function isRentalPaidLike(
+  paymentStatus?: string | null,
+  paidAt?: string | null
+): boolean {
+  if (paidAt) return true;
+  return ["authorized", "paid", "captured", "partially_refunded"].includes(
+    (paymentStatus || "").toLowerCase()
+  );
+}
 ```
 
-Mesajul rămâne în input pentru a fi corectat. Nicio modificare backend sau în alte fișiere.
+### 2. `src/components/messaging/InfoPanel.tsx`
+
+- Replace the `isPaid` computation to use `isRentalPaidLike(data.payment_status, data.paid_at)`.
+- Keep the rest of the contact-gating logic as is — `getOwnerContactInfo` already works bidirectionally for renter↔owner via the existing RPC, so once `isPaid` is true the peer's phone/email will render for both sides.
+
+### 3. `src/components/messaging/ChatPanel.tsx`
+
+- Compute `const isPaid = isRentalPaidLike(rentalCtx?.payment_status, rentalCtx?.paid_at);` once.
+- Use `isPaid` for both the existing collapsed/expanded rental-context block and the new `showPhone` prop.
+- Remove the `if (!ownerId || isOwner) return;` guard around the phone fetch. Always fetch `peerId`'s contact via `getOwnerContactInfo(peerId)` so the owner sees the renter's phone too. Store as `peerPhone`.
+- Pass `peerPhone` to `ChatHeader` as `phone`, and pass `isPaid` as `showPhone`.
+- Pass `isPaid` down to `<MessageInput isPaid={isPaid} ... />` so the input can skip the contact-info alert after payment.
+
+### 4. `src/components/messaging/ChatHeader.tsx`
+
+- Render the phone button **and** the "Vezi produs" button side by side when both are available (today it's `phone ? ... : productUrl ? ...`). Change to two independent conditional blocks so they can coexist.
+- Keep the same styling (ghost icon for phone, primary pill for "Vezi produs"). Tooltip stays "Apelează / Call".
+- Visibility rule stays: phone button only renders when `showPhone && phone`.
+
+### 5. `src/components/messaging/MessageInput.tsx`
+
+- Accept optional `isPaid?: boolean` prop.
+- In `handleSend`, wrap the phone/email detection in `if (!isPaid) { ... }` so the warning dialog is suppressed once payment is made and sharing contact details is expected.
+- No other behavior changes (profanity and special-char checks stay).
+
+## Out of scope
+
+- No DB / RPC / migration changes — the existing `get_contact_info_if_in_conversation` RPC already supports both directions and authorized payments.
+- No styling refactor beyond placing the new call icon next to "Vezi produs".
