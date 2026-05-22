@@ -293,7 +293,7 @@ const RentalDetailPage = () => {
                   {role === "owner" ? t("Tu esti proprietar", "You are owner") : t("Tu esti chirias", "You are renter")}
                 </span>
               </div>
-              <h1 className="sm:text-3xl font-bold tracking-tight mt-1 text-lg">
+              <h1 className="font-bold tracking-tight mt-1 text-lg sm:text-2xl">
                 {t("Inchiriere", "Rental")} — {rental.product_title}
               </h1>
               <p className="text-sm text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
