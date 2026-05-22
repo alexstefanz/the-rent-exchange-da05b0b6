@@ -1,3 +1,39 @@
+# Fix layout shift when opening dropdowns
+
+## Problem
+On `/cauta` and `/categorie/:slug`, clicking a Radix dropdown (Select / Popover — "All categories", "Price range", "Relevance", "Sortare") shifts the whole page slightly to the left while the dropdown is open, then snaps back on close.
+
+## Root cause
+Radix UI primitives (Select, Dialog, Popover when modal) lock body scroll on open. To prevent visible scrollbar reflow, Radix adds `padding-right` (equal to the scrollbar width, ~15px) to `<body>` while the menu is open. Because the page layout uses `mx-auto` containers, that extra right padding makes the centered content visually shift left.
+
+Today `src/index.css` only sets `html, body { overflow-x: clip; }` — there is no reserved scrollbar gutter, so any scroll-lock compensation by Radix becomes a visible jump.
+
+## Fix
+Reserve the scrollbar gutter permanently so Radix's compensation becomes a no-op.
+
+Edit `src/index.css`:
+
+```css
+html {
+  scrollbar-gutter: stable;
+}
+html, body {
+  overflow-x: clip;
+}
+```
+
+`scrollbar-gutter: stable` keeps the vertical scrollbar space reserved at all times, so when Radix locks scroll and removes/compensates the scrollbar, layout width stays identical — no horizontal shift.
+
+## Scope
+- One-line CSS change in `src/index.css`.
+- No component, no JS, no Radix config changes.
+- Affects all pages globally (desired — same dropdown shift happens anywhere a Radix Select/Dialog opens).
+
+## Verification
+- Open `/cauta`, click "All categories", "Price range", "Relevance" — page must not shift.
+- Open `/categorie/:slug` "Sortare" dropdown — same.
+- Open any modal/dialog elsewhere (checkout, admin) — confirm no regression in spacing.
+
 # Hide contact-alert after payment, fix contact visibility, add call button for both roles
 
 ## Context
