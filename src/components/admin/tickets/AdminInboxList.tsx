@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, AlertTriangle, Inbox, Filter, Plus } from "lucide-react";
+import { Search, AlertTriangle, Inbox, Filter, Plus, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -107,7 +107,7 @@ export function AdminInboxList({ tickets, isLoading, selectedId, onSelect, filte
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder="TCK-… sau titlu"
+            placeholder="TCK-…, titlu sau utilizator"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && setFilters({ ...filters, search: search || undefined })}
@@ -209,6 +209,12 @@ export function AdminInboxList({ tickets, isLoading, selectedId, onSelect, filte
                       )}>
                         {t.title}
                       </p>
+                      <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted-foreground min-w-0">
+                        <User className="h-3 w-3 flex-shrink-0 opacity-70" />
+                        <span className="truncate">
+                          {t.requester_name || t.requester_email || "Utilizator anonim"}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-1.5 mt-1">
                         <StatusPill status={t.status} size="xs" />
                         <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-normal">
