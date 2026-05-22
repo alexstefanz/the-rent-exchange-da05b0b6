@@ -82,12 +82,23 @@ const MessagesTab = () => {
   // Mobile: fullscreen chat when selected
   if (!isDesktop && selectedConversation) {
     return (
-      <div
+      <>
+        <div className={`pointer-events-none ${isClosing ? "animate-slide-in-left" : ""}`}>
+          <ConversationList
+            conversations={conversations}
+            isLoading={isLoading}
+            userId={user?.id || ""}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            onSelect={handleSelect}
+          />
+        </div>
+        <div
         className={`fixed inset-0 z-50 bg-background flex flex-col transform-gpu will-change-transform ${
           isClosing ? "animate-slide-out-right" : "animate-slide-in-right"
         }`}
         onAnimationEnd={handleCloseAnimationEnd}
-      >
+        >
         <ChatPanel
           conversationId={selectedConversation.id}
           otherUserName={selectedConversation.other_user?.full_name || null}
@@ -98,7 +109,8 @@ const MessagesTab = () => {
           rentalsId={selectedConversation.rentals_id || null}
           onBack={handleBack}
         />
-      </div>
+        </div>
+      </>
     );
   }
 
