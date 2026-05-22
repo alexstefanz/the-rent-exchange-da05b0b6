@@ -61,6 +61,7 @@ export default function Messages() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [activeTab, setActiveTab] = useState("rezervari");
   const [mobileInfoOpen, setMobileInfoOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   useKeyboardInset(!isDesktop && !!selectedConversation);
 
   if (!authLoading && !user) {
@@ -97,12 +98,24 @@ export default function Messages() {
       });
       return;
     }
-    // Clear the ?conv= param so the sync effect doesn't immediately reopen
-    // the conversation we're trying to close.
+    // Mobile: trigger slide-out animation, then clean up.
+    if (!isDesktop) {
+      setIsClosing(true);
+      return;
+    }
     if (searchParams.get("conv")) {
       navigate("/mesaje", { replace: true });
     }
     setSelectedConversation(null);
+  };
+
+  const handleCloseAnimationEnd = () => {
+    if (!isClosing) return;
+    if (searchParams.get("conv")) {
+      navigate("/mesaje", { replace: true });
+    }
+    setSelectedConversation(null);
+    setIsClosing(false);
   };
 
   if (authLoading) {
@@ -124,8 +137,11 @@ export default function Messages() {
     return (
       <>
         <div
-          className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-background"
+          className={`fixed inset-0 z-50 flex flex-col overflow-hidden bg-background transform-gpu will-change-transform ${
+            isClosing ? "animate-slide-out-right" : "animate-slide-in-right"
+          }`}
           style={{ height: "100dvh", paddingBottom: "var(--keyboard-inset, 0px)" }}
+          onAnimationEnd={handleCloseAnimationEnd}
         >
           <ChatPanel
             conversationId={selectedConversation.id}
