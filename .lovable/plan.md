@@ -1,32 +1,23 @@
-# Fix shift orizontal când se deschid dropdown-urile (categorii / căutare)
+# Afișare requester în inbox tickete admin
 
-## Problemă confirmată
-Am reprodus în browser pe `/cauta`: când dropdown-ul „Toate categoriile" se deschide, întregul conținut centrat se mută ~17px la stânga, apoi revine la închidere. La fel se întâmplă pe paginile de categorii.
+## Scop
+În `/admin/tickets`, fiecare card de ticket din inbox afișează doar `public_id` + titlu. Nu se vede cine a deschis ticketul, deci nu se pot filtra/triajat după user. Adăugăm numele și emailul requesterului direct în listă și extindem căutarea ca să accepte și nume/email.
 
-## Cauză
-Radix UI (Select/Popover/Dialog) folosește `react-remove-scroll`, care la deschidere:
-1. setează atributul `data-scroll-locked` pe `<body>`
-2. injectează la runtime un `<style>` în `<head>` care adaugă `padding-right: <scrollbarSize>px !important` pe body, ca să compenseze scrollbarul ascuns.
+## Modificări
 
-Pentru că `html { scrollbar-gutter: stable }` rezervă deja spațiul de scrollbar, acest `padding-right` injectat de Radix devine o compensare dublă → shift vizibil. Fix-ul anterior (`body[data-scroll-locked] { padding-right: 0 !important }`) are aceeași specificitate ca regula Radix și pierde pentru că `<style>`-ul injectat de Radix vine după `index.css` în DOM (ordinea cascadei).
+### 1. `src/features/admin/opsTicketsApi.ts` — `fetchOpsTickets`
+- După `select('*')`, fac un al doilea query batch pe `profiles` cu `in('id', requesterIds)` pentru a aduce `full_name` și `email`.
+- Populez `requester_name` și `requester_email` pe fiecare ticket (câmpurile există deja pe tipul `OpsTicket`).
+- Extind `filters.search`: dacă există un termen, fac OR și pe `public_id`, `title`, dar și pe ID-urile de requester găsite printr-un mic lookup în `profiles` (full_name/email ilike). Implementare simplă: dacă search nu pare a fi un cod TCK, fac lookup în profiluri și adaug `requester_user_id.in.(...)` la query.
 
-## Soluție
-În `src/index.css`, înlocuiesc regula existentă cu două reguli de specificitate mai mare, care bat regula Radix indiferent de ordine:
+### 2. `src/components/admin/tickets/AdminInboxList.tsx`
+- Sub titlul ticketului, adaug o linie nouă cu iconul `User` (Lucide) + `t.requester_name ?? t.requester_email ?? "Utilizator anonim"`, truncat la o linie, text muted/xs.
+- Actualizez placeholder-ul inputului de căutare: `"TCK-…, titlu sau utilizator"`.
+- Filtrul după tab/prioritate/categorie/status rămâne neschimbat.
 
-```css
-html body[data-scroll-locked],
-html body[data-scroll-locked][data-scroll-locked] {
-  padding-right: 0 !important;
-  margin-right: 0 !important;
-}
-/* Fallback pt. componente Radix care setează `style="padding-right"` inline pe body */
-html body[style*="padding-right"] {
-  padding-right: 0 !important;
-}
-```
+### 3. Fără modificări de schemă, RLS sau backend.
 
-## Fișier editat
-- `src/index.css`
-
-## Verificare
-Re-deschid `/cauta` în browser, click pe „Toate categoriile" → confirm cu screenshot că poziția logo-ului și a butonului „Adaugă anunț nou" rămâne identică între starea închisă și deschisă.
+## Validare
+- Verific în preview pe `/admin/tickets` că fiecare card arată numele utilizatorului care a deschis ticketul.
+- Testez căutarea după nume parțial și după email.
+- Confirm că tichetele „system" (fără requester) afișează fallback-ul fără să spargă layoutul.
