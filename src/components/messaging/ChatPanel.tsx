@@ -326,6 +326,7 @@ export function ChatPanel({
           onBack={onBack}
           onInfo={onOpenInfo}
           phone={ownerPhone}
+          showPhone={!!rentalCtx?.paid_at || rentalCtx?.payment_status === "paid"}
           productUrl={
             rentalCtx?.product_slug
               ? `/produs/${rentalCtx.product_slug}`
