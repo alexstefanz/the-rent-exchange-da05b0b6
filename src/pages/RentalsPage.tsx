@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2, ArrowLeft, User as UserIcon, ShoppingBag } from "lucide-react";
+import { ArrowLeft, User as UserIcon, ShoppingBag } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from "@/components/layout/Navbar";
@@ -18,14 +18,6 @@ const RentalsPage = () => {
   useEffect(() => {
     if (!loading && !user) navigate("/auth", { replace: true });
   }, [user, loading, navigate]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -51,7 +43,7 @@ const RentalsPage = () => {
             </p>
           </div>
         </div>
-        <RentalsTab />
+        {user ? <RentalsTab /> : null}
       </main>
       <Footer />
     </div>

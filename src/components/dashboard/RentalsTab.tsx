@@ -11,7 +11,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import { useRentalRealtime } from "@/hooks/useRentalRealtime";
@@ -52,27 +52,30 @@ const fetchMyRentals = async (userId: string): Promise<MyRental[]> => {
   if (error) throw error;
 
   const ownerIds = Array.from(new Set((data || []).map((r: any) => r.owner_id).filter(Boolean)));
-  let ownerMap: Record<string, string> = {};
-  if (ownerIds.length > 0) {
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", ownerIds);
-    ownerMap = Object.fromEntries((profiles || []).map((p: any) => [p.id, p.full_name || "Proprietar"]));
-  }
-
-  // Fetch return-phase PV signatures so we can move "Finalizat" rentals to history
-  // even when the rental status hasn't yet transitioned to "completed".
   const rentalIds = (data || []).map((r: any) => r.id);
-  let pvMap: Record<string, { owner: string | null; renter: string | null }> = {};
-  if (rentalIds.length > 0) {
-    const { data: pvs } = await supabase
-      .from("rental_pv_documents")
-      .select("rental_id, owner_signed_at, renter_signed_at")
-      .eq("phase", "return")
-      .in("rental_id", rentalIds);
-    pvMap = Object.fromEntries((pvs || []).map((p: any) => [p.rental_id, { owner: p.owner_signed_at, renter: p.renter_signed_at }]));
-  }
+
+  // Run the two secondary lookups in parallel instead of sequentially.
+  const [profilesRes, pvsRes] = await Promise.all([
+    ownerIds.length > 0
+      ? supabase.from("profiles").select("id, full_name").in("id", ownerIds)
+      : Promise.resolve({ data: [] as any[] }),
+    rentalIds.length > 0
+      ? supabase
+          .from("rental_pv_documents")
+          .select("rental_id, owner_signed_at, renter_signed_at")
+          .eq("phase", "return")
+          .in("rental_id", rentalIds)
+      : Promise.resolve({ data: [] as any[] }),
+  ]);
+  const ownerMap: Record<string, string> = Object.fromEntries(
+    ((profilesRes.data as any[]) || []).map((p: any) => [p.id, p.full_name || "Proprietar"]),
+  );
+  const pvMap: Record<string, { owner: string | null; renter: string | null }> = Object.fromEntries(
+    ((pvsRes.data as any[]) || []).map((p: any) => [
+      p.rental_id,
+      { owner: p.owner_signed_at, renter: p.renter_signed_at },
+    ]),
+  );
 
   return (data || []).map((r: any) => ({
     id: r.id,
@@ -108,6 +111,8 @@ const RentalsTab = () => {
     queryKey: ["my-rentals", user?.id],
     queryFn: () => fetchMyRentals(user!.id),
     enabled: !!user?.id,
+    placeholderData: keepPreviousData,
+    staleTime: 30_000,
   });
 
   const [cancelDialogRental, setCancelDialogRental] = useState<MyRental | null>(null);
