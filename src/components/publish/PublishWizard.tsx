@@ -26,6 +26,7 @@ import { Calendar } from "@/components/ui/calendar";
 import type { DateRange } from "react-day-picker";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   createProduct,
   updateProduct,
@@ -39,6 +40,7 @@ import {
   emptyPublishForm,
   CONDITION_LABELS,
   DEFAULT_USAGE_RULES,
+  DEFAULT_USAGE_RULES_I18N,
   stepValidators,
   type PublishFormData,
   type ProductCondition,
@@ -67,12 +69,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const STEPS: StepDef[] = [
-  { id: 1, label: "Categorie", shortLabel: "Categorie" },
-  { id: 2, label: "Fotografii & detalii", shortLabel: "Detalii" },
-  { id: 3, label: "Locație", shortLabel: "Locație" },
-  { id: 4, label: "Preț & disponibilitate", shortLabel: "Preț" },
-  { id: 5, label: "Verificare & publicare", shortLabel: "Publică" },
+const buildSteps = (t: (ro: string, en: string) => string): StepDef[] => [
+  { id: 1, label: t("Categorie", "Category"), shortLabel: t("Categorie", "Category") },
+  { id: 2, label: t("Fotografii & detalii", "Photos & details"), shortLabel: t("Detalii", "Details") },
+  { id: 3, label: t("Locație", "Location"), shortLabel: t("Locație", "Location") },
+  { id: 4, label: t("Preț & disponibilitate", "Price & availability"), shortLabel: t("Preț", "Price") },
+  { id: 5, label: t("Verificare & publicare", "Review & publish"), shortLabel: t("Publică", "Publish") },
 ];
 
 interface Props {
@@ -85,6 +87,8 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { t, language } = useLanguage();
+  const STEPS = useMemo(() => buildSteps(t), [t, language]);
   const queryClient = useQueryClient();
 
   const [step, setStep] = useState(1);
