@@ -1024,20 +1024,24 @@ const Step4Location = ({
   update: <K extends keyof PublishFormData>(k: K, v: PublishFormData[K]) => void;
   errors: Record<string, string>;
 }) => {
+  const { t } = useLanguage();
   const cities = judete.find((j) => j.name === data.location_county)?.localitati || [];
 
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 3 din 5"
-        title="Unde se află produsul?"
-        subtitle="Adresa exactă este vizibilă doar după ce o rezervare e confirmată."
+        eyebrow={t("Pasul 3 din 5", "Step 3 of 5")}
+        title={t("Unde se află produsul?", "Where is the product located?")}
+        subtitle={t(
+          "Adresa exactă este vizibilă doar după ce o rezervare e confirmată.",
+          "The exact address is visible only after a booking is confirmed.",
+        )}
       />
 
       <div className="mt-6 space-y-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label className="text-sm font-semibold">Județ</Label>
+            <Label className="text-sm font-semibold">{t("Județ", "County")}</Label>
             <select
               value={data.location_county}
               onChange={(e) => {
@@ -1046,7 +1050,7 @@ const Step4Location = ({
               }}
               className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
             >
-              <option value="">Selectează județul</option>
+              <option value="">{t("Selectează județul", "Select county")}</option>
               {judete.map((j) => (
                 <option key={j.name} value={j.name}>
                   {j.name}
@@ -1056,14 +1060,14 @@ const Step4Location = ({
             {errors.location_county && <p className="text-sm text-destructive">{errors.location_county}</p>}
           </div>
           <div className="space-y-2">
-            <Label className="text-sm font-semibold">Localitate</Label>
+            <Label className="text-sm font-semibold">{t("Localitate", "City")}</Label>
             <select
               value={data.location_city}
               onChange={(e) => update("location_city", e.target.value)}
               disabled={!data.location_county}
               className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50"
             >
-              <option value="">{data.location_county ? "Selectează localitatea" : "Alege întâi județul"}</option>
+              <option value="">{data.location_county ? t("Selectează localitatea", "Select city") : t("Alege întâi județul", "Pick a county first")}</option>
               {cities.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -1076,17 +1080,17 @@ const Step4Location = ({
 
         <div className="space-y-2">
           <Label className="text-sm font-semibold">
-            Adresă ridicare
+            {t("Adresă ridicare", "Pickup address")}
           </Label>
           <Input
-            placeholder="Ex: Strada Exemplu nr. 10, Sector 1"
+            placeholder={t("Ex: Strada Exemplu nr. 10, Sector 1", "E.g. 10 Example Street, District 1")}
             value={data.pickup_address}
             onChange={(e) => update("pickup_address", e.target.value)}
             maxLength={200}
             className="h-12"
           />
           <p className="text-xs text-muted-foreground">
-            Apare pe pagina anunțului și ajută chiriașii să vadă unde se află produsul.
+            {t("Apare pe pagina anunțului și ajută chiriașii să vadă unde se află produsul.", "Shown on the listing page and helps renters see where the product is located.")}
           </p>
         </div>
 
