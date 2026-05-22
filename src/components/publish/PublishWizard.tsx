@@ -26,6 +26,7 @@ import { Calendar } from "@/components/ui/calendar";
 import type { DateRange } from "react-day-picker";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import {
   createProduct,
   updateProduct,
@@ -39,6 +40,7 @@ import {
   emptyPublishForm,
   CONDITION_LABELS,
   DEFAULT_USAGE_RULES,
+  DEFAULT_USAGE_RULES_I18N,
   stepValidators,
   type PublishFormData,
   type ProductCondition,
@@ -67,12 +69,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const STEPS: StepDef[] = [
-  { id: 1, label: "Categorie", shortLabel: "Categorie" },
-  { id: 2, label: "Fotografii & detalii", shortLabel: "Detalii" },
-  { id: 3, label: "Locație", shortLabel: "Locație" },
-  { id: 4, label: "Preț & disponibilitate", shortLabel: "Preț" },
-  { id: 5, label: "Verificare & publicare", shortLabel: "Publică" },
+const buildSteps = (t: (ro: string, en: string) => string): StepDef[] => [
+  { id: 1, label: t("Categorie", "Category"), shortLabel: t("Categorie", "Category") },
+  { id: 2, label: t("Fotografii & detalii", "Photos & details"), shortLabel: t("Detalii", "Details") },
+  { id: 3, label: t("Locație", "Location"), shortLabel: t("Locație", "Location") },
+  { id: 4, label: t("Preț & disponibilitate", "Price & availability"), shortLabel: t("Preț", "Price") },
+  { id: 5, label: t("Verificare & publicare", "Review & publish"), shortLabel: t("Publică", "Publish") },
 ];
 
 interface Props {
@@ -85,6 +87,8 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { t, language } = useLanguage();
+  const STEPS = useMemo(() => buildSteps(t), [t, language]);
   const queryClient = useQueryClient();
 
   const [step, setStep] = useState(1);
@@ -246,7 +250,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         if (cat && cat.subcategories.length > 0 && !data.subcategory) {
           return {
             success: false,
-            error: { errors: [{ path: ["subcategory"], message: "Selectează o subcategorie" }] },
+            error: { errors: [{ path: ["subcategory"], message: t("Selectează o subcategorie", "Select a subcategory") }] },
           };
         }
         return { success: true };
@@ -278,9 +282,11 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       const firstMsg = Object.values(flat)[0];
       if (flat.subcategory) {
         toast({
-          title: "Alege o subcategorie",
-          description:
+          title: t("Alege o subcategorie", "Pick a subcategory"),
+          description: t(
             "Te rugăm să alegi și o subcategorie din lista de mai jos înainte de a continua.",
+            "Please also pick a subcategory from the list below before continuing.",
+          ),
           variant: "destructive",
         });
         setTimeout(() => {
@@ -289,7 +295,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
             ?.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 50);
       } else if (firstMsg) {
-        toast({ title: "Verifică datele", description: firstMsg, variant: "destructive" });
+        toast({ title: t("Verifică datele", "Check the details"), description: firstMsg, variant: "destructive" });
       }
       return false;
     }
@@ -335,7 +341,12 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   };
 
   const handleExit = () => {
-    toast({ title: mode === "create" ? "Draftul tău este salvat" : "Modificările nesalvate au fost păstrate local" });
+    toast({
+      title:
+        mode === "create"
+          ? t("Draftul tău este salvat", "Your draft has been saved")
+          : t("Modificările nesalvate au fost păstrate local", "Unsaved changes have been kept locally"),
+    });
     navigate("/owner");
   };
 
@@ -385,25 +396,39 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         await updateProduct(productId, { ...payload, is_active: data.is_active }, user.id);
         await queryClient.invalidateQueries({ queryKey: ["my-products", user.id] });
         await queryClient.invalidateQueries({ queryKey: ["product", productId] });
-        toast({ title: "Anunț actualizat", description: "Modificările au fost salvate." });
+        toast({
+          title: t("Anunț actualizat", "Listing updated"),
+          description: t("Modificările au fost salvate.", "Your changes have been saved."),
+        });
         navigate("/owner");
       } else {
         await createProduct(payload, user.id);
         if (draftId) await deleteDraft(draftId);
         toast({
-          title: "Anunț trimis spre aprobare",
-          description: "Vei primi o notificare când e aprobat (uzual sub 2 ore).",
+          title: t("Anunț trimis spre aprobare", "Listing submitted for approval"),
+          description: t(
+            "Vei primi o notificare când e aprobat (uzual sub 2 ore).",
+            "You'll get a notification once it's approved (usually under 2 hours).",
+          ),
         });
         navigate("/owner");
       }
     } catch (err: any) {
       console.error(err);
       if (err?.code === "KYC_REQUIRED" || err?.message?.includes("KYC_REQUIRED")) {
-        toast({ title: "Verificare necesară", description: "Te redirecționăm la KYC.", variant: "destructive" });
+        toast({
+          title: t("Verificare necesară", "Verification required"),
+          description: t("Te redirecționăm la KYC.", "Redirecting you to KYC."),
+          variant: "destructive",
+        });
         setTimeout(() => navigate("/verificare"), 600);
         return;
       }
-      toast({ title: "Eroare la publicare", description: err?.message || "Încearcă din nou.", variant: "destructive" });
+      toast({
+        title: t("Eroare la publicare", "Publish error"),
+        description: err?.message || t("Încearcă din nou.", "Please try again."),
+        variant: "destructive",
+      });
     } finally {
       setIsPublishing(false);
     }
@@ -431,7 +456,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
           <aside className="hidden lg:block">
             <div className="sticky top-24 space-y-4">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Previzualizare live
+                {t("Previzualizare live", "Live preview")}
               </p>
               <LivePreviewCard data={data} feePercent={feePercent} />
               {step >= 2 && <QualityScoreCard data={data} />}
@@ -449,12 +474,12 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         isFinal={step === STEPS.length}
         nextLabel={
           mode === "edit" && editingFromSummary && step !== 5
-            ? "Salvează și înapoi la rezumat"
+            ? t("Salvează și înapoi la rezumat", "Save and back to summary")
             : undefined
         }
         secondaryAction={
           mode === "edit" && editingFromSummary && step !== 5
-            ? { label: "Anulează și înapoi la rezumat", onClick: () => { setEditingFromSummary(false); setStep(5); window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); } }
+            ? { label: t("Anulează și înapoi la rezumat", "Cancel and back to summary"), onClick: () => { setEditingFromSummary(false); setStep(5); window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); } }
             : undefined
         }
       />
@@ -464,27 +489,27 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
           <button
             type="button"
             onClick={() => setPendingDraft(null)}
-            aria-label="Închide"
+            aria-label={t("Închide", "Close")}
             className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <X className="h-4 w-4" />
           </button>
           <AlertDialogHeader>
-            <AlertDialogTitle>Ai un anunț nesalvat</AlertDialogTitle>
+            <AlertDialogTitle>{t("Ai un anunț nesalvat", "You have an unsaved listing")}</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-sm text-muted-foreground">
-                <p>Am găsit un draft început anterior. Vrei să continui de unde ai rămas sau să începi un anunț nou?</p>
+                <p>{t("Am găsit un draft început anterior. Vrei să continui de unde ai rămas sau să începi un anunț nou?", "We found a draft you started earlier. Do you want to continue where you left off or start a new listing?")}</p>
                 {pendingDraft && (
                   <div className="rounded-lg border border-border bg-muted/40 p-3 text-foreground">
                     <p className="font-semibold">
-                      {pendingDraft.payload.title?.trim() || "Anunț fără titlu"}
+                      {pendingDraft.payload.title?.trim() || t("Anunț fără titlu", "Untitled listing")}
                     </p>
                     {pendingDraft.payload.category && (
                       <p className="text-xs text-muted-foreground">{pendingDraft.payload.category}</p>
                     )}
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Ultima modificare:{" "}
-                      {new Date(pendingDraft.updated_at).toLocaleString("ro-RO", {
+                      {t("Ultima modificare:", "Last modified:")}{" "}
+                      {new Date(pendingDraft.updated_at).toLocaleString(language === "en" ? "en-US" : "ro-RO", {
                         day: "2-digit",
                         month: "short",
                         hour: "2-digit",
@@ -497,8 +522,8 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleStartFresh}>Începe anunț nou</AlertDialogCancel>
-            <AlertDialogAction onClick={handleContinueDraft}>Continuă draftul</AlertDialogAction>
+            <AlertDialogCancel onClick={handleStartFresh}>{t("Începe anunț nou", "Start new listing")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleContinueDraft}>{t("Continuă draftul", "Continue draft")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -519,6 +544,7 @@ const Step1Category = ({
   update: <K extends keyof PublishFormData>(k: K, v: PublishFormData[K]) => void;
   errors: Record<string, string>;
 }) => {
+  const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -534,15 +560,18 @@ const Step1Category = ({
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 1 din 6"
-        title="Ce vrei să închiriezi?"
-        subtitle="Alege o categorie ca să-ți arătăm câmpurile potrivite și prețul mediu din piață."
+        eyebrow={t("Pasul 1 din 5", "Step 1 of 5")}
+        title={t("Ce vrei să închiriezi?", "What do you want to rent out?")}
+        subtitle={t(
+          "Alege o categorie ca să-ți arătăm câmpurile potrivite și prețul mediu din piață.",
+          "Pick a category so we can show you the right fields and average market price.",
+        )}
       />
 
       <div className="relative mt-6">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Caută categorie (ex: bicicletă, cameră foto, drujbă...)"
+          placeholder={t("Caută categorie (ex: bicicletă, cameră foto, drujbă...)", "Search category (e.g. bike, camera, chainsaw...)")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="h-12 pl-10"
@@ -590,7 +619,7 @@ const Step1Category = ({
           )}
         >
           <Label className="text-sm font-semibold text-foreground">
-            Subcategorie <span className="text-destructive">*</span>
+            {t("Subcategorie", "Subcategory")} <span className="text-destructive">*</span>
           </Label>
           <div className="mt-3 flex flex-wrap gap-2">
             {selectedCat.subcategories.map((sub) => {
@@ -638,6 +667,7 @@ const Step2Details = ({
   feePercent: number;
   userId: string;
 }) => {
+  const { t, language } = useLanguage();
   const [genLoading, setGenLoading] = useState(false);
   const { toast } = useToast();
   const [newItem, setNewItem] = useState("");
@@ -645,7 +675,7 @@ const Step2Details = ({
 
   const handleGenerate = async () => {
     if (!data.title || data.title.length < 5) {
-      toast({ title: "Adaugă mai întâi titlul", variant: "destructive" });
+      toast({ title: t("Adaugă mai întâi titlul", "Add the title first"), variant: "destructive" });
       return;
     }
     setGenLoading(true);
@@ -659,9 +689,9 @@ const Step2Details = ({
         usage_rules: data.usage_rules,
       });
       update("description", desc);
-      toast({ title: "Descriere generată", description: "Ajusteaz-o cum vrei." });
+      toast({ title: t("Descriere generată", "Description generated"), description: t("Ajusteaz-o cum vrei.", "Adjust it however you like.") });
     } catch (e: any) {
-      toast({ title: "Eroare AI", description: e?.message || "Încearcă din nou.", variant: "destructive" });
+      toast({ title: t("Eroare AI", "AI error"), description: e?.message || t("Încearcă din nou.", "Please try again."), variant: "destructive" });
     } finally {
       setGenLoading(false);
     }
@@ -670,16 +700,19 @@ const Step2Details = ({
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 2 din 5"
-        title="Fotografii & detalii"
-        subtitle="Adaugă întâi pozele (6+ recomandat) — apoi completează titlul și descrierea."
+        eyebrow={t("Pasul 2 din 5", "Step 2 of 5")}
+        title={t("Fotografii & detalii", "Photos & details")}
+        subtitle={t(
+          "Adaugă întâi pozele (6+ recomandat) — apoi completează titlul și descrierea.",
+          "Add the photos first (6+ recommended) — then fill in the title and description.",
+        )}
       />
 
       <div className="mt-6 space-y-6">
         {/* Photos */}
         <div className="space-y-2">
           <Label className="text-sm font-semibold">
-            Fotografii <span className="font-normal text-muted-foreground">(prima poză devine coperta)</span>
+            {t("Fotografii", "Photos")} <span className="font-normal text-muted-foreground">{t("(prima poză devine coperta)", "(the first photo becomes the cover)")}</span>
           </Label>
           <div className="rounded-2xl border border-border bg-card p-4">
             <ImageUpload userId={userId} images={data.images} onChange={(imgs) => update("images", imgs)} maxImages={10} />
@@ -689,12 +722,12 @@ const Step2Details = ({
             <div className="flex items-start gap-3">
               <ImageIcon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               <div className="space-y-1 text-xs text-muted-foreground">
-                <p className="font-medium text-foreground">Sfaturi pentru poze bune:</p>
+                <p className="font-medium text-foreground">{t("Sfaturi pentru poze bune:", "Tips for good photos:")}</p>
                 <ul className="list-disc space-y-0.5 pl-4">
-                  <li>Lumină naturală, fără bliț</li>
-                  <li>Fundal curat, neutru</li>
-                  <li>Arată produsul din 3-4 unghiuri + detalii</li>
-                  <li>Include accesoriile incluse</li>
+                  <li>{t("Lumină naturală, fără bliț", "Natural light, no flash")}</li>
+                  <li>{t("Fundal curat, neutru", "Clean, neutral background")}</li>
+                  <li>{t("Arată produsul din 3-4 unghiuri + detalii", "Show the product from 3-4 angles + details")}</li>
+                  <li>{t("Include accesoriile incluse", "Include the included accessories")}</li>
                 </ul>
               </div>
             </div>
@@ -704,18 +737,18 @@ const Step2Details = ({
         {/* Title */}
         <div className="space-y-2">
           <Label htmlFor="title" className="text-sm font-semibold">
-            Titlu anunț
+            {t("Titlu anunț", "Listing title")}
           </Label>
           <Input
             id="title"
-            placeholder="Ex: Bicicletă MTB Trek Marlin 7, mărime L"
+            placeholder={t("Ex: Bicicletă MTB Trek Marlin 7, mărime L", "E.g. Trek Marlin 7 MTB bike, size L")}
             value={data.title}
             onChange={(e) => update("title", e.target.value)}
             className="h-12 text-base"
             maxLength={100}
           />
           <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Folosește brand, model și particularități. Fără date de contact.</span>
+            <span className="text-muted-foreground">{t("Folosește brand, model și particularități. Fără date de contact.", "Use brand, model and specifics. No contact info.")}</span>
             <span className={cn(data.title.length > 90 ? "text-amber-600" : "text-muted-foreground")}>{data.title.length}/100</span>
           </div>
           {errors.title && <p className="text-sm text-destructive">{errors.title}</p>}
@@ -723,7 +756,7 @@ const Step2Details = ({
 
         {/* Condition */}
         <div className="space-y-2">
-          <Label className="text-sm font-semibold">Starea produsului</Label>
+          <Label className="text-sm font-semibold">{t("Starea produsului", "Product condition")}</Label>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {(Object.keys(CONDITION_LABELS) as ProductCondition[]).map((c) => {
               const active = data.condition === c;
@@ -739,7 +772,7 @@ const Step2Details = ({
                       : "border-border bg-card text-foreground hover:border-primary/40",
                   )}
                 >
-                  {CONDITION_LABELS[c].ro}
+                  {CONDITION_LABELS[c][language]}
                 </button>
               );
             })}
@@ -751,7 +784,7 @@ const Step2Details = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="description" className="text-sm font-semibold">
-              Descriere
+              {t("Descriere", "Description")}
             </Label>
             <Button
               type="button"
@@ -762,12 +795,12 @@ const Step2Details = ({
               className="gap-1.5"
             >
               {genLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-primary" />}
-              Generează cu AI
+              {t("Generează cu AI", "Generate with AI")}
             </Button>
           </div>
           <Textarea
             id="description"
-            placeholder="Descrie pentru ce e potrivit, ce e inclus, particularități sau atenționări..."
+            placeholder={t("Descrie pentru ce e potrivit, ce e inclus, particularități sau atenționări...", "Describe what it's good for, what's included, specifics or warnings...")}
             rows={6}
             value={data.description}
             onChange={(e) => update("description", e.target.value)}
@@ -775,7 +808,7 @@ const Step2Details = ({
             className="resize-none text-base"
           />
           <div className="flex items-center justify-between text-xs">
-            <span className="text-muted-foreground">Min. 60 caractere recomandate. Fără email/telefon/link-uri.</span>
+            <span className="text-muted-foreground">{t("Min. 60 caractere recomandate. Fără email/telefon/link-uri.", "Min. 60 characters recommended. No email/phone/links.")}</span>
             <span className="text-muted-foreground">{data.description.length}/2000</span>
           </div>
           {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
@@ -784,11 +817,11 @@ const Step2Details = ({
         {/* Included items */}
         <div className="space-y-2">
           <Label className="text-sm font-semibold">
-            Ce este inclus <span className="font-normal text-muted-foreground">(accesorii)</span>
+            {t("Ce este inclus", "What's included")} <span className="font-normal text-muted-foreground">{t("(accesorii)", "(accessories)")}</span>
           </Label>
           <div className="flex gap-2">
             <Input
-              placeholder="Ex: Husă transport, încărcător, manual"
+              placeholder={t("Ex: Husă transport, încărcător, manual", "E.g. Carry case, charger, manual")}
               value={newItem}
               onChange={(e) => setNewItem(e.target.value)}
               onKeyDown={(e) => {
@@ -842,11 +875,11 @@ const Step2Details = ({
         {/* Usage rules */}
         <div className="space-y-2">
           <Label className="text-sm font-semibold">
-            Reguli de utilizare <span className="font-normal text-muted-foreground">(opțional)</span>
+            {t("Reguli de utilizare", "Usage rules")} <span className="font-normal text-muted-foreground">{t("(opțional)", "(optional)")}</span>
           </Label>
           <div className="flex gap-2">
             <Input
-              placeholder="Ex: Doar în interior, fără copii sub 12 ani"
+              placeholder={t("Ex: Doar în interior, fără copii sub 12 ani", "E.g. Indoor only, no children under 12")}
               value={newRule}
               onChange={(e) => setNewRule(e.target.value)}
               onKeyDown={(e) => {
@@ -896,7 +929,7 @@ const Step2Details = ({
                       : "border-border bg-background text-foreground hover:border-primary/40",
                   )}
                 >
-                  {r}
+                  {DEFAULT_USAGE_RULES_I18N[r]?.[language] ?? r}
                 </button>
               );
             })}
@@ -991,20 +1024,24 @@ const Step4Location = ({
   update: <K extends keyof PublishFormData>(k: K, v: PublishFormData[K]) => void;
   errors: Record<string, string>;
 }) => {
+  const { t } = useLanguage();
   const cities = judete.find((j) => j.name === data.location_county)?.localitati || [];
 
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 3 din 5"
-        title="Unde se află produsul?"
-        subtitle="Adresa exactă este vizibilă doar după ce o rezervare e confirmată."
+        eyebrow={t("Pasul 3 din 5", "Step 3 of 5")}
+        title={t("Unde se află produsul?", "Where is the product located?")}
+        subtitle={t(
+          "Adresa exactă este vizibilă doar după ce o rezervare e confirmată.",
+          "The exact address is visible only after a booking is confirmed.",
+        )}
       />
 
       <div className="mt-6 space-y-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label className="text-sm font-semibold">Județ</Label>
+            <Label className="text-sm font-semibold">{t("Județ", "County")}</Label>
             <select
               value={data.location_county}
               onChange={(e) => {
@@ -1013,7 +1050,7 @@ const Step4Location = ({
               }}
               className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm"
             >
-              <option value="">Selectează județul</option>
+              <option value="">{t("Selectează județul", "Select county")}</option>
               {judete.map((j) => (
                 <option key={j.name} value={j.name}>
                   {j.name}
@@ -1023,14 +1060,14 @@ const Step4Location = ({
             {errors.location_county && <p className="text-sm text-destructive">{errors.location_county}</p>}
           </div>
           <div className="space-y-2">
-            <Label className="text-sm font-semibold">Localitate</Label>
+            <Label className="text-sm font-semibold">{t("Localitate", "City")}</Label>
             <select
               value={data.location_city}
               onChange={(e) => update("location_city", e.target.value)}
               disabled={!data.location_county}
               className="h-12 w-full rounded-md border border-input bg-background px-3 text-sm disabled:opacity-50"
             >
-              <option value="">{data.location_county ? "Selectează localitatea" : "Alege întâi județul"}</option>
+              <option value="">{data.location_county ? t("Selectează localitatea", "Select city") : t("Alege întâi județul", "Pick a county first")}</option>
               {cities.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -1043,17 +1080,17 @@ const Step4Location = ({
 
         <div className="space-y-2">
           <Label className="text-sm font-semibold">
-            Adresă ridicare
+            {t("Adresă ridicare", "Pickup address")}
           </Label>
           <Input
-            placeholder="Ex: Strada Exemplu nr. 10, Sector 1"
+            placeholder={t("Ex: Strada Exemplu nr. 10, Sector 1", "E.g. 10 Example Street, District 1")}
             value={data.pickup_address}
             onChange={(e) => update("pickup_address", e.target.value)}
             maxLength={200}
             className="h-12"
           />
           <p className="text-xs text-muted-foreground">
-            Apare pe pagina anunțului și ajută chiriașii să vadă unde se află produsul.
+            {t("Apare pe pagina anunțului și ajută chiriașii să vadă unde se află produsul.", "Shown on the listing page and helps renters see where the product is located.")}
           </p>
         </div>
 
@@ -1092,6 +1129,7 @@ const Step5Pricing = ({
   freeListingsLeft: number;
   errors: Record<string, string>;
 }) => {
+  const { t } = useLanguage();
   const [pricing, setPricing] = useState<SimilarPricing | null>(null);
 
   useEffect(() => {
@@ -1107,15 +1145,18 @@ const Step5Pricing = ({
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 4 din 5"
-        title="Preț chirie"
-        subtitle="Setează cât vrei să primești pe zi. Comisionul platformei se adaugă automat clientului."
+        eyebrow={t("Pasul 4 din 5", "Step 4 of 5")}
+        title={t("Preț chirie", "Rental price")}
+        subtitle={t(
+          "Setează cât vrei să primești pe zi. Comisionul platformei se adaugă automat clientului.",
+          "Set how much you want to receive per day. The platform fee is added automatically for the client.",
+        )}
       />
 
       <div className="mt-6 space-y-6">
         {/* Price */}
         <div className="rounded-2xl border border-border bg-card p-5">
-          <Label className="text-sm font-semibold">Preț pe zi (vrei să primești)</Label>
+          <Label className="text-sm font-semibold">{t("Preț pe zi (vrei să primești)", "Price per day (what you receive)")}</Label>
           <div className="mt-2 flex items-center gap-2">
             <Input
               type="number"
@@ -1127,7 +1168,7 @@ const Step5Pricing = ({
               placeholder="50"
               className="h-14 text-2xl font-semibold"
             />
-            <span className="text-lg font-medium text-muted-foreground">RON / zi</span>
+            <span className="text-lg font-medium text-muted-foreground">{t("RON / zi", "RON / day")}</span>
           </div>
           {errors.daily_price_owner && (
             <p className="mt-1 text-sm text-destructive">{errors.daily_price_owner}</p>
@@ -1137,13 +1178,13 @@ const Step5Pricing = ({
           {pricing && pricing.sample_size >= 3 && (
             <div className="mt-4 rounded-xl bg-muted/40 p-4 text-xs">
               <p className="font-medium text-foreground">
-                Prețuri similare în {data.subcategory || data.category}{" "}
-                <span className="text-muted-foreground">({pricing.sample_size} anunțuri)</span>
+                {t("Prețuri similare în", "Similar prices in")} {data.subcategory || data.category}{" "}
+                <span className="text-muted-foreground">({pricing.sample_size} {t("anunțuri", "listings")})</span>
               </p>
               <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-                <Bench label="Ieftin" value={pricing.p25} />
-                <Bench label="Mediu" value={pricing.p50} highlight />
-                <Bench label="Premium" value={pricing.p75} />
+                <Bench label={t("Ieftin", "Cheap")} value={pricing.p25} />
+                <Bench label={t("Mediu", "Average")} value={pricing.p50} highlight />
+                <Bench label={t("Premium", "Premium")} value={pricing.p75} />
               </div>
             </div>
           )}
@@ -1151,19 +1192,24 @@ const Step5Pricing = ({
           {owner > 0 && (
             <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-primary/5 p-4 text-sm">
               <div>
-                <p className="text-xs text-muted-foreground">Tu primești</p>
+                <p className="text-xs text-muted-foreground">{t("Tu primești", "You receive")}</p>
                 <p className="text-lg font-bold text-foreground">{owner} RON</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Clientul plătește</p>
+                <p className="text-xs text-muted-foreground">{t("Clientul plătește", "Client pays")}</p>
                 <p className="text-lg font-bold text-primary">{client} RON</p>
                 <p className="text-[11px] text-muted-foreground">
-                  {feePercent === 0 ? "Comision 0% — gratuit 🎉" : `+ ${commission} RON comision (${feePercent}%)`}
+                  {feePercent === 0
+                    ? t("Comision 0% — gratuit 🎉", "0% fee — free 🎉")
+                    : `+ ${commission} RON ${t("comision", "fee")} (${feePercent}%)`}
                 </p>
               </div>
               {freeListingsLeft > 0 && feePercent === 0 && (
                 <div className="col-span-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-700">
-                  🎉 Mai ai {freeListingsLeft} anunț{freeListingsLeft > 1 ? "uri" : ""} cu 0% comision
+                  🎉 {t(
+                    `Mai ai ${freeListingsLeft} ${freeListingsLeft === 1 ? "anunț" : "anunțuri"} cu 0% comision`,
+                    `You have ${freeListingsLeft} more ${freeListingsLeft === 1 ? "listing" : "listings"} with 0% fee`,
+                  )}
                 </div>
               )}
             </div>
@@ -1202,45 +1248,52 @@ const Step6Review = ({
   onJump: (s: number) => void;
   mode: "create" | "edit";
 }) => {
-  const score = computeQualityScore(data);
+  const { t, language } = useLanguage();
+  const score = computeQualityScore(data, language);
   const owner = data.daily_price_owner ?? 0;
 
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 5 din 5"
-        title={mode === "edit" ? "Verifică modificările" : "Aproape gata!"}
+        eyebrow={t("Pasul 5 din 5", "Step 5 of 5")}
+        title={mode === "edit" ? t("Verifică modificările", "Review changes") : t("Aproape gata!", "Almost done!")}
         subtitle={
           mode === "edit"
-            ? "Verifică schimbările înainte de a salva. Anunțul va rămâne activ după update."
-            : "Verifică detaliile. După publicare, anunțul intră în aprobare (uzual sub 2 ore)."
+            ? t(
+                "Verifică schimbările înainte de a salva. Anunțul va rămâne activ după update.",
+                "Review the changes before saving. The listing will remain active after the update.",
+              )
+            : t(
+                "Verifică detaliile. După publicare, anunțul intră în aprobare (uzual sub 2 ore).",
+                "Review the details. After publishing, the listing goes into review (usually under 2 hours).",
+              )
         }
       />
 
       <div className="mt-6 space-y-4">
         <QualityScoreCard data={data} />
 
-        <ReviewRow label="Categorie" value={data.category + (data.subcategory ? ` · ${data.subcategory}` : "")} onEdit={() => onJump(1)} />
-        <ReviewRow label="Titlu" value={data.title} onEdit={() => onJump(2)} />
+        <ReviewRow label={t("Categorie", "Category")} value={data.category + (data.subcategory ? ` · ${data.subcategory}` : "")} onEdit={() => onJump(1)} />
+        <ReviewRow label={t("Titlu", "Title")} value={data.title} onEdit={() => onJump(2)} />
         <ReviewRow
-          label="Descriere"
+          label={t("Descriere", "Description")}
           value={data.description ? `${data.description.slice(0, 120)}${data.description.length > 120 ? "…" : ""}` : "—"}
           onEdit={() => onJump(2)}
         />
         <ReviewRow
-          label="Stare"
-          value={data.condition ? CONDITION_LABELS[data.condition].ro : "—"}
+          label={t("Stare", "Condition")}
+          value={data.condition ? CONDITION_LABELS[data.condition][language] : "—"}
           onEdit={() => onJump(2)}
         />
-        <ReviewRow label="Fotografii" value={`${data.images.length} imagini`} onEdit={() => onJump(2)} />
+        <ReviewRow label={t("Fotografii", "Photos")} value={`${data.images.length} ${t("imagini", "images")}`} onEdit={() => onJump(2)} />
         <ReviewRow
-          label="Locație"
+          label={t("Locație", "Location")}
           value={`${data.location_city}${data.location_county ? `, ${data.location_county}` : ""}`}
           onEdit={() => onJump(3)}
         />
         <ReviewRow
-          label="Preț"
-          value={`${owner} RON/zi · client ${calculateClientPrice(owner, feePercent)} RON`}
+          label={t("Preț", "Price")}
+          value={`${owner} ${t("RON/zi", "RON/day")} · ${t("client", "client")} ${calculateClientPrice(owner, feePercent)} RON`}
           onEdit={() => onJump(4)}
         />
 
@@ -1249,9 +1302,12 @@ const Step6Review = ({
             <div className="flex items-start gap-2">
               <AlertCircle className="mt-0.5 h-4 w-4 text-amber-600" />
               <div>
-                <p className="font-medium text-amber-900 dark:text-amber-200">Anunțul tău încă poate fi îmbunătățit</p>
+                <p className="font-medium text-amber-900 dark:text-amber-200">{t("Anunțul tău încă poate fi îmbunătățit", "Your listing can still be improved")}</p>
                 <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">
-                  Poți publica acum, dar un scor mai mare aduce mai multe rezervări. Vezi sugestiile din scorul de calitate.
+                  {t(
+                    "Poți publica acum, dar un scor mai mare aduce mai multe rezervări. Vezi sugestiile din scorul de calitate.",
+                    "You can publish now, but a higher score brings more bookings. See the suggestions in the quality score.",
+                  )}
                 </p>
               </div>
             </div>
@@ -1268,11 +1324,18 @@ const ReviewRow = ({ label, value, onEdit }: { label: string; value: string; onE
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-0.5 truncate text-sm font-medium text-foreground">{value || "—"}</p>
     </div>
-    <Button variant="ghost" size="sm" onClick={onEdit} className="text-primary hover:text-primary">
-      Editează
-    </Button>
+    <EditButton onEdit={onEdit} />
   </div>
 );
+
+const EditButton = ({ onEdit }: { onEdit: () => void }) => {
+  const { t } = useLanguage();
+  return (
+    <Button variant="ghost" size="sm" onClick={onEdit} className="text-primary hover:text-primary">
+      {t("Editează", "Edit")}
+    </Button>
+  );
+};
 
 /* ---------------------------- shared header ---------------------------- */
 

@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export interface StepDef {
   id: number;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 const PublishStepper = ({ steps, current, maxReached, onJump }: Props) => {
+  const { t } = useLanguage();
   const progressPct = ((current - 1) / (steps.length - 1)) * 100;
 
   return (
@@ -23,7 +25,7 @@ const PublishStepper = ({ steps, current, maxReached, onJump }: Props) => {
       <div className="md:hidden px-4 py-3">
         <div className="flex items-center justify-between text-xs font-medium">
           <span className="text-muted-foreground">
-            Pasul {current} din {steps.length}
+            {t(`Pasul ${current} din ${steps.length}`, `Step ${current} of ${steps.length}`)}
           </span>
           <span className="text-foreground">{steps[current - 1]?.shortLabel}</span>
         </div>

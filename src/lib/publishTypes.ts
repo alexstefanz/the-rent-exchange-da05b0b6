@@ -129,3 +129,12 @@ export const DEFAULT_USAGE_RULES = [
   "Permis profesional",
   "Fără fumat",
 ] as const;
+
+export const DEFAULT_USAGE_RULES_I18N: Record<(typeof DEFAULT_USAGE_RULES)[number], { ro: string; en: string }> = {
+  "Doar interior": { ro: "Doar interior", en: "Indoor only" },
+  "Fără apă / umiditate": { ro: "Fără apă / umiditate", en: "No water / humidity" },
+  "Fără animale": { ro: "Fără animale", en: "No pets" },
+  "Doar uz personal": { ro: "Doar uz personal", en: "Personal use only" },
+  "Permis profesional": { ro: "Permis profesional", en: "Professional license required" },
+  "Fără fumat": { ro: "Fără fumat", en: "No smoking" },
+};

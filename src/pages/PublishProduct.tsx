@@ -10,6 +10,7 @@ import { BannedBanner } from "@/components/common/BannedBanner";
 import { Button } from "@/components/ui/button";
 import { getProductById, type Product } from "@/features/products/productsApi";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
   mode: "create" | "edit";
@@ -22,6 +23,7 @@ const PublishProductPage = ({ mode }: Props) => {
   const kyc = useKycGate();
   const { isBanned } = useIsBanned();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const [product, setProduct] = useState<Product | null>(null);
   const [loadingProduct, setLoadingProduct] = useState(mode === "edit");
 
@@ -35,12 +37,12 @@ const PublishProductPage = ({ mode }: Props) => {
       try {
         const p = await getProductById(id);
         if (!p) {
-          toast({ title: "Produs inexistent", variant: "destructive" });
+          toast({ title: t("Produs inexistent", "Product not found"), variant: "destructive" });
           navigate("/owner");
           return;
         }
         if (p.owner_id !== user.id) {
-          toast({ title: "Acces interzis", variant: "destructive" });
+          toast({ title: t("Acces interzis", "Access denied"), variant: "destructive" });
           navigate("/owner");
           return;
         }
@@ -65,12 +67,18 @@ const PublishProductPage = ({ mode }: Props) => {
         <BannedBanner
           context={
             mode === "create"
-              ? "Nu poți publica anunțuri noi cât timp contul este suspendat."
-              : "Nu poți edita anunțuri cât timp contul este suspendat."
+              ? t(
+                  "Nu poți publica anunțuri noi cât timp contul este suspendat.",
+                  "You can't publish new listings while your account is suspended.",
+                )
+              : t(
+                  "Nu poți edita anunțuri cât timp contul este suspendat.",
+                  "You can't edit listings while your account is suspended.",
+                )
           }
         />
         <Button variant="outline" onClick={() => navigate("/")}>
-          Înapoi la pagina principală
+          {t("Înapoi la pagina principală", "Back to home")}
         </Button>
       </div>
     );
