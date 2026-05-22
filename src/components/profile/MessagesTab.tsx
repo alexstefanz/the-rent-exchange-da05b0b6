@@ -29,6 +29,7 @@ const MessagesTab = () => {
   const { data: conversations = [], isLoading } = useConversations(user?.id);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [activeTab, setActiveTab] = useState("rezervari");
+  const [isClosing, setIsClosing] = useState(false);
 
   const handleSelect = (conv: Conversation) => {
     const correctTab = conv.buyer_id === user?.id ? "rezervari" : "de-inchiriat";
@@ -37,8 +38,18 @@ const MessagesTab = () => {
   };
 
   const handleBack = () => {
-    setSelectedConversation(null);
     queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    if (!isDesktop) {
+      setIsClosing(true);
+      return;
+    }
+    setSelectedConversation(null);
+  };
+
+  const handleCloseAnimationEnd = () => {
+    if (!isClosing) return;
+    setSelectedConversation(null);
+    setIsClosing(false);
   };
 
   if (isLoading) {
@@ -71,7 +82,12 @@ const MessagesTab = () => {
   // Mobile: fullscreen chat when selected
   if (!isDesktop && selectedConversation) {
     return (
-      <div className="fixed inset-0 z-50 bg-background flex flex-col">
+      <div
+        className={`fixed inset-0 z-50 bg-background flex flex-col transform-gpu will-change-transform ${
+          isClosing ? "animate-slide-out-right" : "animate-slide-in-right"
+        }`}
+        onAnimationEnd={handleCloseAnimationEnd}
+      >
         <ChatPanel
           conversationId={selectedConversation.id}
           otherUserName={selectedConversation.other_user?.full_name || null}
