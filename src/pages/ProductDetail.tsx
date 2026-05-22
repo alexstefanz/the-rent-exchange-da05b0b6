@@ -452,6 +452,16 @@ const ProductDetail = () => {
           />
         </Suspense>
       )}
+
+      <BookedDatesAlert
+        open={conflictOpen}
+        dates={conflictDates}
+        onClose={() => {
+          setConflictOpen(false);
+          setStartDate(undefined);
+          setEndDate(undefined);
+        }}
+      />
     </div>
   );
 };
