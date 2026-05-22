@@ -130,6 +130,7 @@ export default function Messages() {
             ownerId={selectedConversation.owner_id}
             buyerId={selectedConversation.buyer_id}
             rentalsId={selectedConversation.rentals_id || null}
+            productId={selectedConversation.product_id || null}
             onBack={handleBack}
             onOpenInfo={() => setMobileInfoOpen(true)}
           />
@@ -200,6 +201,7 @@ export default function Messages() {
                 ownerId={selectedConversation.owner_id}
                 buyerId={selectedConversation.buyer_id}
                 rentalsId={selectedConversation.rentals_id || null}
+                productId={selectedConversation.product_id || null}
               />
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground bg-[#FCFAF8]">
