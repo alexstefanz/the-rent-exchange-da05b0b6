@@ -10,7 +10,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { requestMutualCancellation, withdrawCancellationRequest, renterCancelUnpaidRental } from "@/features/rentals/rentalsApi";
+import { requestMutualCancellation, withdrawCancellationRequest, cancelUnpaidRental } from "@/features/rentals/rentalsApi";
 
 interface Props {
   rentalId: string;
@@ -41,13 +41,18 @@ const MutualCancellationCard = ({
   const isPending = cancelRequestStatus === "pending";
   const iAmInitiator = isPending && cancelRequestInitiator === currentUserId;
   const unpaid = !paymentStatus || ["pending", "failed", "canceled", "cancelled"].includes(paymentStatus);
-  const canRenterSelfCancel = !!isRenter && unpaid && rentalStatus !== "cancelled" && rentalStatus !== "completed";
+  const canSelfCancelUnpaid = unpaid && rentalStatus !== "cancelled" && rentalStatus !== "completed";
 
   async function selfCancelUnpaid() {
     setBusy(true);
     try {
-      await renterCancelUnpaidRental(rentalId);
-      toast.success(t("Cererea a fost anulată.", "Request cancelled."));
+      await cancelUnpaidRental(rentalId);
+      toast.success(
+        t(
+          "Rezervarea a fost anulată. Ambele părți au fost notificate.",
+          "Reservation cancelled. Both parties have been notified.",
+        ),
+      );
       setConfirmOpen(false);
       await onChanged();
     } catch (e: any) {
@@ -127,8 +132,8 @@ const MutualCancellationCard = ({
     );
   }
 
-  // No pending request
-  if (canRenterSelfCancel) {
+  // No pending request — before payment, either party can cancel instantly
+  if (canSelfCancelUnpaid) {
     return (
       <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
         <div className="flex items-start gap-3">
@@ -137,29 +142,34 @@ const MutualCancellationCard = ({
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-sm">
-              {t("Anulează cererea", "Cancel request")}
+              {t("Anulează rezervarea", "Cancel reservation")}
             </h3>
             <p className="text-xs text-muted-foreground mt-1">
               {t(
-                "Plata nu a fost efectuată — poți anula cererea instant, fără aprobarea unui admin.",
-                "Payment hasn't been processed — you can cancel the request instantly, without admin approval.",
+                "Plata nu a fost efectuată — poți anula instant, fără aprobarea unui admin. Cealaltă parte va fi notificată.",
+                "Payment hasn't been processed — you can cancel instantly, without admin approval. The other party will be notified.",
               )}
             </p>
           </div>
           <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
             <DialogTrigger asChild>
               <Button variant="destructive" size="sm">
-                {t("Anulează cererea", "Cancel request")}
+                {t("Anulează", "Cancel")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>{t("Confirmi anularea?", "Confirm cancellation?")}</DialogTitle>
                 <DialogDescription>
-                  {t(
-                    "Cererea va fi anulată imediat. Proprietarul va fi notificat.",
-                    "The request will be cancelled immediately. The owner will be notified.",
-                  )}
+                  {isRenter
+                    ? t(
+                        "Rezervarea va fi anulată imediat. Proprietarul va fi notificat prin email, SMS și notificare în aplicație.",
+                        "The reservation will be cancelled immediately. The owner will be notified by email, SMS and in-app notification.",
+                      )
+                    : t(
+                        "Rezervarea va fi anulată imediat. Chiriașul va fi notificat prin email, SMS și notificare în aplicație.",
+                        "The reservation will be cancelled immediately. The renter will be notified by email, SMS and in-app notification.",
+                      )}
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>
