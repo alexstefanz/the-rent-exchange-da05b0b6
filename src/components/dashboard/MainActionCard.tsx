@@ -107,7 +107,7 @@ const MainActionCard = ({
     icon = <CheckCircle2 className="h-5 w-5" />;
     title = t(language, "Rezervare finalizată", "Rental completed");
     desc = role === "renter"
-      ? t(language, "Mulțumim! Ajută comunitatea cu un review scurt.", "Thanks! Help the community with a short review.")
+      ? t(language, "Rezervarea s-a încheiat. Lasă un review scurt pentru a ajuta comunitatea.", "Rental completed. Leave a short review to help the community.")
       : t(language, "Banii vor apărea în balanță în 24-48h. Lasă un review chiriașului.", "Funds will appear in your balance in 24-48h. Leave a review for the renter.");
     if (onLeaveReview) {
       primaryLabel = t(language, "Lasă un review", "Leave a review");
