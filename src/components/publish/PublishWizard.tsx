@@ -1248,45 +1248,52 @@ const Step6Review = ({
   onJump: (s: number) => void;
   mode: "create" | "edit";
 }) => {
-  const score = computeQualityScore(data);
+  const { t, language } = useLanguage();
+  const score = computeQualityScore(data, language);
   const owner = data.daily_price_owner ?? 0;
 
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 5 din 5"
-        title={mode === "edit" ? "Verifică modificările" : "Aproape gata!"}
+        eyebrow={t("Pasul 5 din 5", "Step 5 of 5")}
+        title={mode === "edit" ? t("Verifică modificările", "Review changes") : t("Aproape gata!", "Almost done!")}
         subtitle={
           mode === "edit"
-            ? "Verifică schimbările înainte de a salva. Anunțul va rămâne activ după update."
-            : "Verifică detaliile. După publicare, anunțul intră în aprobare (uzual sub 2 ore)."
+            ? t(
+                "Verifică schimbările înainte de a salva. Anunțul va rămâne activ după update.",
+                "Review the changes before saving. The listing will remain active after the update.",
+              )
+            : t(
+                "Verifică detaliile. După publicare, anunțul intră în aprobare (uzual sub 2 ore).",
+                "Review the details. After publishing, the listing goes into review (usually under 2 hours).",
+              )
         }
       />
 
       <div className="mt-6 space-y-4">
         <QualityScoreCard data={data} />
 
-        <ReviewRow label="Categorie" value={data.category + (data.subcategory ? ` · ${data.subcategory}` : "")} onEdit={() => onJump(1)} />
-        <ReviewRow label="Titlu" value={data.title} onEdit={() => onJump(2)} />
+        <ReviewRow label={t("Categorie", "Category")} value={data.category + (data.subcategory ? ` · ${data.subcategory}` : "")} onEdit={() => onJump(1)} />
+        <ReviewRow label={t("Titlu", "Title")} value={data.title} onEdit={() => onJump(2)} />
         <ReviewRow
-          label="Descriere"
+          label={t("Descriere", "Description")}
           value={data.description ? `${data.description.slice(0, 120)}${data.description.length > 120 ? "…" : ""}` : "—"}
           onEdit={() => onJump(2)}
         />
         <ReviewRow
-          label="Stare"
-          value={data.condition ? CONDITION_LABELS[data.condition].ro : "—"}
+          label={t("Stare", "Condition")}
+          value={data.condition ? CONDITION_LABELS[data.condition][language] : "—"}
           onEdit={() => onJump(2)}
         />
-        <ReviewRow label="Fotografii" value={`${data.images.length} imagini`} onEdit={() => onJump(2)} />
+        <ReviewRow label={t("Fotografii", "Photos")} value={`${data.images.length} ${t("imagini", "images")}`} onEdit={() => onJump(2)} />
         <ReviewRow
-          label="Locație"
+          label={t("Locație", "Location")}
           value={`${data.location_city}${data.location_county ? `, ${data.location_county}` : ""}`}
           onEdit={() => onJump(3)}
         />
         <ReviewRow
-          label="Preț"
-          value={`${owner} RON/zi · client ${calculateClientPrice(owner, feePercent)} RON`}
+          label={t("Preț", "Price")}
+          value={`${owner} ${t("RON/zi", "RON/day")} · ${t("client", "client")} ${calculateClientPrice(owner, feePercent)} RON`}
           onEdit={() => onJump(4)}
         />
 
@@ -1295,9 +1302,12 @@ const Step6Review = ({
             <div className="flex items-start gap-2">
               <AlertCircle className="mt-0.5 h-4 w-4 text-amber-600" />
               <div>
-                <p className="font-medium text-amber-900 dark:text-amber-200">Anunțul tău încă poate fi îmbunătățit</p>
+                <p className="font-medium text-amber-900 dark:text-amber-200">{t("Anunțul tău încă poate fi îmbunătățit", "Your listing can still be improved")}</p>
                 <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">
-                  Poți publica acum, dar un scor mai mare aduce mai multe rezervări. Vezi sugestiile din scorul de calitate.
+                  {t(
+                    "Poți publica acum, dar un scor mai mare aduce mai multe rezervări. Vezi sugestiile din scorul de calitate.",
+                    "You can publish now, but a higher score brings more bookings. See the suggestions in the quality score.",
+                  )}
                 </p>
               </div>
             </div>
@@ -1314,11 +1324,18 @@ const ReviewRow = ({ label, value, onEdit }: { label: string; value: string; onE
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-0.5 truncate text-sm font-medium text-foreground">{value || "—"}</p>
     </div>
-    <Button variant="ghost" size="sm" onClick={onEdit} className="text-primary hover:text-primary">
-      Editează
-    </Button>
+    <EditButton onEdit={onEdit} />
   </div>
 );
+
+const EditButton = ({ onEdit }: { onEdit: () => void }) => {
+  const { t } = useLanguage();
+  return (
+    <Button variant="ghost" size="sm" onClick={onEdit} className="text-primary hover:text-primary">
+      {t("Editează", "Edit")}
+    </Button>
+  );
+};
 
 /* ---------------------------- shared header ---------------------------- */
 
