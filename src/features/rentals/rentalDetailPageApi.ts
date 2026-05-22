@@ -51,6 +51,18 @@ export interface RentalFullDetail {
   cancel_request_created_at?: string | null;
   cancel_request_responded_at?: string | null;
   cancel_request_response_note?: string | null;
+  // Identity data extracted from KYC (used in PVs). May be null when KYC
+  // hasn't been completed or admin hasn't verified the extracted data.
+  owner_cnp?: string | null;
+  owner_id_series?: string | null;
+  owner_id_number?: string | null;
+  owner_address?: string | null;
+  owner_identity_verified?: boolean;
+  renter_cnp?: string | null;
+  renter_id_series?: string | null;
+  renter_id_number?: string | null;
+  renter_address?: string | null;
+  renter_identity_verified?: boolean;
 }
 
 export async function getRentalFullDetail(publicId: string): Promise<RentalFullDetail | null> {
