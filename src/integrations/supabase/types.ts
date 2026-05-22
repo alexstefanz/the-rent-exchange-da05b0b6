@@ -2602,6 +2602,7 @@ export type Database = {
         Args: { _action: string; _note?: string; _rental_id: string }
         Returns: Json
       }
+      cancel_unpaid_rental: { Args: { _rental_id: string }; Returns: Json }
       confirm_handover_received: {
         Args: { _rental_id: string }
         Returns: undefined
