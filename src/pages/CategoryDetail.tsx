@@ -302,9 +302,9 @@ const CategoryDetail = () => {
           </>
         )}
 
-        {/* Discovery rails - bottom (Trending + Aproape de tine, 2 per row) */}
+        {/* Discovery rails - bottom (Aproape de tine, 2 per row) */}
         {!hasActiveFilters && !isLoading && products.length > 0 && (
-          <DiscoveryRailsBottom trending={trending} nearby={nearby} viewMode={viewMode} />
+          <DiscoveryRailsBottom trending={[]} nearby={nearby} viewMode={viewMode} />
         )}
       </main>
 
