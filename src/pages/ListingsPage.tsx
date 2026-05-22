@@ -19,6 +19,7 @@ import ListingAvailabilityDialog from "@/components/listings/ListingAvailability
 import type { ListingStatus } from "@/components/listings/ListingStatusBadge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { deleteProduct, updateProduct, type Product } from "@/features/products/productsApi";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -200,54 +201,40 @@ const ListingsPage = () => {
           <ListingsEmptyState />
         ) : (
           <>
-            <Tabs
+            <Select
               value={filters.status}
-              onValueChange={(v) => setFilters((f) => ({ ...f, status: v as ListingsFilters["status"] }))}
+              onValueChange={(v) => {
+                if (v === "__cereri__") {
+                  setTopTab("cereri");
+                  return;
+                }
+                setFilters((f) => ({ ...f, status: v as ListingsFilters["status"] }));
+              }}
             >
-              <TabsList className="h-auto flex-wrap gap-1 bg-muted/60 p-1">
-                <TabsTrigger value="all" className="gap-2">
-                  {t("Toate", "All")}
-                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">{stats?.total ?? products.length}</Badge>
-                </TabsTrigger>
-                <TabsTrigger value="active" className="gap-2">
-                  {t("Active", "Active")}
-                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">{stats?.active ?? 0}</Badge>
-                </TabsTrigger>
-                <TabsTrigger value="pending" className="gap-2">
-                  {t("În verificare", "In review")}
-                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">{stats?.pending ?? 0}</Badge>
-                </TabsTrigger>
-                <TabsTrigger value="hidden" className="gap-2">
-                  {t("Ascunse", "Hidden")}
-                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">{stats?.hidden ?? 0}</Badge>
-                </TabsTrigger>
-                <TabsTrigger value="rejected" className="gap-2">
-                  {t("Respinse", "Rejected")}
-                  <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">{stats?.rejected ?? 0}</Badge>
-                </TabsTrigger>
-                <button
-                  type="button"
-                  onClick={() => setTopTab("cereri")}
-                  className={`inline-flex items-center gap-2 whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all ${
-                    (stats?.new_requests ?? 0) > 0
-                      ? "bg-primary/10 text-primary ring-1 ring-primary/30 hover:bg-primary/15"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Inbox className="h-4 w-4" />
-                  {t("Cereri noi", "New requests")}
-                  <Badge
-                    className={`h-5 px-1.5 text-[10px] ${
-                      (stats?.new_requests ?? 0) > 0
-                        ? "bg-primary text-primary-foreground hover:bg-primary"
-                        : "bg-secondary text-secondary-foreground"
-                    }`}
-                  >
-                    {stats?.new_requests ?? 0}
-                  </Badge>
-                </button>
-              </TabsList>
-            </Tabs>
+              <SelectTrigger className="w-full sm:w-[260px]">
+                <SelectValue placeholder={t("Filtrează", "Filter")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  {t("Toate", "All")} ({stats?.total ?? products.length})
+                </SelectItem>
+                <SelectItem value="active">
+                  {t("Active", "Active")} ({stats?.active ?? 0})
+                </SelectItem>
+                <SelectItem value="pending">
+                  {t("În verificare", "In review")} ({stats?.pending ?? 0})
+                </SelectItem>
+                <SelectItem value="hidden">
+                  {t("Ascunse", "Hidden")} ({stats?.hidden ?? 0})
+                </SelectItem>
+                <SelectItem value="rejected">
+                  {t("Respinse", "Rejected")} ({stats?.rejected ?? 0})
+                </SelectItem>
+                <SelectItem value="__cereri__">
+                  {t("Cereri noi", "New requests")} ({stats?.new_requests ?? 0})
+                </SelectItem>
+              </SelectContent>
+            </Select>
 
             <ListingsFilterBar
               filters={filters}
@@ -259,7 +246,7 @@ const ListingsPage = () => {
             {filtered.length === 0 ? (
               <ListingsEmptyState filtered />
             ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid gap-4 grid-cols-2">
                 {filtered.map((p) => {
                   const status = deriveStatus(p);
                   return (
