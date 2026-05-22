@@ -70,18 +70,12 @@ export function ChatHeader({ name, avatarUrl, productTitle, online, typing, onBa
           </Tooltip>
         </TooltipProvider>
       ) : productUrl ? (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link to={productUrl} className="shrink-0">
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary" asChild>
-                  <span><Package className="h-5 w-5" /></span>
-                </Button>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent>{t("Vezi produsul", "View product")}</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Button asChild size="sm" className="shrink-0 bg-primary hover:bg-[#F98715] text-primary-foreground">
+          <Link to={productUrl}>
+            <Package className="h-4 w-4 mr-1.5" />
+            {t("Vezi produs", "View product")}
+          </Link>
+        </Button>
       ) : null}
       {onInfo && (
         <Button variant="ghost" size="icon" onClick={onInfo} className="shrink-0 lg:hidden">
