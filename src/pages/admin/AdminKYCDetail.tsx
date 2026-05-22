@@ -16,6 +16,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import { useKycCase, useKycDocuments, useKycAuditLog, useKycUserContext } from "@/hooks/queries/useKyc";
 import { useKycDuplicates } from "@/hooks/queries/useKyc";
 import { useUserActivityLogs } from "@/hooks/queries/useUserActivityLogs";
+import ExtractedIdDataCard from "@/components/admin/kyc/ExtractedIdDataCard";
 import {
   approveKycCase, rejectKycCase, requestReupload, setNeedsManualReview,
   KYC_STATUSES, KYC_STATUS_COLORS, REJECTION_REASONS, DOCUMENT_TYPES,
@@ -235,6 +236,11 @@ const AdminKYCDetail = () => {
               </div>
             </CardContent>
           </Card>
+        )}
+
+        {/* Extracted ID data (OCR) */}
+        {kycCase.user_id && (
+          <ExtractedIdDataCard userId={kycCase.user_id} kycCaseId={kycCase.id} />
         )}
 
         <div className="grid gap-6 lg:grid-cols-3">

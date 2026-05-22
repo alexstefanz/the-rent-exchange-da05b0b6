@@ -52,8 +52,23 @@ export interface PvContent {
 
 export function buildPvContent(rental: RentalFullDetail, phase: "handover" | "return"): PvContent {
   const today = format(new Date(), "dd MMMM yyyy");
-  const ownerId = fakeIdentity(rental.owner_id);
-  const renterId = fakeIdentity(rental.renter_id);
+  // Prefer real ID data extracted from KYC; fall back to deterministic fake
+  // identity only when no extracted data is available, so existing rentals
+  // don't break.
+  const ownerFake = fakeIdentity(rental.owner_id);
+  const renterFake = fakeIdentity(rental.renter_id);
+  const ownerId = {
+    cnp: rental.owner_cnp || ownerFake.cnp,
+    serie: rental.owner_id_series || ownerFake.serie,
+    nr: rental.owner_id_number || ownerFake.nr,
+    adresa: rental.owner_address || ownerFake.adresa,
+  };
+  const renterId = {
+    cnp: rental.renter_cnp || renterFake.cnp,
+    serie: rental.renter_id_series || renterFake.serie,
+    nr: rental.renter_id_number || renterFake.nr,
+    adresa: rental.renter_address || renterFake.adresa,
+  };
   const ownerName = rental.owner_name || "Proprietar";
   const renterName = rental.renter_name || "Chirias";
   const ownerPhone = rental.owner_phone || "0740 000 000";
