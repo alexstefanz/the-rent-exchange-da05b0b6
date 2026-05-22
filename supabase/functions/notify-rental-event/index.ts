@@ -264,6 +264,20 @@ const EVENTS: Record<EventKey, EventConfig> = {
   },
 };
 
+EVENTS.request_cancelled_by_owner = {
+  recipients: "both", channels: ["in_app", "email", "sms"], critical: true,
+  emailTemplate: { renter: "rental-rejected" },
+  smsTemplate: { renter: "rental_cancelled" },
+  inAppTitle: (c) => c.recipientRole === "owner"
+    ? { ro: "Ai anulat rezervarea", en: "You cancelled the reservation" }
+    : { ro: "Rezervare anulată de proprietar", en: "Reservation cancelled by owner" },
+  inAppDesc: (c) => c.recipientRole === "owner"
+    ? { ro: `Ai anulat rezervarea pentru "${c.product?.title}"`, en: `You cancelled the reservation for "${c.product?.title}"` }
+    : { ro: `Proprietarul a anulat rezervarea pentru "${c.product?.title}" înainte de plată`, en: `The owner cancelled the reservation for "${c.product?.title}" before payment` },
+  link: (c) => `/rezervari/${c.rental.public_id}`,
+  smsPurpose: "view_rental",
+};
+
 EVENTS.request_reminder_2h = {
   recipients: "both", channels: ["in_app", "email", "sms"], critical: true,
   emailTemplate: { owner: "request-reminder-2h-owner", renter: "request-reminder-2h-renter" },
