@@ -56,7 +56,7 @@ export function ChatHeader({ name, avatarUrl, productTitle, online, typing, onBa
           <span className="truncate">{productTitle}</span>
         </span>
       </div>
-      {showPhone && phone ? (
+      {showPhone && phone && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -69,14 +69,15 @@ export function ChatHeader({ name, avatarUrl, productTitle, online, typing, onBa
             <TooltipContent>{t("Apelează", "Call")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      ) : productUrl ? (
+      )}
+      {productUrl && (
         <Button asChild size="sm" className="shrink-0 bg-primary hover:bg-[#F98715] text-primary-foreground">
           <Link to={productUrl}>
             <Package className="h-4 w-4 mr-1.5" />
             {t("Vezi produs", "View product")}
           </Link>
         </Button>
-      ) : null}
+      )}
       {onInfo && (
         <Button variant="ghost" size="icon" onClick={onInfo} className="shrink-0 lg:hidden">
           <Info className="h-5 w-5" />
