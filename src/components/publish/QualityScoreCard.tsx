@@ -2,11 +2,19 @@ import { Check, Sparkles } from "lucide-react";
 import { computeQualityScore } from "@/lib/qualityScore";
 import type { PublishFormData } from "@/lib/publishTypes";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const QualityScoreCard = ({ data }: { data: PublishFormData }) => {
-  const score = computeQualityScore(data);
+  const { t, language } = useLanguage();
+  const score = computeQualityScore(data, language);
   const level =
-    score.total >= 85 ? "Excelent" : score.total >= 60 ? "Bun" : score.total >= 35 ? "În progres" : "La început";
+    score.total >= 85
+      ? t("Excelent", "Excellent")
+      : score.total >= 60
+        ? t("Bun", "Good")
+        : score.total >= 35
+          ? t("În progres", "In progress")
+          : t("La început", "Just started");
   const color =
     score.total >= 85
       ? "text-emerald-600"
@@ -19,7 +27,7 @@ const QualityScoreCard = ({ data }: { data: PublishFormData }) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-semibold text-foreground">Scor calitate anunț</h3>
+          <h3 className="text-sm font-semibold text-foreground">{t("Scor calitate anunț", "Listing quality score")}</h3>
         </div>
         <span className={cn("text-2xl font-bold", color)}>{score.total}</span>
       </div>
@@ -33,7 +41,7 @@ const QualityScoreCard = ({ data }: { data: PublishFormData }) => {
         />
       </div>
       <p className="mt-2 text-xs text-muted-foreground">
-        Nivel: <span className={cn("font-medium", color)}>{level}</span>
+        {t("Nivel:", "Level:")} <span className={cn("font-medium", color)}>{level}</span>
       </p>
 
       {score.suggestions.length > 0 && (
