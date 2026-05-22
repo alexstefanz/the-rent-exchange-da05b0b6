@@ -341,7 +341,12 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   };
 
   const handleExit = () => {
-    toast({ title: mode === "create" ? "Draftul tău este salvat" : "Modificările nesalvate au fost păstrate local" });
+    toast({
+      title:
+        mode === "create"
+          ? t("Draftul tău este salvat", "Your draft has been saved")
+          : t("Modificările nesalvate au fost păstrate local", "Unsaved changes have been kept locally"),
+    });
     navigate("/owner");
   };
 
@@ -391,25 +396,39 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         await updateProduct(productId, { ...payload, is_active: data.is_active }, user.id);
         await queryClient.invalidateQueries({ queryKey: ["my-products", user.id] });
         await queryClient.invalidateQueries({ queryKey: ["product", productId] });
-        toast({ title: "Anunț actualizat", description: "Modificările au fost salvate." });
+        toast({
+          title: t("Anunț actualizat", "Listing updated"),
+          description: t("Modificările au fost salvate.", "Your changes have been saved."),
+        });
         navigate("/owner");
       } else {
         await createProduct(payload, user.id);
         if (draftId) await deleteDraft(draftId);
         toast({
-          title: "Anunț trimis spre aprobare",
-          description: "Vei primi o notificare când e aprobat (uzual sub 2 ore).",
+          title: t("Anunț trimis spre aprobare", "Listing submitted for approval"),
+          description: t(
+            "Vei primi o notificare când e aprobat (uzual sub 2 ore).",
+            "You'll get a notification once it's approved (usually under 2 hours).",
+          ),
         });
         navigate("/owner");
       }
     } catch (err: any) {
       console.error(err);
       if (err?.code === "KYC_REQUIRED" || err?.message?.includes("KYC_REQUIRED")) {
-        toast({ title: "Verificare necesară", description: "Te redirecționăm la KYC.", variant: "destructive" });
+        toast({
+          title: t("Verificare necesară", "Verification required"),
+          description: t("Te redirecționăm la KYC.", "Redirecting you to KYC."),
+          variant: "destructive",
+        });
         setTimeout(() => navigate("/verificare"), 600);
         return;
       }
-      toast({ title: "Eroare la publicare", description: err?.message || "Încearcă din nou.", variant: "destructive" });
+      toast({
+        title: t("Eroare la publicare", "Publish error"),
+        description: err?.message || t("Încearcă din nou.", "Please try again."),
+        variant: "destructive",
+      });
     } finally {
       setIsPublishing(false);
     }
