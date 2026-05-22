@@ -184,6 +184,7 @@ export default function LeaveReviewDialog({
         queryClient.invalidateQueries({ queryKey: ["ownerRentals"] });
         queryClient.invalidateQueries({ queryKey: ["userReviews"] });
         queryClient.invalidateQueries({ queryKey: ["productReviews", rental.product_id] });
+        toast.success(t("Mulțumim pentru review!", "Thanks for your review!"));
         onOpenChange(false);
       } else if (firstError) {
         toast.error(firstError);
