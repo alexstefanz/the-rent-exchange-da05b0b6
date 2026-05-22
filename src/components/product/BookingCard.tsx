@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import KycGateBanner from "@/components/kyc/KycGateBanner";
 import { useIsBanned } from "@/hooks/useIsBanned";
 import { Ban } from "lucide-react";
+import BookedDatesAlert from "@/components/product/BookedDatesAlert";
 
 interface BookingCardProps {
   productId: string;
@@ -43,6 +44,8 @@ const BookingCard = ({
   const dateLocale = language === "ro" ? ro : enUS;
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [conflictDates, setConflictDates] = useState<Date[]>([]);
+  const [conflictOpen, setConflictOpen] = useState(false);
 
   const { bookedDates } = useBookedDates(productId);
 
@@ -58,7 +61,8 @@ const BookingCard = ({
       setStartDate(date);
     } else {
       if (hasBookedDateInRange(startDate, date, bookedDates)) {
-        toast({ title: language === "ro" ? "Perioada indisponibilă" : "Period unavailable", description: language === "ro" ? "Există zile rezervate în intervalul selectat." : "There are booked days in the selected range.", variant: "destructive" });
+        setConflictDates(bookedDates.filter((d) => d >= startDate && d <= date));
+        setConflictOpen(true);
         return;
       }
       setEndDate(date);
@@ -150,6 +154,16 @@ const BookingCard = ({
           modifiers={{ start: startDate, end: endDate, range: startDate && endDate ? { from: startDate, to: endDate } : undefined }}
           className="rounded-md border w-full pointer-events-auto [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-caption]:text-sm [&_.rdp-head_cell]:text-xs [&_.rdp-cell]:p-0 [&_.rdp-day]:h-8 [&_.rdp-day]:w-8 [&_.rdp-day]:text-xs [&_.rdp-day[aria-selected]]:rounded-lg"
         />
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded-[4px] bg-primary" />
+            {language === "ro" ? "Selectat" : "Selected"}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="h-3 w-3 rounded-[4px] bg-muted border border-border" />
+            <span className="line-through opacity-70">{language === "ro" ? "Rezervat" : "Booked"}</span>
+          </span>
+        </div>
       </div>
 
       {startDate && endDate && (
@@ -192,6 +206,15 @@ const BookingCard = ({
           {ctaLabel}
         </Button>
       </div>
+      <BookedDatesAlert
+        open={conflictOpen}
+        dates={conflictDates}
+        onClose={() => {
+          setConflictOpen(false);
+          setStartDate(undefined);
+          setEndDate(undefined);
+        }}
+      />
     </div>
   );
 };
