@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Heart, Star, Search, List, LayoutGrid, ChevronRight, Check, Loader2, Calendar, Package, MessageCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { categories } from "@/data/categories";
 import { getProductUrl } from "@/lib/slugUtils";
@@ -44,7 +45,7 @@ const UserProfile = () => {
   // React Query hooks for data fetching
   const { data: profile, isLoading: profileLoading, error: profileError } = usePublicProfile(id);
   const { data: products = [] } = usePublicUserProducts(id);
-  const { data: statistics } = useUserStatistics(id);
+  const { data: statistics, isLoading: statsLoading } = useUserStatistics(id);
   const { data: reviews = [] } = useUserReviews(id);
   const { data: isFavorite = false } = useIsUserFavorite(id, user?.id);
   
@@ -343,50 +344,66 @@ const UserProfile = () => {
             </div>
 
             {/* Statistics Section */}
-            {statistics && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Package className="h-5 w-5 text-primary" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border">
+              {statsLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <Skeleton className="h-9 w-9 rounded-lg" />
+                    <div className="space-y-2 flex-1">
+                      <Skeleton className="h-3 w-20" />
+                      <Skeleton className="h-4 w-16" />
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Produse</p>
-                    <p className="font-semibold text-foreground">{statistics.products_count}</p>
+                ))
+              ) : (
+                <>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Package className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Produse</p>
+                      <p className="font-semibold text-foreground">
+                        {statistics && statistics.products_count > 0 ? statistics.products_count : "—"}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Star className="h-5 w-5 text-primary" />
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Star className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Rating mediu</p>
+                      <p className="font-semibold text-foreground">
+                        {statistics && statistics.reviews_count > 0 ? statistics.average_rating.toFixed(1) : "—"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Rating mediu</p>
-                    <p className="font-semibold text-foreground">
-                      {statistics.reviews_count > 0 ? statistics.average_rating.toFixed(1) : "N/A"}
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <MessageCircle className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Recenzii</p>
+                      <p className="font-semibold text-foreground">
+                        {statistics && statistics.reviews_count > 0 ? statistics.reviews_count : "—"}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <MessageCircle className="h-5 w-5 text-primary" />
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <Calendar className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Membru din</p>
+                      <p className="font-semibold text-foreground">
+                        {statistics?.member_since ? formatDate(statistics.member_since) : "—"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Recenzii</p>
-                    <p className="font-semibold text-foreground">{statistics.reviews_count}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Calendar className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Membru din</p>
-                    <p className="font-semibold text-foreground">
-                      {statistics.member_since ? formatDate(statistics.member_since) : "N/A"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </div>
 
