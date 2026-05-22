@@ -579,6 +579,83 @@ export type Database = {
           },
         ]
       }
+      kyc_extracted_data: {
+        Row: {
+          address: string | null
+          birth_date: string | null
+          cnp: string | null
+          created_at: string
+          extracted_at: string
+          extraction_confidence: number | null
+          extraction_model: string | null
+          extraction_raw: Json | null
+          full_name: string | null
+          id: string
+          id_number: string | null
+          id_series: string | null
+          issued_by: string | null
+          kyc_case_id: string | null
+          updated_at: string
+          user_id: string
+          valid_until: string | null
+          verified_at: string | null
+          verified_by_admin: boolean
+          verified_by_admin_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          birth_date?: string | null
+          cnp?: string | null
+          created_at?: string
+          extracted_at?: string
+          extraction_confidence?: number | null
+          extraction_model?: string | null
+          extraction_raw?: Json | null
+          full_name?: string | null
+          id?: string
+          id_number?: string | null
+          id_series?: string | null
+          issued_by?: string | null
+          kyc_case_id?: string | null
+          updated_at?: string
+          user_id: string
+          valid_until?: string | null
+          verified_at?: string | null
+          verified_by_admin?: boolean
+          verified_by_admin_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          birth_date?: string | null
+          cnp?: string | null
+          created_at?: string
+          extracted_at?: string
+          extraction_confidence?: number | null
+          extraction_model?: string | null
+          extraction_raw?: Json | null
+          full_name?: string | null
+          id?: string
+          id_number?: string | null
+          id_series?: string | null
+          issued_by?: string | null
+          kyc_case_id?: string | null
+          updated_at?: string
+          user_id?: string
+          valid_until?: string | null
+          verified_at?: string | null
+          verified_by_admin?: boolean
+          verified_by_admin_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kyc_extracted_data_kyc_case_id_fkey"
+            columns: ["kyc_case_id"]
+            isOneToOne: false
+            referencedRelation: "kyc_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_attachments: {
         Row: {
           conversation_id: string
@@ -2864,6 +2941,20 @@ export type Database = {
       get_product_review_breakdown: {
         Args: { p_product_id: string }
         Returns: Json
+      }
+      get_pv_identity_data: {
+        Args: { _rental_id: string }
+        Returns: {
+          address: string
+          birth_date: string
+          cnp: string
+          full_name: string
+          id_number: string
+          id_series: string
+          party: string
+          user_id: string
+          verified_by_admin: boolean
+        }[]
       }
       get_rental_by_public_id: {
         Args: { p_public_id: string }
