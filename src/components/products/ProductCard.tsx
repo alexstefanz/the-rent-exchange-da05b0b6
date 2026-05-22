@@ -11,6 +11,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getDisplayTitle, getDisplayDescription, getDisplayCategory } from "@/lib/productI18n";
+import { usePrefetchProduct } from "@/hooks/usePrefetch";
 
 interface ProductCardProps {
   product: Product;
@@ -23,6 +24,14 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
   const [rating, setRating] = useState<{ avg: number; count: number } | null>(null);
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const prefetchProduct = usePrefetchProduct();
+  const productHref = getProductUrl(product);
+  const prefetchKey = product.slug || product.id;
+  const hoverHandlers = {
+    onMouseEnter: () => prefetchProduct(prefetchKey),
+    onFocus: () => prefetchProduct(prefetchKey),
+    onTouchStart: () => prefetchProduct(prefetchKey),
+  };
   const displayTitle = getDisplayTitle(product, language);
   const displayDescription = getDisplayDescription(product, language);
   const displayCategory = getDisplayCategory(product.category, language);
@@ -79,7 +88,8 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
   if (viewMode === "list") {
     return (
       <Link
-        to={getProductUrl(product)}
+        to={productHref}
+        {...hoverHandlers}
         className="group block overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover"
       >
         <div className="flex flex-col sm:flex-row">
@@ -138,7 +148,8 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
 
   return (
     <Link
-      to={getProductUrl(product)}
+      to={productHref}
+      {...hoverHandlers}
       className="group relative block transition-all hover:-translate-y-0.5"
     >
       {/* Image container */}
