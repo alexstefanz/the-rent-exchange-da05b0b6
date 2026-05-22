@@ -10,6 +10,7 @@ import {
   sendMessage,
   Message,
   RentalContextRow,
+  isRentalPaidLike,
 } from "@/features/messaging/messagingApi";
 import { attachToMessage, type AttachmentRow, type UploadedAttachment } from "@/lib/chatMedia";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -69,7 +70,7 @@ export function ChatPanel({
   const [peerLastReadAt, setPeerLastReadAt] = useState<string | null>(null);
   const [reopenedAt, setReopenedAt] = useState<string | null>(null);
   const [reopening, setReopening] = useState(false);
-  const [ownerPhone, setOwnerPhone] = useState<string | null>(null);
+  const [peerPhone, setPeerPhone] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<{ items: AttachmentRow[]; index: number } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isOwner = user?.id === ownerId;
@@ -170,14 +171,16 @@ export function ChatPanel({
     };
   }, [conversationId, user?.id, queryClient]);
 
-  // Fetch owner phone for header (only if peer is owner)
+  // Fetch the peer's phone for the header. The underlying RPC is bidirectional
+  // (works for both owner and renter) and only returns data once the rental is
+  // paid/authorized, so we can call it unconditionally for the peer.
   useEffect(() => {
-    if (!ownerId || isOwner) {
-      setOwnerPhone(null);
+    if (!peerId) {
+      setPeerPhone(null);
       return;
     }
-    getOwnerContactInfo(ownerId).then((info) => setOwnerPhone(info?.phone || null));
-  }, [ownerId, isOwner]);
+    getOwnerContactInfo(peerId).then((info) => setPeerPhone(info?.phone || null));
+  }, [peerId]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
@@ -314,6 +317,8 @@ export function ChatPanel({
     queryClient.invalidateQueries({ queryKey: ["conversations"] });
   };
 
+  const isPaid = isRentalPaidLike(rentalCtx?.payment_status, rentalCtx?.paid_at);
+
   return (
     <div className={`flex flex-col h-full bg-[#FCFAF8] ${className}`}>
       {!hideHeader && (
@@ -325,8 +330,8 @@ export function ChatPanel({
           typing={peerTyping}
           onBack={onBack}
           onInfo={onOpenInfo}
-          phone={ownerPhone}
-          showPhone={!!rentalCtx?.paid_at || rentalCtx?.payment_status === "paid"}
+          phone={peerPhone}
+          showPhone={isPaid}
           productUrl={
             rentalCtx?.product_slug
               ? `/produs/${rentalCtx.product_slug}`
@@ -342,7 +347,6 @@ export function ChatPanel({
       {rentalCtx && (
         <div className="border-b bg-background shrink-0">
           {(() => {
-            const isPaid = !!rentalCtx.paid_at || rentalCtx.payment_status === "paid";
             if (!isPaid) {
               const productUrl = rentalCtx.product_slug
                 ? `/produs/${rentalCtx.product_slug}`
