@@ -143,6 +143,7 @@ export default function Messages() {
                 peerId={peerId}
                 peerName={selectedConversation.other_user?.full_name || null}
                 peerAvatar={selectedConversation.other_user?.avatar_url || null}
+                rentalsId={selectedConversation.rentals_id || null}
               />
             )}
           </SheetContent>
@@ -219,6 +220,7 @@ export default function Messages() {
                 peerId={peerId}
                 peerName={selectedConversation.other_user?.full_name || null}
                 peerAvatar={selectedConversation.other_user?.avatar_url || null}
+                rentalsId={selectedConversation.rentals_id || null}
               />
             </div>
           )}

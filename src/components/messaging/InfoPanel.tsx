@@ -36,10 +36,11 @@ interface Props {
   peerId: string;
   peerName: string | null;
   peerAvatar: string | null;
+  rentalsId?: string | null;
   className?: string;
 }
 
-export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, className }: Props) {
+export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, rentalsId, className }: Props) {
   const { t } = useLanguage();
   const [attachments, setAttachments] = useState<AttachmentRow[]>([]);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
@@ -47,6 +48,23 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, classN
   const [linkUrls, setLinkUrls] = useState<string[]>([]);
   const [kycLevel, setKycLevel] = useState<string | null>(null);
   const [memberSince, setMemberSince] = useState<string | null>(null);
+  const [isPaid, setIsPaid] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!rentalsId) { setIsPaid(false); return; }
+    supabase
+      .from("rentals")
+      .select("paid_at,payment_status")
+      .eq("id", rentalsId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled) return;
+        const paid = !!(data as any)?.paid_at || (data as any)?.payment_status === "paid";
+        setIsPaid(paid);
+      });
+    return () => { cancelled = true; };
+  }, [rentalsId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -80,9 +98,13 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, classN
 
   useEffect(() => {
     if (!peerId) return;
-    getOwnerContactInfo(peerId).then((info) =>
-      setContact(info ? { phone: info.phone, email: info.email } : null)
-    );
+    if (isPaid) {
+      getOwnerContactInfo(peerId).then((info) =>
+        setContact(info ? { phone: info.phone, email: info.email } : null)
+      );
+    } else {
+      setContact(null);
+    }
     supabase
       .from("profiles")
       .select("kyc_level, created_at")
@@ -94,7 +116,7 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, classN
           setMemberSince((data as any).created_at || null);
         }
       });
-  }, [peerId]);
+  }, [peerId, isPaid]);
 
   const images = useMemo(() => attachments.filter((a) => a.kind === "image"), [attachments]);
   const videos = useMemo(() => attachments.filter((a) => a.kind === "video"), [attachments]);
@@ -245,7 +267,14 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, classN
           </TabsContent>
 
           <TabsContent value="contact" className="mt-0 space-y-2">
-            {!contact || (!contact.phone && !contact.email) ? (
+            {!isPaid ? (
+              <p className="text-xs text-muted-foreground">
+                {t(
+                  "Datele de contact vor fi vizibile după efectuarea plății.",
+                  "Contact info will be visible after the payment is completed."
+                )}
+              </p>
+            ) : !contact || (!contact.phone && !contact.email) ? (
               <p className="text-xs text-muted-foreground">
                 {t(
                   "Datele de contact vor fi vizibile după plată.",
