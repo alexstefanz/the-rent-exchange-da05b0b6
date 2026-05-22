@@ -1,33 +1,19 @@
-# Alert pentru limbaj licențios în chat
+# Buton telefon doar după plată confirmată
 
-## Comportament curent
+## Problemă
 
-În `src/components/messaging/MessageInput.tsx`, la trimitere (Enter sau click pe Send), dacă textul conține un cuvânt din lista `containsProfanity`, mesajul este blocat și se afișează un **toast** discret. Mulți useri nu îl observă.
+În prezent în `ChatHeader`, butonul de telefon apare ori de câte ori avem numărul proprietarului, indiferent dacă rezervarea a fost plătită sau nu. Butonul "Vezi produsul" apare doar ca fallback când nu există telefon. Rezultat: butonul produsului nu se vede aproape niciodată înainte de plată.
 
-## Comportament dorit
+## Modificare
 
-- Detecția rămâne identică (`containsProfanity`).
-- Când userul apasă **Enter** (sau Send) cu limbaj licențios, mesajul NU este trimis (deja așa este) ȘI se deschide un **AlertDialog modal** (nu toast), bilingv, cu titlu, descriere și un singur buton „Am înțeles / Got it".
-- Mesajul rămâne în input pentru ca userul să-l corecteze.
-- Toast-ul existent este înlocuit cu acest dialog modal (mai vizibil, mai serios).
+Logica devine condiționată de starea de plată a închirierii:
 
-## Conținut alert
+- **Înainte de plată** (sau fără context de închiriere): se afișează butonul **„Vezi produsul"** (icon `Package`) care duce la pagina produsului.
+- **După confirmarea plății** (`rental.paid_at` setat sau `payment_status === "paid"`): se afișează butonul **telefon** (`tel:` link) către numărul proprietarului.
 
-- **Titlu RO**: „Limbaj licențios detectat"
-  **EN**: „Offensive language detected"
-- **Descriere RO**: „Mesajul tău conține limbaj nepotrivit și nu poate fi trimis. Conturile care folosesc limbaj licențios sau ofensator pot fi avertizate, restricționate sau suspendate definitiv. Te rugăm să comunici respectuos."
-  **EN**: „Your message contains inappropriate language and cannot be sent. Accounts that use offensive or abusive language may be warned, restricted, or permanently suspended. Please communicate respectfully."
-- **Buton**: „Am înțeles" / „Got it"
+## Fișiere afectate
 
-## Modificări
+- `src/components/messaging/ChatHeader.tsx` — adaugă prop `showPhone: boolean`. Telefonul se randează doar când `showPhone && phone`; altfel se randează butonul `productUrl`.
+- `src/components/messaging/ChatPanel.tsx` — calculează `const isPaid = !!rentalCtx?.paid_at || rentalCtx?.payment_status === "paid";` și trimite `showPhone={isPaid}` către `ChatHeader`. `productUrl` rămâne calculat ca acum.
 
-1. `src/components/messaging/MessageInput.tsx`
-   - Adaugă state `profanityAlertOpen`.
-   - În `handleSend`: când `containsProfanity(content).hit` → `setProfanityAlertOpen(true)` în loc de `toast.error` și return.
-   - Randează `<AlertDialog>` (shadcn) la finalul componentului cu conținutul bilingv de mai sus.
-   - `handleKey` rămâne neschimbat (apelează `handleSend`, care acum deschide alertul).
-
-## Note
-
-- Fără modificări la `profanityFilter.ts` sau la trigger-ul DB `check_message_profanity` — lista rămâne aceeași.
-- Fără modificări de backend.
+Nicio altă schimbare de comportament sau backend.
