@@ -25,6 +25,7 @@ import SocialProofStrip from "@/components/product/SocialProofStrip";
 import LocationCard from "@/components/product/LocationCard";
 import StickyProductHeader from "@/components/product/StickyProductHeader";
 import ProductDetailSkeleton from "@/components/product/ProductDetailSkeleton";
+import BookedDatesAlert from "@/components/product/BookedDatesAlert";
 
 // Below-the-fold / interaction-triggered → lazy-loaded to shrink the initial bundle.
 const NearbyProductsSlider = lazy(() => import("@/components/products/NearbyProductsSlider"));
@@ -60,6 +61,8 @@ const ProductDetail = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
+  const [conflictDates, setConflictDates] = useState<Date[]>([]);
+  const [conflictOpen, setConflictOpen] = useState(false);
   const titleBlockRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -161,14 +164,16 @@ const ProductDetail = () => {
     if (date.getTime() === startDate.getTime()) return;
     if (isBefore(date, startDate)) {
       if (hasBookedDateInRange(date, startDate, bookedDates)) {
-        toast({ title: t("Perioadă indisponibilă", "Period unavailable"), description: t("Există zile rezervate în interval.", "Booked days in range."), variant: "destructive" });
+        setConflictDates(bookedDates.filter((d) => d >= date && d <= startDate));
+        setConflictOpen(true);
         return;
       }
       setStartDate(date);
       return;
     }
     if (hasBookedDateInRange(startDate, date, bookedDates)) {
-      toast({ title: t("Perioadă indisponibilă", "Period unavailable"), description: t("Există zile rezervate în interval.", "Booked days in range."), variant: "destructive" });
+      setConflictDates(bookedDates.filter((d) => d >= startDate && d <= date));
+      setConflictOpen(true);
       return;
     }
     setEndDate(date);
