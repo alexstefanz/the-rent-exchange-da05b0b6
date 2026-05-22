@@ -111,6 +111,10 @@ export default {
           "0%": { transform: "translateX(0)" },
           "100%": { transform: "translateX(100%)" },
         },
+        "slide-in-left": {
+          "0%": { transform: "translateX(-30%)", opacity: "0.6" },
+          "100%": { transform: "translateX(0)", opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -123,6 +127,7 @@ export default {
         "soft-pulse": "soft-pulse 5s ease-in-out infinite",
         "slide-in-right": "slide-in-right 0.28s ease-out",
         "slide-out-right": "slide-out-right 0.28s ease-in forwards",
+        "slide-in-left": "slide-in-left 0.28s ease-out both",
       },
     },
   },
