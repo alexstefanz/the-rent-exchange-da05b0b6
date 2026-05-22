@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { z } from "zod";
@@ -667,10 +667,10 @@ const AccountTab = () => {
         {/* ============ SUPPORT ============ */}
         <Section id="support" icon={LifeBuoy} title={t("Suport & siguranță", "Support & safety")} description={t("Suntem aici dacă ai nevoie de ajutor.", "We're here if you need help.")}>
           <div className="grid sm:grid-cols-2 gap-3">
-            <SupportLink href="/suport" icon={LifeBuoy} title={t("Centru suport", "Support center")} description={t("Răspunsuri rapide și ghiduri", "Quick answers and guides")} />
-            <SupportLink href="/tichete" icon={MessageCircle} title={t("Tichetele mele", "My tickets")} description={t("Vezi conversațiile cu suportul", "View support conversations")} />
-            <SupportLink href="/cum-functioneaza" icon={Shield} title={t("Cum funcționează", "How it works")} description={t("Procesul de închiriere pas cu pas", "The rental process step by step")} />
-            <SupportLink href="/termeni-conditii" icon={BadgeCheck} title={t("Termeni & condiții", "Terms & conditions")} description={t("Politicile platformei", "Platform policies")} />
+            <SupportLink to="/centru-asistenta" icon={LifeBuoy} title={t("Centru suport", "Support center")} description={t("Răspunsuri rapide și ghiduri", "Quick answers and guides")} />
+            <SupportLink to="/suport" icon={MessageCircle} title={t("Tichetele mele", "My tickets")} description={t("Vezi conversațiile cu suportul", "View support conversations")} />
+            <SupportLink to="/cum-functioneaza" icon={Shield} title={t("Cum funcționează", "How it works")} description={t("Procesul de închiriere pas cu pas", "The rental process step by step")} />
+            <SupportLink to="/termeni-si-conditii" icon={BadgeCheck} title={t("Termeni & condiții", "Terms & conditions")} description={t("Politicile platformei", "Platform policies")} />
           </div>
         </Section>
 
