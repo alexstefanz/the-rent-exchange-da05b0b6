@@ -136,6 +136,25 @@ export default function Messages() {
   if (!isDesktop && selectedConversation) {
     return (
       <>
+        {/* List underneath — revealed by chat slide-out for iOS-style push-back */}
+        <div
+          className={`min-h-screen flex flex-col bg-background ${
+            isClosing ? "animate-slide-in-left" : ""
+          } ${isClosing ? "" : "pointer-events-none"}`}
+        >
+          <Navbar />
+          <main className="flex-1 pb-20">
+            <ConversationList
+              conversations={conversations}
+              isLoading={isLoading}
+              userId={user?.id || ""}
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+              onSelect={handleSelect}
+            />
+          </main>
+          <Footer />
+        </div>
         <div
           className={`fixed inset-0 z-50 flex flex-col overflow-hidden bg-background transform-gpu will-change-transform ${
             isClosing ? "animate-slide-out-right" : "animate-slide-in-right"
