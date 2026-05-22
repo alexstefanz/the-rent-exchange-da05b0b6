@@ -209,9 +209,9 @@ export function AdminInboxList({ tickets, isLoading, selectedId, onSelect, filte
                       )}>
                         {t.title}
                       </p>
-                      <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted-foreground min-w-0">
-                        <User className="h-3 w-3 flex-shrink-0 opacity-70" />
-                        <span className="truncate">
+                      <div className="flex items-center gap-1 mt-0.5 text-[11px] min-w-0">
+                        <User className="h-3 w-3 flex-shrink-0 text-primary opacity-70" />
+                        <span className="truncate font-semibold text-primary">
                           {t.requester_name || t.requester_email || "Utilizator anonim"}
                         </span>
                       </div>
