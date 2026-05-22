@@ -57,8 +57,20 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   }, [open, rental.id, phase]);
 
   const content = buildPvContent(rental, phase);
-  const ownerId = fakeIdentity(rental.owner_id);
-  const renterId = fakeIdentity(rental.renter_id);
+  const ownerFake = fakeIdentity(rental.owner_id);
+  const renterFake = fakeIdentity(rental.renter_id);
+  const ownerId = {
+    cnp: rental.owner_cnp || ownerFake.cnp,
+    serie: rental.owner_id_series || ownerFake.serie,
+    nr: rental.owner_id_number || ownerFake.nr,
+    adresa: rental.owner_address || ownerFake.adresa,
+  };
+  const renterId = {
+    cnp: rental.renter_cnp || renterFake.cnp,
+    serie: rental.renter_id_series || renterFake.serie,
+    nr: rental.renter_id_number || renterFake.nr,
+    adresa: rental.renter_address || renterFake.adresa,
+  };
 
   const uploaderRole: "owner" | "renter" = phase === "handover" ? "owner" : "renter";
   const isUploader = role === uploaderRole;
