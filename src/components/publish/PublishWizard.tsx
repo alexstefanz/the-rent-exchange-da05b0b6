@@ -250,7 +250,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         if (cat && cat.subcategories.length > 0 && !data.subcategory) {
           return {
             success: false,
-            error: { errors: [{ path: ["subcategory"], message: "Selectează o subcategorie" }] },
+            error: { errors: [{ path: ["subcategory"], message: t("Selectează o subcategorie", "Select a subcategory") }] },
           };
         }
         return { success: true };
@@ -282,9 +282,11 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       const firstMsg = Object.values(flat)[0];
       if (flat.subcategory) {
         toast({
-          title: "Alege o subcategorie",
-          description:
+          title: t("Alege o subcategorie", "Pick a subcategory"),
+          description: t(
             "Te rugăm să alegi și o subcategorie din lista de mai jos înainte de a continua.",
+            "Please also pick a subcategory from the list below before continuing.",
+          ),
           variant: "destructive",
         });
         setTimeout(() => {
@@ -293,7 +295,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
             ?.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 50);
       } else if (firstMsg) {
-        toast({ title: "Verifică datele", description: firstMsg, variant: "destructive" });
+        toast({ title: t("Verifică datele", "Check the details"), description: firstMsg, variant: "destructive" });
       }
       return false;
     }
