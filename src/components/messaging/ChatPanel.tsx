@@ -330,8 +330,10 @@ export function ChatPanel({
           productUrl={
             rentalCtx?.product_slug
               ? `/produs/${rentalCtx.product_slug}`
+              : rentalCtx?.product_id
+              ? `/produs/${rentalCtx.product_id}`
               : productId
-              ? getProductUrlFromTitle(rentalCtx?.product_title || productTitle, productId)
+              ? `/produs/${productId}`
               : null
           }
         />
