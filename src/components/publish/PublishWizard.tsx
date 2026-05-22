@@ -1129,6 +1129,7 @@ const Step5Pricing = ({
   freeListingsLeft: number;
   errors: Record<string, string>;
 }) => {
+  const { t } = useLanguage();
   const [pricing, setPricing] = useState<SimilarPricing | null>(null);
 
   useEffect(() => {
@@ -1144,15 +1145,18 @@ const Step5Pricing = ({
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 4 din 5"
-        title="Preț chirie"
-        subtitle="Setează cât vrei să primești pe zi. Comisionul platformei se adaugă automat clientului."
+        eyebrow={t("Pasul 4 din 5", "Step 4 of 5")}
+        title={t("Preț chirie", "Rental price")}
+        subtitle={t(
+          "Setează cât vrei să primești pe zi. Comisionul platformei se adaugă automat clientului.",
+          "Set how much you want to receive per day. The platform fee is added automatically for the client.",
+        )}
       />
 
       <div className="mt-6 space-y-6">
         {/* Price */}
         <div className="rounded-2xl border border-border bg-card p-5">
-          <Label className="text-sm font-semibold">Preț pe zi (vrei să primești)</Label>
+          <Label className="text-sm font-semibold">{t("Preț pe zi (vrei să primești)", "Price per day (what you receive)")}</Label>
           <div className="mt-2 flex items-center gap-2">
             <Input
               type="number"
@@ -1164,7 +1168,7 @@ const Step5Pricing = ({
               placeholder="50"
               className="h-14 text-2xl font-semibold"
             />
-            <span className="text-lg font-medium text-muted-foreground">RON / zi</span>
+            <span className="text-lg font-medium text-muted-foreground">{t("RON / zi", "RON / day")}</span>
           </div>
           {errors.daily_price_owner && (
             <p className="mt-1 text-sm text-destructive">{errors.daily_price_owner}</p>
@@ -1174,13 +1178,13 @@ const Step5Pricing = ({
           {pricing && pricing.sample_size >= 3 && (
             <div className="mt-4 rounded-xl bg-muted/40 p-4 text-xs">
               <p className="font-medium text-foreground">
-                Prețuri similare în {data.subcategory || data.category}{" "}
-                <span className="text-muted-foreground">({pricing.sample_size} anunțuri)</span>
+                {t("Prețuri similare în", "Similar prices in")} {data.subcategory || data.category}{" "}
+                <span className="text-muted-foreground">({pricing.sample_size} {t("anunțuri", "listings")})</span>
               </p>
               <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-                <Bench label="Ieftin" value={pricing.p25} />
-                <Bench label="Mediu" value={pricing.p50} highlight />
-                <Bench label="Premium" value={pricing.p75} />
+                <Bench label={t("Ieftin", "Cheap")} value={pricing.p25} />
+                <Bench label={t("Mediu", "Average")} value={pricing.p50} highlight />
+                <Bench label={t("Premium", "Premium")} value={pricing.p75} />
               </div>
             </div>
           )}
@@ -1188,19 +1192,24 @@ const Step5Pricing = ({
           {owner > 0 && (
             <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-primary/5 p-4 text-sm">
               <div>
-                <p className="text-xs text-muted-foreground">Tu primești</p>
+                <p className="text-xs text-muted-foreground">{t("Tu primești", "You receive")}</p>
                 <p className="text-lg font-bold text-foreground">{owner} RON</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground">Clientul plătește</p>
+                <p className="text-xs text-muted-foreground">{t("Clientul plătește", "Client pays")}</p>
                 <p className="text-lg font-bold text-primary">{client} RON</p>
                 <p className="text-[11px] text-muted-foreground">
-                  {feePercent === 0 ? "Comision 0% — gratuit 🎉" : `+ ${commission} RON comision (${feePercent}%)`}
+                  {feePercent === 0
+                    ? t("Comision 0% — gratuit 🎉", "0% fee — free 🎉")
+                    : `+ ${commission} RON ${t("comision", "fee")} (${feePercent}%)`}
                 </p>
               </div>
               {freeListingsLeft > 0 && feePercent === 0 && (
                 <div className="col-span-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-700">
-                  🎉 Mai ai {freeListingsLeft} anunț{freeListingsLeft > 1 ? "uri" : ""} cu 0% comision
+                  🎉 {t(
+                    `Mai ai ${freeListingsLeft} ${freeListingsLeft === 1 ? "anunț" : "anunțuri"} cu 0% comision`,
+                    `You have ${freeListingsLeft} more ${freeListingsLeft === 1 ? "listing" : "listings"} with 0% fee`,
+                  )}
                 </div>
               )}
             </div>
