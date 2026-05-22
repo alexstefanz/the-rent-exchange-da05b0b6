@@ -209,7 +209,7 @@ const NearbyProductsSlider = ({ currentProductId, locationCity, category }: Near
           className="flex gap-4 overflow-x-auto scrollbar-hide snap-x snap-mandatory md:snap-none pb-2 -mb-2 cursor-grab"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
-          {products.map((product) => {
+          {products.slice(0, 5).map((product) => {
             const clientPrice = calculateClientPrice(product.daily_price_owner, product.platform_fee_percent);
             const imageUrl = getOptimizedImageUrl(product.images?.[0] || "/placeholder.svg", "card");
             const location = product.location_city || "România";
@@ -222,7 +222,7 @@ const NearbyProductsSlider = ({ currentProductId, locationCity, category }: Near
                 key={product.id}
                 to={getProductUrl(product)}
                 onClick={onCardClick}
-                className="group block shrink-0 snap-start overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover w-[calc(50%-8px)] lg:w-[calc(25%-12px)]"
+                className="group block shrink-0 snap-start overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-1 hover:shadow-card-hover w-[calc(50%-8px)] md:w-[calc(33.333%-11px)] lg:w-[calc(20%-13px)]"
               >
                 {/* Image container */}
                 <div className="relative aspect-[4/3] overflow-hidden">
