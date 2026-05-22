@@ -16,9 +16,10 @@ interface Props {
   onInfo?: () => void;
   phone?: string | null;
   productUrl?: string | null;
+  showPhone?: boolean;
 }
 
-export function ChatHeader({ name, avatarUrl, productTitle, online, typing, onBack, onInfo, phone, productUrl }: Props) {
+export function ChatHeader({ name, avatarUrl, productTitle, online, typing, onBack, onInfo, phone, productUrl, showPhone = false }: Props) {
   const { t } = useLanguage();
   const status = typing
     ? t("scrie...", "typing...")
@@ -55,7 +56,7 @@ export function ChatHeader({ name, avatarUrl, productTitle, online, typing, onBa
           <span className="truncate">{productTitle}</span>
         </span>
       </div>
-      {phone ? (
+      {showPhone && phone ? (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
