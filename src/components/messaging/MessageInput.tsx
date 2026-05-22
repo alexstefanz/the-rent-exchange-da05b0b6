@@ -44,6 +44,7 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
   const [sending, setSending] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [profanityAlertOpen, setProfanityAlertOpen] = useState(false);
+  const [contactAlert, setContactAlert] = useState<{ open: boolean; kind: "phone" | "email" | "both" }>({ open: false, kind: "phone" });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastSymbolToastRef = useRef(0);
@@ -107,6 +108,16 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
     if (content && containsProfanity(content).hit) {
       setProfanityAlertOpen(true);
       return;
+    }
+    if (content) {
+      // Normalize: strip spaces, dots, dashes between digits to catch obfuscated phones
+      const normalized = content.replace(/[\s.\-]/g, "");
+      const hasPhone = /(?:^|[^\d])07\d{8}(?!\d)/.test(normalized) || /(?:^|[^\d])\+?40\s*7\d{8}/.test(normalized);
+      const hasEmail = /[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/.test(content);
+      if (hasPhone || hasEmail) {
+        setContactAlert({ open: true, kind: hasPhone && hasEmail ? "both" : hasPhone ? "phone" : "email" });
+        return;
+      }
     }
     if (content && countSpecialChars(content) > MAX_SPECIAL_CHARS) {
       toast.error(
