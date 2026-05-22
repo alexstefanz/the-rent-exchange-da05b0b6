@@ -71,10 +71,15 @@ export function ChatHeader({ name, avatarUrl, productTitle, online, typing, onBa
         </TooltipProvider>
       )}
       {productUrl && (
-        <Button asChild size="sm" className="shrink-0 bg-primary hover:bg-[#F98715] text-primary-foreground">
+        <Button
+          asChild
+          size="sm"
+          aria-label={t("Vezi produs", "View product")}
+          className="shrink-0 bg-primary hover:bg-[#F98715] text-primary-foreground px-2.5 lg:px-3"
+        >
           <Link to={productUrl}>
-            <Package className="h-4 w-4 mr-1.5" />
-            {t("Vezi produs", "View product")}
+            <Package className="h-4 w-4 lg:mr-1.5" />
+            <span className="hidden lg:inline">{t("Vezi produs", "View product")}</span>
           </Link>
         </Button>
       )}
