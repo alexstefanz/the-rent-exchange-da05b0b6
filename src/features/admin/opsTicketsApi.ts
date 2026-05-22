@@ -174,12 +174,52 @@ export const fetchOpsTickets = async (filters?: FetchTicketsFilters): Promise<Op
   if (filters?.category_group) query = query.eq('category_group', filters.category_group);
   if (filters?.category_type) query = query.eq('category_type', filters.category_type);
   if (filters?.search) {
-    query = query.or(`public_id.ilike.%${filters.search}%,title.ilike.%${filters.search}%`);
+    const term = filters.search.trim();
+    // Look up requester ids matching the search term in profiles (name/email)
+    let requesterIds: string[] = [];
+    if (term && !/^TCK[-\s]?\d/i.test(term)) {
+      const { data: matchedProfiles } = await supabase
+        .from('profiles')
+        .select('id')
+        .or(`full_name.ilike.%${term}%,email.ilike.%${term}%`)
+        .limit(50);
+      requesterIds = (matchedProfiles || []).map((p: any) => p.id);
+    }
+    const orParts = [
+      `public_id.ilike.%${term}%`,
+      `title.ilike.%${term}%`,
+    ];
+    if (requesterIds.length > 0) {
+      orParts.push(`requester_user_id.in.(${requesterIds.join(',')})`);
+    }
+    query = query.or(orParts.join(','));
   }
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
-  return (data || []) as unknown as OpsTicket[];
+  const tickets = (data || []) as unknown as OpsTicket[];
+
+  // Batch-enrich with requester name/email
+  const ids = Array.from(
+    new Set(tickets.map((t) => t.requester_user_id).filter((x): x is string => !!x))
+  );
+  if (ids.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .in('id', ids);
+    const map = new Map((profiles || []).map((p: any) => [p.id, p]));
+    tickets.forEach((t) => {
+      if (t.requester_user_id) {
+        const p = map.get(t.requester_user_id);
+        if (p) {
+          t.requester_name = p.full_name;
+          t.requester_email = p.email;
+        }
+      }
+    });
+  }
+  return tickets;
 };
 
 export const fetchOpsTicket = async (id: string): Promise<OpsTicket> => {
