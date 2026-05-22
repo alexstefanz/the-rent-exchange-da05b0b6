@@ -14,6 +14,7 @@ import { addFavoriteProduct, removeFavoriteProduct, getFavoriteProducts } from "
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
+import { usePrefetchProduct } from "@/hooks/usePrefetch";
 
 const FeaturedListings = () => {
   const { data: products, isLoading, isError, refetch } = useProducts();
@@ -21,6 +22,7 @@ const FeaturedListings = () => {
   const { language } = useLanguage();
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const prefetchProduct = usePrefetchProduct();
 
   const allProducts = products || [];
   const displayProducts = allProducts.slice(0, 8);
@@ -144,6 +146,9 @@ const FeaturedListings = () => {
               <Link
                 key={product.id}
                 to={getProductUrl(product)}
+                onMouseEnter={() => prefetchProduct(product.slug || product.id)}
+                onFocus={() => prefetchProduct(product.slug || product.id)}
+                onTouchStart={() => prefetchProduct(product.slug || product.id)}
                 className="group block transition-all hover:-translate-y-0.5"
               >
                 <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
