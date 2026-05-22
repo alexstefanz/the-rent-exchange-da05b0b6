@@ -21,6 +21,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 import { strongPasswordSchema, isWeakPasswordError } from "@/lib/passwordValidation";
 import PhoneOtpDialog from "@/components/profile/PhoneOtpDialog";
+import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 
 // TEMP: while notify.rentli.ro DNS isn't propagated, we verify accounts via SMS
 // instead of email. Set USE_SMS_OTP=false to revert to email OTP confirmation.
@@ -451,6 +452,9 @@ const Auth = () => {
   if (showOtpVerification) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted/30 px-4 py-8">
+        <div className="fixed top-4 right-4 z-50">
+          <LanguageSwitcher />
+        </div>
         <Link to="/" className="mb-8 block">
           <img src={logoImage} alt="RentNow" className="h-12 w-auto" />
         </Link>
@@ -509,6 +513,9 @@ const Auth = () => {
   if (isResetMode) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted/30 px-4 py-8">
+        <div className="fixed top-4 right-4 z-50">
+          <LanguageSwitcher />
+        </div>
         <Link to="/" className="mb-8 block">
           <img src={logoImage} alt="RentNow" className="h-12 w-auto" />
         </Link>
@@ -542,6 +549,9 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-muted/30 px-4 py-8">
+      <div className="fixed top-4 right-4 z-50">
+        <LanguageSwitcher />
+      </div>
       <Link to="/" className="mb-8 block">
         <img src={logoImage} alt="RentNow" className="h-12 w-auto" />
       </Link>
