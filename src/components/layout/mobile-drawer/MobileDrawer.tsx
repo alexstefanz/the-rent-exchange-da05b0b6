@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, TouchEvent } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { X, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,6 +18,12 @@ interface Props {
 export function MobileDrawer({ open, onClose, onLogout }: Props) {
   const { user } = useAuth();
   const { t, language, setLanguage } = useLanguage();
+  const navigate = useNavigate();
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    onClose();
+  };
 
   // Body scroll lock
   useEffect(() => {
@@ -122,7 +128,7 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
             style={{ WebkitOverflowScrolling: "touch" }}
           >
             <div className="flex flex-col gap-2 py-2">
-              {user && <AccountHubBody onNavigate={onClose} />}
+              {user && <AccountHubBody onNavigate={handleNavigate} />}
               <DrawerCategoryExplorer onNavigate={onClose} />
             </div>
           </div>
