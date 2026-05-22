@@ -1,9 +1,10 @@
-import { ArrowLeft, Phone, Info } from "lucide-react";
+import { ArrowLeft, Phone, Info, Package } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 
 interface Props {
   name: string | null;
@@ -14,9 +15,10 @@ interface Props {
   onBack?: () => void;
   onInfo?: () => void;
   phone?: string | null;
+  productUrl?: string | null;
 }
 
-export function ChatHeader({ name, avatarUrl, productTitle, online, typing, onBack, onInfo, phone }: Props) {
+export function ChatHeader({ name, avatarUrl, productTitle, online, typing, onBack, onInfo, phone, productUrl }: Props) {
   const { t } = useLanguage();
   const status = typing
     ? t("scrie...", "typing...")
@@ -53,7 +55,7 @@ export function ChatHeader({ name, avatarUrl, productTitle, online, typing, onBa
           <span className="truncate">{productTitle}</span>
         </span>
       </div>
-      {phone && (
+      {phone ? (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -66,7 +68,20 @@ export function ChatHeader({ name, avatarUrl, productTitle, online, typing, onBa
             <TooltipContent>{t("Apelează", "Call")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
-      )}
+      ) : productUrl ? (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link to={productUrl} className="shrink-0">
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary" asChild>
+                  <span><Package className="h-5 w-5" /></span>
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent>{t("Vezi produsul", "View product")}</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : null}
       {onInfo && (
         <Button variant="ghost" size="icon" onClick={onInfo} className="shrink-0 lg:hidden">
           <Info className="h-5 w-5" />

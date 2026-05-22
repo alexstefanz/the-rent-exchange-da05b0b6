@@ -39,6 +39,7 @@ interface ChatPanelProps {
   ownerId?: string;
   buyerId?: string;
   rentalsId?: string | null;
+  productId?: string | null;
   onBack?: () => void;
   onOpenInfo?: () => void;
   className?: string;
@@ -54,6 +55,7 @@ export function ChatPanel({
   ownerId,
   buyerId,
   rentalsId,
+  productId,
   onBack,
   onOpenInfo,
   className = "",
@@ -324,6 +326,13 @@ export function ChatPanel({
           onBack={onBack}
           onInfo={onOpenInfo}
           phone={ownerPhone}
+          productUrl={
+            rentalCtx?.product_slug
+              ? `/produs/${rentalCtx.product_slug}`
+              : productId
+              ? getProductUrlFromTitle(rentalCtx?.product_title || productTitle, productId)
+              : null
+          }
         />
       )}
 
