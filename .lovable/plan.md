@@ -1,14 +1,24 @@
-# Buton portocaliu „Vezi produs" în header chat
+# Ascunde datele de contact până la plată
 
-## Schimbare
+## Problemă
 
-În `src/components/messaging/ChatHeader.tsx`:
+În panoul lateral (`InfoPanel.tsx`), tab-ul **Contact** afișează telefonul și emailul proprietarului ori de câte ori `getOwnerContactInfo` returnează date — nu verifică dacă rezervarea este plătită. Rezultat: cumpărătorul vede numărul/emailul înainte de a plăti.
 
-- Înlocuiește butonul-icon `Package` (varianta `ghost`, doar icon) cu un **buton portocaliu cu text**:
-  - Variant: `default` (folosește `bg-primary` = #F59E0B), `size="sm"`
-  - Conținut: icon `Package` (h-4 w-4) + text `t("Vezi produs", "View product")`
-  - `asChild` pe `Link to={productUrl}`
-- Butonul telefon rămâne cum este (icon ghost), condiționat de `showPhone && phone` — apare doar după ce plata a fost confirmată (logica deja setată în `ChatPanel` prin `!!rentalCtx?.paid_at || rentalCtx?.payment_status === "paid"`).
-- Cele două butoane sunt mutual exclusive: înainte de plată → buton portocaliu „Vezi produs"; după plată → icon telefon.
+## Modificare
 
-Niciun alt fișier nu se modifică.
+`InfoPanel` primește o stare de plată din `Messages.tsx` și ascunde contactul până la confirmarea plății.
+
+### Fișiere
+
+1. **`src/components/messaging/InfoPanel.tsx`**
+   - Adaugă prop `rentalsId?: string | null`.
+   - Query `rentals` (sau folosește `getRentalContext`) pentru a obține `paid_at` și `payment_status`.
+   - `const isPaid = !!rental?.paid_at || rental?.payment_status === "paid";`
+   - În tab-ul Contact: dacă `!isPaid` → afișează exclusiv mesajul existent „Datele de contact vor fi vizibile după plată / Contact info will be visible after payment." (fără telefon/email).
+   - Dacă `isPaid` → afișează contactul ca acum.
+   - Bonus: evită apelul `getOwnerContactInfo` când `!isPaid` (nu mai expune datele inutil).
+
+2. **`src/pages/Messages.tsx`**
+   - Adaugă `rentalsId={selectedConversation.rentals_id || null}` la ambele instanțe `<InfoPanel ... />` (mobil + desktop).
+
+Nicio modificare backend.
