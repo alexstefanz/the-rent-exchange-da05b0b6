@@ -18,6 +18,15 @@ import { cn } from "@/lib/utils";
 import { containsProfanity } from "@/lib/profanityFilter";
 import { useIsBanned } from "@/hooks/useIsBanned";
 import { Ban } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Props {
   conversationId: string;
@@ -34,6 +43,7 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
   const [pending, setPending] = useState<PreparedAttachment[]>([]);
   const [sending, setSending] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [profanityAlertOpen, setProfanityAlertOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastSymbolToastRef = useRef(0);
@@ -95,12 +105,7 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
     if (sending) return;
     if (!content && pending.length === 0) return;
     if (content && containsProfanity(content).hit) {
-      toast.error(
-        t(
-          "Limbajul licențios nu este permis. Conturile care încalcă această regulă pot fi suspendate.",
-          "Offensive language is not allowed. Accounts that break this rule can be suspended."
-        )
-      );
+      setProfanityAlertOpen(true);
       return;
     }
     if (content && countSpecialChars(content) > MAX_SPECIAL_CHARS) {
@@ -261,6 +266,24 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
           {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         </Button>
       </div>
+      <AlertDialog open={profanityAlertOpen} onOpenChange={setProfanityAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("Limbaj licențios detectat", "Offensive language detected")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(
+                "Mesajul tău conține limbaj nepotrivit și nu poate fi trimis. Conturile care folosesc limbaj licențios sau ofensator pot fi avertizate, restricționate sau suspendate definitiv. Te rugăm să comunici respectuos.",
+                "Your message contains inappropriate language and cannot be sent. Accounts that use offensive or abusive language may be warned, restricted, or permanently suspended. Please communicate respectfully."
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>{t("Am înțeles", "Got it")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
