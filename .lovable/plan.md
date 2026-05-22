@@ -1,36 +1,20 @@
-# Fix: cardurile din offcanvas mobile nu navighează
+# /anunturi — filtre ca dropdown + grid 2 pe rând
 
-## Problema
+## Schimbări
 
-În `src/components/layout/mobile-drawer/MobileDrawer.tsx`, componenta `AccountHubBody` este randată cu:
+### 1. Filtrele de status → Dropdown
+Înlocuiesc `Tabs/TabsList` cu cele 6 opțiuni (Toate, Active, În verificare, Ascunse, Respinse, Cereri noi) cu un `Select` (shadcn). Fiecare opțiune păstrează badge-ul cu numărul. „Cereri noi" rămâne separată: când e selectată, comută `topTab` la `cereri` (același comportament ca acum).
 
-```tsx
-<AccountHubBody onNavigate={onClose} />
-```
+Layout: dropdown-ul stă pe rând cu `ListingsFilterBar` (sau imediat deasupra), aliniat la stânga, lățime ~220px pe desktop, full width pe mobile.
 
-`onClose: () => void` ignoră argumentul `path`, deci toate cardurile (Produsele mele, Închirieri, Balanță/Retrage, Finalizează contul, Adaugă anunț, Panou Admin, etc.) doar închid drawer-ul fără să navigheze către ruta corespunzătoare.
+### 2. „Produsele mele" — 2 pe rând
+Grid-ul curent: `grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`.
+Modific la: `grid gap-4 grid-cols-2` (2 coloane pe toate breakpoint-urile, inclusiv mobile, conform cererii).
 
-## Soluție
-
-Pasează un handler care întâi navighează la `path`, apoi închide drawer-ul:
-
-```tsx
-const navigate = useNavigate();
-const handleNavigate = (path: string) => {
-  navigate(path);
-  onClose();
-};
-...
-<AccountHubBody onNavigate={handleNavigate} />
-```
-
-Adaug `useNavigate` din `react-router-dom` (deja folosit prin `Link` în fișier).
-
-## Fișiere modificate
-
-- `src/components/layout/mobile-drawer/MobileDrawer.tsx` — import `useNavigate`, wrapper `handleNavigate`, pass la `AccountHubBody`.
+## Fișier modificat
+- `src/pages/ListingsPage.tsx`
 
 ## Verificare
-
-- Deschid drawer mobil → click pe „Produsele mele" → navighează la `/anunturi` și închide drawer-ul.
-- La fel pentru „Închirieri" (`/rezervari`), cardul Balanță (`/castiguri`), „Adaugă anunț" (`/owner/new-product`), „Panou Admin" (`/admin`).
+- /anunturi pe mobile (390px): dropdown vizibil, 2 carduri pe rând.
+- Selectare „Cereri noi" → comută pe tab-ul „Cereri primite".
+- Badge-urile rămân vizibile în dropdown.
