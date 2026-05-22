@@ -297,7 +297,7 @@ export const getNearbyProducts = async (
     query = query.eq("location_city", locationCity);
   }
 
-  const { data, error } = await query;
+  let { data, error } = await query;
 
   if (error) {
     handleApiError("Error fetching nearby products", error);
