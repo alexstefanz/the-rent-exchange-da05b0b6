@@ -44,6 +44,7 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
   const [sending, setSending] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [profanityAlertOpen, setProfanityAlertOpen] = useState(false);
+  const [contactAlert, setContactAlert] = useState<{ open: boolean; kind: "phone" | "email" | "both" }>({ open: false, kind: "phone" });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastSymbolToastRef = useRef(0);
@@ -107,6 +108,16 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
     if (content && containsProfanity(content).hit) {
       setProfanityAlertOpen(true);
       return;
+    }
+    if (content) {
+      // Normalize: strip spaces, dots, dashes between digits to catch obfuscated phones
+      const normalized = content.replace(/[\s.\-]/g, "");
+      const hasPhone = /(?:^|[^\d])07\d{8}(?!\d)/.test(normalized) || /(?:^|[^\d])\+?40\s*7\d{8}/.test(normalized);
+      const hasEmail = /[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/.test(content);
+      if (hasPhone || hasEmail) {
+        setContactAlert({ open: true, kind: hasPhone && hasEmail ? "both" : hasPhone ? "phone" : "email" });
+        return;
+      }
     }
     if (content && countSpecialChars(content) > MAX_SPECIAL_CHARS) {
       toast.error(
@@ -276,6 +287,28 @@ export function MessageInput({ conversationId, disabled, onSend, onTyping }: Pro
               {t(
                 "Mesajul tău conține limbaj nepotrivit și nu poate fi trimis. Conturile care folosesc limbaj licențios sau ofensator pot fi avertizate, restricționate sau suspendate definitiv. Te rugăm să comunici respectuos.",
                 "Your message contains inappropriate language and cannot be sent. Accounts that use offensive or abusive language may be warned, restricted, or permanently suspended. Please communicate respectfully."
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>{t("Am înțeles", "Got it")}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={contactAlert.open} onOpenChange={(open) => setContactAlert((s) => ({ ...s, open }))}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {contactAlert.kind === "both"
+                ? t("Date de contact detectate", "Contact info detected")
+                : contactAlert.kind === "phone"
+                ? t("Număr de telefon detectat", "Phone number detected")
+                : t("Adresă de email detectată", "Email address detected")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(
+                "Te rugăm să păstrezi conversația pe Rentli. Dacă apar probleme cu o tranzacție, administratorii pot interveni doar dacă discuția rămâne pe platformă. Schimbul de date de contact înainte de plată este descurajat pentru siguranța ta.",
+                "Please keep the conversation on Rentli. If any issue arises with a transaction, our admins can only step in if the discussion stays on the platform. Sharing contact details before payment is discouraged for your safety."
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
