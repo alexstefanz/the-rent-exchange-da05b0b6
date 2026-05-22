@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { differenceInDays, isBefore } from "date-fns";
@@ -16,10 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { getOrCreateConversation, sendMessage } from "@/features/messaging/messagingApi";
 
-import NearbyProductsSlider from "@/components/products/NearbyProductsSlider";
 import ProductImageGallery from "@/components/product/ProductImageGallery";
-import OwnerOtherListings from "@/components/product/OwnerOtherListings";
-import ProductReviewsSection from "@/components/product/ProductReviewsSection";
 import PremiumBookingCard from "@/components/product/PremiumBookingCard";
 import MobileStickyBookingBar from "@/components/product/MobileStickyBookingBar";
 import OwnerTrustCard from "@/components/product/OwnerTrustCard";
@@ -27,10 +24,15 @@ import ProductInfoAccordion from "@/components/product/ProductInfoAccordion";
 import SocialProofStrip from "@/components/product/SocialProofStrip";
 import LocationCard from "@/components/product/LocationCard";
 import StickyProductHeader from "@/components/product/StickyProductHeader";
-import PremiumLightbox from "@/components/product/PremiumLightbox";
 import ProductDetailSkeleton from "@/components/product/ProductDetailSkeleton";
-import RecentlyViewedSlider from "@/components/product/RecentlyViewedSlider";
-import ShareDialog from "@/components/product/ShareDialog";
+
+// Below-the-fold / interaction-triggered → lazy-loaded to shrink the initial bundle.
+const NearbyProductsSlider = lazy(() => import("@/components/products/NearbyProductsSlider"));
+const OwnerOtherListings = lazy(() => import("@/components/product/OwnerOtherListings"));
+const ProductReviewsSection = lazy(() => import("@/components/product/ProductReviewsSection"));
+const RecentlyViewedSlider = lazy(() => import("@/components/product/RecentlyViewedSlider"));
+const PremiumLightbox = lazy(() => import("@/components/product/PremiumLightbox"));
+const ShareDialog = lazy(() => import("@/components/product/ShareDialog"));
 import { trackRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { useProductExtendedStats } from "@/hooks/queries/useProductExtendedStats";
 import { useUxCopy } from "@/hooks/useUxCopy";
@@ -70,9 +72,13 @@ const ProductDetail = () => {
         if (productData) {
           setProduct(productData);
           if (isUuid && productData.slug) { navigate(getProductUrl(productData), { replace: true }); return; }
-          const { data: ownerData } = await supabase.rpc('get_product_owner_public_info', { owner_uuid: productData.owner_id });
-          if (ownerData && ownerData.length > 0) setOwner(ownerData[0]);
-          if (user) { setIsFavorite(await isProductFavorite(productData.id)); }
+          // Run owner lookup and favorite check in parallel — they don't depend on each other.
+          const [ownerRes, favRes] = await Promise.all([
+            supabase.rpc('get_product_owner_public_info', { owner_uuid: productData.owner_id }),
+            user ? isProductFavorite(productData.id) : Promise.resolve(false),
+          ]);
+          if (ownerRes.data && ownerRes.data.length > 0) setOwner(ownerRes.data[0]);
+          if (user) setIsFavorite(!!favRes);
         }
       } catch (e) { console.error(e); } finally { setIsLoading(false); }
     };
@@ -350,7 +356,9 @@ const ProductDetail = () => {
 
             <LocationCard address={product.pickup_address || location} city={product.location_city} />
 
-            <ProductReviewsSection productId={product.id} isOwnProduct={isOwnProduct} />
+            <Suspense fallback={<div className="h-32" />}>
+              <ProductReviewsSection productId={product.id} isOwnProduct={isOwnProduct} />
+            </Suspense>
           </div>
 
           {/* Booking card — inline on mobile, sticky sidebar on desktop */}
@@ -378,14 +386,20 @@ const ProductDetail = () => {
         </div>
 
         <div className="mt-8">
-          <OwnerOtherListings ownerId={product.owner_id} currentProductId={product.id} ownerName={ownerName} />
+          <Suspense fallback={<div className="h-40" />}>
+            <OwnerOtherListings ownerId={product.owner_id} currentProductId={product.id} ownerName={ownerName} />
+          </Suspense>
         </div>
 
         <div className="mt-8">
-          <NearbyProductsSlider currentProductId={product.id} locationCity={product.location_city} category={product.category} />
+          <Suspense fallback={<div className="h-40" />}>
+            <NearbyProductsSlider currentProductId={product.id} locationCity={product.location_city} category={product.category} />
+          </Suspense>
         </div>
 
-        <RecentlyViewedSlider excludeId={product.id} />
+        <Suspense fallback={<div className="h-40" />}>
+          <RecentlyViewedSlider excludeId={product.id} />
+        </Suspense>
       </main>
 
       <Footer />
@@ -409,22 +423,30 @@ const ProductDetail = () => {
         maxRentalDays={(product as any).max_rental_days ?? null}
       />
 
-      <PremiumLightbox
-        open={lightboxOpen}
-        images={images}
-        index={lightboxIndex}
-        onClose={() => setLightboxOpen(false)}
-        onIndexChange={setLightboxIndex}
-        title={displayTitle}
-      />
+      {lightboxOpen && (
+        <Suspense fallback={null}>
+          <PremiumLightbox
+            open={lightboxOpen}
+            images={images}
+            index={lightboxIndex}
+            onClose={() => setLightboxOpen(false)}
+            onIndexChange={setLightboxIndex}
+            title={displayTitle}
+          />
+        </Suspense>
+      )}
 
-      <ShareDialog
-        open={shareOpen}
-        onOpenChange={setShareOpen}
-        url={canonicalUrl}
-        title={displayTitle}
-        image={seoImage}
-      />
+      {shareOpen && (
+        <Suspense fallback={null}>
+          <ShareDialog
+            open={shareOpen}
+            onOpenChange={setShareOpen}
+            url={canonicalUrl}
+            title={displayTitle}
+            image={seoImage}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };
