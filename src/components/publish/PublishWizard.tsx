@@ -544,6 +544,7 @@ const Step1Category = ({
   update: <K extends keyof PublishFormData>(k: K, v: PublishFormData[K]) => void;
   errors: Record<string, string>;
 }) => {
+  const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -559,15 +560,18 @@ const Step1Category = ({
   return (
     <div>
       <StepHeader
-        eyebrow="Pasul 1 din 6"
-        title="Ce vrei să închiriezi?"
-        subtitle="Alege o categorie ca să-ți arătăm câmpurile potrivite și prețul mediu din piață."
+        eyebrow={t("Pasul 1 din 5", "Step 1 of 5")}
+        title={t("Ce vrei să închiriezi?", "What do you want to rent out?")}
+        subtitle={t(
+          "Alege o categorie ca să-ți arătăm câmpurile potrivite și prețul mediu din piață.",
+          "Pick a category so we can show you the right fields and average market price.",
+        )}
       />
 
       <div className="relative mt-6">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Caută categorie (ex: bicicletă, cameră foto, drujbă...)"
+          placeholder={t("Caută categorie (ex: bicicletă, cameră foto, drujbă...)", "Search category (e.g. bike, camera, chainsaw...)")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="h-12 pl-10"
@@ -615,7 +619,7 @@ const Step1Category = ({
           )}
         >
           <Label className="text-sm font-semibold text-foreground">
-            Subcategorie <span className="text-destructive">*</span>
+            {t("Subcategorie", "Subcategory")} <span className="text-destructive">*</span>
           </Label>
           <div className="mt-3 flex flex-wrap gap-2">
             {selectedCat.subcategories.map((sub) => {
