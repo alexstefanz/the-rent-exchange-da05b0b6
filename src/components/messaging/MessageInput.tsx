@@ -149,6 +149,9 @@ export function MessageInput({ conversationId, disabled, isPaid, onSend, onTypin
     } finally {
       setSending(false);
       setUploadProgress(0);
+      requestAnimationFrame(() => {
+        textareaRef.current?.focus();
+      });
     }
   };
 
