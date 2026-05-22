@@ -140,7 +140,7 @@ export default function Messages() {
         <div
           className={`min-h-screen flex flex-col bg-background ${
             isClosing ? "animate-slide-in-left" : ""
-          } ${isClosing ? "" : "pointer-events-none"}`}
+          } pointer-events-none`}
         >
           <Navbar />
           <main className="flex-1 pb-20">
