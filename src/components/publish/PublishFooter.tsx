@@ -1,5 +1,6 @@
 import { ArrowLeft, ArrowRight, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
   current: number;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 const PublishFooter = ({ current, total, onBack, onNext, isLoading, nextLabel, isFinal, secondaryAction }: Props) => {
+  const { t } = useLanguage();
   return (
     <div className="sticky bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/85">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3 md:py-4">
@@ -23,7 +25,7 @@ const PublishFooter = ({ current, total, onBack, onNext, isLoading, nextLabel, i
           className="min-h-11"
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
-          Înapoi
+          {t("Înapoi", "Back")}
         </Button>
         {secondaryAction && (
           <Button
@@ -46,7 +48,7 @@ const PublishFooter = ({ current, total, onBack, onNext, isLoading, nextLabel, i
           ) : isFinal ? (
             <Sparkles className="h-4 w-4" />
           ) : null}
-          {nextLabel ?? (isFinal ? "Publică anunțul" : "Continuă")}
+          {nextLabel ?? (isFinal ? t("Publică anunțul", "Publish listing") : t("Continuă", "Continue"))}
           {!isFinal && !isLoading && <ArrowRight className="h-4 w-4" />}
         </Button>
       </div>
