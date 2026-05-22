@@ -49,6 +49,7 @@ import NotificationBell from "./NotificationBell";
 import MobileBottomNav from "./MobileBottomNav";
 import { AccountHubMenu } from "./AccountHubMenu";
 import { MobileDrawer } from "./mobile-drawer/MobileDrawer";
+import LanguageSwitcher from "./LanguageSwitcher";
 import logoImage from "@/assets/rentli_logo.webp";
 
 const Navbar = () => {
@@ -191,9 +192,14 @@ const Navbar = () => {
                 <AccountHubMenu onLogout={handleLogout} />
               </>
             ) : (
-              <Button variant="ghost" size="sm" className="hidden lg:flex" asChild>
-                <Link to="/auth">{t("Autentificare", "Login")}</Link>
-              </Button>
+              <>
+                <div className="hidden lg:flex">
+                  <LanguageSwitcher />
+                </div>
+                <Button variant="ghost" size="sm" className="hidden lg:flex" asChild>
+                  <Link to="/auth">{t("Autentificare", "Login")}</Link>
+                </Button>
+              </>
             )}
 
             {/* Add button - Desktop only */}
