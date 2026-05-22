@@ -97,6 +97,11 @@ export default function Messages() {
       });
       return;
     }
+    // Clear the ?conv= param so the sync effect doesn't immediately reopen
+    // the conversation we're trying to close.
+    if (searchParams.get("conv")) {
+      navigate("/mesaje", { replace: true });
+    }
     setSelectedConversation(null);
   };
 
