@@ -1,52 +1,36 @@
-## Problemă
-
-În tabul **Contact** din chat, datele de contact (telefon, email) apar imediat ce există orice rezervare plătită istoric între cei doi utilizatori — chiar dacă rezervarea curentă este doar „acceptată" și încă neplătită (ex. RNT-000147, status `confirmed`, `payment_status='pending'`).
-
-Cauza: funcția `get_contact_info_if_in_conversation(owner_uuid)` verifică doar dacă există *vreo* înregistrare în `rentals` între cei doi utilizatori cu `payment_status IN ('authorized','paid','captured','partially_refunded','refunded')`. Nu ține cont dacă rezervarea respectivă mai este activă.
-
-Acelaşi RPC e folosit şi în header-ul ChatPanel (butonul „sună").
+## Problem
+Pe pagina de produs, zilele rezervate apar gri în calendar fără explicație. Când utilizatorul încearcă să selecteze o perioadă care conține zile rezervate, primește doar un toast scurt „Există zile rezervate în interval", fără să știe care zile sunt blocate sau ce să facă.
 
 ## Soluție
 
-Actualizez funcția RPC astfel încât contactul să fie returnat **doar dacă există cel puţin o închiriere activă plătită** între cei doi utilizatori:
+### 1. Legendă vizibilă sub calendar (`PremiumBookingCard.tsx` + `BookingCard.tsx`)
+Adaugă o mică legendă explicativă chiar sub calendar, vizibilă din start:
+- pătrat gri → „Indisponibil / Rezervat" 
+- pătrat portocaliu → „Selectat"
+- pătrat negru → „Astăzi"
 
-- `payment_status` ∈ (`authorized`, `paid`, `captured`, `partially_refunded`)
-- `status` ∈ (`confirmed`, `active`, `ongoing`, `in_progress`, `pickup_pending`, `return_pending`) — adică NU `completed`, NU `cancelled`, NU `pending`, NU `rejected`
+Astfel utilizatorul înțelege de la prima vedere ce înseamnă fiecare culoare.
 
-Astfel:
-- Cerere doar acceptată, fără plată → contact ascuns (mesajul „vor fi vizibile după plată" rămâne).
-- Plata efectuată şi închirierea în desfăşurare → contact vizibil.
-- După `completed`/`cancelled` → contact iar ascuns.
+### 2. Alert detaliat la conflict (`ProductDetail.tsx` + `BookingCard.tsx`)
+În `handleDateSelect`, când `hasBookedDateInRange` întoarce `true`:
+- Calculează lista exactă de zile rezervate din interval (filtrare pe `bookedDates`).
+- Înlocuiește toast-ul simplu cu un **AlertDialog** (shadcn) care:
+  - Titlu: „Perioada conține zile rezervate"
+  - Listează maxim 6 zile blocate formatate frumos (ex: „15 mar, 16 mar, 22 mar…"), cu „și încă N zile" dacă sunt mai multe.
+  - Mesaj clar: „Te rugăm să alegi o altă perioadă care nu se suprapune."
+  - Buton „Alege altă perioadă" → resetează `startDate`/`endDate` și închide dialogul.
 
-## Implementare
+### 3. Tooltip pe zilele gri (calendar)
+Pe `<DayContent>` custom în `CalendarComponent`, adaugă `title` HTML nativ pe zilele rezervate: „Rezervat — alege altă zi". E un win rapid, accesibil și fără cost de bundle.
 
-**Migrare unică** care recreează funcţia `public.get_contact_info_if_in_conversation(owner_uuid uuid)` cu noua condiţie (păstrând semnătura, `SECURITY DEFINER`, `STABLE`, `search_path=public`).
+### Localizare
+Toate textele noi vor folosi `t(ro, en)` pentru bilingv RO/EN, conform standardului proiectului.
 
-Nu sunt modificări de UI necesare:
-- `InfoPanel.tsx` deja afișează mesajul „Datele de contact vor fi vizibile după plată" când RPC returnează gol.
-- `ChatPanel.tsx` ascunde butonul telefon dacă `ownerPhone` e null.
-
-## Detalii tehnice
-
-```sql
-CREATE OR REPLACE FUNCTION public.get_contact_info_if_in_conversation(owner_uuid uuid)
-RETURNS TABLE(full_name text, phone text, email text, avatar_url text)
-LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
-AS $$
-  SELECT p.full_name, p.phone, p.email, p.avatar_url
-  FROM profiles p
-  WHERE p.id = owner_uuid
-    AND (
-      auth.uid() = owner_uuid
-      OR EXISTS (
-        SELECT 1 FROM rentals r
-        WHERE ((r.owner_id = owner_uuid AND r.renter_id = auth.uid())
-            OR (r.renter_id = owner_uuid AND r.owner_id = auth.uid()))
-          AND r.payment_status IN ('authorized','paid','captured','partially_refunded')
-          AND r.status IN ('confirmed','active','ongoing','in_progress','pickup_pending','return_pending')
-      )
-    );
-$$;
+### Fișiere atinse
+```text
+src/pages/ProductDetail.tsx              (alert dialog state + listă zile blocate)
+src/components/product/PremiumBookingCard.tsx  (legendă + tooltip pe zile)
+src/components/product/BookingCard.tsx          (același tratament pentru cardul vechi)
 ```
 
-După aprobare voi actualiza şi memoria `gated-contact-flow-v2` cu noua regulă.
+Nu se modifică nicio logică de business, RLS sau API — strict UX pe frontend.
