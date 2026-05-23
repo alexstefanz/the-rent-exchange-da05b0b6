@@ -218,8 +218,8 @@ const CategoryDetail = () => {
         topCity={topCity}
       />
       <main className="container py-8">
-        <div className="mb-6 flex items-center gap-2 max-w-2xl">
-          <div className="relative flex-1">
+        <div className="mb-6 max-w-2xl">
+          <div className="relative">
             <SearchIcon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
@@ -227,27 +227,6 @@ const CategoryDetail = () => {
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="h-12 pl-12 text-base"
-            />
-          </div>
-          <div className="lg:hidden">
-            <SearchFilters
-              selectedCategory="all"
-              onCategoryChange={() => {}}
-              selectedCity={selectedCity}
-              onCityChange={handleCityChange}
-              selectedJudet={selectedJudet}
-              onJudetChange={handleJudetChange}
-              priceRange={priceRange}
-              onPriceRangeChange={handlePriceRangeChange}
-              priceMin={priceBounds[0]}
-              priceMax={priceBounds[1]}
-              sortBy={sortBy}
-              onSortByChange={setSortBy}
-              onClearFilters={handleClearFilters}
-              hasActiveFilters={hasActiveFilters}
-              subcategoryOptions={subcategoryOptions}
-              selectedSubcategory={selectedSubcategory}
-              onSubcategoryChange={handleSubcategoryChange}
             />
           </div>
         </div>
@@ -285,7 +264,16 @@ const CategoryDetail = () => {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center gap-2 ml-auto">
+          {/* Mobile-only: grid/list toggle on the left */}
+          <div className="flex lg:hidden items-center gap-1 rounded-lg border border-border p-1">
+            <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("gallery")}>
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("list")}>
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
             <InlineSearchFilters
               selectedCategory="all"
               onCategoryChange={() => {}}
@@ -306,13 +294,34 @@ const CategoryDetail = () => {
               onSubcategoryChange={handleSubcategoryChange}
               hideLocation
             />
-            <div className="flex items-center gap-1 rounded-lg border border-border p-1">
+            <div className="hidden lg:flex items-center gap-1 rounded-lg border border-border p-1">
               <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("gallery")}>
                 <LayoutGrid className="h-4 w-4" />
               </Button>
               <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("list")}>
                 <List className="h-4 w-4" />
               </Button>
+            </div>
+            <div className="lg:hidden">
+              <SearchFilters
+                selectedCategory="all"
+                onCategoryChange={() => {}}
+                selectedCity={selectedCity}
+                onCityChange={handleCityChange}
+                selectedJudet={selectedJudet}
+                onJudetChange={handleJudetChange}
+                priceRange={priceRange}
+                onPriceRangeChange={handlePriceRangeChange}
+                priceMin={priceBounds[0]}
+                priceMax={priceBounds[1]}
+                sortBy={sortBy}
+                onSortByChange={setSortBy}
+                onClearFilters={handleClearFilters}
+                hasActiveFilters={hasActiveFilters}
+                subcategoryOptions={subcategoryOptions}
+                selectedSubcategory={selectedSubcategory}
+                onSubcategoryChange={handleSubcategoryChange}
+              />
             </div>
           </div>
         </div>
