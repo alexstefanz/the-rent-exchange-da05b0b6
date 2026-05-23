@@ -153,7 +153,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
       className="group relative block transition-all hover:-translate-y-0.5"
     >
       {/* Image container */}
-      <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
+      <div className="relative aspect-[3/4] md:aspect-[4/3] overflow-hidden rounded-xl">
         <img
           src={imageUrl}
           alt={displayTitle}
