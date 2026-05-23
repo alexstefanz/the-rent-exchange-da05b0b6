@@ -176,12 +176,6 @@ const CategoryDetail = () => {
       />
       <main className="container py-8">
         <div className="mb-6">
-          <h1 className="font-heading text-2xl font-bold text-foreground md:text-3xl">{catName}</h1>
-          <p className="mt-1 text-muted-foreground">
-            {searchQuery ? copy.search_page.searchFor(searchQuery) : copy.search_page.allProducts}
-          </p>
-        </div>
-        <div className="mb-6">
           <div className="relative max-w-2xl">
             <SearchIcon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
