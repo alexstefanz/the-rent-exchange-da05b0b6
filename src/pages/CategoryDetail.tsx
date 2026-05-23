@@ -3,7 +3,6 @@ import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { Search as SearchIcon, Loader2, LayoutGrid, List } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ProductCard from "@/components/products/ProductCard";
@@ -11,7 +10,6 @@ import CategoryHero from "@/components/category/CategoryHero";
 import SearchFilters, { InlineSearchFilters } from "@/components/search/SearchFilters";
 import EmptySearchState from "@/components/search/EmptySearchState";
 import { useProducts } from "@/hooks/queries/useProducts";
-import { useSearchUsers } from "@/hooks/queries/useSearch";
 import { ProductFilters, calculateClientPrice } from "@/features/products/productsApi";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -31,10 +29,8 @@ const CategoryDetail = () => {
   const initialQuery = searchParams.get("q") || "";
   const subcategoryFilter = searchParams.get("subcategorie") || "";
   const localitateFilter = searchParams.get("localitate") || "";
-  const tabParam = searchParams.get("tab") || "products";
 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [activeTab, setActiveTab] = useState(tabParam);
   const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
   const [selectedSubcategory, setSelectedSubcategory] = useState(subcategoryFilter || "all");
   const [selectedCity, setSelectedCity] = useState(localitateFilter || "all");
@@ -103,8 +99,6 @@ const CategoryDetail = () => {
     return result;
   }, [products, selectedSubcategory, priceRange, sortBy]);
 
-  const { data: users = [], isLoading: isLoadingUsers } = useSearchUsers(searchQuery);
-
   const hasActiveFilters =
     (selectedSubcategory && selectedSubcategory !== "all") ||
     (selectedCity && selectedCity !== "all") ||
@@ -130,12 +124,6 @@ const CategoryDetail = () => {
     setSearchQuery(value);
     const np = new URLSearchParams(searchParams);
     if (value) np.set("q", value); else np.delete("q");
-    setSearchParams(np, { replace: true });
-  };
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    const np = new URLSearchParams(searchParams);
-    np.set("tab", value);
     setSearchParams(np, { replace: true });
   };
   const handleClearFilters = () => {
@@ -187,114 +175,68 @@ const CategoryDetail = () => {
             />
           </div>
         </div>
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <TabsList>
-              <TabsTrigger value="products" className="gap-2">
-                {copy.search_page.products}
-                {!isLoading && filteredProducts.length > 0 && (
-                  <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">{filteredProducts.length}</span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="users" className="gap-2">
-                {copy.search_page.users}
-                {!isLoadingUsers && users.length > 0 && (
-                  <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">{users.length}</span>
-                )}
-              </TabsTrigger>
-            </TabsList>
-            {activeTab === "products" && (
-              <div className="flex items-center gap-2">
-                <InlineSearchFilters
-                  selectedCategory="all"
-                  onCategoryChange={() => {}}
-                  selectedCity={selectedCity}
-                  onCityChange={handleCityChange}
-                  priceRange={priceRange}
-                  onPriceRangeChange={setPriceRange}
-                  sortBy={sortBy}
-                  onSortByChange={setSortBy}
-                  onClearFilters={handleClearFilters}
-                  hasActiveFilters={hasActiveFilters}
-                  subcategoryOptions={subcategoryOptions}
-                  selectedSubcategory={selectedSubcategory}
-                  onSubcategoryChange={handleSubcategoryChange}
-                />
-                <SearchFilters
-                  selectedCategory="all"
-                  onCategoryChange={() => {}}
-                  selectedCity={selectedCity}
-                  onCityChange={handleCityChange}
-                  priceRange={priceRange}
-                  onPriceRangeChange={setPriceRange}
-                  sortBy={sortBy}
-                  onSortByChange={setSortBy}
-                  onClearFilters={handleClearFilters}
-                  hasActiveFilters={hasActiveFilters}
-                  subcategoryOptions={subcategoryOptions}
-                  selectedSubcategory={selectedSubcategory}
-                  onSubcategoryChange={handleSubcategoryChange}
-                />
-                <div className="hidden sm:flex items-center gap-1 rounded-lg border border-border p-1">
-                  <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("gallery")}>
-                    <LayoutGrid className="h-4 w-4" />
-                  </Button>
-                  <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("list")}>
-                    <List className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-          <TabsContent value="products" className="mt-0">
-            <div className="min-w-0">
-              {isLoading && (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              )}
-              {!isLoading && filteredProducts.length > 0 && (
-                <div>
-                  <p className="mb-4 text-sm text-muted-foreground">{copy.search.resultsCount(filteredProducts.length)}</p>
-                  <div className={viewMode === "gallery" ? "grid gap-3 sm:gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4" : "flex flex-col gap-4"}>
-                    {filteredProducts.map((product) => (
-                      <ProductCard key={product.id} product={product} viewMode={viewMode} />
-                    ))}
-                  </div>
-                </div>
-              )}
-              {!isLoading && filteredProducts.length === 0 && (
-                <EmptySearchState searchQuery={searchQuery} type="products" />
-              )}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <p className="text-sm text-muted-foreground">
+            {!isLoading && copy.search.resultsCount(filteredProducts.length)}
+          </p>
+          <div className="flex items-center gap-2">
+            <InlineSearchFilters
+              selectedCategory="all"
+              onCategoryChange={() => {}}
+              selectedCity={selectedCity}
+              onCityChange={handleCityChange}
+              priceRange={priceRange}
+              onPriceRangeChange={setPriceRange}
+              sortBy={sortBy}
+              onSortByChange={setSortBy}
+              onClearFilters={handleClearFilters}
+              hasActiveFilters={hasActiveFilters}
+              subcategoryOptions={subcategoryOptions}
+              selectedSubcategory={selectedSubcategory}
+              onSubcategoryChange={handleSubcategoryChange}
+            />
+            <SearchFilters
+              selectedCategory="all"
+              onCategoryChange={() => {}}
+              selectedCity={selectedCity}
+              onCityChange={handleCityChange}
+              priceRange={priceRange}
+              onPriceRangeChange={setPriceRange}
+              sortBy={sortBy}
+              onSortByChange={setSortBy}
+              onClearFilters={handleClearFilters}
+              hasActiveFilters={hasActiveFilters}
+              subcategoryOptions={subcategoryOptions}
+              selectedSubcategory={selectedSubcategory}
+              onSubcategoryChange={handleSubcategoryChange}
+            />
+            <div className="hidden sm:flex items-center gap-1 rounded-lg border border-border p-1">
+              <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("gallery")}>
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("list")}>
+                <List className="h-4 w-4" />
+              </Button>
             </div>
-          </TabsContent>
-          <TabsContent value="users" className="mt-0">
-            {isLoadingUsers && (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            )}
-            {!isLoadingUsers && users.length > 0 && (
-              <div>
-                <p className="mb-4 text-sm text-muted-foreground">{copy.search_page.userFound(users.length)}</p>
-                <div className="grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                  {users.map((user) => (
-                    <Link key={user.id} to={`/utilizator/${user.id}`} className="flex items-center gap-4 p-4 bg-card rounded-xl border border-border shadow-card hover:shadow-card-hover transition-all hover:-translate-y-1">
-                      <img src={user.avatar_url || "/placeholder.svg"} alt={user.full_name || copy.search_page.user} className="w-14 h-14 rounded-full object-cover border-2 border-border" />
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-foreground truncate">{user.full_name || copy.search_page.user}</h3>
-                        <p className="text-sm text-muted-foreground">{copy.search_page.listings(user.products_count)}</p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-            {!isLoadingUsers && users.length === 0 && (
-              <EmptySearchState searchQuery={searchQuery} type="users" />
-            )}
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
+        <div className="min-w-0">
+          {isLoading && (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          )}
+          {!isLoading && filteredProducts.length > 0 && (
+            <div className={viewMode === "gallery" ? "grid gap-3 sm:gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4" : "flex flex-col gap-4"}>
+              {filteredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} viewMode={viewMode} />
+              ))}
+            </div>
+          )}
+          {!isLoading && filteredProducts.length === 0 && (
+            <EmptySearchState searchQuery={searchQuery} type="products" />
+          )}
+        </div>
       </main>
       <Footer />
     </div>
