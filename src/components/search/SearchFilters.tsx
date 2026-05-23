@@ -6,12 +6,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { categories } from "@/data/categories";
+import { judete } from "@/data/romaniaLocations";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SearchFiltersProps {
   selectedCategory: string;
   onCategoryChange: (value: string) => void;
+  selectedCity: string;
+  onCityChange: (value: string) => void;
   priceRange: [number, number];
   onPriceRangeChange: (value: [number, number]) => void;
   sortBy: string;
@@ -20,11 +23,15 @@ interface SearchFiltersProps {
   hasActiveFilters: boolean;
 }
 
+const sortedCities = Array.from(new Set(judete.flatMap((j) => j.localitati))).sort((a, b) =>
+  a.localeCompare(b, "ro", { sensitivity: "base" }),
+);
+
 const SearchFiltersContent = ({
-  selectedCategory, onCategoryChange, priceRange, onPriceRangeChange, sortBy, onSortByChange, onClearFilters, hasActiveFilters,
+  selectedCategory, onCategoryChange, selectedCity, onCityChange, priceRange, onPriceRangeChange, sortBy, onSortByChange, onClearFilters, hasActiveFilters,
 }: SearchFiltersProps) => {
   const copy = useUxCopy();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   return (
     <div className="space-y-6">
       {hasActiveFilters && (
@@ -42,6 +49,19 @@ const SearchFiltersContent = ({
             <SelectItem value="all">{copy.search_page.allCategoriesFilter}</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category.id} value={category.name}>{language === "en" && category.nameEn ? category.nameEn : category.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-3">
+        <label className="text-sm font-medium text-foreground">{t("Locație", "Location")}</label>
+        <Select value={selectedCity} onValueChange={onCityChange}>
+          <SelectTrigger className="w-full"><SelectValue placeholder={t("Toate orașele", "All cities")} /></SelectTrigger>
+          <SelectContent className="max-h-[300px]">
+            <SelectItem value="all">{t("Toate orașele", "All cities")}</SelectItem>
+            {sortedCities.map((city) => (
+              <SelectItem key={city} value={city}>{city}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -75,10 +95,10 @@ const SearchFiltersContent = ({
 };
 
 export const InlineSearchFilters = ({
-  selectedCategory, onCategoryChange, priceRange, onPriceRangeChange, sortBy, onSortByChange, onClearFilters, hasActiveFilters,
+  selectedCategory, onCategoryChange, selectedCity, onCityChange, priceRange, onPriceRangeChange, sortBy, onSortByChange, onClearFilters, hasActiveFilters,
 }: SearchFiltersProps) => {
   const copy = useUxCopy();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
 
   const priceLabel = priceRange[0] === 0 && priceRange[1] === 1000
     ? copy.search.filters.priceRange
@@ -94,6 +114,18 @@ export const InlineSearchFilters = ({
           <SelectItem value="all">{copy.search_page.allCategoriesFilter}</SelectItem>
           {categories.map((category) => (
             <SelectItem key={category.id} value={category.name}>{language === "en" && category.nameEn ? category.nameEn : category.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select value={selectedCity} onValueChange={onCityChange}>
+        <SelectTrigger className="h-9 w-auto min-w-[140px] text-sm">
+          <SelectValue placeholder={t("Toate orașele", "All cities")} />
+        </SelectTrigger>
+        <SelectContent className="max-h-[300px]">
+          <SelectItem value="all">{t("Toate orașele", "All cities")}</SelectItem>
+          {sortedCities.map((city) => (
+            <SelectItem key={city} value={city}>{city}</SelectItem>
           ))}
         </SelectContent>
       </Select>

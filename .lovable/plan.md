@@ -1,20 +1,21 @@
-## Issue
-The city `Select` in `MobileFilterSheet` shows cities in raw data order (and capped to the first 80), so they look unsorted. The same applies to per-județ city lists in `HeroSearchForm`, `SubcategoryDetail`, and `PublishWizard`.
+## Goal
+Add a city (locație) filter dropdown on the `/cauta` page, alongside category, price, and sort. Wired to the existing `localitate` URL param so it integrates with current product fetch logic.
 
-## Fix
-Sort cities alphabetically using Romanian locale-aware `localeCompare("ro", { sensitivity: "base" })` (handles ă/â/î/ș/ț correctly). "Toate orașele" stays pinned at the top.
+## Changes
 
-### Files
-1. **`src/components/category/MobileFilterSheet.tsx`** — replace `judete.flatMap(j => j.localitati).slice(0, 80)` with the full deduped list sorted RO-alphabetically, then sliced if needed. Drop the 80-cap (or raise it to e.g. 500) so users can find their city; keep `max-h-[40vh]` scroll on the SelectContent.
+### 1. `src/components/search/SearchFilters.tsx`
+- Extend `SearchFiltersProps` with `selectedCity: string` and `onCityChange: (v: string) => void`.
+- Add a city `<Select>` in both `InlineSearchFilters` (desktop bar, between category and price) and `SearchFiltersContent` (mobile sheet, after category). Items: `"all"` → "Toate orașele" + full deduped city list from `judete` (from `@/data/romaniaLocations`), sorted RO-alphabetically with `localeCompare("ro", { sensitivity: "base" })`. SelectContent gets `max-h-[300px]` for scrolling.
+- Include selectedCity in `hasActiveFilters` consideration (handled in parent — see step 2).
 
-2. **`src/components/HeroSearchForm.tsx`** — sort the `localitati` array (per selected județ) alphabetically before mapping into `SelectItem`s in both spots (lines 144 and 168).
-
-3. **`src/pages/SubcategoryDetail.tsx`** — same sort on the `localitati` map (line 184).
-
-4. **`src/components/publish/PublishWizard.tsx`** — sort the `cities` array (line 1028) before rendering.
-
-### Technical note
-Use a small helper inline: `[...arr].sort((a, b) => a.localeCompare(b, "ro", { sensitivity: "base" }))`. No changes to `romaniaLocations.ts` data source.
+### 2. `src/pages/Search.tsx`
+- Add local state `selectedCity` initialized from existing `localitateFilter` URL param (default `"all"`).
+- Add `handleCityChange(v)` that updates state and writes/removes `localitate` in `searchParams` (replace mode).
+- Pass `selectedCity` + `onCityChange` to both `<InlineSearchFilters>` and `<SearchFilters>`.
+- Update `productFilters` to read from `selectedCity` (local state) instead of `localitateFilter` constant, so the dropdown drives the query directly.
+- Update `hasActiveFilters` to include `selectedCity !== "all"`.
+- Update `handleClearFilters` to also reset city to `"all"` and strip `localitate` from URL.
 
 ## Out of scope
-- No change to județ ordering, no UI restyling, no search-in-dropdown feature.
+- No județ-level dropdown (single city is enough and matches the existing param model).
+- No new memory; no other pages.
