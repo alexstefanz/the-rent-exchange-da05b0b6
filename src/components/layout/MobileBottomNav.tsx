@@ -29,8 +29,8 @@ const MobileBottomNav = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background lg:hidden">
-      <div className="flex items-center justify-around h-16 px-4">
+    <nav className="fixed bottom-3 left-3 right-3 z-50 lg:hidden rounded-full border border-white/60 bg-white/60 backdrop-blur-xl backdrop-saturate-150 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.18)]" style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
+      <div className="flex items-center justify-around h-16 px-2">
         {tabs.map((tab) => {
           const active = isActive(tab.to);
           const isDisabled = (tab as any).disabled;
@@ -43,23 +43,23 @@ const MobileBottomNav = () => {
               key={tab.to}
               {...wrapperProps}
               className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors relative ${
-                isDisabled ? "opacity-40 cursor-not-allowed" : active ? "text-primary" : "text-muted-foreground"
+                isDisabled ? "opacity-40 cursor-not-allowed" : active ? "text-primary" : "text-foreground/70"
               }`}
             >
               <div className="relative">
                 {tab.highlight ? (
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center shadow-sm ${isDisabled ? "bg-muted" : "bg-[#F98715]"}`}>
+                  <div className={`w-9 h-9 -mt-1 rounded-full flex items-center justify-center ${isDisabled ? "bg-muted" : "bg-[#F98715] shadow-[0_6px_20px_-4px_rgba(249,135,21,0.55)]"}`}>
                     {isDisabled ? <Ban className="h-4 w-4 text-destructive" strokeWidth={2.5} /> : <tab.icon className="h-4 w-4 text-white" />}
                   </div>
                 ) : (
-                  <>
+                  <div className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${active && !isDisabled ? "bg-primary/10" : ""}`}>
                     <tab.icon className="h-5 w-5" />
                     {typeof (tab as any).badge === "number" && (tab as any).badge > 0 && !isDisabled && (
-                      <span className="absolute -top-1.5 -right-2.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white shadow-sm">
+                      <span className="absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white shadow-sm">
                         {(tab as any).badge > 99 ? "99+" : (tab as any).badge}
                       </span>
                     )}
-                  </>
+                  </div>
                 )}
               </div>
               <span>{tab.label}</span>
@@ -67,8 +67,6 @@ const MobileBottomNav = () => {
           );
         })}
       </div>
-      {/* Safe area for phones with home indicator */}
-      <div className="h-[env(safe-area-inset-bottom)]" />
     </nav>
   );
 };
