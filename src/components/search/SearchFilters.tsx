@@ -29,6 +29,9 @@ interface SearchFiltersProps {
   onSubcategoryChange?: (value: string) => void;
   /** When true, the județ/localitate selects are hidden (used when they're rendered elsewhere). */
   hideLocation?: boolean;
+  /** Optional dynamic bounds for the price slider. Defaults to 0 / 1000. */
+  priceMin?: number;
+  priceMax?: number;
 }
 
 const sortedJudete = [...judete].sort((a, b) =>
@@ -44,7 +47,7 @@ const getLocalitatiForJudet = (judetName: string | undefined): string[] => {
 
 const SearchFiltersContent = ({
   selectedCategory, onCategoryChange, selectedCity, onCityChange, selectedJudet, onJudetChange, priceRange, onPriceRangeChange, sortBy, onSortByChange, onClearFilters, hasActiveFilters,
-  subcategoryOptions, selectedSubcategory, onSubcategoryChange, hideLocation,
+  subcategoryOptions, selectedSubcategory, onSubcategoryChange, hideLocation, priceMin = 0, priceMax = 1000,
 }: SearchFiltersProps) => {
   const copy = useUxCopy();
   const { language, t } = useLanguage();
@@ -127,7 +130,7 @@ const SearchFiltersContent = ({
       <div className="space-y-3">
         <label className="text-sm font-medium text-foreground">{copy.search.filters.priceRange}</label>
         <div className="px-2">
-          <Slider value={priceRange} onValueChange={(value) => onPriceRangeChange(value as [number, number])} max={1000} min={0} step={10} className="w-full" />
+          <Slider value={priceRange} onValueChange={(value) => onPriceRangeChange(value as [number, number])} max={priceMax} min={priceMin} step={Math.max(1, Math.round((priceMax - priceMin) / 100))} className="w-full" />
           <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground">
             <span>{priceRange[0]} RON</span>
             <span>{priceRange[1]} RON</span>
@@ -153,13 +156,13 @@ const SearchFiltersContent = ({
 
 export const InlineSearchFilters = ({
   selectedCategory, onCategoryChange, selectedCity, onCityChange, selectedJudet, onJudetChange, priceRange, onPriceRangeChange, sortBy, onSortByChange, onClearFilters, hasActiveFilters,
-  subcategoryOptions, selectedSubcategory, onSubcategoryChange, hideLocation,
+  subcategoryOptions, selectedSubcategory, onSubcategoryChange, hideLocation, priceMin = 0, priceMax = 1000,
 }: SearchFiltersProps) => {
   const copy = useUxCopy();
   const { language, t } = useLanguage();
   const localitati = getLocalitatiForJudet(selectedJudet);
 
-  const priceLabel = priceRange[0] === 0 && priceRange[1] === 1000
+  const priceLabel = priceRange[0] === priceMin && priceRange[1] === priceMax
     ? copy.search.filters.priceRange
     : `${priceRange[0]} - ${priceRange[1]} RON`;
 
@@ -231,7 +234,7 @@ export const InlineSearchFilters = ({
         <PopoverContent className="w-64" align="start">
           <div className="space-y-3">
             <p className="text-sm font-medium">{copy.search.filters.priceRange}</p>
-            <Slider value={priceRange} onValueChange={(value) => onPriceRangeChange(value as [number, number])} max={1000} min={0} step={10} className="w-full" />
+            <Slider value={priceRange} onValueChange={(value) => onPriceRangeChange(value as [number, number])} max={priceMax} min={priceMin} step={Math.max(1, Math.round((priceMax - priceMin) / 100))} className="w-full" />
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{priceRange[0]} RON</span>
               <span>{priceRange[1]} RON</span>

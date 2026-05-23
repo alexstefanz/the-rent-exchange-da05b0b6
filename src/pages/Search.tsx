@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search as SearchIcon, Loader2, LayoutGrid, List } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -30,6 +30,7 @@ const Search = () => {
   const [selectedJudet, setSelectedJudet] = useState(judetFilter || "all");
   const [selectedCity, setSelectedCity] = useState(localitateFilter || "all");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [priceTouched, setPriceTouched] = useState(false);
   const [sortBy, setSortBy] = useState("relevance");
 
   const productFilters = useMemo((): ProductFilters => {
@@ -41,6 +42,29 @@ const Search = () => {
   }, [searchQuery, selectedCategory, selectedCity]);
 
   const { data: products = [], isLoading } = useProducts(productFilters);
+
+  const priceBounds = useMemo<[number, number]>(() => {
+    if (!products.length) return [0, 1000];
+    let min = Infinity;
+    let max = -Infinity;
+    for (const p of products) {
+      const cp = calculateClientPrice(p.daily_price_owner, p.platform_fee_percent);
+      if (cp < min) min = cp;
+      if (cp > max) max = cp;
+    }
+    const lo = Math.floor(Math.max(0, min));
+    const hi = Math.ceil(Math.max(lo + 1, max));
+    return [lo, hi];
+  }, [products]);
+
+  useEffect(() => {
+    if (!priceTouched) setPriceRange(priceBounds);
+  }, [priceBounds, priceTouched]);
+
+  const handlePriceRangeChange = (value: [number, number]) => {
+    setPriceTouched(true);
+    setPriceRange(value);
+  };
   const judetCitiesSet = useMemo(() => {
     if (selectedJudet === "all") return null;
     const j = judete.find((x) => x.name === selectedJudet);
@@ -57,7 +81,7 @@ const Search = () => {
     return result;
   }, [products, judetCitiesSet, selectedCity, priceRange, sortBy]);
 
-  const hasActiveFilters = (selectedCategory && selectedCategory !== "all") || (selectedJudet && selectedJudet !== "all") || (selectedCity && selectedCity !== "all") || priceRange[0] > 0 || priceRange[1] < 1000 || sortBy !== "relevance";
+  const hasActiveFilters = (selectedCategory && selectedCategory !== "all") || (selectedJudet && selectedJudet !== "all") || (selectedCity && selectedCity !== "all") || (priceTouched && (priceRange[0] !== priceBounds[0] || priceRange[1] !== priceBounds[1])) || sortBy !== "relevance";
   const handleCityChange = (value: string) => {
     setSelectedCity(value);
     const np = new URLSearchParams(searchParams);
@@ -76,7 +100,7 @@ const Search = () => {
     setSearchParams(np, { replace: true });
   };
   const handleClearFilters = () => {
-    setSelectedCategory("all"); setSelectedJudet("all"); setSelectedCity("all"); setPriceRange([0, 1000]); setSortBy("relevance");
+    setSelectedCategory("all"); setSelectedJudet("all"); setSelectedCity("all"); setPriceRange(priceBounds); setPriceTouched(false); setSortBy("relevance");
     const np = new URLSearchParams(searchParams);
     np.delete("judet");
     np.delete("localitate");
@@ -99,7 +123,7 @@ const Search = () => {
               <Input type="text" placeholder={copy.search.placeholder} value={searchQuery} onChange={(e) => handleSearchChange(e.target.value)} className="h-12 pl-12 text-base" />
             </div>
             <div className="lg:hidden">
-              <SearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedCity={selectedCity} onCityChange={handleCityChange} selectedJudet={selectedJudet} onJudetChange={handleJudetChange} priceRange={priceRange} onPriceRangeChange={setPriceRange} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
+              <SearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedCity={selectedCity} onCityChange={handleCityChange} selectedJudet={selectedJudet} onJudetChange={handleJudetChange} priceRange={priceRange} onPriceRangeChange={handlePriceRangeChange} priceMin={priceBounds[0]} priceMax={priceBounds[1]} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
             </div>
           </div>
         </div>
@@ -134,7 +158,7 @@ const Search = () => {
             </Select>
           </div>
           <div className="flex items-center gap-2 ml-auto">
-            <InlineSearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedCity={selectedCity} onCityChange={handleCityChange} selectedJudet={selectedJudet} onJudetChange={handleJudetChange} priceRange={priceRange} onPriceRangeChange={setPriceRange} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} hideLocation />
+            <InlineSearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedCity={selectedCity} onCityChange={handleCityChange} selectedJudet={selectedJudet} onJudetChange={handleJudetChange} priceRange={priceRange} onPriceRangeChange={handlePriceRangeChange} priceMin={priceBounds[0]} priceMax={priceBounds[1]} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} hideLocation />
             <div className="hidden sm:flex items-center gap-1 rounded-lg border border-border p-1">
               <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("gallery")}><LayoutGrid className="h-4 w-4" /></Button>
               <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("list")}><List className="h-4 w-4" /></Button>
@@ -151,7 +175,17 @@ const Search = () => {
               </div>
             </div>
           )}
-          {!isLoading && filteredProducts.length === 0 && <EmptySearchState searchQuery={searchQuery} type="products" />}
+          {!isLoading && filteredProducts.length === 0 && (
+            products.length > 0 && hasActiveFilters ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <p className="text-lg font-medium text-foreground">{t("Niciun rezultat cu filtrele curente", "No results with the current filters")}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{t(`Există ${products.length} anunțuri care se potrivesc căutării.`, `There are ${products.length} listings that match your search.`)}</p>
+                <Button className="mt-4" onClick={handleClearFilters}>{t("Resetează filtrele", "Reset filters")}</Button>
+              </div>
+            ) : (
+              <EmptySearchState searchQuery={searchQuery} type="products" />
+            )
+          )}
         </div>
       </main>
       <Footer />

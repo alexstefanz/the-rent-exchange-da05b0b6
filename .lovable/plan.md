@@ -1,34 +1,39 @@
-# Fix: redenumirea categoriei nu mută produsele existente
+# Fix: filtrele de locație par „rupte" (Iași = 0 rezultate)
 
-## Cauza
-Tabelul `products` stochează categoria ca **text liber** (`products.category`, `products.subcategory`), nu ca foreign key spre `platform_categories.id`. Când admin-ul redenumește o categorie în tabelul `platform_categories` (ex. „Outdoor" → „Drumeții & Natură"), produsele rămân cu vechiul text și „dispar" din categoria nouă.
+## Diagnostic
+Am verificat în DB toate anunțurile din categoria **Unelte**:
 
-## Soluție
+| Titlu | Oraș | Preț/zi |
+|---|---|---|
+| autofiletantă cu impact | iasi | 2 RON |
+| Ciocan demolator | Iasi | 2 RON |
+| Ferăstrău spadă | Iasi | 1 RON |
+| Trusă universală | Iasi | 1 RON |
+| Manitou MRT 2150+ | Iasi | 2 RON |
 
-### 1. Trigger DB pe `platform_categories` (AFTER UPDATE)
-Când `name` sau `name_en` se schimbă, trigger-ul actualizează automat `products.category` pentru toate produsele care aveau valoarea veche. Identic pentru `platform_subcategories` → `products.subcategory`.
+Toate sunt în Iași. RPC-ul `search_products` folosește deja `unaccent + lower + LIKE`, deci „Iași" / „Iasi" / „iasi" se potrivesc corect — **filtrul de locație nu e bug-ul**.
 
-Avantaj: funcționează indiferent unde se face redenumirea (admin UI, dashboard widget, viitoare tool-uri, SQL direct).
+**Cauza reală**: în screenshot-ul tău sliderul **Interval preț** e setat la **90–370 RON**. Filtrul client-side din `CategoryDetail.tsx` (linia 107) elimină orice produs cu preț < 90 RON. Toate uneltele tale (1–2 RON) cad sub această valoare → 0 rezultate, indiferent de oraș.
 
-### 2. Backfill one-time pentru orfanii existenți
-Rulez în aceeași migrare: produsele cu `category = 'Outdoor'` → setate la noul nume al categoriei (`Drumeții & Natură`), astfel încât cortul tău reapare imediat. Verific întâi ce alte denumiri orfane mai există.
+Plus, când schimbi orașul în „Resetează filtrele" intervalul de preț **NU** se resetează — rămâne 90–370 și ascunde tot.
 
-### 3. Fără schimbări de cod frontend
-Nu e nevoie să modific `categoriesApi.ts` sau UI-ul admin — trigger-ul rezolvă transparent.
+## Soluție (UX + cod, fără modificări DB)
 
-## Detalii tehnice
+### 1. Slider de preț dinamic per categorie
+În loc de `max=1000` fix, calculez `min`/`max` din produsele încărcate pentru categoria curentă. Inițializez `priceRange` cu `[minActual, maxActual]`. Astfel, când deschizi Unelte, sliderul e 1–2 RON, iar Drumeții poate fi 90–370 RON. Nu mai există situații „sub minimul aparent".
 
-```sql
--- Funcție: la UPDATE pe platform_categories, propagă name change
-CREATE FUNCTION sync_products_on_category_rename() ...
-  IF NEW.name IS DISTINCT FROM OLD.name THEN
-    UPDATE products SET category = NEW.name WHERE category = OLD.name;
-  END IF;
+### 2. Empty state inteligent
+Dacă `products.length > 0` dar `filteredProducts.length === 0`, afișez un mesaj clar:
+> „Niciun rezultat cu filtrele curente. Există X anunțuri în această categorie."
 
--- Trigger AFTER UPDATE pe platform_categories
--- Trigger similar AFTER UPDATE pe platform_subcategories
--- Backfill: UPDATE products SET category='Drumeții & Natură' WHERE category='Outdoor';
-```
+cu buton **„Resetează filtrele"** care apelează `handleClearFilters()`. Înlocuiește `EmptySearchState` generic în acest caz.
+
+### 3. Reset complet la „Resetează filtrele"
+Verific că `handleClearFilters` resetează și `priceRange` la `[minActual, maxActual]` (azi probabil îl resetează la `[0, 1000]` care nu mai e corect cu sliderul dinamic).
+
+## Fișiere afectate
+- `src/pages/CategoryDetail.tsx` — calcul `priceBounds` din `products`, init `priceRange`, empty state condițional, `handleClearFilters` actualizat.
+- (Opțional) `src/components/search/SearchFilters.tsx` — accept props `priceMin` / `priceMax` pentru slider, fallback `0`/`1000`.
 
 ## Notă
-Migrarea pe termen lung către FK (`category_id uuid REFERENCES platform_categories`) ar fi mai curată, dar implică refactor masiv în filtre, query-uri și seed. Trigger-ul rezolvă problema raportată acum, fără regresii.
+Aceeași logică se aplică și pe `/cauta` (Search.tsx) — fac extensia și acolo în același pas pentru consistență.
