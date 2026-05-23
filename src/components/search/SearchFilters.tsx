@@ -21,6 +21,10 @@ interface SearchFiltersProps {
   onSortByChange: (value: string) => void;
   onClearFilters: () => void;
   hasActiveFilters: boolean;
+  /** Optional: when provided, the "Category" dropdown is replaced by a subcategory dropdown. */
+  subcategoryOptions?: { value: string; label: string }[];
+  selectedSubcategory?: string;
+  onSubcategoryChange?: (value: string) => void;
 }
 
 const sortedCities = Array.from(new Set(judete.flatMap((j) => j.localitati))).sort((a, b) =>
@@ -29,6 +33,7 @@ const sortedCities = Array.from(new Set(judete.flatMap((j) => j.localitati))).so
 
 const SearchFiltersContent = ({
   selectedCategory, onCategoryChange, selectedCity, onCityChange, priceRange, onPriceRangeChange, sortBy, onSortByChange, onClearFilters, hasActiveFilters,
+  subcategoryOptions, selectedSubcategory, onSubcategoryChange,
 }: SearchFiltersProps) => {
   const copy = useUxCopy();
   const { language, t } = useLanguage();
@@ -42,16 +47,33 @@ const SearchFiltersContent = ({
       )}
 
       <div className="space-y-3">
-        <label className="text-sm font-medium text-foreground">{copy.search.filters.category}</label>
-        <Select value={selectedCategory} onValueChange={onCategoryChange}>
-          <SelectTrigger className="w-full"><SelectValue placeholder={copy.search_page.allCategoriesFilter} /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{copy.search_page.allCategoriesFilter}</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category.id} value={category.name}>{language === "en" && category.nameEn ? category.nameEn : category.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {subcategoryOptions ? (
+          <>
+            <label className="text-sm font-medium text-foreground">{t("Subcategorie", "Subcategory")}</label>
+            <Select value={selectedSubcategory ?? "all"} onValueChange={onSubcategoryChange}>
+              <SelectTrigger className="w-full"><SelectValue placeholder={t("Toate subcategoriile", "All subcategories")} /></SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                <SelectItem value="all">{t("Toate subcategoriile", "All subcategories")}</SelectItem>
+                {subcategoryOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
+        ) : (
+          <>
+            <label className="text-sm font-medium text-foreground">{copy.search.filters.category}</label>
+            <Select value={selectedCategory} onValueChange={onCategoryChange}>
+              <SelectTrigger className="w-full"><SelectValue placeholder={copy.search_page.allCategoriesFilter} /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{copy.search_page.allCategoriesFilter}</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.name}>{language === "en" && category.nameEn ? category.nameEn : category.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
+        )}
       </div>
 
       <div className="space-y-3">
@@ -96,6 +118,7 @@ const SearchFiltersContent = ({
 
 export const InlineSearchFilters = ({
   selectedCategory, onCategoryChange, selectedCity, onCityChange, priceRange, onPriceRangeChange, sortBy, onSortByChange, onClearFilters, hasActiveFilters,
+  subcategoryOptions, selectedSubcategory, onSubcategoryChange,
 }: SearchFiltersProps) => {
   const copy = useUxCopy();
   const { language, t } = useLanguage();
@@ -106,17 +129,31 @@ export const InlineSearchFilters = ({
 
   return (
     <div className="hidden lg:flex items-center gap-2">
-      <Select value={selectedCategory} onValueChange={onCategoryChange}>
-        <SelectTrigger className="h-9 w-auto min-w-[140px] text-sm">
-          <SelectValue placeholder={copy.search_page.allCategoriesFilter} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{copy.search_page.allCategoriesFilter}</SelectItem>
-          {categories.map((category) => (
-            <SelectItem key={category.id} value={category.name}>{language === "en" && category.nameEn ? category.nameEn : category.name}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {subcategoryOptions ? (
+        <Select value={selectedSubcategory ?? "all"} onValueChange={onSubcategoryChange}>
+          <SelectTrigger className="h-9 w-auto min-w-[160px] text-sm">
+            <SelectValue placeholder={t("Toate subcategoriile", "All subcategories")} />
+          </SelectTrigger>
+          <SelectContent className="max-h-[300px]">
+            <SelectItem value="all">{t("Toate subcategoriile", "All subcategories")}</SelectItem>
+            {subcategoryOptions.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      ) : (
+        <Select value={selectedCategory} onValueChange={onCategoryChange}>
+          <SelectTrigger className="h-9 w-auto min-w-[140px] text-sm">
+            <SelectValue placeholder={copy.search_page.allCategoriesFilter} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{copy.search_page.allCategoriesFilter}</SelectItem>
+            {categories.map((category) => (
+              <SelectItem key={category.id} value={category.name}>{language === "en" && category.nameEn ? category.nameEn : category.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
 
       <Select value={selectedCity} onValueChange={onCityChange}>
         <SelectTrigger className="h-9 w-auto min-w-[140px] text-sm">
