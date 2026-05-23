@@ -1,19 +1,19 @@
-## Goal
-Transform the mobile bottom navigation (`MobileBottomNav.tsx`) into a floating glassmorphism pill — white translucent background with orange accents — inspired by the Apple News+ / iOS pill examples.
+## Issue
+On `/produs/...`, the sticky `MobileStickyBookingBar` (with "Selectează datele" + "Verifică datele"/"Întreabă") overlaps the new floating glass bottom nav, and its solid card/border style doesn't match the new nav aesthetic.
 
-## Visual direction
-- **Floating pill**, detached from the screen edges: `fixed bottom-3 left-3 right-3`, with `env(safe-area-inset-bottom)` padding preserved below.
-- **Glass effect**: `bg-white/60` + `backdrop-blur-xl` + `backdrop-saturate-150`, subtle inner highlight via `border border-white/60`, soft drop shadow (`shadow-[0_8px_32px_-8px_rgba(0,0,0,0.18)]`).
-- **Shape**: full rounded pill (`rounded-full`), height ~64px.
-- **Active tab**: orange text (`text-primary` = #F59E0B) + small orange dot or soft orange tinted background pill behind the icon (`bg-primary/10`), matching the iOS "selected segment" feel.
-- **Inactive tabs**: dark neutral icon/label (`text-foreground/70`).
-- **Center "Adaugă" button**: keep the solid orange circle (#F98715), slightly elevated above the pill with a soft orange glow (`shadow-[0_6px_20px_-4px_rgba(249,135,21,0.5)]`) so it pops like the red search bubble in image 3.
-- **Badge** (unread chat): keep destructive red dot, repositioned cleanly over the glass.
+## Fix — single file: `src/components/product/MobileStickyBookingBar.tsx`
 
-## Files to change
-1. **`src/components/layout/MobileBottomNav.tsx`** — rewrite the outer `<nav>` container styling (floating pill, glass, rounded-full), tweak per-tab active styling (orange pill behind active icon), keep the highlight Plus button visually lifted.
-2. **`src/index.css`** — adjust the mobile body bottom padding (`@media (max-width: 1023px) { body { padding-bottom: ... } }`) from `4rem` to ~`5.5rem` so floating nav doesn't overlap page content.
+1. **Position above the floating nav, no overlap**
+   - Outer wrapper becomes a floating container: `fixed left-3 right-3 z-[60]` with `bottom: calc(4rem + 12px + 12px + env(safe-area-inset-bottom))` (nav height 64px + nav's bottom-3 offset + 12px gap + safe area). This leaves a clean gap between the booking bar and the bottom nav.
 
-## Non-goals
-- No changes to desktop navbar, routes, icons set, badge logic, or banned-state behavior.
-- No new dependencies.
+2. **Glass pill styling, consistent with `MobileBottomNav`**
+   - Replace `bg-card/95 backdrop-blur-xl border-t border-border shadow-[0_-8px_24px_...]` with:
+     `rounded-3xl border border-white/60 bg-white/70 backdrop-blur-xl backdrop-saturate-150 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.18)]`
+   - Inner padding remains `px-4 pt-3 pb-3`.
+
+3. **Buttons polish to match**
+   - "Verifică datele" / "Rezervă acum" primary button keeps `bg-primary` but gets `rounded-full` and a soft orange glow `shadow-[0_6px_20px_-4px_rgba(249,135,21,0.45)]` echoing the floating "Adaugă" button.
+   - "Întreabă" outline button: `rounded-full bg-white/70 border-white/70 backdrop-blur` so it reads as part of the glass surface.
+
+## Out of scope
+- No changes to `MobileBottomNav`, desktop booking card, or any logic. Pure visual/positional tweak to the mobile sticky bar.
