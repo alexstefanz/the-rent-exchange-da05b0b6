@@ -1025,7 +1025,9 @@ const Step4Location = ({
   errors: Record<string, string>;
 }) => {
   const { t } = useLanguage();
-  const cities = judete.find((j) => j.name === data.location_county)?.localitati || [];
+  const cities = [...(judete.find((j) => j.name === data.location_county)?.localitati || [])].sort(
+    (a, b) => a.localeCompare(b, "ro", { sensitivity: "base" }),
+  );
 
   return (
     <div>
