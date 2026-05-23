@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import ProductCard from "@/components/products/ProductCard";
+import CategoryHero from "@/components/category/CategoryHero";
 import SearchFilters, { InlineSearchFilters } from "@/components/search/SearchFilters";
 import EmptySearchState from "@/components/search/EmptySearchState";
 import { useProducts } from "@/hooks/queries/useProducts";
@@ -42,6 +43,23 @@ const CategoryDetail = () => {
 
   const catName = category ? (language === "en" ? category.nameEn : category.name) : "";
 
+  const bannerImage = useMemo(() => {
+    if (!category) return "";
+    const sub = category.subcategories.find((s) => s.image);
+    const base = sub?.image || "";
+    if (!base) return "";
+    // Upscale Unsplash URLs
+    try {
+      const url = new URL(base);
+      if (url.hostname.includes("unsplash.com")) {
+        url.searchParams.set("w", "1920");
+        url.searchParams.set("q", "85");
+        return url.toString();
+      }
+    } catch {}
+    return base;
+  }, [category]);
+
   const subcategoryOptions = useMemo(() => {
     if (!category) return [];
     return category.subcategories
@@ -58,6 +76,20 @@ const CategoryDetail = () => {
   }, [category, searchQuery, selectedCity]);
 
   const { data: products = [], isLoading } = useProducts(category ? productFilters : undefined);
+
+  const { topCity, newThisWeek } = useMemo(() => {
+    if (!products.length) return { topCity: null as string | null, newThisWeek: 0 };
+    const counts: Record<string, number> = {};
+    let weekCount = 0;
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    for (const p of products) {
+      if (p.location_city) counts[p.location_city] = (counts[p.location_city] || 0) + 1;
+      const created = (p as any).created_at ? new Date((p as any).created_at).getTime() : 0;
+      if (created && created >= weekAgo) weekCount++;
+    }
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    return { topCity: top ? top[0] : null, newThisWeek: weekCount };
+  }, [products]);
 
   const filteredProducts = useMemo(() => {
     let result = products.filter((p) => {
@@ -135,13 +167,14 @@ const CategoryDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+      <CategoryHero
+        name={catName}
+        bannerImage={bannerImage}
+        total={products.length}
+        newThisWeek={newThisWeek}
+        topCity={topCity}
+      />
       <main className="container py-8">
-        <div className="mb-6">
-          <h1 className="font-heading text-2xl font-bold text-foreground md:text-3xl">{catName}</h1>
-          <p className="mt-1 text-muted-foreground">
-            {searchQuery ? copy.search_page.searchFor(searchQuery) : copy.search_page.allProducts}
-          </p>
-        </div>
         <div className="mb-6">
           <div className="relative max-w-2xl">
             <SearchIcon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
