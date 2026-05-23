@@ -272,7 +272,7 @@ const SearchFilters = (props: SearchFiltersProps) => {
     <div className="lg:hidden">
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
-          <Button className="h-12 gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
+          <Button className="h-10 gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
             <Filter className="h-4 w-4" />
             {copy.search_page.filters}
             {props.hasActiveFilters && (
