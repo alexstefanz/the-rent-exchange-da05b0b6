@@ -25,6 +25,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import RentalsOutTab from "@/components/dashboard/RentalsOutTab";
+import { getActiveDraft, deleteDraft, type ProductDraft } from "@/features/publish/draftsApi";
+import { FileText, Trash2 } from "lucide-react";
 
 const deriveStatus = (p: Product): ListingStatus => {
   const a = (p as any).approval_status as string | undefined;
@@ -60,6 +62,30 @@ const ListingsPage = () => {
   const [availabilityProduct, setAvailabilityProduct] = useState<Product | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Product | null>(null);
   const [confirmHide, setConfirmHide] = useState<Product | null>(null);
+  const [draft, setDraft] = useState<ProductDraft | null>(null);
+  const [confirmDeleteDraft, setConfirmDeleteDraft] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    getActiveDraft(user.id, null).then((d) => {
+      if (!d) return setDraft(null);
+      const payload = (d.payload || {}) as any;
+      const isEmpty = !payload?.title && !payload?.category && (!payload?.images || payload.images.length === 0);
+      setDraft(isEmpty ? null : d);
+    });
+  }, [user?.id]);
+
+  const handleDeleteDraft = async () => {
+    if (!draft) return;
+    try {
+      await deleteDraft(draft.id);
+      toast({ title: t("Draft șters", "Draft deleted") });
+      setDraft(null);
+    } catch {
+      toast({ title: t("Eroare la ștergere", "Delete failed"), variant: "destructive" });
+    }
+    setConfirmDeleteDraft(false);
+  };
 
   useEffect(() => {
     if (!loading && !user) navigate("/auth", { replace: true });
@@ -203,6 +229,37 @@ const ListingsPage = () => {
           </TabsList>
 
           <TabsContent value="anunturi" className="space-y-6 mt-0">
+        {draft && (
+          <div className="flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+              <FileText className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-sm">
+                {t("Ai un draft nesalvat", "You have an unsaved draft")}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {(draft.payload as any)?.title?.trim() || t("Anunț fără titlu", "Untitled listing")}
+                {(draft.payload as any)?.category ? ` · ${(draft.payload as any).category}` : ""}
+              </p>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <Button size="sm" variant="outline" asChild>
+                <Link to="/owner/new-product">{t("Continuă", "Continue")}</Link>
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                onClick={() => setConfirmDeleteDraft(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="hidden sm:inline">{t("Șterge", "Delete")}</span>
+              </Button>
+            </div>
+          </div>
+        )}
+
         {hasNoProducts ? (
           <ListingsEmptyState />
         ) : (
