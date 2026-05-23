@@ -1,19 +1,20 @@
 ## Issue
-On `/produs/...`, the sticky `MobileStickyBookingBar` (with "Selectează datele" + "Verifică datele"/"Întreabă") overlaps the new floating glass bottom nav, and its solid card/border style doesn't match the new nav aesthetic.
+The city `Select` in `MobileFilterSheet` shows cities in raw data order (and capped to the first 80), so they look unsorted. The same applies to per-județ city lists in `HeroSearchForm`, `SubcategoryDetail`, and `PublishWizard`.
 
-## Fix — single file: `src/components/product/MobileStickyBookingBar.tsx`
+## Fix
+Sort cities alphabetically using Romanian locale-aware `localeCompare("ro", { sensitivity: "base" })` (handles ă/â/î/ș/ț correctly). "Toate orașele" stays pinned at the top.
 
-1. **Position above the floating nav, no overlap**
-   - Outer wrapper becomes a floating container: `fixed left-3 right-3 z-[60]` with `bottom: calc(4rem + 12px + 12px + env(safe-area-inset-bottom))` (nav height 64px + nav's bottom-3 offset + 12px gap + safe area). This leaves a clean gap between the booking bar and the bottom nav.
+### Files
+1. **`src/components/category/MobileFilterSheet.tsx`** — replace `judete.flatMap(j => j.localitati).slice(0, 80)` with the full deduped list sorted RO-alphabetically, then sliced if needed. Drop the 80-cap (or raise it to e.g. 500) so users can find their city; keep `max-h-[40vh]` scroll on the SelectContent.
 
-2. **Glass pill styling, consistent with `MobileBottomNav`**
-   - Replace `bg-card/95 backdrop-blur-xl border-t border-border shadow-[0_-8px_24px_...]` with:
-     `rounded-3xl border border-white/60 bg-white/70 backdrop-blur-xl backdrop-saturate-150 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.18)]`
-   - Inner padding remains `px-4 pt-3 pb-3`.
+2. **`src/components/HeroSearchForm.tsx`** — sort the `localitati` array (per selected județ) alphabetically before mapping into `SelectItem`s in both spots (lines 144 and 168).
 
-3. **Buttons polish to match**
-   - "Verifică datele" / "Rezervă acum" primary button keeps `bg-primary` but gets `rounded-full` and a soft orange glow `shadow-[0_6px_20px_-4px_rgba(249,135,21,0.45)]` echoing the floating "Adaugă" button.
-   - "Întreabă" outline button: `rounded-full bg-white/70 border-white/70 backdrop-blur` so it reads as part of the glass surface.
+3. **`src/pages/SubcategoryDetail.tsx`** — same sort on the `localitati` map (line 184).
+
+4. **`src/components/publish/PublishWizard.tsx`** — sort the `cities` array (line 1028) before rendering.
+
+### Technical note
+Use a small helper inline: `[...arr].sort((a, b) => a.localeCompare(b, "ro", { sensitivity: "base" }))`. No changes to `romaniaLocations.ts` data source.
 
 ## Out of scope
-- No changes to `MobileBottomNav`, desktop booking card, or any logic. Pure visual/positional tweak to the mobile sticky bar.
+- No change to județ ordering, no UI restyling, no search-in-dropdown feature.
