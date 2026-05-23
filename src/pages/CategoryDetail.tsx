@@ -189,8 +189,8 @@ const CategoryDetail = () => {
         topCity={topCity}
       />
       <main className="container py-8">
-        <div className="mb-6">
-          <div className="relative max-w-2xl">
+        <div className="mb-6 flex items-center gap-2 max-w-2xl">
+          <div className="relative flex-1">
             <SearchIcon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="text"
@@ -198,6 +198,25 @@ const CategoryDetail = () => {
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="h-12 pl-12 text-base"
+            />
+          </div>
+          <div className="lg:hidden">
+            <SearchFilters
+              selectedCategory="all"
+              onCategoryChange={() => {}}
+              selectedCity={selectedCity}
+              onCityChange={handleCityChange}
+              selectedJudet={selectedJudet}
+              onJudetChange={handleJudetChange}
+              priceRange={priceRange}
+              onPriceRangeChange={setPriceRange}
+              sortBy={sortBy}
+              onSortByChange={setSortBy}
+              onClearFilters={handleClearFilters}
+              hasActiveFilters={hasActiveFilters}
+              subcategoryOptions={subcategoryOptions}
+              selectedSubcategory={selectedSubcategory}
+              onSubcategoryChange={handleSubcategoryChange}
             />
           </div>
         </div>
@@ -254,23 +273,6 @@ const CategoryDetail = () => {
               onSubcategoryChange={handleSubcategoryChange}
               hideLocation
             />
-            <SearchFilters
-              selectedCategory="all"
-              onCategoryChange={() => {}}
-              selectedCity={selectedCity}
-              onCityChange={handleCityChange}
-              selectedJudet={selectedJudet}
-              onJudetChange={handleJudetChange}
-              priceRange={priceRange}
-              onPriceRangeChange={setPriceRange}
-              sortBy={sortBy}
-              onSortByChange={setSortBy}
-              onClearFilters={handleClearFilters}
-              hasActiveFilters={hasActiveFilters}
-              subcategoryOptions={subcategoryOptions}
-              selectedSubcategory={selectedSubcategory}
-              onSubcategoryChange={handleSubcategoryChange}
-            />
             <div className="hidden sm:flex items-center gap-1 rounded-lg border border-border p-1">
               <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("gallery")}>
                 <LayoutGrid className="h-4 w-4" />
@@ -281,11 +283,6 @@ const CategoryDetail = () => {
             </div>
           </div>
         </div>
-        {!isLoading && (
-          <p className="mb-4 text-sm text-muted-foreground">
-            {copy.search.resultsCount(filteredProducts.length)}
-          </p>
-        )}
         <div className="min-w-0">
           {isLoading && (
             <div className="flex items-center justify-center py-12">
