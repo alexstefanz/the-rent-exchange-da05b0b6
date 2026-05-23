@@ -403,6 +403,26 @@ const ListingsPage = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={confirmDeleteDraft} onOpenChange={setConfirmDeleteDraft}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("Ștergi draftul?", "Delete draft?")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t(
+                "Draftul va fi eliminat definitiv. Această acțiune nu poate fi anulată.",
+                "The draft will be permanently removed. This action cannot be undone.",
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("Anulează", "Cancel")}</AlertDialogCancel>
+            <AlertDialogAction className="bg-rose-600 hover:bg-rose-700" onClick={handleDeleteDraft}>
+              {t("Șterge", "Delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Footer />
     </div>
   );
