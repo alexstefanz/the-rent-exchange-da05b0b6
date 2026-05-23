@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2, ArrowLeft, Plus, Package, Inbox } from "lucide-react";
+import { Loader2, ArrowLeft, Plus, Package, Inbox, FileText, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from "@/components/layout/Navbar";
@@ -26,7 +26,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import RentalsOutTab from "@/components/dashboard/RentalsOutTab";
 import { getActiveDraft, deleteDraft, type ProductDraft } from "@/features/publish/draftsApi";
-import { FileText, Trash2 } from "lucide-react";
 
 const deriveStatus = (p: Product): ListingStatus => {
   const a = (p as any).approval_status as string | undefined;
