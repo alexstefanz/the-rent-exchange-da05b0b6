@@ -1,6 +1,6 @@
 const createUxCopy = () => ({
   search: {
-    placeholder: { ro: "Caută obiecte de închiriat", en: "Search items to rent" },
+    placeholder: { ro: "Caută obiecte", en: "Search items to rent" },
     noResults: { ro: "Nu am găsit exact ce cauți", en: "We couldn't find what you're looking for" },
     noResultsSubtitle: { ro: "Încearcă termeni mai generali sau extinde zona de căutare", en: "Try broader terms or expand the search area" },
     suggestions: { ro: "Sugestii pentru tine", en: "Suggestions for you" },
