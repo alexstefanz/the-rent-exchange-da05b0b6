@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
 import { Search as SearchIcon, Loader2, LayoutGrid, List } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,7 @@ const CategoryDetail = () => {
   const [selectedJudet, setSelectedJudet] = useState(judetFilter || "all");
   const [selectedCity, setSelectedCity] = useState(localitateFilter || "all");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [priceTouched, setPriceTouched] = useState(false);
   const [sortBy, setSortBy] = useState("relevance");
 
   const catName = category ? (language === "en" ? category.nameEn : category.name) : "";
@@ -76,6 +77,33 @@ const CategoryDetail = () => {
   }, [category, searchQuery, selectedCity]);
 
   const { data: products = [], isLoading } = useProducts(category ? productFilters : undefined);
+
+  // Dynamic price bounds based on the products in this category (client price incl. fee).
+  const priceBounds = useMemo<[number, number]>(() => {
+    if (!products.length) return [0, 1000];
+    let min = Infinity;
+    let max = -Infinity;
+    for (const p of products) {
+      const cp = calculateClientPrice(p.daily_price_owner, p.platform_fee_percent);
+      if (cp < min) min = cp;
+      if (cp > max) max = cp;
+    }
+    const lo = Math.floor(Math.max(0, min));
+    const hi = Math.ceil(Math.max(lo + 1, max));
+    return [lo, hi];
+  }, [products]);
+
+  // Sync slider to actual bounds until the user moves it.
+  useEffect(() => {
+    if (!priceTouched) {
+      setPriceRange(priceBounds);
+    }
+  }, [priceBounds, priceTouched]);
+
+  const handlePriceRangeChange = (value: [number, number]) => {
+    setPriceTouched(true);
+    setPriceRange(value);
+  };
 
   const { topCity, newThisWeek } = useMemo(() => {
     if (!products.length) return { topCity: null as string | null, newThisWeek: 0 };
@@ -116,7 +144,7 @@ const CategoryDetail = () => {
     (selectedSubcategory && selectedSubcategory !== "all") ||
     (selectedJudet && selectedJudet !== "all") ||
     (selectedCity && selectedCity !== "all") ||
-    priceRange[0] > 0 || priceRange[1] < 1000 ||
+    (priceTouched && (priceRange[0] !== priceBounds[0] || priceRange[1] !== priceBounds[1])) ||
     sortBy !== "relevance";
 
   const updateParam = (key: string, value: string) => {
@@ -154,7 +182,8 @@ const CategoryDetail = () => {
     setSelectedSubcategory("all");
     setSelectedJudet("all");
     setSelectedCity("all");
-    setPriceRange([0, 1000]);
+    setPriceRange(priceBounds);
+    setPriceTouched(false);
     setSortBy("relevance");
     const np = new URLSearchParams(searchParams);
     np.delete("subcategorie");
