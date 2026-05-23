@@ -168,7 +168,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/15">
               <ShieldCheck className="h-3 w-3 text-primary" />
             </span>
-            <span className="truncate max-w-[100px]">{displayCategory}</span>
+            <span className="truncate max-w-[100px] text-xs">{displayCategory}</span>
           </span>
         )}
         <button
