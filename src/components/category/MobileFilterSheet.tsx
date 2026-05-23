@@ -100,7 +100,9 @@ const MobileFilterSheet = ({
               </SelectTrigger>
               <SelectContent className="max-h-[40vh]">
                 <SelectItem value="all">{t("Toate orașele", "All cities")}</SelectItem>
-                {judete.flatMap((j) => j.localitati).slice(0, 80).map((loc) => (
+                {Array.from(new Set(judete.flatMap((j) => j.localitati)))
+                  .sort((a, b) => a.localeCompare(b, "ro", { sensitivity: "base" }))
+                  .map((loc) => (
                   <SelectItem key={loc} value={loc}>{loc}</SelectItem>
                 ))}
               </SelectContent>
