@@ -116,15 +116,10 @@ const Search = () => {
           <h1 className="font-heading text-2xl font-bold text-foreground md:text-3xl">{copy.search_page.title}</h1>
           <p className="mt-1 text-muted-foreground hidden md:block">{searchQuery ? copy.search_page.searchFor(searchQuery) : copy.search_page.allProducts}</p>
         </div>
-        <div className="mb-6">
-          <div className="flex items-center gap-2 max-w-2xl">
-            <div className="relative flex-1">
-              <SearchIcon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-              <Input type="text" placeholder={copy.search.placeholder} value={searchQuery} onChange={(e) => handleSearchChange(e.target.value)} className="h-12 pl-12 text-base" />
-            </div>
-            <div className="lg:hidden">
-              <SearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedCity={selectedCity} onCityChange={handleCityChange} selectedJudet={selectedJudet} onJudetChange={handleJudetChange} priceRange={priceRange} onPriceRangeChange={handlePriceRangeChange} priceMin={priceBounds[0]} priceMax={priceBounds[1]} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
-            </div>
+        <div className="mb-6 max-w-2xl">
+          <div className="relative">
+            <SearchIcon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input type="text" placeholder={copy.search.placeholder} value={searchQuery} onChange={(e) => handleSearchChange(e.target.value)} className="h-12 pl-12 text-base" />
           </div>
         </div>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
@@ -157,11 +152,19 @@ const Search = () => {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center gap-2 ml-auto">
+          {/* Mobile-only: grid/list on the left */}
+          <div className="flex lg:hidden items-center gap-1 rounded-lg border border-border p-1">
+            <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("gallery")}><LayoutGrid className="h-4 w-4" /></Button>
+            <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("list")}><List className="h-4 w-4" /></Button>
+          </div>
+          <div className="flex items-center gap-2">
             <InlineSearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedCity={selectedCity} onCityChange={handleCityChange} selectedJudet={selectedJudet} onJudetChange={handleJudetChange} priceRange={priceRange} onPriceRangeChange={handlePriceRangeChange} priceMin={priceBounds[0]} priceMax={priceBounds[1]} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} hideLocation />
-            <div className="flex items-center gap-1 rounded-lg border border-border p-1">
+            <div className="hidden lg:flex items-center gap-1 rounded-lg border border-border p-1">
               <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("gallery")}><LayoutGrid className="h-4 w-4" /></Button>
               <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("list")}><List className="h-4 w-4" /></Button>
+            </div>
+            <div className="lg:hidden">
+              <SearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedCity={selectedCity} onCityChange={handleCityChange} selectedJudet={selectedJudet} onJudetChange={handleJudetChange} priceRange={priceRange} onPriceRangeChange={handlePriceRangeChange} priceMin={priceBounds[0]} priceMax={priceBounds[1]} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
             </div>
           </div>
         </div>
