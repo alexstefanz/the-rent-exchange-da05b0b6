@@ -43,8 +43,8 @@ const MobileStickyBookingBar = (props: Props) => {
 
   return (
     <div
-      className="lg:hidden fixed left-0 right-0 z-[60] bg-card/95 backdrop-blur-xl border-t border-border shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.15)]"
-      style={{ bottom: "calc(4rem + env(safe-area-inset-bottom))" }}
+      className="lg:hidden fixed left-3 right-3 z-[60] rounded-3xl border border-white/60 bg-white/70 backdrop-blur-xl backdrop-saturate-150 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.18)]"
+      style={{ bottom: "calc(4rem + 24px + env(safe-area-inset-bottom))" }}
     >
       <div className="px-4 pt-3 pb-3 flex flex-col gap-2.5">
         {/* Row 1: dates + total */}
@@ -87,19 +87,19 @@ const MobileStickyBookingBar = (props: Props) => {
 
         {/* Row 2: buttons side by side */}
         <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" size="lg" className="h-11 font-semibold" onClick={onAsk}>
+          <Button variant="outline" size="lg" className="h-11 rounded-full font-semibold bg-white/70 border-white/70 backdrop-blur" onClick={onAsk}>
             <MessageCircle className="h-4 w-4 mr-1.5" />
             {t("Întreabă", "Ask")}
           </Button>
           {hasDates ? (
-            <Button size="lg" className="h-11 font-semibold" onClick={onReserve}>
+            <Button size="lg" className="h-11 rounded-full font-semibold shadow-[0_6px_20px_-4px_rgba(249,135,21,0.45)]" onClick={onReserve}>
               <CheckCircle2 className="h-4 w-4 mr-1.5" />
               {t("Rezervă acum", "Reserve now")}
             </Button>
           ) : (
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="lg" className="h-11 font-semibold">
+                <Button size="lg" className="h-11 rounded-full font-semibold shadow-[0_6px_20px_-4px_rgba(249,135,21,0.45)]">
                   <CalendarCheck className="h-4 w-4 mr-1.5" />
                   {t("Verifică datele", "Check dates")}
                 </Button>
