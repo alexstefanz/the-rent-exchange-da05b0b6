@@ -30,9 +30,9 @@ const CategoryHero = ({ name, bannerImage, total, newThisWeek, topCity }: Catego
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/30" />
       <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent" />
 
-      <div className="container relative z-10 flex h-full flex-col justify-end pb-8 md:pb-10">
+      <div className="container relative z-10 flex h-full flex-col items-center text-center md:items-start md:text-left justify-end pb-8 md:pb-10">
         {/* Breadcrumb */}
-        <nav className="mb-3 flex items-center gap-1.5 text-xs text-white/75">
+        <nav className="mb-3 flex items-center justify-center md:justify-start gap-1.5 text-xs text-white/75">
           <Link to="/" className="hover:text-white transition-colors">{t("Acasă", "Home")}</Link>
           <ChevronRight className="h-3 w-3" />
           <Link to="/categorii" className="hover:text-white transition-colors">{t("Categorii", "Categories")}</Link>
@@ -40,12 +40,12 @@ const CategoryHero = ({ name, bannerImage, total, newThisWeek, topCity }: Catego
           <span className="text-white/90">{name}</span>
         </nav>
 
-        <h1 className="font-heading text-4xl md:text-5xl font-bold text-white drop-shadow-md max-w-3xl">
+        <h1 className="font-heading text-4xl md:text-5xl font-bold text-white drop-shadow-md max-w-3xl mx-auto md:mx-0">
           {name}
         </h1>
 
         {/* Stats chips */}
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="mt-4 flex flex-wrap items-center justify-center md:justify-start gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm text-white ring-1 ring-white/20 backdrop-blur-md">
             <span className="font-semibold tabular-nums">{totalCount}</span>
             {t("produse disponibile", "products available")}
