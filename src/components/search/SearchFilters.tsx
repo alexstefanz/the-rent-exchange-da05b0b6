@@ -269,11 +269,11 @@ const SearchFilters = (props: SearchFiltersProps) => {
     <div className="lg:hidden">
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
-          <Button variant="outline" className="gap-2">
+          <Button className="h-12 gap-2 bg-primary text-primary-foreground hover:bg-primary/90">
             <Filter className="h-4 w-4" />
             {copy.search_page.filters}
             {props.hasActiveFilters && (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">!</span>
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-foreground text-xs text-primary">!</span>
             )}
           </Button>
         </SheetTrigger>
