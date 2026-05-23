@@ -172,12 +172,18 @@ const ListingsPage = () => {
             </Button>
           </div>
 
-          <TabsList className="h-auto bg-muted/60 p-1">
-            <TabsTrigger value="anunturi" className="gap-2 px-4 py-2">
+          <TabsList className="grid w-full grid-cols-2 h-auto bg-muted/60 p-1 sm:inline-flex sm:w-auto">
+            <TabsTrigger
+              value="anunturi"
+              className="gap-2 px-4 py-2.5 font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+            >
               <Package className="h-4 w-4" />
               {t("Anunțuri", "Listings")}
             </TabsTrigger>
-            <TabsTrigger value="cereri" className="relative gap-2 px-4 py-2">
+            <TabsTrigger
+              value="cereri"
+              className="relative gap-2 px-4 py-2.5 font-semibold data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=active]:shadow-sm"
+            >
               <Inbox className="h-4 w-4" />
               {t("Cereri primite", "Requests received")}
               {(stats?.new_requests ?? 0) > 0 && (
