@@ -1,12 +1,12 @@
-# Toggle Grid/List pe mobil — Categorii și Search
+# Layout mobil — Search & Categorii
 
-Switch-ul grid/list există deja pe desktop (în `CategoryDetail.tsx` și `Search.tsx`), dar e ascuns pe mobil (`hidden sm:flex`). Îl fac vizibil pe toate dimensiunile.
+## Modificări (`src/pages/CategoryDetail.tsx` și `src/pages/Search.tsx`)
 
-## Modificări
-- `src/pages/CategoryDetail.tsx` — schimb `hidden sm:flex` → `flex` pe containerul cu cele 2 butoane (LayoutGrid / List).
-- `src/pages/Search.tsx` — același lucru.
+1. **Search input full width** pe rândul lui — scot butonul `<SearchFilters>` (mobile sheet) de lângă input.
+2. **Rândul de sub** (cel care conține deja toggle-ul grid/list) devine: 
+   - **stânga**: switcher grid/list 
+   - **dreapta**: butonul „Filtre" (`<SearchFilters>` mobile sheet)
+   
+   Realizat cu `flex items-center justify-between` (toggle-ul fără `ml-auto`, butonul Filtre cu `ml-auto` sau plasat direct la final). Pe desktop (`lg:`) butonul Filtre rămâne ascuns (deja are `lg:hidden`), iar `InlineSearchFilters` rămâne în dreapta ca acum.
 
-## Notă
-Pe mobil, în modul „list" cardurile vor fi stivuite vertical pe toată lățimea (grila actuală `grid-cols-2` se folosește doar în modul „gallery"). Codul deja suportă asta — `viewMode === "list"` returnează `flex flex-col gap-4`.
-
-Despre „pagina de produse": în proiect nu există o pagină distinctă `/produse` — listele de produse sunt afișate pe Categorii și Search. Dacă te referi la „Produsele mele" (`/anunțuri`, dashboard-ul tău), spune-mi și adaug acolo separat.
+Nu schimb nimic la desktop. Nu modific componenta `SearchFilters` în sine.
