@@ -114,7 +114,7 @@ const Search = () => {
       <main className="container py-8">
         <div className="mb-6">
           <h1 className="font-heading text-2xl font-bold text-foreground md:text-3xl">{copy.search_page.title}</h1>
-          <p className="mt-1 text-muted-foreground">{searchQuery ? copy.search_page.searchFor(searchQuery) : copy.search_page.allProducts}</p>
+          <p className="mt-1 text-muted-foreground hidden md:block">{searchQuery ? copy.search_page.searchFor(searchQuery) : copy.search_page.allProducts}</p>
         </div>
         <div className="mb-6">
           <div className="flex items-center gap-2 max-w-2xl">
