@@ -15,9 +15,12 @@ import { useSearchUsers } from "@/hooks/queries/useSearch";
 import { ProductFilters, calculateClientPrice } from "@/features/products/productsApi";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { judete } from "@/data/romaniaLocations";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const Search = () => {
   const copy = useUxCopy();
+  const { t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
   const categoryFilter = searchParams.get("categorie") || "";
@@ -116,7 +119,7 @@ const Search = () => {
             </TabsList>
             {activeTab === "products" && (
               <div className="flex items-center gap-2">
-                <InlineSearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedCity={selectedCity} onCityChange={handleCityChange} selectedJudet={selectedJudet} onJudetChange={handleJudetChange} priceRange={priceRange} onPriceRangeChange={setPriceRange} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
+                <InlineSearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedCity={selectedCity} onCityChange={handleCityChange} selectedJudet={selectedJudet} onJudetChange={handleJudetChange} priceRange={priceRange} onPriceRangeChange={setPriceRange} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} hideLocation />
                 <SearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedCity={selectedCity} onCityChange={handleCityChange} selectedJudet={selectedJudet} onJudetChange={handleJudetChange} priceRange={priceRange} onPriceRangeChange={setPriceRange} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
                 <div className="hidden sm:flex items-center gap-1 rounded-lg border border-border p-1">
                   <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("gallery")}><LayoutGrid className="h-4 w-4" /></Button>
@@ -127,6 +130,35 @@ const Search = () => {
           </div>
           <TabsContent value="products" className="mt-0">
               <div className="min-w-0">
+                <div className="hidden lg:flex items-center gap-2 mb-4">
+                  <Select value={selectedJudet} onValueChange={handleJudetChange}>
+                    <SelectTrigger className="h-9 w-auto min-w-[160px] text-sm">
+                      <SelectValue placeholder={t("Toate județele", "All counties")} />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      <SelectItem value="all">{t("Toate județele", "All counties")}</SelectItem>
+                      {[...judete]
+                        .sort((a, b) => a.name.localeCompare(b.name, "ro", { sensitivity: "base" }))
+                        .map((j) => (
+                          <SelectItem key={j.name} value={j.name}>{j.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={selectedCity} onValueChange={handleCityChange} disabled={selectedJudet === "all"}>
+                    <SelectTrigger className="h-9 w-auto min-w-[160px] text-sm">
+                      <SelectValue placeholder={t("Toate localitățile", "All cities")} />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      <SelectItem value="all">{t("Toate localitățile", "All cities")}</SelectItem>
+                      {(judete.find((x) => x.name === selectedJudet)?.localitati ?? [])
+                        .slice()
+                        .sort((a, b) => a.localeCompare(b, "ro", { sensitivity: "base" }))
+                        .map((city) => (
+                          <SelectItem key={city} value={city}>{city}</SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 {isLoading && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
                 {!isLoading && filteredProducts.length > 0 && (
                   <div>
