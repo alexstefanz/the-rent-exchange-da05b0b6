@@ -26,7 +26,9 @@ const HeroSearchForm = () => {
   const [localitateDrawerOpen, setLocalitateDrawerOpen] = useState(false);
 
   const selectedJudetData = judete.find((j) => j.name === selectedJudet);
-  const localitati = selectedJudetData?.localitati || [];
+  const localitati = [...(selectedJudetData?.localitati || [])].sort((a, b) =>
+    a.localeCompare(b, "ro", { sensitivity: "base" }),
+  );
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
