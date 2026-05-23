@@ -306,7 +306,7 @@ const CategoryDetail = () => {
               onSubcategoryChange={handleSubcategoryChange}
               hideLocation
             />
-            <div className="hidden sm:flex items-center gap-1 rounded-lg border border-border p-1">
+            <div className="flex items-center gap-1 rounded-lg border border-border p-1">
               <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("gallery")}>
                 <LayoutGrid className="h-4 w-4" />
               </Button>
