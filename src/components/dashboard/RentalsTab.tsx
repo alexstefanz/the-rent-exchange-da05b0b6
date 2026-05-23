@@ -127,6 +127,7 @@ const RentalsTab = () => {
     active: rentals.filter(r => (r.status === "confirmed" || r.status === "active") && !r.handover_confirmed_at).length,
     in_progress: rentals.filter(r => (r.status === "confirmed" || r.status === "active") && !!r.handover_confirmed_at && !r.return_confirmed_at).length,
     pending: rentals.filter(r => r.status === "pending").length,
+    completed: rentals.filter(r => r.status === "completed" || (((r.status === "confirmed" || r.status === "active")) && !!r.return_confirmed_at)).length,
     cancelled: rentals.filter(r => r.status === "cancelled" || r.status === "rejected").length,
   }), [rentals]);
 
@@ -135,6 +136,7 @@ const RentalsTab = () => {
     if (statusFilter === "active") return (r.status === "confirmed" || r.status === "active") && !r.handover_confirmed_at;
     if (statusFilter === "in_progress") return (r.status === "confirmed" || r.status === "active") && !!r.handover_confirmed_at && !r.return_confirmed_at;
     if (statusFilter === "pending") return r.status === "pending";
+    if (statusFilter === "completed") return r.status === "completed" || (((r.status === "confirmed" || r.status === "active")) && !!r.return_confirmed_at);
     if (statusFilter === "cancelled") return r.status === "cancelled" || r.status === "rejected";
     return true;
   };
