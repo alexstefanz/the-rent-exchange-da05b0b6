@@ -535,6 +535,12 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={handleDeleteDraft}
+              className="border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+            >
+              {t("Șterge draftul", "Delete draft")}
+            </AlertDialogCancel>
             <AlertDialogCancel onClick={handleStartFresh}>{t("Începe anunț nou", "Start new listing")}</AlertDialogCancel>
             <AlertDialogAction onClick={handleContinueDraft}>{t("Continuă draftul", "Continue draft")}</AlertDialogAction>
           </AlertDialogFooter>
