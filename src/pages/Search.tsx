@@ -14,6 +14,7 @@ import { useProducts } from "@/hooks/queries/useProducts";
 import { useSearchUsers } from "@/hooks/queries/useSearch";
 import { ProductFilters, calculateClientPrice } from "@/features/products/productsApi";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import { judete } from "@/data/romaniaLocations";
 
 const Search = () => {
   const copy = useUxCopy();
@@ -28,6 +29,7 @@ const Search = () => {
   const [activeTab, setActiveTab] = useState(tabParam);
   const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
   const [selectedCategory, setSelectedCategory] = useState(categoryFilter || "all");
+  const [selectedJudet, setSelectedJudet] = useState(judetFilter || "all");
   const [selectedCity, setSelectedCity] = useState(localitateFilter || "all");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [sortBy, setSortBy] = useState("relevance");
@@ -37,30 +39,49 @@ const Search = () => {
     if (searchQuery) filters.search = searchQuery;
     if (selectedCategory && selectedCategory !== "all") filters.category = selectedCategory;
     if (selectedCity && selectedCity !== "all") filters.location_city = selectedCity;
-    else if (judetFilter && judetFilter !== "all") filters.location_city = judetFilter;
     return filters;
-  }, [searchQuery, selectedCategory, judetFilter, selectedCity]);
+  }, [searchQuery, selectedCategory, selectedCity]);
 
   const { data: products = [], isLoading } = useProducts(productFilters);
+  const judetCitiesSet = useMemo(() => {
+    if (selectedJudet === "all") return null;
+    const j = judete.find((x) => x.name === selectedJudet);
+    return j ? new Set(j.localitati) : new Set<string>();
+  }, [selectedJudet]);
   const filteredProducts = useMemo(() => {
     let result = [...products];
+    if (judetCitiesSet && selectedCity === "all") {
+      result = result.filter((p) => p.location_city && judetCitiesSet.has(p.location_city));
+    }
     result = result.filter((p) => { const cp = calculateClientPrice(p.daily_price_owner, p.platform_fee_percent); return cp >= priceRange[0] && cp <= priceRange[1]; });
     if (sortBy === "price_asc") result.sort((a, b) => a.daily_price_owner - b.daily_price_owner);
     else if (sortBy === "price_desc") result.sort((a, b) => b.daily_price_owner - a.daily_price_owner);
     return result;
-  }, [products, priceRange, sortBy]);
+  }, [products, judetCitiesSet, selectedCity, priceRange, sortBy]);
 
   const { data: users = [], isLoading: isLoadingUsers } = useSearchUsers(searchQuery);
-  const hasActiveFilters = (selectedCategory && selectedCategory !== "all") || (selectedCity && selectedCity !== "all") || priceRange[0] > 0 || priceRange[1] < 1000 || sortBy !== "relevance";
+  const hasActiveFilters = (selectedCategory && selectedCategory !== "all") || (selectedJudet && selectedJudet !== "all") || (selectedCity && selectedCity !== "all") || priceRange[0] > 0 || priceRange[1] < 1000 || sortBy !== "relevance";
   const handleCityChange = (value: string) => {
     setSelectedCity(value);
     const np = new URLSearchParams(searchParams);
     if (value && value !== "all") np.set("localitate", value); else np.delete("localitate");
     setSearchParams(np, { replace: true });
   };
-  const handleClearFilters = () => {
-    setSelectedCategory("all"); setSelectedCity("all"); setPriceRange([0, 1000]); setSortBy("relevance");
+  const handleJudetChange = (value: string) => {
+    setSelectedJudet(value);
     const np = new URLSearchParams(searchParams);
+    if (value && value !== "all") np.set("judet", value); else np.delete("judet");
+    const j = judete.find((x) => x.name === value);
+    if (!j || !j.localitati.includes(selectedCity)) {
+      setSelectedCity("all");
+      np.delete("localitate");
+    }
+    setSearchParams(np, { replace: true });
+  };
+  const handleClearFilters = () => {
+    setSelectedCategory("all"); setSelectedJudet("all"); setSelectedCity("all"); setPriceRange([0, 1000]); setSortBy("relevance");
+    const np = new URLSearchParams(searchParams);
+    np.delete("judet");
     np.delete("localitate");
     setSearchParams(np, { replace: true });
   };
@@ -95,8 +116,8 @@ const Search = () => {
             </TabsList>
             {activeTab === "products" && (
               <div className="flex items-center gap-2">
-                <InlineSearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedCity={selectedCity} onCityChange={handleCityChange} priceRange={priceRange} onPriceRangeChange={setPriceRange} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
-                <SearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedCity={selectedCity} onCityChange={handleCityChange} priceRange={priceRange} onPriceRangeChange={setPriceRange} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
+                <InlineSearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedCity={selectedCity} onCityChange={handleCityChange} selectedJudet={selectedJudet} onJudetChange={handleJudetChange} priceRange={priceRange} onPriceRangeChange={setPriceRange} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
+                <SearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedCity={selectedCity} onCityChange={handleCityChange} selectedJudet={selectedJudet} onJudetChange={handleJudetChange} priceRange={priceRange} onPriceRangeChange={setPriceRange} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
                 <div className="hidden sm:flex items-center gap-1 rounded-lg border border-border p-1">
                   <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("gallery")}><LayoutGrid className="h-4 w-4" /></Button>
                   <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("list")}><List className="h-4 w-4" /></Button>

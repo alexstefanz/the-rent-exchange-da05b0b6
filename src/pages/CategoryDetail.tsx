@@ -14,6 +14,8 @@ import { ProductFilters, calculateClientPrice } from "@/features/products/produc
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getCategoryBySlug } from "@/data/categories";
+import { judete } from "@/data/romaniaLocations";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const CategoryDetail = () => {
   const { slug } = useParams();
@@ -28,11 +30,13 @@ const CategoryDetail = () => {
 
   const initialQuery = searchParams.get("q") || "";
   const subcategoryFilter = searchParams.get("subcategorie") || "";
+  const judetFilter = searchParams.get("judet") || "";
   const localitateFilter = searchParams.get("localitate") || "";
 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
   const [selectedSubcategory, setSelectedSubcategory] = useState(subcategoryFilter || "all");
+  const [selectedJudet, setSelectedJudet] = useState(judetFilter || "all");
   const [selectedCity, setSelectedCity] = useState(localitateFilter || "all");
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [sortBy, setSortBy] = useState("relevance");
@@ -87,9 +91,18 @@ const CategoryDetail = () => {
     return { topCity: top ? top[0] : null, newThisWeek: weekCount };
   }, [products]);
 
+  const judetCitiesSet = useMemo(() => {
+    if (selectedJudet === "all") return null;
+    const j = judete.find((x) => x.name === selectedJudet);
+    return j ? new Set(j.localitati) : new Set<string>();
+  }, [selectedJudet]);
+
   const filteredProducts = useMemo(() => {
     let result = products.filter((p) => {
       if (selectedSubcategory !== "all" && p.subcategory !== selectedSubcategory) return false;
+      if (judetCitiesSet && selectedCity === "all") {
+        if (!p.location_city || !judetCitiesSet.has(p.location_city)) return false;
+      }
       const cp = calculateClientPrice(p.daily_price_owner, p.platform_fee_percent);
       if (cp < priceRange[0] || cp > priceRange[1]) return false;
       return true;
@@ -97,10 +110,11 @@ const CategoryDetail = () => {
     if (sortBy === "price_asc") result = [...result].sort((a, b) => a.daily_price_owner - b.daily_price_owner);
     else if (sortBy === "price_desc") result = [...result].sort((a, b) => b.daily_price_owner - a.daily_price_owner);
     return result;
-  }, [products, selectedSubcategory, priceRange, sortBy]);
+  }, [products, selectedSubcategory, judetCitiesSet, selectedCity, priceRange, sortBy]);
 
   const hasActiveFilters =
     (selectedSubcategory && selectedSubcategory !== "all") ||
+    (selectedJudet && selectedJudet !== "all") ||
     (selectedCity && selectedCity !== "all") ||
     priceRange[0] > 0 || priceRange[1] < 1000 ||
     sortBy !== "relevance";
@@ -116,6 +130,16 @@ const CategoryDetail = () => {
     setSelectedCity(value);
     updateParam("localitate", value);
   };
+  const handleJudetChange = (value: string) => {
+    setSelectedJudet(value);
+    updateParam("judet", value);
+    // Reset city if it no longer belongs to the new județ
+    const j = judete.find((x) => x.name === value);
+    if (!j || !j.localitati.includes(selectedCity)) {
+      setSelectedCity("all");
+      updateParam("localitate", "all");
+    }
+  };
   const handleSubcategoryChange = (value: string) => {
     setSelectedSubcategory(value);
     updateParam("subcategorie", value);
@@ -128,11 +152,13 @@ const CategoryDetail = () => {
   };
   const handleClearFilters = () => {
     setSelectedSubcategory("all");
+    setSelectedJudet("all");
     setSelectedCity("all");
     setPriceRange([0, 1000]);
     setSortBy("relevance");
     const np = new URLSearchParams(searchParams);
     np.delete("subcategorie");
+    np.delete("judet");
     np.delete("localitate");
     setSearchParams(np, { replace: true });
   };
@@ -176,15 +202,47 @@ const CategoryDetail = () => {
           </div>
         </div>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">
-            {!isLoading && copy.search.resultsCount(filteredProducts.length)}
-          </p>
-          <div className="flex items-center gap-2">
+          <div className="hidden lg:flex items-center gap-2">
+            <Select value={selectedJudet} onValueChange={handleJudetChange}>
+              <SelectTrigger className="h-9 w-auto min-w-[160px] text-sm">
+                <SelectValue placeholder={t("Toate județele", "All counties")} />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                <SelectItem value="all">{t("Toate județele", "All counties")}</SelectItem>
+                {[...judete]
+                  .sort((a, b) => a.name.localeCompare(b.name, "ro", { sensitivity: "base" }))
+                  .map((j) => (
+                    <SelectItem key={j.name} value={j.name}>{j.name}</SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={selectedCity}
+              onValueChange={handleCityChange}
+              disabled={selectedJudet === "all"}
+            >
+              <SelectTrigger className="h-9 w-auto min-w-[160px] text-sm">
+                <SelectValue placeholder={t("Toate localitățile", "All cities")} />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                <SelectItem value="all">{t("Toate localitățile", "All cities")}</SelectItem>
+                {(judete.find((x) => x.name === selectedJudet)?.localitati ?? [])
+                  .slice()
+                  .sort((a, b) => a.localeCompare(b, "ro", { sensitivity: "base" }))
+                  .map((city) => (
+                    <SelectItem key={city} value={city}>{city}</SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2 ml-auto">
             <InlineSearchFilters
               selectedCategory="all"
               onCategoryChange={() => {}}
               selectedCity={selectedCity}
               onCityChange={handleCityChange}
+              selectedJudet={selectedJudet}
+              onJudetChange={handleJudetChange}
               priceRange={priceRange}
               onPriceRangeChange={setPriceRange}
               sortBy={sortBy}
@@ -194,12 +252,15 @@ const CategoryDetail = () => {
               subcategoryOptions={subcategoryOptions}
               selectedSubcategory={selectedSubcategory}
               onSubcategoryChange={handleSubcategoryChange}
+              hideLocation
             />
             <SearchFilters
               selectedCategory="all"
               onCategoryChange={() => {}}
               selectedCity={selectedCity}
               onCityChange={handleCityChange}
+              selectedJudet={selectedJudet}
+              onJudetChange={handleJudetChange}
               priceRange={priceRange}
               onPriceRangeChange={setPriceRange}
               sortBy={sortBy}
@@ -220,6 +281,11 @@ const CategoryDetail = () => {
             </div>
           </div>
         </div>
+        {!isLoading && (
+          <p className="mb-4 text-sm text-muted-foreground">
+            {copy.search.resultsCount(filteredProducts.length)}
+          </p>
+        )}
         <div className="min-w-0">
           {isLoading && (
             <div className="flex items-center justify-center py-12">

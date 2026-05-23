@@ -15,6 +15,8 @@ interface SearchFiltersProps {
   onCategoryChange: (value: string) => void;
   selectedCity: string;
   onCityChange: (value: string) => void;
+  selectedJudet?: string;
+  onJudetChange?: (value: string) => void;
   priceRange: [number, number];
   onPriceRangeChange: (value: [number, number]) => void;
   sortBy: string;
@@ -25,18 +27,29 @@ interface SearchFiltersProps {
   subcategoryOptions?: { value: string; label: string }[];
   selectedSubcategory?: string;
   onSubcategoryChange?: (value: string) => void;
+  /** When true, the județ/localitate selects are hidden (used when they're rendered elsewhere). */
+  hideLocation?: boolean;
 }
 
-const sortedCities = Array.from(new Set(judete.flatMap((j) => j.localitati))).sort((a, b) =>
-  a.localeCompare(b, "ro", { sensitivity: "base" }),
+const sortedJudete = [...judete].sort((a, b) =>
+  a.name.localeCompare(b.name, "ro", { sensitivity: "base" }),
 );
 
+const getLocalitatiForJudet = (judetName: string | undefined): string[] => {
+  if (!judetName || judetName === "all") return [];
+  const j = judete.find((x) => x.name === judetName);
+  if (!j) return [];
+  return [...j.localitati].sort((a, b) => a.localeCompare(b, "ro", { sensitivity: "base" }));
+};
+
 const SearchFiltersContent = ({
-  selectedCategory, onCategoryChange, selectedCity, onCityChange, priceRange, onPriceRangeChange, sortBy, onSortByChange, onClearFilters, hasActiveFilters,
-  subcategoryOptions, selectedSubcategory, onSubcategoryChange,
+  selectedCategory, onCategoryChange, selectedCity, onCityChange, selectedJudet, onJudetChange, priceRange, onPriceRangeChange, sortBy, onSortByChange, onClearFilters, hasActiveFilters,
+  subcategoryOptions, selectedSubcategory, onSubcategoryChange, hideLocation,
 }: SearchFiltersProps) => {
   const copy = useUxCopy();
   const { language, t } = useLanguage();
+  const localitati = getLocalitatiForJudet(selectedJudet);
+  const judetDisabled = !onJudetChange;
   return (
     <div className="space-y-6">
       {hasActiveFilters && (
@@ -76,18 +89,40 @@ const SearchFiltersContent = ({
         )}
       </div>
 
-      <div className="space-y-3">
-        <label className="text-sm font-medium text-foreground">{t("Locație", "Location")}</label>
-        <Select value={selectedCity} onValueChange={onCityChange}>
-          <SelectTrigger className="w-full"><SelectValue placeholder={t("Toate orașele", "All cities")} /></SelectTrigger>
-          <SelectContent className="max-h-[300px]">
-            <SelectItem value="all">{t("Toate orașele", "All cities")}</SelectItem>
-            {sortedCities.map((city) => (
-              <SelectItem key={city} value={city}>{city}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {!hideLocation && (
+        <>
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-foreground">{t("Județ", "County")}</label>
+            <Select value={selectedJudet ?? "all"} onValueChange={onJudetChange} disabled={judetDisabled}>
+              <SelectTrigger className="w-full"><SelectValue placeholder={t("Toate județele", "All counties")} /></SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                <SelectItem value="all">{t("Toate județele", "All counties")}</SelectItem>
+                {sortedJudete.map((j) => (
+                  <SelectItem key={j.name} value={j.name}>{j.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-3">
+            <label className="text-sm font-medium text-foreground">{t("Localitate", "City")}</label>
+            <Select
+              value={selectedCity}
+              onValueChange={onCityChange}
+              disabled={!selectedJudet || selectedJudet === "all"}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={t("Toate localitățile", "All cities")} />
+              </SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                <SelectItem value="all">{t("Toate localitățile", "All cities")}</SelectItem>
+                {localitati.map((city) => (
+                  <SelectItem key={city} value={city}>{city}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </>
+      )}
 
       <div className="space-y-3">
         <label className="text-sm font-medium text-foreground">{copy.search.filters.priceRange}</label>
@@ -117,11 +152,12 @@ const SearchFiltersContent = ({
 };
 
 export const InlineSearchFilters = ({
-  selectedCategory, onCategoryChange, selectedCity, onCityChange, priceRange, onPriceRangeChange, sortBy, onSortByChange, onClearFilters, hasActiveFilters,
-  subcategoryOptions, selectedSubcategory, onSubcategoryChange,
+  selectedCategory, onCategoryChange, selectedCity, onCityChange, selectedJudet, onJudetChange, priceRange, onPriceRangeChange, sortBy, onSortByChange, onClearFilters, hasActiveFilters,
+  subcategoryOptions, selectedSubcategory, onSubcategoryChange, hideLocation,
 }: SearchFiltersProps) => {
   const copy = useUxCopy();
   const { language, t } = useLanguage();
+  const localitati = getLocalitatiForJudet(selectedJudet);
 
   const priceLabel = priceRange[0] === 0 && priceRange[1] === 1000
     ? copy.search.filters.priceRange
@@ -155,17 +191,36 @@ export const InlineSearchFilters = ({
         </Select>
       )}
 
-      <Select value={selectedCity} onValueChange={onCityChange}>
-        <SelectTrigger className="h-9 w-auto min-w-[140px] text-sm">
-          <SelectValue placeholder={t("Toate orașele", "All cities")} />
-        </SelectTrigger>
-        <SelectContent className="max-h-[300px]">
-          <SelectItem value="all">{t("Toate orașele", "All cities")}</SelectItem>
-          {sortedCities.map((city) => (
-            <SelectItem key={city} value={city}>{city}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {!hideLocation && (
+        <>
+          <Select value={selectedJudet ?? "all"} onValueChange={onJudetChange} disabled={!onJudetChange}>
+            <SelectTrigger className="h-9 w-auto min-w-[140px] text-sm">
+              <SelectValue placeholder={t("Toate județele", "All counties")} />
+            </SelectTrigger>
+            <SelectContent className="max-h-[300px]">
+              <SelectItem value="all">{t("Toate județele", "All counties")}</SelectItem>
+              {sortedJudete.map((j) => (
+                <SelectItem key={j.name} value={j.name}>{j.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={selectedCity}
+            onValueChange={onCityChange}
+            disabled={!selectedJudet || selectedJudet === "all"}
+          >
+            <SelectTrigger className="h-9 w-auto min-w-[140px] text-sm">
+              <SelectValue placeholder={t("Toate localitățile", "All cities")} />
+            </SelectTrigger>
+            <SelectContent className="max-h-[300px]">
+              <SelectItem value="all">{t("Toate localitățile", "All cities")}</SelectItem>
+              {localitati.map((city) => (
+                <SelectItem key={city} value={city}>{city}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </>
+      )}
 
       <Popover>
         <PopoverTrigger asChild>
