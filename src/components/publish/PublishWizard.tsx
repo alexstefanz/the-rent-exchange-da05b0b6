@@ -228,10 +228,23 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
 
   const handleStartFresh = async () => {
     if (!pendingDraft) return;
+    setDraftId(null);
+    setPendingDraft(null);
+  };
+
+  const handleDeleteDraft = async () => {
+    if (!pendingDraft) return;
     try {
       await deleteDraft(pendingDraft.id);
+      toast({
+        title: t("Draft șters", "Draft deleted"),
+        description: t("Draftul a fost eliminat definitiv.", "The draft has been removed permanently."),
+      });
     } catch {
-      // non-blocking
+      toast({
+        title: t("Eroare la ștergere", "Delete failed"),
+        variant: "destructive",
+      });
     }
     setDraftId(null);
     setPendingDraft(null);
