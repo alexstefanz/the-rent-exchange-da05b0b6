@@ -238,7 +238,9 @@ const CategoryDetail = () => {
               selectedJudet={selectedJudet}
               onJudetChange={handleJudetChange}
               priceRange={priceRange}
-              onPriceRangeChange={setPriceRange}
+              onPriceRangeChange={handlePriceRangeChange}
+              priceMin={priceBounds[0]}
+              priceMax={priceBounds[1]}
               sortBy={sortBy}
               onSortByChange={setSortBy}
               onClearFilters={handleClearFilters}
@@ -292,7 +294,9 @@ const CategoryDetail = () => {
               selectedJudet={selectedJudet}
               onJudetChange={handleJudetChange}
               priceRange={priceRange}
-              onPriceRangeChange={setPriceRange}
+              onPriceRangeChange={handlePriceRangeChange}
+              priceMin={priceBounds[0]}
+              priceMax={priceBounds[1]}
               sortBy={sortBy}
               onSortByChange={setSortBy}
               onClearFilters={handleClearFilters}
@@ -326,7 +330,27 @@ const CategoryDetail = () => {
             </div>
           )}
           {!isLoading && filteredProducts.length === 0 && (
-            <EmptySearchState searchQuery={searchQuery} type="products" />
+            products.length > 0 && hasActiveFilters ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <p className="text-lg font-medium text-foreground">
+                  {t(
+                    "Niciun rezultat cu filtrele curente",
+                    "No results with the current filters",
+                  )}
+                </p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  {t(
+                    `Există ${products.length} anunțuri în această categorie.`,
+                    `There are ${products.length} listings in this category.`,
+                  )}
+                </p>
+                <Button className="mt-4" onClick={handleClearFilters}>
+                  {t("Resetează filtrele", "Reset filters")}
+                </Button>
+              </div>
+            ) : (
+              <EmptySearchState searchQuery={searchQuery} type="products" />
+            )
           )}
         </div>
       </main>
