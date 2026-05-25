@@ -186,6 +186,13 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         deleteDraft(d.id).catch(() => {});
         return;
       }
+      try {
+        const dismissed = sessionStorage.getItem("publish:draftPromptDismissed");
+        if (dismissed === d.id) {
+          setDraftId(d.id);
+          return;
+        }
+      } catch {}
       setPendingDraft({
         id: d.id,
         payload,
