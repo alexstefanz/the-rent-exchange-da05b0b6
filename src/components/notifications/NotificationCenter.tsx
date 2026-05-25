@@ -111,9 +111,9 @@ export function NotificationCenter({ variant = "popover", onClose }: Props) {
   return (
     <div className={containerClass}>
       {/* Header */}
-      <div className="px-5 pt-4 pb-2 shrink-0">
+      <div className={`px-5 pt-4 pb-2 shrink-0 ${variant === "sheet" ? "pr-14 relative" : ""}`}>
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h2 className="font-heading text-lg font-bold tracking-tight">
               {t("Notificări", "Notifications")}
             </h2>
@@ -126,7 +126,13 @@ export function NotificationCenter({ variant = "popover", onClose }: Props) {
                 : t("Ești la zi", "You're all caught up")}
             </p>
           </div>
-          <div className="flex items-center gap-1 shrink-0">
+          <div
+            className={`flex items-center gap-1 shrink-0 ${
+              variant === "sheet"
+                ? "absolute top-3 right-14 h-8"
+                : ""
+            }`}
+          >
             <Button
               variant="ghost"
               size="icon"
