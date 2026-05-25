@@ -506,7 +506,13 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         <AlertDialogContent>
           <button
             type="button"
-            onClick={() => setPendingDraft(null)}
+            onClick={() => {
+              if (pendingDraft) {
+                try { sessionStorage.setItem("publish:draftPromptDismissed", pendingDraft.id); } catch {}
+                setDraftId(pendingDraft.id);
+              }
+              setPendingDraft(null);
+            }}
             aria-label={t("Închide", "Close")}
             className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
