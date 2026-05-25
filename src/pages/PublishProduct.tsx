@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { getProductById, type Product } from "@/features/products/productsApi";
 import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   mode: "create" | "edit";
@@ -45,6 +46,13 @@ const PublishProductPage = ({ mode }: Props) => {
           toast({ title: t("Acces interzis", "Access denied"), variant: "destructive" });
           navigate("/owner");
           return;
+        }
+        // serial_number is column-level restricted; fetch it via secure RPC for owner.
+        try {
+          const { data: serial } = await (supabase.rpc as any)("get_my_product_serial", { _id: id });
+          (p as any).serial_number = serial ?? null;
+        } catch {
+          (p as any).serial_number = null;
         }
         setProduct(p);
       } finally {
