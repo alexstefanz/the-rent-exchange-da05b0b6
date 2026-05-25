@@ -1,17 +1,12 @@
-## Problem
+## Modificare
 
-În `NotificationSettingsSheet` (mobil), titlul „Setări notificări” și butonul X sunt pe nivele verticale diferite:
-- `SheetHeader` are `pt-5` (20px) iar `SheetTitle` e pe primul rând, urmat de `SheetDescription`
-- Butonul X (din `SheetContent`) e `absolute top-4 right-4` (16px)
+În `src/components/home/HowItWorksMini.tsx`, înlocuiesc blocul mobil (`md:hidden` cu scroll snap orizontal) cu același timeline vertical folosit pe pagina "Cum funcționează".
 
-Rezultat: X-ul e ușor mai sus decât titlul și se suprapune cu zona din dreapta, fără spațiere clară.
+### Pași
+1. Import `CycleTimeline` din `@/components/howitworks/CycleTimeline`.
+2. Șterg blocul `{/* Mobile: horizontal scroll snap */}` (linii 66–87).
+3. În locul lui, randez `<div className="md:hidden"><CycleTimeline steps={steps} /></div>`.
+   - `CycleTimeline` are deja propriul layout mobile (linia verticală cu dot-uri portocalii, carduri stivuite, animație scroll-driven) care e identic cu imaginea 2.
+4. Variantele desktop și tabletă rămân neschimbate.
 
-## Soluție
-
-În `src/components/notifications/NotificationSettingsSheet.tsx`:
-
-1. Modific `SheetHeader` să fie un layout simplu cu padding consistent: `px-5 pt-4 pb-3 pr-14` (rezervă spațiu pentru X în dreapta sus).
-2. Pun `SheetTitle` într-un rând dedicat aliniat vertical pe linia X-ului: înălțime fixă `h-8` cu `flex items-center`, `leading-none`, ca să coincidă cu centrul butonului X (`top-4` + `h-8` → centrat la ~32px).
-3. `SheetDescription` rămâne sub titlu, separat de un `mt-2`, în afara rândului titlului — astfel titlul și X sunt pe exact aceeași linie cu distanță vizibilă între ele.
-
-Niciun alt fișier afectat.
+Niciun alt fișier nu trebuie modificat. Copia text (PAS · 01 etc., titluri, descrieri) e identică pentru că `steps` folosește același `uxCopy.howItWorksPage`.
