@@ -209,6 +209,13 @@ export function TicketChat({ ticketId, isClosed }: Props) {
             <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
             <Textarea
               ref={textareaRef}
+              name="message"
+              autoComplete="off"
+              autoCorrect="on"
+              autoCapitalize="sentences"
+              spellCheck
+              enterKeyHint="send"
+              inputMode="text"
               value={text}
               onChange={(e) => {
                 const { value, blockedSpecial } = clampChatInput(e.target.value);
