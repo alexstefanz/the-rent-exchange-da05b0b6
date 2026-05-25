@@ -77,7 +77,7 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
       <div
         aria-hidden={!open}
         onClick={onClose}
-        className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+        className={`fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
           open ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       />
@@ -94,7 +94,7 @@ export function MobileDrawer({ open, onClose, onLogout }: Props) {
           transform: open ? `translateX(${dragX}px)` : "translateX(-100%)",
           transitionProperty: dragX !== 0 ? "none" : "transform",
         }}
-        className={`fixed top-0 left-0 z-50 h-[100dvh] w-[88vw] max-w-[360px] bg-background/95 backdrop-blur-xl shadow-2xl transition-transform duration-300 ease-[cubic-bezier(.32,.72,0,1)] lg:hidden ${
+        className={`fixed top-0 left-0 z-[70] h-[100dvh] w-[88vw] max-w-[360px] bg-background/95 backdrop-blur-xl shadow-2xl transition-transform duration-300 ease-[cubic-bezier(.32,.72,0,1)] lg:hidden ${
           open ? "" : "pointer-events-none"
         }`}
       >
