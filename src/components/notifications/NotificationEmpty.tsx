@@ -38,7 +38,7 @@ export function NotificationEmpty({ variant = "all", onAction }: Props) {
             className="flex items-center justify-center gap-1.5 rounded-xl border border-border/70 bg-card px-3 py-2 text-xs font-semibold hover:bg-muted/50 transition-colors"
           >
             <Compass className="h-3.5 w-3.5" />
-            {t("Explorează", "Explore")}
+            {t("Caută", "Search")}
           </Link>
           <Link
             to="/owner/new-product"
