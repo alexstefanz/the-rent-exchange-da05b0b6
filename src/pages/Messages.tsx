@@ -25,19 +25,19 @@ function useIsDesktop() {
 }
 
 /**
- * Tracks the keyboard inset (space taken at the bottom by the on-screen keyboard)
- * and writes it to a CSS variable on <html>. Layout stays fixed at 100dvh; only
- * the bottom padding grows so the input bar sits right above the keyboard.
+ * Tracks the visual viewport height (which excludes the on-screen keyboard
+ * AND the browser accessory bar on iOS) and writes it as --chat-h on <html>.
+ * The chat container uses this height so the input always sits flush above
+ * whatever the browser puts at the bottom (keyboard + Chrome ↑↓✓ bar).
  */
-function useKeyboardInset(active: boolean) {
+function useChatViewport(active: boolean) {
   useEffect(() => {
     if (!active) return;
     const vv = window.visualViewport;
     if (!vv) return;
     const root = document.documentElement;
     const update = () => {
-      const inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      root.style.setProperty("--keyboard-inset", `${Math.round(inset)}px`);
+      root.style.setProperty("--chat-h", `${Math.round(vv.height)}px`);
     };
     update();
     vv.addEventListener("resize", update);
@@ -45,7 +45,7 @@ function useKeyboardInset(active: boolean) {
     return () => {
       vv.removeEventListener("resize", update);
       vv.removeEventListener("scroll", update);
-      root.style.setProperty("--keyboard-inset", "0px");
+      root.style.removeProperty("--chat-h");
     };
   }, [active]);
 }
@@ -62,7 +62,7 @@ export default function Messages() {
   const [activeTab, setActiveTab] = useState("rezervari");
   const [mobileInfoOpen, setMobileInfoOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  useKeyboardInset(!isDesktop && !!selectedConversation);
+  useChatViewport(!isDesktop && !!selectedConversation);
 
   if (!authLoading && !user) {
     navigate("/auth", { replace: true });
@@ -159,7 +159,7 @@ export default function Messages() {
           className={`fixed inset-0 z-50 flex flex-col overflow-hidden bg-background transform-gpu will-change-transform ${
             isClosing ? "animate-slide-out-right" : "animate-slide-in-right"
           }`}
-          style={{ height: "100dvh", paddingBottom: "var(--keyboard-inset, 0px)" }}
+          style={{ height: "var(--chat-h, 100dvh)" }}
           onAnimationEnd={handleCloseAnimationEnd}
         >
           <ChatPanel

@@ -20,6 +20,26 @@ function useIsDesktop() {
   return isDesktop;
 }
 
+function useChatViewport(active: boolean) {
+  useEffect(() => {
+    if (!active) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const root = document.documentElement;
+    const update = () => {
+      root.style.setProperty("--chat-h", `${Math.round(vv.height)}px`);
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+      root.style.removeProperty("--chat-h");
+    };
+  }, [active]);
+}
+
 const MessagesTab = () => {
   const { language } = useLanguage();
   const { user } = useAuth();
@@ -30,6 +50,7 @@ const MessagesTab = () => {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [activeTab, setActiveTab] = useState("rezervari");
   const [isClosing, setIsClosing] = useState(false);
+  useChatViewport(!isDesktop && !!selectedConversation);
 
   const handleSelect = (conv: Conversation) => {
     const correctTab = conv.buyer_id === user?.id ? "rezervari" : "de-inchiriat";
@@ -97,6 +118,7 @@ const MessagesTab = () => {
         className={`fixed inset-0 z-50 bg-background flex flex-col transform-gpu will-change-transform ${
           isClosing ? "animate-slide-out-right" : "animate-slide-in-right"
         }`}
+        style={{ height: "var(--chat-h, 100dvh)" }}
         onAnimationEnd={handleCloseAnimationEnd}
         >
         <ChatPanel
