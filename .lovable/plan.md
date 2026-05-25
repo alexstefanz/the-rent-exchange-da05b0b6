@@ -1,44 +1,52 @@
 ## Obiectiv
-Stabilizez experiența pe mobil când se deschide tastatura, astfel încât:
-- conversația deschisă să rămână afișată corect, fără să se vadă lista de conversații dedesubt;
-- bara de navigație de jos a aplicației să nu mai apară deasupra tastaturii;
-- câmpurile de căutare să nu mai forțeze comportamente suplimentare inutile din partea browserului unde putem evita asta;
-- să separ clar ce poate fi eliminat din aplicație față de ce este controlat nativ de iOS/tastatură.
+Elimin experiența deranjantă de deasupra tastaturii pe mobil în toate ecranele de chat și verific explicit comportamentul pe iPhone pentru Safari și Chrome.
 
-## Ce voi schimba
-1. Corectez containerul full-screen al chatului mobil din `Messages.tsx` și `MessagesTab.tsx`.
-   - Hook-ul actual urmărește doar `visualViewport.height`.
-   - Voi urmări și `visualViewport.offsetTop`/poziția vizibilă, ca overlay-ul de chat să rămână aliniat cu viewportul real când tastatura mută suprafața vizibilă.
-   - Asta elimină efectul din screenshot în care inputul rămâne sus, iar sub el se vede lista de conversații.
+## Problema exactă
+Screenshot-ul arată două lucruri distincte:
+1. zona/composer-ul aplicației, pe care o putem controla;
+2. bara nativă iOS de tip input assistant (cu săgeți/check), pe care web-ul nu o poate ascunde direct în Safari/Chrome.
 
-2. Unific logica de viewport într-un hook comun reutilizabil.
-   - Mut logica duplicată într-un singur hook pentru chat mobil.
-   - Hook-ul va expune variabile CSS pentru înălțime și offset, folosite consecvent în ambele locuri unde există chat full-screen.
+Planul meu este să scot complet orice spațiu sau strat inutil generat de aplicație și să reduc toate trigger-ele posibile din DOM, astfel încât să rămână doar ce este impus nativ de iOS.
 
-3. Întăresc ascunderea navigației mobile globale când tastatura este deschisă.
-   - Revizuiesc `useKeyboardOpen` și pragul/detecția sa pentru cazurile reale de iPhone.
-   - Mă asigur că `MobileBottomNav` dispare predictibil pe chat, search și alte inputuri, fără flicker sau reapariție peste tastatură.
+## Ce voi implementa
+1. Audit complet al tuturor inputurilor de chat mobile
+- Verific `MessageInput`, `SupportChatWidget`, `TicketChat` și containerele lor.
+- Elimin orice padding, safe-area, footer fix, spacer sau wrapper care mai rămâne deasupra tastaturii când inputul este focusat.
 
-4. Normalizez inputurile de search care folosesc moduri iOS mai agresive.
-   - Verific și ajustez câmpurile care folosesc `type="search"` sau `inputMode="search"` când nu aduc valoare reală.
-   - Unde e sigur, le trec pe un comportament text standard pentru a reduce barele/accesoriile suplimentare declanșate de browser.
+2. Unific detecția de tastatură pentru toate chaturile
+- Scot logica duplicată de `visualViewport` și o mut pe un comportament comun, coerent.
+- Fac composer-ul să se lipească de viewport-ul vizibil real când tastatura este deschisă.
+
+3. Curăț trigger-ele care fac iOS să creadă că are mai multe câmpuri navigabile
+- Verific toate câmpurile focusabile din chaturi și orice input temporar/ascuns.
+- Mă asigur că rămâne un singur control editabil activ în fluxul de scriere, fără accesorii suplimentare declanșate de aplicație.
+
+4. Corectez layout-ul pe toate suprafețele de chat mobile
+- `/mesaje`
+- widgetul de suport
+- ticket chat / alte ecrane de conversație
+- Dacă există alte componente de chat reutilizate, le aliniez la același comportament.
+
+5. Validez comportamentul pe iPhone viewport
+- Verific deschiderea tastaturii, focus în textarea, trimitere mesaj, atașamente, back/close.
+- Confirm că dispare complet orice fâșie albă sau spațiu generat de aplicație.
+- Dacă mai rămâne bara cu săgeți/check, o marchez explicit ca limitare nativă iOS/WebKit, nu bug UI al aplicației.
+
+## Fișiere țintă
+- `src/components/messaging/MessageInput.tsx`
+- `src/components/messaging/ChatPanel.tsx`
+- `src/components/support/SupportChatWidget.tsx`
+- `src/components/support/center/TicketChat.tsx`
+- `src/hooks/useKeyboardOpen.ts`
+- posibil și hook-ul comun de viewport/chat dacă trebuie unificat
 
 ## Detalii tehnice
-- Fișiere țintă probabile:
-  - `src/pages/Messages.tsx`
-  - `src/components/profile/MessagesTab.tsx`
-  - `src/hooks/useKeyboardOpen.ts`
-  - `src/components/layout/MobileBottomNav.tsx`
-  - `src/components/layout/mobile-drawer/DrawerSearch.tsx`
-  - `src/components/home/SmartSearch.tsx`
-- Nu voi atinge logica de business a mesajelor; schimbarea rămâne strict în UI/comportament mobil.
-- Observație importantă: bara albă cu săgeți și check din screenshot pare în mare parte controlată nativ de iOS / tastatura instalată. Din web putem reduce trigger-ele produse de aplicație și putem elimina suprapunerile noastre, dar dacă tastatura mai afișează o bară proprie, aceea nu poate fi garantat eliminată complet din codul web.
+- Safari și Chrome pe iPhone folosesc același motor WebKit, deci bara nativă se comportă similar în ambele.
+- Din cod web pot elimina doar elementele/controlul aplicației: padding, safe-area rezidual, focus-uri parazite, inputuri ascunse, moduri de input inutile.
+- Nu voi modifica logica de business a mesajelor; schimbarea rămâne strict la nivel de UX/layout/focus pe mobil.
 
-## Validare
-Voi verifica explicit:
-- listă conversații pe mobil;
-- conversație deschisă pe mobil;
-- focus în inputul de chat;
-- focus în câmpuri de search;
-- dispariția barei de navigație de jos la deschiderea tastaturii;
-- faptul că nu se mai vede conținutul de fundal sub chat când scrii.
+## Rezultat urmărit
+- fără fâșie albă între input și tastatură;
+- fără elemente ale aplicației deasupra tastaturii;
+- același comportament coerent în `/mesaje` și în celelalte chaturi;
+- confirmare clară a ce a fost eliminat din aplicație și ce rămâne nativ pe iPhone.
