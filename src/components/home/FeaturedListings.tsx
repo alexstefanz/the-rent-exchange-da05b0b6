@@ -151,7 +151,7 @@ const FeaturedListings = () => {
                 onTouchStart={() => prefetchProduct(product.slug || product.id)}
                 className="group block transition-all hover:-translate-y-0.5"
               >
-                <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
+                <div className="relative aspect-[3/4] md:aspect-[4/3] overflow-hidden rounded-xl">
                   <img
                     src={imageUrl}
                     alt={getDisplayTitle(product, language)}
