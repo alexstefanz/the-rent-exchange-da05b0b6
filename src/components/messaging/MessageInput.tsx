@@ -228,6 +228,13 @@ export function MessageInput({ conversationId, disabled, isPaid, onSend, onTypin
         <Textarea
           ref={textareaRef}
           rows={1}
+          name="message"
+          autoComplete="off"
+          autoCorrect="on"
+          autoCapitalize="sentences"
+          spellCheck
+          enterKeyHint="send"
+          inputMode="text"
           value={text}
           onChange={(e) => {
             const { value, blockedSpecial } = clampChatInput(e.target.value);
