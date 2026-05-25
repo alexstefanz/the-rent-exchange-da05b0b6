@@ -1,5 +1,6 @@
 import { Send, CheckCircle2, Package, Wrench, Undo2, Wallet } from "lucide-react";
 import { useUxCopy } from "@/hooks/useUxCopy";
+import CycleTimeline from "@/components/howitworks/CycleTimeline";
 
 const HowItWorksMini = () => {
   const copy = useUxCopy();
@@ -63,27 +64,9 @@ const HowItWorksMini = () => {
           ))}
         </div>
 
-        {/* Mobile: horizontal scroll snap */}
-        <div className="md:hidden -mx-4 px-4 overflow-x-auto snap-x snap-mandatory">
-          <div className="flex gap-4 pb-2">
-            {steps.map((step, idx) => (
-              <div
-                key={idx}
-                className="snap-start shrink-0 w-[260px] rounded-2xl border border-border bg-card p-4 shadow-card"
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
-                    <step.icon className="h-5 w-5 text-primary" />
-                  </div>
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-                    {`PAS · ${String(idx + 1).padStart(2, "0")}`}
-                  </span>
-                </div>
-                <h3 className="font-heading text-base font-semibold text-foreground">{step.title}</h3>
-                <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{step.desc}</p>
-              </div>
-            ))}
-          </div>
+        {/* Mobile: vertical timeline (same as "Cum funcționează" page) */}
+        <div className="md:hidden">
+          <CycleTimeline steps={steps} />
         </div>
       </div>
     </section>
