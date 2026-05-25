@@ -1,22 +1,17 @@
 ## Problem
 
-Pe mobil, meniul offcanvas (`MobileDrawer`) și restul containerelor fixe folosesc același z-index `z-50`, deci bara de jos (`MobileBottomNav`) și navbar-ul rămân vizibile peste drawer. În screenshot se vede cum bara de navigare jos (Caută/Favorite/Adaugă/Chat/Cont) și sticky checkout-ul apar peste drawer.
+În `NotificationSettingsSheet` (mobil), titlul „Setări notificări” și butonul X sunt pe nivele verticale diferite:
+- `SheetHeader` are `pt-5` (20px) iar `SheetTitle` e pe primul rând, urmat de `SheetDescription`
+- Butonul X (din `SheetContent`) e `absolute top-4 right-4` (16px)
 
-Z-index actuali:
-- `MobileDrawer` overlay: `z-40`, panel: `z-50`
-- `MobileBottomNav`: `z-50`
-- `Navbar`: `z-50`
-- `StickyCheckoutBar`: `z-40`
-- `StickyProductHeader` (doar desktop): `z-40`
+Rezultat: X-ul e ușor mai sus decât titlul și se suprapune cu zona din dreapta, fără spațiere clară.
 
 ## Soluție
 
-Ridic doar drawer-ul deasupra tuturor barelor fixe, fără să schimb stack-ul celorlalte:
+În `src/components/notifications/NotificationSettingsSheet.tsx`:
 
-1. `src/components/layout/mobile-drawer/MobileDrawer.tsx`
-   - Overlay: `z-40` → `z-[60]`
-   - Panel: `z-50` → `z-[70]`
+1. Modific `SheetHeader` să fie un layout simplu cu padding consistent: `px-5 pt-4 pb-3 pr-14` (rezervă spațiu pentru X în dreapta sus).
+2. Pun `SheetTitle` într-un rând dedicat aliniat vertical pe linia X-ului: înălțime fixă `h-8` cu `flex items-center`, `leading-none`, ca să coincidă cu centrul butonului X (`top-4` + `h-8` → centrat la ~32px).
+3. `SheetDescription` rămâne sub titlu, separat de un `mt-2`, în afara rândului titlului — astfel titlul și X sunt pe exact aceeași linie cu distanță vizibilă între ele.
 
-Restul (`MobileBottomNav` z-50, `Navbar` z-50, `StickyCheckoutBar` z-40) rămâne neschimbat, deci când drawer-ul e închis comportamentul stratificării actuale e identic. Când e deschis, overlay-ul acoperă navbar + bottom nav + sticky bar, iar panelul stă deasupra overlay-ului.
-
-Niciun alt fișier nu trebuie atins.
+Niciun alt fișier afectat.

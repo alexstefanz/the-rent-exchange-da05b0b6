@@ -75,9 +75,11 @@ export function NotificationSettingsSheet({ open, onOpenChange }: Props) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:max-w-md p-0">
-        <SheetHeader className="px-5 pt-5 pb-3">
-          <SheetTitle>{t("Setări notificări", "Notification settings")}</SheetTitle>
-          <SheetDescription>
+        <SheetHeader className="px-5 pt-4 pb-3 pr-14">
+          <SheetTitle className="h-8 flex items-center leading-none">
+            {t("Setări notificări", "Notification settings")}
+          </SheetTitle>
+          <SheetDescription className="mt-2">
             {t(
               "Alege cum vrei să fii anunțat de Rentli.",
               "Choose how you want Rentli to reach you.",
