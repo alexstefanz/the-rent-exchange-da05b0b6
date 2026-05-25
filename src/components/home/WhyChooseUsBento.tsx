@@ -1,16 +1,87 @@
-import { ShieldCheck, UserCheck, Tag, Headphones } from "lucide-react";
+import { ShieldCheck, UserCheck, Tag, Headphones, Check, AudioLines } from "lucide-react";
 import { useUxCopy } from "@/hooks/useUxCopy";
 
 const WhyChooseUsBento = () => {
   const copy = useUxCopy();
   const p = copy.howItWorksPage;
 
-  const bentoCards = [
-    { icon: UserCheck, stat: p.bentoVerifiedStat, statLabel: p.bentoVerifiedStatLabel, title: p.bentoVerifiedTitle, desc: p.bentoVerifiedDesc },
-    { icon: ShieldCheck, stat: p.bentoInsuranceStat, statLabel: p.bentoInsuranceStatLabel, title: p.bentoInsuranceTitle, desc: p.bentoInsuranceDesc },
-    { icon: Headphones, stat: p.bentoSupportStat, statLabel: p.bentoSupportStatLabel, title: p.bentoSupportTitle, desc: p.bentoSupportDesc },
-    { icon: Tag, stat: p.bentoFeeStat, statLabel: p.bentoFeeStatLabel, title: p.bentoFeeTitle, desc: p.bentoFeeDesc },
+  type BadgeKind = "verified" | "protected" | "audio" | "fee";
+
+  const bentoCards: Array<{
+    icon: typeof UserCheck;
+    title: string;
+    desc: string;
+    chips: string[];
+    badge: BadgeKind;
+  }> = [
+    {
+      icon: UserCheck,
+      title: p.bentoVerifiedTitle,
+      desc: p.bentoVerifiedDesc,
+      chips: [p.bentoVerifiedChip1, p.bentoVerifiedChip2, p.bentoVerifiedChip3],
+      badge: "verified",
+    },
+    {
+      icon: ShieldCheck,
+      title: p.bentoInsuranceTitle,
+      desc: p.bentoInsuranceDesc,
+      chips: [p.bentoInsuranceChip1, p.bentoInsuranceChip2, p.bentoInsuranceChip3],
+      badge: "protected",
+    },
+    {
+      icon: Headphones,
+      title: p.bentoSupportTitle,
+      desc: p.bentoSupportDesc,
+      chips: [p.bentoSupportChip1, p.bentoSupportChip2, p.bentoSupportChip3],
+      badge: "audio",
+    },
+    {
+      icon: Tag,
+      title: p.bentoFeeTitle,
+      desc: p.bentoFeeDesc,
+      chips: [p.bentoFeeChip1, p.bentoFeeChip2, p.bentoFeeChip3],
+      badge: "fee",
+    },
   ];
+
+  const renderBadge = (kind: BadgeKind) => {
+    switch (kind) {
+      case "verified":
+        return (
+          <div className="flex flex-col items-end gap-1.5">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-600">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              {p.bentoVerifiedStat}
+            </span>
+            <div className="flex items-center gap-1">
+              <span className="h-2 w-2 rounded-full bg-primary" />
+              <span className="h-2 w-2 rounded-full bg-primary/60" />
+              <span className="h-2 w-2 rounded-full bg-muted-foreground/30" />
+            </div>
+          </div>
+        );
+      case "protected":
+        return (
+          <span className="inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
+            {p.bentoInsuranceStat}
+          </span>
+        );
+      case "audio":
+        return <AudioLines className="h-5 w-5 text-primary" />;
+      case "fee":
+        return (
+          <div className="flex flex-col items-end leading-none">
+            <div className="flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span className="font-heading text-2xl font-bold text-primary">{p.bentoFeeStat}</span>
+            </div>
+            <span className="mt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              {p.bentoFeeStatLabel}
+            </span>
+          </div>
+        );
+    }
+  };
 
   return (
     <section className="border-t border-border bg-secondary/30 py-16 md:py-24">
@@ -72,31 +143,32 @@ const WhyChooseUsBento = () => {
                 </div>
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-2">
-                {["PSD2", "3DS2", "PCI-DSS", "GDPR"].map((tag) => (
-                  <span key={tag} className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-semibold text-white/70">
-                    {tag}
-                  </span>
-                ))}
-              </div>
             </div>
           </div>
 
           {/* 4 small cards */}
           <div className="grid gap-5 sm:grid-cols-2 lg:col-span-2">
             {bentoCards.map((c, i) => (
-              <div key={i} className="rounded-3xl border border-border bg-card p-6 shadow-card transition-shadow hover:shadow-card-hover">
+              <div key={i} className="flex flex-col rounded-3xl border border-border bg-card p-6 shadow-card transition-shadow hover:shadow-card-hover">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10">
                     <c.icon className="h-5 w-5 text-primary" />
                   </div>
-                  <div className="text-right">
-                    <div className="font-heading text-2xl font-bold text-primary leading-none">{c.stat}</div>
-                    <div className="mt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{c.statLabel}</div>
-                  </div>
+                  {renderBadge(c.badge)}
                 </div>
                 <h3 className="mt-8 font-heading text-lg font-semibold text-foreground">{c.title}</h3>
                 <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{c.desc}</p>
+                <div className="mt-auto flex flex-wrap gap-2 pt-5">
+                  {c.chips.map((chip) => (
+                    <span
+                      key={chip}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
+                    >
+                      <Check className="h-3 w-3 text-primary" />
+                      {chip}
+                    </span>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
