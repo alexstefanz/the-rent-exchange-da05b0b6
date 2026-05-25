@@ -8,6 +8,7 @@ import { Conversation } from "@/features/messaging/messagingApi";
 import { ConversationList } from "@/components/messaging/ConversationList";
 import { ChatPanel } from "@/components/messaging/ChatPanel";
 import { useQueryClient } from "@tanstack/react-query";
+import { useChatViewport } from "@/hooks/useChatViewport";
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(typeof window !== "undefined" ? window.innerWidth >= 1024 : true);
@@ -18,26 +19,6 @@ function useIsDesktop() {
     return () => mql.removeEventListener("change", handler);
   }, []);
   return isDesktop;
-}
-
-function useChatViewport(active: boolean) {
-  useEffect(() => {
-    if (!active) return;
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const root = document.documentElement;
-    const update = () => {
-      root.style.setProperty("--chat-h", `${Math.round(vv.height)}px`);
-    };
-    update();
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    return () => {
-      vv.removeEventListener("resize", update);
-      vv.removeEventListener("scroll", update);
-      root.style.removeProperty("--chat-h");
-    };
-  }, [active]);
 }
 
 const MessagesTab = () => {
@@ -118,7 +99,11 @@ const MessagesTab = () => {
         className={`fixed inset-0 z-50 bg-background flex flex-col transform-gpu will-change-transform ${
           isClosing ? "animate-slide-out-right" : "animate-slide-in-right"
         }`}
-        style={{ height: "var(--chat-h, 100dvh)" }}
+        style={{
+          top: "var(--chat-top, 0px)",
+          height: "var(--chat-h, 100dvh)",
+          bottom: "auto",
+        }}
         onAnimationEnd={handleCloseAnimationEnd}
         >
         <ChatPanel
