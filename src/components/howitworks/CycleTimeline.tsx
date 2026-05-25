@@ -221,11 +221,15 @@ function MobileRow({
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       className="relative pl-14"
     >
-      <motion.span
+      <span
         aria-hidden
-        style={{ scale: dotScale }}
-        className="absolute left-5 top-5 z-10 h-3 w-3 -translate-x-1/2 rounded-full bg-primary ring-4 ring-background"
-      />
+        className="absolute left-5 top-5 z-10 -translate-x-1/2"
+      >
+        <motion.span
+          style={{ scale: dotScale }}
+          className="block h-3 w-3 rounded-full bg-primary ring-4 ring-background"
+        />
+      </span>
       <div className="rounded-2xl border border-border bg-card p-4 shadow-card">
         <div className="mb-2 flex items-center gap-3">
           <motion.div
