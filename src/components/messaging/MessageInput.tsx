@@ -46,7 +46,6 @@ export function MessageInput({ conversationId, disabled, isPaid, onSend, onTypin
   const [uploadProgress, setUploadProgress] = useState(0);
   const [profanityAlertOpen, setProfanityAlertOpen] = useState(false);
   const [contactAlert, setContactAlert] = useState<{ open: boolean; kind: "phone" | "email" | "both" }>({ open: false, kind: "phone" });
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const lastSymbolToastRef = useRef(0);
@@ -100,9 +99,9 @@ export function MessageInput({ conversationId, disabled, isPaid, onSend, onTypin
     };
   }, []);
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    e.target.value = "";
+  const handleFileSelect = async (input: HTMLInputElement) => {
+    const files = Array.from(input.files || []);
+    input.value = "";
     if (!files.length) return;
     if (pending.length + files.length > MAX_ATTACHMENTS_PER_MESSAGE) {
       toast.error(t(`Maxim ${MAX_ATTACHMENTS_PER_MESSAGE} fișiere per mesaj`, `Max ${MAX_ATTACHMENTS_PER_MESSAGE} files per message`));
@@ -122,6 +121,41 @@ export function MessageInput({ conversationId, disabled, isPaid, onSend, onTypin
       if (p) prepared.push(p);
     }
     setPending((prev) => [...prev, ...prepared]);
+  };
+
+  const openAttachmentPicker = () => {
+    if (typeof document === "undefined") return;
+    if (effectiveDisabled || sending || pending.length >= MAX_ATTACHMENTS_PER_MESSAGE) return;
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm";
+    input.multiple = true;
+    input.tabIndex = -1;
+    input.setAttribute("aria-hidden", "true");
+    input.style.display = "none";
+
+    const cleanup = () => {
+      input.onchange = null;
+      input.remove();
+    };
+
+    input.onchange = () => {
+      void handleFileSelect(input).finally(cleanup);
+    };
+
+    window.addEventListener(
+      "focus",
+      () => {
+        window.setTimeout(() => {
+          if (document.body.contains(input)) cleanup();
+        }, 200);
+      },
+      { once: true },
+    );
+
+    document.body.appendChild(input);
+    input.click();
   };
 
   const removePending = (i: number) => {
@@ -237,19 +271,11 @@ export function MessageInput({ conversationId, disabled, isPaid, onSend, onTypin
         </div>
       )}
       <div className="flex items-end gap-2 p-3">
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm"
-          multiple
-          hidden
-          onChange={handleFileSelect}
-        />
         <Button
           type="button"
           variant="ghost"
           size="icon"
-          onClick={() => fileInputRef.current?.click()}
+          onClick={openAttachmentPicker}
           disabled={effectiveDisabled || sending || pending.length >= MAX_ATTACHMENTS_PER_MESSAGE}
           className="shrink-0 rounded-full text-muted-foreground hover:text-primary"
         >

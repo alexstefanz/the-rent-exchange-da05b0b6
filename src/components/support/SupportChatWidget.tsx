@@ -250,7 +250,6 @@ const SupportChatWidget = () => {
     useState<AdminAction | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const isAdminRoute = pathname.startsWith("/admin");
 
   // Reset transient state on close
@@ -657,10 +656,7 @@ const SupportChatWidget = () => {
     ensureTicketAndSend(text);
   };
 
-  const handleImageUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const file = e.target.files?.[0];
+  const handleImageUpload = async (file: File | null | undefined) => {
     if (!file || !user) return;
     if (!file.type.startsWith("image/")) {
       toast.error(t("Poți trimite doar imagini.", "You can only send images."));
@@ -676,8 +672,41 @@ const SupportChatWidget = () => {
       toast.error(t("Eroare la încărcarea imaginii.", "Failed to upload image."));
     } finally {
       setIsUploadingImage(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  const openImagePicker = () => {
+    if (typeof document === "undefined") return;
+    if (sendMutation.isPending || isUploadingImage || isCreatingTicket) return;
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.tabIndex = -1;
+    input.setAttribute("aria-hidden", "true");
+    input.style.display = "none";
+
+    const cleanup = () => {
+      input.onchange = null;
+      input.remove();
+    };
+
+    input.onchange = () => {
+      void handleImageUpload(input.files?.[0]).finally(cleanup);
+    };
+
+    window.addEventListener(
+      "focus",
+      () => {
+        window.setTimeout(() => {
+          if (document.body.contains(input)) cleanup();
+        }, 200);
+      },
+      { once: true },
+    );
+
+    document.body.appendChild(input);
+    input.click();
   };
 
   const handleBackFromTicket = () => {
@@ -738,14 +767,6 @@ const SupportChatWidget = () => {
 
   return (
     <>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleImageUpload}
-      />
-
       {/* Live Help card — desktop only */}
       {!isOpen && (
         <button
@@ -1016,7 +1037,7 @@ const SupportChatWidget = () => {
                     <div className="flex items-end gap-2 px-3 py-2.5">
                       <button
                         type="button"
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={openImagePicker}
                         disabled={sendMutation.isPending || isUploadingImage || isCreatingTicket}
                         className="h-9 w-9 shrink-0 flex items-center justify-center rounded-full hover:bg-secondary transition-colors disabled:opacity-50"
                       >
@@ -1262,7 +1283,7 @@ const SupportChatWidget = () => {
                       <div className="flex items-end gap-2 px-3 py-2.5">
                         <button
                           type="button"
-                          onClick={() => fileInputRef.current?.click()}
+                          onClick={openImagePicker}
                           disabled={isUploadingImage || isCreatingTicket}
                           className="h-9 w-9 shrink-0 flex items-center justify-center rounded-full hover:bg-secondary transition-colors disabled:opacity-50"
                         >
