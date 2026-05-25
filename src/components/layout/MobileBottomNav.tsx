@@ -4,6 +4,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useConversations } from "@/hooks/queries/useConversations";
 import { useIsBanned } from "@/hooks/useIsBanned";
+import { useKeyboardOpen } from "@/hooks/useKeyboardOpen";
 
 const MobileBottomNav = () => {
   const location = useLocation();
@@ -11,6 +12,7 @@ const MobileBottomNav = () => {
   const { user } = useAuth();
   const { data: conversations } = useConversations(user?.id);
   const { isBanned } = useIsBanned();
+  const keyboardOpen = useKeyboardOpen();
   const unreadCount = conversations?.reduce((sum: number, c: any) => sum + (c.unread_count || 0), 0) || 0;
 
   const tabs: Array<{ to: string; icon: any; label: string; highlight?: boolean; badge?: number; disabled?: boolean }> = [
@@ -29,7 +31,13 @@ const MobileBottomNav = () => {
   };
 
   return (
-    <nav className="fixed bottom-3 left-3 right-3 z-50 lg:hidden rounded-full border border-white/60 bg-white/60 backdrop-blur-xl backdrop-saturate-150 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.18)]" style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
+    <nav
+      aria-hidden={keyboardOpen}
+      className={`fixed bottom-3 left-3 right-3 z-50 lg:hidden rounded-full border border-white/60 bg-white/60 backdrop-blur-xl backdrop-saturate-150 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.18)] transition-all duration-200 ${
+        keyboardOpen ? "opacity-0 pointer-events-none translate-y-6" : "opacity-100 translate-y-0"
+      }`}
+      style={{ marginBottom: "env(safe-area-inset-bottom)" }}
+    >
       <div className="flex items-center justify-around h-16 px-2">
         {tabs.map((tab) => {
           const active = isActive(tab.to);
