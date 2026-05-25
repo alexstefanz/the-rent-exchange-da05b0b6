@@ -12,6 +12,7 @@ import { ChatPanel } from "@/components/messaging/ChatPanel";
 import { InfoPanel } from "@/components/messaging/InfoPanel";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useChatViewport } from "@/hooks/useChatViewport";
 
 function useIsDesktop() {
   const [isDesktop, setIsDesktop] = useState(typeof window !== "undefined" ? window.innerWidth >= 1024 : true);
@@ -22,32 +23,6 @@ function useIsDesktop() {
     return () => mql.removeEventListener("change", handler);
   }, []);
   return isDesktop;
-}
-
-/**
- * Tracks the visual viewport height (which excludes the on-screen keyboard
- * AND the browser accessory bar on iOS) and writes it as --chat-h on <html>.
- * The chat container uses this height so the input always sits flush above
- * whatever the browser puts at the bottom (keyboard + Chrome ↑↓✓ bar).
- */
-function useChatViewport(active: boolean) {
-  useEffect(() => {
-    if (!active) return;
-    const vv = window.visualViewport;
-    if (!vv) return;
-    const root = document.documentElement;
-    const update = () => {
-      root.style.setProperty("--chat-h", `${Math.round(vv.height)}px`);
-    };
-    update();
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    return () => {
-      vv.removeEventListener("resize", update);
-      vv.removeEventListener("scroll", update);
-      root.style.removeProperty("--chat-h");
-    };
-  }, [active]);
 }
 
 export default function Messages() {
@@ -159,7 +134,11 @@ export default function Messages() {
           className={`fixed inset-0 z-50 flex flex-col overflow-hidden bg-background transform-gpu will-change-transform ${
             isClosing ? "animate-slide-out-right" : "animate-slide-in-right"
           }`}
-          style={{ height: "var(--chat-h, 100dvh)" }}
+          style={{
+            top: "var(--chat-top, 0px)",
+            height: "var(--chat-h, 100dvh)",
+            bottom: "auto",
+          }}
           onAnimationEnd={handleCloseAnimationEnd}
         >
           <ChatPanel
