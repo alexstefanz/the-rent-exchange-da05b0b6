@@ -2891,6 +2891,7 @@ export type Database = {
           rentals_count: number
         }[]
       }
+      get_my_product_serial: { Args: { _id: string }; Returns: string }
       get_or_create_rental_conversation: {
         Args: { p_rental_id: string }
         Returns: string
