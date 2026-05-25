@@ -140,7 +140,7 @@ function NotificationToast({
         "bg-background border border-border/60 rounded-2xl overflow-hidden",
         "shadow-[0_12px_40px_-12px_hsl(var(--foreground)/0.18)]",
         "px-4 py-3.5 pr-9",
-        link && "cursor-pointer hover:bg-muted/30 transition-colors",
+        link && "cursor-pointer",
       )}
     >
       <span className={cn("absolute left-0 top-0 bottom-0 w-1", s.accent)} />
