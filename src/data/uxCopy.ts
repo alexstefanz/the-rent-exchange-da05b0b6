@@ -372,7 +372,7 @@ const createUxCopy = () => ({
   },
   footer: {
      description: { ro: "Mii de produse verificate. Plăți sigure. Suport 24/7.", en: "Thousands of verified items. Secure payments. 24/7 support." },
-    explore: { ro: "Explorează", en: "Explore" },
+    explore: { ro: "Caută", en: "Search" },
     allCategories: { ro: "Toate Categoriile", en: "All Categories" },
     searchProducts: { ro: "Caută Produse", en: "Search Products" },
     outdoorAdventure: { ro: "Outdoor & Aventură", en: "Outdoor & Adventure" },
@@ -401,7 +401,7 @@ const createUxCopy = () => ({
   },
   categories_page: {
     title: { ro: "Toate Categoriile", en: "All Categories" },
-    subtitle: { ro: "Explorează toate cele 22 de categorii de produse pentru închiriat", en: "Explore all 22 product categories for rent" },
+    subtitle: { ro: "Caută în toate cele 22 de categorii de produse pentru închiriat", en: "Search all 22 product categories for rent" },
     searchPlaceholder: { ro: "Caută categorii sau subcategorii...", en: "Search categories or subcategories..." },
     subcategories: { ro: (count: number) => `${count} subcategorii`, en: (count: number) => `${count} subcategories` },
     noResults: { ro: "Nu am găsit categorii care să corespundă căutării tale.", en: "We couldn't find categories matching your search." },
@@ -562,7 +562,7 @@ const createUxCopy = () => ({
     noUsers: { ro: (q: string) => `Nu am găsit utilizatori pentru "${q}". Încearcă termeni mai generali sau extinde zona de căutare`, en: (q: string) => `No users found for "${q}". Try broader terms or expand the search area` },
     noProductsAvailable: { ro: "Nu există produse disponibile momentan.", en: "No products available at the moment." },
     noUsersAvailable: { ro: "Nu există utilizatori disponibili momentan.", en: "No users available at the moment." },
-    exploreCategories: { ro: "Explorează toate categoriile", en: "Explore all categories" },
+    exploreCategories: { ro: "Caută în toate categoriile", en: "Search all categories" },
   },
   progressIndicator: {
     stepOf: { ro: (step: number, total: number) => `Pasul ${step} din ${total}`, en: (step: number, total: number) => `Step ${step} of ${total}` },

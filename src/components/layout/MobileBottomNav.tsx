@@ -14,7 +14,7 @@ const MobileBottomNav = () => {
   const unreadCount = conversations?.reduce((sum: number, c: any) => sum + (c.unread_count || 0), 0) || 0;
 
   const tabs: Array<{ to: string; icon: any; label: string; highlight?: boolean; badge?: number; disabled?: boolean }> = [
-    { to: "/cauta", icon: Search, label: t("Explorează", "Explore") },
+    { to: "/cauta", icon: Search, label: t("Caută", "Search") },
     { to: "/favorite", icon: Heart, label: t("Favorite", "Favorites") },
     { to: "/owner/new-product", icon: Plus, label: t("Adaugă", "Add"), highlight: true, disabled: isBanned },
     { to: "/mesaje", icon: MessageCircle, label: "Chat", badge: unreadCount, disabled: isBanned },
