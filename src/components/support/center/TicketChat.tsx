@@ -72,7 +72,6 @@ export function TicketChat({ ticketId, isClosed }: Props) {
   const qc = useQueryClient();
   const [text, setText] = useState("");
   const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastSymbolToastRef = useRef(0);
@@ -134,9 +133,7 @@ export function TicketChat({ ticketId, isClosed }: Props) {
     sendMutation.mutate(txt);
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (fileRef.current) fileRef.current.value = "";
+  const handleUpload = async (file: File | null | undefined) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       toast.error(t("Doar imagini sunt acceptate.", "Only images are accepted."));
@@ -153,6 +150,40 @@ export function TicketChat({ ticketId, isClosed }: Props) {
     } finally {
       setUploading(false);
     }
+  };
+
+  const openImagePicker = () => {
+    if (typeof document === "undefined") return;
+    if (uploading) return;
+
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*";
+    input.tabIndex = -1;
+    input.setAttribute("aria-hidden", "true");
+    input.style.display = "none";
+
+    const cleanup = () => {
+      input.onchange = null;
+      input.remove();
+    };
+
+    input.onchange = () => {
+      void handleUpload(input.files?.[0]).finally(cleanup);
+    };
+
+    window.addEventListener(
+      "focus",
+      () => {
+        window.setTimeout(() => {
+          if (document.body.contains(input)) cleanup();
+        }, 200);
+      },
+      { once: true },
+    );
+
+    document.body.appendChild(input);
+    input.click();
   };
 
   // Group messages by day
@@ -200,13 +231,12 @@ export function TicketChat({ ticketId, isClosed }: Props) {
               size="icon"
               variant="ghost"
               className="h-9 w-9 shrink-0"
-              onClick={() => fileRef.current?.click()}
+              onClick={openImagePicker}
               disabled={uploading}
               aria-label={t("Atașează imagine", "Attach image")}
             >
               {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
             </Button>
-            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
             <Textarea
               ref={textareaRef}
               name="message"
