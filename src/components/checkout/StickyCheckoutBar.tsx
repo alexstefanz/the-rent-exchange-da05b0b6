@@ -24,7 +24,7 @@ const StickyCheckoutBar = ({ total, ctaLabel, onClick, disabled, loading }: Prop
         <Button
           onClick={onClick}
           disabled={disabled || loading}
-          className="flex-1 h-12 text-base font-semibold shadow-lg shadow-primary/20"
+          className="flex-none basis-[60%] max-w-[60%] h-12 text-base font-semibold shadow-lg shadow-primary/20"
         >
           {loading ? t("Se procesează...", "Processing...") : ctaLabel}
         </Button>
