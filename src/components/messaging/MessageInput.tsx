@@ -48,6 +48,7 @@ export function MessageInput({ conversationId, disabled, isPaid, onSend, onTypin
   const [contactAlert, setContactAlert] = useState<{ open: boolean; kind: "phone" | "email" | "both" }>({ open: false, kind: "phone" });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
   const lastSymbolToastRef = useRef(0);
   const notifySymbolBlocked = () => {
     const now = Date.now();
@@ -68,6 +69,36 @@ export function MessageInput({ conversationId, disabled, isPaid, onSend, onTypin
     ta.style.height = "auto";
     ta.style.height = Math.min(ta.scrollHeight, 140) + "px";
   }, [text]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const updateKeyboardState = () => {
+      const active = document.activeElement as HTMLElement | null;
+      const editing = !!active && (
+        active.tagName === "TEXTAREA" ||
+        active.tagName === "INPUT" ||
+        active.isContentEditable
+      );
+      const delta = window.innerHeight - vv.height;
+      setKeyboardOpen(editing && delta > 80);
+    };
+
+    updateKeyboardState();
+    vv.addEventListener("resize", updateKeyboardState);
+    vv.addEventListener("scroll", updateKeyboardState);
+    document.addEventListener("focusin", updateKeyboardState);
+    document.addEventListener("focusout", updateKeyboardState);
+
+    return () => {
+      vv.removeEventListener("resize", updateKeyboardState);
+      vv.removeEventListener("scroll", updateKeyboardState);
+      document.removeEventListener("focusin", updateKeyboardState);
+      document.removeEventListener("focusout", updateKeyboardState);
+    };
+  }, []);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -165,7 +196,7 @@ export function MessageInput({ conversationId, disabled, isPaid, onSend, onTypin
   return (
     <div
       className="border-t bg-background/95 backdrop-blur-sm shrink-0"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      style={{ paddingBottom: keyboardOpen ? "0px" : "env(safe-area-inset-bottom)" }}
     >
       {isBanned && (
         <div className="px-4 pt-3 pb-1 flex items-center gap-2 text-sm text-destructive">
