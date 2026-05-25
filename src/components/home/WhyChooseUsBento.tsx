@@ -96,7 +96,7 @@ const WhyChooseUsBento = () => {
 
         <div className="grid gap-5 lg:grid-cols-3">
           {/* Big escrow card */}
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#1a1410] via-[#221913] to-[#2a1f17] p-8 lg:row-span-2 md:p-10">
+          <div className="relative h-full overflow-hidden rounded-3xl bg-gradient-to-br from-[#1a1410] via-[#221913] to-[#2a1f17] p-8 md:p-10">
             <div
               aria-hidden
               className="pointer-events-none absolute inset-0 opacity-[0.07]"
