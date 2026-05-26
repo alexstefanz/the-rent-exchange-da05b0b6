@@ -80,12 +80,16 @@ const PremiumBookingCard = ({
             end: endDate,
             range: startDate && endDate ? { from: startDate, to: endDate } : undefined,
             today: new Date(),
+            past: (d: Date) => isBefore(d, new Date(new Date().setHours(0, 0, 0, 0))),
           }}
           modifiersStyles={{
             start: { backgroundColor: "#FA8729", color: "white", borderRadius: "10px" },
             end: { backgroundColor: "#FA8729", color: "white", borderRadius: "10px" },
             range: { backgroundColor: "#FA8729", color: "white", borderRadius: "10px" },
             today: { backgroundColor: "#000", color: "#fff", borderRadius: "10px", fontWeight: 700 },
+          }}
+          modifiersClassNames={{
+            past: "day-past",
           }}
           classNames={{
             months: "flex flex-col gap-4 w-full booking-cal-months",

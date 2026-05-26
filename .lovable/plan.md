@@ -1,52 +1,32 @@
-## Obiectiv
-Elimin experiența deranjantă de deasupra tastaturii pe mobil în toate ecranele de chat și verific explicit comportamentul pe iPhone pentru Safari și Chrome.
+## Problem
 
-## Problema exactă
-Screenshot-ul arată două lucruri distincte:
-1. zona/composer-ul aplicației, pe care o putem controla;
-2. bara nativă iOS de tip input assistant (cu săgeți/check), pe care web-ul nu o poate ascunde direct în Safari/Chrome.
+În calendarul produsului (`PremiumBookingCard`), luna iunie apare goală (doar antetul "June 2026" și zilele săptămânii, fără numere). Cauza:
 
-Planul meu este să scot complet orice spațiu sau strat inutil generat de aplicație și să reduc toate trigger-ele posibile din DOM, astfel încât să rămână doar ce este impus nativ de iOS.
+- Produsul are o rezervare `confirmed` 1 iunie – 10 iulie 2026, deci toate zilele din iunie sunt `disabled`.
+- În `src/index.css` (linia 249) există regula:
+  ```css
+  .rdp-hide-past-weeks .booking-cal-row:not(:has(button:not([disabled]))) { display: none; }
+  ```
+  Scopul inițial era să ascundă săptămânile complet din trecut, dar regula ascunde **orice** rând în care toate zilele sunt disabled — inclusiv săptămâni viitoare complet rezervate. Rezultatul: în iunie toate rândurile dispar.
 
-## Ce voi implementa
-1. Audit complet al tuturor inputurilor de chat mobile
-- Verific `MessageInput`, `SupportChatWidget`, `TicketChat` și containerele lor.
-- Elimin orice padding, safe-area, footer fix, spacer sau wrapper care mai rămâne deasupra tastaturii când inputul este focusat.
+Am verificat în DB: doar acest produs are în prezent o rezervare lungă care declanșează bug-ul, dar problema afectează potențial orice produs cu o săptămână întreagă blocată/rezervată.
 
-2. Unific detecția de tastatură pentru toate chaturile
-- Scot logica duplicată de `visualViewport` și o mut pe un comportament comun, coerent.
-- Fac composer-ul să se lipească de viewport-ul vizibil real când tastatura este deschisă.
+## Fix
 
-3. Curăț trigger-ele care fac iOS să creadă că are mai multe câmpuri navigabile
-- Verific toate câmpurile focusabile din chaturi și orice input temporar/ascuns.
-- Mă asigur că rămâne un singur control editabil activ în fluxul de scriere, fără accesorii suplimentare declanșate de aplicație.
+Diferențiez "zilele din trecut" de "zilele rezervate", ca să ascund din CSS doar săptămânile complet trecute, nu și pe cele complet rezervate.
 
-4. Corectez layout-ul pe toate suprafețele de chat mobile
-- `/mesaje`
-- widgetul de suport
-- ticket chat / alte ecrane de conversație
-- Dacă există alte componente de chat reutilizate, le aliniez la același comportament.
+1. **`src/components/product/PremiumBookingCard.tsx`**
+   - Adaug un modifier `past` în `<CalendarComponent>` pentru zilele de dinainte de azi (`d => isBefore(d, startOfToday())`).
+   - Las `disabled` neschimbat (past sau booked → nealegibil).
+   - Adaug în `modifiersClassNames` (sau prin `classNames.day_…` echivalent) o clasă marker `day-past` pentru zilele din trecut.
 
-5. Validez comportamentul pe iPhone viewport
-- Verific deschiderea tastaturii, focus în textarea, trimitere mesaj, atașamente, back/close.
-- Confirm că dispare complet orice fâșie albă sau spațiu generat de aplicație.
-- Dacă mai rămâne bara cu săgeți/check, o marchez explicit ca limitare nativă iOS/WebKit, nu bug UI al aplicației.
+2. **`src/index.css`** (linia 245-251)
+   - Schimb selectorul ca să ascundă doar rândurile în care **fiecare** zi este `.day-past` (nu doar `disabled`):
+     ```css
+     .rdp-hide-past-weeks .booking-cal-row:not(:has(button:not(.day-past))) { display: none; }
+     ```
+   - Astfel săptămânile complet în trecut rămân ascunse, dar săptămânile viitoare complet rezervate se afișează (cu zile vizibile, opacitate redusă, tăiate — exact ca legenda "Rezervat").
 
-## Fișiere țintă
-- `src/components/messaging/MessageInput.tsx`
-- `src/components/messaging/ChatPanel.tsx`
-- `src/components/support/SupportChatWidget.tsx`
-- `src/components/support/center/TicketChat.tsx`
-- `src/hooks/useKeyboardOpen.ts`
-- posibil și hook-ul comun de viewport/chat dacă trebuie unificat
+## Out of scope
 
-## Detalii tehnice
-- Safari și Chrome pe iPhone folosesc același motor WebKit, deci bara nativă se comportă similar în ambele.
-- Din cod web pot elimina doar elementele/controlul aplicației: padding, safe-area rezidual, focus-uri parazite, inputuri ascunse, moduri de input inutile.
-- Nu voi modifica logica de business a mesajelor; schimbarea rămâne strict la nivel de UX/layout/focus pe mobil.
-
-## Rezultat urmărit
-- fără fâșie albă între input și tastatură;
-- fără elemente ale aplicației deasupra tastaturii;
-- același comportament coerent în `/mesaje` și în celelalte chaturi;
-- confirmare clară a ce a fost eliminat din aplicație și ce rămâne nativ pe iPhone.
+Nu schimb logica de rezervări, RPC-ul `get_booked_dates`, stilistica generală a calendarului sau alte ecrane (calendarul din `ListingAvailabilityDialog` folosește componenta standard fără regula `rdp-hide-past-weeks`, deci nu e afectat).

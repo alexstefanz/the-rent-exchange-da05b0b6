@@ -245,8 +245,9 @@ html body[style*="padding-right"] {
 /* Hide entire calendar week rows where every day is disabled (past weeks).
    Used on the product booking calendar so users only see the current week
    onwards. Current week stays visible because it still contains future days. */
-/* Hide entirely-past weeks (every day disabled). */
-.rdp-hide-past-weeks .booking-cal-row:not(:has(button:not([disabled]))) {
+/* Hide entirely-past weeks (every day is in the past).
+   Uses the .day-past marker so fully-booked future weeks remain visible. */
+.rdp-hide-past-weeks .booking-cal-row:not(:has(button:not(.day-past))) {
   display: none;
 }
 
