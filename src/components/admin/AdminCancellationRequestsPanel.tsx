@@ -37,7 +37,6 @@ const AdminCancellationRequestsPanel = () => {
   const { data: archive = [], isLoading: isArchiveLoading } = useQuery({
     queryKey: ["admin-cancellation-requests-archive"],
     queryFn: listResolvedCancellationRequests,
-    enabled: innerTab === "archive",
   });
 
   const archiveRentalIds = useMemo(() => archive.map((r) => r.rental_id), [archive]);
@@ -63,7 +62,7 @@ const AdminCancellationRequestsPanel = () => {
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ["admin-cancellation-requests"] });
-    queryClient.invalidateQueries({ queryKey: ["admin-cancellation-requests-archive"] });
+    queryClient.refetchQueries({ queryKey: ["admin-cancellation-requests-archive"] });
   };
 
   const approveMutation = useMutation({

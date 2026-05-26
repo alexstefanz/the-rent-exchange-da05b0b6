@@ -1,32 +1,23 @@
-## Problem
+## Problemă
 
-În calendarul produsului (`PremiumBookingCard`), luna iunie apare goală (doar antetul "June 2026" și zilele săptămânii, fără numere). Cauza:
+În `Confirmări / Anulări → Anulări rezervări → Arhivă`, după ce respingi (sau aprobi) o cerere din tab-ul „În așteptare", noua intrare nu apare în Arhivă până la un reload manual.
 
-- Produsul are o rezervare `confirmed` 1 iunie – 10 iulie 2026, deci toate zilele din iunie sunt `disabled`.
-- În `src/index.css` (linia 249) există regula:
-  ```css
-  .rdp-hide-past-weeks .booking-cal-row:not(:has(button:not([disabled]))) { display: none; }
-  ```
-  Scopul inițial era să ascundă săptămânile complet din trecut, dar regula ascunde **orice** rând în care toate zilele sunt disabled — inclusiv săptămâni viitoare complet rezervate. Rezultatul: în iunie toate rândurile dispar.
+Cauza este în `src/components/admin/AdminCancellationRequestsPanel.tsx`:
 
-Am verificat în DB: doar acest produs are în prezent o rezervare lungă care declanșează bug-ul, dar problema afectează potențial orice produs cu o săptămână întreagă blocată/rezervată.
+- Query-ul arhivei are `enabled: innerTab === "archive"`, deci nu rulează cât timp ești pe „În așteptare".
+- După respingere se cheamă `queryClient.invalidateQueries(...)`. Pentru un query dezactivat, invalidate doar marchează datele ca stale, fără să declanșeze fetch. Radix Tabs demontează conținutul tabului inactiv, deci nu există observer activ care să facă refetch.
+- Când treci pe Arhivă, componenta se remontează cu datele cache vechi; refetch-ul pornește, dar până se termină, vezi exact lista veche (fără cererea proaspăt respinsă) și badge-ul cu numărul vechi.
 
 ## Fix
 
-Diferențiez "zilele din trecut" de "zilele rezervate", ca să ascund din CSS doar săptămânile complet trecute, nu și pe cele complet rezervate.
+În `src/components/admin/AdminCancellationRequestsPanel.tsx`:
 
-1. **`src/components/product/PremiumBookingCard.tsx`**
-   - Adaug un modifier `past` în `<CalendarComponent>` pentru zilele de dinainte de azi (`d => isBefore(d, startOfToday())`).
-   - Las `disabled` neschimbat (past sau booked → nealegibil).
-   - Adaug în `modifiersClassNames` (sau prin `classNames.day_…` echivalent) o clasă marker `day-past` pentru zilele din trecut.
-
-2. **`src/index.css`** (linia 245-251)
-   - Schimb selectorul ca să ascundă doar rândurile în care **fiecare** zi este `.day-past` (nu doar `disabled`):
-     ```css
-     .rdp-hide-past-weeks .booking-cal-row:not(:has(button:not(.day-past))) { display: none; }
-     ```
-   - Astfel săptămânile complet în trecut rămân ascunse, dar săptămânile viitoare complet rezervate se afișează (cu zile vizibile, opacitate redusă, tăiate — exact ca legenda "Rezervat").
+1. Activez query-ul arhivei permanent (`enabled: true`) ca să se țină în sincron cu lista pending și ca badge-ul „Arhivă (n)" să fie corect indiferent de tab.
+2. În `invalidateAll()` (apelat din `approveMutation.onSuccess` și `rejectMutation.onSuccess`) folosesc `queryClient.refetchQueries` pentru cheia arhivei, în locul lui `invalidateQueries`, ca să forțez un fetch imediat chiar dacă tab-ul Arhivă nu e încă vizibil.
+3. Pentru robustețe, păstrez și `invalidateQueries` pentru lista pending.
 
 ## Out of scope
 
-Nu schimb logica de rezervări, RPC-ul `get_booked_dates`, stilistica generală a calendarului sau alte ecrane (calendarul din `ListingAvailabilityDialog` folosește componenta standard fără regula `rdp-hide-past-weeks`, deci nu e afectat).
+- Fără modificări în RPC-uri (`list_resolved_cancellation_requests`, `admin_respond_cancellation`) — au fost verificate și funcționează corect.
+- Fără modificări la `AdminApprovals.tsx`, edge functions sau email-uri.
+- Fără realtime subscriptions noi.
