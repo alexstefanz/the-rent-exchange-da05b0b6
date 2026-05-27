@@ -32,7 +32,7 @@ const staticEntries: SitemapEntry[] = [
 
 async function fetchProducts(): Promise<SitemapEntry[]> {
   try {
-    const url = `${SUPABASE_URL}/rest/v1/products?select=slug,updated_at&approval_status=eq.approved&is_active=eq.true&deleted_at=is.null&slug=not.is.null`;
+    const url = `${SUPABASE_URL}/rest/v1/products?select=slug,created_at&approval_status=eq.approved&is_active=eq.true&deleted_at=is.null&slug=not.is.null`;
     const res = await fetch(url, {
       headers: {
         apikey: SUPABASE_ANON_KEY,
@@ -43,12 +43,12 @@ async function fetchProducts(): Promise<SitemapEntry[]> {
       console.warn(`[sitemap] products fetch failed: ${res.status}`);
       return [];
     }
-    const rows: Array<{ slug: string | null; updated_at?: string }> = await res.json();
+    const rows: Array<{ slug: string | null; created_at?: string }> = await res.json();
     return rows
       .filter((r) => r.slug)
       .map((r) => ({
         path: `/produs/${r.slug}`,
-        lastmod: r.updated_at ? r.updated_at.split("T")[0] : undefined,
+        lastmod: r.created_at ? r.created_at.split("T")[0] : undefined,
         changefreq: "weekly" as const,
         priority: "0.7",
       }));
