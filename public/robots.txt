@@ -12,3 +12,30 @@ Allow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /auth
+Disallow: /checkout
+Disallow: /checkout/
+Disallow: /profile
+Disallow: /contul-meu
+Disallow: /mesaje
+Disallow: /favorite
+Disallow: /castiguri
+Disallow: /recenzii
+Disallow: /notificari
+Disallow: /rezervari
+Disallow: /rezervari/
+Disallow: /inchirieri
+Disallow: /inchirieri/
+Disallow: /anunturi
+Disallow: /activitate
+Disallow: /suport
+Disallow: /verificare
+Disallow: /kyc
+Disallow: /dezactivare-cont
+Disallow: /unsubscribe
+Disallow: /owner/
+Disallow: /cereri
+
+Sitemap: https://rentli.ro/sitemap.xml
