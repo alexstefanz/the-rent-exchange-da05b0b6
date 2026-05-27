@@ -67,6 +67,7 @@ Deno.serve(async (req) => {
             variables: {
               productTitle,
               ownerName: ownerProfile?.full_name || "proprietarul",
+              link: `https://rentli.ro/rezervari?rental_id=${r.id}`,
             },
             idempotencyKey: `return_reminder:${r.id}:${today}`,
           },
