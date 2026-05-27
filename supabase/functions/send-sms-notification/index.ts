@@ -9,6 +9,29 @@ const corsHeaders = {
 const SMS_API_URL = "https://smsalert.mobi/api/v2/message/send";
 const PLATFORM_URL = "rentli.ro";
 
+// Templates addressed to the OWNER. All others default to the renter view.
+const OWNER_TEMPLATES = new Set<string>([
+  "rental_request_owner",
+  "rental_accepted_owner",
+  "rental_cancelled_owner",
+  "return_reminder_owner",
+  "return_deadline_2h_owner",
+  "request_reminder_2h_owner",
+  "request_expired_owner",
+]);
+
+/**
+ * Build a per-template deep link to the specific rental.
+ * - Owner-facing templates → /inchirieri?rental_id=...
+ * - Renter-facing templates → /rezervari?rental_id=...
+ * Falls back to the list route when rentalId is missing.
+ */
+function defaultLinkFor(key: string, rentalId?: string | null): string {
+  const isOwner = OWNER_TEMPLATES.has(key);
+  const base = isOwner ? `${PLATFORM_URL}/inchirieri` : `${PLATFORM_URL}/rezervari`;
+  return rentalId ? `${base}?rental_id=${rentalId}` : base;
+}
+
 type TemplateKey =
   | "rental_request_owner"
   | "rental_request_renter"
@@ -47,34 +70,34 @@ type TemplateVars = {
  * Render an SMS body for a given template key.
  * Uses ASCII / no diacritics so messages stay under 160 chars (GSM-7, 1 SMS credit).
  */
-function renderTemplate(key: TemplateKey, v: TemplateVars): string {
+function renderTemplate(key: TemplateKey, v: TemplateVars, rentalId?: string | null): string {
   const title = stripDiacritics(v.productTitle || "produsul").slice(0, 40);
   const renter = stripDiacritics(v.renterName || "Un utilizator").slice(0, 30);
   const owner = stripDiacritics(v.ownerName || "proprietarul").slice(0, 30);
   const other = stripDiacritics(v.otherPartyName || "Cealalta parte").slice(0, 30);
-  const link = v.link || `${PLATFORM_URL}/rezervari`;
+  const link = v.link || defaultLinkFor(key, rentalId);
   const when = stripDiacritics(v.pickupDate || "").slice(0, 30);
   const place = stripDiacritics(v.pickupLocation || "").slice(0, 40);
 
   switch (key) {
     case "rental_request_owner":
-      return `Rentli: cerere noua pt "${title}" de la ${renter}. Detalii: ${PLATFORM_URL}/inchirieri`;
+      return `Rentli: cerere noua pt "${title}" de la ${renter}. Detalii: ${link}`;
     case "rental_request_renter":
-      return `Rentli: cererea ta pt "${title}" a fost trimisa. Astepti raspuns de la ${owner}. ${PLATFORM_URL}/rezervari`;
+      return `Rentli: cererea ta pt "${title}" a fost trimisa. Astepti raspuns de la ${owner}. ${link}`;
     case "rental_accepted":
-      return `Rentli: cererea ta pt "${title}" a fost ACCEPTATA. Detalii: ${PLATFORM_URL}/rezervari`;
+      return `Rentli: cererea ta pt "${title}" a fost ACCEPTATA. Detalii: ${link}`;
     case "rental_accepted_owner":
-      return `Rentli: ai acceptat cererea lui ${renter} pt "${title}". Urmeaza plata. ${PLATFORM_URL}/inchirieri`;
+      return `Rentli: ai acceptat cererea lui ${renter} pt "${title}". Urmeaza plata. ${link}`;
     case "rental_rejected":
-      return `Rentli: cererea pt "${title}" a fost refuzata. Cauta alte produse pe ${PLATFORM_URL}`;
+      return `Rentli: cererea pt "${title}" a fost refuzata. Detalii: ${link}`;
     case "rental_cancelled":
-      return `Rentli: rezervarea pt "${title}" a fost anulata. Detalii: ${PLATFORM_URL}/rezervari`;
+      return `Rentli: rezervarea pt "${title}" a fost anulata. Detalii: ${link}`;
     case "rental_cancelled_owner":
-      return `Rentli: ${renter} a anulat cererea pt "${title}" inainte de plata.`;
+      return `Rentli: ${renter} a anulat cererea pt "${title}" inainte de plata. ${link}`;
     case "return_reminder":
-      return `Rentli: returneaza azi "${title}". Contacteaza ${owner} pt predare.`;
+      return `Rentli: returneaza azi "${title}". Contacteaza ${owner} pt predare. ${link}`;
     case "return_reminder_owner":
-      return `Rentli: ${renter} trebuie sa returneze azi "${title}".`;
+      return `Rentli: ${renter} trebuie sa returneze azi "${title}". ${link}`;
     case "return_deadline_2h":
       return `Rentli: URGENT - 2h pana la deadline pt "${title}". Finalizeaza returnarea: ${link}`;
     case "return_deadline_2h_owner":
@@ -98,9 +121,9 @@ function renderTemplate(key: TemplateKey, v: TemplateVars): string {
     case "request_reminder_2h_renter":
       return `Rentli: asteptam raspunsul lui ${owner} pt "${title}". Mai are 2h. ${link}`;
     case "request_expired_owner":
-      return `Rentli: cererea pt "${title}" a expirat (48h fara raspuns) si a fost anulata automat.`;
+      return `Rentli: cererea pt "${title}" a expirat (48h fara raspuns) si a fost anulata automat. ${link}`;
     case "request_expired_renter":
-      return `Rentli: cererea pt "${title}" a expirat fara raspuns. Hold-ul a fost eliberat integral.`;
+      return `Rentli: cererea pt "${title}" a expirat fara raspuns. Hold-ul a fost eliberat. ${link}`;
   }
 }
 
@@ -250,7 +273,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ success: true, cached: true, status: existing.status });
     }
 
-    const message = renderTemplate(templateKey, variables || {});
+    const message = renderTemplate(templateKey, variables || {}, rentalId || null);
 
     // === ADMIN OVERRIDE PATH ===
     if (phoneOverride && overrideAdminId) {
