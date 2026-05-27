@@ -220,6 +220,7 @@ Deno.serve(async (req) => {
             rentalId: rental.id,
             variables: {
               productTitle: productRes.data?.title || "produsul",
+              link: `https://rentli.ro/inchirieri?rental_id=${rental.id}`,
             },
             idempotencyKey: `rental_cancelled:${rental.id}:${rental.owner_id}`,
           },
