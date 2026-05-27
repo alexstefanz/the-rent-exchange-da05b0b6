@@ -1,54 +1,46 @@
-## Obiectiv
+# Fă Rentli vizibil pe Google
 
-Fiecare SMS legat de o închiriere (cerere, acceptare, refuz, plată, predare, returnare, finalizare, recenzie, expirare) trebuie să conțină un link către pagina rezervării/închirierii respective, inclusiv mesajele finale de notificare.
+Scop: să apară rentli.ro în Google în următoarele 1-2 săptămâni.
 
-## Situația actuală
+## Ce fac
 
-`supabase/functions/send-sms-notification/index.ts` definește 22 de șabloane SMS. Probleme:
+### 1. SEO on-page în `index.html`
+- `<link rel="canonical" href="https://rentli.ro/" />`
+- Meta tag de verificare Google Search Console (token obținut prin API-ul Site Verification)
+- Open Graph: `og:image` cu o imagine de brand (1200x630) în loc de placeholder-ul Lovable
+- JSON-LD `Organization` + `WebSite` (cu `SearchAction` pentru sitelinks searchbox)
+- Title/description deja există — le verific și le optimizez dacă e cazul
 
-1. Mai multe șabloane nu conțin link deloc:
-   - `rental_rejected`, `rental_cancelled_owner`, `return_reminder`, `return_reminder_owner`, `request_expired_owner`, `request_expired_renter`
-2. Alte șabloane folosesc paths statice (`rentli.ro/rezervari`, `rentli.ro/inchirieri`) fără `rental_id`, deci utilizatorul aterizează pe lista generală în loc de rezervarea specifică:
-   - `rental_request_owner`, `rental_request_renter`, `rental_accepted`, `rental_accepted_owner`, `rental_cancelled`
-3. `notify-rental-event` deja construiește un `smsLink` corect (token securizat sau `APP_URL + linkPath` cu `rental_id`) și îl pasează ca `variables.link`, dar majoritatea șabloanelor de mai sus ignoră această variabilă.
-4. Apelanții izolați (`send-cancellation-notification`, `notify-return-day`) nu trimit `variables.link`.
+### 2. `public/sitemap.xml` generat automat
+- Script `scripts/generate-sitemap.ts` rulat pe `predev` și `prebuild`
+- Include rutele publice statice (`/`, `/cum-functioneaza`, `/categorii`, `/contact`, etc.)
+- Include rutele dinamice: toate produsele aprobate (folosind slug-ul SEO existent) și categoriile din `platform_categories`
+- `BASE_URL = "https://rentli.ro"`
 
-## Modificări propuse
+### 3. `public/robots.txt`
+- `Allow: /` pentru toți crawlerii
+- `Disallow:` pentru rute interne (`/admin`, `/profil`, `/inchirieri`, `/rezervari`, `/checkout`, `/auth`, `/lovable/*`)
+- `Sitemap: https://rentli.ro/sitemap.xml`
 
-### 1. `supabase/functions/send-sms-notification/index.ts`
+### 4. Verificare în Google Search Console
+- Cer token META prin connector Google Search Console
+- Îl pun în `index.html`
+- După deploy, declanșez verify + adaug `https://rentli.ro/` ca proprietate
+- Submit sitemap.xml prin API
 
-- Calculează un link implicit per rol/template când `variables.link` lipsește, folosind `rentalId`:
-  - chiriaș (renter) → `rentli.ro/rezervari?rental_id=<id>`
-  - proprietar (owner) → `rentli.ro/inchirieri?rental_id=<id>`
-  - fallback fără `rentalId` → ruta listă existentă.
-- Rescrie toate cele 22 de șabloane astfel încât să se termine cu `${link}` (sau `Detalii: ${link}`), inclusiv:
-  - `rental_rejected`, `rental_cancelled_owner`, `return_reminder`, `return_reminder_owner`, `request_expired_owner`, `request_expired_renter` care acum nu au niciun link.
-  - `rental_request_owner/renter`, `rental_accepted(_owner)`, `rental_cancelled`, `rental_completed`, `review_reminder` să folosească `${link}` în loc de paths statice.
-- Păstrează limita ~160 caractere (GSM-7) prin scurtarea textului acolo unde e nevoie; linkurile securizate `rentli.ro/a/<token>` sunt deja scurte.
-- Păstrează `stripDiacritics` și logica de provider neschimbate.
+### 5. Imagine OG de brand
+- Generez o imagine 1200x630 cu logo + tagline Rentli pentru `og:image`
+- Salvată în `public/og-image.jpg`
 
-### 2. `supabase/functions/notify-rental-event/index.ts`
+### 6. Scan SEO final
+- Rulez `seo--trigger_scan` ca să confirm că nu mai sunt issues
 
-- Niciuna funcțională: deja calculează `smsLink` corect și îl trimite. Singura ajustare: dacă `linkPath` pentru un eveniment nu conține `rental_id`, comutăm pe ruta cu `?rental_id=<id>` corespunzătoare rolului. (Audit rapid al map-ării event→linkPath pentru completitudine.)
+## Ce NU fac (out of scope)
+- Nu modific funcționalitatea aplicației, RLS, edge functions sau plăți
+- Nu schimb routing-ul existent
+- Nu adaug per-page SEO (Helmet) acum — doar sitewide; pot face follow-up dacă vrei meta tags dinamice per produs/categorie
 
-### 3. `supabase/functions/notify-return-day/index.ts`
-
-- La invocarea `send-sms-notification` adaugă `variables.link = ${APP_URL}/rezervari?rental_id=${r.id}` (renter) pentru template-ul `return_reminder`.
-
-### 4. `supabase/functions/send-cancellation-notification/index.ts`
-
-- La trimiterea `rental_cancelled` adaugă `variables.link` cu `rental_id` (rol = chiriaș). Verifică dacă există și varianta către proprietar și aplică similar.
-
-### 5. Deploy
-
-- `deploy_edge_functions(["send-sms-notification", "notify-rental-event", "notify-return-day", "send-cancellation-notification"])`.
-
-### 6. Verificare
-
-- Test smoke prin `supabase--curl_edge_functions` pe `send-sms-notification` cu `phoneOverride` (admin) pentru 3 template-uri reprezentative: `rental_request_owner`, `rental_rejected`, `rental_completed` — confirmă că `message_body` din `sms_logs` se termină cu linkul corect (rental_id sau token).
-
-## În afara scopului
-
-- Schimbări la canalele email / in-app.
-- Modificarea politicii de tokenizare (`secure_action_tokens`) — folosim infrastructura existentă.
-- Adăugarea de șabloane SMS noi.
+## Note tehnice
+- Domeniul live e `https://rentli.ro` (cu redirect de la `www`)
+- Folosesc connector-ul Google Search Console deja conectat
+- Indexarea efectivă durează zile-săptămâni după submit; partea tehnică se rezolvă azi
