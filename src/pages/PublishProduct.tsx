@@ -47,10 +47,18 @@ const PublishProductPage = ({ mode }: Props) => {
           navigate("/owner");
           return;
         }
-        // serial_number is column-level restricted; fetch it via secure RPC for owner.
+        // Sensitive fields (pickup_*, serial_number) are column-level restricted;
+        // hydrate them via the secure owner/admin RPC.
         try {
-          const { data: serial } = await (supabase.rpc as any)("get_my_product_serial", { _id: id });
-          (p as any).serial_number = serial ?? null;
+          const { data: sensRows } = await (supabase.rpc as any)(
+            "get_product_sensitive_fields",
+            { _id: id },
+          );
+          const s = Array.isArray(sensRows) ? sensRows[0] : sensRows;
+          (p as any).pickup_address = s?.pickup_address ?? null;
+          (p as any).pickup_lat = s?.pickup_lat ?? null;
+          (p as any).pickup_lng = s?.pickup_lng ?? null;
+          (p as any).serial_number = s?.serial_number ?? null;
         } catch {
           (p as any).serial_number = null;
         }

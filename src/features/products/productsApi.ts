@@ -3,6 +3,18 @@ import { sanitizeSearchInput } from "@/lib/inputValidation";
 import { handleApiError } from "@/lib/errorHandler";
 import { expandSearchTerms } from "@/lib/searchSynonyms";
 
+// Sensitive columns (pickup_address, pickup_lat, pickup_lng, serial_number,
+// admin_flagged, flag_reason, admin_edited_at, admin_edited_by) are revoked
+// at column level. They are populated only via the owner/admin RPCs below.
+const PRODUCT_SAFE_COLS =
+  "id,owner_id,title,slug,description,title_en,description_en," +
+  "daily_price_owner,platform_fee_percent,category,subcategory," +
+  "location_city,location_country,images,included_items,included_items_en," +
+  "is_active,approval_status,created_at,condition,deposit_type,deposit_value," +
+  "min_rental_days,min_rental_preset,max_rental_days,delivery_available," +
+  "delivery_fee,delivery_radius_km,pickup_available,usage_rules," +
+  "available_immediately,blocked_dates,quality_score";
+
 export interface Product {
   id: string;
   owner_id: string;
@@ -17,6 +29,7 @@ export interface Product {
   subcategory: string | null;
   location_city: string | null;
   location_country: string | null;
+  // Populated only for the product owner (via merge) or admin RPC.
   pickup_address: string | null;
   images: string[];
   included_items: string[] | null;
@@ -34,6 +47,7 @@ export interface Product {
   delivery_fee?: number | null;
   delivery_radius_km?: number | null;
   pickup_available?: boolean | null;
+  // Populated only for the owner (via merge) or admin RPC.
   pickup_lat?: number | null;
   pickup_lng?: number | null;
   usage_rules?: string[] | null;
@@ -81,7 +95,7 @@ export const getProducts = async (filters?: ProductFilters): Promise<Product[]> 
 export const getProductById = async (id: string): Promise<Product | null> => {
   const { data, error } = await supabase
     .from("products")
-    .select("*")
+    .select(PRODUCT_SAFE_COLS as any)
     .eq("id", id)
     .maybeSingle();
 
@@ -89,13 +103,13 @@ export const getProductById = async (id: string): Promise<Product | null> => {
     handleApiError("Error fetching product", error);
   }
 
-  return data;
+  return (data as unknown as Product | null) ?? null;
 };
 
 export const getProductBySlug = async (slug: string): Promise<Product | null> => {
   const { data, error } = await supabase
     .from("products")
-    .select("*")
+    .select(PRODUCT_SAFE_COLS as any)
     .eq("slug", slug)
     .is("deleted_at", null)
     .maybeSingle();
@@ -104,13 +118,13 @@ export const getProductBySlug = async (slug: string): Promise<Product | null> =>
     handleApiError("Error fetching product by slug", error);
   }
 
-  return data;
+  return (data as unknown as Product | null) ?? null;
 };
 
 export const getMyProducts = async (ownerId: string): Promise<Product[]> => {
   const { data, error } = await supabase
     .from("products")
-    .select("*")
+    .select(PRODUCT_SAFE_COLS as any)
     .eq("owner_id", ownerId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
@@ -119,14 +133,34 @@ export const getMyProducts = async (ownerId: string): Promise<Product[]> => {
     handleApiError("Error fetching my products", error);
   }
 
-  return data || [];
+  const rows = ((data as unknown) as Product[] | null) || [];
+  if (rows.length === 0) return rows;
+
+  // Merge owner-only sensitive fields via secure RPC.
+  try {
+    const { data: sens } = await (supabase.rpc as any)("get_my_products_sensitive");
+    const byId = new Map<string, any>((sens || []).map((r: any) => [r.id, r]));
+    return rows.map((p) => {
+      const s = byId.get(p.id);
+      if (!s) return p;
+      return {
+        ...p,
+        pickup_address: s.pickup_address,
+        pickup_lat: s.pickup_lat,
+        pickup_lng: s.pickup_lng,
+        serial_number: s.serial_number,
+      } as Product;
+    });
+  } catch {
+    return rows;
+  }
 };
 
 // Get public products for a specific user (for public profile page)
 export const getPublicUserProducts = async (ownerId: string): Promise<Product[]> => {
   const { data, error } = await (supabase
     .from("products")
-    .select("*") as any)
+    .select(PRODUCT_SAFE_COLS) as any)
     .eq("owner_id", ownerId)
     .eq("is_active", true)
     .eq("approval_status", "approved")
@@ -137,7 +171,7 @@ export const getPublicUserProducts = async (ownerId: string): Promise<Product[]>
     handleApiError("Error fetching user products", error);
   }
 
-  return data || [];
+  return ((data as unknown) as Product[] | null) || [];
 };
 
 export const getOwnerProductCount = async (ownerId: string): Promise<number> => {
@@ -229,7 +263,7 @@ export const createProduct = async (
   const { data: product, error } = await supabase
     .from("products")
     .insert(insertData as any)
-    .select()
+    .select(PRODUCT_SAFE_COLS as any)
     .single();
 
   if (error) {
@@ -241,7 +275,7 @@ export const createProduct = async (
     handleApiError("Error creating product", error);
   }
 
-  return product;
+  return product as unknown as Product;
 };
 
 export const updateProduct = async (
@@ -254,14 +288,14 @@ export const updateProduct = async (
     .update(data)
     .eq("id", id)
     .eq("owner_id", ownerId)
-    .select()
+    .select(PRODUCT_SAFE_COLS as any)
     .single();
 
   if (error) {
     handleApiError("Error updating product", error);
   }
 
-  return product;
+  return product as unknown as Product;
 };
 
 export const deleteProduct = async (id: string, ownerId: string): Promise<void> => {
@@ -284,7 +318,7 @@ export const getNearbyProducts = async (
 ): Promise<Product[]> => {
   let query = (supabase
     .from("products")
-    .select("*") as any)
+    .select(PRODUCT_SAFE_COLS) as any)
     .eq("is_active", true)
     .eq("approval_status", "approved")
     .is("deleted_at", null)
@@ -308,7 +342,7 @@ export const getNearbyProducts = async (
     const existingIds = data?.map(p => p.id) || [];
     const { data: categoryData, error: categoryError } = await (supabase
       .from("products")
-      .select("*") as any)
+      .select(PRODUCT_SAFE_COLS) as any)
       .eq("is_active", true)
       .eq("approval_status", "approved")
       .is("deleted_at", null)
@@ -327,7 +361,7 @@ export const getNearbyProducts = async (
     const existingIds = data?.map(p => p.id) || [];
     const { data: anyData } = await (supabase
       .from("products")
-      .select("*") as any)
+      .select(PRODUCT_SAFE_COLS) as any)
       .eq("is_active", true)
       .eq("approval_status", "approved")
       .is("deleted_at", null)

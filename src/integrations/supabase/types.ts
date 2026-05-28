@@ -2730,6 +2730,15 @@ export type Database = {
           title: string
         }[]
       }
+      get_admin_product_full_details: {
+        Args: { _id: string }
+        Returns: {
+          description: string
+          included_items: string[]
+          location_country: string
+          pickup_address: string
+        }[]
+      }
       get_admin_products: {
         Args: {
           category_filter?: string
@@ -2757,6 +2766,20 @@ export type Database = {
           slug: string
           subcategory: string
           title: string
+        }[]
+      }
+      get_admin_products_sensitive: {
+        Args: { _ids: string[] }
+        Returns: {
+          admin_edited_at: string
+          admin_edited_by: string
+          admin_flagged: boolean
+          flag_reason: string
+          id: string
+          pickup_address: string
+          pickup_lat: number
+          pickup_lng: number
+          serial_number: string
         }[]
       }
       get_admin_rentals: {
@@ -2892,6 +2915,16 @@ export type Database = {
         }[]
       }
       get_my_product_serial: { Args: { _id: string }; Returns: string }
+      get_my_products_sensitive: {
+        Args: never
+        Returns: {
+          id: string
+          pickup_address: string
+          pickup_lat: number
+          pickup_lng: number
+          serial_number: string
+        }[]
+      }
       get_or_create_rental_conversation: {
         Args: { p_rental_id: string }
         Returns: string
@@ -2943,6 +2976,19 @@ export type Database = {
       get_product_review_breakdown: {
         Args: { p_product_id: string }
         Returns: Json
+      }
+      get_product_sensitive_fields: {
+        Args: { _id: string }
+        Returns: {
+          admin_edited_at: string
+          admin_edited_by: string
+          admin_flagged: boolean
+          flag_reason: string
+          pickup_address: string
+          pickup_lat: number
+          pickup_lng: number
+          serial_number: string
+        }[]
       }
       get_pv_identity_data: {
         Args: { _rental_id: string }
@@ -3377,126 +3423,50 @@ export type Database = {
         Args: { _action: string; _note?: string; _rental_id: string }
         Returns: Json
       }
-      search_products:
-        | {
-            Args: {
-              _category?: string
-              _location_city?: string
-              _search?: string
-              _subcategory?: string
-            }
-            Returns: {
-              admin_edited_at: string | null
-              admin_edited_by: string | null
-              admin_flagged: boolean
-              approval_status: string
-              available_immediately: boolean
-              blocked_dates: string[]
-              category: string | null
-              condition: string | null
-              created_at: string | null
-              daily_price_owner: number
-              deleted_at: string | null
-              deleted_by: string | null
-              delivery_available: boolean
-              delivery_fee: number | null
-              delivery_radius_km: number | null
-              deposit_type: string | null
-              deposit_value: number | null
-              description: string | null
-              description_en: string | null
-              flag_reason: string | null
-              id: string
-              images: string[] | null
-              included_items: string[] | null
-              included_items_en: string[] | null
-              is_active: boolean
-              location_city: string | null
-              location_country: string | null
-              max_rental_days: number | null
-              min_rental_days: number | null
-              min_rental_preset: string | null
-              owner_id: string
-              pickup_address: string | null
-              pickup_available: boolean
-              pickup_lat: number | null
-              pickup_lng: number | null
-              platform_fee_percent: number
-              quality_score: number
-              serial_number: string | null
-              slug: string | null
-              subcategory: string | null
-              title: string
-              title_en: string | null
-              usage_rules: string[]
-            }[]
-            SetofOptions: {
-              from: "*"
-              to: "products"
-              isOneToOne: false
-              isSetofReturn: true
-            }
-          }
-        | {
-            Args: {
-              _category?: string
-              _location_city?: string
-              _search?: string
-              _search_terms?: string[]
-              _subcategory?: string
-            }
-            Returns: {
-              admin_edited_at: string | null
-              admin_edited_by: string | null
-              admin_flagged: boolean
-              approval_status: string
-              available_immediately: boolean
-              blocked_dates: string[]
-              category: string | null
-              condition: string | null
-              created_at: string | null
-              daily_price_owner: number
-              deleted_at: string | null
-              deleted_by: string | null
-              delivery_available: boolean
-              delivery_fee: number | null
-              delivery_radius_km: number | null
-              deposit_type: string | null
-              deposit_value: number | null
-              description: string | null
-              description_en: string | null
-              flag_reason: string | null
-              id: string
-              images: string[] | null
-              included_items: string[] | null
-              included_items_en: string[] | null
-              is_active: boolean
-              location_city: string | null
-              location_country: string | null
-              max_rental_days: number | null
-              min_rental_days: number | null
-              min_rental_preset: string | null
-              owner_id: string
-              pickup_address: string | null
-              pickup_available: boolean
-              pickup_lat: number | null
-              pickup_lng: number | null
-              platform_fee_percent: number
-              quality_score: number
-              serial_number: string | null
-              slug: string | null
-              subcategory: string | null
-              title: string
-              title_en: string | null
-              usage_rules: string[]
-            }[]
-            SetofOptions: {
-              from: "*"
-              to: "products"
-              isOneToOne: false
-              isSetofReturn: true
-            }
-          }
+      search_products: {
+        Args: {
+          _category?: string
+          _location_city?: string
+          _search?: string
+          _search_terms?: string[]
+          _subcategory?: string
+        }
+        Returns: {
+          approval_status: string
+          available_immediately: boolean
+          blocked_dates: string[]
+          category: string
+          condition: string
+          created_at: string
+          daily_price_owner: number
+          delivery_available: boolean
+          delivery_fee: number
+          delivery_radius_km: number
+          deposit_type: string
+          deposit_value: number
+          description: string
+          description_en: string
+          id: string
+          images: string[]
+          included_items: string[]
+          included_items_en: string[]
+          is_active: boolean
+          location_city: string
+          location_country: string
+          max_rental_days: number
+          min_rental_days: number
+          min_rental_preset: string
+          owner_id: string
+          pickup_available: boolean
+          platform_fee_percent: number
+          quality_score: number
+          slug: string
+          subcategory: string
+          title: string
+          title_en: string
+          usage_rules: string[]
+        }[]
+      }
       search_users_by_name: {
         Args: { result_limit?: number; search_query: string }
         Returns: {

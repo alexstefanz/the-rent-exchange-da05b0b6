@@ -215,13 +215,24 @@ export const restoreProduct = async (productId: string): Promise<void> => {
 };
 
 export const fetchProductFullDetails = async (productId: string) => {
-  const { data, error } = await supabase
-    .from('products')
-    .select('description, included_items, location_country, pickup_address')
-    .eq('id', productId)
-    .single();
+  // pickup_address is column-level restricted — route through the admin RPC.
+  const { data, error } = await (supabase.rpc as any)(
+    'get_admin_product_full_details',
+    { _id: productId },
+  );
   if (error) throw new Error(error.message);
-  return data;
+  const row = Array.isArray(data) ? data[0] : data;
+  return (row ?? {
+    description: null,
+    included_items: null,
+    location_country: null,
+    pickup_address: null,
+  }) as {
+    description: string | null;
+    included_items: string[] | null;
+    location_country: string | null;
+    pickup_address: string | null;
+  };
 };
 
 export const updateProductAdmin = async (
