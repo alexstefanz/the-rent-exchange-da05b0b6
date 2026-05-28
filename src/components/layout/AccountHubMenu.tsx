@@ -345,10 +345,10 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
           </span>
           <span className="flex-1 min-w-0">
             <span className="block text-sm font-semibold text-foreground">
-              {t("Produsele mele", "My products")}
+              {t("Proprietar", "Owner")}
             </span>
             <span className="block text-[11px] text-muted-foreground">
-              {t("Gestionează anunțurile și cererile", "Manage listings and requests")}
+              {t("Publică produse și gestionează cererile de închiriere.", "Publish products and manage rental requests.")}
             </span>
           </span>
           <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition" />
@@ -364,10 +364,10 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
             </span>
             <span className="flex-1 min-w-0">
               <span className="block text-sm font-semibold text-foreground">
-                {t("Închirieri", "Rentals")}
+                {t("Chiriaș", "Renter")}
               </span>
               <span className="block text-[11px] text-muted-foreground">
-                {t("Active și istoric", "Active and history")}
+                {t("Găsește produse și rezervă rapid ce ai nevoie.", "Find products and quickly book what you need.")}
               </span>
             </span>
             <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition" />
