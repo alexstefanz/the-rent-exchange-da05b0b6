@@ -263,7 +263,7 @@ export const createProduct = async (
   const { data: product, error } = await supabase
     .from("products")
     .insert(insertData as any)
-    .select()
+    .select(PRODUCT_SAFE_COLS as any)
     .single();
 
   if (error) {
@@ -275,7 +275,7 @@ export const createProduct = async (
     handleApiError("Error creating product", error);
   }
 
-  return product;
+  return product as unknown as Product;
 };
 
 export const updateProduct = async (
@@ -288,14 +288,14 @@ export const updateProduct = async (
     .update(data)
     .eq("id", id)
     .eq("owner_id", ownerId)
-    .select()
+    .select(PRODUCT_SAFE_COLS as any)
     .single();
 
   if (error) {
     handleApiError("Error updating product", error);
   }
 
-  return product;
+  return product as unknown as Product;
 };
 
 export const deleteProduct = async (id: string, ownerId: string): Promise<void> => {
@@ -318,7 +318,7 @@ export const getNearbyProducts = async (
 ): Promise<Product[]> => {
   let query = (supabase
     .from("products")
-    .select("*") as any)
+    .select(PRODUCT_SAFE_COLS) as any)
     .eq("is_active", true)
     .eq("approval_status", "approved")
     .is("deleted_at", null)
@@ -342,7 +342,7 @@ export const getNearbyProducts = async (
     const existingIds = data?.map(p => p.id) || [];
     const { data: categoryData, error: categoryError } = await (supabase
       .from("products")
-      .select("*") as any)
+      .select(PRODUCT_SAFE_COLS) as any)
       .eq("is_active", true)
       .eq("approval_status", "approved")
       .is("deleted_at", null)
@@ -361,7 +361,7 @@ export const getNearbyProducts = async (
     const existingIds = data?.map(p => p.id) || [];
     const { data: anyData } = await (supabase
       .from("products")
-      .select("*") as any)
+      .select(PRODUCT_SAFE_COLS) as any)
       .eq("is_active", true)
       .eq("approval_status", "approved")
       .is("deleted_at", null)
