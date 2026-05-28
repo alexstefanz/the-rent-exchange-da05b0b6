@@ -95,7 +95,7 @@ export const getProducts = async (filters?: ProductFilters): Promise<Product[]> 
 export const getProductById = async (id: string): Promise<Product | null> => {
   const { data, error } = await supabase
     .from("products")
-    .select(PRODUCT_SAFE_COLS)
+    .select(PRODUCT_SAFE_COLS as any)
     .eq("id", id)
     .maybeSingle();
 
@@ -103,13 +103,13 @@ export const getProductById = async (id: string): Promise<Product | null> => {
     handleApiError("Error fetching product", error);
   }
 
-  return (data as Product | null) ?? null;
+  return (data as unknown as Product | null) ?? null;
 };
 
 export const getProductBySlug = async (slug: string): Promise<Product | null> => {
   const { data, error } = await supabase
     .from("products")
-    .select(PRODUCT_SAFE_COLS)
+    .select(PRODUCT_SAFE_COLS as any)
     .eq("slug", slug)
     .is("deleted_at", null)
     .maybeSingle();
@@ -118,13 +118,13 @@ export const getProductBySlug = async (slug: string): Promise<Product | null> =>
     handleApiError("Error fetching product by slug", error);
   }
 
-  return (data as Product | null) ?? null;
+  return (data as unknown as Product | null) ?? null;
 };
 
 export const getMyProducts = async (ownerId: string): Promise<Product[]> => {
   const { data, error } = await supabase
     .from("products")
-    .select(PRODUCT_SAFE_COLS)
+    .select(PRODUCT_SAFE_COLS as any)
     .eq("owner_id", ownerId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
@@ -133,7 +133,7 @@ export const getMyProducts = async (ownerId: string): Promise<Product[]> => {
     handleApiError("Error fetching my products", error);
   }
 
-  const rows = (data as Product[] | null) || [];
+  const rows = ((data as unknown) as Product[] | null) || [];
   if (rows.length === 0) return rows;
 
   // Merge owner-only sensitive fields via secure RPC.
