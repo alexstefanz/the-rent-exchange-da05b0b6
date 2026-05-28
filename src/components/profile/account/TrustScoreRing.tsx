@@ -52,22 +52,22 @@ export function TrustScoreRing({ value, size = 132, label, sublabel }: Props) {
           animate={{ strokeDashoffset: circumference - dash }}
           transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
         />
-        {/* Center value */}
+        {/* Center value — sits inside the top semicircle */}
         <text
           x={cx}
-          y={cy - 6}
+          y={cy - 18}
           textAnchor="middle"
           className="fill-foreground"
-          style={{ fontSize: 28, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}
+          style={{ fontSize: 26, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}
         >
           {safe}
         </text>
         <text
           x={cx}
-          y={cy + 12}
+          y={cy - 4}
           textAnchor="middle"
           className="fill-muted-foreground"
-          style={{ fontSize: 10, letterSpacing: 0.5, textTransform: "uppercase" }}
+          style={{ fontSize: 9, letterSpacing: 1, textTransform: "uppercase" }}
         >
           {label || "Trust"}
         </text>
