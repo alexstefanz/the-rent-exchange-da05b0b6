@@ -171,7 +171,7 @@ export const getPublicUserProducts = async (ownerId: string): Promise<Product[]>
     handleApiError("Error fetching user products", error);
   }
 
-  return (data as Product[] | null) || [];
+  return ((data as unknown) as Product[] | null) || [];
 };
 
 export const getOwnerProductCount = async (ownerId: string): Promise<number> => {
