@@ -1,46 +1,60 @@
-# Fă Rentli vizibil pe Google
+## Cauza erorii
 
-Scop: să apară rentli.ro în Google în următoarele 1-2 săptămâni.
+Utilizatorul (renter) apasă **„Confirmă primirea bunului"** → frontendul cheamă RPC-ul `confirm_handover_received` (SECURITY DEFINER) care face:
+```sql
+UPDATE rentals SET handover_confirmed_at = now(), status = 'active' WHERE id = ...
+```
 
-## Ce fac
+Pe acest UPDATE se declanșează trigger-ul `lock_renter_rental_update`. Trigger-ul verifică `auth.uid()` — care **rămâne renter-ul** chiar și în SECURITY DEFINER (e luat din JWT, nu din rolul Postgres) — și respinge orice modificare la `handover_confirmed_at`. De aici mesajul *„Renters can only cancel their pending rentals; financial / state columns are read-only"*.
 
-### 1. SEO on-page în `index.html`
-- `<link rel="canonical" href="https://rentli.ro/" />`
-- Meta tag de verificare Google Search Console (token obținut prin API-ul Site Verification)
-- Open Graph: `og:image` cu o imagine de brand (1200x630) în loc de placeholder-ul Lovable
-- JSON-LD `Organization` + `WebSite` (cu `SearchAction` pentru sitelinks searchbox)
-- Title/description deja există — le verific și le optimizez dacă e cazul
+Aceeași problemă va apărea la orice alt RPC sigur care mută renter-ul printr-un câmp blocat (ex: viitoare `confirm_return_received`, early return, etc.).
 
-### 2. `public/sitemap.xml` generat automat
-- Script `scripts/generate-sitemap.ts` rulat pe `predev` și `prebuild`
-- Include rutele publice statice (`/`, `/cum-functioneaza`, `/categorii`, `/contact`, etc.)
-- Include rutele dinamice: toate produsele aprobate (folosind slug-ul SEO existent) și categoriile din `platform_categories`
-- `BASE_URL = "https://rentli.ro"`
+## Soluție
 
-### 3. `public/robots.txt`
-- `Allow: /` pentru toți crawlerii
-- `Disallow:` pentru rute interne (`/admin`, `/profil`, `/inchirieri`, `/rezervari`, `/checkout`, `/auth`, `/lovable/*`)
-- `Sitemap: https://rentli.ro/sitemap.xml`
+Pattern standard cu **flag de sesiune** (GUC): RPC-urile sigure setează un flag înainte de UPDATE, iar trigger-ul îl respectă și permite trecerea.
 
-### 4. Verificare în Google Search Console
-- Cer token META prin connector Google Search Console
-- Îl pun în `index.html`
-- După deploy, declanșez verify + adaug `https://rentli.ro/` ca proprietate
-- Submit sitemap.xml prin API
+### 1. Migrație (un singur fișier)
 
-### 5. Imagine OG de brand
-- Generez o imagine 1200x630 cu logo + tagline Rentli pentru `og:image`
-- Salvată în `public/og-image.jpg`
+- Rescrie funcția `lock_renter_rental_update` să facă **early return** dacă `current_setting('app.bypass_renter_lock', true) = 'on'`, înainte de toate celelalte verificări (după service_role / admin / owner check, ca să nu compromită ownerul).
+- Rescrie `confirm_handover_received` (SECURITY DEFINER) ca să apeleze `PERFORM set_config('app.bypass_renter_lock','on', true);` (true = scope la tranzacția curentă) chiar înainte de `UPDATE rentals ...`. După UPDATE nu mai e necesar reset, scope-ul e local.
+- Toate celelalte verificări de business din RPC (renter check, status check, PV signed check) rămân neschimbate — bypass-ul ocolește doar trigger-ul anti-tampering, nu logica RPC.
 
-### 6. Scan SEO final
-- Rulez `seo--trigger_scan` ca să confirm că nu mai sunt issues
+### 2. Nu modific frontend
 
-## Ce NU fac (out of scope)
-- Nu modific funcționalitatea aplicației, RLS, edge functions sau plăți
-- Nu schimb routing-ul existent
-- Nu adaug per-page SEO (Helmet) acum — doar sitewide; pot face follow-up dacă vrei meta tags dinamice per produs/categorie
+Codul client (`confirmHandoverReceived` în `rentalDetailPageApi.ts`) e corect — apelează RPC-ul. Nu necesită modificări.
 
-## Note tehnice
-- Domeniul live e `https://rentli.ro` (cu redirect de la `www`)
-- Folosesc connector-ul Google Search Console deja conectat
-- Indexarea efectivă durează zile-săptămâni după submit; partea tehnică se rezolvă azi
+### 3. Audit & curățare în aceeași migrație
+
+- `ownerRentalsApi.ts → confirmHandover` (linia 78) face un `.update` direct din client cu `handover_confirmed_at + status='active'`. Folosit doar în `InspectionDialog` din **owner flow** → `auth.uid() = owner_id` → trigger-ul are deja early-return pentru owner, deci e OK, nu schimb nimic.
+- `ownerRentalsApi.ts → confirmReturn` (linia 104) updatează `return_confirmed_at, status='completed', completed_at` — apelat tot din `InspectionDialog`. Acest dialog e deschis și de renter? Verific în implementare: dacă da, e o a doua sursă a aceluiași bug și mut și acest update într-un RPC SECURITY DEFINER `confirm_return_received` cu același pattern de bypass. Dacă e doar owner, las neschimbat.
+
+### 4. Verificare
+
+- Curl test pe RPC-ul `confirm_handover_received` cu sesiune renter pe o rezervare reală pending+pv-signed → trebuie să returneze success și să mute statusul în `active`.
+- Verific în loguri Postgres că nu mai apare excepția `Renters can only cancel...`.
+
+## Detalii tehnice
+
+```text
+┌─ Renter apasă "Confirmă primirea"
+│
+├─→ supabase.rpc('confirm_handover_received', { _rental_id })
+│       │
+│       ├─ verifică renter, status, PV semnat
+│       ├─ set_config('app.bypass_renter_lock','on', true)   ◄── NOU
+│       └─ UPDATE rentals SET handover_confirmed_at, status='active'
+│              │
+│              └─→ trigger lock_renter_rental_update
+│                     │
+│                     ├─ service_role? admin? owner? → exit
+│                     ├─ bypass flag = 'on'? → exit ◄── NOU
+│                     └─ ... (verificările existente)
+```
+
+Flag-ul cu scope tranzacțional (al 3-lea argument `true` la `set_config`) garantează că nu „scapă" în alte sesiuni / conexiuni din pool.
+
+## În afara scopului
+
+- Nu schimb politicile RLS pe `rentals` — sunt corecte.
+- Nu modific logica de cancel a renter-ului — funcționează.
+- Nu refactorez `InspectionDialog` decât dacă auditul de la pasul 3 arată că e folosit și de renter pentru `return_confirmed_at`.
