@@ -510,14 +510,6 @@ const AccountTab = () => {
               <Field label={t("Telefon", "Phone")} icon={<Phone className="h-4 w-4" />} error={form.formState.errors.phone?.message}>
                 <Input type="tel" placeholder="+40 7XX XXX XXX" maxLength={20} {...form.register("phone")} />
               </Field>
-              <Field
-                label={t("Email de contact (opțional)", "Contact email (optional)")}
-                icon={<Mail className="h-4 w-4" />}
-                hint={t("Folosit doar intern, după activarea unei închirieri.", "Used internally only, after a rental becomes active.")}
-                error={form.formState.errors.email?.message}
-              >
-                <Input type="email" placeholder="contact@exemplu.ro" maxLength={100} {...form.register("email")} />
-              </Field>
             </div>
 
             {/* Sticky save bar on mobile */}
