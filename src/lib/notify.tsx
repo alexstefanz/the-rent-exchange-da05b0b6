@@ -216,7 +216,7 @@ function show(variant: NotifyVariant, opts: NotifyOptions) {
     {
       id: GLOBAL_NOTIFICATION_TOAST_ID,
       duration,
-      position: "bottom-right",
+      position: "bottom-center",
     },
   );
 }
