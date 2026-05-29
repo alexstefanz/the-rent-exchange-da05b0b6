@@ -1,44 +1,38 @@
-## Obiectiv
+## Problem
 
-Oprim expunerea către vizitatori anonimi și ceilalți useri autentificați (non-owner, non-admin) a coloanelor sensibile din `public.products`:
-`serial_number`, `pickup_address`, `pickup_lat`, `pickup_lng`, `admin_flagged`, `flag_reason`, `admin_edited_at`, `admin_edited_by`.
+1. Toast-ul pentru `kyc_submitted` ("Verificare identitate trimisă") apare cu icon `XCircle` roșu, sugerând respingere — ar trebui să fie un icon KYC galben (cerere în curs de revizuire).
+2. Pozițiile toast-urilor sunt inconsistente: `sonner` global e setat pe `bottom-right`, dar `notify.tsx` forțează `bottom-center`. Toate notificările trebuie să apară uniform tip toast în dreapta jos.
 
-Owner-ul și adminii păstrează acces complet prin RPC-uri SECURITY DEFINER.
+## Cauză
 
-## Migrație (un singur fișier)
+În `src/lib/notify.tsx`, `variantFromNotificationType("kyc_submitted")`:
+- nu match-uiește pe `confirm/approved`, nici pe `reject/cancel`
+- `categorize("kyc_submitted")` din `notificationCategory.ts` returnează `urgent` (fallback pe `t.includes("kyc")`)
+- → mapat pe `cancellation` (XCircle, roșu)
 
-1. `REVOKE SELECT (pickup_address, pickup_lat, pickup_lng, serial_number, admin_flagged, flag_reason, admin_edited_at, admin_edited_by) ON public.products FROM anon, authenticated;`
-2. RPC-uri noi SECURITY DEFINER (`search_path = public`):
-   - `get_product_sensitive_fields(_id uuid)` → returnează cele 8 câmpuri dacă `auth.uid() = owner_id` SAU `has_role(auth.uid(),'admin')`, altfel rând gol.
-   - `get_my_products_sensitive()` → tabel `(id, pickup_address, pickup_lat, pickup_lng, serial_number)` pentru produsele caller-ului.
-   - `get_admin_products_sensitive(_ids uuid[])` → toate cele 8 câmpuri per id, doar pentru admini.
-3. `get_my_product_serial` deja există — păstrat pentru compatibilitate.
+## Plan
 
-## Modificări de cod
+### 1. `src/lib/notify.tsx`
+- Adaugă o nouă variantă `kyc` cu:
+  - `Icon: ShieldCheck` (lucide)
+  - paletă galbenă: `halo: "bg-amber-500/15"`, `icon: "text-amber-600"`, `accent: "bg-amber-500"`, `badgeBg: "bg-amber-500"`
+- În `variantFromNotificationType`, înainte de regula `reject/cancel`, adaugă o ramură explicită pentru KYC "în așteptare":
+  - `kyc_submitted`, `kyc_pending`, `kyc_under_review`, `kyc_needs_manual_review` și orice tip care conține `kyc` și nu este `approved/verified/rejected` → `"kyc"`
+  - `kyc_approved` / `kyc_verified` rămân `confirmation` (verde)
+  - `kyc_rejected` rămâne `cancellation` (roșu)
+- Schimbă `position` în apelul `toast.custom` din `"bottom-center"` în `"bottom-right"` pentru ca toate toast-urile (notify wrapper + sonner direct) să apară uniform în dreapta jos.
 
-- `src/features/products/productsApi.ts`
-  - `getProductById` / `getProductBySlug` / `getProducts` / `getPublicUserProducts` / `getMyProducts`: înlocuim `.select("*")` cu listă explicită de coloane safe.
-  - `getMyProducts`: după fetch, merge câmpurile sensibile via `get_my_products_sensitive()`.
-  - `createProduct` / `updateProduct`: `.select()` doar pe coloane non-sensitive (RETURNING-ul Postgres respectă grant-urile de coloană).
-  - Comentariu pe interfața `Product` că aceste câmpuri sunt populate doar pentru owner/admin.
+### 2. `src/lib/notificationCategory.ts`
+- Pentru consistență (icon în NotificationCenter dropdown), când `type === "kyc_submitted"` / `kyc_pending` / `kyc_under_review`, returnează stilul KYC galben (sau categoria `system` cu icon `ShieldCheck` ambră). Concret:
+  - Adaug în `getTypeIcon` mapare `kyc_submitted` → `ShieldCheck`
+  - Adaug o categorie ușoară de "kyc pending" (sau reutilizez stilul existent `success` dar cu paletă ambră) — preferabil un mic style override în map: nou case în `categorize` care întoarce o nouă categorie `"kyc"` cu halo/icon ambră.
+- Astfel notificarea apare cu același icon/culoare și în dropdown, și în toast.
 
-- `src/features/admin/adminProductsApi.ts`
-  - Direct selecturile pe `admin_flagged`, `flag_reason`, `admin_edited_*`, `pickup_address` → înlocuite cu `get_admin_products_sensitive(ids)` și merge by id.
-  - `.update()` continuă să funcționeze (REVOKE-ul e doar pe SELECT); doar scoatem coloanele din `.select()` returning.
+### 3. Verificare regresii
+- Toast-uri existente care folosesc `notify.success/error/confirmation/...` continuă să funcționeze (doar poziția se schimbă din `bottom-center` în `bottom-right`).
+- `RentalPopupManager` (modal centrat) nu este afectat.
+- `sonner` global rămâne `bottom-right` → toate toast-urile sunt acum aliniate.
 
-- `src/pages/admin/AdminProducts.tsx`, `src/pages/admin/AdminApprovals.tsx`
-  - Folosesc RPC-ul admin pentru a popula flag-urile de moderare și adresa de pickup în UI.
-
-- `src/components/publish/PublishWizard.tsx` & `src/pages/PublishProduct.tsx`
-  - La edit, hidratează `pickup_address`, `pickup_lat`, `pickup_lng`, `serial_number` via `get_product_sensitive_fields(id)`. Deja făcut pentru `serial` — extindem.
-
-- `src/components/home/FeaturedListings.tsx`, `src/components/products/ProductCard.tsx`, `src/pages/ProductDetail.tsx`
-  - Scoatem `product.pickup_address` din randările publice (fallback pe `location_city`, care e deja default-ul). Pentru chiriași cu booking activ, fluxul existent `get_rental_renter_info` continuă să livreze adresa completă.
-
-## Risc & validare
-
-- După migrație, orice `.select("*")` din `products` eșuează pentru anon/authenticated. Toate locurile identificate prin grep sunt incluse mai sus.
-- `insert/update().select("*")` eșuează la fel — trecem pe liste explicite.
-- Smoke test după aplicare: home, product detail (delogat + cumpărător + owner), publish wizard edit, tab admin products.
-
-Dacă aprobi, aplic migrația și schimbările de cod într-un singur batch.
+## Out of scope
+- Schimbări la backend / tipuri de notificări noi.
+- Modificări la `RentalRequestPopup` (modal explicit, nu toast).
