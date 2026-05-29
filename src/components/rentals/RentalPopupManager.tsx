@@ -36,6 +36,8 @@ export default function RentalPopupManager() {
   const redirectedRef = useRef<boolean>(false);
 
   const pushItem = (item: RentalPopupItem) => {
+    if (seenIdsRef.current.has(item.id)) return;
+    seenIdsRef.current.add(item.id);
     setQueue((q) => {
       if (q.some((x) => x.id === item.id)) return q;
       return [...q, item];
