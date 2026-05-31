@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export interface WalletBalance {
   total_earnings: number;
+  pending_earnings: number;
   total_withdrawn: number;
   pending_withdrawals: number;
   wallet_spent: number;
@@ -24,6 +25,7 @@ export const useWalletBalance = () => {
       const row = Array.isArray(data) ? data[0] : data;
       return {
         total_earnings: Number(row?.total_earnings ?? 0),
+        pending_earnings: Number(row?.pending_earnings ?? 0),
         total_withdrawn: Number(row?.total_withdrawn ?? 0),
         pending_withdrawals: Number(row?.pending_withdrawals ?? 0),
         wallet_spent: Number(row?.wallet_spent ?? 0),

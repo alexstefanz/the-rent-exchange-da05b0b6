@@ -38,6 +38,7 @@ export interface WithdrawalRow {
 export interface EarningsData {
   totalThisMonth: number;
   totalAllTime: number;
+  pendingEarnings: number;
   totalRentals: number;
   availableBalance: number;
   totalWithdrawn: number;
@@ -79,6 +80,7 @@ interface RentalRecord {
   product_id: string | null;
   renter_id: string | null;
   is_test_payment: boolean | null;
+  handover_confirmed_at: string | null;
   products?: { title?: string | null; images?: string[] | null } | null;
 }
 
@@ -90,6 +92,7 @@ interface RenterProfileRow {
 
 interface WalletRpcRow {
   total_earnings?: number | string | null;
+  pending_earnings?: number | string | null;
   total_withdrawn?: number | string | null;
   pending_withdrawals?: number | string | null;
   available?: number | string | null;
@@ -98,6 +101,7 @@ interface WalletRpcRow {
 const empty: EarningsData = {
   totalThisMonth: 0,
   totalAllTime: 0,
+  pendingEarnings: 0,
   totalRentals: 0,
   availableBalance: 0,
   totalWithdrawn: 0,
@@ -120,7 +124,7 @@ export const useEarnings = () => {
         supabase
           .from("rentals")
           .select(
-            "id, public_id, owner_payout, subtotal, platform_fee, payment_status, status, created_at, start_date, end_date, product_id, renter_id, is_test_payment, products:product_id(title, images)"
+            "id, public_id, owner_payout, subtotal, platform_fee, payment_status, status, created_at, start_date, end_date, product_id, renter_id, is_test_payment, handover_confirmed_at, products:product_id(title, images)"
           )
           .eq("owner_id", user.id)
           .order("created_at", { ascending: false }),
@@ -188,11 +192,17 @@ export const useEarnings = () => {
 
       for (const r of list) {
         const payout = Number(r.owner_payout) || 0;
-        totalAllTime += payout;
-        if (new Date(r.created_at) >= monthStart) totalThisMonth += payout;
+        // Only completed rentals count toward total/this-month earnings;
+        // in-progress rentals (PV signed) are tracked separately as "held".
+        if (r.status === "completed") {
+          totalAllTime += payout;
+          if (new Date(r.created_at) >= monthStart) totalThisMonth += payout;
+        }
 
-        let status: TxStatus = "available";
+        let status: TxStatus = "pending";
         if (r.status === "cancelled") status = "cancelled";
+        else if (r.status === "completed") status = "available";
+        else if (r.handover_confirmed_at) status = "held";
 
         txns.push({
           id: r.id,
@@ -219,12 +229,14 @@ export const useEarnings = () => {
       const walletRow = Array.isArray(walletRows) ? walletRows[0] : walletRows;
       const walletAvailable = Number(walletRow?.available ?? totalAllTime - totalWithdrawn - pendingWithdrawals);
       const walletTotalEarnings = Number(walletRow?.total_earnings ?? totalAllTime);
+      const walletPendingEarnings = Number(walletRow?.pending_earnings ?? 0);
       const walletTotalWithdrawn = Number(walletRow?.total_withdrawn ?? totalWithdrawn);
       const walletPendingWithdrawals = Number(walletRow?.pending_withdrawals ?? pendingWithdrawals);
 
       setEarnings({
         totalThisMonth: Math.round(totalThisMonth * 100) / 100,
         totalAllTime: Math.round(walletTotalEarnings * 100) / 100,
+        pendingEarnings: Math.round(walletPendingEarnings * 100) / 100,
         totalRentals: list.length,
         availableBalance: Math.max(0, Math.round(walletAvailable * 100) / 100),
         totalWithdrawn: Math.round(walletTotalWithdrawn * 100) / 100,

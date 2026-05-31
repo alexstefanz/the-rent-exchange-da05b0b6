@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Wallet, ArrowUpRight, TrendingUp, Lock, ShoppingBag } from "lucide-react";
+import { Wallet, ArrowUpRight, TrendingUp, Lock, ShoppingBag, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -9,6 +9,7 @@ import { useIsBanned } from "@/hooks/useIsBanned";
 interface Props {
   available: number;
   thisMonth: number;
+  pendingEarnings?: number;
   hasMethod: boolean;
   onWithdraw: () => void;
 }
@@ -29,7 +30,7 @@ const useCountUp = (target: number, ms = 800) => {
   return v;
 };
 
-export const WalletHeroCard = ({ available, thisMonth, hasMethod, onWithdraw }: Props) => {
+export const WalletHeroCard = ({ available, thisMonth, pendingEarnings = 0, hasMethod, onWithdraw }: Props) => {
   const { t } = useLanguage();
   const { isBanned } = useIsBanned();
   const animated = useCountUp(available);
@@ -85,6 +86,14 @@ export const WalletHeroCard = ({ available, thisMonth, hasMethod, onWithdraw }: 
                 +{thisMonth.toFixed(2)} RON
               </span>
               <span className="text-muted-foreground">{t("luna aceasta", "this month")}</span>
+            </div>
+          )}
+
+          {pendingEarnings > 0 && (
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs text-amber-700">
+              <Clock className="h-3 w-3" />
+              <span className="tabular-nums font-medium">+{pendingEarnings.toFixed(2)} RON</span>
+              <span>{t("în curs · se deblochează la finalizare", "in progress · unlocks on completion")}</span>
             </div>
           )}
 
