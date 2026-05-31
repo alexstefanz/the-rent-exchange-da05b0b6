@@ -1171,8 +1171,10 @@ const Step5Pricing = ({
   }, [data.category, data.subcategory]);
 
   const owner = data.daily_price_owner ?? 0;
-  const client = owner > 0 ? calculateClientPrice(owner, feePercent) : 0;
-  const commission = Math.round((client - owner) * 100) / 100;
+  // NEW MODEL: client pays owner price + commission (min 1 RON when fee > 0).
+  // Preview at the per-day level uses a 1-day rental.
+  const commission = owner > 0 ? calcPlatformFee(owner, feePercent) : 0;
+  const client = owner > 0 ? Math.round((owner + commission) * 100) / 100 : 0;
 
   return (
     <div>
@@ -1193,10 +1195,16 @@ const Step5Pricing = ({
             <Input
               type="number"
               min={2}
+              step={1}
+              inputMode="numeric"
+              pattern="[0-9]*"
               value={data.daily_price_owner ?? ""}
-              onChange={(e) =>
-                update("daily_price_owner", e.target.value === "" ? null : Number(e.target.value))
-              }
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw === "") { update("daily_price_owner", null); return; }
+                const n = Math.max(0, Math.floor(Number(raw)));
+                update("daily_price_owner", Number.isFinite(n) ? n : null);
+              }}
               placeholder="50"
               className="h-14 text-2xl font-semibold"
             />
