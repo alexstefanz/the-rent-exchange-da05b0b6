@@ -723,7 +723,12 @@ const RentalDetailPage = () => {
                 ) : null}
                 <div className="border-t border-border pt-2 mt-2 flex justify-between font-semibold">
                   <dt>{isOwner ? t("Castig net", "Net earnings") : t("Total", "Total")}</dt>
-                  <dd className="text-primary">{isOwner ? rental.owner_payout : rental.subtotal} RON</dd>
+                  <dd className="text-primary">
+                    {isOwner
+                      ? rental.owner_payout
+                      : Math.round((Number(rental.subtotal || 0) + Number(rental.platform_fee || 0)) * 100) / 100}
+                    {" "}RON
+                  </dd>
                 </div>
               </dl>
               {rental.is_test_payment && (

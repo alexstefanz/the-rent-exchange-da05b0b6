@@ -20,6 +20,7 @@ import { useKycGate } from "@/hooks/queries/useKycGate";
 import KycGateBanner from "@/components/kyc/KycGateBanner";
 import { PhoneRequiredGate, PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
 import { getOrCreateConversation } from "@/features/messaging/messagingApi";
+import { calcPlatformFee } from "@/lib/rentalPricing";
 
 interface CheckoutState {
   product: {
@@ -67,6 +68,10 @@ const Checkout = () => {
   }
 
   const { product, startDate, endDate, rentalDays, totalPrice } = state;
+  // `totalPrice` from ProductDetail is the owner-net subtotal. The client total
+  // (charged by Stripe) adds the platform fee with a 1 RON minimum.
+  const platformFee = calcPlatformFee(totalPrice, product.platformFeePercent ?? 0);
+  const clientTotal = Math.round((totalPrice + platformFee) * 100) / 100;
 
   const handleOpenChat = async () => {
     if (!user) { setShowLoginDialog(true); return; }
@@ -266,7 +271,7 @@ const Checkout = () => {
       </main>
 
       <StickyCheckoutBar
-        total={totalPrice}
+        total={clientTotal}
         ctaLabel={t("Trimite cererea", "Send request")}
         onClick={handleSendRequest}
         loading={isSubmitting}

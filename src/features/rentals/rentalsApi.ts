@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { calcPlatformFee } from "@/lib/rentalPricing";
 
 interface CreateRentalParams {
   productId: string;
@@ -27,11 +28,16 @@ export async function createRental(params: CreateRentalParams) {
     paymentMethod,
   } = params;
 
+  // NEW MODEL (2026-05):
+  // - `subtotal` is the owner-net amount (dailyPrice × days).
+  // - `platformFee` is charged on top, with a minimum of 1 RON when fee > 0.
+  // - `ownerPayout` equals `subtotal` (owner receives exactly what they listed).
+  // The client total (charged by Stripe) is `subtotal + platformFee`.
   const subtotal = typeof params.subtotal === "number" && params.subtotal > 0
     ? Math.round(params.subtotal * 100) / 100
     : Math.round(dailyPrice * rentalDays * 100) / 100;
-  const platformFee = Math.round(subtotal * platformFeePercent / 100 * 100) / 100;
-  const ownerPayout = Math.round((subtotal - platformFee) * 100) / 100;
+  const platformFee = calcPlatformFee(subtotal, platformFeePercent);
+  const ownerPayout = subtotal;
 
   // Insert rental
   const { data: rental, error } = await supabase

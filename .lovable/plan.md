@@ -1,37 +1,112 @@
-## Obiectiv
+## Probleme identificate
 
-În secțiunea **Cum primești banii** (Cont → Payout):
-1. Eliminăm afirmația despre titular pe care nu o putem verifica.
-2. IBAN-ul se poate seta **o singură dată**. Pentru schimbare, utilizatorul trebuie să deschidă un tichet de suport.
+Din ecranele atașate și din cod:
 
-## Modificări — `src/components/profile/AccountTab.tsx`
+1. **Totalul nu se calculează corect.** În `Sumar financiar` (rental detail) apare `Subtotal 8.4 + Comision 0.42 = Total 8.4 RON` — comisionul este afișat dar nu se adună la total. La checkout, `Total` afișează `8 RON` în loc de `8.4 RON` (`useCountUp` rotunjește la întreg).
+2. **Modelul de preț este inconsistent:** `daily_price_owner = 2 RON` → client price `2.10 RON` (owner × 1.05). `subtotal = 2.10 × 4 = 8.4` (totalul clientului). Apoi `platform_fee = 5% × 8.4 = 0.42` se scade din subtotal → owner primește `7.98 RON` în loc de `8 RON` promiși în publish wizard.
+3. **Prețuri cu zecimale.** Input-ul din publish wizard (`Step5Pricing`, `type="number"`) acceptă orice zecimale și produce sume urâte (2.1 RON / zi, total 8.4 RON).
+4. **Fără comision minim.** La închirieri foarte mici (ex. 8 RON) comisionul de 5% înseamnă 0.42 RON, neeconomic. Trebuie minim 1 RON.
 
-### A. Eliminare copy nejustificat
-- **Descrierea secțiunii** (linia 621): scoatem fraza despre "titularul contului" și "suspendarea contului". Înlocuim cu un text neutru:
-  - RO: `Adaugă IBAN-ul în care vei primi banii din închirieri.`
-  - EN: `Add the IBAN where you'll receive rental payouts.`
-- **Banner-ul amber din formul de editare** (liniile 1060–1068): eliminat complet (caseta roșie din screenshot).
-- În formul de adăugare păstrăm doar pre-completarea `Titular cont: <full_name>` ca informativ; **fără** validare suplimentară. Linia rămâne pentru transparență, ca utilizatorul să știe ce nume e atașat plății.
+## Soluție
 
-### B. IBAN o singură dată (one-shot)
-- În vizualizarea cu IBAN salvat (liniile 977–1031):
-  - **Eliminăm** butoanele `Adaugă` și `Șterge`, `AlertDialog`-ul de confirmare ștergere, `handleDelete`, state-urile `confirmOpen` și `deleting`.
-  - Adăugăm un singur buton secundar **„Solicită schimbare IBAN"** / `Request IBAN change` care navighează la `/suport`.
-  - Sub IBAN-ul mascat, inserăm un info box gri/amber cu lacăt (`Lock` icon):
-    - RO: `IBAN-ul este blocat pentru securitate. Pentru schimbare, deschide un tichet de suport — echipa verifică identitatea și actualizează contul.`
-    - EN: `Your IBAN is locked for security. To change it, open a support ticket — our team will verify your identity and update the account.`
-  - Păstrăm badge-ul `Implicit` și caseta verde `IBAN configurat — ești gata să primești plăți.`
-- `setEditing(true)` nu mai poate fi declanșat din UI când există deja un IBAN. Inițializarea `editing = !hasIban` rămâne corectă pentru utilizatorii fără IBAN.
+### 1. Unificarea modelului de preț (sursa de adevăr)
 
-### C. Cleanup
-- Importurile `Trash2` și componentele `AlertDialog*` rămân utile în restul fișierului (Danger Zone, etc.), nu le ștergem.
-- `account_holder_name` continuă să se salveze din `profile.full_name` la prima introducere — fără modificări la schemă.
+Schimbăm semnificația câmpurilor:
+- `daily_price_owner` = ce primește proprietarul / zi (întreg, ≥ 2 RON).
+- `subtotal` (în `rentals`) = `daily_price_owner × rental_days` (suma netă pentru proprietar).
+- `platform_fee` = `max(1, round(subtotal × platform_fee_percent / 100, 2))` dacă `platform_fee_percent > 0`, altfel `0`.
+- `owner_payout` = `subtotal` (proprietarul primește exact `2 RON × zile`).
+- **Total client = `subtotal + platform_fee`** (ce încasează Stripe).
 
-## Ce **nu** se schimbă
-- Nu se modifică backend / RLS / migrări. Coloana `iban` rămâne editabilă din DB pentru admini (vor procesa cererea de schimbare manual via tichet).
-- Withdrawals și restul UX rămân neschimbate.
+Avantaje: numere rotunde, owner primește exact cât a setat, comision transparent ca rând separat.
 
-## Verificare
-1. User fără IBAN → vede formul cu input + buton `Salvează IBAN`, fără amber-banner.
-2. După prima salvare → IBAN-ul devine read-only, fără buton de ștergere/editare. Apare info box cu lacăt + buton `Solicită schimbare IBAN` care duce la `/suport`.
-3. La refresh, IBAN-ul rămâne blocat. Singura cale de modificare e prin tichet (manual, de către admin/suport).
+### 2. Front-end — preț întreg
+
+`src/components/publish/PublishWizard.tsx` (`Step5Pricing`):
+- `<Input type="number" min={2} step={1} inputMode="numeric" pattern="[0-9]*">`.
+- `onChange`: `Math.max(0, Math.floor(Number(e.target.value)))` ca să blocheze zecimalele copy-paste.
+- În blocul „Clientul plătește": afișează `subtotal + comision` calculat cu `max(1, …)`. Helper text: `+ X RON comision (Y%)` cu X = comisionul efectiv (min 1).
+
+### 3. Helper unic pentru calcul
+
+În `src/lib/rentalPricing.ts`:
+```ts
+export const MIN_PLATFORM_FEE_RON = 1;
+
+export function calcPlatformFee(subtotalOwner: number, feePercent: number) {
+  if (!feePercent || feePercent <= 0) return 0;
+  const raw = Math.round(subtotalOwner * feePercent) / 100;
+  return Math.max(MIN_PLATFORM_FEE_RON, Math.round(raw * 100) / 100);
+}
+
+export function calcClientTotal(subtotalOwner: number, feePercent: number) {
+  return Math.round((subtotalOwner + calcPlatformFee(subtotalOwner, feePercent)) * 100) / 100;
+}
+```
+
+Refactor `computeRentalPrice` să întoarcă `subtotalOwner`, `platformFee`, `total` (client). Înlocuim toate locurile care folosesc `clientPrice = owner × 1.05`:
+- `src/features/products/productsApi.ts` → `calculateClientPrice` devine wrapper peste `calcClientTotal(owner × 1, feePercent)` pentru ziua singulară, dar majoritatea consumerilor (cardurile de listing, Search, CategoryDetail, UserProfile, ProductDetail hero price) afișează acum `daily_price_owner` ca preț de zi al clientului + un mic indicator `+ comision la checkout`. Notă: schimbă prețurile afișate în listă de la `2.10 RON` la `2 RON` — confirmare necesară (vezi întrebare).
+- `src/pages/ProductDetail.tsx` (`handleReserve`, JSON-LD, `trackRecentlyViewed`), `src/components/product/PremiumBookingCard.tsx`, `MobileStickyBookingBar.tsx`: trec prin `computeRentalPrice` reactualizat care folosește `daily_price_owner`.
+
+### 4. Checkout — afișare corectă
+
+`src/components/checkout/PremiumBookingSummary.tsx`:
+- Schimbă props: primește `dailyPriceOwner`, `rentalDays`, `platformFeePercent`.
+- Calculează `subtotal`, `platformFee`, `total` cu helperele de mai sus.
+- Rândurile: `X RON × N zile → subtotal RON`, `Comision Rentli → +platformFee RON` (nu „Gratuit") dacă > 0, altfel „Gratuit".
+- `Total` folosește `Math.round(total * 100) / 100` și `useCountUp` adaptat să afișeze 2 zecimale (sau întreg dacă `total % 1 === 0`).
+
+`src/pages/Checkout.tsx` (caller) trimite `dailyPriceOwner` și `platformFeePercent` în loc de `clientPrice`.
+
+### 5. Crearea rentalului
+
+`src/features/rentals/rentalsApi.ts` (`createRental`):
+- `dailyPrice` primit = `daily_price_owner` (întreg).
+- `subtotal = dailyPrice * rentalDays`.
+- `platformFee = calcPlatformFee(subtotal, platformFeePercent)`.
+- `ownerPayout = subtotal` (nu se mai scade).
+- Insert: `daily_price: dailyPrice` (owner), `subtotal`, `platform_fee`, `owner_payout`.
+
+Backend Stripe (`supabase/functions/create-checkout-session/index.ts`):
+- `unit_amount = Math.round((rental.subtotal + rental.platform_fee) * 100)` (Stripe încasează totalul real).
+- Verificarea minimului de 2 RON rămâne, dar pe `subtotal + platform_fee`.
+
+`supabase/functions/capture-rental-payment/index.ts`: `owner_payout` și `platform_fee` rămân deja stocate corect — doar valorile lor sunt diferite acum.
+
+### 6. Sumar financiar (rental detail)
+
+`src/pages/RentalDetailPage.tsx` (~linia 714-728):
+- Rândul totalului folosește `rental.subtotal + rental.platform_fee` pentru chiriaș (în loc de `rental.subtotal`).
+- Pentru proprietar afișează `rental.owner_payout` (= subtotal acum).
+
+## Compatibilitate cu datele existente
+
+Rentalurile vechi au modelul invers (`subtotal` include comisionul). Pentru a evita confuzii la afișare:
+- Adăugăm un flag derivat: tratăm `rentals` create înainte de migrație drept legacy doar la nivel de UI dacă apare `owner_payout < subtotal`. Practic, pe rental detail putem afișa mereu `subtotal + platform_fee` ca total client — pentru rentalurile vechi, acest total va apărea mai mare decât suma efectiv încasată. **Recomandare:** filtrăm vizual doar pe rentaluri noi, păstrând valorile vechi neatinse în DB.
+
+Alternativ și mai simplu: nu retroactivăm — schimbarea afectează doar rentalurile create de aici încolo. Adăugăm `platform_fee_basis` enum (`'gross' | 'net'`) cu default `'net'` pe rentaluri noi pentru a ști cum să afișăm. Decid în implementare.
+
+## Detalii tehnice (referință)
+
+```text
+Owner setează 10 RON/zi, 4 zile, fee 5%:
+  subtotal      = 40 RON
+  platform_fee  = max(1, 40 * 0.05) = max(1, 2) = 2 RON
+  total client  = 42 RON
+  owner payout  = 40 RON
+
+Owner setează 5 RON/zi, 2 zile, fee 5%:
+  subtotal      = 10 RON
+  platform_fee  = max(1, 10 * 0.05) = max(1, 0.5) = 1 RON
+  total client  = 11 RON
+  owner payout  = 10 RON
+
+Free listing (fee=0):
+  platform_fee  = 0
+  total client  = subtotal
+  owner payout  = subtotal
+```
+
+## Întrebare de clarificare
+
+1. **Prețul afișat în carduri / listă / hero produs** — îl arătăm acum ca preț *net owner* (ex. „2 RON / zi") cu mențiunea „+ comision la checkout", sau preferi să afișăm direct totalul (owner + comision min 1 RON) ca preț al clientului? Comisionul minim de 1 RON face afișarea per-zi ciudată (1 zi = 2+1=3 RON, 4 zile = 2×4+1=9 RON), așa că recomand afișarea netă în liste și totalul calculat doar la checkout.

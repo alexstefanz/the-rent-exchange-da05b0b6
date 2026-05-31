@@ -2,8 +2,8 @@ import { format, differenceInDays } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
 import { MapPin, ShieldCheck, FileCheck2, Lock, CalendarDays } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useCountUp } from "@/hooks/useCountUp";
 import { Separator } from "@/components/ui/separator";
+import { calcPlatformFee } from "@/lib/rentalPricing";
 
 interface Props {
   product: {
@@ -11,17 +11,22 @@ interface Props {
     images: string[];
     price: number;
     location: string;
+    platformFeePercent?: number;
   };
   startDate: Date;
   endDate: Date;
   rentalDays: number;
+  /** Owner-net subtotal (dailyPrice × rentalDays). */
   totalPrice: number;
 }
 
 const PremiumBookingSummary = ({ product, startDate, endDate, rentalDays, totalPrice }: Props) => {
   const { language, t } = useLanguage();
   const locale = language === "ro" ? ro : enUS;
-  const animatedTotal = useCountUp(totalPrice, 700);
+  const subtotal = totalPrice;
+  const platformFee = calcPlatformFee(subtotal, product.platformFeePercent ?? 0);
+  const total = Math.round((subtotal + platformFee) * 100) / 100;
+  const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
 
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
@@ -73,11 +78,15 @@ const PremiumBookingSummary = ({ product, startDate, endDate, rentalDays, totalP
             <span>
               {product.price} RON × {rentalDays} {t("zile", "days")}
             </span>
-            <span className="text-foreground">{totalPrice} RON</span>
+            <span className="text-foreground">{fmt(subtotal)} RON</span>
           </div>
           <div className="flex justify-between text-muted-foreground">
-            <span>{t("Taxă serviciu", "Service fee")}</span>
-            <span className="text-emerald-600 font-medium">{t("Gratuit", "Free")}</span>
+            <span>{t("Comision Rentli", "Platform fee")}</span>
+            {platformFee > 0 ? (
+              <span className="text-foreground">{fmt(platformFee)} RON</span>
+            ) : (
+              <span className="text-emerald-600 font-medium">{t("Gratuit", "Free")}</span>
+            )}
           </div>
         </div>
 
@@ -86,7 +95,7 @@ const PremiumBookingSummary = ({ product, startDate, endDate, rentalDays, totalP
         <div className="flex justify-between items-baseline">
           <span className="font-semibold text-foreground">{t("Total", "Total")}</span>
           <span className="font-bold text-2xl text-foreground tabular-nums">
-            {animatedTotal} <span className="text-base font-medium text-muted-foreground">RON</span>
+            {fmt(total)} <span className="text-base font-medium text-muted-foreground">RON</span>
           </span>
         </div>
 
