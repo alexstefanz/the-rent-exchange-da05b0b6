@@ -1,15 +1,16 @@
 import { motion } from "framer-motion";
-import { CheckCircle2, ArrowUpRight, TrendingUp } from "lucide-react";
+import { CheckCircle2, ArrowUpRight, TrendingUp, Clock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
   available: number;
+  pending?: number;
   withdrawn: number;
   total: number;
 }
 
-export const BalanceBreakdown = ({ available, withdrawn, total }: Props) => {
+export const BalanceBreakdown = ({ available, pending = 0, withdrawn, total }: Props) => {
   const { t } = useLanguage();
 
   const items = [
@@ -20,6 +21,17 @@ export const BalanceBreakdown = ({ available, withdrawn, total }: Props) => {
       color: "text-emerald-600",
       bg: "bg-emerald-500/10",
       hint: t("Pot fi retrași acum", "Can be withdrawn now"),
+    },
+    {
+      label: t("În curs", "In progress"),
+      value: pending,
+      icon: Clock,
+      color: "text-amber-600",
+      bg: "bg-amber-500/10",
+      hint: t(
+        "Fonduri câștigate după semnarea procesului verbal — se pot retrage doar după finalizarea închirierii.",
+        "Earned after the handover protocol is signed — can be withdrawn only after the rental is completed."
+      ),
     },
     {
       label: t("Retras", "Withdrawn"),
@@ -41,7 +53,7 @@ export const BalanceBreakdown = ({ available, withdrawn, total }: Props) => {
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {items.map((it, i) => (
           <motion.div
             key={it.label}
