@@ -34,6 +34,7 @@ import {
   calculateClientPrice,
   type Product,
 } from "@/features/products/productsApi";
+import { calcPlatformFee } from "@/lib/rentalPricing";
 import { categories } from "@/data/categories";
 import { judete } from "@/data/romaniaLocations";
 import {
