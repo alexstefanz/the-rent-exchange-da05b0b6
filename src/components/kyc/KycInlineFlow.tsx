@@ -453,6 +453,43 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
+                <UserIcon className="h-5 w-5" />
+                {t("Datele tale", "Your details")}
+              </CardTitle>
+              <CardDescription>
+                {t(
+                  "Folosim acest nume pentru a verifica documentul și pentru contracte.",
+                  "We use this name to verify your document and for contracts."
+                )}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Label htmlFor="kyc-full-name">
+                {t("Nume complet (așa cum apare pe buletin)", "Full name (as shown on your ID)")}
+              </Label>
+              <Input
+                id="kyc-full-name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                onBlur={() => setNameTouched(true)}
+                placeholder="Popescu Ion Andrei"
+                maxLength={100}
+                autoComplete="name"
+              />
+              {nameTouched && !isNameValid && (
+                <p className="text-xs text-destructive">
+                  {t(
+                    "Introdu numele complet (nume și prenume, doar litere).",
+                    "Enter your full name (first and last, letters only)."
+                  )}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
                 <Upload className="h-5 w-5" />
                 {t("Documente necesare", "Required documents")}
               </CardTitle>
@@ -555,7 +592,7 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
           <Button
             className="w-full"
             size="lg"
-            disabled={!allDocsUploaded || isSubmitting || !phoneGate.hasValidPhone}
+            disabled={!allDocsUploaded || isSubmitting || !phoneGate.hasValidPhone || !isNameValid}
             onClick={handleSubmit}
           >
             {isSubmitting ? (
