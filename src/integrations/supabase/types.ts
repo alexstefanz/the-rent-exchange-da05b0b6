@@ -3241,6 +3241,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: {
           available: number
+          pending_earnings: number
           pending_withdrawals: number
           total_earnings: number
           total_withdrawn: number
