@@ -32,12 +32,14 @@ const EarningsTab = () => {
       <WalletHeroCard
         available={earnings.availableBalance}
         thisMonth={earnings.totalThisMonth}
+        pendingEarnings={earnings.pendingEarnings}
         hasMethod={!!method}
         onWithdraw={() => setOpenDrawer(true)}
       />
 
       <BalanceBreakdown
         available={earnings.availableBalance}
+        pending={earnings.pendingEarnings}
         withdrawn={earnings.totalWithdrawn}
         total={earnings.totalAllTime}
       />
