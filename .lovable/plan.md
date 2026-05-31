@@ -1,51 +1,37 @@
 ## Obiectiv
 
-Refac hero-ul din pagina **Câștiguri** astfel încât **Bani disponibili** și **Bani în așteptare** să apară ca două carduri mari, alăturate, cu greutate vizuală egală.
+În secțiunea **Cum primești banii** (Cont → Payout):
+1. Eliminăm afirmația despre titular pe care nu o putem verifica.
+2. IBAN-ul se poate seta **o singură dată**. Pentru schimbare, utilizatorul trebuie să deschidă un tichet de suport.
 
-## Layout nou
+## Modificări — `src/components/profile/AccountTab.tsx`
 
-```text
-┌───────────────────────────────┬───────────────────────────────┐
-│  Disponibil pentru retragere  │  În așteptare                 │
-│  1.234,50 RON                 │  450,00 RON                   │
-│  +120,00 RON luna aceasta     │  Se deblochează la finalizare │
-│  [Retrage bani]               │  (helper text + tooltip)      │
-└───────────────────────────────┴───────────────────────────────┘
-```
+### A. Eliminare copy nejustificat
+- **Descrierea secțiunii** (linia 621): scoatem fraza despre "titularul contului" și "suspendarea contului". Înlocuim cu un text neutru:
+  - RO: `Adaugă IBAN-ul în care vei primi banii din închirieri.`
+  - EN: `Add the IBAN where you'll receive rental payouts.`
+- **Banner-ul amber din formul de editare** (liniile 1060–1068): eliminat complet (caseta roșie din screenshot).
+- În formul de adăugare păstrăm doar pre-completarea `Titular cont: <full_name>` ca informativ; **fără** validare suplimentară. Linia rămâne pentru transparență, ca utilizatorul să știe ce nume e atașat plății.
 
-- Desktop (≥ `sm`): două coloane egale, `grid-cols-2`, gap 4.
-- Mobile: stivuite, `grid-cols-1`.
+### B. IBAN o singură dată (one-shot)
+- În vizualizarea cu IBAN salvat (liniile 977–1031):
+  - **Eliminăm** butoanele `Adaugă` și `Șterge`, `AlertDialog`-ul de confirmare ștergere, `handleDelete`, state-urile `confirmOpen` și `deleting`.
+  - Adăugăm un singur buton secundar **„Solicită schimbare IBAN"** / `Request IBAN change` care navighează la `/suport`.
+  - Sub IBAN-ul mascat, inserăm un info box gri/amber cu lacăt (`Lock` icon):
+    - RO: `IBAN-ul este blocat pentru securitate. Pentru schimbare, deschide un tichet de suport — echipa verifică identitatea și actualizează contul.`
+    - EN: `Your IBAN is locked for security. To change it, open a support ticket — our team will verify your identity and update the account.`
+  - Păstrăm badge-ul `Implicit` și caseta verde `IBAN configurat — ești gata să primești plăți.`
+- `setEditing(true)` nu mai poate fi declanșat din UI când există deja un IBAN. Inițializarea `editing = !hasIban` rămâne corectă pentru utilizatorii fără IBAN.
 
-## Modificări
+### C. Cleanup
+- Importurile `Trash2` și componentele `AlertDialog*` rămân utile în restul fișierului (Danger Zone, etc.), nu le ștergem.
+- `account_holder_name` continuă să se salveze din `profile.full_name` la prima introducere — fără modificări la schemă.
 
-### 1. `src/components/earnings/WalletHeroCard.tsx`
-- Trec layout-ul intern la `grid sm:grid-cols-2 gap-4`.
-- **Card stâng "Disponibil"** (verde primary):
-  - Iconiță `Wallet`, label `Disponibil pentru retragere / Available to withdraw`
-  - Sumă mare animată (count-up) + `RON`
-  - Sub-linie: `+X RON luna aceasta` dacă `thisMonth > 0`
-  - Buton `Retrage bani` (logica disable rămâne identică: ban, fără metodă, sold 0)
-  - Helper text scurt despre folosirea soldului în checkout
-- **Card drept "În așteptare"** (amber):
-  - Iconiță `Clock`, label `În așteptare / Pending`
-  - Sumă mare `pendingEarnings.toFixed(2)` + `RON` (0,00 dacă nu există)
-  - Helper bilingv: `Se deblochează automat după finalizarea închirierii.`
-  - Tooltip cu detalii: fonduri câștigate după semnarea procesului verbal, devin disponibile la status `completed`.
-  - Fără buton — informativ.
-- Păstrez gradient subtle + glow doar pe cardul "Disponibil"; cardul "În așteptare" primește accent amber discret (`from-amber-500/8 via-background`).
-- Elimin chip-ul mic "+X în curs" (acum redundant).
-
-### 2. `src/components/earnings/BalanceBreakdown.tsx`
-- Trec grila la `grid-cols-2 sm:grid-cols-3` și scot cardul **"În curs"** (a urcat în hero). Rămân: Disponibil, Retras, Total câștiguri.
-- Astfel evităm duplicarea informației pending.
-
-### 3. Fără schimbări pe hooks / RPC / migrări
-- `useWalletBalance` și `get_user_wallet_balance` rămân neschimbate; doar consumăm `pendingEarnings`.
-- `EarningsTab.tsx` deja pasează `pendingEarnings` în hero și `pending` în breakdown — nu necesită modificări.
+## Ce **nu** se schimbă
+- Nu se modifică backend / RLS / migrări. Coloana `iban` rămâne editabilă din DB pentru admini (vor procesa cererea de schimbare manual via tichet).
+- Withdrawals și restul UX rămân neschimbate.
 
 ## Verificare
-
-1. User cu `available > 0` și `pending = 0` → cardul drept arată `0,00 RON` cu textul "Niciun ban în așteptare".
-2. User cu pending > 0 → cardul drept arată suma în amber, fără buton.
-3. Mobile (< 640px) → carduri stivuite pe verticală, buton "Retrage" full-width.
-4. Grila de mai jos arată 3 carduri (Disponibil / Retras / Total), fără dublură pending.
+1. User fără IBAN → vede formul cu input + buton `Salvează IBAN`, fără amber-banner.
+2. După prima salvare → IBAN-ul devine read-only, fără buton de ștergere/editare. Apare info box cu lacăt + buton `Solicită schimbare IBAN` care duce la `/suport`.
+3. La refresh, IBAN-ul rămâne blocat. Singura cale de modificare e prin tichet (manual, de către admin/suport).

@@ -618,7 +618,7 @@ const AccountTab = () => {
         </Section>
 
         {/* ============ PAYOUT (IBAN) ============ */}
-        <Section id="payout" icon={Wallet} title={t("Cum primești banii", "How you get paid")} description={t("IBAN-ul trebuie să fie pe numele tău (titularul contului). Folosirea contului altei persoane nu este permisă și poate duce la suspendarea contului.", "The IBAN must be in your name (the account holder). Using someone else's account is not allowed and may result in account suspension.")}>
+        <Section id="payout" icon={Wallet} title={t("Cum primești banii", "How you get paid")} description={t("Adaugă IBAN-ul în care vei primi banii din închirieri.", "Add the IBAN where you'll receive rental payouts.")}>
           <PayoutForm
             userId={user?.id}
             profile={profile}
@@ -892,8 +892,6 @@ const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: an
   const [editing, setEditing] = useState(!hasIban);
   const [iban, setIban] = useState("");
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const ibanRegex = /^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$/;
 
@@ -931,46 +929,6 @@ const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: an
     } finally { setSaving(false); }
   };
 
-  const handleDelete = async () => {
-    if (!userId) return;
-    setDeleting(true);
-    try {
-      // Block delete when there's a pending withdrawal
-      const { data: pending, error: pendingErr } = await supabase
-        .from("withdrawal_requests" as any)
-        .select("id")
-        .eq("user_id", userId)
-        .eq("status", "pending")
-        .limit(1);
-      if (pendingErr) throw pendingErr;
-      if (pending && pending.length > 0) {
-        toast({
-          title: t("Cerere în așteptare", "Pending request"),
-          description: t(
-            "Ai o cerere de retragere în așteptare. Așteaptă procesarea ei înainte să ștergi IBAN-ul.",
-            "You have a pending withdrawal request. Wait for it to be processed before deleting your IBAN."
-          ),
-          variant: "destructive",
-        });
-        setConfirmOpen(false);
-        return;
-      }
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({ iban: null, account_holder_name: null } as any)
-        .eq("id", userId);
-      if (error) throw error;
-      onSaved("", "");
-      setIban("");
-      setEditing(true);
-      setConfirmOpen(false);
-      toast({ title: t("IBAN șters", "IBAN deleted"), description: t("Contul bancar a fost eliminat.", "Bank account removed.") });
-    } catch {
-      toast({ title: t("Eroare", "Error"), description: t("Nu s-a putut șterge IBAN-ul", "Could not delete IBAN"), variant: "destructive" });
-    } finally { setDeleting(false); }
-  };
-
   // Saved view
   if (hasIban && !editing) {
     return (
@@ -988,40 +946,25 @@ const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: an
             {savedHolder && <p className="text-xs text-muted-foreground mt-0.5 truncate">{savedHolder}</p>}
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <Button variant="outline" size="sm" onClick={() => { setIban(""); setEditing(true); }} className="flex-1 sm:flex-none">
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
-              {t("Adaugă", "Add")}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate("/suport")}
+              className="flex-1 sm:flex-none"
+            >
+              <LifeBuoy className="h-3.5 w-3.5 mr-1.5" />
+              {t("Solicită schimbare IBAN", "Request IBAN change")}
             </Button>
-            <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm" className="flex-1 sm:flex-none text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30">
-                  <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                  {t("Șterge", "Delete")}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{t("Șterge IBAN-ul?", "Delete IBAN?")}</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {t(
-                      "După ștergere nu vei mai putea solicita retrageri până când adaugi un alt IBAN.",
-                      "After deletion you won't be able to request withdrawals until you add a new IBAN."
-                    )}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel disabled={deleting}>{t("Anulează", "Cancel")}</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={(e) => { e.preventDefault(); handleDelete(); }}
-                    disabled={deleting}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    {deleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("Se șterge...", "Deleting...")}</> : t("Șterge IBAN", "Delete IBAN")}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
           </div>
+        </div>
+        <div className="flex items-start gap-2 rounded-lg bg-muted/40 border border-border px-3 py-2.5 text-xs text-muted-foreground">
+          <Lock className="h-4 w-4 shrink-0 mt-0.5 text-foreground/70" />
+          <span>
+            {t(
+              "IBAN-ul este blocat pentru securitate. Pentru schimbare, deschide un tichet de suport — echipa verifică identitatea și actualizează contul.",
+              "Your IBAN is locked for security. To change it, open a support ticket — our team will verify your identity and update the account."
+            )}
+          </span>
         </div>
         <div className="flex items-center gap-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">
           <CheckCircle2 className="h-4 w-4" />
@@ -1057,12 +1000,12 @@ const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: an
           )}
         </div>
       </div>
-      <div className="flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-950/20 px-3 py-2.5 text-xs text-amber-800 dark:text-amber-300">
-        <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+      <div className="flex items-start gap-2 rounded-lg bg-muted/40 border border-border px-3 py-2.5 text-xs text-muted-foreground">
+        <Lock className="h-4 w-4 shrink-0 mt-0.5 text-foreground/70" />
         <span>
           {t(
-            "IBAN-ul trebuie să aparțină titularului contului Rentli. Conturile pe numele altor persoane nu vor putea fi validate la plată.",
-            "The IBAN must belong to the Rentli account holder. Accounts in another person's name will not be validated for payouts."
+            "Atenție: după salvare, IBAN-ul nu mai poate fi modificat direct. Pentru schimbare va trebui să deschizi un tichet de suport.",
+            "Heads up: once saved, the IBAN cannot be changed directly. To update it later you'll need to open a support ticket."
           )}
         </span>
       </div>
