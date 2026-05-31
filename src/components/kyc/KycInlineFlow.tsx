@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Shield,
   Upload,
@@ -16,6 +18,7 @@ import {
   Image as ImageIcon,
   Phone,
   ArrowRight,
+  User as UserIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -66,6 +69,41 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeDocType, setActiveDocType] = useState<"id_front" | "id_back" | "selfie" | null>(null);
   const phoneGate = usePhoneRequired();
+  const [fullName, setFullName] = useState("");
+  const [initialFullName, setInitialFullName] = useState("");
+  const [nameTouched, setNameTouched] = useState(false);
+
+  // Validation: trim, min 2 words each >=2 chars, letters/space/hyphen/apostrophe, max 100
+  const NAME_REGEX = /^[A-Za-zĂÂÎȘȚăâîșțĂÂÎŞŢăâîşţ' -]+$/;
+  const validateName = (raw: string): boolean => {
+    const v = raw.trim();
+    if (v.length < 4 || v.length > 100) return false;
+    if (!NAME_REGEX.test(v)) return false;
+    const parts = v.split(/\s+/).filter(Boolean);
+    if (parts.length < 2) return false;
+    return parts.every((p) => p.replace(/['-]/g, "").length >= 2);
+  };
+  const isNameValid = validateName(fullName);
+
+  // Load existing full_name from profile
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      const v = (data?.full_name || "").trim();
+      setFullName(v);
+      setInitialFullName(v);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   // Load existing KYC case
   const refreshKycCase = useCallback(async () => {
@@ -172,9 +210,31 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
   const handleSubmit = async () => {
     if (!user || !allDocsUploaded) return;
     if (!phoneGate.requirePhone()) return;
+    if (!isNameValid) {
+      setNameTouched(true);
+      toast({
+        title: t("Nume invalid", "Invalid name"),
+        description: t(
+          "Te rugăm să introduci numele complet așa cum apare pe buletin.",
+          "Please enter your full name as it appears on your ID."
+        ),
+        variant: "destructive",
+      });
+      return;
+    }
     setIsSubmitting(true);
 
     try {
+      const trimmedName = fullName.trim();
+      if (trimmedName !== initialFullName) {
+        const { error: nameErr } = await supabase
+          .from("profiles")
+          .update({ full_name: trimmedName })
+          .eq("id", user.id);
+        if (nameErr) throw nameErr;
+        setInitialFullName(trimmedName);
+      }
+
       let caseId = kycCase?.id;
 
       if (!caseId || kycCase?.status === "REJECTED") {
@@ -317,6 +377,12 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
                   "Your account is fully verified. Enjoy all features!"
                 )}
               </p>
+              {initialFullName && (
+                <p className="text-sm mt-1">
+                  <span className="text-muted-foreground">{t("Nume:", "Name:")}</span>{" "}
+                  <span className="font-medium">{initialFullName}</span>
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -390,6 +456,43 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
 
       {canUpload && !showPhoneGate && (
         <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <UserIcon className="h-5 w-5" />
+                {t("Datele tale", "Your details")}
+              </CardTitle>
+              <CardDescription>
+                {t(
+                  "Folosim acest nume pentru a verifica documentul și pentru contracte.",
+                  "We use this name to verify your document and for contracts."
+                )}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Label htmlFor="kyc-full-name">
+                {t("Nume complet (așa cum apare pe buletin)", "Full name (as shown on your ID)")}
+              </Label>
+              <Input
+                id="kyc-full-name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                onBlur={() => setNameTouched(true)}
+                placeholder="Popescu Ion Andrei"
+                maxLength={100}
+                autoComplete="name"
+              />
+              {nameTouched && !isNameValid && (
+                <p className="text-xs text-destructive">
+                  {t(
+                    "Introdu numele complet (nume și prenume, doar litere).",
+                    "Enter your full name (first and last, letters only)."
+                  )}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -495,7 +598,7 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
           <Button
             className="w-full"
             size="lg"
-            disabled={!allDocsUploaded || isSubmitting || !phoneGate.hasValidPhone}
+            disabled={!allDocsUploaded || isSubmitting || !phoneGate.hasValidPhone || !isNameValid}
             onClick={handleSubmit}
           >
             {isSubmitting ? (
