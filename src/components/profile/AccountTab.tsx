@@ -618,7 +618,7 @@ const AccountTab = () => {
         </Section>
 
         {/* ============ PAYOUT (IBAN) ============ */}
-        <Section id="payout" icon={Wallet} title={t("Cum primești banii", "How you get paid")} description={t("IBAN-ul trebuie să fie pe numele tău (titularul contului). Folosirea contului altei persoane nu este permisă și poate duce la suspendarea contului.", "The IBAN must be in your name (the account holder). Using someone else's account is not allowed and may result in account suspension.")}>
+        <Section id="payout" icon={Wallet} title={t("Cum primești banii", "How you get paid")} description={t("Adaugă IBAN-ul în care vei primi banii din închirieri.", "Add the IBAN where you'll receive rental payouts.")}>
           <PayoutForm
             userId={user?.id}
             profile={profile}
