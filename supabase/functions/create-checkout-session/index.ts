@@ -112,8 +112,11 @@ serve(async (req) => {
 
     // Stripe RON minimum charge is 2 RON. Block lower amounts up-front so we
     // surface a friendly error instead of a generic 500 from Stripe.
+    // NEW MODEL: the client total = subtotal (owner-net) + platform_fee.
     const subtotalRon = Number(rental.subtotal) || 0;
-    if (subtotalRon < 2) {
+    const platformFeeRon = Number(rental.platform_fee) || 0;
+    const clientTotalRon = Math.round((subtotalRon + platformFeeRon) * 100) / 100;
+    if (clientTotalRon < 2) {
       return new Response(
         JSON.stringify({
           error: "MIN_AMOUNT",
@@ -173,7 +176,7 @@ serve(async (req) => {
               description: `Închiriere ${rental.start_date} → ${rental.end_date}`,
               ...(productImage ? { images: [productImage] } : {}),
             },
-            unit_amount: Math.round(rental.subtotal * 100), // RON → bani
+            unit_amount: Math.round(clientTotalRon * 100), // RON → bani (subtotal + comision)
           },
           quantity: 1,
         },
