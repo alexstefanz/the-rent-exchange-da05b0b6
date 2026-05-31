@@ -63,8 +63,16 @@ export interface ProductFilters {
   search?: string;
 }
 
-export const calculateClientPrice = (ownerPrice: number, feePercent: number): number => {
-  return Math.round(ownerPrice * (1 + feePercent / 100) * 100) / 100;
+/**
+ * Per-day price displayed to clients in lists and product pages.
+ *
+ * NEW MODEL (2026-05): the listed daily price equals the owner's net price.
+ * The platform fee is added on top only at checkout / on the rental record,
+ * with a floor of 1 RON enforced server-side. `feePercent` is kept for
+ * backwards compatibility with existing call sites.
+ */
+export const calculateClientPrice = (ownerPrice: number, _feePercent: number): number => {
+  return Math.round((Number(ownerPrice) || 0) * 100) / 100;
 };
 
 export const getProducts = async (filters?: ProductFilters): Promise<Product[]> => {
