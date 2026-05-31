@@ -377,6 +377,12 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
                   "Your account is fully verified. Enjoy all features!"
                 )}
               </p>
+              {initialFullName && (
+                <p className="text-sm mt-1">
+                  <span className="text-muted-foreground">{t("Nume:", "Name:")}</span>{" "}
+                  <span className="font-medium">{initialFullName}</span>
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
