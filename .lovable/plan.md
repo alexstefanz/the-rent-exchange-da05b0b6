@@ -1,112 +1,57 @@
-## Probleme identificate
+# SMS rules — simplified
 
-Din ecranele atașate și din cod:
+SMS-urile vor fi trimise doar pentru evenimentele esențiale: prima cerere/acceptare și momentele de predare-înapoi a produsului, plus câteva evenimente critice de siguranță (anulări, expirare, dispute). În rest doar in-app + email.
 
-1. **Totalul nu se calculează corect.** În `Sumar financiar` (rental detail) apare `Subtotal 8.4 + Comision 0.42 = Total 8.4 RON` — comisionul este afișat dar nu se adună la total. La checkout, `Total` afișează `8 RON` în loc de `8.4 RON` (`useCountUp` rotunjește la întreg).
-2. **Modelul de preț este inconsistent:** `daily_price_owner = 2 RON` → client price `2.10 RON` (owner × 1.05). `subtotal = 2.10 × 4 = 8.4` (totalul clientului). Apoi `platform_fee = 5% × 8.4 = 0.42` se scade din subtotal → owner primește `7.98 RON` în loc de `8 RON` promiși în publish wizard.
-3. **Prețuri cu zecimale.** Input-ul din publish wizard (`Step5Pricing`, `type="number"`) acceptă orice zecimale și produce sume urâte (2.1 RON / zi, total 8.4 RON).
-4. **Fără comision minim.** La închirieri foarte mici (ex. 8 RON) comisionul de 5% înseamnă 0.42 RON, neeconomic. Trebuie minim 1 RON.
+## Evenimente care PĂSTREAZĂ SMS
 
-## Soluție
+### Inițiere
+| Eveniment | SMS către |
+|---|---|
+| `request_created` | Doar **owner** (renter primește doar in-app + email) |
+| `request_accepted` | Doar **renter** (owner primește doar in-app + email) |
 
-### 1. Unificarea modelului de preț (sursa de adevăr)
+### Predarea înapoi (final închiriere)
+| Eveniment | SMS către |
+|---|---|
+| `return_reminder_2h` (critic) | Ambii |
+| `return_in_progress` (critic) | Ambii |
+| `pv_return_pending` (critic) | Ambii |
+| `pv_return_completed_by_party` (critic) | Ambii |
 
-Schimbăm semnificația câmpurilor:
-- `daily_price_owner` = ce primește proprietarul / zi (întreg, ≥ 2 RON).
-- `subtotal` (în `rentals`) = `daily_price_owner × rental_days` (suma netă pentru proprietar).
-- `platform_fee` = `max(1, round(subtotal × platform_fee_percent / 100, 2))` dacă `platform_fee_percent > 0`, altfel `0`.
-- `owner_payout` = `subtotal` (proprietarul primește exact `2 RON × zile`).
-- **Total client = `subtotal + platform_fee`** (ce încasează Stripe).
+### Critice de siguranță (păstrate)
+| Eveniment | SMS către |
+|---|---|
+| `request_reminder_2h` | Ambii |
+| `request_expired` | Ambii |
+| `request_cancelled_by_renter` | Doar owner |
+| `request_cancelled_by_owner` | Doar renter |
+| `dispute_opened` | Ambii |
 
-Avantaje: numere rotunde, owner primește exact cât a setat, comision transparent ca rând separat.
+## Evenimente care PIERD SMS (rămân in-app + email)
 
-### 2. Front-end — preț întreg
+- `request_rejected` — non-critic
+- `pickup_scheduled` — predarea inițială, scoasă conform cerinței (doar return mai are SMS)
+- `pv_pickup_pending` — la fel
+- `pv_pickup_completed_by_party` — la fel
+- `return_reminder_24h` — non-critic (rămâne `return_reminder_2h`)
+- `rental_completed` — non-critic
+- `payment_succeeded` — deja fără SMS
+- restul (cancel_request_submitted/withdrawn/approved/rejected, review_reminder etc.) — deja fără SMS
 
-`src/components/publish/PublishWizard.tsx` (`Step5Pricing`):
-- `<Input type="number" min={2} step={1} inputMode="numeric" pattern="[0-9]*">`.
-- `onChange`: `Math.max(0, Math.floor(Number(e.target.value)))` ca să blocheze zecimalele copy-paste.
-- În blocul „Clientul plătește": afișează `subtotal + comision` calculat cu `max(1, …)`. Helper text: `+ X RON comision (Y%)` cu X = comisionul efectiv (min 1).
+## Detalii tehnice
 
-### 3. Helper unic pentru calcul
+1. **`supabase/functions/notify-rental-event/index.ts`** — singura sursă de adevăr pentru SMS-uri:
+   - Scot `"sms"` din `channels` la evenimentele listate mai sus (pickup_scheduled, pv_pickup_*, request_rejected, return_reminder_24h, rental_completed).
+   - Introduc un filtru "doar către destinatarul acțiunii" pentru `request_created` (skip dacă `recipientRole === "renter"`) și `request_accepted` (skip dacă `recipientRole === "owner"`). Implementare: în bucla per-recipient, înainte de a trimite SMS, verific un mic switch pe `event_key` + `recipientRole` și sar peste canalul `sms` (in-app + email rămân neatinse).
+   - Eventual mai curat: extind `smsTemplate` să fie deja doar pe rolul țintă (e deja așa pentru aceste două), dar logica iterează pe ambii destinatari → confirm că lipsa template-ului pentru celălalt rol blochează deja trimiterea; dacă nu, adaug guard explicit.
 
-În `src/lib/rentalPricing.ts`:
-```ts
-export const MIN_PLATFORM_FEE_RON = 1;
+2. **Niciun alt cod nu mai trimite SMS direct** — toate apelurile trec prin `notify-rental-event` (verificat în `rentalsApi.ts`). Funcția `send-sms-notification` rămâne neschimbată (e doar transportul) și `notify-return-day` continuă să trimită `return_reminder_2h` (păstrat).
 
-export function calcPlatformFee(subtotalOwner: number, feePercent: number) {
-  if (!feePercent || feePercent <= 0) return 0;
-  const raw = Math.round(subtotalOwner * feePercent) / 100;
-  return Math.max(MIN_PLATFORM_FEE_RON, Math.round(raw * 100) / 100);
-}
+3. **Fără migrări DB**. Fără modificări UI. Fără modificări la șabloanele de email.
 
-export function calcClientTotal(subtotalOwner: number, feePercent: number) {
-  return Math.round((subtotalOwner + calcPlatformFee(subtotalOwner, feePercent)) * 100) / 100;
-}
-```
+## Verificare după deploy
 
-Refactor `computeRentalPrice` să întoarcă `subtotalOwner`, `platformFee`, `total` (client). Înlocuim toate locurile care folosesc `clientPrice = owner × 1.05`:
-- `src/features/products/productsApi.ts` → `calculateClientPrice` devine wrapper peste `calcClientTotal(owner × 1, feePercent)` pentru ziua singulară, dar majoritatea consumerilor (cardurile de listing, Search, CategoryDetail, UserProfile, ProductDetail hero price) afișează acum `daily_price_owner` ca preț de zi al clientului + un mic indicator `+ comision la checkout`. Notă: schimbă prețurile afișate în listă de la `2.10 RON` la `2 RON` — confirmare necesară (vezi întrebare).
-- `src/pages/ProductDetail.tsx` (`handleReserve`, JSON-LD, `trackRecentlyViewed`), `src/components/product/PremiumBookingCard.tsx`, `MobileStickyBookingBar.tsx`: trec prin `computeRentalPrice` reactualizat care folosește `daily_price_owner`.
-
-### 4. Checkout — afișare corectă
-
-`src/components/checkout/PremiumBookingSummary.tsx`:
-- Schimbă props: primește `dailyPriceOwner`, `rentalDays`, `platformFeePercent`.
-- Calculează `subtotal`, `platformFee`, `total` cu helperele de mai sus.
-- Rândurile: `X RON × N zile → subtotal RON`, `Comision Rentli → +platformFee RON` (nu „Gratuit") dacă > 0, altfel „Gratuit".
-- `Total` folosește `Math.round(total * 100) / 100` și `useCountUp` adaptat să afișeze 2 zecimale (sau întreg dacă `total % 1 === 0`).
-
-`src/pages/Checkout.tsx` (caller) trimite `dailyPriceOwner` și `platformFeePercent` în loc de `clientPrice`.
-
-### 5. Crearea rentalului
-
-`src/features/rentals/rentalsApi.ts` (`createRental`):
-- `dailyPrice` primit = `daily_price_owner` (întreg).
-- `subtotal = dailyPrice * rentalDays`.
-- `platformFee = calcPlatformFee(subtotal, platformFeePercent)`.
-- `ownerPayout = subtotal` (nu se mai scade).
-- Insert: `daily_price: dailyPrice` (owner), `subtotal`, `platform_fee`, `owner_payout`.
-
-Backend Stripe (`supabase/functions/create-checkout-session/index.ts`):
-- `unit_amount = Math.round((rental.subtotal + rental.platform_fee) * 100)` (Stripe încasează totalul real).
-- Verificarea minimului de 2 RON rămâne, dar pe `subtotal + platform_fee`.
-
-`supabase/functions/capture-rental-payment/index.ts`: `owner_payout` și `platform_fee` rămân deja stocate corect — doar valorile lor sunt diferite acum.
-
-### 6. Sumar financiar (rental detail)
-
-`src/pages/RentalDetailPage.tsx` (~linia 714-728):
-- Rândul totalului folosește `rental.subtotal + rental.platform_fee` pentru chiriaș (în loc de `rental.subtotal`).
-- Pentru proprietar afișează `rental.owner_payout` (= subtotal acum).
-
-## Compatibilitate cu datele existente
-
-Rentalurile vechi au modelul invers (`subtotal` include comisionul). Pentru a evita confuzii la afișare:
-- Adăugăm un flag derivat: tratăm `rentals` create înainte de migrație drept legacy doar la nivel de UI dacă apare `owner_payout < subtotal`. Practic, pe rental detail putem afișa mereu `subtotal + platform_fee` ca total client — pentru rentalurile vechi, acest total va apărea mai mare decât suma efectiv încasată. **Recomandare:** filtrăm vizual doar pe rentaluri noi, păstrând valorile vechi neatinse în DB.
-
-Alternativ și mai simplu: nu retroactivăm — schimbarea afectează doar rentalurile create de aici încolo. Adăugăm `platform_fee_basis` enum (`'gross' | 'net'`) cu default `'net'` pe rentaluri noi pentru a ști cum să afișăm. Decid în implementare.
-
-## Detalii tehnice (referință)
-
-```text
-Owner setează 10 RON/zi, 4 zile, fee 5%:
-  subtotal      = 40 RON
-  platform_fee  = max(1, 40 * 0.05) = max(1, 2) = 2 RON
-  total client  = 42 RON
-  owner payout  = 40 RON
-
-Owner setează 5 RON/zi, 2 zile, fee 5%:
-  subtotal      = 10 RON
-  platform_fee  = max(1, 10 * 0.05) = max(1, 0.5) = 1 RON
-  total client  = 11 RON
-  owner payout  = 10 RON
-
-Free listing (fee=0):
-  platform_fee  = 0
-  total client  = subtotal
-  owner payout  = subtotal
-```
-
-## Întrebare de clarificare
-
-1. **Prețul afișat în carduri / listă / hero produs** — îl arătăm acum ca preț *net owner* (ex. „2 RON / zi") cu mențiunea „+ comision la checkout", sau preferi să afișăm direct totalul (owner + comision min 1 RON) ca preț al clientului? Comisionul minim de 1 RON face afișarea per-zi ciudată (1 zi = 2+1=3 RON, 4 zile = 2×4+1=9 RON), așa că recomand afișarea netă în liste și totalul calculat doar la checkout.
+- Trigger manual `request_created` și confirm că primește SMS doar owner-ul.
+- Trigger `request_accepted` și confirm că primește SMS doar renter-ul.
+- Trigger `pickup_scheduled` → fără SMS în `sms_logs`, dar in-app + email prezente.
+- Trigger `return_reminder_2h` → SMS la ambii.
