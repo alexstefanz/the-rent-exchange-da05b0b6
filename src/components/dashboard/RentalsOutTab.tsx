@@ -19,6 +19,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useRentalRealtime } from "@/hooks/useRentalRealtime";
 import StatusBadge from "./StatusBadge";
 import RentalsFilterBar, { type RentalStatusFilter, type RentalSortBy } from "./RentalsFilterBar";
+import { bucketOf } from "./rentalBucket";
 
 const RentalsOutTab = () => {
   const copy = useUxCopy();
@@ -42,23 +43,15 @@ const RentalsOutTab = () => {
   const [statusFilter, setStatusFilter] = useState<RentalStatusFilter>("all");
   const [sortBy, setSortBy] = useState<RentalSortBy>("newest");
 
-  const counts = useMemo(() => ({
-    all: rentals.length,
-    active: rentals.filter(r => (r.status === "confirmed" || r.status === "active") && !r.handover_confirmed_at).length,
-    in_progress: rentals.filter(r => (r.status === "confirmed" || r.status === "active") && !!r.handover_confirmed_at && !r.return_confirmed_at).length,
-    pending: rentals.filter(r => r.status === "pending").length,
-    completed: rentals.filter(r => r.status === "completed" || (((r.status === "confirmed" || r.status === "active")) && !!r.return_confirmed_at)).length,
-    cancelled: rentals.filter(r => r.status === "cancelled" || r.status === "rejected").length,
-  }), [rentals]);
+  const counts = useMemo(() => {
+    const c = { all: rentals.length, active: 0, in_progress: 0, overdue: 0, pending: 0, completed: 0, cancelled: 0 };
+    for (const r of rentals) c[bucketOf(r)]++;
+    return c;
+  }, [rentals]);
 
   const matchesStatus = (r: OwnerRental) => {
     if (statusFilter === "all") return true;
-    if (statusFilter === "active") return (r.status === "confirmed" || r.status === "active") && !r.handover_confirmed_at;
-    if (statusFilter === "in_progress") return (r.status === "confirmed" || r.status === "active") && !!r.handover_confirmed_at && !r.return_confirmed_at;
-    if (statusFilter === "pending") return r.status === "pending";
-    if (statusFilter === "completed") return r.status === "completed" || (((r.status === "confirmed" || r.status === "active")) && !!r.return_confirmed_at);
-    if (statusFilter === "cancelled") return r.status === "cancelled" || r.status === "rejected";
-    return true;
+    return bucketOf(r) === statusFilter;
   };
 
   const sortRentals = (arr: OwnerRental[]) => {
