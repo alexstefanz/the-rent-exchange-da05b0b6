@@ -316,7 +316,7 @@ const ListingsPage = () => {
                       key={p.id}
                       product={p}
                       status={status}
-                      onCalendar={() => setAvailabilityProduct(p)}
+                      onCalendar={status === "rejected" ? undefined : () => setAvailabilityProduct(p)}
                       onHide={() => setConfirmHide(p)}
                       onActivate={() => handleActivate(p)}
                       onDelete={() => setConfirmDelete(p)}
