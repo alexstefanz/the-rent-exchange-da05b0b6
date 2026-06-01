@@ -159,7 +159,10 @@ const ListingCard = ({ product, status, onHide, onActivate, onDelete, onCalendar
 
         <div className="mt-4 flex gap-2">
           <Button asChild size="sm" className="flex-1">
-            <Link to={editUrl}><Edit className="h-4 w-4" /> {t("Editează", "Edit")}</Link>
+            <Link to={editUrl}>
+              <Edit className="h-4 w-4" />{" "}
+              {isRejected ? t("Editează & retrimite", "Edit & resubmit") : t("Editează", "Edit")}
+            </Link>
           </Button>
           <Button asChild variant="outline" size="sm">
             <Link to={primaryUrl} target={isRejected ? undefined : linkTarget}><Eye className="h-4 w-4" /></Link>

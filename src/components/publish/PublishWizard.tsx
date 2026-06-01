@@ -409,12 +409,20 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       };
 
       if (mode === "edit" && productId) {
+        const wasRejected = initialProduct?.approval_status === "rejected";
         await updateProduct(productId, { ...payload, is_active: data.is_active }, user.id);
         await queryClient.invalidateQueries({ queryKey: ["my-products", user.id] });
         await queryClient.invalidateQueries({ queryKey: ["product", productId] });
         toast({
-          title: t("Anunț actualizat", "Listing updated"),
-          description: t("Modificările au fost salvate.", "Your changes have been saved."),
+          title: wasRejected
+            ? t("Anunț retrimis spre aprobare", "Listing resubmitted for approval")
+            : t("Anunț actualizat", "Listing updated"),
+          description: wasRejected
+            ? t(
+                "Îl vei vedea publicat după verificare (de obicei sub 2 ore).",
+                "It will be published after review (usually under 2 hours).",
+              )
+            : t("Modificările au fost salvate.", "Your changes have been saved."),
         });
         navigate("/owner");
       } else {
