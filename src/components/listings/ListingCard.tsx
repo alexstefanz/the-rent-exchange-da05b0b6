@@ -51,6 +51,12 @@ const ListingCard = ({ product, status, onHide, onActivate, onDelete, onCalendar
   const cover = !imgError && product.images?.[0] ? product.images[0] : "/placeholder.svg";
 
   const isPending = status === "pending";
+  const isRejected = status === "rejected";
+  const editUrl = `/owner/edit-product/${product.id}`;
+  // Rejected listings are not publicly visible — direct all "view" actions to the edit page instead.
+  const primaryUrl = isRejected ? editUrl : url;
+  const linkTarget = isPending ? "_blank" : undefined;
+  const linkRel = isPending ? "noopener noreferrer" : undefined;
 
   const handleShare = async () => {
     const fullUrl = window.location.origin + url;
@@ -68,7 +74,7 @@ const ListingCard = ({ product, status, onHide, onActivate, onDelete, onCalendar
   return (
     <article className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg">
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
-        <Link to={url} target={isPending ? "_blank" : undefined} rel={isPending ? "noopener noreferrer" : undefined}>
+        <Link to={primaryUrl} target={isRejected ? undefined : linkTarget} rel={isRejected ? undefined : linkRel}>
           <img
             src={cover}
             alt={title}
@@ -92,12 +98,15 @@ const ListingCard = ({ product, status, onHide, onActivate, onDelete, onCalendar
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
               <DropdownMenuItem asChild>
-                <Link to={url} target={isPending ? "_blank" : undefined}><Eye className="mr-2 h-4 w-4" /> {t("Vezi anunț", "View listing")}</Link>
+                <Link to={primaryUrl} target={isRejected ? undefined : linkTarget}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  {isRejected ? t("Editează pentru republicare", "Edit to republish") : t("Vezi anunț", "View listing")}
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to={`/owner/edit-product/${product.id}`}><Edit className="mr-2 h-4 w-4" /> {t("Editează", "Edit")}</Link>
+                <Link to={editUrl}><Edit className="mr-2 h-4 w-4" /> {t("Editează", "Edit")}</Link>
               </DropdownMenuItem>
-              {onCalendar && (
+              {onCalendar && !isRejected && (
                 <DropdownMenuItem onClick={onCalendar}><CalendarDays className="mr-2 h-4 w-4" /> {t("Disponibilitate", "Availability")}</DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={handleShare}><Share2 className="mr-2 h-4 w-4" /> {t("Distribuie", "Share")}</DropdownMenuItem>
@@ -119,7 +128,7 @@ const ListingCard = ({ product, status, onHide, onActivate, onDelete, onCalendar
 
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
-          <Link to={url} className="min-w-0 flex-1 hover:text-primary">
+          <Link to={primaryUrl} className="min-w-0 flex-1 hover:text-primary">
             <h3 className="truncate font-semibold text-foreground">{title}</h3>
           </Link>
         </div>
@@ -150,12 +159,12 @@ const ListingCard = ({ product, status, onHide, onActivate, onDelete, onCalendar
 
         <div className="mt-4 flex gap-2">
           <Button asChild size="sm" className="flex-1">
-            <Link to={`/owner/edit-product/${product.id}`}><Edit className="h-4 w-4" /> {t("Editează", "Edit")}</Link>
+            <Link to={editUrl}><Edit className="h-4 w-4" /> {t("Editează", "Edit")}</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
-            <Link to={url} target={isPending ? "_blank" : undefined}><Eye className="h-4 w-4" /></Link>
+            <Link to={primaryUrl} target={isRejected ? undefined : linkTarget}><Eye className="h-4 w-4" /></Link>
           </Button>
-          {onCalendar && (
+          {onCalendar && !isRejected && (
             <Button variant="outline" size="sm" onClick={onCalendar} aria-label={t("Calendar", "Calendar")}>
               <CalendarDays className="h-4 w-4" />
             </Button>
