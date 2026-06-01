@@ -1,13 +1,14 @@
 import { ArrowUpDown, Filter } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export type RentalStatusFilter = "all" | "active" | "in_progress" | "pending" | "completed" | "cancelled";
+export type RentalStatusFilter = "all" | "active" | "in_progress" | "overdue" | "pending" | "completed" | "cancelled";
 export type RentalSortBy = "newest" | "oldest" | "amount_desc" | "amount_asc";
 
 interface Counts {
   all: number;
   active: number;
   in_progress: number;
+  overdue: number;
   pending: number;
   completed: number;
   cancelled: number;
@@ -34,6 +35,7 @@ const RentalsFilterBar = ({
     { key: "all", label: "Toate", count: counts.all },
     { key: "active", label: "Active", count: counts.active },
     { key: "in_progress", label: "În derulare", count: counts.in_progress },
+    { key: "overdue", label: "Întârziate", count: counts.overdue },
     { key: "pending", label: "În așteptare", count: counts.pending },
     { key: "completed", label: "Finalizate", count: counts.completed },
     { key: "cancelled", label: "Anulate", count: counts.cancelled },
@@ -49,7 +51,9 @@ const RentalsFilterBar = ({
         <SelectContent>
           {items.map((it) => (
             <SelectItem key={it.key} value={it.key}>
-              {it.label} ({it.count})
+              <span className={it.key === "overdue" && it.count > 0 ? "text-amber-700 font-medium" : undefined}>
+                {it.label} ({it.count})
+              </span>
             </SelectItem>
           ))}
         </SelectContent>
