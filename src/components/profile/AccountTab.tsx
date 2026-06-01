@@ -18,7 +18,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import {
   CheckCircle2, AlertCircle, Lock, Wallet, Shield, Trash2, User, Phone, Mail,
   MessageCircle, Camera, Loader2, LifeBuoy, Bell, ChevronDown, Star, Calendar, Sparkles,
-  ShieldCheck, KeyRound, Smartphone, History, Globe, BadgeCheck, ChevronRight, Landmark, Pencil, Plus, X,
+  ShieldCheck, KeyRound, History, BadgeCheck, ChevronRight, Landmark, Pencil, Plus, X,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -611,9 +611,6 @@ const AccountTab = () => {
                   : "—"
               }
             />
-            {/* Coming soon */}
-            <ComingSoonCard icon={Smartphone} title={t("Autentificare în 2 pași (2FA)", "Two-factor auth (2FA)")} description={t("Strat suplimentar de protecție via SMS sau aplicație.", "Extra protection via SMS or authenticator app.")} />
-            <ComingSoonCard icon={Globe} title={t("Sesiuni active & dispozitive", "Active sessions & devices")} description={t("Vezi unde ești conectat și deconectează dispozitive.", "See where you're signed in and revoke devices.")} />
           </div>
         </Section>
 
