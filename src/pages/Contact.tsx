@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Mail, Send, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,23 +10,62 @@ import { useToast } from "@/hooks/use-toast";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { supabase } from "@/integrations/supabase/client";
+import { createUserTicket } from "@/features/tickets/userTicketsApi";
 
 const Contact = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.email || !form.subject || !form.message) {
       toast({ title: t("Te rugăm să completezi toate câmpurile.", "Please fill in all fields."), variant: "destructive" });
       return;
     }
-    const body = `Nume: ${form.name}\nEmail: ${form.email}\n\n${form.message}`;
-    const mailto = `mailto:office@rentli.ro?subject=${encodeURIComponent(form.subject)}&body=${encodeURIComponent(body)}`;
-    window.open(mailto, "_blank");
-    toast({ title: t("Mesajul a fost pregătit!", "Message prepared!"), description: t("Se deschide clientul de email.", "Opening email client.") });
-    setForm({ name: "", email: "", subject: "", message: "" });
+
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      toast({
+        title: t("Trebuie să fii autentificat", "Authentication required"),
+        description: t("Autentifică-te pentru a deschide un tichet de suport.", "Sign in to open a support ticket."),
+        variant: "destructive",
+      });
+      navigate(`/auth?redirect=${encodeURIComponent("/contact")}`);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const description = `Nume: ${form.name}\nEmail: ${form.email}\n\n${form.message}`;
+      const ticket = await createUserTicket({
+        title: form.subject,
+        description,
+        category_group: "USER",
+        category_type: "GENERAL_INQUIRY",
+        priority: "MEDIUM",
+      });
+      toast({
+        title: t("Tichet creat", "Ticket created"),
+        description: t(
+          `Te-am redirecționat la conversație (${ticket.public_id ?? "TCK"}).`,
+          `Redirecting you to the conversation (${ticket.public_id ?? "TCK"}).`,
+        ),
+      });
+      setForm({ name: "", email: "", subject: "", message: "" });
+      navigate("/suport");
+    } catch (err) {
+      toast({
+        title: t("Eroare la trimitere", "Failed to send"),
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -74,10 +113,16 @@ const Contact = () => {
                 <Label htmlFor="message">{t("Mesaj", "Message")} *</Label>
                 <Textarea id="message" rows={5} value={form.message} onChange={e => setForm(f => ({ ...f, message: e.target.value }))} placeholder={t("Scrie mesajul tău aici...", "Write your message here...")} />
               </div>
-              <Button type="submit" className="w-full" size="lg">
+              <Button type="submit" className="w-full" size="lg" disabled={submitting}>
                 <Send className="h-4 w-4 mr-2" />
-                {t("Trimite mesajul", "Send message")}
+                {submitting ? t("Se trimite...", "Sending...") : t("Trimite mesajul", "Send message")}
               </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                {t(
+                  "Mesajul tău devine un tichet pe care îl poți urmări din Suport & Tichete.",
+                  "Your message becomes a ticket you can track from Support & Tickets.",
+                )}
+              </p>
             </form>
           </CardContent>
         </Card>
