@@ -3,13 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Search,
-  Sparkles,
   X,
   Plus,
   Truck,
   MapPin,
   Calendar as CalendarIcon,
-  Loader2,
   Check,
   Image as ImageIcon,
   Tag,
