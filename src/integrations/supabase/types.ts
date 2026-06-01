@@ -2602,6 +2602,12 @@ export type Database = {
         Args: { _action: string; _note?: string; _rental_id: string }
         Returns: Json
       }
+      auto_confirm_overdue_handovers: {
+        Args: never
+        Returns: {
+          rental_id: string
+        }[]
+      }
       cancel_unpaid_rental: { Args: { _rental_id: string }; Returns: Json }
       confirm_handover_received: {
         Args: { _rental_id: string }
