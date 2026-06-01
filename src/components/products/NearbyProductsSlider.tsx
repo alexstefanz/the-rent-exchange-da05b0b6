@@ -183,7 +183,10 @@ const NearbyProductsSlider = ({ currentProductId, locationCity, category }: Near
 
   if (isLoading || products.length === 0) return null;
 
-  const title = locationCity ? copy.nearby.listingsFrom(locationCity) : copy.nearby.similarListings;
+  const shown = products.slice(0, 5);
+  const allFromCity =
+    !!locationCity && shown.length > 0 && shown.every((p) => p.location_city === locationCity);
+  const title = allFromCity ? copy.nearby.listingsFrom(locationCity!) : copy.nearby.similarListings;
 
   return (
     <div className="mb-10">

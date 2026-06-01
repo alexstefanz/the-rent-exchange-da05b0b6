@@ -1,12 +1,13 @@
-# Pop-up confirmare la „Schimbă parola"
+# Titlu slider „Anunțuri din {oraș}" - corect doar când e adevărat
 
-În `src/components/profile/AccountTab.tsx`, butonul cheamă deja `resetPasswordForEmail` și afișează un toast — dar toast-ul trece neobservat. Îl înlocuiesc cu un dialog vizibil.
+## Problemă
+`NearbyProductsSlider` afișează mereu titlul „Anunțuri din {locationCity}" pe baza orașului produsului curent. `getNearbyProducts` însă, dacă nu găsește destule anunțuri în acel oraș, completează cu rezultate din aceeași categorie și apoi cu orice produs activ — astfel cardurile apar din alte orașe (Bacău, Iași, etc.) sub titlul „Anunțuri din Buhuși".
 
-## Modificări
-- Adaug un `AlertDialog` (shadcn, deja folosit în proiect) controlat de un state nou `passwordResetSentOpen`.
-- În `handlePasswordReset`, după succes, în loc de toast deschid dialogul. Conținut bilingv:
-  - Titlu: „Email trimis" / „Email sent"
-  - Descriere: „Ți-am trimis un email la **{user.email}** cu un link pentru resetarea parolei. Verifică inbox-ul (și folderul Spam)." / EN echivalent
-  - Acțiune unică: „Am înțeles" / „Got it" care închide dialogul
-- Pentru eroare păstrez toast destructive ca acum.
-- Nu schimb logica de trimitere a email-ului, nu ating fluxul `/reset-password`.
+## Fix (frontend only)
+În `src/components/products/NearbyProductsSlider.tsx`:
+- După `setProducts(data)`, calculez câte produse au efectiv `location_city === locationCity`.
+- Titlul devine:
+  - `copy.nearby.listingsFrom(locationCity)` doar dacă **toate** cele afișate (primele 5) sunt din `locationCity`.
+  - altfel `copy.nearby.similarListings` („Anunțuri similare" / „Similar listings").
+
+Nu modific `getNearbyProducts` — fallback-ul rămâne util pentru a popula sliderul.
