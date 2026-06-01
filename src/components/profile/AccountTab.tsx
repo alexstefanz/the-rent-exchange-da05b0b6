@@ -613,6 +613,23 @@ const AccountTab = () => {
               }
             />
           </div>
+
+          <AlertDialog open={passwordResetSentOpen} onOpenChange={setPasswordResetSentOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("Email trimis", "Email sent")}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t(
+                    `Ți-am trimis un email la ${user?.email ?? ""} cu un link pentru resetarea parolei. Verifică inbox-ul (și folderul Spam).`,
+                    `We sent an email to ${user?.email ?? ""} with a link to reset your password. Check your inbox (and Spam folder).`
+                  )}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogAction>{t("Am înțeles", "Got it")}</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </Section>
 
         {/* ============ PAYOUT (IBAN) ============ */}
