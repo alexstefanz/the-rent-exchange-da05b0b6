@@ -1,57 +1,60 @@
-# SMS rules — simplified
+# Cereri primite — fix counts, add "Întârziate", smart status badge
 
-SMS-urile vor fi trimise doar pentru evenimentele esențiale: prima cerere/acceptare și momentele de predare-înapoi a produsului, plus câteva evenimente critice de siguranță (anulări, expirare, dispute). În rest doar in-app + email.
+Trei probleme observate în poză:
 
-## Evenimente care PĂSTREAZĂ SMS
+1. **Total greșit**: `Toate (14)` dar suma celorlalte = 9+3+1+0+0 = 13. Există rezervări care nu intră în niciun bucket din dropdown.
+2. **Lipsește categoria "Întârziate"**: rezervări la care termenul a trecut dar n-au fost finalizate/anulate nu apar în nicio categorie afară de "Toate".
+3. **Badge static "Confirmată" verde** chiar și când termenul de predare/returnare a trecut deja — induce în eroare.
 
-### Inițiere
-| Eveniment | SMS către |
-|---|---|
-| `request_created` | Doar **owner** (renter primește doar in-app + email) |
-| `request_accepted` | Doar **renter** (owner primește doar in-app + email) |
+## Fix-uri
 
-### Predarea înapoi (final închiriere)
-| Eveniment | SMS către |
-|---|---|
-| `return_reminder_2h` (critic) | Ambii |
-| `return_in_progress` (critic) | Ambii |
-| `pv_return_pending` (critic) | Ambii |
-| `pv_return_completed_by_party` (critic) | Ambii |
+### 1. `src/components/dashboard/RentalsOutTab.tsx` — partiție exhaustivă + bucket "Întârziate"
 
-### Critice de siguranță (păstrate)
-| Eveniment | SMS către |
-|---|---|
-| `request_reminder_2h` | Ambii |
-| `request_expired` | Ambii |
-| `request_cancelled_by_renter` | Doar owner |
-| `request_cancelled_by_owner` | Doar renter |
-| `dispute_opened` | Ambii |
+Refactor `counts` + `matchesStatus` cu un helper unic `bucketOf(rental) → RentalStatusFilter` ca să garantăm că **fiecare rezervare aparține exact unui bucket** (suma = Toate).
 
-## Evenimente care PIERD SMS (rămân in-app + email)
+Reguli noi (în ordine, prima care match-uiește câștigă):
+- `cancelled` → status în `cancelled` / `rejected`
+- `completed` → status `completed` SAU (confirmed/active + `return_confirmed_at`)
+- `overdue` (nou — **Întârziate**) → status în `confirmed` / `active`, neanulat, nereturnat, ȘI `end_date < azi`
+- `in_progress` → confirmed/active + `handover_confirmed_at` setat (și nereturnat)
+- `active` → confirmed/active fără handover, end_date ≥ azi
+- `pending` → status `pending`
+- fallback `other` (nu ar trebui să apară; loghez `console.warn` cu id-ul ca să prindem cazurile noi)
 
-- `request_rejected` — non-critic
-- `pickup_scheduled` — predarea inițială, scoasă conform cerinței (doar return mai are SMS)
-- `pv_pickup_pending` — la fel
-- `pv_pickup_completed_by_party` — la fel
-- `return_reminder_24h` — non-critic (rămâne `return_reminder_2h`)
-- `rental_completed` — non-critic
-- `payment_succeeded` — deja fără SMS
-- restul (cancel_request_submitted/withdrawn/approved/rejected, review_reminder etc.) — deja fără SMS
+`counts.all` = `rentals.length` și `counts[bucket] = rentals.filter(r => bucketOf(r) === bucket).length` → suma celor 6 buckete = total garantat.
 
-## Detalii tehnice
+### 2. `src/components/dashboard/RentalsFilterBar.tsx` — adaugă opțiunea "Întârziate"
 
-1. **`supabase/functions/notify-rental-event/index.ts`** — singura sursă de adevăr pentru SMS-uri:
-   - Scot `"sms"` din `channels` la evenimentele listate mai sus (pickup_scheduled, pv_pickup_*, request_rejected, return_reminder_24h, rental_completed).
-   - Introduc un filtru "doar către destinatarul acțiunii" pentru `request_created` (skip dacă `recipientRole === "renter"`) și `request_accepted` (skip dacă `recipientRole === "owner"`). Implementare: în bucla per-recipient, înainte de a trimite SMS, verific un mic switch pe `event_key` + `recipientRole` și sar peste canalul `sms` (in-app + email rămân neatinse).
-   - Eventual mai curat: extind `smsTemplate` să fie deja doar pe rolul țintă (e deja așa pentru aceste două), dar logica iterează pe ambii destinatari → confirm că lipsa template-ului pentru celălalt rol blochează deja trimiterea; dacă nu, adaug guard explicit.
+- Extind `RentalStatusFilter` cu `"overdue"`.
+- Adaug în `Counts` câmpul `overdue`.
+- Item nou în dropdown, plasat între `În derulare` și `În așteptare`, cu styling discret de avertizare (`text-amber-700` pe label când count > 0).
 
-2. **Niciun alt cod nu mai trimite SMS direct** — toate apelurile trec prin `notify-rental-event` (verificat în `rentalsApi.ts`). Funcția `send-sms-notification` rămâne neschimbată (e doar transportul) și `notify-return-day` continuă să trimită `return_reminder_2h` (păstrat).
+### 3. Badge dinamic pe card (în RentalsOutTab, blocul cu `Cerere nouă` / `Confirmată`)
 
-3. **Fără migrări DB**. Fără modificări UI. Fără modificări la șabloanele de email.
+Înlocuiesc switch-ul actual cu `getCardStage(rental)` care întoarce `{ label, tone }`:
 
-## Verificare după deploy
+| Condiție | Label | Tone |
+|---|---|---|
+| pending + start_date trecut | `Expirată` | gri |
+| pending | `Cerere nouă` | primary pulse |
+| overdue (end_date trecut, nereturnat) | `Întârziată` | roșu/amber |
+| confirmed, fără handover, start_date = azi | `Predare azi` | primary |
+| confirmed, fără handover | `Confirmată` | emerald |
+| handover + end_date = azi, fără return | `Returnare azi` | primary |
+| handover + nereturnat | `În derulare` | albastru |
+| return_confirmed_at | `Finalizată` | emerald subtle |
 
-- Trigger manual `request_created` și confirm că primește SMS doar owner-ul.
-- Trigger `request_accepted` și confirm că primește SMS doar renter-ul.
-- Trigger `pickup_scheduled` → fără SMS în `sms_logs`, dar in-app + email prezente.
-- Trigger `return_reminder_2h` → SMS la ambii.
+Toate folosesc `Badge` cu clase semantice existente (fără hex). Înlocuiește `Confirmată` verde mereu-pe.
+
+## Out of scope (nu schimbăm)
+
+- Logica de backend / `get_owner_rentals` RPC — toate informațiile necesare (`start_date`, `end_date`, `handover_confirmed_at`, `return_confirmed_at`, `status`) sunt deja în payload.
+- Acțiuni pe carduri (Accept / Refuză / Anulează) — neschimbate.
+- Tabul "Anunțuri" / istoricul accordion — neschimbate (folosește același `RentalsFilterBar`, deci primește gratuit bucketul `overdue` în counts).
+
+## Verificare după implementare
+
+- Reîncărcare pagină: `Toate (N)` = suma celorlalte buckete.
+- Cele 2 carduri din poză (cu termen trecut) apar acum în `Întârziate` și au badge `Întârziată` roșu/amber pe imagine.
+- Filtrare pe `Întârziate` → arată exact acele carduri.
+- Filtrare pe `Active` → nu mai conține rezervările cu termen trecut.

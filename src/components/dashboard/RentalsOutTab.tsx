@@ -19,6 +19,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { useRentalRealtime } from "@/hooks/useRentalRealtime";
 import StatusBadge from "./StatusBadge";
 import RentalsFilterBar, { type RentalStatusFilter, type RentalSortBy } from "./RentalsFilterBar";
+import { bucketOf } from "./rentalBucket";
 
 const RentalsOutTab = () => {
   const copy = useUxCopy();
@@ -42,23 +43,15 @@ const RentalsOutTab = () => {
   const [statusFilter, setStatusFilter] = useState<RentalStatusFilter>("all");
   const [sortBy, setSortBy] = useState<RentalSortBy>("newest");
 
-  const counts = useMemo(() => ({
-    all: rentals.length,
-    active: rentals.filter(r => (r.status === "confirmed" || r.status === "active") && !r.handover_confirmed_at).length,
-    in_progress: rentals.filter(r => (r.status === "confirmed" || r.status === "active") && !!r.handover_confirmed_at && !r.return_confirmed_at).length,
-    pending: rentals.filter(r => r.status === "pending").length,
-    completed: rentals.filter(r => r.status === "completed" || (((r.status === "confirmed" || r.status === "active")) && !!r.return_confirmed_at)).length,
-    cancelled: rentals.filter(r => r.status === "cancelled" || r.status === "rejected").length,
-  }), [rentals]);
+  const counts = useMemo(() => {
+    const c = { all: rentals.length, active: 0, in_progress: 0, overdue: 0, pending: 0, completed: 0, cancelled: 0 };
+    for (const r of rentals) c[bucketOf(r)]++;
+    return c;
+  }, [rentals]);
 
   const matchesStatus = (r: OwnerRental) => {
     if (statusFilter === "all") return true;
-    if (statusFilter === "active") return (r.status === "confirmed" || r.status === "active") && !r.handover_confirmed_at;
-    if (statusFilter === "in_progress") return (r.status === "confirmed" || r.status === "active") && !!r.handover_confirmed_at && !r.return_confirmed_at;
-    if (statusFilter === "pending") return r.status === "pending";
-    if (statusFilter === "completed") return r.status === "completed" || (((r.status === "confirmed" || r.status === "active")) && !!r.return_confirmed_at);
-    if (statusFilter === "cancelled") return r.status === "cancelled" || r.status === "rejected";
-    return true;
+    return bucketOf(r) === statusFilter;
   };
 
   const sortRentals = (arr: OwnerRental[]) => {
@@ -206,13 +199,22 @@ const RentalsOutTab = () => {
                         </div>
                       )}
                     <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
-                      {isExpired ? (
-                        <Badge className="bg-muted text-muted-foreground border border-border shadow-md text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">Expirată</Badge>
-                      ) : isPending ? (
-                        <Badge className="bg-primary text-primary-foreground animate-pulse shadow-md text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">Cerere nouă</Badge>
-                      ) : (
-                        <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-md text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">Confirmată</Badge>
-                      )}
+                      {(() => {
+                        const badgeBase = "shadow-md text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5";
+                        const today = new Date(); today.setHours(0,0,0,0);
+                        const startD = new Date(rental.start_date); startD.setHours(0,0,0,0);
+                        const endD = new Date(rental.end_date); endD.setHours(0,0,0,0);
+                        const handover = !!rental.handover_confirmed_at;
+                        const returned = !!rental.return_confirmed_at;
+                        if (isExpired) return <Badge className={`bg-muted text-muted-foreground border border-border ${badgeBase}`}>Expirată</Badge>;
+                        if (isPending) return <Badge className={`bg-primary text-primary-foreground animate-pulse ${badgeBase}`}>Cerere nouă</Badge>;
+                        if (returned) return <Badge className={`bg-emerald-100 text-emerald-800 border border-emerald-200 ${badgeBase}`}>Finalizată</Badge>;
+                        if (endD < today) return <Badge className={`bg-rose-100 text-rose-800 border border-rose-200 ${badgeBase}`}>Întârziată</Badge>;
+                        if (handover && endD.getTime() === today.getTime()) return <Badge className={`bg-primary text-primary-foreground ${badgeBase}`}>Returnare azi</Badge>;
+                        if (handover) return <Badge className={`bg-sky-100 text-sky-800 border border-sky-200 ${badgeBase}`}>În derulare</Badge>;
+                        if (startD.getTime() === today.getTime()) return <Badge className={`bg-primary text-primary-foreground ${badgeBase}`}>Predare azi</Badge>;
+                        return <Badge className={`bg-emerald-100 text-emerald-800 border border-emerald-200 ${badgeBase}`}>Confirmată</Badge>;
+                      })()}
                     </div>
                   </Link>
 
