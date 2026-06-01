@@ -48,7 +48,6 @@ import {
 } from "@/lib/publishTypes";
 import { computeQualityScore } from "@/lib/qualityScore";
 import { upsertDraft, deleteDraft, getActiveDraft } from "@/features/publish/draftsApi";
-import { generateProductDescription } from "@/features/publish/aiDescriptionApi";
 import { getSimilarPricing, type SimilarPricing } from "@/features/publish/pricingBenchmarkApi";
 import ImageUpload from "@/components/products/ImageUpload";
 import LivePreviewCard from "./LivePreviewCard";
