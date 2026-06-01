@@ -1,29 +1,31 @@
-# Disponibilitate anunț — mutually exclusive + dată custom
+## Problem
 
-## Probleme
-1. În popup-ul „Disponibilitate" se pot bifa și „Disponibil imediat" și zile blocate în același timp (UX confuz).
-2. Nu există opțiunea „Disponibil începând cu o anumită dată" — utilizatorii nu pot programa o dată de start (anterioară sau ulterioară datei publicării).
+Un anunț cu status **Respins** se comportă în prezent ca un anunț public:
+- Click pe card → se deschide pagina publică `/produs/...` cu calendar de rezervare și buton „Întreabă proprietarul"
+- Din meniul cardului din `/anunțuri` se poate apăsa „Disponibilitate" și modifica zile blocate / disponibilitate imediat
 
-## Modificări
+Un anunț respins nu ar trebui să fie vizibil public și nu ar trebui să permită setări de disponibilitate până la republicare/aprobare.
 
-### 1. DB — coloană nouă
-Adaug `available_from date` în `public.products` (nullable, fără constrângere față de `created_at`). Actualizez și view-urile/RPC-urile care expun câmpurile produsului:
-- `products_public` view & `get_safe_product` (din migrațiile 20260528*) — adaug `available_from`.
+## Schimbări
 
-### 2. Dialog `ListingAvailabilityDialog`
-Redesign cu **două opțiuni mutually exclusive** (RadioGroup, două carduri):
-- **„Disponibil imediat"** — apare în căutări de la momentul publicării.
-- **„Disponibil începând cu data"** — afișează un date-picker (Calendar mode="single"). Acceptă orice dată (inclusiv anterior datei publicării). Sub aceasta apare descrierea „Apare în căutări începând cu această dată".
+### 1. `src/components/listings/ListingCard.tsx`
+- Pentru `status === "rejected"`:
+  - Ascunde butonul „Disponibilitate" (icon Calendar) din toolbar
+  - Elimină itemul „Disponibilitate" din DropdownMenu
+  - „Vezi anunț" și click pe imagine/titlu → în loc de link la pagina publică, navighează direct la `/owner/edit-product/{id}` (sau dezactivat cu tooltip „Anunț respins — editează pentru republicare")
+  - Păstrează doar acțiunile: Editează, Distribuie (opțional dezactivat), Reactivează (nu se aplică), Șterge
 
-„Zile blocate" (calendar multiple) rămâne sub ambele opțiuni — perioade indisponibile separate.
+### 2. `src/pages/ListingsPage.tsx`
+- În `handlers`, ignoră deschiderea dialogului `ListingAvailabilityDialog` dacă produsul e `rejected` (safety net): nu mai pasăm `onCalendar` pentru produse respinse
 
-Salvare:
-- opțiunea „imediat" → `available_immediately=true, available_from=null`
-- opțiunea „de la data" → `available_immediately=false, available_from=<ISO date>`
+### 3. `src/pages/ProductDetail.tsx`
+- După încărcarea produsului, calculează `isOwner = user?.id === product.owner_id` și `isPubliclyVisible = product.approval_status === "approved" && product.is_active`
+- Dacă `!isPubliclyVisible && !isOwner` → randează pagina 404 (NotFound) sau redirect către home
+- Dacă `!isPubliclyVisible && isOwner` → afișează un banner sticky în partea de sus a paginii:
+  - `pending`: „Anunț în așteptarea aprobării — nu este vizibil public"
+  - `rejected`: „Anunț respins — nu este vizibil public. Editează pentru republicare." + buton „Editează"
+- Ascunde widgetul de rezervare (calendar + preț + buton „Întreabă proprietarul"/„Rezervă") când produsul nu e public; păstrează doar previzualizarea conținutului (galerie, descriere, locație) pentru proprietar
 
-### 3. Tipuri & API
-- Adaug `available_from?: string | null` în `Product` (`src/features/products/productsApi.ts`) și includ în `PRODUCT_SAFE_COLS`.
-- `src/lib/publishTypes.ts` — adaug câmpul în tipuri (default `null`).
-
-## Scope-out
-Nu modific filtrarea în search / `get_booked_dates` / card listing badge (UX-ul existent rămâne). Doar persistăm valoarea; eventuale ajustări vizuale se pot adresa separat.
+### Out of scope
+- Fără schimbări de DB / RLS (RLS-ul permite deja owner-ului să-și vadă produsul, iar publicul nu îl vede prin filtrele existente — singura problemă e UI-ul care îl tratează ca public)
+- Fără schimbări la fluxul admin de aprobare/respingere
