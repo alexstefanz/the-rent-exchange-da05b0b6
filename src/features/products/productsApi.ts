@@ -13,7 +13,7 @@ const PRODUCT_SAFE_COLS =
   "is_active,approval_status,created_at,condition,deposit_type,deposit_value," +
   "min_rental_days,min_rental_preset,max_rental_days,delivery_available," +
   "delivery_fee,delivery_radius_km,pickup_available,usage_rules," +
-  "available_immediately,blocked_dates,quality_score";
+  "available_immediately,blocked_dates,quality_score,available_from";
 
 export interface Product {
   id: string;
@@ -54,6 +54,7 @@ export interface Product {
   available_immediately?: boolean | null;
   blocked_dates?: string[] | null;
   quality_score?: number | null;
+  available_from?: string | null;
 }
 
 export interface ProductFilters {
