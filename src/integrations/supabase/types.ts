@@ -1402,6 +1402,7 @@ export type Database = {
           admin_edited_by: string | null
           admin_flagged: boolean
           approval_status: string
+          available_from: string | null
           available_immediately: boolean
           blocked_dates: string[]
           category: string | null
@@ -1447,6 +1448,7 @@ export type Database = {
           admin_edited_by?: string | null
           admin_flagged?: boolean
           approval_status?: string
+          available_from?: string | null
           available_immediately?: boolean
           blocked_dates?: string[]
           category?: string | null
@@ -1492,6 +1494,7 @@ export type Database = {
           admin_edited_by?: string | null
           admin_flagged?: boolean
           approval_status?: string
+          available_from?: string | null
           available_immediately?: boolean
           blocked_dates?: string[]
           category?: string | null
@@ -3440,6 +3443,7 @@ export type Database = {
         }
         Returns: {
           approval_status: string
+          available_from: string
           available_immediately: boolean
           blocked_dates: string[]
           category: string
