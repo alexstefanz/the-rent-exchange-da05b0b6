@@ -89,6 +89,7 @@ const AccountTab = () => {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isSavingSms, setIsSavingSms] = useState(false);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [passwordResetSentOpen, setPasswordResetSentOpen] = useState(false);
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [activeSection, setActiveSection] = useState("personal");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -274,7 +275,7 @@ const AccountTab = () => {
     setIsResettingPassword(true);
     try {
       await supabase.auth.resetPasswordForEmail(user.email, { redirectTo: `${window.location.origin}/auth` });
-      toast({ title: t("Email trimis", "Email sent"), description: t("Verifică emailul pentru linkul de resetare.", "Check your email for the reset link.") });
+      setPasswordResetSentOpen(true);
     } catch (e) {
       toast({ title: t("Eroare", "Error"), description: t("Nu s-a putut trimite emailul", "Could not send email"), variant: "destructive" });
     } finally {
