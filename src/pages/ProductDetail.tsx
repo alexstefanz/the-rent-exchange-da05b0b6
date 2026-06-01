@@ -357,6 +357,7 @@ const ProductDetail = () => {
                   ? (product as any).included_items_en
                   : (product as any).included_items
               }
+              usageRules={(product as any).usage_rules}
             />
 
             <LocationCard address={product.pickup_address || location} city={product.location_city} />
