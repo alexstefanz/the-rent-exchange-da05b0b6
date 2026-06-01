@@ -1,3 +1,4 @@
+import { Check, ListChecks } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ProductIncludes from "./ProductIncludes";
@@ -6,9 +7,10 @@ import UsageRules from "./UsageRules";
 interface Props {
   description?: string | null;
   includedItems?: string[];
+  usageRules?: string[];
 }
 
-const ProductInfoAccordion = ({ description, includedItems }: Props) => {
+const ProductInfoAccordion = ({ description, includedItems, usageRules }: Props) => {
   const { t } = useLanguage();
 
   return (
@@ -31,6 +33,32 @@ const ProductInfoAccordion = ({ description, includedItems }: Props) => {
             <AccordionContent className="px-5 pb-4">
               <div className="-mx-5 -mb-4">
                 <ProductIncludes items={includedItems} />
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        )}
+
+        {usageRules && usageRules.length > 0 && (
+          <AccordionItem value="usage-rules" className="border-b">
+            <AccordionTrigger className="px-5 py-4 hover:no-underline font-heading text-base font-semibold">
+              {t("Reguli de utilizare", "Usage rules")}
+            </AccordionTrigger>
+            <AccordionContent className="px-5 pb-4">
+              <div className="rounded-xl border border-border bg-card p-6">
+                <h2 className="mb-4 font-heading text-xl font-semibold text-foreground flex items-center gap-2">
+                  <ListChecks className="h-5 w-5 text-primary" />
+                  {t("Reguli de utilizare", "Usage rules")}
+                </h2>
+                <ul className="space-y-3">
+                  {usageRules.map((rule, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+                        <Check className="h-3 w-3 text-emerald-600" />
+                      </div>
+                      <span className="text-sm text-muted-foreground">{rule}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </AccordionContent>
           </AccordionItem>
