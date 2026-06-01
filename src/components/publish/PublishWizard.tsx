@@ -696,34 +696,9 @@ const Step2Details = ({
   userId: string;
 }) => {
   const { t, language } = useLanguage();
-  const [genLoading, setGenLoading] = useState(false);
   const { toast } = useToast();
   const [newItem, setNewItem] = useState("");
   const [newRule, setNewRule] = useState("");
-
-  const handleGenerate = async () => {
-    if (!data.title || data.title.length < 5) {
-      toast({ title: t("Adaugă mai întâi titlul", "Add the title first"), variant: "destructive" });
-      return;
-    }
-    setGenLoading(true);
-    try {
-      const desc = await generateProductDescription({
-        title: data.title,
-        category: data.category,
-        subcategory: data.subcategory,
-        condition: data.condition || undefined,
-        included_items: data.included_items,
-        usage_rules: data.usage_rules,
-      });
-      update("description", desc);
-      toast({ title: t("Descriere generată", "Description generated"), description: t("Ajusteaz-o cum vrei.", "Adjust it however you like.") });
-    } catch (e: any) {
-      toast({ title: t("Eroare AI", "AI error"), description: e?.message || t("Încearcă din nou.", "Please try again."), variant: "destructive" });
-    } finally {
-      setGenLoading(false);
-    }
-  };
 
   return (
     <div>
@@ -810,22 +785,9 @@ const Step2Details = ({
 
         {/* Description */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="description" className="text-sm font-semibold">
-              {t("Descriere", "Description")}
-            </Label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleGenerate}
-              disabled={genLoading}
-              className="gap-1.5"
-            >
-              {genLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-primary" />}
-              {t("Generează cu AI", "Generate with AI")}
-            </Button>
-          </div>
+          <Label htmlFor="description" className="text-sm font-semibold">
+            {t("Descriere", "Description")}
+          </Label>
           <Textarea
             id="description"
             placeholder={t("Descrie pentru ce e potrivit, ce e inclus, particularități sau atenționări...", "Describe what it's good for, what's included, specifics or warnings...")}
