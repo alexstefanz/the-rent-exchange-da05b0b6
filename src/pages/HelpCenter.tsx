@@ -476,8 +476,8 @@ const HelpCenter = () => {
                     />
                   </div>
 
-                  <Button type="submit" className="w-full">
-                    {t("Trimite feedback", "Send feedback")}
+                  <Button type="submit" className="w-full" disabled={submittingFeedback}>
+                    {submittingFeedback ? t("Se trimite...", "Sending...") : t("Trimite feedback", "Send feedback")}
                   </Button>
                 </form>
               </CardContent>
