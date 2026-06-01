@@ -1,13 +1,29 @@
-# Titlu slider „Anunțuri din {oraș}" - corect doar când e adevărat
+# Disponibilitate anunț — mutually exclusive + dată custom
 
-## Problemă
-`NearbyProductsSlider` afișează mereu titlul „Anunțuri din {locationCity}" pe baza orașului produsului curent. `getNearbyProducts` însă, dacă nu găsește destule anunțuri în acel oraș, completează cu rezultate din aceeași categorie și apoi cu orice produs activ — astfel cardurile apar din alte orașe (Bacău, Iași, etc.) sub titlul „Anunțuri din Buhuși".
+## Probleme
+1. În popup-ul „Disponibilitate" se pot bifa și „Disponibil imediat" și zile blocate în același timp (UX confuz).
+2. Nu există opțiunea „Disponibil începând cu o anumită dată" — utilizatorii nu pot programa o dată de start (anterioară sau ulterioară datei publicării).
 
-## Fix (frontend only)
-În `src/components/products/NearbyProductsSlider.tsx`:
-- După `setProducts(data)`, calculez câte produse au efectiv `location_city === locationCity`.
-- Titlul devine:
-  - `copy.nearby.listingsFrom(locationCity)` doar dacă **toate** cele afișate (primele 5) sunt din `locationCity`.
-  - altfel `copy.nearby.similarListings` („Anunțuri similare" / „Similar listings").
+## Modificări
 
-Nu modific `getNearbyProducts` — fallback-ul rămâne util pentru a popula sliderul.
+### 1. DB — coloană nouă
+Adaug `available_from date` în `public.products` (nullable, fără constrângere față de `created_at`). Actualizez și view-urile/RPC-urile care expun câmpurile produsului:
+- `products_public` view & `get_safe_product` (din migrațiile 20260528*) — adaug `available_from`.
+
+### 2. Dialog `ListingAvailabilityDialog`
+Redesign cu **două opțiuni mutually exclusive** (RadioGroup, două carduri):
+- **„Disponibil imediat"** — apare în căutări de la momentul publicării.
+- **„Disponibil începând cu data"** — afișează un date-picker (Calendar mode="single"). Acceptă orice dată (inclusiv anterior datei publicării). Sub aceasta apare descrierea „Apare în căutări începând cu această dată".
+
+„Zile blocate" (calendar multiple) rămâne sub ambele opțiuni — perioade indisponibile separate.
+
+Salvare:
+- opțiunea „imediat" → `available_immediately=true, available_from=null`
+- opțiunea „de la data" → `available_immediately=false, available_from=<ISO date>`
+
+### 3. Tipuri & API
+- Adaug `available_from?: string | null` în `Product` (`src/features/products/productsApi.ts`) și includ în `PRODUCT_SAFE_COLS`.
+- `src/lib/publishTypes.ts` — adaug câmpul în tipuri (default `null`).
+
+## Scope-out
+Nu modific filtrarea în search / `get_booked_dates` / card listing badge (UX-ul existent rămâne). Doar persistăm valoarea; eventuale ajustări vizuale se pot adresa separat.
