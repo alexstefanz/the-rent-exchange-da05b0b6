@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Search, HelpCircle, MessageCircle, FileText, ChevronRight, Star, Upload, X, Smile, Meh, Frown, ThumbsUp, Lightbulb, AlertTriangle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,8 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { createUserTicket, addUserTicketAttachment } from "@/features/tickets/userTicketsApi";
 
 const EMOJI_RATINGS = [
   { emoji: "😡", label: "Foarte nemulțumit", value: 1 },
@@ -31,6 +33,7 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const HelpCenter = () => {
   const { t } = useLanguage();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Contact form state
   const contactRef = useRef<HTMLDivElement>(null);
@@ -38,11 +41,13 @@ const HelpCenter = () => {
   const [contactForm, setContactForm] = useState({ name: "", email: "", subject: "", message: "" });
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [submittingContact, setSubmittingContact] = useState(false);
 
   // Feedback form state
   const [emojiRating, setEmojiRating] = useState<number | null>(null);
   const [feedbackType, setFeedbackType] = useState<string | null>(null);
   const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
 
   const scrollTo = (ref: React.RefObject<HTMLDivElement>) => {
     ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -70,7 +75,7 @@ const HelpCenter = () => {
     setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const { name, email, subject, message } = contactForm;
     if (!name.trim() || !email.trim() || !subject.trim() || !message.trim()) {
@@ -78,20 +83,60 @@ const HelpCenter = () => {
       return;
     }
 
-    const body = `Nume: ${name}\nEmail: ${email}\n\n${message}`;
-    const mailtoUrl = `mailto:office@rentli.ro?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(mailtoUrl, "_blank");
-
-    if (attachedFiles.length > 0) {
-      toast({ title: t("Atașează fișierele în emailul care se deschide", "Please attach the files to the email that opens"), description: t(`Ai ${attachedFiles.length} fișier(e) de atașat manual.`, `You have ${attachedFiles.length} file(s) to attach manually.`) });
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      toast({
+        title: t("Trebuie să fii autentificat", "Authentication required"),
+        description: t("Autentifică-te pentru a deschide un tichet de suport.", "Sign in to open a support ticket."),
+        variant: "destructive",
+      });
+      navigate(`/auth?redirect=${encodeURIComponent("/centru-ajutor")}`);
+      return;
     }
 
-    setContactForm({ name: "", email: "", subject: "", message: "" });
-    setAttachedFiles([]);
+    setSubmittingContact(true);
+    try {
+      const description = `Nume: ${name}\nEmail: ${email}\n\n${message}`;
+      const ticket = await createUserTicket({
+        title: subject,
+        description,
+        category_group: "USER",
+        category_type: "GENERAL_INQUIRY",
+        priority: "MEDIUM",
+      });
+
+      // Upload attachments best-effort
+      for (const f of attachedFiles) {
+        try {
+          await addUserTicketAttachment(ticket.id, f);
+        } catch (err) {
+          console.warn("[ticket attachment]", err);
+        }
+      }
+
+      toast({
+        title: t("Tichet creat", "Ticket created"),
+        description: t(
+          `Te-am redirecționat la conversație (${ticket.public_id ?? "TCK"}).`,
+          `Redirecting you to the conversation (${ticket.public_id ?? "TCK"}).`,
+        ),
+      });
+      setContactForm({ name: "", email: "", subject: "", message: "" });
+      setAttachedFiles([]);
+      navigate("/suport");
+    } catch (err) {
+      toast({
+        title: t("Eroare la trimitere", "Failed to send"),
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingContact(false);
+    }
   };
 
   // Feedback form handler
-  const handleFeedbackSubmit = (e: React.FormEvent) => {
+  const handleFeedbackSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!emojiRating) {
       toast({ title: t("Selectează o evaluare", "Select a rating"), variant: "destructive" });
@@ -102,15 +147,49 @@ const HelpCenter = () => {
       return;
     }
 
-    const ratingLabel = EMOJI_RATINGS.find((r) => r.value === emojiRating)?.label || "";
-    const subject = `Feedback Rentli - ${feedbackType}`;
-    const body = `Evaluare: ${ratingLabel} (${emojiRating}/5)\nTip: ${feedbackType}\n\n${feedbackMessage || "(fără mesaj suplimentar)"}`;
-    const mailtoUrl = `mailto:office@rentli.ro?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    window.open(mailtoUrl, "_blank");
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData.user) {
+      toast({
+        title: t("Trebuie să fii autentificat", "Authentication required"),
+        description: t("Autentifică-te pentru a trimite feedback.", "Sign in to send feedback."),
+        variant: "destructive",
+      });
+      navigate(`/auth?redirect=${encodeURIComponent("/centru-ajutor")}`);
+      return;
+    }
 
-    setEmojiRating(null);
-    setFeedbackType(null);
-    setFeedbackMessage("");
+    setSubmittingFeedback(true);
+    try {
+      const ratingLabel = EMOJI_RATINGS.find((r) => r.value === emojiRating)?.label || "";
+      const title = `[Feedback] ${feedbackType}`;
+      const description = `Evaluare: ${ratingLabel} (${emojiRating}/5)\nTip: ${feedbackType}\n\n${feedbackMessage || "(fără mesaj suplimentar)"}`;
+      const ticket = await createUserTicket({
+        title,
+        description,
+        category_group: "USER",
+        category_type: "GENERAL_INQUIRY",
+        priority: "LOW",
+      });
+      toast({
+        title: t("Mulțumim pentru feedback!", "Thanks for your feedback!"),
+        description: t(
+          `Am creat tichetul ${ticket.public_id ?? "TCK"}.`,
+          `Ticket ${ticket.public_id ?? "TCK"} created.`,
+        ),
+      });
+      setEmojiRating(null);
+      setFeedbackType(null);
+      setFeedbackMessage("");
+      navigate("/suport");
+    } catch (err) {
+      toast({
+        title: t("Eroare la trimitere", "Failed to send"),
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    } finally {
+      setSubmittingFeedback(false);
+    }
   };
 
   const categories = [
@@ -303,9 +382,15 @@ const HelpCenter = () => {
                     )}
                   </div>
 
-                  <Button type="submit" className="w-full">
-                    {t("Trimite mesajul", "Send message")}
+                  <Button type="submit" className="w-full" disabled={submittingContact}>
+                    {submittingContact ? t("Se trimite...", "Sending...") : t("Trimite mesajul", "Send message")}
                   </Button>
+                  <p className="text-xs text-muted-foreground text-center">
+                    {t(
+                      "Mesajul tău devine un tichet pe care îl poți urmări din Suport & Tichete.",
+                      "Your message becomes a ticket you can track from Support & Tickets.",
+                    )}
+                  </p>
                 </form>
               </CardContent>
             </Card>
