@@ -274,15 +274,7 @@ export default function LeaveReviewDialog({
         )}
 
         {!loading && !bothDone && (
-          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-between">
-            <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={handleSkip} disabled={submitting}>
-                {copy.timeline.review.skip}
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => handleSnooze(1)} disabled={submitting}>
-                {copy.timeline.review.snooze}
-              </Button>
-            </div>
+          <DialogFooter className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
             <Button onClick={handleSubmit} disabled={!canSubmit}>
               {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {t("Trimite review", "Submit review")}
