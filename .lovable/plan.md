@@ -1,31 +1,35 @@
 ## Problem
 
-Un anunț cu status **Respins** se comportă în prezent ca un anunț public:
-- Click pe card → se deschide pagina publică `/produs/...` cu calendar de rezervare și buton „Întreabă proprietarul"
-- Din meniul cardului din `/anunțuri` se poate apăsa „Disponibilitate" și modifica zile blocate / disponibilitate imediat
+Un anunț **Respins** poate fi editat din `/anunțuri`, dar la apăsarea butonului „Publică":
+- `updateProduct` salvează modificările păstrând `approval_status = 'rejected'` și `is_active = false`
+- Anunțul rămâne respins, nu se retrimite la moderare → utilizatorul nu vede nimic schimbat și pleacă confuz
 
-Un anunț respins nu ar trebui să fie vizibil public și nu ar trebui să permită setări de disponibilitate până la republicare/aprobare.
+## Soluție
 
-## Schimbări
+La salvarea unui anunț **respins** din modul `edit`, retrimite automat anunțul la verificare (status `pending`) și anunță clar utilizatorul.
 
-### 1. `src/components/listings/ListingCard.tsx`
-- Pentru `status === "rejected"`:
-  - Ascunde butonul „Disponibilitate" (icon Calendar) din toolbar
-  - Elimină itemul „Disponibilitate" din DropdownMenu
-  - „Vezi anunț" și click pe imagine/titlu → în loc de link la pagina publică, navighează direct la `/owner/edit-product/{id}` (sau dezactivat cu tooltip „Anunț respins — editează pentru republicare")
-  - Păstrează doar acțiunile: Editează, Distribuie (opțional dezactivat), Reactivează (nu se aplică), Șterge
+### 1. `src/features/products/productsApi.ts` — `updateProduct`
+- Înainte de update, citește `approval_status` și `flag_reason` curente
+- Dacă produsul era `rejected`:
+  - Adaugă în payload: `approval_status: 'pending'`, `flag_reason: null`, `is_active: true` (ca să intre din nou în coada de aprobare)
+  - Returnează un flag `resubmitted: true` (sau folosește produsul returnat care va avea noul status)
+- Restul cazurilor rămân neschimbate (un anunț approved editat rămâne approved — nu schimbăm fluxul existent)
 
-### 2. `src/pages/ListingsPage.tsx`
-- În `handlers`, ignoră deschiderea dialogului `ListingAvailabilityDialog` dacă produsul e `rejected` (safety net): nu mai pasăm `onCalendar` pentru produse respinse
+### 2. `src/components/publish/PublishWizard.tsx` — `handlePublish`
+- După `updateProduct`, dacă produsul rezultat are `approval_status === 'pending'` și înainte era `rejected` (folosim `initialProduct.approval_status === 'rejected'`):
+  - Toast: „Anunț retrimis spre aprobare — îl vei vedea publicat după verificare (de obicei sub 2 ore)."
+- Altfel păstrăm toast-ul existent „Anunț actualizat"
 
-### 3. `src/pages/ProductDetail.tsx`
-- După încărcarea produsului, calculează `isOwner = user?.id === product.owner_id` și `isPubliclyVisible = product.approval_status === "approved" && product.is_active`
-- Dacă `!isPubliclyVisible && !isOwner` → randează pagina 404 (NotFound) sau redirect către home
-- Dacă `!isPubliclyVisible && isOwner` → afișează un banner sticky în partea de sus a paginii:
-  - `pending`: „Anunț în așteptarea aprobării — nu este vizibil public"
-  - `rejected`: „Anunț respins — nu este vizibil public. Editează pentru republicare." + buton „Editează"
-- Ascunde widgetul de rezervare (calendar + preț + buton „Întreabă proprietarul"/„Rezervă") când produsul nu e public; păstrează doar previzualizarea conținutului (galerie, descriere, locație) pentru proprietar
+### 3. `src/components/listings/ListingCard.tsx` — UX clarificare
+- Pe cardul `rejected`, schimbă eticheta butonului principal din „Editează" în **„Editează & retrimite"** și actualizează tooltipul „Anunț respins — editează pentru retrimitere la verificare"
+- (Comportamentul existent — link spre `/owner/edit-product/{id}` — rămâne)
+
+### Decizie: editare permisă sau blocată?
+
+Mențin **editarea permisă** (varianta a 2-a propusă de tine): e flow-ul natural — utilizatorul corectează motivul respingerii și retrimite. Blocarea editării ar bloca și republicarea. În schimb, UI-ul comunică explicit că salvarea = retrimitere la moderare.
 
 ### Out of scope
-- Fără schimbări de DB / RLS (RLS-ul permite deja owner-ului să-și vadă produsul, iar publicul nu îl vede prin filtrele existente — singura problemă e UI-ul care îl tratează ca public)
-- Fără schimbări la fluxul admin de aprobare/respingere
+
+- Fără modificări de DB / RLS (update-ul de `approval_status` de către owner e deja permis de RLS-ul existent, la fel ca la creare)
+- Fără email/notificare nouă către admin — folosim aceleași triggere ca la prima creare (dacă există deja notificare pentru `pending` o vom vedea funcționând; dacă nu, e o îmbunătățire separată)
+- Fără schimbări în fluxul admin de aprobare

@@ -292,9 +292,24 @@ export const updateProduct = async (
   data: Partial<PublishProductInput> & { is_active?: boolean },
   ownerId: string,
 ): Promise<Product> => {
+  // If listing was rejected, editing+saving = resubmit for moderation.
+  const { data: current } = await supabase
+    .from("products")
+    .select("approval_status")
+    .eq("id", id)
+    .eq("owner_id", ownerId)
+    .maybeSingle();
+
+  const payload: Record<string, unknown> = { ...data };
+  if ((current as any)?.approval_status === "rejected") {
+    payload.approval_status = "pending";
+    payload.flag_reason = null;
+    payload.is_active = true;
+  }
+
   const { data: product, error } = await supabase
     .from("products")
-    .update(data)
+    .update(payload as never)
     .eq("id", id)
     .eq("owner_id", ownerId)
     .select(PRODUCT_SAFE_COLS as any)
