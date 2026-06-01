@@ -434,7 +434,7 @@ const ProductDetail = () => {
                 onClear={clearDates}
                 onReserve={handleReserve}
                 onAsk={handleStartChat}
-                isOwnProduct={isOwnProduct}
+                isOwnProduct={isOwnProduct || !isPubliclyVisible}
                 responseMinutes={extendedStats?.owner_response_minutes}
                 ownerVerified={!!extendedStats?.owner_kyc_verified}
                 minRentalDays={product.min_rental_days}
@@ -475,7 +475,7 @@ const ProductDetail = () => {
         onClear={clearDates}
         onReserve={handleReserve}
         onAsk={handleStartChat}
-        isOwnProduct={isOwnProduct}
+        isOwnProduct={isOwnProduct || !isPubliclyVisible}
         responseMinutes={extendedStats?.owner_response_minutes}
         ownerVerified={!!extendedStats?.owner_kyc_verified}
         minRentalDays={product.min_rental_days}
