@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { differenceInDays, isBefore } from "date-fns";
 import { useBookedDates, isDateBooked, hasBookedDateInRange } from "@/hooks/queries/useBookedDates";
 import { computeRentalPrice } from "@/lib/rentalPricing";
-import { ChevronRight, MapPin, Heart, Share2 } from "lucide-react";
+import { ChevronRight, MapPin, Heart, Share2, AlertTriangle, Clock, Edit } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -255,6 +255,22 @@ const ProductDetail = () => {
   const displayTitle = (language === "en" && product.title_en) ? product.title_en : product.title;
   const displayDescription = (language === "en" && product.description_en) ? product.description_en : product.description;
   const isOwnProduct = user?.id === product.owner_id;
+  const approvalStatus = (product as any).approval_status as string | undefined;
+  const isPubliclyVisible = approvalStatus === "approved" && product.is_active !== false;
+
+  // Not publicly visible and viewer isn't the owner → behave as Not Found.
+  if (!isPubliclyVisible && !isOwnProduct) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="container py-16 text-center">
+          <h1 className="font-heading text-2xl font-bold text-foreground">{copy.product.notFound}</h1>
+          <Button asChild className="mt-4"><Link to="/categorii">{copy.product.backToCategories}</Link></Button>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24 lg:pb-0">
@@ -267,7 +283,7 @@ const ProductDetail = () => {
         reviewCount={extendedStats?.owner_review_count}
         triggerRef={titleBlockRef}
         onReserve={handleReserve}
-        isOwnProduct={isOwnProduct}
+        isOwnProduct={isOwnProduct || !isPubliclyVisible}
       />
 
       <ProductImageGallery
@@ -282,6 +298,43 @@ const ProductDetail = () => {
       />
 
       <main className="w-full max-w-7xl mx-auto py-6 px-[10px] md:px-6 lg:px-8">
+        {!isPubliclyVisible && isOwnProduct && (
+          <div
+            className={`mb-4 flex items-start gap-3 rounded-xl border p-4 ${
+              approvalStatus === "rejected"
+                ? "border-rose-200 bg-rose-50"
+                : "border-amber-200 bg-amber-50"
+            }`}
+          >
+            <div
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
+                approvalStatus === "rejected" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"
+              }`}
+            >
+              {approvalStatus === "rejected" ? <AlertTriangle className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className={`font-semibold text-sm ${approvalStatus === "rejected" ? "text-rose-900" : "text-amber-900"}`}>
+                {approvalStatus === "rejected"
+                  ? t("Anunț respins — nu este vizibil public", "Listing rejected — not publicly visible")
+                  : approvalStatus === "pending"
+                  ? t("Anunț în așteptarea aprobării — nu este vizibil public", "Listing pending approval — not publicly visible")
+                  : t("Anunț ascuns — nu este vizibil public", "Listing hidden — not publicly visible")}
+              </p>
+              <p className={`text-xs mt-1 ${approvalStatus === "rejected" ? "text-rose-800" : "text-amber-800"}`}>
+                {approvalStatus === "rejected"
+                  ? t("Editează anunțul pentru a-l retrimite spre aprobare.", "Edit the listing to resubmit it for approval.")
+                  : t("Doar tu poți vedea această pagină.", "Only you can see this page.")}
+              </p>
+            </div>
+            <Button asChild size="sm" variant="outline" className="shrink-0">
+              <Link to={`/owner/edit-product/${product.id}`}>
+                <Edit className="h-4 w-4" /> {t("Editează", "Edit")}
+              </Link>
+            </Button>
+          </div>
+        )}
+
         <nav className="mb-4 hidden md:flex items-center gap-2 text-sm text-muted-foreground overflow-x-auto">
           <Link to="/categorii" className="hover:text-primary text-xs whitespace-nowrap">{copy.product.allCategories}</Link>
           <ChevronRight className="h-4 w-4 flex-shrink-0" />
