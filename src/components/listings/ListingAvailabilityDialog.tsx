@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
-import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import type { Product } from "@/features/products/productsApi";
 
 interface Props {
@@ -22,23 +24,31 @@ const toIso = (d: Date) => d.toISOString().slice(0, 10);
 const ListingAvailabilityDialog = ({ product, open, onOpenChange, onSaved }: Props) => {
   const { language } = useLanguage();
   const t = (ro: string, en: string) => (language === "ro" ? ro : en);
-  const [available, setAvailable] = useState(true);
+  const [mode, setMode] = useState<"immediate" | "from_date">("immediate");
+  const [availableFrom, setAvailableFrom] = useState<Date | undefined>(undefined);
   const [blocked, setBlocked] = useState<Date[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!product) return;
-    setAvailable(product.available_immediately ?? true);
+    const hasFrom = !!product.available_from;
+    setMode(hasFrom ? "from_date" : "immediate");
+    setAvailableFrom(hasFrom ? toDate(product.available_from!) : undefined);
     setBlocked((product.blocked_dates || []).map(toDate));
   }, [product]);
 
   const save = async () => {
     if (!product) return;
+    if (mode === "from_date" && !availableFrom) {
+      toast({ title: t("Alege o dată de început", "Pick a start date"), variant: "destructive" });
+      return;
+    }
     setSaving(true);
     const { error } = await supabase
       .from("products")
       .update({
-        available_immediately: available,
+        available_immediately: mode === "immediate",
+        available_from: mode === "from_date" && availableFrom ? toIso(availableFrom) : null,
         blocked_dates: blocked.map(toIso),
       } as any)
       .eq("id", product.id);
@@ -59,13 +69,66 @@ const ListingAvailabilityDialog = ({ product, open, onOpenChange, onSaved }: Pro
           <DialogTitle>{t("Disponibilitate", "Availability")}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <label className="flex items-center justify-between rounded-xl border border-border p-3">
-            <div>
-              <div className="text-sm font-medium">{t("Disponibil imediat", "Available immediately")}</div>
-              <div className="text-xs text-muted-foreground">{t("Apare în căutări", "Appears in search")}</div>
-            </div>
-            <Switch checked={available} onCheckedChange={setAvailable} />
-          </label>
+          <RadioGroup
+            value={mode}
+            onValueChange={(v) => setMode(v as "immediate" | "from_date")}
+            className="space-y-2"
+          >
+            <label
+              htmlFor="avail-immediate"
+              className={cn(
+                "flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-colors",
+                mode === "immediate" ? "border-primary bg-primary/5" : "border-border"
+              )}
+            >
+              <RadioGroupItem id="avail-immediate" value="immediate" className="mt-0.5" />
+              <div>
+                <div className="text-sm font-medium">{t("Disponibil imediat", "Available immediately")}</div>
+                <div className="text-xs text-muted-foreground">{t("Apare în căutări de la publicare", "Appears in search after publishing")}</div>
+              </div>
+            </label>
+
+            <label
+              htmlFor="avail-from"
+              className={cn(
+                "flex items-start gap-3 rounded-xl border p-3 cursor-pointer transition-colors",
+                mode === "from_date" ? "border-primary bg-primary/5" : "border-border"
+              )}
+            >
+              <RadioGroupItem id="avail-from" value="from_date" className="mt-0.5" />
+              <div className="flex-1">
+                <div className="text-sm font-medium">{t("Disponibil începând cu data", "Available starting on")}</div>
+                <div className="text-xs text-muted-foreground mb-2">{t("Apare în căutări începând cu această dată", "Appears in search starting on this date")}</div>
+                {mode === "from_date" && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className={cn("w-full justify-start font-normal", !availableFrom && "text-muted-foreground")}
+                        onClick={(e) => e.preventDefault()}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {availableFrom
+                          ? availableFrom.toLocaleDateString(language === "ro" ? "ro-RO" : "en-GB")
+                          : t("Alege data", "Pick a date")}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={availableFrom}
+                        onSelect={setAvailableFrom}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </div>
+            </label>
+          </RadioGroup>
 
           <div className="rounded-xl border border-border p-2">
             <div className="px-2 pb-1 text-xs font-medium text-muted-foreground">{t("Zile blocate", "Blocked days")}</div>
