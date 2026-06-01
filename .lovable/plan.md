@@ -1,60 +1,41 @@
-# Cereri primite — fix counts, add "Întârziate", smart status badge
+# Fallback predare: auto-confirmare după 24h
 
-Trei probleme observate în poză:
+## Problemă
+Când PV-ul de predare e semnat de ambele părți dar chiriașul nu apasă "Confirm primirea" (eroare, uitare, telefon descărcat), rezervarea rămâne blocată în statusul `confirmed` cu `handover_confirmed_at = NULL`. Owner-ul vede la nesfârșit "Așteptăm confirmarea chiriașului" și produsul nu trece în `active`.
 
-1. **Total greșit**: `Toate (14)` dar suma celorlalte = 9+3+1+0+0 = 13. Există rezervări care nu intră în niciun bucket din dropdown.
-2. **Lipsește categoria "Întârziate"**: rezervări la care termenul a trecut dar n-au fost finalizate/anulate nu apar în nicio categorie afară de "Toate".
-3. **Badge static "Confirmată" verde** chiar și când termenul de predare/returnare a trecut deja — induce în eroare.
+## Soluție
+Un cron job rulează zilnic și auto-confirmă predarea pentru rezervările unde:
+1. `handover_confirmed_at IS NULL`
+2. `status IN ('confirmed','active')`
+3. PV-ul `handover` are atât `owner_signed_at` cât și `renter_signed_at`
+4. Cea mai recentă semnătură PV este mai veche de **24h**
 
-## Fix-uri
+## Implementare
 
-### 1. `src/components/dashboard/RentalsOutTab.tsx` — partiție exhaustivă + bucket "Întârziate"
+### 1. Migrație: RPC `auto_confirm_overdue_handovers()`
+- `SECURITY DEFINER`, owner `postgres`, fără parametri.
+- `GRANT EXECUTE ... TO service_role` (apelată doar din edge function).
+- Setează `app.bypass_renter_lock = 'on'` (același mecanism ca `confirm_handover_received`) ca să treacă de trigger-ul `lock_renter_rental_update`.
+- `UPDATE rentals SET handover_confirmed_at = now(), status = 'active'` pentru toate rezervările care îndeplinesc condițiile, returnând `SETOF uuid` cu ID-urile actualizate.
+- Logare în `audit_log` / `user_activity_logs` cu motiv `auto_handover_24h` (folosim tabela existentă pentru audit, fără tabel nou).
 
-Refactor `counts` + `matchesStatus` cu un helper unic `bucketOf(rental) → RentalStatusFilter` ca să garantăm că **fiecare rezervare aparține exact unui bucket** (suma = Toate).
+### 2. Edge function `auto-confirm-handovers`
+- `verify_jwt = false` (apelată de cron prin `pg_net`).
+- Validează header `Authorization: Bearer <CRON_SECRET>` (env var nou) ca anon-ul să nu o poată apela.
+- Apelează RPC-ul cu `service_role` și pentru fiecare ID returnat trimite un eveniment către `notify-rental-event` cu tip nou `handover_auto_confirmed` (notificare in-app + email pentru owner și chiriaș, fără SMS — conform regulilor curente).
 
-Reguli noi (în ordine, prima care match-uiește câștigă):
-- `cancelled` → status în `cancelled` / `rejected`
-- `completed` → status `completed` SAU (confirmed/active + `return_confirmed_at`)
-- `overdue` (nou — **Întârziate**) → status în `confirmed` / `active`, neanulat, nereturnat, ȘI `end_date < azi`
-- `in_progress` → confirmed/active + `handover_confirmed_at` setat (și nereturnat)
-- `active` → confirmed/active fără handover, end_date ≥ azi
-- `pending` → status `pending`
-- fallback `other` (nu ar trebui să apară; loghez `console.warn` cu id-ul ca să prindem cazurile noi)
+### 3. Cron job
+- Programat la fiecare oră (`0 * * * *`) prin `pg_cron` + `pg_net` (inserat cu insert tool, nu migrație, pentru că include URL + anon key).
+- POST către `/functions/v1/auto-confirm-handovers` cu `Authorization: Bearer <CRON_SECRET>`.
 
-`counts.all` = `rentals.length` și `counts[bucket] = rentals.filter(r => bucketOf(r) === bucket).length` → suma celor 6 buckete = total garantat.
+### 4. Frontend
+- În `RentalDetailPage.tsx`, sub butonul galben "Așteptăm confirmarea chiriasului", adăugăm un text informativ:
+  > „Dacă chiriasul nu confirmă în 24h de la semnarea PV-ului, predarea este confirmată automat."
+- Pentru chiriaș, sub `Pasul 4`, mesaj similar pentru transparență.
+- Bilingv prin `uxCopy.ts`.
 
-### 2. `src/components/dashboard/RentalsFilterBar.tsx` — adaugă opțiunea "Întârziate"
-
-- Extind `RentalStatusFilter` cu `"overdue"`.
-- Adaug în `Counts` câmpul `overdue`.
-- Item nou în dropdown, plasat între `În derulare` și `În așteptare`, cu styling discret de avertizare (`text-amber-700` pe label când count > 0).
-
-### 3. Badge dinamic pe card (în RentalsOutTab, blocul cu `Cerere nouă` / `Confirmată`)
-
-Înlocuiesc switch-ul actual cu `getCardStage(rental)` care întoarce `{ label, tone }`:
-
-| Condiție | Label | Tone |
-|---|---|---|
-| pending + start_date trecut | `Expirată` | gri |
-| pending | `Cerere nouă` | primary pulse |
-| overdue (end_date trecut, nereturnat) | `Întârziată` | roșu/amber |
-| confirmed, fără handover, start_date = azi | `Predare azi` | primary |
-| confirmed, fără handover | `Confirmată` | emerald |
-| handover + end_date = azi, fără return | `Returnare azi` | primary |
-| handover + nereturnat | `În derulare` | albastru |
-| return_confirmed_at | `Finalizată` | emerald subtle |
-
-Toate folosesc `Badge` cu clase semantice existente (fără hex). Înlocuiește `Confirmată` verde mereu-pe.
-
-## Out of scope (nu schimbăm)
-
-- Logica de backend / `get_owner_rentals` RPC — toate informațiile necesare (`start_date`, `end_date`, `handover_confirmed_at`, `return_confirmed_at`, `status`) sunt deja în payload.
-- Acțiuni pe carduri (Accept / Refuză / Anulează) — neschimbate.
-- Tabul "Anunțuri" / istoricul accordion — neschimbate (folosește același `RentalsFilterBar`, deci primește gratuit bucketul `overdue` în counts).
-
-## Verificare după implementare
-
-- Reîncărcare pagină: `Toate (N)` = suma celorlalte buckete.
-- Cele 2 carduri din poză (cu termen trecut) apar acum în `Întârziate` și au badge `Întârziată` roșu/amber pe imagine.
-- Filtrare pe `Întârziate` → arată exact acele carduri.
-- Filtrare pe `Active` → nu mai conține rezervările cu termen trecut.
+## Verificare
+1. Migrația rulează curat și RPC-ul are GRANT corect.
+2. Apel manual la edge function cu header valid → vede în log câte rezervări a actualizat.
+3. Verificare în DB că pentru o rezervare cu PV semnat de >24h, `handover_confirmed_at` și `status='active'` sunt setate.
+4. Vedem notificările `handover_auto_confirmed` în inbox pentru ambele părți.

@@ -337,6 +337,12 @@ const RentalDetailPage = () => {
                         "You signed the handover PV together with the owner, in person. Confirm that you received the product to unlock the in-use stage.",
                       )}
                 </p>
+                <p className="text-xs text-muted-foreground mt-2 italic">
+                  {t(
+                    "Dacă chiriașul nu confirmă în 24h de la semnarea PV-ului, predarea este confirmată automat de sistem, ca produsul să nu rămână blocat.",
+                    "If the renter doesn't confirm within 24h of the PV being signed, the system auto-confirms the handover so the rental doesn't stay blocked.",
+                  )}
+                </p>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
