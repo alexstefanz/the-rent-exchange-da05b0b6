@@ -1,40 +1,52 @@
 ## Problem
 
-Formularul **Asistență & Contact** din `/centru-ajutor` (și cel din `/contact`) deschide clientul de email implicit (Outlook) prin `mailto:` în loc să creeze un tichet în sistemul intern. Rezultatul: nu se generează tichet, mailul nu se trimite și utilizatorul rămâne blocat.
+In `InspectionDialog`, when both parties have submitted their PV photos, the dialog shows a green "Confirm primirea" (checkout) / "Confirm returnarea" (checkin) button. This button calls `confirmHandover` / `confirmReturn` from `src/features/rentals/ownerRentalsApi.ts`, which does a direct `supabase.from("rentals").update(...)`.
 
-Infrastructura de tickete există deja: `createUserTicket` din `src/features/tickets/userTicketsApi.ts` scrie în `ops_tickets`, iar `addUserTicketAttachment` urcă fișiere în bucket-ul `ticket-attachments`. Pagina `/suport` listează deja tichetele utilizatorului.
+The RLS on `public.rentals` only allows updates by:
+- the owner (`owner_id = auth.uid()`)
+- admins
+- renter, but only to set `status='cancelled'` on a `pending` rental
 
-## Soluție
+When the renter (new test account) opens the PV and presses "Confirm primirea", the update matches zero rows. Supabase doesn't throw, so the UI shows a success toast but `handover_confirmed_at` is never set and the rental never moves to `active`. Same bug for the return side if the renter (or anyone other than the owner) is the one pressing the button.
 
-Înlocuim trimiterea prin `mailto:` cu crearea unui tichet real în baza de date și redirect către conversația din `/suport`.
+## Fix
 
-### 1. `src/pages/HelpCenter.tsx` — `handleContactSubmit`
-- Citește user-ul curent (`supabase.auth.getUser` sau `useAuth`)
-- **Dacă NU este autentificat**: toast „Trebuie să fii autentificat pentru a deschide un tichet" + buton/redirect către `/auth?redirect=/centru-ajutor`. Fără fallback mailto.
-- **Dacă este autentificat**:
-  1. `createUserTicket({ title: subject, description: 'Nume: …\nEmail: …\n\n' + message, category_group: 'USER', category_type: 'GENERAL_INQUIRY', priority: 'MEDIUM' })`
-  2. Pentru fiecare fișier atașat → `addUserTicketAttachment(ticket.id, file)` (best-effort, prinde erorile individual)
-  3. Toast succes „Tichet creat — `TCK-XXXXXX`. Te-am redirecționat la conversație."
-  4. `navigate('/suport')` (sau direct la detalii dacă există rută; momentan `/suport` listează tichetele)
-  5. Reset formular + fișiere
-- Buton dezactivat + spinner cât rulează submitul; gestionare erori cu toast.
+Move both transitions into SECURITY DEFINER RPCs that explicitly authorize **either** party and enforce the PV-completed precondition, then call them from the client.
 
-### 2. `src/pages/HelpCenter.tsx` — `handleFeedbackSubmit`
-- Aceeași logică: creează tichet `USER / GENERAL_INQUIRY`, titlu `[Feedback] {feedbackType}`, descriere cu rating + tip + mesaj. Aceleași condiții de autentificare.
+### 1. DB migration — two RPCs
 
-### 3. `src/pages/Contact.tsx` — formularul de pe pagina Contact
-- Aceeași migrare: înlocuim `mailto:` cu `createUserTicket` + aceleași reguli de auth/redirect.
-- Păstrăm pe pagină informația vizuală „office@rentli.ro" ca link de email pentru cei care preferă, dar formularul nu mai deschide mailul.
+`public.confirm_rental_handover(_rental_id uuid)`:
+- load the rental; require `auth.uid()` ∈ {owner_id, renter_id} else raise
+- require `status IN ('confirmed','pending_handover')` and `handover_confirmed_at IS NULL`
+- require both checkout PVs exist with `array_length(photos,1) >= 3` for roles `owner` and `renter` in `rental_inspections` (same gate the dialog already uses)
+- update `handover_confirmed_at = now()`, `status = 'active'`, `updated_at = now()`
+- return the updated row id
+- `GRANT EXECUTE ... TO authenticated`
 
-### 4. UX: labeluri & helper text
-- Sub butonul „Trimite mesajul" adăugăm un mic helper: „Mesajul tău devine un tichet pe care îl poți urmări din **Suport & Tichete**."
-- Pentru utilizatorii neautentificați, înlocuim helper-ul cu „Autentifică-te pentru a deschide un tichet."
+`public.confirm_rental_return(_rental_id uuid)`:
+- same caller check (owner or renter)
+- require `handover_confirmed_at IS NOT NULL` and `return_confirmed_at IS NULL` and `status='active'`
+- require both checkin PVs (`role` in owner/renter, `phase='checkin'`, ≥3 photos)
+- **does not** capture Stripe — capture stays in the existing `capture-rental-payment` edge function
+- updates `return_confirmed_at`, `completed_at`, `status='completed'`
 
-### Memory update
-- Actualizez memoria `mem://content/writing-policy` pentru a reflecta că formularele de support trimit direct în sistemul de tichete (nu mai folosesc `mailto:`). Memoria veche „forms use mailto links" devine învechită și trebuie corectată ca să nu repetăm pattern-ul greșit.
+Both raise informative `RAISE EXCEPTION` messages that the existing `mapPvError` / toast can surface verbatim.
 
-### Out of scope
+### 2. Client — `src/features/rentals/ownerRentalsApi.ts`
 
-- Fără modificări de schemă DB / RLS / RPC (totul există deja: `ops_tickets`, `addUserTicketAttachment`, bucket `ticket-attachments`).
-- Fără email tranzacțional nou — confirmările prin email pentru tichete create (dacă există deja un trigger) rămân așa cum sunt; dacă nu există, e o îmbunătățire separată.
-- Fără pagină nouă de detaliu tichet — folosim cea existentă `/suport`.
+- `confirmHandover(rentalId)`: replace the direct table update with `supabase.rpc('confirm_rental_handover', { _rental_id: rentalId })`. Keep the best-effort `notify-rental-event` call for `handover_confirmed`.
+- `confirmReturn(rentalId)`: keep the existing order — call `capture-rental-payment` first; on success, call `supabase.rpc('confirm_rental_return', { _rental_id: rentalId })` instead of the direct update. Keep the two follow-up notifications.
+
+No UI changes required — `InspectionDialog` already invalidates `my-rentals` / `owner-rentals` after `handleConfirmGate`, so the renter will see the rental move forward immediately.
+
+### 3. Out of scope
+
+- No change to RLS policies on `rentals` (kept restrictive; the RPC is the controlled escape hatch).
+- No change to PV flow, dispute flow, or `capture-rental-payment`.
+- No change to admin/owner-only paths that still update `rentals` directly (cancellation, pickup, etc.).
+
+### Verification
+
+- New test renter account: complete checkout PV on both sides → "Confirm primirea" sets `handover_confirmed_at` and flips status to `active`; timeline advances.
+- Owner pressing the same button still works.
+- Pressing before both PVs are complete returns the RPC's error message via the existing toast.

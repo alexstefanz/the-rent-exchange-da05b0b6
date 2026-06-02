@@ -72,11 +72,9 @@ export async function respondToRental(rentalId: string, action: "accept" | "reje
 }
 
 export async function confirmHandover(rentalId: string) {
-  const now = new Date().toISOString();
-  const { error } = await supabase
-    .from("rentals")
-    .update({ handover_confirmed_at: now, status: "active" })
-    .eq("id", rentalId);
+  const { error } = await supabase.rpc("confirm_rental_handover", {
+    _rental_id: rentalId,
+  });
   if (error) throw mapPvError(error);
   // Best-effort: notify both parties that handover is confirmed.
   supabase.functions
@@ -100,15 +98,9 @@ export async function confirmReturn(rentalId: string) {
   }
 
   // 2) Mark rental as completed only after successful capture
-  const now = new Date().toISOString();
-  const { error } = await supabase
-    .from("rentals")
-    .update({
-      return_confirmed_at: now,
-      status: "completed",
-      completed_at: now,
-    })
-    .eq("id", rentalId);
+  const { error } = await supabase.rpc("confirm_rental_return", {
+    _rental_id: rentalId,
+  });
   if (error) throw mapPvError(error);
 
   // Fire completion + review reminder notifications (best-effort, non-blocking)

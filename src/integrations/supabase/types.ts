@@ -2618,6 +2618,8 @@ export type Database = {
         Returns: undefined
       }
       confirm_pickup: { Args: { _rental_id: string }; Returns: Json }
+      confirm_rental_handover: { Args: { _rental_id: string }; Returns: string }
+      confirm_rental_return: { Args: { _rental_id: string }; Returns: string }
       count_special_chars: { Args: { _t: string }; Returns: number }
       create_user_notification: {
         Args: {
