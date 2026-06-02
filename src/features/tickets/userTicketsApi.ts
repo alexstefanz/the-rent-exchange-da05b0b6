@@ -205,3 +205,11 @@ export const getTicketAttachmentSignedUrl = async (reference: string): Promise<s
 
 export const isTicketAttachmentRef = (text: string): boolean =>
   text.trim().startsWith(TICKET_PATH_PREFIX);
+
+/**
+ * Close own ticket (sets status to CLOSED). RPC enforces ownership server-side.
+ */
+export const closeUserTicket = async (ticketId: string): Promise<void> => {
+  const { error } = await supabase.rpc('close_user_ticket' as any, { p_ticket_id: ticketId });
+  if (error) throw new Error(error.message);
+};
