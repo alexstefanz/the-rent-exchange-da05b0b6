@@ -50,6 +50,7 @@ import {
   fetchUserTicketMessages,
   addUserTicketMessage,
   fetchUserTickets,
+  closeUserTicket,
   type OpsTicket,
 } from "@/features/tickets/userTicketsApi";
 import {
