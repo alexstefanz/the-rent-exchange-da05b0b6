@@ -6,7 +6,7 @@ import { ro, enUS } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus, Search, LifeBuoy, Loader2, ArrowLeft, MessageSquare, Filter,
-  Inbox, CheckCircle2, Clock4, Sparkles,
+  Inbox, CheckCircle2, Clock4, Sparkles, X,
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -23,9 +23,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import {
   fetchUserTickets, createUserTicket,
+  closeUserTicket,
   CATEGORY_GROUPS, CATEGORY_TYPES, CATEGORY_GROUP_LABELS,
   type OpsTicket,
 } from "@/features/tickets/userTicketsApi";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import { useUserTicketsRealtime } from "@/hooks/useTicketRealtime";
 import { StatusPill } from "@/components/support/center/StatusPill";
 import { TicketTimeline } from "@/components/support/center/TicketTimeline";
