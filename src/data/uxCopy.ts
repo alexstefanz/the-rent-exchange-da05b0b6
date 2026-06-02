@@ -66,6 +66,13 @@ const createUxCopy = () => ({
     backToCategories: { ro: "Înapoi la Categorii", en: "Back to Categories" },
     allCategories: { ro: "Toate categoriile", en: "All categories" },
     viewOnMap: { ro: "Vezi pe Google Maps", en: "View on Google Maps" },
+    deletedTitle: { ro: "Acest anunț nu mai este disponibil", en: "This listing is no longer available" },
+    deletedSubtitle: {
+      ro: "Anunțul a fost șters de proprietar sau de echipa Rentli și nu mai poate fi rezervat.",
+      en: "This listing was removed by the owner or by the Rentli team and can no longer be booked.",
+    },
+    deletedBrowseCta: { ro: "Vezi anunțuri similare", en: "Browse similar listings" },
+    deletedHomeCta: { ro: "Înapoi acasă", en: "Back home" },
   },
   owner: {
     memberSince: { ro: "Membru din", en: "Member since" },
