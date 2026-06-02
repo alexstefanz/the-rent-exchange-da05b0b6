@@ -294,7 +294,19 @@ function TicketCard({
 
 function TicketDetailView({ ticket, onBack }: { ticket: OpsTicket; onBack: () => void }) {
   const { t } = useLanguage();
+  const qc = useQueryClient();
   const isClosed = ticket.status === "CLOSED" || ticket.status === "RESOLVED";
+
+  const closeMutation = useMutation({
+    mutationFn: () => closeUserTicket(ticket.id),
+    onSuccess: () => {
+      toast.success(t("Ticket închis", "Ticket closed"));
+      qc.invalidateQueries({ queryKey: ["userTickets"] });
+      qc.invalidateQueries({ queryKey: ["userTicketMessages", ticket.id] });
+    },
+    onError: (e: Error) =>
+      toast.error(t("Nu am putut închide ticketul", "Could not close the ticket"), { description: e.message }),
+  });
 
   return (
     <div className="flex flex-col h-full max-h-[calc(100vh-12rem)]">
@@ -310,6 +322,40 @@ function TicketDetailView({ ticket, onBack }: { ticket: OpsTicket; onBack: () =>
           </div>
           <h2 className="font-semibold text-base leading-tight">{ticket.title}</h2>
         </div>
+        {!isClosed && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="shrink-0 text-muted-foreground hover:text-destructive"
+                disabled={closeMutation.isPending}
+              >
+                {closeMutation.isPending
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : <X className="h-4 w-4 mr-1" />}
+                <span className="hidden sm:inline">{t("Închide ticketul", "Close ticket")}</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{t("Închizi acest ticket?", "Close this ticket?")}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t(
+                    "Confirmă doar dacă problema este rezolvată sau ticketul a fost deschis din greșeală. Poți deschide oricând un ticket nou.",
+                    "Confirm only if the issue is resolved or the ticket was opened by mistake. You can always open a new one."
+                  )}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("Anulează", "Cancel")}</AlertDialogCancel>
+                <AlertDialogAction onClick={() => closeMutation.mutate()}>
+                  {t("Închide ticketul", "Close ticket")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {/* Body: chat + side context */}
