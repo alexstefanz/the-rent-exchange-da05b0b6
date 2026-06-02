@@ -1,52 +1,44 @@
-## Problem
+## Problemă
+Când se accesează URL-ul unui produs șters, `getProductBySlug` filtrează `deleted_at IS NULL` și returnează `null`. `ProductDetail.tsx` afișează atunci mesajul generic „Produs negăsit" — identic cu cazul în care slug-ul nu a existat niciodată. Vrem o pagină dedicată care să comunice clar: anunțul a existat, dar a fost șters.
 
-In `InspectionDialog`, when both parties have submitted their PV photos, the dialog shows a green "Confirm primirea" (checkout) / "Confirm returnarea" (checkin) button. This button calls `confirmHandover` / `confirmReturn` from `src/features/rentals/ownerRentalsApi.ts`, which does a direct `supabase.from("rentals").update(...)`.
+## Ce schimbăm
 
-The RLS on `public.rentals` only allows updates by:
-- the owner (`owner_id = auth.uid()`)
-- admins
-- renter, but only to set `status='cancelled'` on a `pending` rental
+### 1. API nou care distinge „șters" vs „inexistent"
+În `src/features/products/productsApi.ts` adăugăm:
+- `getProductStatusBySlug(slug)` → returnează `{ status: "deleted" | "not_found" | "exists", product?: Product }`. Face un singur SELECT pe `products` după slug, fără filtrul `deleted_at IS NULL`, și citește coloana `deleted_at` ca să decidă starea.
+- Pentru UUID, similar `getProductStatusById(id)`.
 
-When the renter (new test account) opens the PV and presses "Confirm primirea", the update matches zero rows. Supabase doesn't throw, so the UI shows a success toast but `handover_confirmed_at` is never set and the rental never moves to `active`. Same bug for the return side if the renter (or anyone other than the owner) is the one pressing the button.
+Astfel evităm două round-trip-uri și nu modificăm RLS (rândul cu `deleted_at` setat rămâne lizibil — verificăm întâi în SQL ce policy se aplică; dacă RLS ascunde produsele șterse, adăugăm o RPC `security definer` `get_product_deletion_status(slug)` care întoarce doar `{ exists boolean, deleted boolean }`, fără date sensibile).
 
-## Fix
+### 2. Componentă nouă `DeletedProductNotice`
+`src/components/product/DeletedProductNotice.tsx`:
+- Navbar + Footer pentru consistență
+- Iconiță (Trash2 / PackageX) într-un container `rounded-2xl bg-muted`
+- Titlu: „Acest anunț nu mai este disponibil" / „This listing is no longer available"
+- Subtitlu: „A fost șters de proprietar sau de echipa Rentli." / EN echivalent
+- Două CTA-uri: „Vezi anunțuri similare" (linkează la `/categorii` sau, dacă știm categoria din produsul șters, la categoria respectivă) + „Înapoi acasă"
+- Slot opțional pentru `NearbyProductsSlider` sau recomandări din aceeași categorie
 
-Move both transitions into SECURITY DEFINER RPCs that explicitly authorize **either** party and enforce the PV-completed precondition, then call them from the client.
+Textele intră în `src/data/uxCopy.ts` sub `product.deleted.*` (RO + EN), conform regulii de bilingualism.
 
-### 1. DB migration — two RPCs
+### 3. Integrare în `ProductDetail.tsx`
+- Înlocuim apelul curent cu `getProductStatusBySlug` / `getProductStatusById`.
+- După `setIsLoading(false)`:
+  - `status === "exists"` → flux normal actual
+  - `status === "deleted"` → render `<DeletedProductNotice />` și setăm `useSEO` cu `noindex` + status 410-equivalent în JSON-LD (Schema.org `availability: Discontinued`)
+  - `status === "not_found"` → păstrăm ecranul actual „Produs negăsit"
 
-`public.confirm_rental_handover(_rental_id uuid)`:
-- load the rental; require `auth.uid()` ∈ {owner_id, renter_id} else raise
-- require `status IN ('confirmed','pending_handover')` and `handover_confirmed_at IS NULL`
-- require both checkout PVs exist with `array_length(photos,1) >= 3` for roles `owner` and `renter` in `rental_inspections` (same gate the dialog already uses)
-- update `handover_confirmed_at = now()`, `status = 'active'`, `updated_at = now()`
-- return the updated row id
-- `GRANT EXECUTE ... TO authenticated`
+### 4. SEO
+Pe pagina „șters" setăm `<meta name="robots" content="noindex,follow">` prin `useSEO` ca Google să scoată URL-ul din index.
 
-`public.confirm_rental_return(_rental_id uuid)`:
-- same caller check (owner or renter)
-- require `handover_confirmed_at IS NOT NULL` and `return_confirmed_at IS NULL` and `status='active'`
-- require both checkin PVs (`role` in owner/renter, `phase='checkin'`, ≥3 photos)
-- **does not** capture Stripe — capture stays in the existing `capture-rental-payment` edge function
-- updates `return_confirmed_at`, `completed_at`, `status='completed'`
+## Detalii tehnice
+- Niciun edge function nou; eventual o singură RPC `get_product_deletion_status` dacă RLS blochează citirea rândurilor cu `deleted_at` setat (de verificat în pasul 1 înainte de implementare).
+- Fără modificări la fluxul de ștergere (`deleteProduct` rămâne soft-delete cu `deleted_at`).
+- Fără modificări de rutare — totul rămâne pe `/produs/:slug`.
 
-Both raise informative `RAISE EXCEPTION` messages that the existing `mapPvError` / toast can surface verbatim.
-
-### 2. Client — `src/features/rentals/ownerRentalsApi.ts`
-
-- `confirmHandover(rentalId)`: replace the direct table update with `supabase.rpc('confirm_rental_handover', { _rental_id: rentalId })`. Keep the best-effort `notify-rental-event` call for `handover_confirmed`.
-- `confirmReturn(rentalId)`: keep the existing order — call `capture-rental-payment` first; on success, call `supabase.rpc('confirm_rental_return', { _rental_id: rentalId })` instead of the direct update. Keep the two follow-up notifications.
-
-No UI changes required — `InspectionDialog` already invalidates `my-rentals` / `owner-rentals` after `handleConfirmGate`, so the renter will see the rental move forward immediately.
-
-### 3. Out of scope
-
-- No change to RLS policies on `rentals` (kept restrictive; the RPC is the controlled escape hatch).
-- No change to PV flow, dispute flow, or `capture-rental-payment`.
-- No change to admin/owner-only paths that still update `rentals` directly (cancellation, pickup, etc.).
-
-### Verification
-
-- New test renter account: complete checkout PV on both sides → "Confirm primirea" sets `handover_confirmed_at` and flips status to `active`; timeline advances.
-- Owner pressing the same button still works.
-- Pressing before both PVs are complete returns the RPC's error message via the existing toast.
+## Fișiere atinse
+- `src/features/products/productsApi.ts` (funcție nouă)
+- `src/components/product/DeletedProductNotice.tsx` (nou)
+- `src/pages/ProductDetail.tsx` (branching pe status)
+- `src/data/uxCopy.ts` (chei noi RO/EN)
+- opțional: o migrație nouă cu RPC `get_product_deletion_status`

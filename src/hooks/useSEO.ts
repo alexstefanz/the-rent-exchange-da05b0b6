@@ -8,6 +8,7 @@ interface SEOConfig {
   type?: "website" | "product" | "article";
   canonical?: string;
   jsonLd?: Record<string, any> | null;
+  noindex?: boolean;
 }
 
 const setMeta = (selector: string, attr: string, value: string) => {
@@ -30,7 +31,7 @@ const setMeta = (selector: string, attr: string, value: string) => {
   el.setAttribute(attr, value);
 };
 
-export const useSEO = ({ title, description, image, url, type = "website", canonical, jsonLd }: SEOConfig) => {
+export const useSEO = ({ title, description, image, url, type = "website", canonical, jsonLd, noindex }: SEOConfig) => {
   useEffect(() => {
     if (title) document.title = title;
     if (description) setMeta('meta[name="description"]', "content", description);
@@ -48,6 +49,22 @@ export const useSEO = ({ title, description, image, url, type = "website", canon
 
     if (canonical) setMeta('link[rel="canonical"]', "href", canonical);
 
+    // robots: only manage when noindex is explicitly requested; otherwise clean up.
+    const robotsEl = document.head.querySelector<HTMLMetaElement>('meta[name="robots"][data-seo="dynamic"]');
+    if (noindex) {
+      if (robotsEl) {
+        robotsEl.setAttribute("content", "noindex,follow");
+      } else {
+        const el = document.createElement("meta");
+        el.setAttribute("name", "robots");
+        el.setAttribute("content", "noindex,follow");
+        el.setAttribute("data-seo", "dynamic");
+        document.head.appendChild(el);
+      }
+    } else if (robotsEl) {
+      robotsEl.remove();
+    }
+
     let jsonLdEl = document.getElementById("seo-jsonld") as HTMLScriptElement | null;
     if (jsonLd) {
       if (!jsonLdEl) {
@@ -60,5 +77,5 @@ export const useSEO = ({ title, description, image, url, type = "website", canon
     } else if (jsonLdEl) {
       jsonLdEl.remove();
     }
-  }, [title, description, image, url, type, canonical, JSON.stringify(jsonLd)]);
+  }, [title, description, image, url, type, canonical, JSON.stringify(jsonLd), noindex]);
 };

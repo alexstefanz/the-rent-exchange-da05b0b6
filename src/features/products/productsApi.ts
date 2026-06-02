@@ -130,6 +130,46 @@ export const getProductBySlug = async (slug: string): Promise<Product | null> =>
   return (data as unknown as Product | null) ?? null;
 };
 
+export type ProductLookupStatus = "exists" | "deleted" | "not_found";
+
+export interface ProductLookupResult {
+  status: ProductLookupStatus;
+  product: Product | null;
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Resolves a product by slug or UUID and distinguishes between "deleted" and
+ * "not found" so the UI can show a dedicated "listing removed" page on stale
+ * links instead of a generic 404.
+ */
+export const getProductLookup = async (slugOrId: string): Promise<ProductLookupResult> => {
+  const isUuid = UUID_RE.test(slugOrId);
+
+  // Try the normal (live) fetch first — fastest path for the common case.
+  const product = isUuid ? await getProductById(slugOrId) : await getProductBySlug(slugOrId);
+  if (product) return { status: "exists", product };
+
+  // Fall back to a tiny SECURITY DEFINER RPC that bypasses RLS and only
+  // exposes { exists, deleted } so we can tell "deleted" from "never existed".
+  try {
+    if (isUuid) {
+      const { data } = await (supabase.rpc as any)("get_product_deletion_status_by_id", { _id: slugOrId });
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row?.exists_flag) return { status: row.deleted ? "deleted" : "not_found", product: null };
+    } else {
+      const { data } = await (supabase.rpc as any)("get_product_deletion_status", { _slug: slugOrId });
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row?.exists_flag) return { status: row.deleted ? "deleted" : "not_found", product: null };
+    }
+  } catch (e) {
+    console.error("getProductLookup status RPC failed", e);
+  }
+
+  return { status: "not_found", product: null };
+};
+
 export const getMyProducts = async (ownerId: string): Promise<Product[]> => {
   const { data, error } = await supabase
     .from("products")

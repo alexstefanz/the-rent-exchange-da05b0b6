@@ -2973,6 +2973,21 @@ export type Database = {
           subtotal: number
         }[]
       }
+      get_product_deletion_status: {
+        Args: { _slug: string }
+        Returns: {
+          deleted: boolean
+          exists_flag: boolean
+        }[]
+      }
+      get_product_deletion_status_by_id: {
+        Args: { _id: string }
+        Returns: {
+          deleted: boolean
+          exists_flag: boolean
+          slug: string
+        }[]
+      }
       get_product_extended_stats: {
         Args: { p_product_id: string }
         Returns: Json
