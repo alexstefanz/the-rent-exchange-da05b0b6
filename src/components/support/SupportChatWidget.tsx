@@ -41,6 +41,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -50,6 +51,7 @@ import {
   fetchUserTicketMessages,
   addUserTicketMessage,
   fetchUserTickets,
+  closeUserTicket,
   type OpsTicket,
 } from "@/features/tickets/userTicketsApi";
 import {
@@ -905,6 +907,54 @@ const SupportChatWidget = () => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+            )}
+            {!isAdmin && ticketId && !isClosed && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors"
+                    aria-label={t("Închide ticketul", "Close ticket")}
+                    title={t("Închide ticketul", "Close ticket")}
+                  >
+                    <CheckCircle2 className="h-5 w-5" />
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="z-[90]">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      {t("Închizi acest ticket?", "Close this ticket?")}
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {t(
+                        "Confirmă doar dacă problema este rezolvată sau ticketul a fost deschis din greșeală. Poți oricând deschide unul nou.",
+                        "Confirm only if the issue is resolved or the ticket was opened by mistake. You can always open a new one.",
+                      )}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>{t("Anulează", "Cancel")}</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={async () => {
+                        try {
+                          await closeUserTicket(ticketId);
+                          toast.success(t("Ticket închis", "Ticket closed"));
+                          queryClient.invalidateQueries({ queryKey: ["userTickets"] });
+                          queryClient.invalidateQueries({ queryKey: ["ticketInfo", ticketId] });
+                          queryClient.invalidateQueries({ queryKey: ["ticketMessages", ticketId] });
+                          queryClient.invalidateQueries({ queryKey: ["userTicketMessages", ticketId] });
+                        } catch (e: any) {
+                          toast.error(
+                            t("Nu am putut închide ticketul", "Could not close the ticket"),
+                            { description: e?.message },
+                          );
+                        }
+                      }}
+                    >
+                      {t("Închide ticketul", "Close ticket")}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
             <button
               onClick={() => setIsOpen(false)}

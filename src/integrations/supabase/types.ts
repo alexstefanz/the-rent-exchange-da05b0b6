@@ -2612,6 +2612,7 @@ export type Database = {
         }[]
       }
       cancel_unpaid_rental: { Args: { _rental_id: string }; Returns: Json }
+      close_user_ticket: { Args: { p_ticket_id: string }; Returns: undefined }
       confirm_handover_received: {
         Args: { _rental_id: string }
         Returns: undefined
