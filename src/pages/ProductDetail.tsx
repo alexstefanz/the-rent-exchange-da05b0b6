@@ -9,7 +9,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { categories } from "@/data/categories";
-import { getProductById, getProductBySlug, Product, calculateClientPrice } from "@/features/products/productsApi";
+import { getProductLookup, Product, calculateClientPrice } from "@/features/products/productsApi";
 import { getProductUrl } from "@/lib/slugUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,6 +26,7 @@ import LocationCard from "@/components/product/LocationCard";
 import StickyProductHeader from "@/components/product/StickyProductHeader";
 import ProductDetailSkeleton from "@/components/product/ProductDetailSkeleton";
 import BookedDatesAlert from "@/components/product/BookedDatesAlert";
+import DeletedProductNotice from "@/components/product/DeletedProductNotice";
 
 // Below-the-fold / interaction-triggered → lazy-loaded to shrink the initial bundle.
 const NearbyProductsSlider = lazy(() => import("@/components/products/NearbyProductsSlider"));
@@ -54,6 +55,7 @@ const ProductDetail = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [owner, setOwner] = useState<OwnerInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleted, setIsDeleted] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
@@ -69,10 +71,14 @@ const ProductDetail = () => {
     const fetchProduct = async () => {
       if (!slug) return;
       setIsLoading(true);
+      setIsDeleted(false);
       try {
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug);
-        const productData = isUuid ? await getProductById(slug) : await getProductBySlug(slug);
-        if (productData) {
+        const lookup = await getProductLookup(slug);
+        if (lookup.status === "deleted") {
+          setIsDeleted(true);
+        } else if (lookup.status === "exists" && lookup.product) {
+          const productData = lookup.product;
           setProduct(productData);
           if (isUuid && productData.slug) { navigate(getProductUrl(productData), { replace: true }); return; }
           // Run owner lookup and favorite check in parallel — they don't depend on each other.
@@ -248,6 +254,7 @@ const ProductDetail = () => {
   };
 
   if (isLoading) return <ProductDetailSkeleton />;
+  if (isDeleted) return <DeletedProductNotice />;
   if (!product) return (<div className="min-h-screen bg-background"><Navbar /><main className="container py-16 text-center"><h1 className="font-heading text-2xl font-bold text-foreground">{copy.product.notFound}</h1><Button asChild className="mt-4"><Link to="/categorii">{copy.product.backToCategories}</Link></Button></main><Footer /></div>);
 
   const location = product.location_city || "România";
