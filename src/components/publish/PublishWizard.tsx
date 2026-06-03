@@ -540,13 +540,13 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         isLoading={isPublishing}
         isFinal={step === STEPS.length}
         nextLabel={
-          mode === "edit" && editingFromSummary && step !== 5
+          mode === "edit" && editingFromSummary && step !== 4
             ? t("Salvează și înapoi la rezumat", "Save and back to summary")
             : undefined
         }
         secondaryAction={
-          mode === "edit" && editingFromSummary && step !== 5
-            ? { label: t("Anulează și înapoi la rezumat", "Cancel and back to summary"), onClick: () => { setEditingFromSummary(false); setStep(5); window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); } }
+          mode === "edit" && editingFromSummary && step !== 4
+            ? { label: t("Anulează și înapoi la rezumat", "Cancel and back to summary"), onClick: () => { setEditingFromSummary(false); setStep(4); window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); } }
             : undefined
         }
       />
