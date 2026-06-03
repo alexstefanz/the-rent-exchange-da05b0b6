@@ -151,8 +151,8 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   // section instead of re-walking the whole wizard.
   useEffect(() => {
     if (mode === "edit" && initialProduct) {
-      setStep(5);
-      setMaxReached(5);
+      setStep(4);
+      setMaxReached(4);
     }
     // run once when the product is loaded
     // eslint-disable-next-line react-hooks/exhaustive-deps
