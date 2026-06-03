@@ -43,6 +43,7 @@ const Auth = lazy(() => import("./pages/Auth"));
 const Profile = lazy(() => import("./pages/Profile"));
 const NewProduct = lazy(() => import("./pages/NewProduct"));
 const EditProduct = lazy(() => import("./pages/EditProduct"));
+const ProductPreview = lazy(() => import("./pages/ProductPreview"));
 const Messages = lazy(() => import("./pages/Messages"));
 const HelpCenter = lazy(() => import("./pages/HelpCenter"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -144,6 +145,7 @@ const App = () => (
                 <Route path="/owner" element={<Navigate to="/anunturi" replace />} />
                 <Route path="/owner/new-product" element={<NewProduct />} />
                 <Route path="/owner/edit-product/:id" element={<EditProduct />} />
+                <Route path="/publica/previzualizare" element={<ProductPreview />} />
                 <Route path="/mesaje" element={<Messages />} />
                 <Route path="/favorite" element={<FavoritesPage />} />
                 <Route path="/castiguri" element={<EarningsPage />} />
