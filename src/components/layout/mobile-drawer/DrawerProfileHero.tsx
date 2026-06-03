@@ -27,7 +27,7 @@ export function DrawerProfileHero({
 
   return (
     <Link
-      to="/contul-meu"
+      to="/profile"
       onClick={onNavigate}
       className="group block rounded-2xl border border-border/60 bg-gradient-to-br from-primary/10 via-background to-primary/5 p-4 transition-all hover:border-primary/40 hover:shadow-md active:scale-[.99]"
     >

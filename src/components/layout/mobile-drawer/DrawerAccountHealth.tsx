@@ -33,7 +33,7 @@ export function DrawerAccountHealth({ emailVerified, hasPhone, hasIban, onNaviga
         </span>
       </div>
       <Link
-        to="/contul-meu"
+        to="/profile"
         onClick={onNavigate}
         className="block rounded-xl border border-border/60 bg-card p-3 transition-all hover:border-primary/40 active:scale-[.99]"
       >
