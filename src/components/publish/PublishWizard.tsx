@@ -552,7 +552,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
             type="button"
             onClick={() => {
               if (pendingDraft) {
-                try { sessionStorage.setItem("publish:draftPromptDismissed", pendingDraft.id); } catch {}
+                try { localStorage.setItem("publish:draftPromptDismissed", pendingDraft.id); } catch {}
                 setDraftId(pendingDraft.id);
               }
               setPendingDraft(null);
