@@ -526,10 +526,10 @@ const AccountTab = () => {
 
         {/* ============ PAYOUT (IBAN) ============ */}
         <Section id="payout" icon={Wallet} title={t("Cum primești banii", "How you get paid")} description={t("Adaugă IBAN-ul în care vei primi banii din închirieri.", "Add the IBAN where you'll receive rental payouts.")}>
-          <PayoutForm
+          <PayoutIbansSection
             userId={user?.id}
             profile={profile}
-            onSaved={(iban, holder) => setProfile((p) => (p ? ({ ...p, iban, account_holder_name: holder } as any) : p))}
+            onDefaultChanged={(iban, holder) => setProfile((p) => (p ? ({ ...p, iban, account_holder_name: holder } as any) : p))}
           />
         </Section>
 
@@ -787,32 +787,73 @@ const SupportLink = ({ to, icon: Icon, title, description }: { to: string; icon:
   </Link>
 );
 
-const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: any; onSaved: (iban: string, holder: string) => void }) => {
+type PayoutIban = {
+  id: string;
+  iban: string;
+  account_holder_name: string;
+  is_default: boolean;
+  created_at: string;
+};
+
+const MAX_IBANS = 3;
+
+const maskIbanFull = (raw: string) => {
+  const clean = (raw || "").replace(/\s/g, "");
+  if (clean.length < 8) return clean;
+  return `${clean.slice(0, 4)} •••• •••• •••• ${clean.slice(-4)}`;
+};
+
+const PayoutIbansSection = ({
+  userId,
+  profile,
+  onDefaultChanged,
+}: {
+  userId?: string;
+  profile: any;
+  onDefaultChanged: (iban: string, holder: string) => void;
+}) => {
   const { t } = useLanguage();
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const savedIban = (profile as any)?.iban || "";
-  const savedHolder = (profile as any)?.account_holder_name || "";
   const fullName = ((profile as any)?.full_name || "").trim();
-  const hasIban = !!savedIban;
 
-  const [editing, setEditing] = useState(!hasIban);
-  const [iban, setIban] = useState("");
+  const [ibans, setIbans] = useState<PayoutIban[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+  const [newIban, setNewIban] = useState("");
   const [saving, setSaving] = useState(false);
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  const ibanRegex = /^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$/;
+  const ibanRegex = /^RO[0-9]{2}[A-Z0-9]{20}$/;
 
-  const maskIban = (raw: string) => {
-    const clean = raw.replace(/\s/g, "");
-    if (clean.length < 8) return clean;
-    return `${clean.slice(0, 4)} •••• •••• •••• ${clean.slice(-4)}`;
+  const load = async () => {
+    if (!userId) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("payout_ibans")
+      .select("id, iban, account_holder_name, is_default, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: true });
+    if (!error && data) setIbans(data as PayoutIban[]);
+    setLoading(false);
   };
 
-  const handleSave = async () => {
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [userId]);
+
+  // Open the inline form automatically if user has no IBAN yet
+  useEffect(() => {
+    if (!loading && ibans.length === 0) setAdding(true);
+  }, [loading, ibans.length]);
+
+  const syncDefaultToParent = (list: PayoutIban[]) => {
+    const def = list.find((x) => x.is_default);
+    if (def) onDefaultChanged(def.iban, def.account_holder_name);
+  };
+
+  const handleAdd = async () => {
     if (!userId) return;
-    const cleanIban = iban.toUpperCase().replace(/\s/g, "");
-    if (!ibanRegex.test(cleanIban)) {
-      toast({ title: t("IBAN invalid", "Invalid IBAN"), description: t("Verifică formatul IBAN-ului.", "Check the IBAN format."), variant: "destructive" });
+    const clean = newIban.toUpperCase().replace(/\s/g, "");
+    if (!ibanRegex.test(clean)) {
+      toast({ title: t("IBAN invalid", "Invalid IBAN"), description: t("Verifică formatul IBAN-ului (RO + 22 caractere).", "Check the IBAN format (RO + 22 chars)."), variant: "destructive" });
       return;
     }
     if (!fullName || fullName.length < 3) {
@@ -823,104 +864,211 @@ const PayoutForm = ({ userId, profile, onSaved }: { userId?: string; profile: an
       });
       return;
     }
+    if (ibans.length >= MAX_IBANS) {
+      toast({ title: t("Limită atinsă", "Limit reached"), description: t("Poți avea maxim 3 IBAN-uri salvate.", "You can save up to 3 IBANs."), variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
-      const { error } = await supabase.from("profiles").update({ iban: cleanIban, account_holder_name: fullName } as any).eq("id", userId);
+      const { error } = await supabase
+        .from("payout_ibans")
+        .insert({ user_id: userId, iban: clean, account_holder_name: fullName, is_default: ibans.length === 0 } as any);
       if (error) throw error;
-      onSaved(cleanIban, fullName);
-      setEditing(false);
-      setIban("");
-      toast({ title: t("Salvat", "Saved"), description: t("IBAN actualizat cu succes", "IBAN updated successfully") });
-    } catch {
-      toast({ title: t("Eroare", "Error"), description: t("Nu s-a putut salva IBAN-ul", "Could not save IBAN"), variant: "destructive" });
-    } finally { setSaving(false); }
+      setNewIban("");
+      setAdding(false);
+      toast({ title: t("Salvat", "Saved"), description: t("IBAN adăugat cu succes.", "IBAN added successfully.") });
+      await load();
+    } catch (e: any) {
+      const msg = e?.message || "";
+      const friendly = msg.includes("duplicate")
+        ? t("IBAN-ul este deja salvat.", "This IBAN is already saved.")
+        : msg || t("Nu s-a putut salva IBAN-ul.", "Could not save IBAN.");
+      toast({ title: t("Eroare", "Error"), description: friendly, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  // Saved view
-  if (hasIban && !editing) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-start sm:items-center gap-4 rounded-xl border bg-muted/30 p-4 flex-col sm:flex-row">
+  const handleSetDefault = async (id: string) => {
+    if (!userId) return;
+    setBusyId(id);
+    try {
+      const { error } = await supabase
+        .from("payout_ibans")
+        .update({ is_default: true } as any)
+        .eq("id", id)
+        .eq("user_id", userId);
+      if (error) throw error;
+      const next = ibans.map((x) => ({ ...x, is_default: x.id === id }));
+      setIbans(next);
+      syncDefaultToParent(next);
+      toast({ title: t("Implicit actualizat", "Default updated") });
+    } catch (e: any) {
+      toast({ title: t("Eroare", "Error"), description: e?.message || "", variant: "destructive" });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    setBusyId(id);
+    try {
+      const { error } = await supabase.rpc("delete_payout_iban", { p_id: id } as any);
+      if (error) throw error;
+      toast({ title: t("Șters", "Deleted") });
+      await load();
+    } catch (e: any) {
+      toast({ title: t("Nu se poate șterge", "Cannot delete"), description: e?.message || "", variant: "destructive" });
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const canAddMore = ibans.length < MAX_IBANS;
+
+  return (
+    <div className="space-y-4">
+      {loading && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          {t("Se încarcă...", "Loading...")}
+        </div>
+      )}
+
+      {/* IBAN cards */}
+      {!loading && ibans.map((row) => (
+        <div key={row.id} className="flex items-start sm:items-center gap-4 rounded-xl border bg-muted/30 p-4 flex-col sm:flex-row">
           <div className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
             <Landmark className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="text-sm font-semibold">IBAN</span>
-              <Badge variant="secondary" className="text-[10px] h-5">{t("Implicit", "Default")}</Badge>
+              {row.is_default && (
+                <Badge variant="secondary" className="text-[10px] h-5">{t("Implicit", "Default")}</Badge>
+              )}
             </div>
-            <p className="font-mono text-sm tracking-wide truncate">{maskIban(savedIban)}</p>
-            {savedHolder && <p className="text-xs text-muted-foreground mt-0.5 truncate">{savedHolder}</p>}
+            <p className="font-mono text-sm tracking-wide truncate">{maskIbanFull(row.iban)}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">{row.account_holder_name}</p>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate("/suport")}
-              className="flex-1 sm:flex-none"
-            >
-              <LifeBuoy className="h-3.5 w-3.5 mr-1.5" />
-              {t("Solicită schimbare IBAN", "Request IBAN change")}
-            </Button>
+            {!row.is_default && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleSetDefault(row.id)}
+                disabled={busyId === row.id}
+                className="flex-1 sm:flex-none"
+              >
+                {busyId === row.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <BadgeCheck className="h-3.5 w-3.5 mr-1.5" />}
+                {t("Setează implicit", "Set as default")}
+              </Button>
+            )}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" disabled={busyId === row.id} className="text-destructive hover:text-destructive">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("Șterge acest IBAN?", "Delete this IBAN?")}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t(
+                      "Dacă există o cerere de retragere în așteptare pe acest IBAN, ștergerea va fi blocată.",
+                      "If there is a pending withdrawal on this IBAN, deletion will be blocked."
+                    )}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("Anulează", "Cancel")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => handleDelete(row.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    {t("Șterge", "Delete")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
+      ))}
+
+      {/* Add new IBAN form */}
+      {!loading && adding && canAddMore && (
+        <div className="space-y-3 rounded-xl border border-dashed bg-background p-4">
+          <div className="space-y-2">
+            <Label htmlFor="new-iban" className="text-sm">
+              {ibans.length === 0 ? t("IBAN", "IBAN") : t("IBAN suplimentar", "Additional IBAN")}
+            </Label>
+            <Input
+              id="new-iban"
+              value={formatIbanMask(newIban)}
+              onChange={(e) => setNewIban(e.target.value.toUpperCase().replace(/\s/g, ""))}
+              placeholder="RO49 AAAA 1B31 0075 9384 0000"
+              maxLength={42}
+              className="font-mono tracking-wider"
+            />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+              <User className="h-3.5 w-3.5 shrink-0" />
+              {fullName ? (
+                <span className="truncate">
+                  {t("Titular cont:", "Account holder:")}{" "}
+                  <span className="font-medium text-foreground">{fullName}</span>
+                  <span className="ml-1">— {t("același nume pe toate IBAN-urile", "same name on all IBANs")}</span>
+                </span>
+              ) : (
+                <button type="button" onClick={() => scrollToSection("personal")} className="text-primary hover:underline">
+                  {t("Completează numele complet în Profil", "Fill in your full name in Profile")}
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button onClick={handleAdd} disabled={saving || !newIban} className="w-full sm:w-auto">
+              {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("Se salvează...", "Saving...")}</> : t("Salvează IBAN", "Save IBAN")}
+            </Button>
+            {ibans.length > 0 && (
+              <Button variant="ghost" onClick={() => { setAdding(false); setNewIban(""); }} className="w-full sm:w-auto">
+                {t("Anulează", "Cancel")}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* "Add another IBAN" button */}
+      {!loading && !adding && canAddMore && ibans.length > 0 && (
+        <Button variant="outline" onClick={() => setAdding(true)} className="w-full sm:w-auto">
+          <Plus className="h-4 w-4 mr-1.5" />
+          {t("Adaugă alt IBAN", "Add another IBAN")}
+          <span className="ml-2 text-xs text-muted-foreground">({ibans.length}/{MAX_IBANS})</span>
+        </Button>
+      )}
+
+      {!loading && !canAddMore && (
+        <p className="text-xs text-muted-foreground">
+          {t("Ai atins limita de 3 IBAN-uri. Șterge unul pentru a adăuga altul.", "You've reached the limit of 3 IBANs. Delete one to add another.")}
+        </p>
+      )}
+
+      {/* Security notice */}
+      {!loading && ibans.length > 0 && (
         <div className="flex items-start gap-2 rounded-lg bg-muted/40 border border-border px-3 py-2.5 text-xs text-muted-foreground">
           <Lock className="h-4 w-4 shrink-0 mt-0.5 text-foreground/70" />
           <span>
             {t(
-              "IBAN-ul este blocat pentru securitate. Pentru schimbare, deschide un tichet de suport — echipa verifică identitatea și actualizează contul.",
-              "Your IBAN is locked for security. To change it, open a support ticket — our team will verify your identity and update the account."
+              "Toate IBAN-urile trebuie să fie pe numele tău complet din profil. Pentru schimbarea numelui titular, deschide un tichet de suport.",
+              "All IBANs must be in your full name from the profile. To change the account holder name, open a support ticket."
             )}
           </span>
         </div>
+      )}
+
+      {!loading && ibans.length > 0 && (
         <div className="flex items-center gap-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-400">
           <CheckCircle2 className="h-4 w-4" />
           {t("IBAN configurat — ești gata să primești plăți.", "IBAN set — you're ready to receive payouts.")}
         </div>
-      </div>
-    );
-  }
-
-  // Edit / add view
-  return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="iban" className="text-sm">IBAN</Label>
-        <Input
-          id="iban"
-          value={formatIbanMask(iban)}
-          onChange={(e) => setIban(e.target.value.toUpperCase().replace(/\s/g, ""))}
-          placeholder="RO49 AAAA 1B31 0075 9384 0000"
-          maxLength={42}
-          className="font-mono tracking-wider"
-        />
-        <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
-          <User className="h-3.5 w-3.5 shrink-0" />
-          {fullName ? (
-            <span className="truncate">
-              {t("Titular cont:", "Account holder:")} <span className="font-medium text-foreground">{fullName}</span>
-            </span>
-          ) : (
-            <button type="button" onClick={() => scrollToSection("personal")} className="text-primary hover:underline">
-              {t("Completează numele complet în Profil", "Fill in your full name in Profile")}
-            </button>
-          )}
-        </div>
-      </div>
-      <div className="flex items-start gap-2 rounded-lg bg-muted/40 border border-border px-3 py-2.5 text-xs text-muted-foreground">
-        <Lock className="h-4 w-4 shrink-0 mt-0.5 text-foreground/70" />
-        <span>
-          {t(
-            "Atenție: după salvare, IBAN-ul nu mai poate fi modificat direct. Pentru schimbare va trebui să deschizi un tichet de suport.",
-            "Heads up: once saved, the IBAN cannot be changed directly. To update it later you'll need to open a support ticket."
-          )}
-        </span>
-      </div>
-      <div className="flex flex-col sm:flex-row gap-2">
-        <Button onClick={handleSave} disabled={saving || !iban} className="w-full sm:w-auto">
-          {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("Se salvează...", "Saving...")}</> : (hasIban ? t("Salvează modificările", "Save changes") : t("Salvează IBAN", "Save IBAN"))}
-        </Button>
-      </div>
+      )}
     </div>
   );
 };
