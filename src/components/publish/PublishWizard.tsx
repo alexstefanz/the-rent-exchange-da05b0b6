@@ -224,7 +224,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
     try { localStorage.setItem("publish:draftPromptDismissed", pendingDraft.id); } catch {}
     setDraftId(pendingDraft.id);
     setData({ ...emptyPublishForm(), ...pendingDraft.payload });
-    const target = Math.min(Math.max(pendingDraft.step || 1, 1), 5);
+    const target = Math.min(Math.max(pendingDraft.step || 1, 1), 4);
     setStep(target);
     setMaxReached(target);
     setPendingDraft(null);
