@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef, lazy, Suspense } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { differenceInDays, isBefore } from "date-fns";
 import { useBookedDates, isDateBooked, hasBookedDateInRange } from "@/hooks/queries/useBookedDates";
@@ -27,6 +27,7 @@ import StickyProductHeader from "@/components/product/StickyProductHeader";
 import ProductDetailSkeleton from "@/components/product/ProductDetailSkeleton";
 import BookedDatesAlert from "@/components/product/BookedDatesAlert";
 import DeletedProductNotice from "@/components/product/DeletedProductNotice";
+import PreviewBanner from "@/components/product/PreviewBanner";
 
 // Below-the-fold / interaction-triggered → lazy-loaded to shrink the initial bundle.
 const NearbyProductsSlider = lazy(() => import("@/components/products/NearbyProductsSlider"));
@@ -47,6 +48,8 @@ interface OwnerInfo { id: string; full_name: string | null; avatar_url: string |
 const ProductDetail = () => {
   const navigate = useNavigate();
   const { slug } = useParams();
+  const [searchParams] = useSearchParams();
+  const isPreview = searchParams.get("preview") === "1";
   const { user } = useAuth();
   const copy = useUxCopy();
   const { language, t } = useLanguage();
