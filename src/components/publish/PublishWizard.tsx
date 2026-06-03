@@ -942,35 +942,9 @@ const Step2Details = ({
               <Plus className="h-4 w-4" />
             </Button>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {DEFAULT_USAGE_RULES.map((r) => {
-              const active = data.usage_rules.includes(r);
-              return (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() =>
-                    update(
-                      "usage_rules",
-                      active ? data.usage_rules.filter((x) => x !== r) : [...data.usage_rules, r],
-                    )
-                  }
-                  className={cn(
-                    "rounded-full border px-3 py-1.5 text-sm transition-colors",
-                    active
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background text-foreground hover:border-primary/40",
-                  )}
-                >
-                  {DEFAULT_USAGE_RULES_I18N[r]?.[language] ?? r}
-                </button>
-              );
-            })}
-          </div>
-          {data.usage_rules.filter((r) => !(DEFAULT_USAGE_RULES as readonly string[]).includes(r)).length > 0 && (
+          {data.usage_rules.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-1">
               {data.usage_rules
-                .filter((r) => !(DEFAULT_USAGE_RULES as readonly string[]).includes(r))
                 .map((rule, i) => (
                   <span
                     key={`${rule}-${i}`}
