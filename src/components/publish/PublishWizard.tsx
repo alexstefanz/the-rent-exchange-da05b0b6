@@ -490,7 +490,14 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <PublishTopBar saveStatus={saveStatus} lastSavedAt={lastSavedAt} onExit={handleExit} mode={mode} />
+      <PublishTopBar
+        saveStatus={saveStatus}
+        lastSavedAt={lastSavedAt}
+        onExit={handleExit}
+        mode={mode}
+        onPreview={handlePreview}
+        canPreview={canPreview}
+      />
       <PublishStepper steps={STEPS} current={step} maxReached={maxReached} onJump={jump} />
 
       <main className="flex-1">
