@@ -401,7 +401,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   const handlePublish = async () => {
     if (!user) return;
     // Validate critical steps
-    for (let s = 1; s <= 4; s++) {
+    for (let s = 1; s <= 3; s++) {
       if (!validateStep(s)) {
         setStep(s);
         return;
