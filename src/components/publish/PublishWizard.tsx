@@ -354,8 +354,8 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
     if (s <= maxReached) {
       // If we jump out from the Summary into an earlier step (edit mode),
       // remember so that "Continuă" returns to the Summary after saving.
-      if (mode === "edit" && step === 5 && s !== 5) setEditingFromSummary(true);
-      if (s === 5) setEditingFromSummary(false);
+      if (mode === "edit" && step === 4 && s !== 4) setEditingFromSummary(true);
+      if (s === 4) setEditingFromSummary(false);
       setStep(s);
       window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     }
