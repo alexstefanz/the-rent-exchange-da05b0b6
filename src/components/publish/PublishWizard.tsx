@@ -1319,7 +1319,7 @@ const Step6Review = ({
         <ReviewRow
           label={t("Preț", "Price")}
           value={`${owner} ${t("RON/zi", "RON/day")} · ${t("client plătește/zi", "client pays/day")} ${Math.round((owner + calcPlatformFee(owner, feePercent)) * 100) / 100} RON`}
-          onEdit={() => onJump(4)}
+          onEdit={() => onJump(3)}
         />
 
         {score.total < 60 && (
