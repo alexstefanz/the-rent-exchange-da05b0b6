@@ -355,6 +355,43 @@ const AccountTab = () => {
 
         {/* ============ PERSONAL INFORMATION ============ */}
         <Section id="personal" icon={User} title={t("Informații personale", "Personal information")} description={t("Datele tale de bază. Sunt folosite pentru a comunica cu ceilalți utilizatori.", "Your basic info, used to communicate with other users.")}>
+          {/* Compact avatar + identity row (full hero lives on /profile) */}
+          <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
+            <div className="relative">
+              <Avatar className="h-16 w-16 ring-2 ring-primary/20">
+                <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "User"} />
+                <AvatarFallback className="bg-primary/10 text-primary font-semibold">{initials}</AvatarFallback>
+              </Avatar>
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleAvatarPicked(f); }}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="absolute -bottom-0.5 -right-0.5 h-7 w-7 rounded-full bg-foreground text-background flex items-center justify-center shadow-md hover:scale-105 transition-transform"
+                aria-label={t("Schimbă fotografia", "Change photo")}
+              >
+                {isUploadingAvatar ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
+              </button>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-semibold truncate">{profile?.full_name || t("Utilizator nou", "New user")}</p>
+                {kycStatus === "VERIFIED" && (
+                  <Badge className="bg-emerald-500 hover:bg-emerald-600 gap-1 h-5 text-[10px]">
+                    <BadgeCheck className="h-3 w-3" /> {t("Verificat", "Verified")}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+            </div>
+          </div>
+
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
             <div className="grid sm:grid-cols-2 gap-5">
               <Field label={t("Email cont", "Account email")} icon={<Mail className="h-4 w-4" />} hint={t("Emailul nu poate fi modificat", "Email cannot be changed")}>
