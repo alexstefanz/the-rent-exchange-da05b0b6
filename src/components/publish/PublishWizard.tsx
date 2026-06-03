@@ -511,9 +511,13 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
             {step === 2 && user && (
               <Step2Details data={data} update={update} errors={errors} feePercent={feePercent} userId={user.id} />
             )}
-            {step === 3 && <Step4Location data={data} update={update} errors={errors} />}
-            {step === 4 && <Step5Pricing data={data} update={update} feePercent={feePercent} freeListingsLeft={freeListingsLeft} errors={errors} />}
-            {step === 5 && <Step6Review data={data} feePercent={feePercent} onJump={jump} mode={mode} />}
+            {step === 3 && (
+              <div className="space-y-10">
+                <Step4Location data={data} update={update} errors={errors} />
+                <Step5Pricing data={data} update={update} feePercent={feePercent} freeListingsLeft={freeListingsLeft} errors={errors} />
+              </div>
+            )}
+            {step === 4 && <Step6Review data={data} feePercent={feePercent} onJump={jump} mode={mode} />}
           </div>
 
           <aside className="hidden lg:block">
