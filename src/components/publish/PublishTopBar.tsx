@@ -1,16 +1,19 @@
-import { Loader2, Check, X } from "lucide-react";
+import { Loader2, Check, X, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Props {
   saveStatus: "idle" | "saving" | "saved";
   lastSavedAt: Date | null;
   onExit: () => void;
   mode: "create" | "edit";
+  onPreview?: () => void;
+  canPreview?: boolean;
 }
 
-const PublishTopBar = ({ saveStatus, lastSavedAt, onExit, mode }: Props) => {
+const PublishTopBar = ({ saveStatus, lastSavedAt, onExit, mode, onPreview, canPreview }: Props) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   return (
@@ -40,6 +43,32 @@ const PublishTopBar = ({ saveStatus, lastSavedAt, onExit, mode }: Props) => {
         </div>
 
         <div className="flex items-center gap-2">
+          {onPreview && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onPreview}
+                    disabled={!canPreview}
+                    className="gap-1.5"
+                  >
+                    <Eye className="h-4 w-4" />
+                    <span className="hidden sm:inline">{t("Previzualizează anunțul", "Preview listing")}</span>
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!canPreview && (
+                <TooltipContent>
+                  {t(
+                    "Adaugă titlu, categorie și o imagine pentru a previzualiza",
+                    "Add title, category and one image to preview",
+                  )}
+                </TooltipContent>
+              )}
+            </Tooltip>
+          )}
           <Button variant="ghost" size="sm" onClick={onExit} className="hidden sm:inline-flex">
             {mode === "create" ? t("Salvează și ieși", "Save and exit") : t("Ieși", "Exit")}
           </Button>
