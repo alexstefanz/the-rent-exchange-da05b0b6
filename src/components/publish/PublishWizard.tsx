@@ -283,13 +283,15 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         if (!detailsRes.success) return detailsRes;
         return stepValidators.step3.safeParse({ images: data.images });
       },
-      3: () =>
-        stepValidators.step4.safeParse({
+      3: () => {
+        const locRes = stepValidators.step4.safeParse({
           location_county: data.location_county,
           location_city: data.location_city,
-        }),
-      4: () => stepValidators.step5.safeParse({ daily_price_owner: data.daily_price_owner }),
-      5: () => ({ success: true }),
+        });
+        if (!locRes.success) return locRes;
+        return stepValidators.step5.safeParse({ daily_price_owner: data.daily_price_owner });
+      },
+      4: () => ({ success: true }),
     };
     const result = validators[s]();
     if (!result.success) {
