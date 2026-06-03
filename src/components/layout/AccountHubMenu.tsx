@@ -93,7 +93,7 @@ function HeaderCard({
   const memberYear = memberSince ? new Date(memberSince).getFullYear() : null;
   return (
     <button
-      onClick={() => onNav("/contul-meu")}
+      onClick={() => onNav("/profile")}
       className="group block w-full rounded-2xl bg-gradient-to-br from-primary/10 via-background to-background p-4 text-left transition-all hover:from-primary/15"
     >
       <div className="flex items-center gap-3">
