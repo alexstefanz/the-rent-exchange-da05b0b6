@@ -526,10 +526,10 @@ const AccountTab = () => {
 
         {/* ============ PAYOUT (IBAN) ============ */}
         <Section id="payout" icon={Wallet} title={t("Cum primești banii", "How you get paid")} description={t("Adaugă IBAN-ul în care vei primi banii din închirieri.", "Add the IBAN where you'll receive rental payouts.")}>
-          <PayoutForm
+          <PayoutIbansSection
             userId={user?.id}
             profile={profile}
-            onSaved={(iban, holder) => setProfile((p) => (p ? ({ ...p, iban, account_holder_name: holder } as any) : p))}
+            onDefaultChanged={(iban, holder) => setProfile((p) => (p ? ({ ...p, iban, account_holder_name: holder } as any) : p))}
           />
         </Section>
 
