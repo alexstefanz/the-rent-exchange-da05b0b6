@@ -209,6 +209,7 @@ const ProductDetail = () => {
     url: canonicalUrl,
     canonical: canonicalUrl,
     type: "product",
+    noindex: isPreview,
     jsonLd: product ? {
       "@context": "https://schema.org",
       "@type": "Product",
