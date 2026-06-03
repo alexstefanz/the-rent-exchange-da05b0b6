@@ -367,6 +367,33 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
     navigate("/owner");
   };
 
+  const canPreview = !!data.title && !!data.category && (data.images?.length ?? 0) > 0;
+
+  const handlePreview = () => {
+    if (!canPreview || !user) return;
+    if (mode === "edit" && initialProduct) {
+      const url = `${getProductUrl(initialProduct)}?preview=1`;
+      window.open(url, "_blank", "noopener,noreferrer");
+      return;
+    }
+    try {
+      sessionStorage.setItem(
+        "publish:preview",
+        JSON.stringify({ data, feePercent, ownerId: user.id, savedAt: Date.now() }),
+      );
+      window.open("/publica/previzualizare", "_blank", "noopener,noreferrer");
+    } catch {
+      toast({
+        title: t("Eroare", "Error"),
+        description: t(
+          "Nu am putut deschide previzualizarea. Încearcă din nou.",
+          "Couldn't open the preview. Please try again.",
+        ),
+        variant: "destructive",
+      });
+    }
+  };
+
   const handlePublish = async () => {
     if (!user) return;
     // Validate critical steps
