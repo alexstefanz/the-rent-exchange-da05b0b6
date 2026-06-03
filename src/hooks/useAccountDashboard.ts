@@ -176,7 +176,7 @@ export function useAccountDashboard() {
         { key: "email", labelRo: "Email confirmat", labelEn: "Email verified", done: !!p.email, href: "/contul-meu" },
         { key: "phone", labelRo: "Telefon adăugat", labelEn: "Phone added", done: !!p.phone, href: "/contul-meu" },
         { key: "kyc", labelRo: "Identitate verificată", labelEn: "Identity verified", done: p.kyc_status === "VERIFIED", href: "/verificare" },
-        { key: "iban", labelRo: "IBAN pentru plăți", labelEn: "Payout IBAN", done: !!p.iban, href: "/castiguri" },
+        { key: "iban", labelRo: "IBAN pentru plăți", labelEn: "Payout IBAN", done: !!p.iban, href: "/contul-meu" },
         { key: "profile", labelRo: "Profil completat", labelEn: "Profile completed", done: !!p.full_name && !!p.avatar_url, href: "/contul-meu" },
       ];
       const completion = Math.round((items.filter((i) => i.done).length / items.length) * 100);
