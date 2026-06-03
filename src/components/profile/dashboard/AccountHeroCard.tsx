@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ShieldCheck, Star, Package, Calendar, ArrowRight, ExternalLink, Bell } from "lucide-react";
+import { ShieldCheck, Star, Package, Calendar, ArrowRight, ExternalLink, Bell, Settings } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -135,6 +135,12 @@ export function AccountHeroCard({ data }: Props) {
               <Link to="/contul-meu">
                 {t("Completează profilul", "Complete profile")}
                 <ArrowRight className="h-4 w-4 ml-1" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/contul-meu">
+                <Settings className="h-4 w-4 mr-1" />
+                {t("Setări cont", "Account settings")}
               </Link>
             </Button>
             {profile?.id && (
