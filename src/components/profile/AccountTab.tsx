@@ -30,7 +30,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { isValidRomanianPhone } from "@/lib/inputValidation";
 import { useProfileRealtime } from "@/hooks/useProfileRealtime";
-import { TrustScoreRing } from "@/components/profile/account/TrustScoreRing";
 import { AvatarCropperDialog } from "@/components/profile/account/AvatarCropperDialog";
 import KycInlineFlow from "@/components/kyc/KycInlineFlow";
 import PhoneOtpDialog from "@/components/profile/PhoneOtpDialog";
