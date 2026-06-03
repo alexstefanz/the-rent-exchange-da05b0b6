@@ -1,55 +1,35 @@
-## Obiectiv
-Utilizatorul poate adăuga maxim **3 IBAN-uri** în secțiunea „Cum primești banii". Toate trebuie să fie pe **același nume și prenume** = `profiles.full_name`. Unul este marcat „Implicit" și se folosește automat la retrageri / payout.
+## Problem
 
-## Backend (migration nouă)
+After consolidating the wizard from 5 to 4 steps, clicking **"Publică anunțul"** on step 4 (Verificare & publicare) advances to a non-existent step 5 (empty screen with "Continuă" button) instead of submitting the listing for admin approval.
 
-**Tabelă nouă `public.payout_ibans`**
-- `id uuid pk`, `user_id uuid not null`, `iban text not null`, `account_holder_name text not null`, `is_default boolean not null default false`, `created_at timestamptz default now()`.
-- `UNIQUE (user_id, iban)` (anti-duplicat).
-- GRANT SELECT/INSERT/UPDATE/DELETE pentru `authenticated`; GRANT ALL pentru `service_role` (fără anon).
-- RLS deny-by-default: policies pentru SELECT/INSERT/DELETE doar pe `auth.uid() = user_id`. UPDATE doar pentru câmpul `is_default` (policy cu USING + WITH CHECK pe owner).
+## Root cause
 
-**Trigger `enforce_payout_ibans_rules` (BEFORE INSERT/UPDATE)**
-- Refuză dacă utilizatorul are deja 3 rânduri (la INSERT).
-- Forțează `account_holder_name` = `trim(profiles.full_name)` (lookup); refuză dacă `full_name` e gol.
-- Validează formatul (regex RO + mod-97, prin re-folosirea logicii deja existente în SQL sau un check rapid de format `^RO\d{2}[A-Z0-9]{20}$`).
+In `src/components/publish/PublishWizard.tsx`, `goNext()` still checks the old step number:
 
-**Trigger `sync_default_payout_iban` (AFTER INSERT/UPDATE)**
-- Dacă noul rând e `is_default = true`, resetează `is_default = false` la celelalte rânduri ale aceluiași user.
-- Dacă utilizatorul nu are niciun default după operație, marchează cel mai vechi ca default.
-- Sincronizează `profiles.iban` și `profiles.account_holder_name` cu IBAN-ul implicit (păstrăm compatibilitatea cu withdrawals + edge functions existente).
+```ts
+const goNext = () => {
+  if (step === 5) {        // ← never true now (max step is 4)
+    handlePublish();
+    return;
+  }
+  ...
+};
+```
 
-**Backfill**
-- Pentru fiecare profil cu `iban` setat, inserează un rând în `payout_ibans` (default `true`) dacă nu există deja.
+So on step 4 it falls through and increments to step 5, which renders nothing. The `editingFromSummary` branch also still targets step 5. Step header eyebrows still say "Pasul X din 5".
 
-**Funcție RPC `delete_payout_iban(p_id uuid)` (SECURITY DEFINER)**
-- Refuză dacă există `withdrawals` în stare `pending` pentru `user_id` care folosește exact acel IBAN.
-- Șterge rândul; dacă era default, triggerul promovează altul.
+## Fix
 
-## Frontend
+In `src/components/publish/PublishWizard.tsx`:
 
-**`src/components/profile/AccountTab.tsx` — secțiunea Payout**
-- Înlocuiesc `PayoutForm` cu un component `PayoutIbansSection` care:
-  - Listează IBAN-urile existente ca **carduri** (același design ca în screenshot: icon, label „IBAN" + badge „Implicit", IBAN mascat, nume titular).
-  - Fiecare card: buton „Setează implicit" (dacă nu e), „Șterge" (cu confirm; blocat dacă pending withdrawal).
-  - Buton „**Adaugă alt IBAN**" vizibil doar dacă `count < 3`. La click deschide un mic form inline cu input IBAN; titularul e read-only = `profile.full_name` (afișat ca text explicativ: „Titular: Alex Test — trebuie să fie același nume pe toate IBAN-urile").
-  - La salvare: insert în `payout_ibans` (primul devine automat default).
-  - Banner-ul „IBAN configurat" rămâne dacă există cel puțin un IBAN.
-  - Mesajul de securitate „IBAN-ul e blocat pentru schimbare" rămâne, dar reformulat: schimbarea titularului se face doar prin suport; IBAN-urile pot fi adăugate/eliminate liber.
+1. `goNext`: change `if (step === 5)` → `if (step === 4)` so the publish button triggers `handlePublish()` on the final step.
+2. `goNext` edit-mode summary branch: change `setStep(5)` / `setMaxReached(m => Math.max(m, 5))` → `setStep(4)` / `Math.max(m, 4)`.
+3. Update the four step header eyebrows from `"Pasul X din 5"` / `"Step X of 5"` to `"din 4"` / `"of 4"` (Step1Category, Step2Details, the merged Location+Pricing step 3, and Step6Review which currently shows "PASUL 5 DIN 5").
 
-**`src/components/earnings/WithdrawDrawer.tsx` + `src/hooks/useEarnings.ts`**
-- `useEarnings` returnează lista de `payout_ibans` în loc de un singur `method`.
-- WithdrawDrawer: dacă există mai multe IBAN-uri, afișează un select („Trimite în contul…") cu opțiunile mascate; preselectează cel default. La submit trimite IBAN-ul selectat în `withdrawal_requests` (același flux).
+No backend changes — the existing `createProduct` / `updateProduct` flow already submits to admin approval (`approval_status = 'pending'`).
 
-**`src/components/earnings/WithdrawalMethodCard.tsx`**
-- Adaptat să afișeze lista (sau redirect către secțiunea Payout din AccountTab dacă rămâne ca shortcut).
+## Verification
 
-## În afara scope-ului
-- Tabela `withdrawals` nu se modifică — stochează în continuare IBAN-ul ca string copiat la momentul cererii.
-- Edge functions de payout/email rămân neschimbate (citesc tot din `profiles.iban` / din `withdrawals.iban`).
-- Nu se modifică UI-ul admin pentru withdrawals.
-
-## Detalii tehnice
-- Validare IBAN: re-folosim `isValidRomanianIban` din `src/lib/ibanValidation.ts` în client; trigger-ul SQL face doar verificare de format.
-- Comparația „același nume" e case-insensitive pe `trim()`. Triggerul forțează valoarea din `profiles.full_name`, deci utilizatorul nu poate tasta alt nume — câmpul e ascuns/read-only în UI.
-- Toate operațiunile de scriere se fac din client cu Supabase JS (RLS + triggers asigură integritatea); ștergerea folosește RPC pentru verificarea pending-withdrawal cu privilegii ridicate.
+- On a new listing, reach step 4, click **Publică anunțul** → toast "Anunț trimis spre aprobare" appears and navigates to `/owner`.
+- On editing an approved listing, save → resubmitted for approval as before.
+- Stepper shows 4 steps and headers read "Pasul X din 4".
