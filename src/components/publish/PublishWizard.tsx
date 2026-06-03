@@ -56,6 +56,7 @@ import PublishStepper, { type StepDef } from "./PublishStepper";
 import PublishTopBar from "./PublishTopBar";
 import PublishFooter from "./PublishFooter";
 import { cn } from "@/lib/utils";
+import { getProductUrl } from "@/lib/slugUtils";
 import {
   AlertDialog,
   AlertDialogAction,
