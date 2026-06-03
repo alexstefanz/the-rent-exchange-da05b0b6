@@ -71,9 +71,8 @@ import {
 const buildSteps = (t: (ro: string, en: string) => string): StepDef[] => [
   { id: 1, label: t("Categorie", "Category"), shortLabel: t("Categorie", "Category") },
   { id: 2, label: t("Fotografii & detalii", "Photos & details"), shortLabel: t("Detalii", "Details") },
-  { id: 3, label: t("Locație", "Location"), shortLabel: t("Locație", "Location") },
-  { id: 4, label: t("Preț & disponibilitate", "Price & availability"), shortLabel: t("Preț", "Price") },
-  { id: 5, label: t("Verificare & publicare", "Review & publish"), shortLabel: t("Publică", "Publish") },
+  { id: 3, label: t("Locație & Preț", "Location & Price"), shortLabel: t("Locație & Preț", "Location & Price") },
+  { id: 4, label: t("Verificare & publicare", "Review & publish"), shortLabel: t("Publică", "Publish") },
 ];
 
 interface Props {
