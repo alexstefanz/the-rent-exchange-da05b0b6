@@ -29,12 +29,14 @@ const AccountDetailsPage = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
-      <main className="flex-1 container py-8 pt-24 lg:pt-8">
-        <Button variant="ghost" size="sm" className="mb-4" onClick={() => navigate("/profile")}>
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          {t("Înapoi la Contul Meu", "Back to My Account")}
-        </Button>
-        <h1 className="text-3xl font-bold tracking-tight mb-6">{t("Detalii cont", "Account Details")}</h1>
+      <main className="flex-1 container py-6 pt-24 lg:pt-6">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/profile")}>
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            {t("Înapoi la Contul Meu", "Back to My Account")}
+          </Button>
+        </div>
+        <h1 className="text-2xl font-bold tracking-tight mb-4">{t("Setări cont", "Account settings")}</h1>
         <AccountTab />
       </main>
       <Footer />
