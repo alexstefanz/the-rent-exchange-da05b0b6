@@ -270,7 +270,7 @@ const ProductDetail = () => {
   const isPubliclyVisible = approvalStatus === "approved" && product.is_active !== false;
 
   // Not publicly visible and viewer isn't the owner → behave as Not Found.
-  if (!isPubliclyVisible && !isOwnProduct) {
+  if (!isPubliclyVisible && !isOwnProduct && !isPreview) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
@@ -285,6 +285,7 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24 lg:pb-0">
+      {isPreview && isOwnProduct && <PreviewBanner />}
       <Navbar />
 
       <StickyProductHeader
