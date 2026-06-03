@@ -2,6 +2,8 @@ import { Link } from "react-router-dom";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import logoImage from "@/assets/rentli_logo.webp";
+import anpcSol from "@/assets/anpc-sol.webp.asset.json";
+import anpcSal from "@/assets/anpc-sal.webp.asset.json";
 
 const FacebookIcon = ({ size = 20 }: { size?: number }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="#1877F2">
@@ -53,6 +55,14 @@ const Footer = () => {
               </a>
               <a href="https://www.tiktok.com/@rentli_romania" target="_blank" rel="noopener noreferrer" className="transition-opacity hover:opacity-80">
                 <TiktokIcon size={20} />
+              </a>
+            </div>
+            <div className="flex items-center gap-2 pt-2">
+              <a href="https://anpc.ro/ce-este-sol/" target="_blank" rel="noopener noreferrer" className="transition-opacity hover:opacity-80">
+                <img src={anpcSol.url} alt="ANPC - Soluționarea online a litigiilor" className="h-10 w-auto" />
+              </a>
+              <a href="https://anpc.ro/ce-este-sal/" target="_blank" rel="noopener noreferrer" className="transition-opacity hover:opacity-80">
+                <img src={anpcSal.url} alt="ANPC - Soluționarea alternativă a litigiilor" className="h-10 w-auto" />
               </a>
             </div>
           </div>
