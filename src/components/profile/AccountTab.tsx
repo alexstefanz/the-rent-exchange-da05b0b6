@@ -803,7 +803,7 @@ const maskIbanFull = (raw: string) => {
   return `${clean.slice(0, 4)} •••• •••• •••• ${clean.slice(-4)}`;
 };
 
-const PayoutIbansSection = ({
+function PayoutIbansSection({
   userId,
   profile,
   onDefaultChanged,
@@ -811,7 +811,7 @@ const PayoutIbansSection = ({
   userId?: string;
   profile: any;
   onDefaultChanged: (iban: string, holder: string) => void;
-}) => {
+}) {
   const { t } = useLanguage();
   const { toast } = useToast();
   const fullName = ((profile as any)?.full_name || "").trim();
