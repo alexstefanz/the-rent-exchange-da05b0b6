@@ -186,7 +186,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         return;
       }
       try {
-        const dismissed = sessionStorage.getItem("publish:draftPromptDismissed");
+        const dismissed = localStorage.getItem("publish:draftPromptDismissed");
         if (dismissed === d.id) {
           setDraftId(d.id);
           return;
@@ -222,6 +222,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
 
   const handleContinueDraft = () => {
     if (!pendingDraft) return;
+    try { localStorage.setItem("publish:draftPromptDismissed", pendingDraft.id); } catch {}
     setDraftId(pendingDraft.id);
     setData({ ...emptyPublishForm(), ...pendingDraft.payload });
     const target = Math.min(Math.max(pendingDraft.step || 1, 1), 5);
@@ -232,6 +233,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
 
   const handleStartFresh = async () => {
     if (!pendingDraft) return;
+    try { localStorage.setItem("publish:draftPromptDismissed", pendingDraft.id); } catch {}
     setDraftId(null);
     setPendingDraft(null);
   };
@@ -240,6 +242,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
     if (!pendingDraft) return;
     try {
       await deleteDraft(pendingDraft.id);
+      try { localStorage.removeItem("publish:draftPromptDismissed"); } catch {}
       toast({
         title: t("Draft șters", "Draft deleted"),
         description: t("Draftul a fost eliminat definitiv.", "The draft has been removed permanently."),
