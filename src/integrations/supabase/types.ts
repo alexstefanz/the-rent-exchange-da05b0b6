@@ -1174,6 +1174,33 @@ export type Database = {
           },
         ]
       }
+      payout_ibans: {
+        Row: {
+          account_holder_name: string
+          created_at: string
+          iban: string
+          id: string
+          is_default: boolean
+          user_id: string
+        }
+        Insert: {
+          account_holder_name: string
+          created_at?: string
+          iban: string
+          id?: string
+          is_default?: boolean
+          user_id: string
+        }
+        Update: {
+          account_holder_name?: string
+          created_at?: string
+          iban?: string
+          id?: string
+          is_default?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       phone_otp_verifications: {
         Row: {
           attempts: number
@@ -2637,6 +2664,7 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      delete_payout_iban: { Args: { p_id: string }; Returns: undefined }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
