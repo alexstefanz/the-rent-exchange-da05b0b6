@@ -325,7 +325,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   };
 
   const goNext = () => {
-    if (step === 5) {
+    if (step === 4) {
       handlePublish();
       return;
     }
@@ -333,8 +333,8 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
     // Edit mode: after editing one section from the Summary, jump back to it.
     if (mode === "edit" && editingFromSummary) {
       setEditingFromSummary(false);
-      setStep(5);
-      setMaxReached((m) => Math.max(m, 5));
+      setStep(4);
+      setMaxReached((m) => Math.max(m, 4));
       window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
       return;
     }
@@ -639,7 +639,7 @@ const Step1Category = ({
   return (
     <div>
       <StepHeader
-        eyebrow={t("Pasul 1 din 5", "Step 1 of 5")}
+        eyebrow={t("Pasul 1 din 4", "Step 1 of 4")}
         title={t("Ce vrei să închiriezi?", "What do you want to rent out?")}
         subtitle={t(
           "Alege o categorie ca să-ți arătăm câmpurile potrivite și prețul mediu din piață.",
@@ -754,7 +754,7 @@ const Step2Details = ({
   return (
     <div>
       <StepHeader
-        eyebrow={t("Pasul 2 din 5", "Step 2 of 5")}
+        eyebrow={t("Pasul 2 din 4", "Step 2 of 4")}
         title={t("Fotografii & detalii", "Photos & details")}
         subtitle={t(
           "Adaugă întâi pozele (6+ recomandat) — apoi completează titlul și descrierea.",
@@ -1047,7 +1047,7 @@ const Step4Location = ({
   return (
     <div>
       <StepHeader
-        eyebrow={t("Pasul 3 din 5", "Step 3 of 5")}
+        eyebrow={t("Pasul 3 din 4", "Step 3 of 4")}
         title={t("Unde se află produsul?", "Where is the product located?")}
         subtitle={t(
           "Adresa exactă este vizibilă doar după ce o rezervare e confirmată.",
@@ -1164,7 +1164,7 @@ const Step5Pricing = ({
   return (
     <div>
       <StepHeader
-        eyebrow={t("Pasul 4 din 5", "Step 4 of 5")}
+        eyebrow={t("Pasul 3 din 4", "Step 3 of 4")}
         title={t("Preț chirie", "Rental price")}
         subtitle={t(
           "Setează cât vrei să primești pe zi. Comisionul platformei se adaugă automat clientului.",
@@ -1280,7 +1280,7 @@ const Step6Review = ({
   return (
     <div>
       <StepHeader
-        eyebrow={t("Pasul 5 din 5", "Step 5 of 5")}
+        eyebrow={t("Pasul 4 din 4", "Step 4 of 4")}
         title={mode === "edit" ? t("Verifică modificările", "Review changes") : t("Aproape gata!", "Almost done!")}
         subtitle={
           mode === "edit"
