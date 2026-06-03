@@ -71,9 +71,8 @@ import {
 const buildSteps = (t: (ro: string, en: string) => string): StepDef[] => [
   { id: 1, label: t("Categorie", "Category"), shortLabel: t("Categorie", "Category") },
   { id: 2, label: t("Fotografii & detalii", "Photos & details"), shortLabel: t("Detalii", "Details") },
-  { id: 3, label: t("Locație", "Location"), shortLabel: t("Locație", "Location") },
-  { id: 4, label: t("Preț & disponibilitate", "Price & availability"), shortLabel: t("Preț", "Price") },
-  { id: 5, label: t("Verificare & publicare", "Review & publish"), shortLabel: t("Publică", "Publish") },
+  { id: 3, label: t("Locație & Preț", "Location & Price"), shortLabel: t("Locație & Preț", "Location & Price") },
+  { id: 4, label: t("Verificare & publicare", "Review & publish"), shortLabel: t("Publică", "Publish") },
 ];
 
 interface Props {
@@ -152,8 +151,8 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   // section instead of re-walking the whole wizard.
   useEffect(() => {
     if (mode === "edit" && initialProduct) {
-      setStep(5);
-      setMaxReached(5);
+      setStep(4);
+      setMaxReached(4);
     }
     // run once when the product is loaded
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -225,7 +224,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
     try { localStorage.setItem("publish:draftPromptDismissed", pendingDraft.id); } catch {}
     setDraftId(pendingDraft.id);
     setData({ ...emptyPublishForm(), ...pendingDraft.payload });
-    const target = Math.min(Math.max(pendingDraft.step || 1, 1), 5);
+    const target = Math.min(Math.max(pendingDraft.step || 1, 1), 4);
     setStep(target);
     setMaxReached(target);
     setPendingDraft(null);
@@ -284,13 +283,15 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         if (!detailsRes.success) return detailsRes;
         return stepValidators.step3.safeParse({ images: data.images });
       },
-      3: () =>
-        stepValidators.step4.safeParse({
+      3: () => {
+        const locRes = stepValidators.step4.safeParse({
           location_county: data.location_county,
           location_city: data.location_city,
-        }),
-      4: () => stepValidators.step5.safeParse({ daily_price_owner: data.daily_price_owner }),
-      5: () => ({ success: true }),
+        });
+        if (!locRes.success) return locRes;
+        return stepValidators.step5.safeParse({ daily_price_owner: data.daily_price_owner });
+      },
+      4: () => ({ success: true }),
     };
     const result = validators[s]();
     if (!result.success) {
@@ -353,8 +354,8 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
     if (s <= maxReached) {
       // If we jump out from the Summary into an earlier step (edit mode),
       // remember so that "Continuă" returns to the Summary after saving.
-      if (mode === "edit" && step === 5 && s !== 5) setEditingFromSummary(true);
-      if (s === 5) setEditingFromSummary(false);
+      if (mode === "edit" && step === 4 && s !== 4) setEditingFromSummary(true);
+      if (s === 4) setEditingFromSummary(false);
       setStep(s);
       window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     }
@@ -400,7 +401,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   const handlePublish = async () => {
     if (!user) return;
     // Validate critical steps
-    for (let s = 1; s <= 4; s++) {
+    for (let s = 1; s <= 3; s++) {
       if (!validateStep(s)) {
         setStep(s);
         return;
@@ -510,9 +511,13 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
             {step === 2 && user && (
               <Step2Details data={data} update={update} errors={errors} feePercent={feePercent} userId={user.id} />
             )}
-            {step === 3 && <Step4Location data={data} update={update} errors={errors} />}
-            {step === 4 && <Step5Pricing data={data} update={update} feePercent={feePercent} freeListingsLeft={freeListingsLeft} errors={errors} />}
-            {step === 5 && <Step6Review data={data} feePercent={feePercent} onJump={jump} mode={mode} />}
+            {step === 3 && (
+              <div className="space-y-10">
+                <Step4Location data={data} update={update} errors={errors} />
+                <Step5Pricing data={data} update={update} feePercent={feePercent} freeListingsLeft={freeListingsLeft} errors={errors} />
+              </div>
+            )}
+            {step === 4 && <Step6Review data={data} feePercent={feePercent} onJump={jump} mode={mode} />}
           </div>
 
           <aside className="hidden lg:block">
@@ -535,13 +540,13 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         isLoading={isPublishing}
         isFinal={step === STEPS.length}
         nextLabel={
-          mode === "edit" && editingFromSummary && step !== 5
+          mode === "edit" && editingFromSummary && step !== 4
             ? t("Salvează și înapoi la rezumat", "Save and back to summary")
             : undefined
         }
         secondaryAction={
-          mode === "edit" && editingFromSummary && step !== 5
-            ? { label: t("Anulează și înapoi la rezumat", "Cancel and back to summary"), onClick: () => { setEditingFromSummary(false); setStep(5); window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); } }
+          mode === "edit" && editingFromSummary && step !== 4
+            ? { label: t("Anulează și înapoi la rezumat", "Cancel and back to summary"), onClick: () => { setEditingFromSummary(false); setStep(4); window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); } }
             : undefined
         }
       />
@@ -1314,7 +1319,7 @@ const Step6Review = ({
         <ReviewRow
           label={t("Preț", "Price")}
           value={`${owner} ${t("RON/zi", "RON/day")} · ${t("client plătește/zi", "client pays/day")} ${Math.round((owner + calcPlatformFee(owner, feePercent)) * 100) / 100} RON`}
-          onEdit={() => onJump(4)}
+          onEdit={() => onJump(3)}
         />
 
         {score.total < 60 && (
