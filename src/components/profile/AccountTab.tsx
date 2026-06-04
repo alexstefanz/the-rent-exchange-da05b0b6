@@ -611,7 +611,33 @@ const AccountTab = () => {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="border-t border-border px-5 py-5">
-                <div className="flex justify-end">
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm space-y-2">
+                    <p className="font-semibold text-destructive">
+                      {t("Atenție — această acțiune are consecințe importante", "Warning — this action has important consequences")}
+                    </p>
+                    <p className="text-foreground/80">
+                      {t(
+                        "Dezactivarea contului tău va avea următoarele efecte:",
+                        "Deactivating your account will have the following effects:"
+                      )}
+                    </p>
+                    <ul className="list-disc pl-5 space-y-1 text-foreground/80">
+                      <li>{t("Profilul tău și toate anunțurile vor fi ascunse imediat de pe platformă.", "Your profile and all listings will be immediately hidden from the platform.")}</li>
+                      <li>{t("Nu vei mai putea primi rezervări, mesaje sau notificări.", "You will no longer receive bookings, messages or notifications.")}</li>
+                      <li>{t("Rezervările active trebuie finalizate înainte de dezactivare.", "Active rentals must be completed before deactivation.")}</li>
+                      <li>{t("Soldul disponibil trebuie retras în prealabil — după dezactivare nu mai poți face retrageri.", "Any available balance must be withdrawn beforehand — after deactivation withdrawals are no longer possible.")}</li>
+                      <li>{t("Vei fi delogat automat și nu te vei mai putea autentifica.", "You will be logged out automatically and will no longer be able to sign in.")}</li>
+                      <li>{t("Poți reactiva contul contactând echipa de suport în 30 de zile; după această perioadă datele pot fi șterse definitiv.", "You can reactivate your account by contacting support within 30 days; after this period data may be permanently deleted.")}</li>
+                    </ul>
+                    <p className="text-foreground/70">
+                      {t(
+                        "Vei primi un email de confirmare — contul nu se dezactivează până nu apeși link-ul din email (valabil 24 de ore).",
+                        "You will receive a confirmation email — the account is not deactivated until you click the link in the email (valid for 24 hours)."
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex justify-end">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="destructive" size="sm">{t("Dezactivează contul", "Deactivate account")}</Button>
@@ -632,6 +658,7 @@ const AccountTab = () => {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                  </div>
                 </div>
               </div>
             </CollapsibleContent>
