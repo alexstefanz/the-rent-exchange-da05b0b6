@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -56,6 +56,10 @@ const Auth = () => {
   const [phoneOtpOpen, setPhoneOtpOpen] = useState(false);
   const [pendingPhone, setPendingPhone] = useState("");
   const [gatingLogin, setGatingLogin] = useState(false);
+  // Credentials saved during the signup OTP flow so that — if
+  // refreshSession() fails after phone verification — we can re-establish
+  // a fully authenticated session without forcing the user to re-login.
+  const pendingCredsRef = useRef<{ email: string; password: string } | null>(null);
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -319,6 +323,9 @@ const Auth = () => {
       }
 
       if (USE_SMS_OTP) {
+        // Save credentials so PhoneOtpDialog can re-sign-in as fallback
+        // if refreshSession() fails right after phone verification.
+        pendingCredsRef.current = { email: data.email, password: data.password };
         setPendingPhone(normalizedPhone);
         setPhoneOtpOpen(true);
       } else {
@@ -354,6 +361,7 @@ const Auth = () => {
     toast({ title: "Cont verificat!", description: "Bun venit pe Rentli." });
     setPhoneOtpOpen(false);
     setGatingLogin(false);
+    pendingCredsRef.current = null;
     navigate("/", { replace: true });
   };
 
@@ -780,9 +788,11 @@ const Auth = () => {
             // User closed the gate without verifying — sign out so they retry.
             supabase.auth.signOut();
             setGatingLogin(false);
+            pendingCredsRef.current = null;
           }
         }}
         onVerified={handlePhoneVerified}
+        fallbackCreds={pendingCredsRef.current}
       />
     </div>
   );

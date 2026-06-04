@@ -1,76 +1,37 @@
-# Migrare emailuri la Resend (noreply@rentli.ro)
+## Problema
 
-## Context
-- Lovable Emails pe `notify.rentli.ro` e în stare **drifted** + folosit niciodată cu succes (Resend API key invalid).
-- Trecem complet pe Resend, cu trimitere de la **noreply@rentli.ro** (root domain).
-- Păstrăm toate cele 18 template-uri React Email și pgmq queue + retries — schimbăm doar providerul de trimitere efectivă.
+După înregistrare + introducere cod OTP pe telefon, userul nu rămâne autentificat. Trebuie să dea refresh și să se logheze din nou — flow rupt.
 
-## Pași
+**Cauza:** Contul nou creat prin `signUp()` are emailul neconfirmat (Supabase cere confirmare email). Sesiunea returnată este "soft" — funcționează temporar pentru apelul către `verify-phone-otp`, dar nu e o sesiune validă completă: după navigare / refresh, headerul vede `user = null` și apare "Autentificare".
 
-### 1. Dezactivare Lovable Emails și pregătire DNS
-- Apel `email_domain--toggle_project_emails(enabled: false)` ca să oprim infra Lovable de email (NS-urile rămân la registrar — le vei șterge manual mai târziu dacă vrei, dar nu sunt blocante pentru root rentli.ro).
-- Îți spun explicit ce NS-uri să ștergi opțional la registrar pentru curățenie:
-  - `notify.rentli.ro NS ns3.lovable.cloud`
-  - `notify.rentli.ro NS ns4.lovable.cloud`
+În plus, fluxul nostru nu mai folosește confirmare prin email — verificarea reală e prin OTP pe telefon. Deci trebuie să marcăm emailul ca **confirmat** automat în momentul în care telefonul a fost verificat cu succes.
 
-### 2. Conectare Resend
-- Apel `standard_connectors--connect(connector_id: "resend")` — vei autoriza contul Resend din browser.
-- Connector-ul setează automat `RESEND_API_KEY` în secrets-ul proiectului (gateway-routed).
+## Soluția
 
-### 3. Verificare rentli.ro în Resend (faci tu manual)
-- Resend Dashboard → Domains → Add `rentli.ro`.
-- Resend îți va da:
-  - 1× `MX` (send.rentli.ro)
-  - 1× `TXT` SPF (`v=spf1 include:amazonses.com ~all`)
-  - 1× `TXT` DKIM (`resend._domainkey.rentli.ro`)
-  - 1× `TXT` DMARC recomandat (`_dmarc.rentli.ro`)
-- Le adaugi la registrar, apeși Verify în Resend. Nu intră în conflict cu NS-ul `notify.rentli.ro` (subdomeniu separat).
+În două bucăți mici, doar pe fluxul de auth — fără atingeri în UI/business logic:
 
-### 4. Refactor edge functions să trimită prin Resend gateway
-- `supabase/functions/send-transactional-email/index.ts`:
-  - Păstrăm queue-ul pgmq + retry-uri + logging `email_send_log` + render React Email + check `suppressed_emails`.
-  - Înlocuim apelul către provider Lovable cu un POST către gateway-ul Resend:
-    ```
-    POST https://connector-gateway.lovable.dev/resend/emails
-    Authorization: Bearer ${LOVABLE_API_KEY}
-    X-Connection-Api-Key: ${RESEND_API_KEY}
-    body: { from: "Rentli <noreply@rentli.ro>", to, subject, html }
-    ```
-  - Footerul de unsubscribe + token rămân, link-ul rămâne către `/dezinscriere?token=...`.
-- `supabase/functions/auth-email-hook/index.ts`:
-  - Aceeași schemă — render template (Welcome/Recovery/Magic Link/etc.) cu @react-email/render și trimitere prin Resend gateway, în loc de Lovable Mailer.
-  - Hook-ul rămâne configurat în Supabase Auth (`hook_send_email_uri`).
-- `supabase/functions/request-account-deactivation/index.ts`: deja folosește `send-transactional-email`, nu îl mai atingem.
+### 1. Edge function `verify-phone-otp` (server)
+După ce telefonul e validat cu succes, în plus față de update-ul profilului:
+- folosim service-role-ul deja prezent ca să apelăm `supabase.auth.admin.updateUserById(userId, { email_confirm: true })`
+- ignorăm eroarea dacă emailul e deja confirmat (idempotent)
+- răspunsul rămâne `{ success: true, phone }` — nicio schimbare de contract
 
-### 5. Constante și config
-- Setăm explicit `FROM_ADDRESS = "Rentli <noreply@rentli.ro>"` într-un `_shared/email-config.ts` reutilizat de cele 2 funcții.
-- Eliminăm referințele la `SENDER_DOMAIN`/`FROM_DOMAIN` din Lovable Emails dacă mai există.
+### 2. Client `PhoneOtpDialog` + `Auth.tsx`
+După ce `verify-phone-otp` returnează success:
+- apelăm `supabase.auth.refreshSession()` în `PhoneOtpDialog.verify()` (înainte de `onVerified`) ca să primim un JWT proaspăt cu `email_confirmed_at` setat
+- dacă refresh-ul eșuează (rar — token expirat), facem fallback la `signIn(email, password)` folosind credențialele păstrate temporar în `Auth.tsx` (le adăugăm într-un ref local doar pe durata flow-ului, nu în localStorage)
+- după refresh, `onAuthStateChange` re-emite `SIGNED_IN` cu sesiunea validă → `AuthContext` actualizează `user` → headerul arată userul logat și `useEffect`-ul din `Auth.tsx` navighează la `/`
 
-### 6. Validare end-to-end
-- Deploy `send-transactional-email`, `auth-email-hook`.
-- În `/admin/test-emails` trimit succesiv: `welcome`, `account-deactivation`, `password-changed`, `rental-request-owner`.
-- Verific:
-  - `email_send_log` are status `sent` cu `message_id` Resend.
-  - Edge function logs nu au erori 401/422.
-  - Resend Dashboard → Logs arată Delivered.
-- Test auth: forgot password real către un email exterior.
+### 3. Detaliu mic
+În `handleRegister` (Auth.tsx), salvăm `data.email` + `data.password` într-un `useRef` (`pendingCredsRef.current = { email, password }`) și îl pasăm către `PhoneOtpDialog` ca prop opțional `fallbackCreds`, folosit doar dacă `refreshSession` eșuează. Curățăm ref-ul după succes.
 
-### 7. Update memorie
-- Actualizez `mem://integrations/branded-email-system` → provider Resend, from `noreply@rentli.ro`, no Mailgun NS.
-- Actualizez `mem://security/edge-function-config` cu rolul nou al `send-transactional-email` (gateway Resend).
+## Ce NU se schimbă
 
-## Ce ai de făcut tu (manual)
-1. Confirmi planul (după aprobare începem cu pașii 1–2).
-2. Autorizezi conectarea Resend când îți cere din browser.
-3. În Resend Dashboard adaugi domeniul `rentli.ro` și copiezi MX/SPF/DKIM/DMARC la registrar.
-4. Îmi spui când DNS-urile sunt aplicate ca să rulez testele.
+- UI-ul (dialog, butoane, copy)
+- Fluxul de login normal
+- Fluxul de reset parolă
+- Verificarea telefonului din `AccountTab` (acolo userul e deja logat, deci pasul de `email_confirm` e no-op — sigur)
 
-## Detalii tehnice (rezumat)
-- Provider: gateway Resend (`https://connector-gateway.lovable.dev/resend/emails`).
-- Auth: `Authorization: Bearer ${LOVABLE_API_KEY}` + `X-Connection-Api-Key: ${RESEND_API_KEY}`.
-- From: `Rentli <noreply@rentli.ro>` (toate emailurile, inclusiv auth).
-- Reply-To: lipsește deliberat — răspunsurile merg pe chat-ul intern.
-- Renderer: @react-email/render @0.0.17 (Deno npm specifier), neschimbat.
-- Queue: pgmq + `process-email-queue` cron — neschimbat, doar callback-ul de send schimbă.
-- Logging: `email_send_log` neschimbat — `message_id` va fi cel întors de Resend.
-- Suppression: păstrăm `suppressed_emails` ca filtru pre-send; bounce-urile manuale Resend pot fi adăugate ulterior via webhook (out of scope acum).
+## Rezultat
+
+User → creează cont → primește cod SMS → introduce 6 cifre → este logat instant pe homepage, fără refresh, fără re-login.
