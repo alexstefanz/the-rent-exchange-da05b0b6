@@ -22,7 +22,6 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const resendApiKey = Deno.env.get("RESEND_API_KEY")!;
 
     // Verify user from JWT
     const supabaseClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
@@ -62,38 +61,17 @@ Deno.serve(async (req) => {
     const siteUrl = req.headers.get("origin") || "https://rentli.ro";
     const confirmLink = `${siteUrl}/dezactivare-cont?token=${token}`;
 
-    // Send email via Resend
-    const emailRes = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
+    // Send via standard transactional email pipeline (queued + branded template)
+    const { error: emailError } = await adminClient.functions.invoke("send-transactional-email", {
+      body: {
+        templateName: "account-deactivation",
+        recipientEmail: user.email,
+        idempotencyKey: `account-deactivation-${user.id}-${token}`,
+        templateData: { confirmationLink: confirmLink },
       },
-      body: JSON.stringify({
-        from: "Rentli <noreply@resend.dev>",
-        to: [user.email],
-        subject: "Confirmare dezactivare cont",
-        html: `
-          <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #333;">Confirmare dezactivare cont</h2>
-            <p>Ai solicitat dezactivarea contului tău pe Rentli.</p>
-            <p>Dacă ești sigur că dorești să dezactivezi contul, apasă butonul de mai jos:</p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${confirmLink}" 
-                 style="background-color: #dc2626; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
-                Dezactivează contul
-              </a>
-            </div>
-            <p style="color: #666; font-size: 14px;">Link-ul expiră în 24 de ore.</p>
-            <p style="color: #666; font-size: 14px;">Dacă nu ai solicitat dezactivarea contului, ignoră acest email.</p>
-          </div>
-        `,
-      }),
     });
-
-    if (!emailRes.ok) {
-      const emailError = await emailRes.text();
-      console.error("Resend error:", emailError);
+    if (emailError) {
+      console.error("send-transactional-email error:", emailError);
       return new Response(JSON.stringify({ error: "Could not send email" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
