@@ -51,3 +51,5 @@ project_id = "tsffyecastudajmgrckt"
     verify_jwt = false
   [functions.resolve-action-token]
     verify_jwt = false
+  [functions.resend-webhook]
+    verify_jwt = false
