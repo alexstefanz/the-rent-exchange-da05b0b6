@@ -8,7 +8,9 @@ import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
 const SITE_NAME = "Rentli"
 // FROM_DOMAIN is the domain shown in the From: header and used as the actual
 // Resend sender domain. Must match a verified domain in your Resend dashboard.
-const FROM_DOMAIN = "rentli.ro"
+// TEMP: using resend.dev test sender until rentli.ro DNS is verified in Resend.
+const FROM_DOMAIN = "resend.dev"
+const FROM_LOCAL = "onboarding"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -308,7 +310,7 @@ Deno.serve(async (req) => {
     payload: {
       message_id: messageId,
       to: effectiveRecipient,
-      from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+      from: `${SITE_NAME} <${FROM_LOCAL}@${FROM_DOMAIN}>`,
       subject: resolvedSubject,
       html,
       text: plainText,
