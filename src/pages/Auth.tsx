@@ -323,6 +323,9 @@ const Auth = () => {
       }
 
       if (USE_SMS_OTP) {
+        // Save credentials so PhoneOtpDialog can re-sign-in as fallback
+        // if refreshSession() fails right after phone verification.
+        pendingCredsRef.current = { email: data.email, password: data.password };
         setPendingPhone(normalizedPhone);
         setPhoneOtpOpen(true);
       } else {
