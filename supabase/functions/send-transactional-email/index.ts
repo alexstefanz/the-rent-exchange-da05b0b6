@@ -3,14 +3,13 @@ import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
 
-// Configuration baked in at scaffold time — do NOT change these manually.
-// To update, re-run the email domain setup flow.
+// Provider: Resend via Lovable connector gateway. From-address fixed on rentli.ro.
+// Once Resend has verified rentli.ro, emails ship from noreply@rentli.ro.
 const SITE_NAME = "Rentli"
-// FROM_DOMAIN is the domain shown in the From: header and used as the actual
-// Resend sender domain. Must match a verified domain in your Resend dashboard.
-// TEMP: using resend.dev test sender until rentli.ro DNS is verified in Resend.
-const FROM_DOMAIN = "resend.dev"
-const FROM_LOCAL = "onboarding"
+const FROM_DOMAIN = "rentli.ro"
+const FROM_LOCAL = "noreply"
+const FROM_ADDRESS = `${SITE_NAME} <${FROM_LOCAL}@${FROM_DOMAIN}>`
+const RESEND_GATEWAY_URL = "https://connector-gateway.lovable.dev/resend/emails"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -294,10 +293,7 @@ Deno.serve(async (req) => {
       ? template.subject(templateData)
       : template.subject
 
-  // 5. Enqueue the pre-rendered email for async processing by the dispatcher.
-  // The dispatcher (process-email-queue) handles sending, retries, and rate-limit backoff.
-
-  // Log pending BEFORE enqueue so we have a record even if enqueue crashes
+  // 5. Log pending BEFORE send so we have a record even if Resend crashes
   await supabase.from('email_send_log').insert({
     message_id: messageId,
     template_name: templateName,
@@ -305,48 +301,95 @@ Deno.serve(async (req) => {
     status: 'pending',
   })
 
-  const { error: enqueueError } = await supabase.rpc('enqueue_email', {
-    queue_name: 'transactional_emails',
-    payload: {
-      message_id: messageId,
-      to: effectiveRecipient,
-      from: `${SITE_NAME} <${FROM_LOCAL}@${FROM_DOMAIN}>`,
-      subject: resolvedSubject,
-      html,
-      text: plainText,
-      purpose: 'transactional',
-      label: templateName,
-      idempotency_key: idempotencyKey,
-      unsubscribe_token: unsubscribeToken,
-      queued_at: new Date().toISOString(),
-    },
-  })
-
-  if (enqueueError) {
-    console.error('Failed to enqueue email', {
-      error: enqueueError,
-      templateName,
-      effectiveRecipient,
+  // 6. Send via Resend connector gateway
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')
+  const resendApiKey = Deno.env.get('RESEND_API_KEY')
+  if (!lovableApiKey || !resendApiKey) {
+    console.error('Resend gateway credentials missing', {
+      hasLovableKey: !!lovableApiKey,
+      hasResendKey: !!resendApiKey,
     })
-
     await supabase.from('email_send_log').insert({
       message_id: messageId,
       template_name: templateName,
       recipient_email: effectiveRecipient,
       status: 'failed',
-      error_message: 'Failed to enqueue email',
+      error_message: 'Resend gateway credentials missing',
     })
-
-    return new Response(JSON.stringify({ error: 'Failed to enqueue email' }), {
+    return new Response(JSON.stringify({ error: 'Email provider not configured' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
 
-  console.log('Transactional email enqueued', { templateName, effectiveRecipient })
+  let providerMessageId: string | null = null
+  let providerError: string | null = null
+  try {
+    const resendRes = await fetch(RESEND_GATEWAY_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${lovableApiKey}`,
+        'X-Connection-Api-Key': resendApiKey,
+      },
+      body: JSON.stringify({
+        from: FROM_ADDRESS,
+        to: [effectiveRecipient],
+        subject: resolvedSubject,
+        html,
+        text: plainText,
+        headers: {
+          'X-Entity-Ref-ID': idempotencyKey,
+        },
+      }),
+    })
+
+    const resendBody = await resendRes.json().catch(() => ({}))
+
+    if (!resendRes.ok) {
+      providerError = `Resend ${resendRes.status}: ${JSON.stringify(resendBody)}`
+    } else {
+      providerMessageId = resendBody?.id ?? null
+    }
+  } catch (e) {
+    providerError = e instanceof Error ? e.message : String(e)
+  }
+
+  if (providerError) {
+    console.error('Resend send failed', {
+      providerError,
+      templateName,
+      effectiveRecipient,
+    })
+    await supabase.from('email_send_log').insert({
+      message_id: messageId,
+      template_name: templateName,
+      recipient_email: effectiveRecipient,
+      status: 'failed',
+      error_message: providerError.slice(0, 1000),
+    })
+    return new Response(JSON.stringify({ error: 'Failed to send email', detail: providerError }), {
+      status: 502,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
+  await supabase.from('email_send_log').insert({
+    message_id: messageId,
+    template_name: templateName,
+    recipient_email: effectiveRecipient,
+    status: 'sent',
+    metadata: { provider: 'resend', provider_message_id: providerMessageId, idempotency_key: idempotencyKey },
+  })
+
+  console.log('Transactional email sent via Resend', {
+    templateName,
+    effectiveRecipient,
+    providerMessageId,
+  })
 
   return new Response(
-    JSON.stringify({ success: true, queued: true }),
+    JSON.stringify({ success: true, sent: true, providerMessageId }),
     {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
