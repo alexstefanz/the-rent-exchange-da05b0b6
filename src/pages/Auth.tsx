@@ -361,6 +361,7 @@ const Auth = () => {
     toast({ title: "Cont verificat!", description: "Bun venit pe Rentli." });
     setPhoneOtpOpen(false);
     setGatingLogin(false);
+    pendingCredsRef.current = null;
     navigate("/", { replace: true });
   };
 
