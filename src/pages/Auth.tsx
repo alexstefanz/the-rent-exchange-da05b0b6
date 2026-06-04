@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -56,6 +56,10 @@ const Auth = () => {
   const [phoneOtpOpen, setPhoneOtpOpen] = useState(false);
   const [pendingPhone, setPendingPhone] = useState("");
   const [gatingLogin, setGatingLogin] = useState(false);
+  // Credentials saved during the signup OTP flow so that — if
+  // refreshSession() fails after phone verification — we can re-establish
+  // a fully authenticated session without forcing the user to re-login.
+  const pendingCredsRef = useRef<{ email: string; password: string } | null>(null);
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
