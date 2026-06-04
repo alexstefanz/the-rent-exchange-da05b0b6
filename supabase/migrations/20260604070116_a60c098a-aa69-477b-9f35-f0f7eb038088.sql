@@ -1,0 +1,1 @@
+REVOKE SELECT (pickup_address, pickup_lat, pickup_lng, serial_number, admin_flagged, flag_reason, admin_edited_at, admin_edited_by) ON public.products FROM anon, authenticated;
