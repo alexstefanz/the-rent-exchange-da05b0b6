@@ -346,7 +346,10 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   };
 
   const goBack = () => {
-    if (step === 1) return;
+    if (step === 1) {
+      navigate(-1);
+      return;
+    }
     setStep(step - 1);
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
   };
