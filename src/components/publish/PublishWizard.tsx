@@ -661,6 +661,7 @@ const Step1Category = ({
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
         {filtered.map((cat) => {
           const active = data.category === cat.name;
+          const Icon = getCategoryIcon(cat.id);
           return (
             <button
               key={cat.id}
@@ -676,7 +677,9 @@ const Step1Category = ({
                   : "border-border bg-card hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm",
               )}
             >
-              <span className="text-3xl">{cat.icon}</span>
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+                <Icon className="h-7 w-7 text-primary" />
+              </span>
               <span className={cn("text-xs font-medium leading-tight", active ? "text-primary" : "text-foreground")}>
                 {cat.name}
               </span>
