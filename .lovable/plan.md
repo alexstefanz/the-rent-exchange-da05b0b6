@@ -1,27 +1,21 @@
-## Obiectiv
-Switch temporar sender de la `noreply@rentli.ro` la `onboarding@resend.dev` pentru a confirma că restul pipeline-ului funcționează, până se verifică domeniul `rentli.ro` în Resend.
+## Pe pauză
+Pun pe hold planul Resend / domeniu sender până adăugăm înregistrările DNS pentru `rentli.ro`. Nu mai facem teste de trimitere până atunci.
 
-## Modificări
+## Modificări în `src/pages/ActivityLogPage.tsx`
 
-**1. `supabase/functions/send-transactional-email/index.ts`**
-- Schimb `FROM_DOMAIN = "rentli.ro"` → `FROM_DOMAIN = "resend.dev"`
-- Schimb sender-ul construit: `${SITE_NAME} <noreply@${FROM_DOMAIN}>` → `${SITE_NAME} <onboarding@resend.dev>` (Resend acceptă doar `onboarding@resend.dev` exact, nu `noreply@resend.dev`)
+1. **Eliminăm textul tehnic gri din dreapta badge-ului**
+   - Scoatem complet blocul care afișează `log.metadata.title / new_status / product_id` (ex: `confirmed`, `12699393-e827-…`, `VERIFIED`, `APPROVED`, `SUBMITTED`).
+   - Rămâne doar: iconiță + badge acțiune (în română) + data în dreapta.
 
-**2. Verific dacă mai există alți senders hardcodați** în:
-- `supabase/functions/auth-email-hook/` (dacă există)
-- `supabase/functions/process-email-queue/` 
-- alte funcții care construiesc `from:`
+2. **Toate acțiunile traduse în română (fallback inclus)**
+   - Extindem `actionLabels` cu cheile care apar acum „raw" în UI (KYC_APPROVED, KYC_SUBMITTED, KYC_REJECTED, KYC_REUPLOAD_REQUESTED, KYC_CASE_CREATED dacă lipsește, etc.). Verific întâi în DB ce valori `action` distincte există în `user_activity_logs` pentru a nu rata niciuna.
+   - Pentru orice cheie încă nemapată, fallback-ul nu va mai fi `log.action` brut SCREAMING_CASE — îl transformăm într-un text prietenos (lowercase + spații, prima literă mare) ca să nu mai apară niciodată „KYC_APPROVED" în UI.
 
-Le aliniez toate la `Rentli <onboarding@resend.dev>` temporar.
+3. **Aplicăm aceeași curățare și în `src/components/admin/user-detail/UserActivityTab.tsx`**
+   - Aceleași etichete RO extinse + eliminăm linia cu `metadata.title / product_id / new_status` (sau o păstrăm doar pt admin? — propunere: în admin păstrăm metadata, în pagina publică user o scoatem). Confirmă dacă vrei și în admin curățat.
 
-**3. `src/pages/admin/AdminTestEmails.tsx`**
-- Update text UI: "via **noreply@rentli.ro**" → "via **onboarding@resend.dev** (test mode)" + mic banner avertisment galben că e mod temporar până la verificare DNS.
+## Ce NU schimbăm
+- Logica de logging, structura tabelei, iconițele, culorile badge-urilor, layoutul listei.
+- Versiunea EN rămâne sincronizată (adăugăm și traducerile EN pentru cheile noi).
 
-**4. Deploy edge functions** modificate.
-
-## După verificare DNS (pași viitori, nu acum)
-Revert simplu: `FROM_DOMAIN` înapoi la `rentli.ro`, sender înapoi la `noreply@rentli.ro`, scoate banner-ul din AdminTestEmails.
-
-## Restricții cunoscute Resend test mode
-- `onboarding@resend.dev` poate trimite **doar către adresa email-ului contului Resend** (proprietarul contului). Deci testele vor merge doar către `z.alexstefan@gmail.com` dacă acela e contul Resend. Către alte adrese va da `403 you can only send testing emails to your own email address`.
-- Pipeline-ul (queue → log → status `sent`) se va putea confirma complet.
+Spune-mi dacă vrei curățarea metadata și în tab-ul admin sau doar pe pagina user, și dau drumul.
