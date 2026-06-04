@@ -1,35 +1,75 @@
-## Problem
 
-After consolidating the wizard from 5 to 4 steps, clicking **"Publică anunțul"** on step 4 (Verificare & publicare) advances to a non-existent step 5 (empty screen with "Continuă" button) instead of submitting the listing for admin approval.
+## Strategie
 
-## Root cause
+Păstrăm **întreaga infrastructură actuală** (queue pgmq, 18 template-uri React Email, audit log, suppression, unsubscribe). Schimbăm **doar provider-ul efectiv de livrare**: în loc ca `process-email-queue` să trimită prin Lovable Emails, trimite prin **Resend API** via gateway-ul connector.
 
-In `src/components/publish/PublishWizard.tsx`, `goNext()` still checks the old step number:
+Zero modificări UI. Zero rescriere template-uri. Zero refactor cod aplicație.
 
-```ts
-const goNext = () => {
-  if (step === 5) {        // ← never true now (max step is 4)
-    handlePublish();
-    return;
-  }
-  ...
-};
+## Pași
+
+### 1. Conectare Resend
+- Conectez connector-ul Resend (`standard_connectors--connect resend`) → tu autorizezi în popup și introduci API key Resend.
+- Secret `RESEND_API_KEY` devine disponibil automat în edge functions.
+
+### 2. Configurare domeniu sender în Resend
+**Acțiune ta** (manual în dashboard Resend, înainte de pasul 3):
+- Adaugi `rentli.ro` în Resend → Domains.
+- Vei primi MX, SPF, DKIM, DMARC records de adăugat la registrar.
+- **ATENȚIE — conflict DNS:** subdomeniul `noreply.rentli.ro` (sau cel folosit acum de Lovable) e delegat NS către Lovable. Resend NU poate verifica același subdomeniu.
+  - **Opțiunea A (recomandat):** Folosim subdomeniu nou pentru Resend, ex. `mail.rentli.ro` → `mail@rentli.ro` sau `noreply@mail.rentli.ro`. Lovable Emails rămâne intactă ca fallback.
+  - **Opțiunea B:** Dezactivăm Lovable Emails, ștergi NS records de la registrar, apoi configurezi `noreply.rentli.ro` în Resend (poate dura până la 72h propagare DNS).
+- Verifici domeniul în Resend (status "Verified").
+
+### 3. Modificare `send-transactional-email`
+Adaptez funcția să trimită prin Resend via gateway, păstrând:
+- ✅ Aceeași semnătură (`templateName`, `recipientEmail`, `templateData`, `idempotencyKey`)
+- ✅ Aceeași logică de rendering (React Email → HTML)
+- ✅ Verificare `suppressed_emails` înainte de trimitere
+- ✅ Logging în `email_send_log` (status `sent`/`failed` + `message_id` Resend pentru tracking)
+
+Înlocuiesc apelul către Lovable Emails API cu:
+```
+POST https://connector-gateway.lovable.dev/resend/emails
+Headers: Authorization: Bearer LOVABLE_API_KEY, X-Connection-Api-Key: RESEND_API_KEY
+Body: { from, to, subject, html }
 ```
 
-So on step 4 it falls through and increments to step 5, which renders nothing. The `editingFromSummary` branch also still targets step 5. Step header eyebrows still say "Pasul X din 5".
+`from` devine ex. `Rentli <noreply@mail.rentli.ro>`.
 
-## Fix
+### 4. Auth emails (opțional)
+`auth-email-hook` trimite tot prin sistemul Lovable Emails. Două opțiuni:
+- **Lasă pe Lovable** — auth emails (reset parolă, confirmare cont) continuă să meargă fără modificări. Recomandat dacă alegem Opțiunea A la DNS.
+- **Mutăm și auth pe Resend** — modific `auth-email-hook` să trimită direct prin Resend în loc să enqueue pe `auth_emails`. Mai mult cod de schimbat, doar dacă insiști.
 
-In `src/components/publish/PublishWizard.tsx`:
+### 5. Configurare bounce/complaint webhooks în Resend (opțional)
+Pentru ca suppression list să rămână sincronizată:
+- În Resend dashboard → Webhooks → adăugăm URL-ul funcției `handle-email-suppression`.
+- Adaptez funcția să accepte formatul webhook Resend (`email.bounced`, `email.complained`).
 
-1. `goNext`: change `if (step === 5)` → `if (step === 4)` so the publish button triggers `handlePublish()` on the final step.
-2. `goNext` edit-mode summary branch: change `setStep(5)` / `setMaxReached(m => Math.max(m, 5))` → `setStep(4)` / `Math.max(m, 4)`.
-3. Update the four step header eyebrows from `"Pasul X din 5"` / `"Step X of 5"` to `"din 4"` / `"of 4"` (Step1Category, Step2Details, the merged Location+Pricing step 3, and Step6Review which currently shows "PASUL 5 DIN 5").
+### 6. Test end-to-end
+- Folosim pagina `AdminTestEmails` existentă pentru a trimite toate cele 18 template-uri prin Resend către un email de test.
+- Verificăm în `AdminNotificationAudit` că status-ul devine `sent` + `message_id` Resend e logat.
 
-No backend changes — the existing `createProduct` / `updateProduct` flow already submits to admin approval (`approval_status = 'pending'`).
+## Detalii tehnice
 
-## Verification
+**Ce NU se schimbă:**
+- `supabase/functions/_shared/transactional-email-templates/*.tsx` (toate 18 template-urile)
+- `process-email-queue` (queue logic)
+- `email_send_log`, `suppressed_emails`, `email_unsubscribe_tokens` (tabele)
+- `AdminTestEmails`, `AdminNotificationAudit` (UI)
+- Toate trigger-urile din cod care apelează `send-transactional-email`
 
-- On a new listing, reach step 4, click **Publică anunțul** → toast "Anunț trimis spre aprobare" appears and navigates to `/owner`.
-- On editing an approved listing, save → resubmitted for approval as before.
-- Stepper shows 4 steps and headers read "Pasul X din 4".
+**Ce se schimbă:**
+- `supabase/functions/send-transactional-email/index.ts` — înlocuit apel API
+- `supabase/functions/handle-email-suppression/index.ts` — adaptat la format webhook Resend (dacă alegem pasul 5)
+- Nou secret: `RESEND_API_KEY` (gestionat de connector)
+- `supabase/config.toml` — fără modificări
+
+**Tradeoff-uri acceptate:**
+- Pierdem retry-ul automat de 5x al Lovable Emails pe rețea (Resend are doar retry-uri proprii pe rate-limit). Putem implementa retry custom în queue worker dacă vrem.
+- Cont Resend separat de monitorizat (dashboard, billing, quota).
+- DNS de mentenant în 2 locuri (dacă alegem Opțiunea A).
+
+## Întrebare înainte de implementare
+
+Care opțiune DNS o preferi — **A** (subdomeniu nou, Lovable rămâne fallback) sau **B** (mutăm tot pe Resend, ștergem NS Lovable)? Și includem și auth emails pe Resend (pasul 4) sau doar tranzacționale?
