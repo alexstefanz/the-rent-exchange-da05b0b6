@@ -788,9 +788,11 @@ const Auth = () => {
             // User closed the gate without verifying — sign out so they retry.
             supabase.auth.signOut();
             setGatingLogin(false);
+            pendingCredsRef.current = null;
           }
         }}
         onVerified={handlePhoneVerified}
+        fallbackCreds={pendingCredsRef.current}
       />
     </div>
   );
