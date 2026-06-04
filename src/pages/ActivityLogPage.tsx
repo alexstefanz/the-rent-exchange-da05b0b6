@@ -28,6 +28,24 @@ const actionLabels: Record<string, { ro: string; en: string }> = {
   KYC_CASE_CREATED: { ro: "Cerere KYC creată", en: "KYC case created" },
 };
 
+const extraLabels: Record<string, { ro: string; en: string }> = {
+  KYC_APPROVED: { ro: "KYC aprobat", en: "KYC approved" },
+  KYC_REJECTED: { ro: "KYC respins", en: "KYC rejected" },
+  KYC_SUBMITTED: { ro: "KYC trimis", en: "KYC submitted" },
+  KYC_IN_PROGRESS: { ro: "KYC în procesare", en: "KYC in progress" },
+  KYC_NEEDS_MANUAL_REVIEW: { ro: "KYC necesită revizuire", en: "KYC needs review" },
+  KYC_REUPLOAD_REQUESTED: { ro: "KYC reîncărcare cerută", en: "KYC reupload requested" },
+  PASSWORD_RESET_REQUESTED: { ro: "Resetare parolă cerută", en: "Password reset requested" },
+  RENTAL_EARLY_RETURN_REQUESTED: { ro: "Returnare anticipată cerută", en: "Early return requested" },
+};
+Object.assign(actionLabels, extraLabels);
+
+const humanize = (action: string) =>
+  action
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/^./, (c) => c.toUpperCase());
+
 const getActionIcon = (action: string) => {
   if (action.startsWith("PRODUCT")) return Package;
   if (action.startsWith("RENTAL")) return ShoppingBag;
@@ -87,12 +105,6 @@ const ActivityLogPage = () => {
               const Icon = getActionIcon(log.action);
               const label = actionLabels[log.action];
               const colorClass = getActionColor(log.action);
-              const detail =
-                log.metadata?.title ||
-                log.metadata?.new_status ||
-                log.metadata?.product_id ||
-                "";
-
               return (
                 <div
                   key={log.id}
@@ -104,13 +116,8 @@ const ActivityLogPage = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Badge variant="outline" className={`text-xs ${colorClass}`}>
-                        {label ? (language === "ro" ? label.ro : label.en) : log.action}
+                        {label ? (language === "ro" ? label.ro : label.en) : humanize(log.action)}
                       </Badge>
-                      {detail && (
-                        <span className="text-xs text-muted-foreground truncate max-w-[200px]">
-                          {detail}
-                        </span>
-                      )}
                     </div>
                   </div>
                   <span className="text-xs text-muted-foreground flex-shrink-0">
