@@ -109,7 +109,11 @@ const AdminTestEmails = () => {
             <p className="text-muted-foreground mt-1">
               Trimite notificări de test către{" "}
               <strong>{isEmailValid ? trimmedEmail : "(email invalid)"}</strong>{" "}
-              via <strong>noreply@rentli.ro</strong>
+              via <strong>onboarding@resend.dev</strong> (mod test)
+            </p>
+            <p className="text-xs text-amber-600 mt-2 max-w-2xl">
+              ⚠️ Mod test temporar: emailurile pleacă de la <code>onboarding@resend.dev</code> și
+              pot fi livrate doar către adresa contului Resend până la verificarea DNS pentru <code>rentli.ro</code>.
             </p>
           </div>
           <Button onClick={sendAll} size="lg" disabled={!isEmailValid}>
