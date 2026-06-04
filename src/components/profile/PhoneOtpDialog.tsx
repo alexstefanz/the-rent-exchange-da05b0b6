@@ -12,9 +12,16 @@ interface PhoneOtpDialogProps {
   phone: string;
   onOpenChange: (open: boolean) => void;
   onVerified: (phone: string) => void;
+  /**
+   * Optional credentials used as a fallback to re-establish a fully
+   * authenticated session if `refreshSession()` fails after the phone OTP
+   * is verified (e.g. right after sign-up when the email was not yet
+   * confirmed). Pass undefined when not applicable (e.g. account settings).
+   */
+  fallbackCreds?: { email: string; password: string } | null;
 }
 
-const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified }: PhoneOtpDialogProps) => {
+const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, fallbackCreds }: PhoneOtpDialogProps) => {
   const ux = useUxCopy();
   const [code, setCode] = useState("");
   const [verifying, setVerifying] = useState(false);
@@ -72,6 +79,27 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified }: PhoneOtpDialo
         return;
       }
       toast.success(ux.phoneOtp.success);
+      // Refresh the session so the JWT picks up the newly confirmed email.
+      // If refresh fails (rare, e.g. session lost), fall back to a fresh
+      // sign-in using the credentials provided by the caller.
+      try {
+        const { error: refreshErr } = await supabase.auth.refreshSession();
+        if (refreshErr && fallbackCreds?.email && fallbackCreds.password) {
+          await supabase.auth.signInWithPassword({
+            email: fallbackCreds.email,
+            password: fallbackCreds.password,
+          });
+        }
+      } catch {
+        if (fallbackCreds?.email && fallbackCreds.password) {
+          try {
+            await supabase.auth.signInWithPassword({
+              email: fallbackCreds.email,
+              password: fallbackCreds.password,
+            });
+          } catch { /* ignore — user can retry login manually */ }
+        }
+      }
       onVerified(phone);
       onOpenChange(false);
     } catch {
