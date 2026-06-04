@@ -112,6 +112,19 @@ Deno.serve(async (req) => {
       return json({ error: "profile_update_failed" }, 500);
     }
 
+    // Mark email as confirmed — phone OTP is our real verification mechanism.
+    // Idempotent: if email is already confirmed, this is a no-op for our flow.
+    try {
+      const { error: confirmErr } = await supabase.auth.admin.updateUserById(userId, {
+        email_confirm: true,
+      });
+      if (confirmErr) {
+        console.error("[verify-phone-otp] email_confirm error", confirmErr);
+      }
+    } catch (e) {
+      console.error("[verify-phone-otp] email_confirm threw", e);
+    }
+
     console.log(`[verify-phone-otp] verified user=${userId} phone=${phone}`);
     return json({ success: true, phone });
   } catch (e) {
