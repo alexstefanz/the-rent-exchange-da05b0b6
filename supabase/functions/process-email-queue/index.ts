@@ -1,5 +1,76 @@
-import { sendLovableEmail } from 'npm:@lovable.dev/email-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
+
+// Resend via Lovable connector gateway.
+// LOVABLE_API_KEY authenticates to the gateway; RESEND_API_KEY is the
+// per-project connection key that the gateway rewrites into Resend's
+// upstream `Authorization: Bearer <resend_secret>` header.
+const RESEND_GATEWAY_URL = 'https://connector-gateway.lovable.dev/resend/emails'
+
+interface ResendSendResult {
+  id?: string
+  message?: string
+  name?: string
+  statusCode?: number
+}
+
+async function sendViaResend(args: {
+  to: string
+  from: string
+  subject: string
+  html: string
+  text?: string
+  idempotency_key?: string
+  lovableApiKey: string
+  resendApiKey: string
+}): Promise<{ id: string }> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${args.lovableApiKey}`,
+    'X-Connection-Api-Key': args.resendApiKey,
+  }
+  if (args.idempotency_key) {
+    headers['Idempotency-Key'] = args.idempotency_key
+  }
+
+  const response = await fetch(RESEND_GATEWAY_URL, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      from: args.from,
+      to: [args.to],
+      subject: args.subject,
+      html: args.html,
+      text: args.text,
+    }),
+  })
+
+  const bodyText = await response.text()
+  let body: ResendSendResult = {}
+  try {
+    body = bodyText ? JSON.parse(bodyText) : {}
+  } catch {
+    // Non-JSON body — keep as message
+    body = { message: bodyText }
+  }
+
+  if (!response.ok) {
+    const retryAfterHeader = response.headers.get('Retry-After')
+    const err: Error & { status?: number; retryAfterSeconds?: number | null } =
+      new Error(
+        `Resend send failed: ${response.status} ${body?.name ?? ''} ${body?.message ?? bodyText}`.trim(),
+      )
+    err.status = response.status
+    err.retryAfterSeconds = retryAfterHeader
+      ? Number(retryAfterHeader) || null
+      : null
+    throw err
+  }
+
+  if (!body?.id) {
+    throw new Error('Resend returned 200 but no message id')
+  }
+  return { id: body.id }
+}
 
 const MAX_RETRIES = 5
 const DEFAULT_BATCH_SIZE = 10
@@ -80,10 +151,11 @@ async function moveToDlq(
 
 Deno.serve(async (req) => {
   const apiKey = Deno.env.get('LOVABLE_API_KEY')
+  const resendApiKey = Deno.env.get('RESEND_API_KEY')
   const supabaseUrl = Deno.env.get('SUPABASE_URL')
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
-  if (!apiKey || !supabaseUrl || !supabaseServiceKey) {
+  if (!apiKey || !resendApiKey || !supabaseUrl || !supabaseServiceKey) {
     console.error('Missing required environment variables')
     return new Response(
       JSON.stringify({ error: 'Server configuration error' }),
@@ -249,33 +321,26 @@ Deno.serve(async (req) => {
       }
 
       try {
-        await sendLovableEmail(
-          {
-            run_id: payload.run_id,
-            to: payload.to,
-            from: payload.from,
-            sender_domain: payload.sender_domain,
-            subject: payload.subject,
-            html: payload.html,
-            text: payload.text,
-            purpose: payload.purpose,
-            label: payload.label,
-            idempotency_key: payload.idempotency_key,
-            unsubscribe_token: payload.unsubscribe_token,
-            message_id: payload.message_id,
-          },
-          // sendUrl is optional — when LOVABLE_SEND_URL is not set, the library
-          // falls back to the default Lovable API endpoint (https://api.lovable.dev).
-          // Set LOVABLE_SEND_URL as a Supabase secret to override (e.g. for local dev).
-          { apiKey, sendUrl: Deno.env.get('LOVABLE_SEND_URL') }
-        )
+        const sent = await sendViaResend({
+          to: payload.to as string,
+          from: payload.from as string,
+          subject: payload.subject as string,
+          html: payload.html as string,
+          text: payload.text as string | undefined,
+          idempotency_key:
+            (payload.idempotency_key as string | undefined) ??
+            (payload.message_id as string | undefined),
+          lovableApiKey: apiKey,
+          resendApiKey,
+        })
 
-        // Log success
+        // Log success (store Resend's message id in metadata for tracking)
         await supabase.from('email_send_log').insert({
           message_id: payload.message_id,
           template_name: payload.label || queue,
           recipient_email: payload.to,
           status: 'sent',
+          metadata: { provider: 'resend', resend_id: sent.id },
         })
 
         // Delete from queue
