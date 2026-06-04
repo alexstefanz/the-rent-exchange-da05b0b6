@@ -21,7 +21,7 @@ const PublishFooter = ({ current, total, onBack, onNext, isLoading, nextLabel, i
         <Button
           variant="ghost"
           onClick={onBack}
-          disabled={current === 1 || isLoading}
+          disabled={isLoading}
           className="min-h-11"
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
