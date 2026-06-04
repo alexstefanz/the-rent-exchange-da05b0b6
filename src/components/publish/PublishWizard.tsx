@@ -34,6 +34,7 @@ import {
 } from "@/features/products/productsApi";
 import { calcPlatformFee } from "@/lib/rentalPricing";
 import { categories } from "@/data/categories";
+import { getCategoryIcon } from "@/data/categoryIcons";
 import { judete } from "@/data/romaniaLocations";
 import {
   emptyPublishForm,
