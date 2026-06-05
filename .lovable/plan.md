@@ -1,37 +1,29 @@
-## Problema
+## Problem
 
-După înregistrare + introducere cod OTP pe telefon, userul nu rămâne autentificat. Trebuie să dea refresh și să se logheze din nou — flow rupt.
+Mesajele noi din chat nu apar live — e nevoie de refresh. Din console logs văd că:
+- `notifications-realtime` (per-user) trimite intermitent `CHANNEL_ERROR`.
+- Canalul `global-realtime` funcționează (toast-ul „Mesaj nou..." apare).
+- `ChatPanel` are un canal propriu `chat-panel-${conversationId}` care ascultă `INSERT` pe `messages` și actualizează lista locală — dar dacă acel canal eșuează (concurrent channel error, race la auth) nu există fallback și mesajul nu apare decât la refetch (refresh manual).
 
-**Cauza:** Contul nou creat prin `signUp()` are emailul neconfirmat (Supabase cere confirmare email). Sesiunea returnată este "soft" — funcționează temporar pentru apelul către `verify-phone-otp`, dar nu e o sesiune validă completă: după navigare / refresh, headerul vede `user = null` și apare "Autentificare".
+Cache-ul listei de mesaje folosește cheia `["messages-attached", conversationId]`, dar `useGlobalRealtime` invalidează doar `["messages", conversationId]`, deci nu împrospătează panoul deschis.
 
-În plus, fluxul nostru nu mai folosește confirmare prin email — verificarea reală e prin OTP pe telefon. Deci trebuie să marcăm emailul ca **confirmat** automat în momentul în care telefonul a fost verificat cu succes.
+## Schimbări
 
-## Soluția
+### 1. `src/hooks/useGlobalRealtime.ts`
+La `INSERT` pe `messages`, pe lângă cheile actuale, invalidează și:
+- `["messages-attached", m.conversation_id]`
+- `["messages-attached"]` (umbrella) ca fallback
 
-În două bucăți mici, doar pe fluxul de auth — fără atingeri în UI/business logic:
+Aceasta garantează că, indiferent dacă subscripția locală din `ChatPanel` reușește sau nu, panoul deschis își reface lista din DB imediat ce ajunge orice INSERT pe `messages` pentru acest user (RLS permite doar mesajele conversațiilor sale).
 
-### 1. Edge function `verify-phone-otp` (server)
-După ce telefonul e validat cu succes, în plus față de update-ul profilului:
-- folosim service-role-ul deja prezent ca să apelăm `supabase.auth.admin.updateUserById(userId, { email_confirm: true })`
-- ignorăm eroarea dacă emailul e deja confirmat (idempotent)
-- răspunsul rămâne `{ success: true, phone }` — nicio schimbare de contract
+### 2. `src/components/messaging/ChatPanel.tsx`
+- Adaugă logging la `.subscribe((status) => ...)` pentru `CHANNEL_ERROR/TIMED_OUT` (diagnoză rapidă).
+- Pe `SUBSCRIBED`, invalidează `["messages-attached", conversationId]` ca să prindă mesaje sosite între deschidere și subscribe-ready (RLS race).
+- Mută `markConversationRead` într-un debounce mic ca să nu lupte cu invalidarea.
 
-### 2. Client `PhoneOtpDialog` + `Auth.tsx`
-După ce `verify-phone-otp` returnează success:
-- apelăm `supabase.auth.refreshSession()` în `PhoneOtpDialog.verify()` (înainte de `onVerified`) ca să primim un JWT proaspăt cu `email_confirmed_at` setat
-- dacă refresh-ul eșuează (rar — token expirat), facem fallback la `signIn(email, password)` folosind credențialele păstrate temporar în `Auth.tsx` (le adăugăm într-un ref local doar pe durata flow-ului, nu în localStorage)
-- după refresh, `onAuthStateChange` re-emite `SIGNED_IN` cu sesiunea validă → `AuthContext` actualizează `user` → headerul arată userul logat și `useEffect`-ul din `Auth.tsx` navighează la `/`
+### 3. Verificare
+După deploy, deschid `/mesaje`, selectez o conversație într-un tab și trimit un mesaj din alt tab/cont — mesajul trebuie să apară < 1s fără refresh. Verific consola pentru `[chat-panel] status: SUBSCRIBED` și absența `CHANNEL_ERROR`.
 
-### 3. Detaliu mic
-În `handleRegister` (Auth.tsx), salvăm `data.email` + `data.password` într-un `useRef` (`pendingCredsRef.current = { email, password }`) și îl pasăm către `PhoneOtpDialog` ca prop opțional `fallbackCreds`, folosit doar dacă `refreshSession` eșuează. Curățăm ref-ul după succes.
+## De ce nu modific RLS / publication
 
-## Ce NU se schimbă
-
-- UI-ul (dialog, butoane, copy)
-- Fluxul de login normal
-- Fluxul de reset parolă
-- Verificarea telefonului din `AccountTab` (acolo userul e deja logat, deci pasul de `email_confirm` e no-op — sigur)
-
-## Rezultat
-
-User → creează cont → primește cod SMS → introduce 6 cifre → este logat instant pe homepage, fără refresh, fără re-login.
+`messages` e deja în `supabase_realtime`, are RLS corectă pentru participanți și `relreplident=default` (suficient pentru INSERT). Problema e doar pe partea de client: lipsește invalidarea cheii corecte de cache la nivel global.

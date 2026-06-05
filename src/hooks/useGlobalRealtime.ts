@@ -140,7 +140,12 @@ export function useGlobalRealtime(userId: string | undefined) {
           invalidate([
             ["conversations", userId],
             ["unread-messages", userId],
-            ...(m.conversation_id ? [["messages", m.conversation_id]] : []),
+            ...(m.conversation_id
+              ? [
+                  ["messages", m.conversation_id],
+                  ["messages-attached", m.conversation_id],
+                ]
+              : [["messages-attached"]]),
           ]);
         },
       )
