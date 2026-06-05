@@ -164,7 +164,15 @@ export function ChatPanel({
           setReopenedAt(conv.reopened_at ?? null);
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          console.warn(`[chat-panel:${conversationId}] status:`, status);
+        }
+        if (status === "SUBSCRIBED") {
+          // Catch any INSERT that fired between open and channel-ready (RLS race).
+          queryClient.invalidateQueries({ queryKey: ["messages-attached", conversationId] });
+        }
+      });
     return () => {
       supabase.removeChannel(channel);
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
