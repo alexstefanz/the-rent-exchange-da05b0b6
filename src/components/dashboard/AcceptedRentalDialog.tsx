@@ -124,7 +124,7 @@ export function AcceptedRentalDialog({ rental, open, onOpenChange, onCancelled }
                 </AvatarFallback>
               </Avatar>
               <Link
-                to={`/user/${rental.renter_id}`}
+                to={`/utilizator/${rental.renter_id}`}
                 className="font-semibold text-foreground hover:underline"
               >
                 {rental.renter_name || t("Chiriaș", "Renter")}
