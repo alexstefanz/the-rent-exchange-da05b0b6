@@ -10,6 +10,7 @@ interface Props {
   totalPaid?: number
   currency?: string
   ownerName?: string
+  pvPdfUrl?: string
 }
 
 const RentalCompletedRenterEmail = (p: Props) => {
@@ -22,6 +23,12 @@ const RentalCompletedRenterEmail = (p: Props) => {
       </Lead>
       <ProductCard image={p.productImage} title={p.productTitle} status="completed" />
       <Para>Total plătit: <strong>{p.totalPaid ?? 0} {p.currency ?? 'RON'}</strong></Para>
+      {p.pvPdfUrl ? (
+        <>
+          <Para>Procesul verbal de returnare este atașat acestui email și poate fi descărcat și de aici (valabil 7 zile):</Para>
+          <CTAButton href={p.pvPdfUrl} variant="ghost">Descarcă PV (PDF)</CTAButton>
+        </>
+      ) : null}
       <Para>Lasă un review pentru <strong>{p.ownerName ?? 'proprietar'}</strong> și ajută alți utilizatori să aleagă în siguranță.</Para>
       <CTAButton href={reviewCta}>Lasă un review</CTAButton>
     </BaseLayout>
