@@ -118,7 +118,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     link: (c) => `/rezervari/${c.rental.public_id}?pv=handover`,
   },
   pv_pickup_completed_by_party: {
-    recipients: "both", channels: ["in_app"], critical: true,
+    recipients: "both", channels: ["in_app", "email"], critical: true,
     emailTemplate: { both: "pv-other-done" },
     inAppTitle: { ro: "PV de predare completat parțial", en: "Pickup PV partially complete" },
     inAppDesc: (c) => ({ ro: `${c.extra.actorName ?? "Cealaltă parte"} a completat PV-ul. Verifică-l.`, en: `${c.extra.actorName ?? "The other party"} completed the PV. Review it.` }),
@@ -172,7 +172,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsPurpose: "pv_return",
   },
   pv_return_completed_by_party: {
-    recipients: "both", channels: ["in_app", "sms"], critical: true,
+    recipients: "both", channels: ["in_app", "email", "sms"], critical: true,
     emailTemplate: { both: "pv-other-done" },
     smsTemplate: { both: "pv_other_done" },
     inAppTitle: { ro: "PV de returnare completat parțial", en: "Return PV partially complete" },
