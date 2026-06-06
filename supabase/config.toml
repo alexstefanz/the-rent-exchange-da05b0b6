@@ -53,3 +53,5 @@ project_id = "tsffyecastudajmgrckt"
     verify_jwt = false
   [functions.resend-webhook]
     verify_jwt = false
+  [functions.generate-pv-pdf]
+    verify_jwt = false

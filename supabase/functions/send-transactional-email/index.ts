@@ -56,6 +56,7 @@ Deno.serve(async (req) => {
   let idempotencyKey: string
   let messageId: string
   let templateData: Record<string, any> = {}
+  let attachments: Array<{ filename: string; content: string }> = []
   try {
     const body = await req.json()
     templateName = body.templateName || body.template_name
@@ -64,6 +65,11 @@ Deno.serve(async (req) => {
     idempotencyKey = body.idempotencyKey || body.idempotency_key || messageId
     if (body.templateData && typeof body.templateData === 'object') {
       templateData = body.templateData
+    }
+    if (Array.isArray(body.attachments)) {
+      attachments = body.attachments
+        .filter((a: any) => a && typeof a.filename === 'string' && typeof a.content === 'string')
+        .slice(0, 5) // safety cap
     }
   } catch {
     return new Response(
@@ -341,6 +347,7 @@ Deno.serve(async (req) => {
         headers: {
           'X-Entity-Ref-ID': idempotencyKey,
         },
+        ...(attachments.length ? { attachments } : {}),
       }),
     })
 

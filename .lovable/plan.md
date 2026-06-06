@@ -1,63 +1,102 @@
+# Emails la fiecare pas al închirierii + PV atașat
 
-# Mobile performance fix — target LCP ≤ 2.5s
+## Ce este azi
 
-PageSpeed mobile: **Performance 66 · FCP 3.3s · LCP 7.6s** (TBT 10ms, CLS 0). JS execution and layout are fine — this is a **resource-delivery problem**, dominated by the hero. Plan below targets LCP under 2.5s and bundle bytes down ~1.5 MB.
+Pipeline-ul `notify-rental-event` mapează deja ~25 evenimente de închiriere către template-uri React Email (queue + Resend). PV-urile (predare/returnare) sunt generate doar **client-side** ca DOCX din `src/lib/pvDocx.ts`; nu există PDF persistent, iar emailurile nu conțin niciun link/atașament PV.
 
-## Root causes found
+## Probleme identificate
 
-1. **Hero eagerly fetches all 5 slides on mount.** `HeroDynamic.tsx` renders all 5 `<img>` tags inside absolute-positioned `opacity-0` divs. `loading="lazy"` is ignored because the elements are in the viewport — the browser downloads ~1 MB of hero images before the first slide even paints. Network trace already shows `hero-travel.jpg` (190 KB, 647 ms) loaded alongside the active slide.
+1. **Emailuri lipsă deși templateul e setat** în `notify-rental-event/index.ts`:
+   - `pv_pickup_completed_by_party` — `channels: ["in_app"]` (lipsește `"email"`), deci `pv-other-done` nu pleacă la predare.
+   - `pv_return_completed_by_party` — `channels: ["in_app","sms"]` (lipsește `"email"`), deci `pv-other-done` nu pleacă la returnare.
+2. **Niciun PV nu e atașat sau link-uit** în:
+   - `handover-confirmed` (PV predare semnat de ambele părți)
+   - `rental-completed-owner` / `rental-completed-renter` (PV returnare semnat)
+   - `pv-other-done` (când o parte a semnat — celălalt vede ce a fost completat)
+3. Nu există proces verbal generat server-side, deci nu poate fi atașat la email în mod fiabil.
 
-2. **Mobile gets the desktop hero image.** `index.html` preloads `/images/banner_hero_mobile.webp` for ≤768 px, but `HeroDynamic` only references `/images/banner_hero.webp`. The mobile preload is wasted bandwidth and mobile users still pay for the desktop file. No `<picture>` / `srcset` anywhere.
+## Plan
 
-3. **Hero rotation slides are JPEG**, 164–298 KB each. WebP equivalents would be ~40–60% smaller.
+### 1. Generator PV PDF server-side
+Edge function nouă `generate-pv-pdf` (`verify_jwt = true`, doar owner/renter sau service-role):
+- Input: `{ rental_id, phase: "handover" | "return" }`.
+- Citește `rentals`, `products`, `profiles` owner/renter și `rental_pv_documents` (semnături + checklist + poze din storage).
+- Generează PDF cu `pdf-lib` (npm via esm.sh — nu necesită fonturi binare extra; folosim Helvetica standard, fără diacritice prin `noDia` din `pvContent.ts` reused via copy).
+- Conține: header Rentli, datele părților, produs, perioada, checklist, semnături (imagine PNG inline), poze de proces (max 10, downscale).
+- Upload în bucket privat **`rental-pv-pdfs`** la `rentals/{rental_id}/{phase}.pdf` (overwrite).
+- Returnează `{ path, signed_url }` (URL semnat 7 zile).
 
-4. **Dead heavy assets** shipped in build:
-   - `public/jocuri-console.png` 841 KB — not referenced anywhere
-   - `src/assets/jocuri-console.png` 841 KB — duplicate, unused
-   - `src/assets/banner_hero.png` 232 KB — replaced by webp, unused
-   - `src/assets/rentli_logo.png` 357 KB — webp version (8 KB) is what Navbar imports
-   - `src/assets/rentnow_logo.png` 321 KB — needs usage check
-   - `src/assets/category-transport.jpg` 877 KB and `public/images/categories/transport-utilitare.jpg` 877 KB — likely the same source uncompressed
+### 2. Hook în notify-rental-event
+Înainte de a queue email, pentru aceste evenimente:
+- `handover_confirmed`, `pv_pickup_completed_by_party` → cheamă `generate-pv-pdf(phase: "handover")`
+- `rental_completed`, `pv_return_completed_by_party` → `generate-pv-pdf(phase: "return")`
 
-5. **`og-image.jpg` 148 KB** and `favicon.png` 52 KB are larger than necessary (cosmetic, low priority).
+Trece în `templateData`:
+- `pvPdfUrl` (link semnat 7 zile — buton vizibil în email)
+- `pvAttachment` (opțional, base64 — vezi pasul 4)
 
-## Fixes (build mode)
+Dacă generarea PDF eșuează, emailul pleacă fără PV (graceful), eroarea e logată.
 
-### Phase 1 — Hero (biggest LCP win, ~60% of the gap)
+### 3. Update template-uri
+Adaugă secțiune „Proces verbal" cu buton `Descarcă PV (PDF)` în:
+- `handover-confirmed.tsx`
+- `rental-completed-owner.tsx`, `rental-completed-renter.tsx`
+- `pv-other-done.tsx` (text: „Vezi ce a completat partea celălaltă")
 
-1. Rewrite `HeroDynamic.tsx`:
-   - Render only the **active** slide + an optional invisible `<link rel="prefetch">` for the next one inserted via effect. Drop opacity-stacked offscreen `<img>` tags.
-   - Replace `<img src=...>` with `<picture>` containing a `<source media="(max-width: 768px)" srcset="...mobile.webp 1x, ...mobile@2x.webp 2x, ...mobile@3x.webp 3x">` and a desktop `<source>` / fallback for the first slide. Keep `fetchPriority="high"` only on slide 0.
-2. Fix `index.html` preload to point at the actual file the LCP element uses (currently mismatched). Drop the unused preload.
-3. Convert the 4 hero rotation files to `.webp` (`hero-outdoor`, `hero-events`, `hero-travel`, `hero-tools`) using `cwebp`/`sharp` at quality 80; commit alongside originals so the JPGs can be removed once references update.
+Prop nou pe fiecare: `pvPdfUrl?: string`. Buton afișat doar dacă există.
 
-### Phase 2 — Delete dead/oversized bytes
+### 4. Atașament real (opțional — recomand DA pentru `rental-completed-*`)
+`send-transactional-email` suportă deja payload-ul Resend; adăugăm pass-through pentru `attachments: [{ filename, content }]` când vine din `notify-rental-event`. Pentru `handover_confirmed` și `rental_completed` trimitem PDF-ul **și** ca atașament (filename `PV-{phase}-{rental_public_id}.pdf`), pentru ca utilizatorul să-l aibă offline. Pentru `pv-other-done` doar link (PV-ul nu e final încă).
 
-4. Delete unused files: `public/jocuri-console.png`, `src/assets/jocuri-console.png`, `src/assets/banner_hero.png`, `src/assets/rentli_logo.png`, `src/assets/rentnow_logo.png` (after `rg` confirms no imports).
-5. Re-encode `public/images/categories/transport-utilitare.jpg` from 877 KB → target ≤ 120 KB WebP (resize to ≤ 1600 px wide).
-6. Re-encode `og-image.jpg` to ≤ 80 KB at 1200×630.
+### 5. Fix bug-uri channels
+În `notify-rental-event/index.ts`:
+- `pv_pickup_completed_by_party.channels` → `["in_app","email"]`
+- `pv_return_completed_by_party.channels` → `["in_app","email","sms"]`
 
-### Phase 3 — Quick wins around the hero
+### 6. Bucket + RLS
+Migrare:
+- Creează bucket privat `rental-pv-pdfs` (via storage tool).
+- Policy `storage.objects`: SELECT permis doar service_role + owner/renter al rezervării respective (citit din path-ul `rentals/{rental_id}/...`).
 
-7. Add `<link rel="dns-prefetch">` for the Supabase storage subdomain (product images load from there post-LCP).
-8. Ensure first-paint route (`Index`) does not trigger any Supabase fetch that races the hero — quick audit of `useHomepageActivity` and featured listings to confirm they only fire post-mount.
-9. Audit other heavy pages for the same eager-image pattern: `CategoryHero`, `ProductDetail` gallery, `NearbyProductsSlider`. Apply `loading="lazy"` + `decoding="async"` + explicit `width`/`height` where missing.
+### 7. Audit complet pași inchiriere
+Tabel de verificare (toate cu email after fix):
 
-### Phase 4 — Verify
+```text
+Pas închiriere                         Email template               Trimite?
+─────────────────────────────────────────────────────────────────────────────
+Cerere trimisă                         rental-request-owner/renter   da
+Reminder cerere 2h                     request-reminder-2h-*         da
+Cerere expirată                        request-expired-*             da
+Cerere acceptată                       rental-accepted               da
+Plata reușită                          rental-accepted               da
+Cerere refuzată                        rental-rejected               da (renter)
+Predare programată                     pickup-scheduled              da
+PV predare necesar                     pv-pending                    da
+PV predare semnat de o parte           pv-other-done   + PV link     FIX
+Predare confirmată                     handover-confirmed + PV PDF   FIX
+Reminder returnare 24h / 2h            return-reminder / -2h         da
+Returnare în curs                      return-in-progress            da
+PV returnare necesar                   pv-pending                    da
+PV returnare semnat de o parte         pv-other-done   + PV link     FIX
+Închiriere finalizată                  rental-completed-*  + PV PDF  FIX
+Reminder review                        review-reminder               da
+Anulări / mutual cancel                cancellation-*                da
+```
 
-10. Rebuild, then re-run `browser--performance_profile` at 390×844 viewport. Targets:
-    - LCP ≤ 2.5 s (from 7.6 s)
-    - FCP ≤ 1.8 s (from 3.3 s)
-    - Hero total bytes ≤ 130 KB on mobile (from ~1 MB)
-    - Total transferred image bytes for `/` first paint ≤ 200 KB
-11. Spot-check other pages (`/cauta`, `/categorie/utilaje`, `/produs/:slug`) with the profiler.
+## Detalii tehnice
 
-## Out of scope
+- `pdf-lib` rulează în Deno via `https://esm.sh/pdf-lib@1.17`. Nu necesită binare. Embed poze JPEG/PNG cu `embedJpg`/`embedPng`; pentru WEBP convertim sau scoatem (rare în PV).
+- `noDia()` din `src/lib/pvContent.ts` se copiază în `supabase/functions/_shared/pvContent.ts` (păstrăm sursă unică prin shared helper).
+- Atașamentele Resend: `attachments: [{ filename, content: <base64> }]` — payload sub 10 MB; downscale poze înainte de embed (max 1280px, JPEG q=70).
+- Signed URL 7 zile pentru link (acoperă durata utilă post-închiriere); dacă userul deschide după expirare, butonul îl duce către `/rezervari/{public_id}` unde poate regenera.
+- Nu se modifică `pvDocx.ts` client-side (păstrăm DOCX-ul descărcabil din UI).
 
-- JS bundle splitting beyond what's already in `manualChunks` (TBT is 10 ms — no JS problem to fix).
-- Service worker / PWA.
-- Image CDN/transformer integration (would help further but adds infra; only if Phase 1–3 don't hit target).
+## Verificare post-implementare
 
-## Open question
-
-Want me to also **convert hero JPGs → WebP in the same pass** (small CLI run via `nix run nixpkgs#libwebp -- cwebp`), or keep originals and just stop loading the dead slides? The WebP conversion is the right long-term answer and only takes one extra step.
+1. Deploy `generate-pv-pdf`, `notify-rental-event`, `send-transactional-email` + toate templateurile modificate.
+2. Test E2E pe o rezervare de test:
+   - completează PV predare de o parte → verifică `pv-other-done` cu link PV.
+   - confirmă predarea → verifică `handover-confirmed` cu PDF atașat + buton.
+   - completează PV returnare → verifică `pv-other-done`.
+   - finalizare → verifică `rental-completed-*` cu PDF atașat.
+3. Query `email_send_log` dedupe pe `message_id` pentru a confirma status `sent` pe fiecare pas.

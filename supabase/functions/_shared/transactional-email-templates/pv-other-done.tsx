@@ -9,6 +9,7 @@ interface Props {
   rentalId?: string
   otherPartyName?: string
   phase?: 'pickup' | 'return'
+  pvPdfUrl?: string
 }
 
 const PvOtherDoneEmail = (p: Props) => {
@@ -22,6 +23,12 @@ const PvOtherDoneEmail = (p: Props) => {
       </Lead>
       <ProductCard image={p.productImage} title={p.productTitle} status="pending" />
       <CTAButton href={cta}>Completează PV-ul tău</CTAButton>
+      {p.pvPdfUrl ? (
+        <>
+          <Para>Poți consulta versiunea curentă a PV-ului (cu partea completată de cealaltă parte):</Para>
+          <CTAButton href={p.pvPdfUrl} variant="ghost">Vezi PV (PDF)</CTAButton>
+        </>
+      ) : null}
       <Para>Ai nevoie de minim 3 poze și să bifezi checklist-ul.</Para>
     </BaseLayout>
   )

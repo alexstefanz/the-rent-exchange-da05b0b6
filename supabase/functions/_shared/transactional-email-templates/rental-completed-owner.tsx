@@ -10,6 +10,7 @@ interface Props {
   ownerPayout?: number
   currency?: string
   renterName?: string
+  pvPdfUrl?: string
 }
 
 const RentalCompletedOwnerEmail = (p: Props) => {
@@ -22,6 +23,12 @@ const RentalCompletedOwnerEmail = (p: Props) => {
         Închirierea pentru <strong>{p.productTitle ?? 'produs'}</strong> a fost finalizată cu succes. Suma de <strong>{p.ownerPayout ?? 0} {p.currency ?? 'RON'}</strong> a fost adăugată la balanța ta și va fi disponibilă pentru retragere conform termenilor.
       </Lead>
       <ProductCard image={p.productImage} title={p.productTitle} status="completed" />
+      {p.pvPdfUrl ? (
+        <>
+          <Para>Procesul verbal de returnare este atașat acestui email și poate fi descărcat și de aici (valabil 7 zile):</Para>
+          <CTAButton href={p.pvPdfUrl} variant="ghost">Descarcă PV (PDF)</CTAButton>
+        </>
+      ) : null}
       <CTAButton href={cta}>Vezi balanța</CTAButton>
       <Para>Te rugăm să lași un review pentru <strong>{p.renterName ?? 'chiriaș'}</strong> ca să întărești comunitatea Rentli.</Para>
       <CTAButton href={reviewCta}>Lasă un review</CTAButton>

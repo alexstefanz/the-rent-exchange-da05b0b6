@@ -118,7 +118,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     link: (c) => `/rezervari/${c.rental.public_id}?pv=handover`,
   },
   pv_pickup_completed_by_party: {
-    recipients: "both", channels: ["in_app"], critical: true,
+    recipients: "both", channels: ["in_app", "email"], critical: true,
     emailTemplate: { both: "pv-other-done" },
     inAppTitle: { ro: "PV de predare completat parțial", en: "Pickup PV partially complete" },
     inAppDesc: (c) => ({ ro: `${c.extra.actorName ?? "Cealaltă parte"} a completat PV-ul. Verifică-l.`, en: `${c.extra.actorName ?? "The other party"} completed the PV. Review it.` }),
@@ -172,7 +172,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsPurpose: "pv_return",
   },
   pv_return_completed_by_party: {
-    recipients: "both", channels: ["in_app", "sms"], critical: true,
+    recipients: "both", channels: ["in_app", "email", "sms"], critical: true,
     emailTemplate: { both: "pv-other-done" },
     smsTemplate: { both: "pv_other_done" },
     inAppTitle: { ro: "PV de returnare completat parțial", en: "Return PV partially complete" },
@@ -334,6 +334,26 @@ Deno.serve(async (req) => {
 
     const results: any[] = [];
 
+    // ── PV PDF generation (cached for the duration of this request) ──────
+    // Some events should ship the proces-verbal PDF as a link (and optionally
+    // an attachment). Generate once and reuse for both recipients.
+    const pvPhase: "handover" | "return" | null =
+      (event_key === "handover_confirmed" || event_key === "pv_pickup_completed_by_party") ? "handover" :
+      (event_key === "rental_completed" || event_key === "pv_return_completed_by_party") ? "return" : null;
+    const attachPv = event_key === "handover_confirmed" || event_key === "rental_completed";
+    let pvAsset: { signed_url: string; filename: string; base64: string } | null = null;
+    if (pvPhase) {
+      try {
+        const { data, error } = await supabase.functions.invoke("generate-pv-pdf", {
+          body: { rental_id, phase: pvPhase },
+        });
+        if (error) console.error("[notify-rental-event] PV gen error:", error);
+        else if (data?.signed_url) pvAsset = { signed_url: data.signed_url, filename: data.filename, base64: data.base64 };
+      } catch (e) {
+        console.error("[notify-rental-event] PV gen threw:", e);
+      }
+    }
+
     for (const role of recipients) {
       // Skip notifying the actor for "_completed_by_party" events (they did the action)
       const userObj = role === "owner" ? owner : renter;
@@ -406,6 +426,7 @@ Deno.serve(async (req) => {
               phase: event_key.includes("return") ? "return" : "pickup",
               reason: extra?.reason,
               reporterName: extra?.actorName,
+              pvPdfUrl: pvAsset?.signed_url,
             };
             try {
               const { error: emErr } = await supabase.functions.invoke("send-transactional-email", {
@@ -414,6 +435,9 @@ Deno.serve(async (req) => {
                   recipientEmail: userObj.email,
                   idempotencyKey: `${event_key}:${rental_id}:${userObj.id}`,
                   templateData,
+                  ...(attachPv && pvAsset ? {
+                    attachments: [{ filename: pvAsset.filename, content: pvAsset.base64 }],
+                  } : {}),
                 },
               });
               await supabase.from("notification_audit_log").insert({
