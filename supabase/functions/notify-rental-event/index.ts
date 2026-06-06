@@ -426,6 +426,7 @@ Deno.serve(async (req) => {
               phase: event_key.includes("return") ? "return" : "pickup",
               reason: extra?.reason,
               reporterName: extra?.actorName,
+              pvPdfUrl: pvAsset?.signed_url,
             };
             try {
               const { error: emErr } = await supabase.functions.invoke("send-transactional-email", {
@@ -434,6 +435,9 @@ Deno.serve(async (req) => {
                   recipientEmail: userObj.email,
                   idempotencyKey: `${event_key}:${rental_id}:${userObj.id}`,
                   templateData,
+                  ...(attachPv && pvAsset ? {
+                    attachments: [{ filename: pvAsset.filename, content: pvAsset.base64 }],
+                  } : {}),
                 },
               });
               await supabase.from("notification_audit_log").insert({
