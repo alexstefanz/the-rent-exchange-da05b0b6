@@ -334,6 +334,26 @@ Deno.serve(async (req) => {
 
     const results: any[] = [];
 
+    // ── PV PDF generation (cached for the duration of this request) ──────
+    // Some events should ship the proces-verbal PDF as a link (and optionally
+    // an attachment). Generate once and reuse for both recipients.
+    const pvPhase: "handover" | "return" | null =
+      (event_key === "handover_confirmed" || event_key === "pv_pickup_completed_by_party") ? "handover" :
+      (event_key === "rental_completed" || event_key === "pv_return_completed_by_party") ? "return" : null;
+    const attachPv = event_key === "handover_confirmed" || event_key === "rental_completed";
+    let pvAsset: { signed_url: string; filename: string; base64: string } | null = null;
+    if (pvPhase) {
+      try {
+        const { data, error } = await supabase.functions.invoke("generate-pv-pdf", {
+          body: { rental_id, phase: pvPhase },
+        });
+        if (error) console.error("[notify-rental-event] PV gen error:", error);
+        else if (data?.signed_url) pvAsset = { signed_url: data.signed_url, filename: data.filename, base64: data.base64 };
+      } catch (e) {
+        console.error("[notify-rental-event] PV gen threw:", e);
+      }
+    }
+
     for (const role of recipients) {
       // Skip notifying the actor for "_completed_by_party" events (they did the action)
       const userObj = role === "owner" ? owner : renter;
