@@ -347,6 +347,7 @@ Deno.serve(async (req) => {
         headers: {
           'X-Entity-Ref-ID': idempotencyKey,
         },
+        ...(attachments.length ? { attachments } : {}),
       }),
     })
 
