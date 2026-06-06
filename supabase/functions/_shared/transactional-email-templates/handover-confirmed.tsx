@@ -9,6 +9,7 @@ interface Props {
   rentalId?: string
   startDate?: string
   endDate?: string
+  pvPdfUrl?: string
 }
 
 const HandoverConfirmedEmail = (p: Props) => {
@@ -21,6 +22,12 @@ const HandoverConfirmedEmail = (p: Props) => {
       </Lead>
       <ProductCard image={p.productImage} title={p.productTitle} status="active" />
       <Para>Perioadă: <strong>{p.startDate} — {p.endDate}</strong></Para>
+      {p.pvPdfUrl ? (
+        <>
+          <Para>Procesul verbal de predare este atașat acestui email și poate fi descărcat și de aici (valabil 7 zile):</Para>
+          <CTAButton href={p.pvPdfUrl} variant="ghost">Descarcă PV (PDF)</CTAButton>
+        </>
+      ) : null}
       <CTAButton href={cta}>Vezi detalii închiriere</CTAButton>
     </BaseLayout>
   )
