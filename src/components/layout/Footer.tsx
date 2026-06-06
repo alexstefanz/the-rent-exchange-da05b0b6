@@ -72,7 +72,7 @@ const Footer = () => {
               <h4 className="font-heading text-sm font-semibold">{language === "en" ? "Company" : "Companie"}</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link to="/despre-noi" className="transition-colors hover:text-foreground">{language === "en" ? "About us" : "Despre noi"}</Link></li>
-                <li><a href="https://rentli.ro/contact" className="transition-colors hover:text-foreground">{language === "en" ? "Contact us" : "Contactează-ne"}</a></li>
+                <li><Link to="/contact" className="transition-colors hover:text-foreground">{language === "en" ? "Contact us" : "Contactează-ne"}</Link></li>
                 <li><Link to="/despre-noi" className="transition-colors hover:text-foreground">{language === "en" ? "CSR - Circular economy" : "CSR - Economie circulară"}</Link></li>
               </ul>
             </div>

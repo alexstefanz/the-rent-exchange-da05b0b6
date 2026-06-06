@@ -163,7 +163,7 @@ const ReviewsTab = () => {
     <Card key={`pr-${review.id}`}>
       <CardContent className="flex gap-4 p-4">
         {showReviewer ? (
-          <Link to={`/user/${review.reviewer_id}`}>
+          <Link to={`/utilizator/${review.reviewer_id}`}>
             <Avatar className="h-10 w-10">
               <AvatarImage src={review.reviewer_avatar || undefined} />
               <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
@@ -178,7 +178,7 @@ const ReviewsTab = () => {
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-2 min-w-0">
               {showReviewer ? (
-                <Link to={`/user/${review.reviewer_id}`} className="font-medium hover:underline truncate">
+                <Link to={`/utilizator/${review.reviewer_id}`} className="font-medium hover:underline truncate">
                   {review.reviewer_name || t("Utilizator", "User")}
                 </Link>
               ) : (
@@ -222,7 +222,7 @@ const ReviewsTab = () => {
             {userReceived.map((review) => (
               <Card key={`ur-${review.id}`}>
                 <CardContent className="flex gap-4 p-4">
-                  <Link to={`/user/${review.reviewer_id}`}>
+                  <Link to={`/utilizator/${review.reviewer_id}`}>
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={review.reviewer?.avatar_url || undefined} />
                       <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
@@ -231,7 +231,7 @@ const ReviewsTab = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex items-center gap-2 min-w-0">
-                        <Link to={`/user/${review.reviewer_id}`} className="font-medium hover:underline truncate">
+                        <Link to={`/utilizator/${review.reviewer_id}`} className="font-medium hover:underline truncate">
                           {review.reviewer?.full_name || t("Utilizator", "User")}
                         </Link>
                         <Badge variant="outline" className="text-xs shrink-0">
@@ -261,7 +261,7 @@ const ReviewsTab = () => {
             {userGiven.map((review) => (
               <Card key={`ug-${review.id}`}>
                 <CardContent className="flex gap-4 p-4">
-                  <Link to={`/user/${review.reviewed_user_id}`}>
+                  <Link to={`/utilizator/${review.reviewed_user_id}`}>
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={review.reviewed_user?.avatar_url || undefined} />
                       <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
@@ -270,7 +270,7 @@ const ReviewsTab = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex items-center gap-2 min-w-0">
-                        <Link to={`/user/${review.reviewed_user_id}`} className="font-medium hover:underline truncate">
+                        <Link to={`/utilizator/${review.reviewed_user_id}`} className="font-medium hover:underline truncate">
                           {review.reviewed_user?.full_name || t("Utilizator", "User")}
                         </Link>
                         <Badge variant="outline" className="text-xs shrink-0">

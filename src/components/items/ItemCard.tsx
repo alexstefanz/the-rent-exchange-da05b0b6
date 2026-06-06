@@ -25,7 +25,7 @@ const ItemCard = ({
 }: ItemCardProps) => {
   return (
     <Link
-      to={`/item/${id}`}
+      to={`/produs/${id}`}
       className="group block overflow-hidden rounded-xl bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-[#F7F6F2] p-3">
@@ -60,7 +60,7 @@ const ItemCard = ({
         </div>
 
         <div className="flex items-baseline gap-1">
-          <span className="text-xl font-semibold text-primary">${price}</span>
+          <span className="text-xl font-semibold text-primary">{price} RON</span>
           <span className="text-sm text-muted-foreground">/ {priceUnit}</span>
         </div>
       </div>

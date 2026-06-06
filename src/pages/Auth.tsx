@@ -735,11 +735,11 @@ const Auth = () => {
                   />
                   <span className="leading-snug">
                     Sunt de acord cu{" "}
-                    <Link to="/termeni" className="text-primary underline-offset-2 hover:underline">
+                    <Link to="/termeni-si-conditii" className="text-primary underline-offset-2 hover:underline">
                       Termenii
                     </Link>{" "}
                     și{" "}
-                    <Link to="/confidentialitate" className="text-primary underline-offset-2 hover:underline">
+                    <Link to="/politica-confidentialitate" className="text-primary underline-offset-2 hover:underline">
                       Politica GDPR
                     </Link>
                     .
