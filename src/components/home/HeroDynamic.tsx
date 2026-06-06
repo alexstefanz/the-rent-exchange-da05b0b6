@@ -5,17 +5,25 @@ import { cn } from "@/lib/utils";
 
 interface Slide {
   src: string;
+  mobileSrcSet?: string;
   alt: string;
   labelRo: string;
   labelEn: string;
 }
 
 const SLIDES: Slide[] = [
-  { src: "/images/banner_hero.webp", alt: "Marketplace de închirieri Rentli", labelRo: "Electronice", labelEn: "Electronics" },
-  { src: "/images/hero/hero-outdoor.jpg", alt: "Echipament outdoor în munți", labelRo: "Outdoor", labelEn: "Outdoor" },
-  { src: "/images/hero/hero-events.jpg", alt: "Echipamente pentru evenimente", labelRo: "Evenimente", labelEn: "Events" },
-  { src: "/images/hero/hero-travel.jpg", alt: "Călătorii și travel", labelRo: "Travel", labelEn: "Travel" },
-  { src: "/images/hero/hero-tools.jpg", alt: "Unelte profesionale", labelRo: "Unelte", labelEn: "Tools" },
+  {
+    src: "/images/banner_hero.webp",
+    mobileSrcSet:
+      "/images/banner_hero_mobile.webp 1x, /images/banner_hero_mobile@2x.webp 2x, /images/banner_hero_mobile@3x.webp 3x",
+    alt: "Marketplace de închirieri Rentli",
+    labelRo: "Electronice",
+    labelEn: "Electronics",
+  },
+  { src: "/images/hero/hero-outdoor.webp", alt: "Echipament outdoor în munți", labelRo: "Outdoor", labelEn: "Outdoor" },
+  { src: "/images/hero/hero-events.webp", alt: "Echipamente pentru evenimente", labelRo: "Evenimente", labelEn: "Events" },
+  { src: "/images/hero/hero-travel.webp", alt: "Călătorii și travel", labelRo: "Travel", labelEn: "Travel" },
+  { src: "/images/hero/hero-tools.webp", alt: "Unelte profesionale", labelRo: "Unelte", labelEn: "Tools" },
 ];
 
 const ROTATE_MS = 6000;
@@ -23,6 +31,8 @@ const ROTATE_MS = 6000;
 const HeroDynamic = () => {
   const { language, t } = useLanguage();
   const [active, setActive] = useState(0);
+  // Tracks which slides have ever been activated, so we only mount images on demand.
+  const [loaded, setLoaded] = useState<Set<number>>(() => new Set([0]));
   const [paused, setPaused] = useState(false);
   const heroRef = useRef<HTMLElement>(null);
 
@@ -33,6 +43,16 @@ const HeroDynamic = () => {
     return () => clearInterval(id);
   }, [paused]);
 
+  // Mark active slide as loaded, and warm the next one slightly ahead of time.
+  useEffect(() => {
+    setLoaded((prev) => {
+      const next = new Set(prev);
+      next.add(active);
+      next.add((active + 1) % SLIDES.length);
+      return next;
+    });
+  }, [active]);
+
   return (
     <section
       ref={heroRef}
@@ -41,7 +61,7 @@ const HeroDynamic = () => {
       onMouseLeave={() => setPaused(false)}
     >
       {/* Slides */}
-      {SLIDES.map((slide, i) => (
+      {SLIDES.map((slide, i) => loaded.has(i) ? (
         <div
           key={slide.src}
           aria-hidden={i !== active}
@@ -50,21 +70,26 @@ const HeroDynamic = () => {
             i === active ? "opacity-100" : "opacity-0",
           )}
         >
-          <img
-            src={slide.src}
-            alt={i === 0 ? slide.alt : ""}
-            width={1920}
-            height={1088}
-            fetchPriority={i === 0 ? "high" : "low"}
-            loading={i === 0 ? "eager" : "lazy"}
-            decoding="async"
-            className={cn(
-              "absolute inset-0 w-full h-full object-cover",
-              "motion-safe:animate-[hero-zoom_14s_ease-in-out_infinite_alternate]",
+          <picture>
+            {slide.mobileSrcSet && (
+              <source media="(max-width: 768px)" srcSet={slide.mobileSrcSet} type="image/webp" />
             )}
-          />
+            <img
+              src={slide.src}
+              alt={i === 0 ? slide.alt : ""}
+              width={1920}
+              height={1088}
+              fetchPriority={i === 0 ? "high" : "low"}
+              loading={i === 0 ? "eager" : "lazy"}
+              decoding="async"
+              className={cn(
+                "absolute inset-0 w-full h-full object-cover",
+                "motion-safe:animate-[hero-zoom_14s_ease-in-out_infinite_alternate]",
+              )}
+            />
+          </picture>
         </div>
-      ))}
+      ) : null)}
 
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/35 to-black/55 z-10" />
