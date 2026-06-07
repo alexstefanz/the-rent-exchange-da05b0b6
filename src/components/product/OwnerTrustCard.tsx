@@ -1,5 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, ShieldCheck } from "lucide-react";
+import { Star, ShieldCheck, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { ProductExtendedStats } from "@/hooks/queries/useProductExtendedStats";
 
@@ -13,7 +14,7 @@ interface Props {
   isLoading?: boolean;
 }
 
-const OwnerTrustCard = ({ ownerName, ownerAvatar, stats }: Props) => {
+const OwnerTrustCard = ({ ownerId, ownerName, ownerAvatar, stats }: Props) => {
   const { t } = useLanguage();
 
   const memberSince = stats?.owner_member_since ? new Date(stats.owner_member_since).getFullYear().toString() : "—";
@@ -21,7 +22,11 @@ const OwnerTrustCard = ({ ownerName, ownerAvatar, stats }: Props) => {
   const reviewCount = stats?.owner_review_count || 0;
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 md:p-6">
+    <Link
+      to={`/user/${ownerId}`}
+      className="group block rounded-2xl border border-border bg-card p-5 md:p-6 transition-all hover:border-primary/40 hover:shadow-md"
+      aria-label={t(`Vezi profilul lui ${ownerName}`, `View ${ownerName}'s profile`)}
+    >
       <div className="flex items-start gap-4">
         <div className="relative">
           <Avatar className="h-16 w-16 md:h-20 md:w-20 ring-2 ring-primary/20">
@@ -32,7 +37,7 @@ const OwnerTrustCard = ({ ownerName, ownerAvatar, stats }: Props) => {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-heading text-lg font-semibold text-foreground truncate">{ownerName}</h3>
+            <h3 className="font-heading text-lg font-semibold text-foreground truncate group-hover:text-primary transition-colors">{ownerName}</h3>
             {stats?.owner_kyc_verified && (
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-[11px] font-semibold">
                 <ShieldCheck className="h-3 w-3" /> {t("Verificat", "Verified")}
@@ -48,8 +53,9 @@ const OwnerTrustCard = ({ ownerName, ownerAvatar, stats }: Props) => {
             {t("Membru din", "Member since")} {memberSince}
           </p>
         </div>
+        <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform group-hover:translate-x-0.5 self-center" />
       </div>
-    </div>
+    </Link>
   );
 };
 
