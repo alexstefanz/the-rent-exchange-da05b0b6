@@ -23,7 +23,7 @@ const OwnerTrustCard = ({ ownerId, ownerName, ownerAvatar, stats }: Props) => {
 
   return (
     <Link
-      to={`/user/${ownerId}`}
+      to={`/utilizator/${ownerId}`}
       className="group block rounded-2xl border border-border bg-card p-5 md:p-6 transition-all hover:border-primary/40 hover:shadow-md"
       aria-label={t(`Vezi profilul lui ${ownerName}`, `View ${ownerName}'s profile`)}
     >
