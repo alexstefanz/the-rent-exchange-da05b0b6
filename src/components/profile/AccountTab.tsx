@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { z } from "zod";
@@ -81,6 +81,7 @@ const AccountTab = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -157,6 +158,33 @@ const AccountTab = () => {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  /* ---- handle ?focus= deep-links from profile completion checklist ---- */
+  useEffect(() => {
+    if (isLoading) return;
+    const focus = searchParams.get("focus");
+    if (!focus) return;
+    const sectionByFocus: Record<string, string> = {
+      name: "personal",
+      phone: "personal",
+      avatar: "personal",
+      iban: "payout",
+    };
+    const sectionId = sectionByFocus[focus];
+    if (sectionId) {
+      // Wait a tick for layout, then scroll and trigger action.
+      setTimeout(() => {
+        scrollToSection(sectionId);
+        if (focus === "avatar") {
+          fileInputRef.current?.click();
+        }
+      }, 150);
+    }
+    // Clean URL so refresh doesn't re-trigger
+    const next = new URLSearchParams(searchParams);
+    next.delete("focus");
+    setSearchParams(next, { replace: true });
+  }, [isLoading, searchParams, setSearchParams]);
 
   /* ---- derived values ---- */
   const phoneFieldValue = form.watch("phone");
