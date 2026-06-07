@@ -173,11 +173,11 @@ export function useAccountDashboard() {
       // health
       const p: any = profile || {};
       const items = [
-        { key: "email", labelRo: "Email confirmat", labelEn: "Email verified", done: !!p.email, href: "/contul-meu" },
-        { key: "phone", labelRo: "Telefon adăugat", labelEn: "Phone added", done: !!p.phone, href: "/contul-meu" },
+        { key: "name", labelRo: "Nume complet", labelEn: "Full name", done: !!p.full_name, href: "/contul-meu?focus=name" },
+        { key: "phone", labelRo: "Telefon valid", labelEn: "Valid phone", done: !!p.phone, href: "/contul-meu?focus=phone" },
+        { key: "avatar", labelRo: "Fotografie profil", labelEn: "Profile photo", done: !!p.avatar_url, href: "/contul-meu?focus=avatar" },
         { key: "kyc", labelRo: "Identitate verificată", labelEn: "Identity verified", done: p.kyc_status === "VERIFIED", href: "/verificare" },
-        { key: "iban", labelRo: "IBAN pentru plăți", labelEn: "Payout IBAN", done: !!p.iban, href: "/contul-meu" },
-        { key: "profile", labelRo: "Profil completat", labelEn: "Profile completed", done: !!p.full_name && !!p.avatar_url, href: "/contul-meu" },
+        { key: "iban", labelRo: "IBAN configurat", labelEn: "IBAN set", done: !!p.iban, href: "/contul-meu?focus=iban" },
       ];
       const completion = Math.round((items.filter((i) => i.done).length / items.length) * 100);
 
