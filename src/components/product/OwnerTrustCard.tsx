@@ -37,7 +37,7 @@ const OwnerTrustCard = ({ ownerId, ownerName, ownerAvatar, stats }: Props) => {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-heading text-lg font-semibold text-foreground truncate group-hover:text-primary transition-colors">{ownerName}</h3>
+            <p className="font-heading text-lg font-semibold text-foreground truncate group-hover:text-primary transition-colors">{ownerName}</p>
             {stats?.owner_kyc_verified && (
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.5 text-[11px] font-semibold">
                 <ShieldCheck className="h-3 w-3" /> {t("Verificat", "Verified")}

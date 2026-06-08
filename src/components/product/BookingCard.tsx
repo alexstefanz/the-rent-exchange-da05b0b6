@@ -116,12 +116,12 @@ const BookingCard = ({
       {showTitle && (
         <>
           <div className="flex items-start justify-between gap-3 mb-2 lg:hidden">
-            <h1 className="font-heading text-xl font-semibold text-foreground leading-tight flex-1">{title}</h1>
+            <p className="font-heading text-xl font-semibold text-foreground leading-tight flex-1">{title}</p>
             <button onClick={onFavoriteToggle} className="flex-shrink-0 mt-1">
               <Heart className={cn("h-5 w-5 transition-colors", isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground")} />
             </button>
           </div>
-          <h1 className="hidden lg:block font-heading text-lg font-semibold text-foreground mb-2 leading-tight">{title}</h1>
+          <p className="hidden lg:block font-heading text-lg font-semibold text-foreground mb-2 leading-tight">{title}</p>
         </>
       )}
 

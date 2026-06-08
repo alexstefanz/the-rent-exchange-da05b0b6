@@ -39,7 +39,7 @@ const StickyProductHeader = ({ title, clientPrice, rating, reviewCount, triggerR
     >
       <div className="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <h2 className="font-heading text-base font-semibold text-foreground truncate">{title}</h2>
+          <p className="font-heading text-base font-semibold text-foreground truncate">{title}</p>
           <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
             {rating != null && rating > 0 && (
               <span className="inline-flex items-center gap-1">

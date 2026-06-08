@@ -14,9 +14,9 @@ export function DrawerCategoryExplorer({ onNavigate }: Props) {
 
   return (
     <section className="px-2">
-      <h3 className="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <p className="px-3 mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
         {t("Categorii populare", "Popular categories")}
-      </h3>
+      </p>
       <div className="flex flex-wrap gap-1.5 px-1">
         {popular.map((cat) => {
           const Icon = getCategoryIcon(cat.id);
