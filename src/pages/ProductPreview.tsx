@@ -180,18 +180,18 @@ const ProductPreview = () => {
       />
 
       <main className="w-full max-w-7xl mx-auto py-6 px-[10px] md:px-6 lg:px-8">
-        <div className="hidden lg:flex items-start justify-between gap-4 mb-4">
-          <div className="min-w-0">
-            <h1 className="font-heading text-3xl font-semibold text-foreground">{displayTitle}</h1>
-            <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
+        <div className="flex items-start justify-between gap-4 mb-5 lg:mb-4">
+          <div className="min-w-0 flex-1">
+            <h1 className="font-heading text-2xl lg:text-3xl font-semibold text-foreground">{displayTitle}</h1>
+            <div className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-3 mt-1 lg:mt-2 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1">
                 <MapPin className="h-4 w-4 text-primary" />
                 {location}
               </span>
-              <SocialProofStrip />
+              <div className="hidden lg:block"><SocialProofStrip /></div>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden lg:flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={previewBlocked}
@@ -208,14 +208,6 @@ const ProductPreview = () => {
             >
               <Heart className="h-4 w-4" />
             </button>
-          </div>
-        </div>
-
-        <div className="lg:hidden mb-5">
-          <h1 className="font-heading text-2xl font-semibold text-foreground">{displayTitle}</h1>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-            <MapPin className="h-4 w-4 text-primary" />
-            {location}
           </div>
         </div>
 

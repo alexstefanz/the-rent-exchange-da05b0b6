@@ -355,41 +355,28 @@ const ProductDetail = () => {
           <span className="text-foreground whitespace-nowrap">{displayTitle}</span>
         </nav>
 
-        {/* Title block desktop */}
-        <div ref={titleBlockRef} className="hidden lg:flex items-start justify-between gap-4 mb-4">
-          <div className="min-w-0">
-            <h1 className="font-heading text-3xl font-semibold text-foreground">{displayTitle}</h1>
-            <div className="flex items-center gap-3 mt-2 text-sm text-muted-foreground">
+        {/* Title block — single H1 with responsive layout */}
+        <div ref={titleBlockRef} className="flex items-start justify-between gap-4 mb-5 lg:mb-4">
+          <div className="min-w-0 flex-1">
+            <h1 className="font-heading text-2xl lg:text-3xl font-semibold text-foreground">{displayTitle}</h1>
+            <div className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-3 mt-1 lg:mt-2 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4 text-primary" />{location}</span>
-              <SocialProofStrip
-                timesRented={extendedStats?.times_rented}
-                watchersCount={extendedStats?.watchers_count}
-                lastBookingAt={extendedStats?.last_booking_at}
-              />
+              <div className="lg:contents mt-2 lg:mt-0">
+                <SocialProofStrip
+                  timesRented={extendedStats?.times_rented}
+                  watchersCount={extendedStats?.watchers_count}
+                  lastBookingAt={extendedStats?.last_booking_at}
+                />
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden lg:flex items-center gap-2 shrink-0">
             <button onClick={handleShare} className="h-10 w-10 rounded-full border border-border bg-card hover:bg-muted flex items-center justify-center transition-colors" aria-label="share">
               <Share2 className="h-4 w-4" />
             </button>
             <button onClick={handleToggleFavorite} className="h-10 w-10 rounded-full border border-border bg-card hover:bg-muted flex items-center justify-center transition-all hover:scale-105" aria-label="favorite">
               <Heart className={`h-4 w-4 ${isFavorite ? "fill-red-500 text-red-500" : "text-foreground"}`} />
             </button>
-          </div>
-        </div>
-
-        {/* Title block mobile/tablet — appears above booking card */}
-        <div className="lg:hidden mb-5">
-          <h1 className="font-heading text-2xl font-semibold text-foreground">{displayTitle}</h1>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-            <MapPin className="h-4 w-4 text-primary" />{location}
-          </div>
-          <div className="mt-3">
-            <SocialProofStrip
-              timesRented={extendedStats?.times_rented}
-              watchersCount={extendedStats?.watchers_count}
-              lastBookingAt={extendedStats?.last_booking_at}
-            />
           </div>
         </div>
 
