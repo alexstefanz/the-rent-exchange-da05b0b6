@@ -535,7 +535,7 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
   );
 
   const BodyContent = (
-    <div className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin]">
+    <div className="flex-1">
       <AccountHubBody onNavigate={handleNav} />
     </div>
   );
@@ -591,7 +591,7 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
         <DropdownMenuContent
           align="end"
           sideOffset={8}
-          className="w-[360px] p-0 bg-background border border-border/70 shadow-2xl rounded-2xl flex flex-col max-h-[min(640px,75vh)] overflow-hidden"
+          className="w-[360px] p-0 bg-background border border-border/70 shadow-2xl rounded-2xl flex flex-col overflow-visible"
         >
           {BodyContent}
           {FooterZone}
