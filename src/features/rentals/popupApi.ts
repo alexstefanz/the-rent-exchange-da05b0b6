@@ -69,3 +69,10 @@ export async function markRenterConfirmationSeen(rentalId: string): Promise<void
   });
   if (error) console.warn("markRenterConfirmationSeen", error);
 }
+
+export async function incrementOwnerPopupSeen(rentalId: string): Promise<void> {
+  const { error } = await supabase.rpc("increment_owner_popup_seen", {
+    _rental_id: rentalId,
+  });
+  if (error) console.warn("incrementOwnerPopupSeen", error);
+}

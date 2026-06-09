@@ -1847,6 +1847,7 @@ export type Database = {
           owner_compensation: number | null
           owner_id: string | null
           owner_payout: number
+          owner_popup_seen_count: number
           paid_at: string | null
           payment_intent_id: string | null
           payment_method: string | null
@@ -1918,6 +1919,7 @@ export type Database = {
           owner_compensation?: number | null
           owner_id?: string | null
           owner_payout: number
+          owner_popup_seen_count?: number
           paid_at?: string | null
           payment_intent_id?: string | null
           payment_method?: string | null
@@ -1989,6 +1991,7 @@ export type Database = {
           owner_compensation?: number | null
           owner_id?: string | null
           owner_payout?: number
+          owner_popup_seen_count?: number
           paid_at?: string | null
           payment_intent_id?: string | null
           payment_method?: string | null
@@ -3314,6 +3317,10 @@ export type Database = {
       increment_macro_usage: {
         Args: { p_macro_id: string }
         Returns: undefined
+      }
+      increment_owner_popup_seen: {
+        Args: { _rental_id: string }
+        Returns: number
       }
       initiate_return: { Args: { _rental_id: string }; Returns: undefined }
       is_user_banned: { Args: { _user_id: string }; Returns: boolean }

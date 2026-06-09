@@ -7,6 +7,7 @@ import {
   fetchRentalPopups,
   fetchRentalPopupById,
   markRenterConfirmationSeen,
+  incrementOwnerPopupSeen,
   type RentalPopupItem,
 } from "@/features/rentals/popupApi";
 import { respondToRental } from "@/features/rentals/ownerRentalsApi";
@@ -42,6 +43,10 @@ export default function RentalPopupManager() {
     // so it never re-appears on next page load / realtime event.
     if (item.mode === "renter") {
       markRenterConfirmationSeen(item.id).catch(() => {});
+    }
+    // For owners: bump the displayed-count so it stops showing after 3 times.
+    if (item.mode === "owner") {
+      incrementOwnerPopupSeen(item.id).catch(() => {});
     }
     setQueue((q) => {
       if (q.some((x) => x.id === item.id)) return q;
