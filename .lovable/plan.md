@@ -1,48 +1,35 @@
-# Igienă SEO heading-uri — pagina produs + componente partajate
+## Problema
 
-## Probleme identificate
+La RNT-000160 chiriasul incarca pozele si semneaza PV-ul de returnare, dar UPDATE-ul cade silentios cu eroarea Postgres:
 
-Pe `/produs/:slug` apar în DOM mai multe heading-uri greșite:
+`Renters can only transition a pending rental to cancelled`
 
-1. **H3 „Categorii populare"** — provine din `DrawerCategoryExplorer.tsx` (drawer mobil), renderat în DOM chiar și când e închis.
-2. **2× H1 cu titlul produsului** — în `ProductDetail.tsx` titlul este renderat de două ori (bloc desktop `lg:flex` + bloc mobil `lg:hidden`), ambele ca `<h1>`. Deși unul e ascuns vizual, ambele există în DOM.
-3. **H1 suplimentar în BookingCard** — `src/components/product/BookingCard.tsx` are 2× `<h1>` cu titlul (mobil + desktop intern).
-4. **H2 duplicat cu titlul** — `StickyProductHeader.tsx` are `<h2>` cu titlul produsului (apare la scroll, dar e în DOM).
-5. **Numele proprietarului ca H3** — `OwnerTrustCard.tsx` folosește `<h3>` pentru numele owner-ului; ar trebui `<p>`/`<span>`.
+## Cauza
 
-## Modificări propuse
+Cand chiriasul semneaza `rental_pv_documents` (faza `return`), trigger-ul AFTER UPDATE `tg_pv_return_progress` executa pe `rentals`:
 
-### 1. `src/pages/ProductDetail.tsx`
-Un singur `<h1>` cu clase responsive (`text-2xl lg:text-3xl`), fără a duplica blocul. Restructurăm cele două blocuri (mobil/desktop) astfel încât titlul + locația + social proof să apară o singură dată, cu layout-ul gestionat prin Tailwind responsive — nu prin două `<h1>` separate.
+```sql
+UPDATE public.rentals
+SET early_return_status = 'initiated'
+WHERE id = NEW.rental_id;
+```
 
-### 2. `src/components/product/BookingCard.tsx`
-Schimbăm cele două `<h1>` cu titlul în `<p className="font-heading ...">` sau `<span>` — BookingCard nu trebuie să dețină H1-ul paginii.
+Functia e `SECURITY DEFINER`, dar `auth.uid()` ramane al chiriasului. Trigger-ul BEFORE UPDATE `lock_renter_rental_update` de pe `rentals` vede atunci un renter care modifica un rental `active` (nu `pending`) si arunca exceptia → toata tranzactia de semnare se face rollback. In UI butonul "Semneaza si trimite clientului" nu produce nimic vizibil.
 
-### 3. `src/components/product/StickyProductHeader.tsx`
-`<h2>` → `<span>` / `<p>` (este un header sticky vizual, nu un titlu semantic de secțiune).
+Acelasi pattern e folosit corect in alte RPC-uri (`confirm_handover_received` etc.) prin flag-ul tranzactional `app.bypass_renter_lock`.
 
-### 4. `src/components/product/OwnerTrustCard.tsx`
-`<h3>` cu numele owner-ului → `<p className="font-heading ...">` (păstrăm stilurile identice).
+## Fix (migratie)
 
-### 5. `src/components/layout/mobile-drawer/DrawerCategoryExplorer.tsx`
-`<h3>Categorii populare</h3>` → `<p>` / `<div>` cu aceleași clase. Este o etichetă vizuală în drawer, nu un titlu de pagină.
+1. Modific `public.tg_pv_return_progress`:
+   - Inainte de fiecare `UPDATE public.rentals ...` setez `PERFORM set_config('app.bypass_renter_lock', 'on', true);` (scoped pe tranzactie).
+2. Acelasi tratament pentru `public.tg_pv_handover_progress` daca el atinge `public.rentals` (verificat in migratie, aplicat doar daca e cazul) — pentru a evita acelasi tip de blocaj cand owner-ul actualizeaza si trigger-ul cascade.
 
-### 6. Audit rapid restul componentelor de pe pagina produs
-- `ProductInfoAccordion`, `LocationCard`, `RentalProtection`, `RecentlyViewedSlider`, `ProductIncludes`, `UsageRules`, `HowItWorksMini` folosesc `<h2>` pentru titluri reale de secțiune — **se păstrează** (corect SEO sub un singur H1).
-- `OwnerOtherListings`, `PremiumBookingCard` au `<h3>` sub `<h2>` — corect, se păstrează.
+Fara modificari de frontend; eticheta butonului si fluxul UI raman. Notificarea catre proprietar (`pv_return_completed_by_party`) era deja apelata din `PvSignatureDialog` dupa semnare — odata ce UPDATE-ul trece, va ajunge la el normal.
 
-### 7. Verificare globală (alte pagini cheie)
-Confirm rapid în `Index.tsx`, `CategoryDetail.tsx`, `Search.tsx`, `ListingsPage.tsx`, `UserProfile.tsx` că:
-- există un singur `<h1>` per pagină;
-- nu există heading-uri în Navbar / Footer / drawer-uri care să apară înainte de H1.
+## Verificare
 
-Dacă găsesc abateri identice (ex. drawer / sticky header cu `<h2>` în alte locuri), le corectez în aceeași sesiune.
-
-## Detalii tehnice
-- Schimbările sunt strict semantice (tag swap) — clasele Tailwind rămân identice, deci aspectul vizual nu se modifică.
-- Nu se modifică logică de business, rute sau date.
-- Nu se modifică `useSEO` / meta tags (deja corecte per pagină produs).
-
-## Out of scope
-- Nu modific conținutul textual al titlurilor.
-- Nu modific structura paginilor admin sau a paginilor legale.
+- Migratia ruleaza cu succes.
+- Reproduc semnatura chiriasului pe RNT-000160 (sau pe un duplicat de test) si confirm:
+  - `rental_pv_documents.renter_signed_at` se populeaza.
+  - `rentals.early_return_status` devine `initiated`.
+  - Notificarea `pv_return_completed_by_party` ajunge la proprietar.
