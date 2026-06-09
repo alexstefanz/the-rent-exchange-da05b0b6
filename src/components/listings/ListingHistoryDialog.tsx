@@ -1,37 +1,16 @@
-import { useEffect, useState } from "react";
-import { Loader2, Package, History as HistoryIcon, ShoppingBag, Activity } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { Loader2, Package, ArrowRight, Inbox } from "lucide-react";
 import { format } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useQuery } from "@tanstack/react-query";
+import { getOwnerRentals, type OwnerRental } from "@/features/rentals/ownerRentalsApi";
+import StatusBadge from "@/components/dashboard/StatusBadge";
 import type { Product } from "@/features/products/productsApi";
-
-type LogRow = {
-  id: string;
-  action: string;
-  metadata: Record<string, any> | null;
-  created_at: string;
-};
-
-const ACTION_LABELS: Record<string, { ro: string; en: string }> = {
-  PRODUCT_CREATED: { ro: "Anunț creat", en: "Listing created" },
-  PRODUCT_DEACTIVATED: { ro: "Anunț ascuns", en: "Listing hidden" },
-  PRODUCT_REACTIVATED: { ro: "Anunț reactivat", en: "Listing reactivated" },
-  PRODUCT_DELETED: { ro: "Anunț șters", en: "Listing deleted" },
-  PRICE_CHANGED: { ro: "Preț modificat", en: "Price changed" },
-};
-
-const colorFor = (action: string) => {
-  if (action.includes("CREATED") || action.includes("REACTIVATED"))
-    return "bg-emerald-100 text-emerald-800 border-emerald-200";
-  if (action.includes("DELETED") || action.includes("DEACTIVATED"))
-    return "bg-rose-100 text-rose-800 border-rose-200";
-  if (action.includes("CHANGED") || action.includes("UPDATED"))
-    return "bg-blue-100 text-blue-800 border-blue-200";
-  return "bg-muted text-muted-foreground";
-};
 
 interface Props {
   product: Product | null;
@@ -39,99 +18,108 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+const ALLOWED_STATUS = ["pending", "accepted", "rejected", "completed", "cancelled", "active", "inactive"];
+
 const ListingHistoryDialog = ({ product, open, onOpenChange }: Props) => {
+  const { user } = useAuth();
   const { language } = useLanguage();
   const t = (r: string, e: string) => (language === "ro" ? r : e);
   const locale = language === "ro" ? ro : enUS;
 
-  const [logs, setLogs] = useState<LogRow[] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { data: rentals = [], isLoading } = useQuery({
+    queryKey: ["ownerRentals", user?.id],
+    queryFn: () => getOwnerRentals(user!.id),
+    enabled: !!user?.id && open,
+  });
 
-  useEffect(() => {
-    if (!open || !product?.id) return;
-    let cancelled = false;
-    setLoading(true);
-    setLogs(null);
-    (async () => {
-      const { data, error } = await supabase
-        .from("user_activity_logs")
-        .select("id, action, metadata, created_at")
-        .eq("entity_type", "product")
-        .eq("entity_id", product.id)
-        .order("created_at", { ascending: false })
-        .limit(200);
-      if (cancelled) return;
-      if (error) console.error("ListingHistoryDialog:", error);
-      setLogs((data as LogRow[]) || []);
-      setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [open, product?.id]);
-
-  const renderMeta = (row: LogRow) => {
-    if (!row.metadata) return null;
-    const m = row.metadata;
-    if (row.action === "PRICE_CHANGED" && (m.old_price || m.new_price)) {
-      return (
-        <span className="text-xs text-muted-foreground">
-          {m.old_price} → <span className="font-semibold text-foreground">{m.new_price} RON</span>
-        </span>
+  const productRentals = useMemo(() => {
+    if (!product?.id) return [] as OwnerRental[];
+    return rentals
+      .filter((r) => r.product_id === product.id)
+      .sort(
+        (a, b) =>
+          new Date(b.created_at || b.start_date).getTime() -
+          new Date(a.created_at || a.start_date).getTime(),
       );
-    }
-    return null;
-  };
+  }, [rentals, product?.id]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <HistoryIcon className="h-5 w-5 text-primary" />
-            {t("Istoric anunț", "Listing history")}
+            <Package className="h-5 w-5 text-primary" />
+            {t("Istoric închirieri", "Rental history")}
+            <span className="ml-1 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+              {productRentals.length}
+            </span>
           </DialogTitle>
           {product && (
             <DialogDescription className="truncate">{product.title}</DialogDescription>
           )}
         </DialogHeader>
 
-        <div className="max-h-[60vh] overflow-y-auto pr-1">
-          {loading ? (
+        <div className="max-h-[65vh] overflow-y-auto pr-1">
+          {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-          ) : !logs || logs.length === 0 ? (
+          ) : productRentals.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-sm text-muted-foreground">
-              <Activity className="h-8 w-8 opacity-40" />
-              {t("Nu există evenimente înregistrate pentru acest anunț.", "No events recorded for this listing yet.")}
+              <Inbox className="h-8 w-8 opacity-40" />
+              {t("Nicio închiriere înregistrată pe acest anunț.", "No rentals recorded for this listing yet.")}
             </div>
           ) : (
-            <ol className="relative space-y-3 border-l border-border pl-4">
-              {logs.map((row) => {
-                const label = ACTION_LABELS[row.action]?.[language] || row.action.replace(/_/g, " ").toLowerCase();
+            <div className="divide-y divide-border">
+              {productRentals.map((rental) => {
+                const to = rental.public_id
+                  ? `/rezervari/${rental.public_id}`
+                  : `/produs/${rental.product_id}`;
+                const statusKey = (ALLOWED_STATUS.includes(rental.status) ? rental.status : "pending") as any;
                 return (
-                  <li key={row.id} className="relative">
-                    <span className="absolute -left-[21px] top-1.5 flex h-3 w-3 items-center justify-center rounded-full bg-primary/15 ring-2 ring-background">
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                    </span>
-                    <div className="flex items-start justify-between gap-3 rounded-lg border border-border/60 bg-card p-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant="outline" className={colorFor(row.action)}>
-                            {label}
-                          </Badge>
-                          {renderMeta(row)}
-                        </div>
-                        <p className="mt-1 text-[11px] text-muted-foreground">
-                          {format(new Date(row.created_at), "d MMM yyyy, HH:mm", { locale })}
-                        </p>
+                  <div
+                    key={rental.id}
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className="font-medium text-foreground truncate">{rental.product_title}</p>
+                        {rental.public_id && (
+                          <span className="font-mono text-[10px] text-muted-foreground bg-muted/60 rounded px-1.5 py-0.5 flex-shrink-0">
+                            {rental.public_id}
+                          </span>
+                        )}
                       </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {t("Chiriaș", "Renter")}:{" "}
+                        <span className="text-foreground">
+                          {rental.renter_name || t("Necunoscut", "Unknown")}
+                        </span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {format(new Date(rental.start_date), "d MMM yyyy", { locale })} –{" "}
+                        {format(new Date(rental.end_date), "d MMM yyyy", { locale })} · {rental.rental_days}{" "}
+                        {t("zile", "days")}
+                      </p>
                     </div>
-                  </li>
+                    <div className="flex items-center justify-between sm:justify-end gap-3 flex-shrink-0">
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-foreground">
+                          {rental.owner_payout} RON
+                        </p>
+                        <StatusBadge status={statusKey} />
+                      </div>
+                      <Button asChild variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+                        <Link to={to}>
+                          {t("Vezi mai mult", "View more")}{" "}
+                          <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
                 );
               })}
-            </ol>
+            </div>
           )}
         </div>
       </DialogContent>
