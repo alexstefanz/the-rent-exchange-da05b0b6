@@ -83,8 +83,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
     smsPurpose: "view_rental",
   },
   payment_succeeded: {
-    recipients: "both", channels: ["in_app", "email"], critical: true,
-    emailTemplate: { owner: "rental-accepted", renter: "rental-accepted" },
+    recipients: "both", channels: ["in_app"], critical: true,
     smsTemplate: { owner: "rental_accepted_owner", renter: "rental_accepted" },
     inAppTitle: { ro: "Plata a fost confirmată", en: "Payment confirmed" },
     inAppDesc: (c) => ({ ro: `Plata pentru "${c.product?.title}" a fost confirmată`, en: `Payment for "${c.product?.title}" was confirmed` }),
