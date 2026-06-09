@@ -12,7 +12,8 @@ export interface TemplateEntry {
 import { template as welcomeEmail } from './welcome.tsx'
 import { template as rentalRequestOwner } from './rental-request-owner.tsx'
 import { template as rentalRequestRenter } from './rental-request-renter.tsx'
-import { template as rentalAccepted } from './rental-accepted.tsx'
+import { template as rentalAcceptedRenter } from './rental-accepted-renter.tsx'
+import { template as rentalAcceptedOwner } from './rental-accepted-owner.tsx'
 import { template as rentalRejected } from './rental-rejected.tsx'
 import { template as cancellationOwner } from './cancellation-owner.tsx'
 import { template as cancellationRenter } from './cancellation-renter.tsx'
@@ -54,7 +55,8 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'welcome': welcomeEmail,
   'rental-request-owner': rentalRequestOwner,
   'rental-request-renter': rentalRequestRenter,
-  'rental-accepted': rentalAccepted,
+  'rental-accepted-renter': rentalAcceptedRenter,
+  'rental-accepted-owner': rentalAcceptedOwner,
   'rental-rejected': rentalRejected,
   'cancellation-owner': cancellationOwner,
   'cancellation-renter': cancellationRenter,
