@@ -1,3 +1,4 @@
+import * as React from "react";
 // Legacy useToast hook bridged to the unified `notify` card system.
 // Kept for backward compatibility with files that still import from
 // "@/hooks/use-toast" or "@/components/ui/use-toast".
@@ -35,4 +36,3 @@ function useToast() {
 }
 
 export { useToast, toast };
-import * as React from "react";
