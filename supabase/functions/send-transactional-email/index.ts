@@ -57,6 +57,8 @@ Deno.serve(async (req) => {
   let messageId: string
   let templateData: Record<string, any> = {}
   let attachments: Array<{ filename: string; content: string }> = []
+  let threadKey: string | null = null
+  let threadSubject: string | null = null
   try {
     const body = await req.json()
     templateName = body.templateName || body.template_name
@@ -70,6 +72,15 @@ Deno.serve(async (req) => {
       attachments = body.attachments
         .filter((a: any) => a && typeof a.filename === 'string' && typeof a.content === 'string')
         .slice(0, 5) // safety cap
+    }
+    // Optional email threading inputs (e.g. group all emails for one rental
+    // into a single Gmail conversation).
+    if (typeof body.threadKey === 'string' && body.threadKey.length > 0) {
+      // Sanitize to a safe Message-ID local part.
+      threadKey = body.threadKey.replace(/[^a-zA-Z0-9._:-]/g, '-').slice(0, 120)
+    }
+    if (typeof body.threadSubject === 'string' && body.threadSubject.length > 0) {
+      threadSubject = body.threadSubject.slice(0, 120)
     }
   } catch {
     return new Response(
@@ -299,6 +310,24 @@ Deno.serve(async (req) => {
       ? template.subject(templateData)
       : template.subject
 
+  // If a thread context is provided, normalize subject so every email in the
+  // thread shares the same leading subject (Gmail groups by Subject + headers).
+  const finalSubject = threadSubject
+    ? `${threadSubject} — ${resolvedSubject}`
+    : resolvedSubject
+
+  // Threading headers (RFC 5322) — Gmail/Outlook will group these into one
+  // conversation. We anchor every email in a thread to a stable "root"
+  // Message-ID derived from the threadKey.
+  const threadHeaders: Record<string, string> = {}
+  if (threadKey) {
+    const rootId = `${threadKey}.root@${FROM_DOMAIN}`
+    const thisId = `${threadKey}.${idempotencyKey.replace(/[^a-zA-Z0-9._:-]/g, '-').slice(0, 80)}@${FROM_DOMAIN}`
+    threadHeaders['Message-ID'] = `<${thisId}>`
+    threadHeaders['In-Reply-To'] = `<${rootId}>`
+    threadHeaders['References'] = `<${rootId}>`
+  }
+
   // 5. Log pending BEFORE send so we have a record even if Resend crashes
   await supabase.from('email_send_log').insert({
     message_id: messageId,
@@ -341,11 +370,12 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         from: FROM_ADDRESS,
         to: [effectiveRecipient],
-        subject: resolvedSubject,
+        subject: finalSubject,
         html,
         text: plainText,
         headers: {
           'X-Entity-Ref-ID': idempotencyKey,
+          ...threadHeaders,
         },
         ...(attachments.length ? { attachments } : {}),
       }),

@@ -429,12 +429,21 @@ Deno.serve(async (req) => {
               pvPdfUrl: pvAsset?.signed_url,
             };
             try {
+              // Thread context: group all emails for this rental into a single
+              // Gmail/Outlook conversation (Message-ID/In-Reply-To/References).
+              const rentalCode = rental.public_id || `id-${rental.id.slice(0, 8)}`;
+              const threadKey = `rental:${rentalCode}`;
+              const threadSubject = product?.title
+                ? `${rentalCode} · ${product.title}`
+                : rentalCode;
               const { error: emErr } = await supabase.functions.invoke("send-transactional-email", {
                 body: {
                   templateName: tplName,
                   recipientEmail: userObj.email,
                   idempotencyKey: `${event_key}:${rental_id}:${userObj.id}`,
                   templateData,
+                  threadKey,
+                  threadSubject,
                   ...(attachPv && pvAsset ? {
                     attachments: [{ filename: pvAsset.filename, content: pvAsset.base64 }],
                   } : {}),
