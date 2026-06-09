@@ -74,7 +74,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
   },
   request_accepted: {
     recipients: "both", channels: ["in_app", "email", "sms"], critical: false,
-    emailTemplate: { both: "rental-accepted" },
+    emailTemplate: { owner: "rental-accepted-owner", renter: "rental-accepted-renter" },
     // SMS only to the recipient of the action (renter learns request was accepted).
     smsTemplate: { renter: "rental_accepted" },
     inAppTitle: { ro: "Cererea a fost acceptată", en: "Request accepted" },
@@ -241,7 +241,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
   },
   request_cancelled_by_renter: {
     recipients: "both", channels: ["in_app", "email", "sms"], critical: true,
-    emailTemplate: { owner: "rental-rejected" },
+    emailTemplate: { owner: "cancellation-owner" },
     smsTemplate: { owner: "rental_cancelled_owner" },
     inAppTitle: (c) => c.recipientRole === "renter"
       ? { ro: "Ai anulat cererea", en: "You cancelled the request" }
@@ -256,7 +256,7 @@ const EVENTS: Record<EventKey, EventConfig> = {
 
 EVENTS.request_cancelled_by_owner = {
   recipients: "both", channels: ["in_app", "email", "sms"], critical: true,
-  emailTemplate: { renter: "rental-rejected" },
+  emailTemplate: { renter: "cancellation-renter" },
   smsTemplate: { renter: "rental_cancelled" },
   inAppTitle: (c) => c.recipientRole === "owner"
     ? { ro: "Ai anulat rezervarea", en: "You cancelled the reservation" }
