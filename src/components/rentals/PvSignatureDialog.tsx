@@ -4,6 +4,7 @@ import { jsPDF } from "jspdf";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Eraser, FileSignature, Download, FileText, ExternalLink, Send } from "lucide-react";
+import { X, ZoomIn } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,6 +37,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   const [signing, setSigning] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingDocx, setDownloadingDocx] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -297,6 +299,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto bg-background">
         <DialogHeader>
@@ -345,7 +348,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
                   </p>
                   <div className="grid grid-cols-2 gap-4">
                     {photosMeta.map((m, i) => (
-                      <DocPhoto key={m.path} path={m.path} label={`Poza ${i + 1}`} />
+                      <DocPhoto key={m.path} path={m.path} label={`Poza ${i + 1}`} onClick={() => setLightboxIndex(i)} />
                     ))}
                   </div>
                 </section>
@@ -444,6 +447,15 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {lightboxIndex !== null && photosMeta[lightboxIndex] && (
+      <PvLightbox
+        photos={photosMeta}
+        index={lightboxIndex}
+        onClose={() => setLightboxIndex(null)}
+        onIndex={setLightboxIndex}
+      />
+    )}
+    </>
   );
 }
 
@@ -451,16 +463,78 @@ function DocParagraph({ children }: { children: React.ReactNode }) {
   return <p className="mb-4 text-justify">{children}</p>;
 }
 
-function DocPhoto({ path, label }: { path: string; label: string }) {
+function PvLightbox({ photos, index, onClose, onIndex }: { photos: { path: string }[]; index: number; onClose: () => void; onIndex: (i: number) => void }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    setUrl(null);
+    getPvFileSignedUrl(photos[index].path).then(setUrl).catch(() => setUrl(null));
+  }, [photos, index]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft" && index > 0) onIndex(index - 1);
+      if (e.key === "ArrowRight" && index < photos.length - 1) onIndex(index + 1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [index, photos.length, onClose, onIndex]);
+  return (
+    <div
+      className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-sm flex flex-col animate-in fade-in"
+      onClick={onClose}
+    >
+      <div className="flex items-center justify-between p-3 text-white" onClick={(e) => e.stopPropagation()}>
+        <span className="text-sm">Poza {index + 1} / {photos.length}</span>
+        <Button size="icon" variant="ghost" onClick={onClose} className="text-white hover:bg-white/10">
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
+      <div className="flex-1 flex items-center justify-center relative px-4 pb-4" onClick={(e) => e.stopPropagation()}>
+        {!url ? (
+          <Loader2 className="h-8 w-8 animate-spin text-white" />
+        ) : (
+          <img src={url} alt={`Poza ${index + 1}`} className="max-h-full max-w-full object-contain" />
+        )}
+        {index > 0 && (
+          <button
+            onClick={() => onIndex(index - 1)}
+            className="absolute left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white text-2xl flex items-center justify-center"
+            aria-label="prev"
+          >
+            ‹
+          </button>
+        )}
+        {index < photos.length - 1 && (
+          <button
+            onClick={() => onIndex(index + 1)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white text-2xl flex items-center justify-center"
+            aria-label="next"
+          >
+            ›
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DocPhoto({ path, label, onClick }: { path: string; label: string; onClick?: () => void }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => { getPvFileSignedUrl(path).then(setUrl).catch(() => setUrl(null)); }, [path]);
   return (
-    <div className="rounded-lg overflow-hidden border border-border bg-muted">
+    <button
+      type="button"
+      onClick={onClick}
+      className="group rounded-lg overflow-hidden border border-border bg-muted text-left cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-primary"
+    >
       <div className="aspect-[4/3] relative">
-        {url ? <img src={url} alt={label} className="absolute inset-0 w-full h-full object-cover" /> : <div className="absolute inset-0 animate-pulse bg-muted" />}
+        {url ? <img src={url} alt={label} className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105" /> : <div className="absolute inset-0 animate-pulse bg-muted" />}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+          <ZoomIn className="h-6 w-6 text-white drop-shadow" />
+        </div>
       </div>
       <p className="text-[11px] text-muted-foreground px-2 py-1">{label}</p>
-    </div>
+    </button>
   );
 }
 
