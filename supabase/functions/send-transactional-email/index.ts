@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
   let attachments: Array<{ filename: string; content: string }> = []
   let threadKey: string | null = null
   let threadSubject: string | null = null
+  let subjectSuffix: string | null = null
   try {
     const body = await req.json()
     templateName = body.templateName || body.template_name
@@ -81,6 +82,9 @@ Deno.serve(async (req) => {
     }
     if (typeof body.threadSubject === 'string' && body.threadSubject.length > 0) {
       threadSubject = body.threadSubject.slice(0, 120)
+    }
+    if (typeof body.subjectSuffix === 'string' && body.subjectSuffix.length > 0) {
+      subjectSuffix = body.subjectSuffix.slice(0, 120)
     }
   } catch {
     return new Response(
@@ -310,11 +314,14 @@ Deno.serve(async (req) => {
       ? template.subject(templateData)
       : template.subject
 
-  // If a thread context is provided, normalize subject so every email in the
-  // thread shares the same leading subject (Gmail groups by Subject + headers).
-  const finalSubject = threadSubject
-    ? `${threadSubject} — ${resolvedSubject}`
-    : resolvedSubject
+  // Append a human-readable suffix to the subject (e.g. product name) so the
+  // inbox preview shows what the email is about. Falls back to the legacy
+  // threadSubject prefix if no subjectSuffix is provided.
+  const finalSubject = subjectSuffix
+    ? `${resolvedSubject} · ${subjectSuffix}`
+    : threadSubject
+      ? `${threadSubject} — ${resolvedSubject}`
+      : resolvedSubject
 
   // Threading headers (RFC 5322) — Gmail/Outlook will group these into one
   // conversation. We anchor every email in a thread to a stable "root"
