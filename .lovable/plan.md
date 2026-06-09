@@ -1,58 +1,58 @@
-## Problema
+## Problemă
+PDF-ul (jsPDF) și DOCX-ul (docx-js) descărcate arată diferit față de procesul-verbal afișat în dialog:
+- nu există logo Rentli în PDF, layout-ul antetului e diferit (centrare/font/spațiere)
+- intro + obiectul închirierii sunt scrise ca text neformatat — în UI sunt fraze cu cuvinte cheie **bold** (numele părților, CNP, CI, adresă, telefon, email, denumire produs, categorie, zile, total, preț/zi, garanție)
+- clauza finală nu e italicizată / muted ca în UI
+- pozele nu sunt aliniate în grid 2 coloane în DOCX (sunt una sub alta)
+- semnăturile au layout/font diferit (etichetă, nume, semnătură, linie, „Semnat …" muted) — vrem să arate ca în UI
+- PDF-ul nu păstrează ordinea „header → hr → titlu → 6 paragrafe → poze → semnături → footer cod RNT"
 
-În screenshot-uri apar 3 simptome:
-1. **Toast-uri cu fundal transparent și text negru** (ex. „Returnarea a fost initiata", „Te rugam sa semnezi in caseta") — vin de la `toast.success/error` direct din `sonner`. `src/components/ui/sonner.tsx` forțează `bg-transparent border-0 shadow-none p-0` pe toate toast-urile default, deci orice apel direct `toast.success(...)` apare gol.
-2. **Duplicări** (un card portocaliu/verde stilizat + un toast transparent lângă) — codul cheamă atât `notify.*` (card custom) cât și `toast.error(...)` brut, sau `useToast` legacy în paralel cu sonner. În plus, `<Toaster />` legacy din `src/App.tsx` randează un al doilea sistem.
-3. **Mesaje tehnice brute** propagate din DB / RPC:
-   - `record "new" has no field "deposit_amount"`
-   - `Owners can only set rental status to cancelled from the client (got: completed)`
-   - `PDF: Owner signature is already captured and cannot be modified`
+Vrem ca cele 3 randări (dialog HTML, PDF, DOCX) să fie cât mai aproape vizual una de alta.
 
 ## Plan
 
-### 1. Un singur sistem de notificări: card-ul `notify`
-- Înlocuiește în `src/hooks/use-toast.ts` implementarea legacy cu un thin wrapper peste `notify` (`notify.success/error/info`). Astfel cele ~30 de fișiere care folosesc `useToast` rămân funcționale, dar randează card-ul corect.
-- Scoate `<Toaster />` (legacy shadcn) din `src/App.tsx`. Păstrăm doar `<Sonner />`.
-- Hardening în `src/components/ui/sonner.tsx`: păstrăm overrides existente (notify.tsx folosește `toast.custom`), dar adăugăm un fallback minim — dacă cineva mai cheamă direct `toast.success(...)`, să apară tot un card stilizat (nu transparent). Practic forțăm orice `toast.success/error/...` să treacă prin `notify` printr-un patch în `notify.ts` și descurajăm folosirea directă.
+### 1. `src/lib/pvContent.ts` — sursă unică de adevăr pentru conținutul „rich"
+Adăugăm o funcție nouă `buildPvRichContent(rental, phase)` care întoarce, pe lângă stringurile actuale, și **runs structurate** — fragmente `{ text, bold? }` — pentru:
+- `introRuns` (intro cu bold pe nume, „Predator (proprietar)", CNP, „CI seria X nr Y", adresă, telefon, email pentru ambele părți)
+- `objectRuns` (obiectul închirierii cu bold pe denumire produs, categorie, „N zile", „X lei", „Y lei/zi", „Z lei" garanție)
+- `accessoriesRuns` (opțional)
+- `periodRuns`, `responsibilityRuns`, `finalClauseRuns`
 
-### 2. Migrare apeluri directe `toast.*` → `notify.*`
-Înlocuiri în fișierele afectate de screenshot-uri:
-- `src/pages/RentalDetailPage.tsx`:
-  - `toast.success("Returnarea a fost initiata.")` → `notify.confirmation({ title: "Returnare inițiată", message: "Procesul de returnare a fost pornit." })`
-  - `toast.error(...)` → `notify.error(friendly(e))`
-- `src/components/rentals/PvSignatureDialog.tsx`:
-  - „Te rugam sa semnezi in caseta" → `notify.warning({ title: "Semnătură lipsă", message: "Te rugăm să semnezi în casetă." })`
-  - Erorile PDF/DOCX/semnare → `notify.error(...)` cu mesaj prietenos
-  - **Suprimă** toast-ul `"PDF: ..."` dacă mesajul conține `Owner signature is already captured` — semnătura există deja, succesul real e afișat oricum.
-- Restul fișierelor care fac `toast.success/error/...` direct din `sonner` se vor remedia implicit prin pasul 1 (sonner.tsx + wrapper), nu modificăm fiecare call site dacă nu e necesar pentru claritate.
+Folosim aceste runs și în JSX-ul din dialog ca să garantăm că cele 3 formate au exact aceleași porțiuni bold (refactor minor în `PvSignatureDialog.tsx` — înlocuim porțiunile hardcodate cu un helper `<RichLine runs=… />`).
 
-### 3. Traducere erori brute → mesaje prietenoase
-Adaugă în `src/lib/errorHandler.ts` (sau un mic util nou `friendlyRpcError`) mapări pentru pattern-urile observate:
-- `has no field "deposit_amount"` → „Nu s-au putut salva sumele. Încearcă din nou peste câteva secunde sau contactează suportul." (+ log în consolă cu eroarea reală)
-- `Owners can only set rental status to cancelled` → suprimă silent dacă acțiunea curentă nu e o anulare (e o eroare colaterală a unui trigger ce rulează după ce predarea s-a făcut deja); altfel afișează „Nu poți modifica statusul închirierii din acest ecran."
-- `Owner signature is already captured` → suprimă (semnătura există deja, e no-op).
+### 2. `src/lib/pvDocx.ts` — aliniere vizuală cu dialogul
+- Păstrăm logo Rentli centrat (există).
+- Antet: nume firmă bold 12pt, apoi 3 rânduri 9pt color `#6B7280` (muted), urmat de o linie orizontală subțire (paragraph cu `border.bottom` color `#E5E7EB`).
+- Titlu: centrat, bold, 14pt, spațiere consistentă.
+- Construim cele 6 paragrafe din `…Runs` cu `TextRun({ bold })` per fragment, aliniere `JUSTIFIED`, font Arial 11pt.
+- Clauza finală: italică, 10pt, color `#6B7280`, separată de spațiere mai mare.
+- Poze: secțiunea cu header bold „FOTOGRAFII LA …", apoi un `Table` cu N/2 rânduri × 2 celule (fără border vizibil) — fiecare celulă conține poza centrată la 260×180 + caption „Poza N" sub ea. Asta înlocuiește lista verticală actuală.
+- Semnături: tabelul existent rămâne cu 2 coloane, dar layout-ul în celulă devine identic cu UI — label bold mic, nume, semnătură 180×60 sau text italic „— nesemnat —", apoi o linie subțire (`border.bottom`), apoi „Semnat dd.MM.yyyy HH:mm" muted 9pt.
+- Footer: cod închiriere + „Generat: …" 8pt muted (există).
 
-Aceste mapări sunt aplicate într-un helper `notifyError(e)` care decide:
-1. dacă mesajul e în lista „suprimă" → doar `console.warn` și return,
-2. dacă are mapare prietenoasă → `notify.error({ title, message })`,
-3. fallback → `notify.error({ title: "Ceva nu a mers", message: getSecureErrorMessage(e) })`.
-
-Înlocuim apelurile critice din PV / Rental detail / Listings cu `notifyError(e)`.
+### 3. `src/components/rentals/PvSignatureDialog.tsx` — generator PDF aliniat
+Refactorizăm `generatePdf(updatedPv)`:
+- Încărcăm logo-ul Rentli (`@/assets/rentli_logo.png` → dataURL) și îl desenăm centrat sus (~120×40).
+- Antet identic cu DOCX (nume bold ~11pt, 3 rânduri ~9pt gri, linie subțire).
+- Titlu centrat bold 14pt.
+- Înlocuim `writeParagraph(content.intro/object/…)` cu un helper nou `writeRichParagraph(runs, { align: "justify" })` care iterează cuvântul-cu-cuvânt prin runs, comutând `setFont("helvetica","bold"/"normal")` pe fragmente, calculând lățimea și wrap-ul manual cu `getStringUnitWidth`. Asta produce porțiuni bold exact ca în UI.
+- Clauza finală: italic + culoare `#6B7280`, font size 9.
+- Poze: păstrăm grid-ul 2-up existent (deja corect) cu caption „Poza N" sub fiecare.
+- Semnături: layout cu label bold ~10pt, nume regular, semnătură (sau italic „— nesemnat —"), linie, „Semnat …" 8pt gri — exact ca SigBox.
+- Footer: rămâne neschimbat.
 
 ### 4. Verificare
-- Re-test fluxul: inițiere returnare → 1 singur card verde, fără text transparent dedesubt.
-- Semnează PV fără a desena → 1 singur card amber „Semnătură lipsă".
-- Semnătură deja existentă → niciun toast tehnic, doar card-ul de succes „Închirierea... a fost finalizată".
+- Descarcă PDF + DOCX pentru un PV semnat de ambele părți; compară vizual cu dialogul.
+- Verifică wrap-ul, alinierea justified, lățimea pozelor și aspectul semnăturilor.
+- Verifică că diacriticele sunt înlocuite corect în PDF (Helvetica nu le suportă — `noDia` aplicat deja).
+- Verifică pe un PV doar pe jumătate semnat (apar „— nesemnat —" în loc de imagine semnătură).
 
 ## Fișiere modificate
-- `src/App.tsx` (scoate `<Toaster />` legacy)
-- `src/hooks/use-toast.ts` (bridge spre `notify`)
-- `src/lib/notify.tsx` (adaugă `notify.warning` fallback dacă lipsește + helper `notifyError`)
-- `src/lib/errorHandler.ts` (mapări mesaje prietenoase + lista de suprimat)
-- `src/components/ui/sonner.tsx` (stil fallback lizibil pentru orice toast direct)
-- `src/pages/RentalDetailPage.tsx`
-- `src/components/rentals/PvSignatureDialog.tsx`
+- `src/lib/pvContent.ts` (adaugă `buildPvRichContent` cu runs structurate; păstrează `buildPvContent` pentru back-compat)
+- `src/lib/pvDocx.ts` (folosește runs + grid de poze 2-col + final clause italic muted)
+- `src/components/rentals/PvSignatureDialog.tsx` (PDF generator rescris cu logo + runs bold + signature box aliniat; JSX-ul folosește același helper de runs ca să garanteze identitatea)
 
 ## Out of scope
-- Nu migrăm acum toate cele ~30 de fișiere care folosesc `useToast` — pasul 1 le rezolvă automat. Le putem curăța într-un follow-up.
-- Nu modificăm trigger-ele SQL care emit erorile brute (sunt protecții legitime); doar le traducem în UI.
+- Nu schimbăm conținutul textului PV-ului (frazele rămân aceleași) și nu modificăm logica de upload/semnare.
+- Nu adăugăm watermark sau pagini multiple — PDF-ul rămâne A4 portrait; spargerea pe pagini se face automat la overflow.
+- Nu schimbăm logo-ul sau datele de companie (`COMPANY`).
