@@ -4,6 +4,7 @@ import { jsPDF } from "jspdf";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Eraser, FileSignature, Download, FileText, ExternalLink, Send } from "lucide-react";
+import { X, ZoomIn } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
@@ -36,6 +37,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   const [signing, setSigning] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingDocx, setDownloadingDocx] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -345,7 +347,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
                   </p>
                   <div className="grid grid-cols-2 gap-4">
                     {photosMeta.map((m, i) => (
-                      <DocPhoto key={m.path} path={m.path} label={`Poza ${i + 1}`} />
+                      <DocPhoto key={m.path} path={m.path} label={`Poza ${i + 1}`} onClick={() => setLightboxIndex(i)} />
                     ))}
                   </div>
                 </section>
