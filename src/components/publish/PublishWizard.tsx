@@ -522,7 +522,22 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
                 <Step5Pricing data={data} update={update} feePercent={feePercent} freeListingsLeft={freeListingsLeft} errors={errors} />
               </div>
             )}
-            {step === 4 && <Step6Review data={data} feePercent={feePercent} onJump={jump} mode={mode} />}
+            {step === 4 && (
+              <>
+                {mode === "edit" && initialProduct?.approval_status === "approved" && (
+                  <div className="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    <p>
+                      {t(
+                        "Orice modificare salvată va trimite anunțul din nou spre aprobare. Anunțul nu va fi vizibil public până la o nouă verificare (de obicei sub 2 ore).",
+                        "Saving any change will resubmit the listing for review. It won't be publicly visible until re-approved (usually under 2 hours).",
+                      )}
+                    </p>
+                  </div>
+                )}
+                <Step6Review data={data} feePercent={feePercent} onJump={jump} mode={mode} />
+              </>
+            )}
           </div>
 
           <aside className="hidden lg:block">
