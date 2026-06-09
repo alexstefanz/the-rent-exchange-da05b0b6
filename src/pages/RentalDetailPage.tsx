@@ -29,6 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { useIsAdmin } from "@/hooks/queries/useAdminStats";
 import { toast } from "sonner";
+import { notify, notifyError } from "@/lib/notify";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -875,12 +876,18 @@ const RentalDetailPage = () => {
                 setInitiatingReturn(true);
                 try {
                   await initiateReturn(rental.id);
-                  toast.success(t("Returnarea a fost initiata.", "Return initiated."));
+                  notify.confirmation({
+                    title: t("Returnare inițiată", "Return initiated"),
+                    message: t(
+                      "Procesul de returnare a fost pornit.",
+                      "The return process has been started.",
+                    ),
+                  });
                   setReturnDialogOpen(false);
                   await Promise.all([refetch(), refetchReturnInitiated()]);
                 } catch (e: any) {
                   console.error("initiate_return error:", e);
-                  toast.error(e?.message || t("Eroare la initiere.", "Failed to initiate."));
+                  notifyError(e, { fallbackTitle: t("Eroare la inițiere", "Failed to initiate") });
                 } finally {
                   setInitiatingReturn(false);
                 }

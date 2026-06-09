@@ -54,3 +54,54 @@ export const handleApiError = (context: string, error: unknown): never => {
   logSecureError(context, error);
   throw new Error(getSecureErrorMessage(error));
 };
+
+/**
+ * Patterns whose error messages should be silently swallowed in the UI.
+ * They're non-actionable for the user (already-applied state, harmless
+ * trigger races, etc.). We still log them in dev.
+ */
+const SUPPRESS_PATTERNS: RegExp[] = [
+  /Owner signature is already captured/i,
+  /Renter signature is already captured/i,
+  /Owners can only set rental status to cancelled/i,
+];
+
+/**
+ * Map technical/DB error fragments to friendly Romanian messages.
+ */
+const FRIENDLY_MAP: Array<{ test: RegExp; title: string; message: string }> = [
+  {
+    test: /has no field "?deposit_amount"?/i,
+    title: "Nu am putut salva sumele",
+    message:
+      "A apărut o problemă temporară la salvarea garanției. Te rugăm să încerci din nou peste câteva secunde.",
+  },
+  {
+    test: /duplicate key value|already exists/i,
+    title: "Există deja",
+    message: "Această înregistrare există deja.",
+  },
+  {
+    test: /permission denied|not authorized/i,
+    title: "Acces restricționat",
+    message: "Nu ai permisiunea necesară pentru această acțiune.",
+  },
+];
+
+export interface FriendlyError {
+  suppress: boolean;
+  title: string;
+  message: string;
+}
+
+export function toFriendlyError(error: unknown, fallbackTitle = "Ceva nu a mers"): FriendlyError {
+  const raw = ((error as any)?.message ?? String(error ?? "")).toString();
+  if (!raw) return { suppress: false, title: fallbackTitle, message: "A apărut o eroare." };
+  if (SUPPRESS_PATTERNS.some((re) => re.test(raw))) {
+    return { suppress: true, title: fallbackTitle, message: raw };
+  }
+  for (const m of FRIENDLY_MAP) {
+    if (m.test.test(raw)) return { suppress: false, title: m.title, message: m.message };
+  }
+  return { suppress: false, title: fallbackTitle, message: getSecureErrorMessage(error) };
+}
