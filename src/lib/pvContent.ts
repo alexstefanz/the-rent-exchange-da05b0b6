@@ -135,3 +135,139 @@ export const COMPANY = {
 };
 
 export const MIN_PV_PHOTOS = 2;
+
+/* =============================================================
+ * Rich (run-based) content — shared by PDF, DOCX and HTML view.
+ * Each paragraph is an array of `{ text, bold? }` so all three
+ * renderers can apply identical bold emphasis.
+ * ============================================================= */
+
+export interface PvRun {
+  text: string;
+  bold?: boolean;
+}
+
+export interface PvRichContent {
+  title: string;
+  ownerName: string;
+  renterName: string;
+  introRuns: PvRun[];
+  objectRuns: PvRun[];
+  accessoriesRuns: PvRun[] | null;
+  periodRuns: PvRun[];
+  responsibilityRuns: PvRun[];
+  finalClauseRuns: PvRun[];
+  todayLabel: string;
+}
+
+const T = (text: string): PvRun => ({ text });
+const B = (text: string): PvRun => ({ text, bold: true });
+
+export function buildPvRichContent(
+  rental: RentalFullDetail,
+  phase: "handover" | "return",
+): PvRichContent {
+  const today = format(new Date(), "dd MMMM yyyy");
+  const ownerFake = fakeIdentity(rental.owner_id);
+  const renterFake = fakeIdentity(rental.renter_id);
+  const ownerId = {
+    cnp: rental.owner_cnp || ownerFake.cnp,
+    serie: rental.owner_id_series || ownerFake.serie,
+    nr: rental.owner_id_number || ownerFake.nr,
+    adresa: rental.owner_address || ownerFake.adresa,
+  };
+  const renterId = {
+    cnp: rental.renter_cnp || renterFake.cnp,
+    serie: rental.renter_id_series || renterFake.serie,
+    nr: rental.renter_id_number || renterFake.nr,
+    adresa: rental.renter_address || renterFake.adresa,
+  };
+  const ownerName = rental.owner_name || "Proprietar";
+  const renterName = rental.renter_name || "Chirias";
+  const ownerPhone = rental.owner_phone || "0740 000 000";
+  const renterPhone = rental.renter_phone || "0740 000 000";
+  const ownerEmail = rental.owner_email || "owner@rentli.ro";
+  const renterEmail = rental.renter_email || "renter@rentli.ro";
+  const title = phase === "handover"
+    ? "PROCES-VERBAL DE PREDARE-PRIMIRE"
+    : "PROCES-VERBAL DE RETURNARE";
+
+  const introRuns: PvRun[] = [
+    T("Incheiat astazi, "), B(today),
+    T(", intre domnul/doamna "), B(ownerName),
+    T(", in calitate de "), B("Predator (proprietar)"),
+    T(", identificat cu CNP "), B(ownerId.cnp),
+    T(", CI seria "), B(ownerId.serie),
+    T(" nr. "), B(ownerId.nr),
+    T(", domiciliat in "), B(ownerId.adresa),
+    T(", telefon "), B(ownerPhone),
+    T(", email "), B(ownerEmail),
+    T(", si domnul/doamna "), B(renterName),
+    T(", in calitate de "), B("Primitor (chirias/utilizator)"),
+    T(", identificat cu CNP "), B(renterId.cnp),
+    T(", CI seria "), B(renterId.serie),
+    T(" nr. "), B(renterId.nr),
+    T(", domiciliat in "), B(renterId.adresa),
+    T(", telefon "), B(renterPhone),
+    T(", email "), B(renterEmail),
+    T("."),
+  ];
+
+  const cat = rental.product_category || "-";
+  const objectRuns: PvRun[] = [
+    T("Prin prezentul proces-verbal, Predatorul preda, iar Primitorul primeste spre utilizare temporara, prin intermediul platformei de renting peer-to-peer Rentli, urmatorul bun: "),
+    B(rental.product_title || "-"),
+    T(", din categoria "), B(cat),
+    T(", pentru o perioada de "), B(`${rental.rental_days} zile`),
+    T(", cu costul total de "), B(`${rental.subtotal} lei`),
+    T(" ("), B(`${rental.daily_price} lei/zi`),
+    T(") si o garantie de "), B(`${rental.product_deposit_value ?? 0} lei`),
+    T("."),
+  ];
+
+  const items = rental.product_included_items || [];
+  const accessoriesRuns: PvRun[] | null = items.length > 0
+    ? [
+        T("Bunul este insotit de urmatoarele accesorii: "),
+        B(items.join(", ")),
+        T(phase === "handover"
+          ? ". La momentul predarii au fost realizate fotografii pentru confirmarea starii acestuia: "
+          : ". La momentul returnarii au fost realizate fotografii pentru confirmarea starii acestuia: "),
+        B("DA"),
+        T("."),
+      ]
+    : null;
+
+  const startTime = rental.pickup_time || "10:00";
+  const endTime = "18:00";
+  const periodRuns: PvRun[] = [
+    T("Perioada de utilizare convenita intre parti este de la data si ora "),
+    B(`${format(new Date(rental.start_date), "dd.MM.yyyy")}, ora ${startTime}`),
+    T(" pana la data si ora "),
+    B(`${format(new Date(rental.end_date), "dd.MM.yyyy")}, ora ${endTime}`),
+    T("."),
+  ];
+
+  const responsibilityRuns: PvRun[] = [
+    T(phase === "handover"
+      ? "Primitorul declara ca a verificat bunul si il accepta in starea mentionata, obligandu-se sa il utilizeze conform destinatiei sale, sa il pastreze in bune conditii si sa il returneze la termenul stabilit, in aceeasi stare, cu exceptia uzurii normale. Primitorul isi asuma raspunderea pentru orice deteriorare, pierdere sau furt survenite pe perioada utilizarii si se obliga sa notifice imediat Predatorul in cazul aparitiei unor defecte sau incidente."
+      : "Primitorul restituie bunul catre Predator, iar Predatorul confirma primirea acestuia in starea documentata prin fotografiile anexate. Eventualele daune constatate la momentul returnarii vor fi reglementate prin intermediul platformei Rentli, conform termenilor si conditiilor agreate."),
+  ];
+
+  const finalClauseRuns: PvRun[] = [
+    T("Eventualele neintelegeri vor fi solutionate conform termenilor si conditiilor platformei Rentli. Prezentul proces-verbal a fost incheiat in doua exemplare, cate unul pentru fiecare parte, avand aceeasi valoare juridica."),
+  ];
+
+  return {
+    title,
+    ownerName,
+    renterName,
+    introRuns,
+    objectRuns,
+    accessoriesRuns,
+    periodRuns,
+    responsibilityRuns,
+    finalClauseRuns,
+    todayLabel: today,
+  };
+}
