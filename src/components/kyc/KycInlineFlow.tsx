@@ -66,6 +66,7 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [docs, setDocs] = useState<UploadedDoc[]>([]);
+  const [existingDocTypes, setExistingDocTypes] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeDocType, setActiveDocType] = useState<"id_front" | "id_back" | "selfie" | null>(null);
   const phoneGate = usePhoneRequired();
@@ -118,6 +119,15 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
 
     if (error) console.error("Error loading KYC case:", error);
     setKycCase(data);
+    if (data?.id) {
+      const { data: docRows } = await supabase
+        .from("kyc_documents")
+        .select("document_type")
+        .eq("kyc_case_id", data.id);
+      setExistingDocTypes(new Set((docRows ?? []).map((r: any) => r.document_type)));
+    } else {
+      setExistingDocTypes(new Set());
+    }
     setIsLoading(false);
   }, [user]);
 
@@ -327,10 +337,45 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
   const isAlreadySubmitted = kycCase?.status === "SUBMITTED" || kycCase?.status === "NEEDS_MANUAL_REVIEW";
   const isVerified = kycCase?.status === "VERIFIED" || kycCase?.status === "APPROVED";
   const isRejected = kycCase?.status === "REJECTED";
-  const canUpload = !isAlreadySubmitted && !isVerified;
+  const hasAllExistingDocs =
+    existingDocTypes.has("id_front") &&
+    existingDocTypes.has("id_back") &&
+    existingDocTypes.has("selfie");
+  const isStuckInProgress =
+    kycCase?.status === "IN_PROGRESS" && hasAllExistingDocs;
+  const isInProcessing = isAlreadySubmitted || isStuckInProgress;
+  const canUpload = !isInProcessing && !isVerified && !isRejected ? !isInProcessing && !isVerified : !isInProcessing && !isVerified;
+  // Simplified: allow upload only when not processing and not verified.
+  // (Rejected users still need to re-upload.)
+  const canUploadFinal = !isInProcessing && !isVerified;
   const showPhoneGate = canUpload && !phoneGate.isProfileLoading && !phoneGate.hasValidPhone;
 
-  const progress = isVerified ? 100 : isAlreadySubmitted ? 66 : docs.length > 0 ? 33 : 0;
+  const progress = isVerified ? 100 : isInProcessing ? 66 : docs.length > 0 ? 33 : 0;
+
+  // Self-heal: if case is IN_PROGRESS but all docs are uploaded, promote to SUBMITTED.
+  useEffect(() => {
+    if (!user?.id || !kycCase?.id) return;
+    if (kycCase.status !== "IN_PROGRESS" || !hasAllExistingDocs) return;
+    let cancelled = false;
+    (async () => {
+      const { error: upErr } = await supabase
+        .from("kyc_cases")
+        .update({ status: "SUBMITTED", submitted_at: new Date().toISOString() })
+        .eq("id", kycCase.id);
+      if (upErr) {
+        console.warn("KYC self-heal: could not promote to SUBMITTED", upErr);
+        return;
+      }
+      await supabase.from("profiles").update({ kyc_status: "SUBMITTED" }).eq("id", user.id);
+      if (cancelled) return;
+      queryClient.invalidateQueries({ queryKey: ["kycGate", user.id] });
+      queryClient.invalidateQueries({ queryKey: ["currentUserProfile", user.id] });
+      refreshKycCase();
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, kycCase?.id, kycCase?.status, hasAllExistingDocs, queryClient, refreshKycCase]);
 
   if (isLoading) {
     return (
