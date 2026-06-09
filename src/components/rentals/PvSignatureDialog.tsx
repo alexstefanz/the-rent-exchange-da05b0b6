@@ -453,16 +453,23 @@ function DocParagraph({ children }: { children: React.ReactNode }) {
   return <p className="mb-4 text-justify">{children}</p>;
 }
 
-function DocPhoto({ path, label }: { path: string; label: string }) {
+function DocPhoto({ path, label, onClick }: { path: string; label: string; onClick?: () => void }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => { getPvFileSignedUrl(path).then(setUrl).catch(() => setUrl(null)); }, [path]);
   return (
-    <div className="rounded-lg overflow-hidden border border-border bg-muted">
+    <button
+      type="button"
+      onClick={onClick}
+      className="group rounded-lg overflow-hidden border border-border bg-muted text-left cursor-zoom-in focus:outline-none focus:ring-2 focus:ring-primary"
+    >
       <div className="aspect-[4/3] relative">
-        {url ? <img src={url} alt={label} className="absolute inset-0 w-full h-full object-cover" /> : <div className="absolute inset-0 animate-pulse bg-muted" />}
+        {url ? <img src={url} alt={label} className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105" /> : <div className="absolute inset-0 animate-pulse bg-muted" />}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+          <ZoomIn className="h-6 w-6 text-white drop-shadow" />
+        </div>
       </div>
       <p className="text-[11px] text-muted-foreground px-2 py-1">{label}</p>
-    </div>
+    </button>
   );
 }
 
