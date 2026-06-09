@@ -120,7 +120,7 @@ export const WithdrawalMethodCard = ({ method }: { method: PayoutMethod | null }
       }
       const { error } = await supabase
         .from("profiles")
-        .update({ iban: null, account_holder: null } as any)
+        .update({ iban: null, account_holder_name: null } as any)
         .eq("id", user.id);
       if (error) throw error;
       toast.success(t("IBAN șters", "IBAN deleted"));
