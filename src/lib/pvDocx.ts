@@ -16,7 +16,7 @@ import {
 import { format } from "date-fns";
 import type { RentalFullDetail, PvDocument } from "@/features/rentals/rentalDetailPageApi";
 import { getPvFileSignedUrl } from "@/features/rentals/rentalDetailPageApi";
-import { buildPvContent, noDia, COMPANY } from "./pvContent";
+import { buildPvRichContent, noDia, COMPANY, type PvRun } from "./pvContent";
 import rentliLogoUrl from "@/assets/rentli_logo.png";
 
 async function fetchAsArrayBuffer(url: string): Promise<ArrayBuffer> {
@@ -36,11 +36,25 @@ async function loadImage(path: string): Promise<{ data: ArrayBuffer; type: "jpg"
   }
 }
 
-function p(text: string, opts: { bold?: boolean; align?: (typeof AlignmentType)[keyof typeof AlignmentType]; size?: number } = {}) {
+function runsToTextRuns(runs: PvRun[], opts: { size?: number; italics?: boolean; color?: string } = {}) {
+  return runs.map(
+    (r) =>
+      new TextRun({
+        text: noDia(r.text),
+        bold: r.bold,
+        italics: opts.italics,
+        size: opts.size ?? 22,
+        color: opts.color,
+        font: "Arial",
+      }),
+  );
+}
+
+function pRich(runs: PvRun[], opts: { align?: (typeof AlignmentType)[keyof typeof AlignmentType]; size?: number; italics?: boolean; color?: string; after?: number } = {}) {
   return new Paragraph({
     alignment: opts.align ?? AlignmentType.JUSTIFIED,
-    spacing: { after: 160 },
-    children: [new TextRun({ text: noDia(text), bold: opts.bold, size: opts.size ?? 22, font: "Arial" })],
+    spacing: { after: opts.after ?? 160, line: 320 },
+    children: runsToTextRuns(runs, { size: opts.size, italics: opts.italics, color: opts.color }),
   });
 }
 
@@ -53,7 +67,7 @@ function centerLine(text: string, bold = false, size = 20) {
 }
 
 export async function generatePvDocx(rental: RentalFullDetail, pv: PvDocument, phase: "handover" | "return"): Promise<Blob> {
-  const c = buildPvContent(rental, phase);
+  const c = buildPvRichContent(rental, phase);
 
   // Load embedded images (signatures + photos)
   const photosMeta = pv.photos_meta || [];
@@ -70,7 +84,7 @@ export async function generatePvDocx(rental: RentalFullDetail, pv: PvDocument, p
     logoBuffer = null;
   }
 
-  const children: Paragraph[] = [];
+  const children: (Paragraph | Table)[] = [];
 
   // Header
   if (logoBuffer) {
@@ -86,52 +100,97 @@ export async function generatePvDocx(rental: RentalFullDetail, pv: PvDocument, p
     }));
   }
   children.push(centerLine(COMPANY.name, true, 22));
-  children.push(centerLine(COMPANY.address, false, 18));
-  children.push(centerLine(COMPANY.fiscal, false, 18));
-  children.push(centerLine(COMPANY.contact, false, 18));
-  children.push(new Paragraph({ children: [new TextRun({ text: "", size: 4 })], spacing: { after: 240 } }));
+  children.push(new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { after: 40 },
+    children: [new TextRun({ text: noDia(COMPANY.address), size: 18, color: "6B7280", font: "Arial" })],
+  }));
+  children.push(new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { after: 40 },
+    children: [new TextRun({ text: noDia(COMPANY.fiscal), size: 18, color: "6B7280", font: "Arial" })],
+  }));
+  children.push(new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { after: 120 },
+    children: [new TextRun({ text: noDia(COMPANY.contact), size: 18, color: "6B7280", font: "Arial" })],
+  }));
+  // Thin divider line
+  children.push(new Paragraph({
+    spacing: { after: 200 },
+    border: { bottom: { color: "E5E7EB", space: 1, style: BorderStyle.SINGLE, size: 6 } },
+    children: [new TextRun({ text: "" })],
+  }));
 
   // Title
   children.push(new Paragraph({
     heading: HeadingLevel.HEADING_1,
     alignment: AlignmentType.CENTER,
-    spacing: { before: 200, after: 240 },
-    children: [new TextRun({ text: noDia(c.title), bold: true, size: 28, font: "Arial" })],
+    spacing: { before: 200, after: 320 },
+    children: [new TextRun({ text: noDia(c.title), bold: true, size: 30, font: "Arial" })],
   }));
 
-  // Paragraphs
-  children.push(p(c.intro));
-  children.push(p(c.object));
-  if (c.accessories) children.push(p(c.accessories));
-  children.push(p(c.period));
-  children.push(p(c.responsibility));
-  children.push(p(c.finalClause));
+  // Body paragraphs (with inline bold matching the UI)
+  children.push(pRich(c.introRuns));
+  children.push(pRich(c.objectRuns));
+  if (c.accessoriesRuns) children.push(pRich(c.accessoriesRuns));
+  children.push(pRich(c.periodRuns));
+  children.push(pRich(c.responsibilityRuns));
+  // Final clause: italic + muted (matches UI styling)
+  children.push(pRich(c.finalClauseRuns, { italics: true, color: "6B7280", size: 20, after: 240 }));
 
-  // Photos
-  if (photoBuffers.some(Boolean)) {
+  // Photos — 2-column grid with caption below each
+  const validPhotos = photoBuffers
+    .map((ph, i) => (ph ? { ph, i } : null))
+    .filter(Boolean) as Array<{ ph: { data: ArrayBuffer; type: "jpg" | "png" }; i: number }>;
+  if (validPhotos.length > 0) {
     children.push(new Paragraph({
       spacing: { before: 200, after: 120 },
-      children: [new TextRun({ text: noDia(phase === "handover" ? "FOTOGRAFII LA PREDARE" : "FOTOGRAFII LA RETURNARE"), bold: true, size: 22, font: "Arial" })],
+      children: [new TextRun({
+        text: noDia(phase === "handover" ? "Fotografii la predare" : "Fotografii la returnare"),
+        bold: true, size: 18, color: "6B7280", font: "Arial",
+      })],
     }));
-    for (let i = 0; i < photoBuffers.length; i++) {
-      const ph = photoBuffers[i];
-      if (!ph) continue;
-      children.push(new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 60 },
-        children: [new ImageRun({
-          type: ph.type === "png" ? "png" : "jpg",
-          data: ph.data,
-          transformation: { width: 360, height: 240 },
-          altText: { title: `Poza ${i + 1}`, description: `Poza ${i + 1}`, name: `poza${i + 1}` },
-        }) as any],
-      }));
-      children.push(new Paragraph({
-        alignment: AlignmentType.CENTER,
-        spacing: { after: 200 },
-        children: [new TextRun({ text: `Poza ${i + 1}`, size: 18, font: "Arial", italics: true })],
+    const noBorder = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
+    const cellNoBorders = { top: noBorder, bottom: noBorder, left: noBorder, right: noBorder };
+    function photoCell(item: { ph: { data: ArrayBuffer; type: "jpg" | "png" }; i: number } | null) {
+      const inner: Paragraph[] = [];
+      if (item) {
+        inner.push(new Paragraph({
+          alignment: AlignmentType.CENTER,
+          spacing: { after: 40 },
+          children: [new ImageRun({
+            type: item.ph.type === "png" ? "png" : "jpg",
+            data: item.ph.data,
+            transformation: { width: 260, height: 180 },
+            altText: { title: `Poza ${item.i + 1}`, description: `Poza ${item.i + 1}`, name: `poza${item.i + 1}` },
+          }) as any],
+        }));
+        inner.push(new Paragraph({
+          alignment: AlignmentType.LEFT,
+          children: [new TextRun({ text: `Poza ${item.i + 1}`, size: 16, color: "6B7280", font: "Arial" })],
+        }));
+      } else {
+        inner.push(new Paragraph({ children: [new TextRun({ text: "" })] }));
+      }
+      return new TableCell({
+        borders: cellNoBorders,
+        width: { size: 4680, type: WidthType.DXA },
+        margins: { top: 60, bottom: 120, left: 60, right: 60 },
+        children: inner,
+      });
+    }
+    const rows: TableRow[] = [];
+    for (let i = 0; i < validPhotos.length; i += 2) {
+      rows.push(new TableRow({
+        children: [photoCell(validPhotos[i] ?? null), photoCell(validPhotos[i + 1] ?? null)],
       }));
     }
+    children.push(new Table({
+      width: { size: 9360, type: WidthType.DXA },
+      columnWidths: [4680, 4680],
+      rows,
+    }));
   }
 
   // Signatures — 2-column table
@@ -142,17 +201,18 @@ export async function generatePvDocx(rental: RentalFullDetail, pv: PvDocument, p
     const inner: Paragraph[] = [];
     inner.push(new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 80 },
+      spacing: { after: 60 },
       children: [new TextRun({ text: noDia(roleLabel), bold: true, size: 20, font: "Arial" })],
     }));
     inner.push(new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 120 },
+      spacing: { after: 160 },
       children: [new TextRun({ text: noDia(name), size: 20, font: "Arial" })],
     }));
     if (sig) {
       inner.push(new Paragraph({
         alignment: AlignmentType.CENTER,
+        spacing: { after: 40 },
         children: [new ImageRun({
           type: "png",
           data: sig,
@@ -163,13 +223,18 @@ export async function generatePvDocx(rental: RentalFullDetail, pv: PvDocument, p
     } else {
       inner.push(new Paragraph({
         alignment: AlignmentType.CENTER,
-        spacing: { before: 200, after: 60 },
+        spacing: { before: 200, after: 80 },
         children: [new TextRun({ text: "— nesemnat —", italics: true, size: 18, color: "999999", font: "Arial" })],
       }));
     }
+    // Thin divider line under signature
+    inner.push(new Paragraph({
+      spacing: { after: 40 },
+      border: { bottom: { color: "111111", space: 1, style: BorderStyle.SINGLE, size: 6 } },
+      children: [new TextRun({ text: "" })],
+    }));
     inner.push(new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { before: 40 },
       children: [new TextRun({ text: signedAt ? `Semnat: ${format(new Date(signedAt), "dd.MM.yyyy HH:mm")}` : "Semnatura", size: 16, color: "777777", font: "Arial" })],
     }));
     return new TableCell({
