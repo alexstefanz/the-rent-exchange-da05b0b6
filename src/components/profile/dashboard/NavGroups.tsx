@@ -93,6 +93,14 @@ const GROUPS: Group[] = [
         hintEn: "Bookings on your listings",
       },
       {
+        to: "/inchirieri",
+        icon: ScrollText,
+        ro: "Istoric închirieri",
+        en: "Rental history",
+        hintRo: "Toate închirierile anunțurilor tale",
+        hintEn: "All bookings on your listings",
+      },
+      {
         to: "/castiguri",
         icon: Wallet,
         ro: "Câștiguri & retrageri",
