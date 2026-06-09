@@ -445,15 +445,16 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       };
 
       if (mode === "edit" && productId) {
-        const wasRejected = initialProduct?.approval_status === "rejected";
+        const prevStatus = initialProduct?.approval_status;
+        const willRequireReview = prevStatus === "rejected" || prevStatus === "approved";
         await updateProduct(productId, { ...payload, is_active: data.is_active }, user.id);
         await queryClient.invalidateQueries({ queryKey: ["my-products", user.id] });
         await queryClient.invalidateQueries({ queryKey: ["product", productId] });
         toast({
-          title: wasRejected
+          title: willRequireReview
             ? t("Anunț retrimis spre aprobare", "Listing resubmitted for approval")
             : t("Anunț actualizat", "Listing updated"),
-          description: wasRejected
+          description: willRequireReview
             ? t(
                 "Îl vei vedea publicat după verificare (de obicei sub 2 ore).",
                 "It will be published after review (usually under 2 hours).",
