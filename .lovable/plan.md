@@ -1,40 +1,53 @@
-## Cauza duplicării
+## Problem
 
-**1. "Cererea ta de închiriere a fost acceptată!"** (2 emailuri)
-- `respond-rental-request` (când proprietarul acceptă) → trimite eveniment `request_accepted` → email `rental-accepted`
-- `verify-stripe-payment` (când se confirmă plata, imediat după) → trimite eveniment `payment_succeeded` → tot template-ul `rental-accepted`
+Several emails sent via `notify-rental-event` use `emailTemplate: { both: "..." }` (same template sent to renter AND owner) or incorrectly reuse a one-sided template for the wrong role. The body copy is written from one perspective only, so the other party reads phrasing that doesn't apply to them.
 
-Practic, fiecare cerere acceptată generează 2 emailuri aproape simultane cu același subiect și conținut.
+Concrete example reported (image): when the owner accepts a reservation, the OWNER also receives the renter-perspective email — "🎉 Cererea ta a fost acceptată! Alex Test (proprietarul) a confirmat rezervarea. Pregătește-te să te bucuri de produs." — which makes no sense for the owner.
 
-**2. "Predarea a fost confirmată"** (2 emailuri)
-- `PvSignatureDialog.handleSign` — când ambele părți au semnat PV-ul, frontend invocă `notify-rental-event` cu `handover_confirmed` (#1)
-- `rentalDetailPageApi.confirmHandoverReceived` — când chiriașul apasă apoi "Confirm primirea", RPC-ul setează `handover_confirmed_at` și frontend mai invocă `notify-rental-event` cu `handover_confirmed` (#2)
+## Audit results
 
-## Plan de reparare
+| Template | Mapping today | Issue | Action |
+|---|---|---|---|
+| `rental-accepted` | `both` | Owner sees renter-only copy ("Cererea ta a fost acceptată", "Pregătește-te să te bucuri de produs", "Discută cu proprietarul") | **Split** into `rental-accepted-renter` (current copy) + new `rental-accepted-owner` |
+| `request_cancelled_by_renter` → owner uses `rental-rejected` | wrong template | Owner reads "Din păcate, proprietarul nu a putut accepta cererea ta" — the owner is the recipient | Switch owner mapping to existing `cancellation-owner` ("Chiriașul a anulat cererea pentru produsul tău") |
+| `request_cancelled_by_owner` → renter uses `rental-rejected` | partly OK but wording is "refuz" not "anulare" | Switch renter mapping to existing `cancellation-renter` ("Cererea ta de închiriere a fost anulată") |
+| `pickup-scheduled` (both) | Neutral text ("Ai stabilit împreună cu cealaltă parte") | OK — no change |
+| `handover-confirmed` (both) | Neutral ("ambele părți", "închirierea e activă") | OK — no change |
+| `pv-pending`, `pv-other-done`, `return-reminder`, `return-deadline-2h`, `return-in-progress` (both) | Neutral phrasing | OK — no change |
+| `review-reminder`, `dispute-opened` (both) | Neutral | OK — no change |
+| `rental-completed-owner` / `rental-completed-renter` | Already split per role | OK |
+| `rental-request-owner` / `rental-request-renter` | Already split | OK |
+| `request-reminder-2h-*`, `request-expired-*` | Already split | OK |
 
-### Email "rental-accepted" — un singur trimis per cerere
-În `supabase/functions/notify-rental-event/index.ts`, în config-ul evenimentului `payment_succeeded`:
-- Scot template-ul email (`emailTemplate`) — păstrez doar notificarea in-app + SMS pentru proprietar
-- Subiect in-app rămâne "Plata a fost confirmată" (util pentru proprietar care vede astfel că banii sunt blocați)
-- Emailul "Cererea ta a fost acceptată" rămâne doar pe `request_accepted`
+## Changes
 
-Avantaje:
-- Chiriașul primește un singur email cu titlul corect
-- Proprietarul vede separat in-app că plata e ok, fără email duplicat
+### 1. New template: `rental-accepted-owner.tsx`
+- Subject: `Ai acceptat o cerere de închiriere ✓`
+- H1: `Ai acceptat cererea`
+- Lead: `Ai confirmat rezervarea pentru <renterName> la <productTitle>. Pregătește produsul pentru predare.`
+- ProductCard with `status="approved"`, period, total price (suma încasată).
+- Para: `Discută cu chiriașul direct din chat-ul Rentli pentru a stabili ridicarea.`
+- CTA: `Vezi rezervarea`.
+- Props: `productTitle, productImage, location, renterName, startDate, endDate, totalPrice, currency, rentalId`.
 
-### Email "handover-confirmed" — un singur trimis per predare
-În `src/components/rentals/PvSignatureDialog.tsx`, în `handleSign`:
-- Scot blocul care invocă `notify-rental-event` cu `handover_confirmed` (liniile ~276–281)
-- Păstrez doar evenimentul `pv_pickup_completed_by_party` (notifică cealaltă parte că PV-ul a fost semnat)
+### 2. Rename current `rental-accepted.tsx` → `rental-accepted-renter.tsx`
+- Keep current copy/props (already renter-targeted).
+- Subject unchanged: `Cererea ta de închiriere a fost acceptată! 🎉`.
 
-Astfel emailul `handover-confirmed` rămâne trimis exclusiv de `confirmHandoverReceived` (când chiriașul confirmă fizic primirea — momentul real în care închirierea devine activă).
+### 3. `registry.ts`
+- Remove `'rental-accepted'`.
+- Register `'rental-accepted-owner'` and `'rental-accepted-renter'`.
 
-### Verificare
-După deploy:
-- `notify-rental-event` + redeploy
-- Test: accept o cerere → 1 singur email "Cererea acceptată"
-- Test: semnez PV ambele părți + confirm primirea → 1 singur email "Predarea confirmată"
+### 4. `notify-rental-event/index.ts`
+- `request_accepted` (line ~77): `emailTemplate: { owner: "rental-accepted-owner", renter: "rental-accepted-renter" }`.
+- Ensure `templateData` builder includes both `ownerName` (for renter email) and `renterName` (for owner email). Verify the data passed to the email per recipient role.
+- `request_cancelled_by_renter` (line 244): change to `emailTemplate: { owner: "cancellation-owner" }`.
+- `request_cancelled_by_owner` (line 259): change to `emailTemplate: { renter: "cancellation-renter" }`.
 
-## Fișiere modificate
-- `supabase/functions/notify-rental-event/index.ts` — scot `emailTemplate` din `payment_succeeded`
-- `src/components/rentals/PvSignatureDialog.tsx` — elimin invocarea `handover_confirmed` din `handleSign`
+### 5. Deploy
+Deploy `notify-rental-event` and `send-transactional-email` after edits.
+
+## Out of scope
+
+- Non-rental templates (welcome, KYC, withdrawals, tickets, product-published/rejected, account-banned, password-changed, new-message, review-received, payout-received) — single-recipient, copy is consistent with role.
+- Visual/branding changes.
