@@ -16,6 +16,7 @@ import ListingsFilterBar, { type ListingsFilters } from "@/components/listings/L
 import ListingCard from "@/components/listings/ListingCard";
 import ListingsEmptyState from "@/components/listings/ListingsEmptyState";
 import ListingAvailabilityDialog from "@/components/listings/ListingAvailabilityDialog";
+import ListingHistoryDialog from "@/components/listings/ListingHistoryDialog";
 import type { ListingStatus } from "@/components/listings/ListingStatusBadge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +60,7 @@ const ListingsPage = () => {
   });
 
   const [availabilityProduct, setAvailabilityProduct] = useState<Product | null>(null);
+  const [historyProduct, setHistoryProduct] = useState<Product | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Product | null>(null);
   const [confirmHide, setConfirmHide] = useState<Product | null>(null);
   const [draft, setDraft] = useState<ProductDraft | null>(null);
@@ -317,6 +319,7 @@ const ListingsPage = () => {
                       product={p}
                       status={status}
                       onCalendar={status === "rejected" ? undefined : () => setAvailabilityProduct(p)}
+                      onHistory={() => setHistoryProduct(p)}
                       onHide={() => setConfirmHide(p)}
                       onActivate={() => handleActivate(p)}
                       onDelete={() => setConfirmDelete(p)}
@@ -358,6 +361,12 @@ const ListingsPage = () => {
         open={!!availabilityProduct}
         onOpenChange={(o) => !o && setAvailabilityProduct(null)}
         onSaved={refresh}
+      />
+
+      <ListingHistoryDialog
+        product={historyProduct}
+        open={!!historyProduct}
+        onOpenChange={(o) => !o && setHistoryProduct(null)}
       />
 
       <AlertDialog open={!!confirmHide} onOpenChange={(o) => !o && setConfirmHide(null)}>
