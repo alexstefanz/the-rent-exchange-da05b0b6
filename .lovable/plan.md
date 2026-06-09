@@ -1,28 +1,17 @@
-## Goal
+## Problem
 
-Add an owner-side rental history page that mirrors the renter's `/rezervari` page ("Închirierile mele"), so the owner has a dedicated history view of all rentals on their listings (not just pending requests in `/anunturi?tab=cereri`).
+Când chiriașul confirmă PV-ul, apare eroarea:
+`record "new" has no field "deposit_amount"`
 
-## Changes
+## Cauză
 
-### 1. New page `src/pages/OwnerRentalsPage.tsx`
-- Same layout/structure as `RentalsPage.tsx`.
-- Header tone: owner (primary/15 + Store icon + "Ca proprietar" chip).
-- Title RO/EN: "Istoric închirieri" / "Rental history".
-- Subtitle: "Toate rezervările pe anunțurile tale" / "All bookings on your listings".
-- Body renders `<RentalsOutTab />` (already lists owner-side rentals with all statuses).
-- Back button → `/profile`.
-- Reuses `BannedBanner`, `Navbar`, `Footer`.
+În migrarea `20260609114211_*.sql` (hardening din scanul Wiz) am creat trigger-ul `enforce_rental_owner_update_restrictions` pe tabela `public.rentals` care verifică `NEW.deposit_amount IS DISTINCT FROM OLD.deposit_amount`. Tabela `rentals` **nu are coloana `deposit_amount`** (verificat în schema). Orice UPDATE pe rentals (inclusiv cel făcut de confirmarea PV-ului) declanșează trigger-ul și eșuează imediat la parsing.
 
-### 2. Route in `src/App.tsx`
-- Replace the current `<Route path="/inchirieri" element={<Navigate to="/anunturi?tab=cereri" replace />} />` with `<Route path="/inchirieri" element={<OwnerRentalsPage />} />`.
-- Lazy import `OwnerRentalsPage`.
-- Keep `/inchirieri/:publicId` route untouched.
+## Fix
 
-### 3. Nav entry in `src/components/profile/dashboard/NavGroups.tsx`
-- Under the "Ca proprietar" group, add a new item (after "Cereri primite"):
-  - `to: "/inchirieri"`, icon `ScrollText` (or `History`), RO "Istoric închirieri", EN "Rental history", hint RO "Toate închirierile anunțurilor tale" / EN "All bookings on your listings".
+O nouă migrare care înlocuiește funcția `public.enforce_rental_owner_update_restrictions()` eliminând linia cu `deposit_amount` din lista de coloane protejate. Restul logicii (subtotal, platform_fee, owner_payout, refund_amount, daily_price, rental_days, start_date, end_date, renter_id, product_id, owner_id, stripe_*, paid_at, captured_at, owner_payout_released_at, early_return_*) rămâne neschimbat. Trigger-ul nu trebuie recreat — doar `CREATE OR REPLACE FUNCTION`.
 
 ## Out of scope
-- No changes to `RentalsOutTab`, queries, or APIs.
-- No email/notification changes.
-- No DB changes.
+
+- Nicio modificare în UI / `InspectionDialog` / `ownerRentalsApi`.
+- Nicio modificare la alte trigger-e sau policies din hardening.
