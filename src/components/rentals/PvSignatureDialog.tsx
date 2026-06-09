@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Loader2, Eraser, FileSignature, Download, FileText, ExternalLink, Send } from "lucide-react";
 import { X, ZoomIn } from "lucide-react";
 import { toast } from "sonner";
+import { notify, notifyError } from "@/lib/notify";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -224,7 +225,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       const blob = await generatePdf(pv);
       downloadBlob(blob, `${content.title.toLowerCase().replace(/[^a-z0-9]+/gi, "-")}-${rental.public_id || rental.id}.pdf`);
     } catch (e: any) {
-      toast.error(e?.message || "Eroare la generare PDF");
+      notifyError(e, { fallbackTitle: "Eroare la generare PDF" });
     } finally { setDownloadingPdf(false); }
   }
 
@@ -236,12 +237,15 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       downloadBlob(blob, `${content.title.toLowerCase().replace(/[^a-z0-9]+/gi, "-")}-${rental.public_id || rental.id}.docx`);
     } catch (e: any) {
       console.error(e);
-      toast.error(e?.message || "Eroare la generare DOCX");
+      notifyError(e, { fallbackTitle: "Eroare la generare DOCX" });
     } finally { setDownloadingDocx(false); }
   }
 
   async function handleSign() {
-    if (!sigRef.current || sigRef.current.isEmpty()) { toast.error("Te rugam sa semnezi in caseta"); return; }
+    if (!sigRef.current || sigRef.current.isEmpty()) {
+      notify.warning({ title: "Semnătură lipsă", message: "Te rugăm să semnezi în casetă." });
+      return;
+    }
     const dataUrl = sigRef.current.getCanvas().toDataURL("image/png");
     setSigning(true);
     try {
@@ -258,7 +262,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
           if (afterPdf) setPv(afterPdf);
         } catch (pdfErr: any) {
           console.error("PV PDF gen failed:", pdfErr);
-          toast.error("PDF: " + (pdfErr?.message || "eroare la generare"));
+          notifyError(pdfErr, { fallbackTitle: "Eroare la generare PDF" });
         }
       } else { setPv(refreshed); }
 
@@ -282,7 +286,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       if (finalPv) setPv(finalPv);
       if (finalPv?.pdf_path) onOpenChange(false);
     } catch (e: any) {
-      toast.error(e?.message || "Eroare la semnare");
+      notifyError(e, { fallbackTitle: "Eroare la semnare" });
     } finally { setSigning(false); }
   }
 
@@ -291,7 +295,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
     try {
       const url = await getPvFileSignedUrl(pv.pdf_path);
       window.open(url, "_blank");
-    } catch (e: any) { toast.error(e?.message || "Nu s-a putut deschide PDF"); }
+    } catch (e: any) { notifyError(e, { fallbackTitle: "Nu s-a putut deschide PDF" }); }
   }
 
   return (

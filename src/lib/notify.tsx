@@ -241,6 +241,24 @@ export const notify = {
     show("cancellation", { title, message }),
 };
 
+/**
+ * Display a backend / RPC error as a styled card, translating known
+ * technical messages into friendly Romanian copy and silently swallowing
+ * harmless duplicate-state errors. Always logs the raw error for devs.
+ */
+export function notifyError(
+  error: unknown,
+  opts: { fallbackTitle?: string } = {},
+) {
+  // Lazy import to avoid circular deps at module init.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { toFriendlyError } = require("@/lib/errorHandler") as typeof import("@/lib/errorHandler");
+  const friendly = toFriendlyError(error, opts.fallbackTitle ?? "Ceva nu a mers");
+  if (typeof console !== "undefined") console.warn("[notifyError]", error);
+  if (friendly.suppress) return;
+  show("cancellation", { title: friendly.title, message: friendly.message });
+}
+
 /** Map a DB notification row to a toast variant. */
 export function variantFromNotificationType(type: string): NotifyVariant {
   const t = (type || "").toLowerCase();
