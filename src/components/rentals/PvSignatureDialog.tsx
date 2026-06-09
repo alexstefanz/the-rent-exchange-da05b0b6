@@ -234,15 +234,24 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       const items = loaded.filter(Boolean) as Array<{ path: string; role: "owner" | "renter"; uploaded_at: string; dataUrl: string; dims: { w: number; h: number } }>;
       if (items.length > 0) {
         const colW = (W - 100 - 20) / 2;
-        const maxImgH = 160;
+        const maxImgH = 130;
         for (let i = 0; i < items.length; i += 2) {
-          if (y + maxImgH + 18 > H - 40) { doc.addPage(); y = 50; }
-          let rowH = 0;
+          // Compute actual row height (max of the two scaled images) before deciding page break
+          let plannedRowH = 0;
+          const sizes: { w: number; h: number }[] = [];
           for (let c = 0; c < 2 && i + c < items.length; c++) {
             const it = items[i + c];
             const ratio = it.dims.w / it.dims.h || 1;
             let w = colW; let h = w / ratio;
             if (h > maxImgH) { h = maxImgH; w = h * ratio; }
+            sizes.push({ w, h });
+            plannedRowH = Math.max(plannedRowH, h);
+          }
+          if (y + plannedRowH + 18 > H - 40) { doc.addPage(); y = 50; }
+          let rowH = 0;
+          for (let c = 0; c < 2 && i + c < items.length; c++) {
+            const it = items[i + c];
+            const { w, h } = sizes[c];
             const x = 50 + c * (colW + 20);
             try { doc.addImage(it.dataUrl, "JPEG", x, y, w, h); }
             catch { try { doc.addImage(it.dataUrl, "PNG", x, y, w, h); } catch { /* skip */ } }
@@ -258,41 +267,55 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       }
     }
 
-    // Signatures
-    if (y + 130 > H - 40) { doc.addPage(); y = 50; }
+    // Signatures — try to fit on the same page; compact layout if space is tight
+    const remaining = (H - 30) - y;
+    let sigImgH = 60;
+    let labelGap = 14;
+    let nameGap = 10;
+    let lineGap = 12;
+    let stampGap = 20;
+    const fullBlock = 14 + 10 + 60 + 12 + 20; // ~116
+    const compactBlock = 12 + 9 + 48 + 10 + 16; // ~95
+    if (remaining < fullBlock) {
+      if (remaining >= compactBlock) {
+        sigImgH = 48; labelGap = 12; nameGap = 9; lineGap = 10; stampGap = 16;
+      } else {
+        doc.addPage(); y = 50;
+      }
+    }
     const colW = (W - 100) / 2;
     doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(0);
     doc.text(noDia("Predator (proprietar)"), MARGIN + (colW - 10) / 2, y, { align: "center" });
     doc.text(noDia("Primitor (chirias)"), MARGIN + colW + (colW - 10) / 2, y, { align: "center" });
-    y += 14;
+    y += labelGap;
     doc.setFont("helvetica", "normal"); doc.setFontSize(10);
     doc.text(noDia(rich.ownerName), MARGIN + (colW - 10) / 2, y, { align: "center" });
     doc.text(noDia(rich.renterName), MARGIN + colW + (colW - 10) / 2, y, { align: "center" });
-    y += 10;
+    y += nameGap;
     const sigY = y;
     const drawSigBox = (dataUrl: string | null, x: number) => {
       if (dataUrl) {
-        try { doc.addImage(dataUrl, "PNG", x + 10, sigY, colW - 30, 60); }
+        try { doc.addImage(dataUrl, "PNG", x + 10, sigY, colW - 30, sigImgH); }
         catch { /* noop */ }
       } else {
         doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(153, 153, 153);
-        doc.text("— nesemnat —", x + (colW - 10) / 2, sigY + 36, { align: "center" });
+        doc.text("— nesemnat —", x + (colW - 10) / 2, sigY + sigImgH / 2 + 4, { align: "center" });
         doc.setTextColor(0); doc.setFont("helvetica", "normal");
       }
     };
     drawSigBox(updatedPv.owner_signature_data, MARGIN);
     drawSigBox(updatedPv.renter_signature_data, MARGIN + colW);
-    y += 64;
+    y += sigImgH + 4;
     doc.setDrawColor(120);
     doc.line(MARGIN, y, MARGIN + colW - 10, y);
     doc.line(MARGIN + colW, y, MARGIN + colW * 2 - 10, y);
-    y += 12;
+    y += lineGap;
     doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(119, 119, 119);
     const ownerStamp = updatedPv.owner_signed_at ? `Semnat ${format(new Date(updatedPv.owner_signed_at), "dd.MM.yyyy HH:mm")}` : "Semnatura";
     const renterStamp = updatedPv.renter_signed_at ? `Semnat ${format(new Date(updatedPv.renter_signed_at), "dd.MM.yyyy HH:mm")}` : "Semnatura";
     doc.text(ownerStamp, MARGIN + (colW - 10) / 2, y, { align: "center" });
     doc.text(renterStamp, MARGIN + colW + (colW - 10) / 2, y, { align: "center" });
-    y += 20;
+    y += stampGap;
     doc.setFontSize(7); doc.setTextColor(140);
     doc.text(noDia(`Cod inchiriere: ${rental.public_id || "-"} | Generat: ${format(new Date(), "dd.MM.yyyy HH:mm")}`), MARGIN, y);
     doc.setTextColor(0);
