@@ -27,18 +27,23 @@ interface Props {
   compact?: boolean;
   minRentalDays?: number | null;
   maxRentalDays?: number | null;
+  platformFeePercent?: number;
 }
 
 const PremiumBookingCard = ({
   clientPrice, priceWeek, priceMonth, startDate, endDate, bookedDates,
   onSelectDate, onClear, onReserve, onAsk, isOwnProduct,
   responseMinutes, ownerVerified, compact, minRentalDays, maxRentalDays,
+  platformFeePercent = 0,
 }: Props) => {
   const { language, t } = useLanguage();
   const dateLocale = language === "ro" ? ro : enUS;
 
   const rentalDays = useMemo(() => (startDate && endDate) ? differenceInDays(endDate, startDate) + 1 : 0, [startDate, endDate]);
-  const breakdown = useMemo(() => computeRentalPrice(rentalDays, clientPrice, priceWeek, priceMonth), [rentalDays, clientPrice, priceWeek, priceMonth]);
+  const breakdown = useMemo(
+    () => computeRentalPrice(rentalDays, clientPrice, priceWeek, priceMonth, platformFeePercent),
+    [rentalDays, clientPrice, priceWeek, priceMonth, platformFeePercent],
+  );
   const totalPrice = breakdown.total;
 
   const responseLabel = responseMinutes && responseMinutes > 0
@@ -56,6 +61,14 @@ const PremiumBookingCard = ({
           <span className="text-base font-semibold text-foreground">RON</span>
           <span className="text-muted-foreground text-sm">/ {t("zi", "day")}</span>
         </div>
+        {platformFeePercent > 0 && (
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {t(
+              `+ ${platformFeePercent}% comision Rentli (min 1 RON) la finalizare`,
+              `+ ${platformFeePercent}% Rentli fee (min 1 RON) at checkout`,
+            )}
+          </p>
+        )}
       </div>
 
       {/* Calendar */}
@@ -141,6 +154,12 @@ const PremiumBookingCard = ({
             </span>
             <span className="font-medium">{formatPriceShort(rentalDays * clientPrice)} RON</span>
           </div>
+          {breakdown.platformFee > 0 && (
+            <div className="flex justify-between mt-1">
+              <span className="text-muted-foreground">{t("Comision Rentli", "Rentli fee")}</span>
+              <span className="font-medium">{formatPriceShort(breakdown.platformFee)} RON</span>
+            </div>
+          )}
           <div className="flex justify-between mt-2.5 font-semibold text-base"><span>{t("Total", "Total")}</span><span className="text-primary">{formatPriceShort(totalPrice)} RON</span></div>
         </div>
       )}

@@ -25,18 +25,19 @@ interface Props {
   ownerVerified?: boolean;
   minRentalDays?: number | null;
   maxRentalDays?: number | null;
+  platformFeePercent?: number;
 }
 
 const MobileStickyBookingBar = (props: Props) => {
   const { language, t } = useLanguage();
-  const { clientPrice, priceWeek, priceMonth, startDate, endDate, onReserve, onAsk, isOwnProduct } = props;
+  const { clientPrice, priceWeek, priceMonth, startDate, endDate, onReserve, onAsk, isOwnProduct, platformFeePercent = 0 } = props;
   const dateLocale = language === "ro" ? ro : enUS;
 
   const hasDates = !!(startDate && endDate);
   const rentalDays = useMemo(() => (hasDates ? differenceInDays(endDate!, startDate!) + 1 : 0), [hasDates, startDate, endDate]);
   const totalPrice = useMemo(
-    () => (hasDates ? computeRentalPrice(rentalDays, clientPrice, priceWeek, priceMonth).total : 0),
-    [hasDates, rentalDays, clientPrice, priceWeek, priceMonth],
+    () => (hasDates ? computeRentalPrice(rentalDays, clientPrice, priceWeek, priceMonth, platformFeePercent).total : 0),
+    [hasDates, rentalDays, clientPrice, priceWeek, priceMonth, platformFeePercent],
   );
 
   if (isOwnProduct) return null;
