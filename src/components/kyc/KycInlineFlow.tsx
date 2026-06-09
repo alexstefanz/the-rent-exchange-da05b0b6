@@ -430,7 +430,7 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
         </Card>
       )}
 
-      {isAlreadySubmitted && (
+      {isInProcessing && !isVerified && (
         <Card className="border-amber-500/30 bg-amber-50/30 dark:bg-amber-950/10">
           <CardContent className="flex items-center gap-3 py-6">
             <Loader2 className="h-8 w-8 text-amber-500 flex-shrink-0 animate-spin" />
@@ -454,7 +454,7 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
         </Card>
       )}
 
-      {isRejected && (
+      {isRejected && !isInProcessing && (
         <Card className="border-destructive/30 bg-destructive/5">
           <CardContent className="flex items-start gap-3 py-6">
             <AlertCircle className="h-6 w-6 text-destructive flex-shrink-0 mt-0.5" />
