@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import { MapPin, Eye, Edit, MoreHorizontal, EyeOff, Eye as EyeIcon, CalendarDays, Trash2, Share2, Sparkles } from "lucide-react";
+import { MapPin, Eye, Edit, MoreHorizontal, EyeOff, Eye as EyeIcon, CalendarDays, Trash2, Share2, Sparkles, History as HistoryIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -20,6 +20,7 @@ interface Props {
   onActivate?: () => void;
   onDelete?: () => void;
   onCalendar?: () => void;
+  onHistory?: () => void;
 }
 
 const deriveQualityScore = (p: Product): number => {
@@ -37,7 +38,7 @@ const deriveQualityScore = (p: Product): number => {
   return Math.min(100, s);
 };
 
-const ListingCard = ({ product, status, onHide, onActivate, onDelete, onCalendar }: Props) => {
+const ListingCard = ({ product, status, onHide, onActivate, onDelete, onCalendar, onHistory }: Props) => {
   const { language } = useLanguage();
   const t = (ro: string, en: string) => (language === "ro" ? ro : en);
   const [imgError, setImgError] = useState(false);
@@ -108,6 +109,9 @@ const ListingCard = ({ product, status, onHide, onActivate, onDelete, onCalendar
               </DropdownMenuItem>
               {onCalendar && !isRejected && (
                 <DropdownMenuItem onClick={onCalendar}><CalendarDays className="mr-2 h-4 w-4" /> {t("Disponibilitate", "Availability")}</DropdownMenuItem>
+              )}
+              {onHistory && (
+                <DropdownMenuItem onClick={onHistory}><HistoryIcon className="mr-2 h-4 w-4" /> {t("Istoric", "History")}</DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={handleShare}><Share2 className="mr-2 h-4 w-4" /> {t("Distribuie", "Share")}</DropdownMenuItem>
               <DropdownMenuSeparator />
