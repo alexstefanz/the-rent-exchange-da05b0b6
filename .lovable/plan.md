@@ -1,21 +1,48 @@
 ## Problem
 
-La "Confirm returnarea": `Owners can only set rental status to cancelled from the client (got: completed)`.
+When a user has already submitted KYC documents, the page sometimes still shows the upload form and allows re-uploading new documents instead of a "verification in progress" state.
 
-## Cauză
+Root cause is in `src/components/kyc/KycInlineFlow.tsx`:
 
-`confirmReturn` apelează RPC-ul `confirm_rental_return` (SECURITY DEFINER) care face `UPDATE rentals SET status='completed'`. SECURITY DEFINER nu schimbă `auth.uid()`, deci trigger-ul `enforce_rental_owner_update_restrictions` îl vede pe owner făcând update și blochează orice `status` ≠ `'cancelled'`. Aceeași logică va bloca și alte tranziții legitime owner-driven prin RPC (handover_confirmed_at→active, etc.).
+- The "already submitted" state only triggers when `kyc_cases.status` is `SUBMITTED` or `NEEDS_MANUAL_REVIEW`.
+- In the database we already have at least one case stuck in `IN_PROGRESS` with all 3 documents uploaded (case `bc8f5eeb…`, 3 docs, `submitted_at = null`, `profiles.kyc_status = NOT_VERIFIED`). This happens when the final `UPDATE … status='SUBMITTED'` step silently doesn't complete (tab closed, network drop, transient RLS hiccup), leaving the row at `IN_PROGRESS` even though documents are already in storage.
+- Because `canUpload = !isAlreadySubmitted && !isVerified`, the user sees the upload form again and can re-upload.
 
-## Fix
+## Fix (UI + light data-recovery, no schema changes)
 
-Nouă migrare cu `CREATE OR REPLACE FUNCTION public.enforce_rental_owner_update_restrictions()` care:
-- elimină blocarea pe `status` pentru owner. Tranzițiile valide sunt deja impuse de RPC-urile SECURITY DEFINER (`confirm_rental_handover`, `confirm_rental_return`, `open_rental_dispute`, cancel flows) și de RLS pe `rentals`.
-- păstrează intact restul protecțiilor (subtotal, platform_fee, owner_payout, refund_amount, daily_price, rental_days, start_date, end_date, renter_id, product_id, owner_id, payment_intent_id, paid_at, captured_at, early_return_*) — acestea oricum nu sunt setate de RPC-uri din path-ul PV-ului.
+### 1. Treat "in processing" more broadly in `src/components/kyc/KycInlineFlow.tsx`
 
-## De ce este sigur
+- Load existing `kyc_documents` for the current case (count of `id_front` / `id_back` / `selfie`).
+- Define `hasAllDocsUploaded = front && back && selfie`.
+- Expand the gating:
+  - `isInProcessing = isAlreadySubmitted || (kycCase?.status === "IN_PROGRESS" && hasAllDocsUploaded)`
+  - `canUpload = !isInProcessing && !isVerified`
+- Render the existing amber "Verificare în curs / Verification in progress" card whenever `isInProcessing` is true (including stuck `IN_PROGRESS` cases that already have all 3 docs).
+- Hide the file picker, name input, and "Submit" button while `isInProcessing`.
 
-Coloanele financiare/temporale rămân blocate la UPDATE direct de către owner. Restricția pe `status` era duplicată față de logica RPC-urilor și bloca flow-ul corect. Fără ea, owner-ul tot nu poate seta status arbitrar via client direct fără a trece prin RPC, deoarece RLS pe `rentals` permite owner-ului doar update-uri prin RPC-urile autorizate (verificat în migrările existente de hardening).
+### 2. Self-heal stuck `IN_PROGRESS` cases
 
-## Out of scope
+When the component loads a case with status `IN_PROGRESS` and 3 documents are already present:
+- Fire a best-effort update `kyc_cases.status = 'SUBMITTED'`, `submitted_at = now()` (RLS already allows this transition for the owner).
+- Also update `profiles.kyc_status = 'SUBMITTED'` so the global gate (`useKycGate`, `DrawerKycPill`, account dashboard) shows the correct "in progress" state everywhere.
+- Invalidate `kycGate` and `currentUserProfile` queries.
 
-UI, RPC-uri, sau alte trigger-e.
+### 3. Make the submit flow resilient
+
+In `handleSubmit`, capture and surface the error from the final `.update({ status: 'SUBMITTED' })` and the `profiles` update (currently both are awaited without error handling). If either fails, keep the user on the page with a toast instead of silently leaving them in `IN_PROGRESS`.
+
+### 4. Out of scope
+
+- No DB schema, RLS, or trigger changes.
+- No changes to the admin KYC review flow.
+- No changes to `extract-id-data` edge function.
+
+## Files to change
+
+- `src/components/kyc/KycInlineFlow.tsx` — gating logic, doc-count query, self-heal, error handling on the final updates.
+
+## Verification
+
+- User with `kyc_cases.status = IN_PROGRESS` + 3 docs sees the amber "Verificare în curs" card, no upload UI.
+- New submission flow still works end-to-end and ends at `SUBMITTED` with `profiles.kyc_status = SUBMITTED`.
+- `DrawerKycPill` shows the amber "Verificare în curs" pill consistently.
