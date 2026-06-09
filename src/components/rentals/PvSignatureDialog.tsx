@@ -446,6 +446,15 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {lightboxIndex !== null && photosMeta[lightboxIndex] && (
+      <PvLightbox
+        photos={photosMeta}
+        index={lightboxIndex}
+        onClose={() => setLightboxIndex(null)}
+        onIndex={setLightboxIndex}
+      />
+    )}
+    </>
   );
 }
 
