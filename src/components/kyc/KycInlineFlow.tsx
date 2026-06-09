@@ -293,16 +293,21 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
         });
       }
 
-      const { data: updated } = await supabase
+      const { data: updated, error: submitErr } = await supabase
         .from("kyc_cases")
         .update({ status: "SUBMITTED", submitted_at: new Date().toISOString() })
         .eq("id", caseId)
         .select("id, status, level_required, rejection_reason, public_id, created_at")
         .single();
 
+      if (submitErr) throw submitErr;
       if (updated) setKycCase(updated);
 
-      await supabase.from("profiles").update({ kyc_status: "SUBMITTED" }).eq("id", user.id);
+      const { error: profErr } = await supabase
+        .from("profiles")
+        .update({ kyc_status: "SUBMITTED" })
+        .eq("id", user.id);
+      if (profErr) console.warn("KYC: profile kyc_status update failed", profErr);
 
       // Fire-and-forget: extract ID card data via Lovable AI (non-blocking)
       supabase.functions
