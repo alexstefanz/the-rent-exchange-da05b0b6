@@ -346,6 +346,10 @@ export const updateProduct = async (
     payload.flag_reason = null;
     payload.is_active = true;
   }
+  // Any edit to an already-approved listing must be re-reviewed by admins.
+  if ((current as any)?.approval_status === "approved") {
+    payload.approval_status = "pending";
+  }
 
   const { data: product, error } = await supabase
     .from("products")
