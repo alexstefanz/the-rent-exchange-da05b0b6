@@ -1,17 +1,24 @@
 ## Problem
 
-Când chiriașul confirmă PV-ul, apare eroarea:
-`record "new" has no field "deposit_amount"`
+`record "new" has no field "stripe_payment_intent_id"` la semnarea/confirmarea PV-ului.
 
 ## Cauză
 
-În migrarea `20260609114211_*.sql` (hardening din scanul Wiz) am creat trigger-ul `enforce_rental_owner_update_restrictions` pe tabela `public.rentals` care verifică `NEW.deposit_amount IS DISTINCT FROM OLD.deposit_amount`. Tabela `rentals` **nu are coloana `deposit_amount`** (verificat în schema). Orice UPDATE pe rentals (inclusiv cel făcut de confirmarea PV-ului) declanșează trigger-ul și eșuează imediat la parsing.
+Trigger-ul `enforce_rental_owner_update_restrictions` (din migrarea de hardening Wiz) verifică:
+- `NEW.stripe_payment_intent_id` — nu există în `rentals` (coloana se numește `payment_intent_id`)
+- `NEW.stripe_session_id` — nu există deloc
+
+Orice UPDATE pe `rentals` eșuează la parsing-ul trigger-ului.
 
 ## Fix
 
-O nouă migrare care înlocuiește funcția `public.enforce_rental_owner_update_restrictions()` eliminând linia cu `deposit_amount` din lista de coloane protejate. Restul logicii (subtotal, platform_fee, owner_payout, refund_amount, daily_price, rental_days, start_date, end_date, renter_id, product_id, owner_id, stripe_*, paid_at, captured_at, owner_payout_released_at, early_return_*) rămâne neschimbat. Trigger-ul nu trebuie recreat — doar `CREATE OR REPLACE FUNCTION`.
+Nouă migrare cu `CREATE OR REPLACE FUNCTION public.enforce_rental_owner_update_restrictions()` care:
+- înlocuiește `NEW.stripe_payment_intent_id` cu `NEW.payment_intent_id` (coloana reală)
+- elimină verificarea pe `stripe_session_id` (coloana nu există)
+- păstrează restul protecțiilor (subtotal, platform_fee, owner_payout, refund_amount, daily_price, rental_days, start_date, end_date, renter_id, product_id, owner_id, paid_at, captured_at, owner_payout_released_at*, early_return_*) și restricția de status pentru owner
+
+*Notă: `owner_payout_released_at` nu apare în lista coloanelor — voi elimina și acea verificare ca să nu reapară aceeași clasă de eroare.
 
 ## Out of scope
 
-- Nicio modificare în UI / `InspectionDialog` / `ownerRentalsApi`.
-- Nicio modificare la alte trigger-e sau policies din hardening.
+Nicio modificare în UI sau alte trigger-e.
