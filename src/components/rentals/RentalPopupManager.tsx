@@ -38,6 +38,11 @@ export default function RentalPopupManager() {
   const pushItem = (item: RentalPopupItem) => {
     if (seenIdsRef.current.has(item.id)) return;
     seenIdsRef.current.add(item.id);
+    // For renters: mark confirmation as seen the moment we display it,
+    // so it never re-appears on next page load / realtime event.
+    if (item.mode === "renter") {
+      markRenterConfirmationSeen(item.id).catch(() => {});
+    }
     setQueue((q) => {
       if (q.some((x) => x.id === item.id)) return q;
       return [...q, item];
