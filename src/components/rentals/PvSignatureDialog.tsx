@@ -272,13 +272,9 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
             extra: { actorName: role === "owner" ? rental.owner_name : rental.renter_name, phase },
           },
         });
-        // If BOTH parties have now signed, fire the "complete" event to notify both.
-        if (refreshed.owner_signature_data && refreshed.renter_signature_data) {
-          const complete_event = phase === "handover" ? "handover_confirmed" : "rental_completed";
-          await supabase.functions.invoke("notify-rental-event", {
-            body: { rental_id: rental.id, event_key: complete_event, actor_id: user?.id },
-          });
-        }
+        // Note: handover_confirmed / rental_completed are fired by the dedicated
+        // RPC flows (confirm_handover_received / confirm_rental_return) to avoid
+        // duplicate emails when the renter performs the explicit confirmation.
       } catch { /* non-blocking */ }
 
       onSigned?.();
