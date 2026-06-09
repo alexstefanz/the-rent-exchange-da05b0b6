@@ -18,8 +18,9 @@ import {
   type PvDocument,
 } from "@/features/rentals/rentalDetailPageApi";
 import type { RentalFullDetail } from "@/features/rentals/rentalDetailPageApi";
-import { buildPvContent, fakeIdentity, noDia, COMPANY, MIN_PV_PHOTOS } from "@/lib/pvContent";
+import { buildPvContent, buildPvRichContent, fakeIdentity, noDia, COMPANY, MIN_PV_PHOTOS, type PvRun } from "@/lib/pvContent";
 import { generatePvDocx, downloadBlob } from "@/lib/pvDocx";
+import rentliLogoUrl from "@/assets/rentli_logo.png";
 
 interface Props {
   open: boolean;
@@ -95,45 +96,117 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
     const MARGIN = 50;
     const CONTENT_W = W - MARGIN * 2;
     let y = 40;
+    const rich = buildPvRichContent(rental, phase);
 
     const ensureSpace = (needed: number) => {
       if (y + needed > H - 40) { doc.addPage(); y = 50; }
     };
-    const writeParagraph = (text: string, opts: { size?: number; bold?: boolean; align?: "left" | "center" | "justify"; lh?: number } = {}) => {
+    const writeParagraph = (text: string, opts: { size?: number; bold?: boolean; italic?: boolean; align?: "left" | "center" | "justify"; lh?: number; color?: [number, number, number] } = {}) => {
       const size = opts.size ?? 10;
       const lh = opts.lh ?? 13;
       doc.setFontSize(size);
-      doc.setFont("helvetica", opts.bold ? "bold" : "normal");
+      const style = opts.bold && opts.italic ? "bolditalic" : opts.bold ? "bold" : opts.italic ? "italic" : "normal";
+      doc.setFont("helvetica", style);
+      if (opts.color) doc.setTextColor(opts.color[0], opts.color[1], opts.color[2]); else doc.setTextColor(0);
       const lines = doc.splitTextToSize(noDia(text), CONTENT_W) as string[];
       ensureSpace(lines.length * lh);
       if (opts.align === "center") doc.text(lines, W / 2, y, { align: "center" });
       else doc.text(lines, MARGIN, y, { align: opts.align === "justify" ? "justify" : "left", maxWidth: CONTENT_W });
       y += lines.length * lh;
+      doc.setTextColor(0);
     };
 
+    // Word-wrap renderer for rich (bold/regular) runs.
+    const writeRichParagraph = (runs: PvRun[], opts: { size?: number; lh?: number } = {}) => {
+      const size = opts.size ?? 10;
+      const lh = opts.lh ?? 14;
+      doc.setFontSize(size);
+      // Tokenize into words while keeping bold info per token.
+      type Tok = { text: string; bold: boolean };
+      const tokens: Tok[] = [];
+      for (const r of runs) {
+        const parts = noDia(r.text).split(/(\s+)/);
+        for (const p of parts) if (p.length > 0) tokens.push({ text: p, bold: !!r.bold });
+      }
+      const widthOf = (t: Tok) => {
+        doc.setFont("helvetica", t.bold ? "bold" : "normal");
+        return doc.getTextWidth(t.text);
+      };
+      // Greedy line wrap.
+      const lines: Tok[][] = [];
+      let line: Tok[] = [];
+      let lineW = 0;
+      for (const tok of tokens) {
+        const w = widthOf(tok);
+        if (line.length === 0 && /^\s+$/.test(tok.text)) continue;
+        if (lineW + w > CONTENT_W && line.length > 0) {
+          lines.push(line);
+          line = [];
+          lineW = 0;
+          if (/^\s+$/.test(tok.text)) continue;
+        }
+        line.push(tok);
+        lineW += w;
+      }
+      if (line.length > 0) lines.push(line);
+
+      ensureSpace(lines.length * lh);
+      for (const ln of lines) {
+        let x = MARGIN;
+        for (const tok of ln) {
+          doc.setFont("helvetica", tok.bold ? "bold" : "normal");
+          doc.text(tok.text, x, y);
+          x += doc.getTextWidth(tok.text);
+        }
+        y += lh;
+      }
+    };
+
+    // Brand logo (best-effort)
+    try {
+      const logoDataUrl: string = await new Promise((resolve, reject) => {
+        fetch(rentliLogoUrl).then((r) => r.blob()).then((b) => {
+          const fr = new FileReader();
+          fr.onload = () => resolve(fr.result as string);
+          fr.onerror = () => reject(fr.error);
+          fr.readAsDataURL(b);
+        }).catch(reject);
+      });
+      const logoW = 90, logoH = 30;
+      doc.addImage(logoDataUrl, "PNG", (W - logoW) / 2, y, logoW, logoH);
+      y += logoH + 8;
+    } catch { /* ignore */ }
+
     // Header
-    doc.setFontSize(10); doc.setFont("helvetica", "bold");
-    doc.text(COMPANY.name, W / 2, y, { align: "center" }); y += 12;
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9);
+    doc.setFontSize(11); doc.setFont("helvetica", "bold"); doc.setTextColor(17, 17, 17);
+    doc.text(COMPANY.name, W / 2, y, { align: "center" }); y += 14;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(107, 114, 128);
     doc.text(noDia(COMPANY.address), W / 2, y, { align: "center" }); y += 11;
     doc.text(COMPANY.fiscal, W / 2, y, { align: "center" }); y += 11;
     doc.text(COMPANY.contact, W / 2, y, { align: "center" }); y += 14;
-    doc.setDrawColor(200); doc.line(MARGIN, y, W - MARGIN, y); y += 22;
+    doc.setTextColor(0);
+    doc.setDrawColor(229, 231, 235); doc.line(MARGIN, y, W - MARGIN, y); y += 24;
 
     doc.setFontSize(14); doc.setFont("helvetica", "bold");
-    doc.text(noDia(content.title), W / 2, y, { align: "center" }); y += 22;
+    doc.text(noDia(rich.title), W / 2, y, { align: "center" }); y += 24;
 
-    writeParagraph(content.intro, { align: "justify" }); y += 8;
-    writeParagraph(content.object, { align: "justify" }); y += 8;
-    if (content.accessories) { writeParagraph(content.accessories, { align: "justify" }); y += 8; }
-    writeParagraph(content.period, { align: "justify" }); y += 8;
-    writeParagraph(content.responsibility, { align: "justify" }); y += 8;
-    writeParagraph(content.finalClause, { align: "justify" }); y += 14;
+    writeRichParagraph(rich.introRuns); y += 8;
+    writeRichParagraph(rich.objectRuns); y += 8;
+    if (rich.accessoriesRuns) { writeRichParagraph(rich.accessoriesRuns); y += 8; }
+    writeRichParagraph(rich.periodRuns); y += 8;
+    writeRichParagraph(rich.responsibilityRuns); y += 12;
+    // Final clause: italic, muted
+    writeParagraph(rich.finalClauseRuns.map((r) => r.text).join(""), {
+      align: "justify", size: 9, italic: true, color: [107, 114, 128], lh: 12,
+    });
+    y += 14;
 
     // Photos
     ensureSpace(20);
-    doc.setFontSize(11); doc.setFont("helvetica", "bold");
-    doc.text(noDia(phase === "handover" ? "Fotografii la predare:" : "Fotografii la returnare:"), MARGIN, y); y += 14;
+    doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(107, 114, 128);
+    doc.text(noDia((phase === "handover" ? "Fotografii la predare" : "Fotografii la returnare").toUpperCase()), MARGIN, y);
+    y += 14;
+    doc.setTextColor(0);
     doc.setFont("helvetica", "normal");
 
     const meta = updatedPv.photos_meta || [];
@@ -173,7 +246,9 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
             const x = 50 + c * (colW + 20);
             try { doc.addImage(it.dataUrl, "JPEG", x, y, w, h); }
             catch { try { doc.addImage(it.dataUrl, "PNG", x, y, w, h); } catch { /* skip */ } }
-            doc.setFontSize(8); doc.text(`Poza ${i + c + 1}`, x, y + h + 10);
+            doc.setFontSize(8); doc.setTextColor(107, 114, 128);
+            doc.text(`Poza ${i + c + 1}`, x, y + h + 10);
+            doc.setTextColor(0);
             rowH = Math.max(rowH, h);
           }
           y += rowH + 22;
@@ -186,30 +261,38 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
     // Signatures
     if (y + 130 > H - 40) { doc.addPage(); y = 50; }
     const colW = (W - 100) / 2;
-    doc.setFontSize(10); doc.setFont("helvetica", "bold");
-    doc.text(noDia("Predator (proprietar)"), MARGIN, y);
-    doc.text(noDia("Primitor (chirias)"), MARGIN + colW, y);
-    y += 8;
+    doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(0);
+    doc.text(noDia("Predator (proprietar)"), MARGIN + (colW - 10) / 2, y, { align: "center" });
+    doc.text(noDia("Primitor (chirias)"), MARGIN + colW + (colW - 10) / 2, y, { align: "center" });
+    y += 14;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+    doc.text(noDia(rich.ownerName), MARGIN + (colW - 10) / 2, y, { align: "center" });
+    doc.text(noDia(rich.renterName), MARGIN + colW + (colW - 10) / 2, y, { align: "center" });
+    y += 10;
     const sigY = y;
-    const tryDrawSig = (dataUrl: string | null, x: number) => {
-      if (!dataUrl) return;
-      try { doc.addImage(dataUrl, "PNG", x, sigY, colW - 10, 60); } catch { /* noop */ }
+    const drawSigBox = (dataUrl: string | null, x: number) => {
+      if (dataUrl) {
+        try { doc.addImage(dataUrl, "PNG", x + 10, sigY, colW - 30, 60); }
+        catch { /* noop */ }
+      } else {
+        doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(153, 153, 153);
+        doc.text("— nesemnat —", x + (colW - 10) / 2, sigY + 36, { align: "center" });
+        doc.setTextColor(0); doc.setFont("helvetica", "normal");
+      }
     };
-    tryDrawSig(updatedPv.owner_signature_data, MARGIN);
-    tryDrawSig(updatedPv.renter_signature_data, MARGIN + colW);
+    drawSigBox(updatedPv.owner_signature_data, MARGIN);
+    drawSigBox(updatedPv.renter_signature_data, MARGIN + colW);
     y += 64;
     doc.setDrawColor(120);
     doc.line(MARGIN, y, MARGIN + colW - 10, y);
     doc.line(MARGIN + colW, y, MARGIN + colW * 2 - 10, y);
     y += 12;
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10);
-    doc.text(noDia(content.ownerName), MARGIN, y);
-    doc.text(noDia(content.renterName), MARGIN + colW, y);
-    y += 12;
-    doc.setFont("helvetica", "normal"); doc.setFontSize(8);
-    doc.text(`Semnat: ${updatedPv.owner_signed_at ? format(new Date(updatedPv.owner_signed_at), "dd.MM.yyyy HH:mm") : "-"}`, MARGIN, y);
-    doc.text(`Semnat: ${updatedPv.renter_signed_at ? format(new Date(updatedPv.renter_signed_at), "dd.MM.yyyy HH:mm") : "-"}`, MARGIN + colW, y);
-    y += 16;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(119, 119, 119);
+    const ownerStamp = updatedPv.owner_signed_at ? `Semnat ${format(new Date(updatedPv.owner_signed_at), "dd.MM.yyyy HH:mm")}` : "Semnatura";
+    const renterStamp = updatedPv.renter_signed_at ? `Semnat ${format(new Date(updatedPv.renter_signed_at), "dd.MM.yyyy HH:mm")}` : "Semnatura";
+    doc.text(ownerStamp, MARGIN + (colW - 10) / 2, y, { align: "center" });
+    doc.text(renterStamp, MARGIN + colW + (colW - 10) / 2, y, { align: "center" });
+    y += 20;
     doc.setFontSize(7); doc.setTextColor(140);
     doc.text(noDia(`Cod inchiriere: ${rental.public_id || "-"} | Generat: ${format(new Date(), "dd.MM.yyyy HH:mm")}`), MARGIN, y);
     doc.setTextColor(0);
