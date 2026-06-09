@@ -433,9 +433,7 @@ Deno.serve(async (req) => {
               // Gmail/Outlook conversation (Message-ID/In-Reply-To/References).
               const rentalCode = rental.public_id || `id-${rental.id.slice(0, 8)}`;
               const threadKey = `rental:${rentalCode}`;
-              const threadSubject = product?.title
-                ? `${rentalCode} · ${product.title}`
-                : rentalCode;
+              const subjectSuffix = product?.title || rentalCode;
               const { error: emErr } = await supabase.functions.invoke("send-transactional-email", {
                 body: {
                   templateName: tplName,
@@ -443,7 +441,7 @@ Deno.serve(async (req) => {
                   idempotencyKey: `${event_key}:${rental_id}:${userObj.id}`,
                   templateData,
                   threadKey,
-                  threadSubject,
+                  subjectSuffix,
                   ...(attachPv && pvAsset ? {
                     attachments: [{ filename: pvAsset.filename, content: pvAsset.base64 }],
                   } : {}),
