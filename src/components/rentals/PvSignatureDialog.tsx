@@ -299,6 +299,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto bg-background">
         <DialogHeader>
