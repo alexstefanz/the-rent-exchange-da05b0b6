@@ -344,10 +344,7 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
   const isStuckInProgress =
     kycCase?.status === "IN_PROGRESS" && hasAllExistingDocs;
   const isInProcessing = isAlreadySubmitted || isStuckInProgress;
-  const canUpload = !isInProcessing && !isVerified && !isRejected ? !isInProcessing && !isVerified : !isInProcessing && !isVerified;
-  // Simplified: allow upload only when not processing and not verified.
-  // (Rejected users still need to re-upload.)
-  const canUploadFinal = !isInProcessing && !isVerified;
+  const canUpload = !isInProcessing && !isVerified;
   const showPhoneGate = canUpload && !phoneGate.isProfileLoading && !phoneGate.hasValidPhone;
 
   const progress = isVerified ? 100 : isInProcessing ? 66 : docs.length > 0 ? 33 : 0;
