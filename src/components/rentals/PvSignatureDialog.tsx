@@ -463,6 +463,61 @@ function DocParagraph({ children }: { children: React.ReactNode }) {
   return <p className="mb-4 text-justify">{children}</p>;
 }
 
+function PvLightbox({ photos, index, onClose, onIndex }: { photos: { path: string }[]; index: number; onClose: () => void; onIndex: (i: number) => void }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    setUrl(null);
+    getPvFileSignedUrl(photos[index].path).then(setUrl).catch(() => setUrl(null));
+  }, [photos, index]);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft" && index > 0) onIndex(index - 1);
+      if (e.key === "ArrowRight" && index < photos.length - 1) onIndex(index + 1);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [index, photos.length, onClose, onIndex]);
+  return (
+    <div
+      className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-sm flex flex-col animate-in fade-in"
+      onClick={onClose}
+    >
+      <div className="flex items-center justify-between p-3 text-white" onClick={(e) => e.stopPropagation()}>
+        <span className="text-sm">Poza {index + 1} / {photos.length}</span>
+        <Button size="icon" variant="ghost" onClick={onClose} className="text-white hover:bg-white/10">
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
+      <div className="flex-1 flex items-center justify-center relative px-4 pb-4" onClick={(e) => e.stopPropagation()}>
+        {!url ? (
+          <Loader2 className="h-8 w-8 animate-spin text-white" />
+        ) : (
+          <img src={url} alt={`Poza ${index + 1}`} className="max-h-full max-w-full object-contain" />
+        )}
+        {index > 0 && (
+          <button
+            onClick={() => onIndex(index - 1)}
+            className="absolute left-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white text-2xl flex items-center justify-center"
+            aria-label="prev"
+          >
+            ‹
+          </button>
+        )}
+        {index < photos.length - 1 && (
+          <button
+            onClick={() => onIndex(index + 1)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white/10 hover:bg-white/20 text-white text-2xl flex items-center justify-center"
+            aria-label="next"
+          >
+            ›
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DocPhoto({ path, label, onClick }: { path: string; label: string; onClick?: () => void }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => { getPvFileSignedUrl(path).then(setUrl).catch(() => setUrl(null)); }, [path]);
