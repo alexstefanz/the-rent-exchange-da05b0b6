@@ -187,7 +187,13 @@ const AdminUsers = () => {
                                   <AvatarImage src={u.avatar_url || undefined} />
                                   <AvatarFallback>{u.full_name?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
                                 </Avatar>
-                                <span className="font-medium">{u.full_name || 'Fără nume'}</span>
+                                <span className="font-medium">
+                                  {u.full_name || (
+                                    <span className="text-muted-foreground italic">
+                                      Fără nume{u.kyc_status && u.kyc_status !== 'NONE' ? ` · KYC ${u.kyc_status}` : ' · KYC neînceput'}
+                                    </span>
+                                  )}
+                                </span>
                                 {expandedUserId === u.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                               </div>
                             </TableCell>
@@ -270,7 +276,13 @@ const AdminUsers = () => {
                             <AvatarFallback>{u.full_name?.charAt(0)?.toUpperCase() || 'U'}</AvatarFallback>
                           </Avatar>
                           <div className="min-w-0">
-                            <p className="font-medium text-sm truncate">{u.full_name || 'Fără nume'}</p>
+                            <p className="font-medium text-sm truncate">
+                              {u.full_name || (
+                                <span className="text-muted-foreground italic">
+                                  Fără nume{u.kyc_status && u.kyc_status !== 'NONE' ? ` · KYC ${u.kyc_status}` : ' · KYC neînceput'}
+                                </span>
+                              )}
+                            </p>
                             <p className="text-xs text-muted-foreground truncate">{u.email || '-'}</p>
                           </div>
                         </div>
