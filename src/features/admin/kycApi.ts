@@ -221,12 +221,26 @@ export const approveKycCase = async (caseId: string): Promise<void> => {
   }).eq('id', caseId);
   if (error) throw new Error(error.message);
 
-  // Update profile
+  // Update profile — also lock the name so the user cannot change it
+  // unilaterally after the admin has confirmed it matches the ID card.
   await supabase.from('profiles').update({
     kyc_status: 'VERIFIED',
     kyc_level: kycCase.level_required,
     kyc_last_verified_at: new Date().toISOString(),
-  }).eq('id', kycCase.user_id);
+    full_name_source: 'KYC',
+    full_name_locked: true,
+    full_name_verified_at: new Date().toISOString(),
+  } as any).eq('id', kycCase.user_id);
+
+  // Mark the OCR-extracted data as admin-verified (idempotent: ignore if no row)
+  await (supabase
+    .from('kyc_extracted_data' as any)
+    .update({
+      verified_by_admin: true,
+      verified_by_admin_id: userData.user?.id,
+      verified_at: new Date().toISOString(),
+    } as any)
+    .eq('user_id', kycCase.user_id) as any);
 
   await auditLog(caseId, 'APPROVED', kycCase.status, 'APPROVED');
 
