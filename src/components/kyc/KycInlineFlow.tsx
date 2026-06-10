@@ -73,6 +73,7 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
   const [fullName, setFullName] = useState("");
   const [initialFullName, setInitialFullName] = useState("");
   const [nameTouched, setNameTouched] = useState(false);
+  const [nameLocked, setNameLocked] = useState(false);
 
   // Validation: trim, min 2 words each >=2 chars, letters/space/hyphen/apostrophe, max 100
   const NAME_REGEX = /^[A-Za-zĂÂÎȘȚăâîșțĂÂÎŞŢăâîşţ' -]+$/;
@@ -93,13 +94,14 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("full_name")
+        .select("full_name, full_name_locked")
         .eq("id", user.id)
         .maybeSingle();
       if (cancelled) return;
       const v = (data?.full_name || "").trim();
       setFullName(v);
       setInitialFullName(v);
+      setNameLocked(!!(data as any)?.full_name_locked);
     })();
     return () => {
       cancelled = true;
@@ -239,7 +241,7 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
       if (trimmedName !== initialFullName) {
         const { error: nameErr } = await supabase
           .from("profiles")
-          .update({ full_name: trimmedName })
+          .update({ full_name: trimmedName, full_name_source: 'USER' } as any)
           .eq("id", user.id);
         if (nameErr) throw nameErr;
         setInitialFullName(trimmedName);
