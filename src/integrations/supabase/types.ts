@@ -1588,6 +1588,9 @@ export type Database = {
           deactivation_token_expires_at: string | null
           email: string | null
           full_name: string | null
+          full_name_locked: boolean
+          full_name_source: string | null
+          full_name_verified_at: string | null
           iban: string | null
           id: string
           is_banned: boolean
@@ -1615,6 +1618,9 @@ export type Database = {
           deactivation_token_expires_at?: string | null
           email?: string | null
           full_name?: string | null
+          full_name_locked?: boolean
+          full_name_source?: string | null
+          full_name_verified_at?: string | null
           iban?: string | null
           id: string
           is_banned?: boolean
@@ -1642,6 +1648,9 @@ export type Database = {
           deactivation_token_expires_at?: string | null
           email?: string | null
           full_name?: string | null
+          full_name_locked?: boolean
+          full_name_source?: string | null
+          full_name_verified_at?: string | null
           iban?: string | null
           id?: string
           is_banned?: boolean
