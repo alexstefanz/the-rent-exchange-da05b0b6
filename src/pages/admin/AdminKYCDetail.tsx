@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ShieldCheck, ArrowLeft, CheckCircle, XCircle, RefreshCw, AlertTriangle,
   User, Mail, Phone, Calendar, Package, FileText, Clock, Eye, Loader2, Activity
@@ -21,6 +21,9 @@ import {
   approveKycCase, rejectKycCase, requestReupload, setNeedsManualReview,
   KYC_STATUSES, KYC_STATUS_COLORS, REJECTION_REASONS, DOCUMENT_TYPES,
 } from "@/features/admin/kycApi";
+import { fetchExtractedDataForUser } from "@/features/admin/kycExtractedDataApi";
+import { compareNames, normalizeName } from "@/lib/nameMatch";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { toast } from "sonner";
@@ -60,11 +63,46 @@ const AdminKYCDetail = () => {
   const { data: activityLogs } = useUserActivityLogs(kycCase?.user_id);
   const { data: duplicates } = useKycDuplicates(id);
 
+  // Same cache key as ExtractedIdDataCard so both stay in sync.
+  const { data: extracted } = useQuery({
+    queryKey: ["kycExtracted", kycCase?.user_id],
+    queryFn: () => fetchExtractedDataForUser(kycCase!.user_id),
+    enabled: !!kycCase?.user_id,
+  });
+
+  const nameMatch = compareNames(userContext?.full_name, extracted?.full_name);
+  const nameMismatch = nameMatch === "mismatch";
+  const hasExtractedName = !!extracted?.full_name;
+
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ['kycCase', id] });
     queryClient.invalidateQueries({ queryKey: ['kycAuditLog', id] });
     queryClient.invalidateQueries({ queryKey: ['adminKycCases'] });
+    if (kycCase?.user_id) {
+      queryClient.invalidateQueries({ queryKey: ['kycExtracted', kycCase.user_id] });
+      queryClient.invalidateQueries({ queryKey: ['kycUserContext', kycCase.user_id] });
+    }
   };
+
+  const copyNameFromIdMutation = useMutation({
+    mutationFn: async () => {
+      if (!extracted?.full_name || !kycCase?.user_id) throw new Error("Lipsește numele extras");
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: extracted.full_name, full_name_source: 'ADMIN' } as any)
+        .eq('id', kycCase.user_id);
+      if (error) throw new Error(error.message);
+      await supabase.from('kyc_audit_log').insert({
+        kyc_case_id: kycCase.id,
+        action: 'NAME_CORRECTED_BY_ADMIN',
+        old_value: userContext?.full_name || null,
+        new_value: extracted.full_name,
+        actor_type: 'ADMIN',
+      });
+    },
+    onSuccess: () => { toast.success("Nume actualizat din CI"); invalidateAll(); },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const approveMutation = useMutation({
     mutationFn: () => approveKycCase(id!),
@@ -153,7 +191,8 @@ const AdminKYCDetail = () => {
             <CardContent className="flex flex-wrap gap-3 pt-6">
               <Button
                 onClick={() => approveMutation.mutate()}
-                disabled={approveMutation.isPending}
+                disabled={approveMutation.isPending || nameMismatch}
+                title={nameMismatch ? "Numele declarat nu coincide cu cel din CI. Corectează-l înainte de aprobare." : undefined}
                 className="bg-green-600 hover:bg-green-700"
               >
                 {approveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
@@ -174,6 +213,78 @@ const AdminKYCDetail = () => {
                 <AlertTriangle className="h-4 w-4 mr-2" />
                 Revizuire manuală
               </Button>
+              {nameMismatch && (
+                <p className="basis-full text-sm text-destructive">
+                  Numele declarat nu coincide cu cel din CI. Folosește butonul „Folosește numele din CI" din secțiunea de mai jos sau cere reîncărcare înainte de aprobare.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Name verification (declared vs OCR) */}
+        {kycCase.user_id && (
+          <Card className={
+            nameMismatch
+              ? "border-destructive/40 bg-destructive/5"
+              : nameMatch === 'match'
+              ? "border-green-500/30 bg-green-50/40"
+              : "border-muted"
+          }>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Verificare nume
+              </CardTitle>
+              <CardDescription>
+                Numele din profilul utilizatorului trebuie să coincidă cu cel de pe cartea de identitate.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-muted-foreground">Nume declarat (profil)</p>
+                  <p className="font-medium">{userContext?.full_name || <span className="text-muted-foreground font-normal">— lipsește —</span>}</p>
+                  {userContext?.full_name && (
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">normalizat: {normalizeName(userContext.full_name) || '—'}</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Nume extras din CI</p>
+                  <p className="font-medium">{extracted?.full_name || <span className="text-muted-foreground font-normal">— neextras —</span>}</p>
+                  {extracted?.full_name && (
+                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">normalizat: {normalizeName(extracted.full_name) || '—'}</p>
+                  )}
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {nameMatch === 'match' && (
+                  <Badge className="bg-green-100 text-green-800 border-0">
+                    <CheckCircle className="h-3 w-3 mr-1" /> Numele coincide
+                  </Badge>
+                )}
+                {nameMismatch && (
+                  <Badge className="bg-red-100 text-red-800 border-0">
+                    <XCircle className="h-3 w-3 mr-1" /> Numele NU coincide
+                  </Badge>
+                )}
+                {nameMatch === 'missing' && (
+                  <Badge variant="outline">
+                    <AlertTriangle className="h-3 w-3 mr-1" /> Date insuficiente pentru comparare
+                  </Badge>
+                )}
+                {hasExtractedName && nameMismatch && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => copyNameFromIdMutation.mutate()}
+                    disabled={copyNameFromIdMutation.isPending}
+                  >
+                    {copyNameFromIdMutation.isPending && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                    Folosește numele din CI
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}
