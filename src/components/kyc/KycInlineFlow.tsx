@@ -513,8 +513,8 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
               </CardTitle>
               <CardDescription>
                 {t(
-                  "Folosim acest nume pentru a verifica documentul și pentru contracte.",
-                  "We use this name to verify your document and for contracts."
+                "Numele trebuie să fie identic cu cel din cartea de identitate. Va fi verificat de echipa noastră.",
+                "Your name must match exactly the one on your ID card. It will be reviewed by our team."
                 )}
               </CardDescription>
             </CardHeader>
@@ -530,7 +530,16 @@ export const KycInlineFlow = ({ variant = "page" }: KycInlineFlowProps) => {
                 placeholder="Popescu Ion Andrei"
                 maxLength={100}
                 autoComplete="name"
+              disabled={nameLocked}
               />
+            {nameLocked && (
+              <p className="text-xs text-muted-foreground">
+                {t(
+                  "Numele a fost verificat de un administrator și nu mai poate fi modificat. Contactează suportul pentru schimbări.",
+                  "Your name was verified by an administrator and can no longer be changed. Contact support for updates."
+                )}
+              </p>
+            )}
               {nameTouched && !isNameValid && (
                 <p className="text-xs text-destructive">
                   {t(
