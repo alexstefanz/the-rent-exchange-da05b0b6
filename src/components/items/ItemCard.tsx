@@ -28,7 +28,7 @@ const ItemCard = ({
       to={`/produs/${id}`}
       className="group block overflow-hidden rounded-xl bg-card shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-card-hover"
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-[#F7F6F2] p-3">
+      <div className="relative aspect-[4/3] overflow-hidden bg-primary/15 p-3">
         <div className="w-full h-full rounded-[30px] bg-white flex items-center justify-center overflow-hidden px-[15px] py-4">
           <div className="h-[250px] w-[250px] max-h-full max-w-full">
             <img
