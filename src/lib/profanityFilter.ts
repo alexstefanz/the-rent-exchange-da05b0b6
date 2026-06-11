@@ -19,6 +19,8 @@ const BAD_WORDS: string[] = [
   "bagmiapula","bagmiapizda","bagpula","tragipula","linsemiapula","lapula",
   "pizdamasii","pizdamuii","futumama","futumamata","futiomama","futiomortii",
   "futinematii","futinemortii","futiocrucea",
+  // Familiale (variante)
+  "mata","matii",
   // English
   "fuck","fucker","fucking","motherfucker","shit","bullshit","bitch","bitches",
   "asshole","pussy","cunt","whore","slut","retard","retarded",

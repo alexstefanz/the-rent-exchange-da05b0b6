@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { containsProfanity } from "@/lib/profanityFilter";
 
 export interface ProductReview {
   id: string;
@@ -56,6 +57,10 @@ export async function createProductReview(
   if (!user) throw new Error("Not authenticated");
 
   const overall = Math.round((ratings.condition + ratings.communication + ratings.punctuality) / 3);
+
+  if (comment && containsProfanity(comment).hit) {
+    throw new Error("Comentariul conține limbaj inadecvat. Te rugăm să-l reformulezi.");
+  }
 
   const { error } = await supabase.from("product_reviews").insert({
     product_id: productId,
