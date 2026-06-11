@@ -18,6 +18,7 @@ import { useUxCopy } from "@/hooks/useUxCopy";
 import { supabase } from "@/integrations/supabase/client";
 import { createProductReview } from "@/features/products/productReviewsApi";
 import { createUserReview } from "@/features/profile/reviewsApi";
+import { containsProfanity } from "@/lib/profanityFilter";
 
 export interface LeaveReviewRental {
   id: string;
@@ -90,6 +91,8 @@ export default function LeaveReviewDialog({
   const reviewType: "owner" | "renter" =
     currentUserRole === "renter" ? "owner" : "renter";
 
+  const profanityHit = comment.trim().length > 0 && containsProfanity(comment).hit;
+
   // Reset & check existing reviews when dialog opens
   useEffect(() => {
     if (!open || !rental || !user) return;
@@ -136,6 +139,7 @@ export default function LeaveReviewDialog({
     !loading &&
     !submitting &&
     rating > 0 &&
+    !profanityHit &&
     !(productReviewExists && userReviewExists);
 
   const handleSubmit = async () => {
@@ -268,6 +272,14 @@ export default function LeaveReviewDialog({
                   rows={3}
                   className="w-full"
                 />
+                {profanityHit && (
+                  <p className="text-xs text-destructive">
+                    {t(
+                      "Comentariul conține limbaj inadecvat. Te rugăm să-l reformulezi.",
+                      "Comment contains inappropriate language. Please rephrase."
+                    )}
+                  </p>
+                )}
               </div>
             </section>
           </div>
