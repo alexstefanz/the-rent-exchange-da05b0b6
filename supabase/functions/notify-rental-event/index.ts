@@ -11,6 +11,14 @@ const APP_URL = "https://rentli.ro";
 type Channel = "in_app" | "email" | "sms";
 type Recipient = "owner" | "renter" | "both";
 
+// Owner email policy: owners receive ONLY these 3 emails per rental lifecycle.
+// All other events still send in-app + SMS to the owner (where configured).
+const OWNER_EMAIL_ALLOWED = new Set<string>([
+  "request_created",
+  "handover_confirmed",
+  "rental_completed",
+]);
+
 type EventKey =
   | "request_created"
   | "request_accepted"
@@ -399,7 +407,12 @@ Deno.serve(async (req) => {
 
       // 2) EMAIL
       if (cfg.channels.includes("email") && cfg.emailTemplate && userObj.email) {
-        if (!emailAllowed) {
+        if (role === "owner" && !OWNER_EMAIL_ALLOWED.has(event_key)) {
+          await supabase.from("notification_audit_log").insert({
+            rental_id, user_id: userObj.id, event_key, channel: "email",
+            status: "skipped", error: "owner_email_filtered",
+          });
+        } else if (!emailAllowed) {
           await supabase.from("notification_audit_log").insert({ rental_id, user_id: userObj.id, event_key, channel: "email", status: "skipped", error: "opt_out" });
         } else if (!(await alreadySent("email"))) {
           const tplName = cfg.emailTemplate[role] || cfg.emailTemplate.both;

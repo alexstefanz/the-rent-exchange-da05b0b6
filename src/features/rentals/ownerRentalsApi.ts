@@ -76,10 +76,9 @@ export async function confirmHandover(rentalId: string) {
     _rental_id: rentalId,
   });
   if (error) throw mapPvError(error);
-  // Best-effort: notify both parties that handover is confirmed.
-  supabase.functions
-    .invoke("notify-rental-event", { body: { rental_id: rentalId, event_key: "handover_confirmed" } })
-    .catch((e) => console.warn("notify handover_confirmed failed", e));
+  // Note: handover_confirmed notification is fired by the DB trigger
+  // `rentals_notify_status` when `handover_confirmed_at` transitions from NULL.
+  // Do NOT invoke notify-rental-event here — it causes duplicate emails.
 }
 
 export async function confirmReturn(rentalId: string) {
