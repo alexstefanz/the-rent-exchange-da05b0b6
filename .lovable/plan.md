@@ -1,49 +1,32 @@
-# Nume complet obligatoriu la KYC + confirmare admin
+## Filtru limbaj licențios în review-uri
 
-## Context
-Utilizatorii apar „Fără nume" în listă (`profiles.full_name` gol). KYC-ul colectează deja un câmp nume obligatoriu (`KycInlineFlow` linia 73–242) și îl scrie în `profiles.full_name`. Problema: (1) utilizatorii care nu au făcut KYC rămân fără nume; (2) numele introdus de utilizator nu este comparat explicit cu numele extras OCR din CI; (3) admin-ul aprobă fără să confirme că cele două coincid.
+### Scop
+Blocarea limbajului licențios atât în `product_reviews` cât și în `user_reviews`, pe 3 niveluri: client UI, API client și bază de date.
 
-## Modificări
+### 1. Extindere listă cuvinte restrictionate
+Adaugă în `src/lib/profanityFilter.ts` și în triggerul DB cuvintele: `mata`, `ma-ta`, `matii`.
 
-### 1. KYC inline flow — întărim cerința de nume
-- Păstrăm pasul existent „Date personale" cu `fullName` obligatoriu (deja blochează submit-ul).
-- Adăugăm sub câmp un mesaj clar: „Numele trebuie să fie identic cu cel din cartea de identitate. Va fi verificat de echipa noastră."
-- La trimitere, scriem și `profiles.full_name_source = 'KYC'` și `profiles.full_name_locked = true` (vezi migrația). După aprobarea KYC numele nu mai poate fi schimbat de utilizator din UI fără cerere de actualizare.
+### 2. Validare client-side în formularul de review
+În `src/components/dashboard/LeaveReviewDialog.tsx`:
+- Verifică textul comentariului cu `containsProfanity()` înainte de submit.
+- Afișează eroare bilingvă sub textarea dacă e detectat: "Comentariul conține limbaj inadecvat." / "Comment contains inappropriate language."
+- Dezactivează butonul "Trimite review" până la corectare.
 
-### 2. Admin KYC Detail — comparator nume
-În `AdminKYCDetail.tsx`, în panoul „Date extrase din CI", adăugăm o secțiune nouă **„Verificare nume"**:
+### 3. Validare API client
+În `src/features/products/productReviewsApi.ts` și `src/features/profile/reviewsApi.ts`:
+- Rulează `containsProfanity(comment)` înainte de `insert`. Aruncă eroare explicită dacă e detectat.
 
-```text
-Nume declarat (profil) : ION POPESCU
-Nume extras din CI    : POPESCU ION
-Status                : ⚠ Diferit (după normalizare: identic)
-[ Marchează ca potrivit ]   [ Cere reîncărcare ]
-```
+### 4. Trigger bază de date
+Crează 2 triggers similare cu `check_message_profanity`, pentru tabelele `product_reviews` și `user_reviews`, pe coloana `comment`.
+- Reutilizează funcția existentă `public.normalize_for_profanity()`.
+- Adaugă și cuvintele noi (`mata`, `ma-ta`, `matii`) în array-ul de cuvinte din trigger.
 
-- Normalizare: uppercase, fără diacritice, sortare cuvinte, trim spații multiple.
-- Dacă numele normalizate diferă, butonul **Aprobă** este dezactivat cu tooltip „Numele nu coincide cu CI-ul. Cere reîncărcare sau corectează numele înainte de aprobare."
-- Buton „Corectează numele din profil" deschide un mic dialog care setează `profiles.full_name` la valoarea din CI (cu audit în `kyc_audit_log`: action `NAME_CORRECTED_BY_ADMIN`).
-- La click pe **Aprobă**, în plus față de fluxul existent, marcăm `kyc_extracted_data.verified_by_admin = true` și salvăm `profiles.full_name_verified_at = now()`.
+### 5. Fallback admin
+Review-urile blocate de trigger vor genera o eroare clară la submit, prinsă în UI și afișată ca toast.
 
-### 3. Listă utilizatori admin
-În `AdminUsers` înlocuim fallback-ul „Fără nume" cu badge:
-- nume gol și fără KYC → „Fără nume · KYC neînceput"
-- nume gol și KYC trimis → „Fără nume · KYC în verificare"
-Permite admin-ului să identifice rapid cazurile.
-
-### 4. Migrație DB
-```sql
-ALTER TABLE public.profiles
-  ADD COLUMN IF NOT EXISTS full_name_source text,        -- 'USER' | 'KYC' | 'ADMIN'
-  ADD COLUMN IF NOT EXISTS full_name_locked boolean NOT NULL DEFAULT false,
-  ADD COLUMN IF NOT EXISTS full_name_verified_at timestamptz;
-```
-Fără modificări de RLS (câmpurile sunt deja acoperite de policy-urile existente pe `profiles`).
-
-## Ce NU schimbăm
-- Schema `kyc_cases` / `kyc_extracted_data` rămâne identică.
-- Edge function `extract-id-data` rămâne neschimbată (deja extrage `full_name`).
-- Fluxul de aprobare/respingere KYC existent rămâne; doar adăugăm gate-ul pe potrivire nume.
-
-## Notă despre utilizatorii existenți „Fără nume"
-Nu putem completa retroactiv numele lor — vor fi forțați să completeze la primul flux KYC sau pot fi editați manual de admin din `AdminUserDetail`. Plan-ul nu include un script de migrare a datelor existente.
+### Fișiere modificate
+- `src/lib/profanityFilter.ts` — adăugare cuvinte noi
+- `src/components/dashboard/LeaveReviewDialog.tsx` — validare client + UI eroare
+- `src/features/products/productReviewsApi.ts` — validare API
+- `src/features/profile/reviewsApi.ts` — validare API
+- `supabase/migrations/` — trigger(e) noi pentru `product_reviews` și `user_reviews`
