@@ -253,8 +253,7 @@ export async function getReturnInitiated(rentalId: string): Promise<boolean> {
 export async function confirmHandoverReceived(rentalId: string) {
   const { error } = await supabase.rpc("confirm_handover_received" as never, { _rental_id: rentalId } as never);
   if (error) throw error;
-  // Best-effort notification to both parties (owner gets in-app + email).
-  supabase.functions
-    .invoke("notify-rental-event", { body: { rental_id: rentalId, event_key: "handover_confirmed" } })
-    .catch((e) => console.warn("notify handover_confirmed failed", e));
+  // Note: handover_confirmed notification is fired by the DB trigger
+  // `rentals_notify_status` when `handover_confirmed_at` transitions from NULL.
+  // Do NOT invoke notify-rental-event here — it causes duplicate emails.
 }
