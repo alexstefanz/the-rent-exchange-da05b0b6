@@ -1,0 +1,4 @@
+REVOKE SELECT (pickup_address, pickup_lat, pickup_lng, serial_number)
+  ON public.products FROM anon;
+REVOKE SELECT (pickup_address, pickup_lat, pickup_lng, serial_number)
+  ON public.products FROM authenticated;
