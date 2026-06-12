@@ -271,6 +271,32 @@ const AccountTab = () => {
         phone: phoneChanged ? undefined : (normalizedPhone || undefined),
         email: data.email || undefined,
       });
+      // Detect changes to send security confirmation email (fire-and-forget)
+      const changes: { label: string; value: string }[] = [];
+      const prevName = (profile?.full_name || "").trim();
+      const newName = (data.full_name || "").trim();
+      if (newName && newName !== prevName) {
+        changes.push({ label: "Nume complet", value: newName });
+      }
+      const prevEmail = (profile?.email || "").trim().toLowerCase();
+      const newEmail = (data.email || "").trim().toLowerCase();
+      if (newEmail && newEmail !== prevEmail) {
+        changes.push({ label: "Email", value: newEmail });
+      }
+      // Phone change (when not OTP-gated, e.g. removed). OTP-gated phone change is sent in handlePhoneVerified.
+      if (!phoneChanged && normalizedPhone !== (profile?.phone || "")) {
+        changes.push({ label: "Telefon", value: normalizedPhone || "—" });
+      }
+      if (changes.length > 0 && (updated?.email || user.email)) {
+        supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "profile-updated",
+            recipientEmail: updated?.email || user.email,
+            idempotencyKey: `profile-updated-${user.id}-${Date.now()}`,
+            templateData: { changes },
+          },
+        }).catch((e) => console.error("profile-updated email failed:", e));
+      }
       setProfile(updated);
       await queryClient.invalidateQueries({ queryKey: ["currentUserProfile", user.id] });
       if (phoneChanged) {
@@ -295,6 +321,17 @@ const AccountTab = () => {
       if (fresh) setProfile(fresh);
     } catch { /* ignore */ }
     await queryClient.invalidateQueries({ queryKey: ["currentUserProfile", user.id] });
+    // Fire-and-forget security email for phone change
+    if (user.email) {
+      supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "profile-updated",
+          recipientEmail: user.email,
+          idempotencyKey: `profile-updated-${user.id}-phone-${Date.now()}`,
+          templateData: { changes: [{ label: "Telefon", value: verifiedPhone }] },
+        },
+      }).catch((e) => console.error("profile-updated email failed:", e));
+    }
   };
 
   const handlePasswordReset = async () => {

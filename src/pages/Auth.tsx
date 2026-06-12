@@ -347,11 +347,12 @@ const Auth = () => {
     try {
       const { data: { user: verifiedUser } } = await supabase.auth.getUser();
       if (verifiedUser?.email) {
-        await supabase.functions.invoke("send-general-notification", {
+        await supabase.functions.invoke("send-transactional-email", {
           body: {
-            type: "welcome",
-            email: verifiedUser.email,
-            full_name: verifiedUser?.user_metadata?.full_name || "",
+            templateName: "welcome",
+            recipientEmail: verifiedUser.email,
+            idempotencyKey: `welcome-${verifiedUser.id}`,
+            templateData: { name: verifiedUser?.user_metadata?.full_name || "" },
           },
         });
       }
@@ -381,11 +382,12 @@ const Auth = () => {
       // Send welcome email (fire and forget)
       try {
         const { data: { user: verifiedUser } } = await supabase.auth.getUser();
-        await supabase.functions.invoke("send-general-notification", {
+        await supabase.functions.invoke("send-transactional-email", {
           body: {
-            type: "welcome",
-            email: otpEmail,
-            full_name: verifiedUser?.user_metadata?.full_name || "",
+            templateName: "welcome",
+            recipientEmail: otpEmail,
+            idempotencyKey: `welcome-${verifiedUser?.id ?? otpEmail}`,
+            templateData: { name: verifiedUser?.user_metadata?.full_name || "" },
           },
         });
       } catch (e) {
