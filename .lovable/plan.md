@@ -1,57 +1,36 @@
-## Current state
+## Problema
+La click pe "Rezervă acum" în pagina produsului, totalul afișat în checkout este greșit (comision dublu):
 
-Already sent:
-- **Welcome** — fires after OTP verification in `Auth.tsx` via `send-general-notification` (old inline HTML), not the branded `welcome.tsx` template.
-- **Password changed** — fires from password reset flow (`Auth.tsx → send-password-changed-notification`).
-- **KYC approved** — fires from `kycApi.ts` via `kyc-approved` branded template.
-- **Account deactivation request** — confirmation link email exists (`account-deactivation` template).
+- Pagina produs: `2 × 2 zile = 4 RON`, comision `1 RON`, total `5 RON` ✅
+- Checkout: `2 RON × 2 zile = 5 RON` (greșit), comision `1 RON`, total `6 RON` ❌
 
-Missing:
-- Welcome doesn't always reach users (uses old function; not branded; no fallback path for non-OTP confirm).
-- Password change via the in-app "Schimbă parola" flow (uses `resetPasswordForEmail`) doesn't trigger the post-change confirmation.
-- No email when **email**, **full name**, or **phone** is updated from `AccountTab`.
-- No email when an **IBAN is added** in `WithdrawalMethodCard`.
-- No final confirmation email after account is actually **deactivated** (only the request link is sent).
+## Cauza
+În `src/pages/ProductDetail.tsx` (linia 241–242), la navigarea către `/checkout`, se trimite:
 
-## Changes
+```ts
+const totalPrice = computeRentalPrice(rentalDays, clientPrice, priceWeek, priceMonth, product.platform_fee_percent ?? 0).total;
+navigate('/checkout', { state: { ..., totalPrice } });
+```
 
-### 1. Switch welcome email to the branded template
-- In `src/pages/Auth.tsx` (`handleVerifyOtp` and `handlePhoneVerified`), replace `send-general-notification` calls with:
-  ```ts
-  supabase.functions.invoke("send-transactional-email", {
-    body: { templateName: "welcome", recipientEmail, idempotencyKey: `welcome-${userId}`, templateData: { name } }
-  })
-  ```
-- Idempotency key per user guarantees one welcome per account even if the user re-verifies.
+`.total` include deja comisionul. Dar `Checkout.tsx` (liniile 71–74) și `PremiumBookingSummary.tsx` (liniile 26–28) tratează `totalPrice` ca **subtotal owner-net** și mai adaugă comisionul o dată:
 
-### 2. New transactional email templates (`supabase/functions/_shared/transactional-email-templates/`)
-Each follows the existing `BaseLayout / H1 / Lead / InfoRow / CTAButton` pattern (same as `email-change.tsx` / `password-changed.tsx`):
+```ts
+const platformFee = calcPlatformFee(totalPrice, product.platformFeePercent ?? 0);
+const clientTotal = Math.round((totalPrice + platformFee) * 100) / 100;
+```
 
-- `profile-updated.tsx` — generic "Date cont actualizate" with an `InfoRow` per changed field (Nume / Email / Telefon), CTA to `/contul-meu`, security warning "Nu ai făcut tu această modificare? Contactează suportul".
-- `iban-added.tsx` — "IBAN adăugat în contul tău" with masked IBAN (`RO** **** **** **** **** 1234`), CTA to `/castiguri`.
-- `account-deactivated.tsx` — "Contul tău a fost dezactivat" sent after successful deactivation, mentions reactivation via support.
+De aceea apare `5 RON × 2 zile = 5 RON` + `1 RON comision` = `6 RON` în loc de `5 RON`.
 
-Register each in `registry.ts`.
+## Fix
+Schimb un singur loc în `src/pages/ProductDetail.tsx`: trimit `.subtotal` (owner-net) în loc de `.total`, păstrând contractul existent al paginii Checkout și al `PremiumBookingSummary` (care presupun owner-net și calculează comisionul singure).
 
-### 3. Wire triggers
+```ts
+const totalPrice = computeRentalPrice(rentalDays, clientPrice, priceWeek, priceMonth, product.platform_fee_percent ?? 0).subtotal;
+```
 
-**`src/components/profile/AccountTab.tsx` → `handleSubmit`**
-- After `updateProfile` succeeds, diff the previous `profile` against the new values; if any of `full_name / email / phone` changed, invoke `send-transactional-email` with `profile-updated`, passing only the changed labels. Idempotency key: `profile-updated-${userId}-${Date.now()}`. Fire-and-forget.
-
-**`src/components/profile/AccountTab.tsx` → `handlePasswordReset`**
-- Keep calling `resetPasswordForEmail` (sends the reset link). The actual "parolă schimbată" confirmation already fires in `Auth.tsx → handleSetNewPassword`, so no extra call needed there. No change required.
-
-**`src/components/earnings/WithdrawalMethodCard.tsx` → `handleAdd`**
-- After successful insert into `payout_ibans`, invoke `send-transactional-email` with `iban-added`, passing the masked IBAN and account holder name. Idempotency key: `iban-added-${user.id}-${clean}`.
-
-**`supabase/functions/confirm-account-deactivation/index.ts`**
-- After successful deactivation, invoke `send-transactional-email` with `account-deactivated` using the user's email captured before deactivation. Idempotency: `account-deactivated-${user.id}`.
-
-### 4. KYC approved
-- Already wired (`kyc-approved` template, fired from `kycApi.ts:248`). No change.
+Verific de asemenea că `MobileStickyBookingBar` și orice alt loc care navighează la `/checkout` trimit subtotalul, nu totalul cu comision inclus (momentan `MobileStickyBookingBar` doar afișează `.total` pentru utilizator, dar nu face navigarea — confirm înainte de fix).
 
 ## Out of scope
-- New welcome content/design (reusing existing `welcome.tsx`).
-- Phone OTP change emails (phone change already gated by SMS OTP; we still send `profile-updated` after the OTP completes, in `handlePhoneVerified`).
-- Avatar / SMS-notifications-toggle changes — no email (low-signal).
-- Deactivation request link email (already exists).
+- Nu modific `PremiumBookingCard` (afișarea pe pagina produsului este corectă).
+- Nu modific `rentalPricing.ts` (formulele sunt corecte).
+- Nu modific edge function-ul `create-checkout-session` (folosește valorile salvate din DB la inserarea rezervării, care provin din `subtotal` corect).
