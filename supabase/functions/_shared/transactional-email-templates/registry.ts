@@ -50,6 +50,9 @@ import { template as requestReminder2hOwner } from './request-reminder-2h-owner.
 import { template as requestReminder2hRenter } from './request-reminder-2h-renter.tsx'
 import { template as requestExpiredOwner } from './request-expired-owner.tsx'
 import { template as requestExpiredRenter } from './request-expired-renter.tsx'
+import { template as profileUpdated } from './profile-updated.tsx'
+import { template as ibanAdded } from './iban-added.tsx'
+import { template as accountDeactivated } from './account-deactivated.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'welcome': welcomeEmail,
@@ -93,4 +96,7 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'request-reminder-2h-renter': requestReminder2hRenter,
   'request-expired-owner': requestExpiredOwner,
   'request-expired-renter': requestExpiredRenter,
+  'profile-updated': profileUpdated,
+  'iban-added': ibanAdded,
+  'account-deactivated': accountDeactivated,
 }
