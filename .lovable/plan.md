@@ -1,55 +1,57 @@
-## Reducere email-uri proprietar + fix duplicat
+## Current state
 
-### Scop
-Proprietarul primește prea multe email-uri (8) pentru un flux de închiriere. Reducem la doar 3 email-uri și eliminăm cauza duplicatului "Predarea a fost confirmată".
+Already sent:
+- **Welcome** — fires after OTP verification in `Auth.tsx` via `send-general-notification` (old inline HTML), not the branded `welcome.tsx` template.
+- **Password changed** — fires from password reset flow (`Auth.tsx → send-password-changed-notification`).
+- **KYC approved** — fires from `kycApi.ts` via `kyc-approved` branded template.
+- **Account deactivation request** — confirmation link email exists (`account-deactivation` template).
 
-### Email-uri păstrate pentru proprietar
-1. `request_created` → "Cerere nouă de închiriere"
-2. `handover_confirmed` → "Predarea a fost confirmată"
-3. `rental_completed` → "Închirierea ta a fost finalizată"
+Missing:
+- Welcome doesn't always reach users (uses old function; not branded; no fallback path for non-OTP confirm).
+- Password change via the in-app "Schimbă parola" flow (uses `resetPasswordForEmail`) doesn't trigger the post-change confirmation.
+- No email when **email**, **full name**, or **phone** is updated from `AccountTab`.
+- No email when an **IBAN is added** in `WithdrawalMethodCard`.
+- No final confirmation email after account is actually **deactivated** (only the request link is sent).
 
-### Email-uri eliminate pentru proprietar (rămân doar in-app + SMS unde e cazul)
-- `request_accepted` ("Ai acceptat o cerere")
-- `pv_pickup_pending` ("Acțiune necesară: completează partea ta din PV")
-- `pv_pickup_completed_by_party`
-- `pv_return_pending` ("Acțiune necesară: PV de returnare")
-- `pv_return_completed_by_party`
-- `return_in_progress`
-- `return_reminder_24h`, `return_reminder_2h`
-- `request_reminder_2h`, `request_expired`
-- `pickup_scheduled`
-- `dispute_opened`, `cancellation-*`
+## Changes
 
-Pentru renter (chiriaș) păstrăm comportamentul actual neschimbat.
+### 1. Switch welcome email to the branded template
+- In `src/pages/Auth.tsx` (`handleVerifyOtp` and `handlePhoneVerified`), replace `send-general-notification` calls with:
+  ```ts
+  supabase.functions.invoke("send-transactional-email", {
+    body: { templateName: "welcome", recipientEmail, idempotencyKey: `welcome-${userId}`, templateData: { name } }
+  })
+  ```
+- Idempotency key per user guarantees one welcome per account even if the user re-verifies.
 
-### Implementare
-În `supabase/functions/notify-rental-event/index.ts`:
-- Adăugăm o constantă `OWNER_EMAIL_ALLOWED = new Set(["request_created","handover_confirmed","rental_completed"])`.
-- În bucla `for (const role of recipients)`, înainte de blocul EMAIL, dacă `role === "owner" && !OWNER_EMAIL_ALLOWED.has(event_key)` → audit_log status `skipped` cu reason `owner_email_filtered` și skip trimitere. Toate celelalte canale (in_app, SMS) rămân.
+### 2. New transactional email templates (`supabase/functions/_shared/transactional-email-templates/`)
+Each follows the existing `BaseLayout / H1 / Lead / InfoRow / CTAButton` pattern (same as `email-change.tsx` / `password-changed.tsx`):
 
-### Fix duplicat "Predarea a fost confirmată"
-Cauză: `handover_confirmed` este invocat simultan din 2 surse:
-1. Client (`src/features/rentals/rentalDetailPageApi.ts` linia 258, `src/features/rentals/ownerRentalsApi.ts` linia 81)
-2. DB trigger `rentals_notify_status` (migrație `20260511053841`)
+- `profile-updated.tsx` — generic "Date cont actualizate" with an `InfoRow` per changed field (Nume / Email / Telefon), CTA to `/contul-meu`, security warning "Nu ai făcut tu această modificare? Contactează suportul".
+- `iban-added.tsx` — "IBAN adăugat în contul tău" with masked IBAN (`RO** **** **** **** **** 1234`), CTA to `/castiguri`.
+- `account-deactivated.tsx` — "Contul tău a fost dezactivat" sent after successful deactivation, mentions reactivation via support.
 
-Verificarea de idempotență din funcție citește `notification_audit_log` înainte de insert — race condition: ambele invocări trec verificarea simultan și trimit email-ul de 2 ori.
+Register each in `registry.ts`.
 
-**Soluție:**
-- Eliminăm cele 2 apeluri din client (`rentalDetailPageApi.ts` și `ownerRentalsApi.ts`). DB trigger-ul e sursa unică de adevăr și se declanșează atomic la `UPDATE rentals SET handover_confirmed_at = now()`.
-- Adăugăm protecție defensivă: migrație care creează `UNIQUE INDEX` parțial pe `notification_audit_log(rental_id, event_key, user_id, channel) WHERE status IN ('sent','delivered')` pentru a preveni viitoare race conditions. În funcție, prindem erori `23505` (unique violation) la insertul audit log-ului și tratăm trimiterea ca duplicat (nu repornim send-ul).
+### 3. Wire triggers
 
-### Verificare
-- După deploy, verificare manuală prin a urmări un flux complet și confirma că proprietarul primește exact 3 email-uri.
-- Verificare în `notification_audit_log` că pentru `handover_confirmed` există un singur rând per user.
+**`src/components/profile/AccountTab.tsx` → `handleSubmit`**
+- After `updateProfile` succeeds, diff the previous `profile` against the new values; if any of `full_name / email / phone` changed, invoke `send-transactional-email` with `profile-updated`, passing only the changed labels. Idempotency key: `profile-updated-${userId}-${Date.now()}`. Fire-and-forget.
 
-### Fișiere modificate
-- `supabase/functions/notify-rental-event/index.ts` — filtru owner emails + retry safe pe unique violation
-- `src/features/rentals/rentalDetailPageApi.ts` — eliminare apel client `handover_confirmed`
-- `src/features/rentals/ownerRentalsApi.ts` — eliminare apel client `handover_confirmed`
-- migrație nouă — unique index pe `notification_audit_log`
-- deploy `notify-rental-event`
+**`src/components/profile/AccountTab.tsx` → `handlePasswordReset`**
+- Keep calling `resetPasswordForEmail` (sends the reset link). The actual "parolă schimbată" confirmation already fires in `Auth.tsx → handleSetNewPassword`, so no extra call needed there. No change required.
 
-### Out of scope
-- Templatele email-urilor în sine (nu modificăm conținut).
-- Notificările in-app și SMS — rămân neschimbate.
-- Email-urile către chiriaș.
+**`src/components/earnings/WithdrawalMethodCard.tsx` → `handleAdd`**
+- After successful insert into `payout_ibans`, invoke `send-transactional-email` with `iban-added`, passing the masked IBAN and account holder name. Idempotency key: `iban-added-${user.id}-${clean}`.
+
+**`supabase/functions/confirm-account-deactivation/index.ts`**
+- After successful deactivation, invoke `send-transactional-email` with `account-deactivated` using the user's email captured before deactivation. Idempotency: `account-deactivated-${user.id}`.
+
+### 4. KYC approved
+- Already wired (`kyc-approved` template, fired from `kycApi.ts:248`). No change.
+
+## Out of scope
+- New welcome content/design (reusing existing `welcome.tsx`).
+- Phone OTP change emails (phone change already gated by SMS OTP; we still send `profile-updated` after the OTP completes, in `handlePhoneVerified`).
+- Avatar / SMS-notifications-toggle changes — no email (low-signal).
+- Deactivation request link email (already exists).
