@@ -23,7 +23,8 @@ const RentalAcceptedEmail = (p: Props) => {
       <H1>🎉 Cererea ta a fost acceptată!</H1>
       <Lead>
         <strong>{p.ownerName ?? 'Proprietarul'}</strong> a confirmat rezervarea.
-        Pregătește-te să te bucuri de produs.
+        Pentru a finaliza rezervarea, <strong>plătește acum</strong> prin Stripe — suma va fi
+        blocată în siguranță până la predare.
       </Lead>
       <ProductCard
         image={p.productImage}
@@ -34,8 +35,8 @@ const RentalAcceptedEmail = (p: Props) => {
         currency={p.currency}
         status="approved"
       />
-      <CTAButton href={cta}>Vezi rezervarea</CTAButton>
-      <Para>Discută cu proprietarul direct din chat-ul Rentli pentru a stabili ridicarea.</Para>
+      <CTAButton href={cta}>Plătește acum</CTAButton>
+      <Para>După plată, vei putea discuta cu proprietarul direct din chat-ul Rentli pentru a stabili ridicarea.</Para>
     </BaseLayout>
   )
 }
