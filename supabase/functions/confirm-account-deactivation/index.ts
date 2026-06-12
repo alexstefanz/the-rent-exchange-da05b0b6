@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
     // Find profile with this token
     const { data: profile, error: findError } = await adminClient
       .from("profiles")
-      .select("id, deactivation_token_expires_at")
+      .select("id, email, deactivation_token_expires_at")
       .eq("deactivation_token", token)
       .single();
 
@@ -63,6 +63,27 @@ Deno.serve(async (req) => {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Send confirmation email (fire-and-forget; do not fail the deactivation)
+    try {
+      let recipientEmail = profile.email as string | null;
+      if (!recipientEmail) {
+        const { data: auth } = await adminClient.auth.admin.getUserById(profile.id);
+        recipientEmail = auth?.user?.email ?? null;
+      }
+      if (recipientEmail) {
+        await adminClient.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "account-deactivated",
+            recipientEmail,
+            idempotencyKey: `account-deactivated-${profile.id}`,
+            templateData: {},
+          },
+        });
+      }
+    } catch (e) {
+      console.error("account-deactivated email failed:", e);
     }
 
     return new Response(JSON.stringify({ success: true }), {
