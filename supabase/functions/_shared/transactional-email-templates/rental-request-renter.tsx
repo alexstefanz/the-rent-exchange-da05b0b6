@@ -21,8 +21,9 @@ const RentalRequestRenterEmail = (p: Props) => {
     <BaseLayout preview="Cererea ta a fost trimisă proprietarului">
       <H1>Cerere trimisă cu succes ✓</H1>
       <Lead>
-        Plata ta a fost autorizată în siguranță. Cererea așteaptă confirmarea proprietarului
-        — ești notificat imediat ce primește un răspuns.
+        Cererea ta a fost trimisă proprietarului. <strong>Cardul tău nu a fost debitat.</strong>{' '}
+        Imediat ce proprietarul acceptă, primești un link de plată securizată Stripe, iar suma
+        va fi blocată în custodie până la predare.
       </Lead>
       <ProductCard
         image={p.productImage}
@@ -34,7 +35,7 @@ const RentalRequestRenterEmail = (p: Props) => {
         status="pending"
       />
       <CTAButton href={cta}>Vezi statusul cererii</CTAButton>
-      <Para>Suma este reținută în escrow și va fi eliberată proprietarului doar după ridicare.</Para>
+      <Para>După plată, suma este reținută în custodie și eliberată proprietarului doar după finalizarea închirierii.</Para>
     </BaseLayout>
   )
 }

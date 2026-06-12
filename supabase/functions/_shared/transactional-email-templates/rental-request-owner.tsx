@@ -24,8 +24,9 @@ const RentalRequestOwnerEmail = (p: Props) => {
       <H1>Cerere nouă de închiriere</H1>
       <Lead>
         <strong>{p.renterName ?? 'Un utilizator'}</strong> dorește să închirieze produsul
-        „{productLabel}". Plata a fost <strong>autorizată (blocată)</strong> pe cardul chiriașului
-        și va fi încasată automat după ce acceptați cererea.
+        „{productLabel}". <strong>Nu se face nicio încasare în acest moment.</strong> Dacă
+        acceptați cererea, chiriașul va primi un link de plată securizată Stripe, iar suma
+        va fi blocată în custodie până la finalizarea închirierii.
       </Lead>
       <ProductCard
         image={p.productImage}
@@ -38,8 +39,9 @@ const RentalRequestOwnerEmail = (p: Props) => {
       />
       <CTAButton href={cta}>Vezi cererea</CTAButton>
       <Para>
-        Acceptați sau refuzați cererea cât mai repede. După acceptare, plata se va încasa și veți putea
-        discuta cu chiriașul pe chat pentru a stabili data și ora predării.
+        Acceptați sau refuzați cererea cât mai repede. După acceptare, chiriașul are la
+        dispoziție un link de plată securizată Stripe; imediat ce plata este efectuată, puteți
+        discuta pe chat pentru a stabili data și ora predării.
       </Para>
       <Para>
         La predare și la returnare este obligatoriu să completați procesele verbale cu poze, ca să ne
