@@ -238,7 +238,7 @@ const ProductDetail = () => {
 
   const handleReserve = () => {
     if (!product || !startDate || !endDate) return;
-    const totalPrice = computeRentalPrice(rentalDays, clientPrice, priceWeek, priceMonth, product.platform_fee_percent ?? 0).total;
+    const totalPrice = computeRentalPrice(rentalDays, clientPrice, priceWeek, priceMonth, product.platform_fee_percent ?? 0).subtotal;
     navigate('/checkout', { state: { product: { id: product.id, title: displayTitle, images, price: clientPrice, priceUnit: "zi", location, ownerId: product.owner_id, platformFeePercent: product.platform_fee_percent }, startDate, endDate, rentalDays, totalPrice } });
   };
 
