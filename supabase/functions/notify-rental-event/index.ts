@@ -248,30 +248,22 @@ const EVENTS: Record<EventKey, EventConfig> = {
     link: (c) => `/rezervari/${c.rental.public_id}`,
   },
   request_cancelled_by_renter: {
-    recipients: "both", channels: ["in_app", "email", "sms"], critical: true,
+    recipients: "owner", channels: ["in_app", "email", "sms"], critical: true,
     emailTemplate: { owner: "cancellation-owner" },
     smsTemplate: { owner: "rental_cancelled_owner" },
-    inAppTitle: (c) => c.recipientRole === "renter"
-      ? { ro: "Ai anulat cererea", en: "You cancelled the request" }
-      : { ro: "Cerere de închiriere anulată", en: "Rental request cancelled" },
-    inAppDesc: (c) => c.recipientRole === "renter"
-      ? { ro: `Ai anulat cererea pentru "${c.product?.title}"`, en: `You cancelled the request for "${c.product?.title}"` }
-      : { ro: `Chiriașul a anulat cererea pentru "${c.product?.title}" înainte de plată`, en: `The renter cancelled the request for "${c.product?.title}" before payment` },
+    inAppTitle: { ro: "Cerere de închiriere anulată", en: "Rental request cancelled" },
+    inAppDesc: (c) => ({ ro: `Chiriașul a anulat cererea pentru "${c.product?.title}" înainte de plată`, en: `The renter cancelled the request for "${c.product?.title}" before payment` }),
     link: (c) => `/rezervari/${c.rental.public_id}`,
     smsPurpose: "view_rental",
   },
 };
 
 EVENTS.request_cancelled_by_owner = {
-  recipients: "both", channels: ["in_app", "email", "sms"], critical: true,
+  recipients: "renter", channels: ["in_app", "email", "sms"], critical: true,
   emailTemplate: { renter: "cancellation-renter" },
   smsTemplate: { renter: "rental_cancelled" },
-  inAppTitle: (c) => c.recipientRole === "owner"
-    ? { ro: "Ai anulat rezervarea", en: "You cancelled the reservation" }
-    : { ro: "Rezervare anulată de proprietar", en: "Reservation cancelled by owner" },
-  inAppDesc: (c) => c.recipientRole === "owner"
-    ? { ro: `Ai anulat rezervarea pentru "${c.product?.title}"`, en: `You cancelled the reservation for "${c.product?.title}"` }
-    : { ro: `Proprietarul a anulat rezervarea pentru "${c.product?.title}" înainte de plată`, en: `The owner cancelled the reservation for "${c.product?.title}" before payment` },
+  inAppTitle: { ro: "Rezervare anulată de proprietar", en: "Reservation cancelled by owner" },
+  inAppDesc: (c) => ({ ro: `Proprietarul a anulat rezervarea pentru "${c.product?.title}" înainte de plată`, en: `The owner cancelled the reservation for "${c.product?.title}" before payment` }),
   link: (c) => `/rezervari/${c.rental.public_id}`,
   smsPurpose: "view_rental",
 };
