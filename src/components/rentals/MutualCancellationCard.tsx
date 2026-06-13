@@ -20,6 +20,8 @@ interface Props {
   cancelRequestReason?: string | null;
   currentUserId: string;
   isRenter?: boolean;
+  isOwner?: boolean;
+  isAdmin?: boolean;
   paymentStatus?: string | null;
   rentalStatus?: string | null;
   onChanged: () => void | Promise<void>;
@@ -28,7 +30,7 @@ interface Props {
 const MutualCancellationCard = ({
   rentalId, cancelRequestStatus, cancelRequestInitiator,
   cancelRequestSubject, cancelRequestReason,
-  currentUserId, isRenter, paymentStatus, rentalStatus, onChanged,
+  currentUserId, isRenter, isOwner, isAdmin, paymentStatus, rentalStatus, onChanged,
 }: Props) => {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -42,6 +44,10 @@ const MutualCancellationCard = ({
   const iAmInitiator = isPending && cancelRequestInitiator === currentUserId;
   const unpaid = !paymentStatus || ["pending", "failed", "canceled", "cancelled"].includes(paymentStatus);
   const canSelfCancelUnpaid = unpaid && rentalStatus !== "cancelled" && rentalStatus !== "completed";
+  const isParticipant = !!isRenter || !!isOwner;
+
+  // Hide entirely from users who are neither renter, owner, nor admin
+  if (!isParticipant && !isAdmin) return null;
 
   async function selfCancelUnpaid() {
     setBusy(true);
@@ -161,7 +167,12 @@ const MutualCancellationCard = ({
               <DialogHeader>
                 <DialogTitle>{t("Confirmi anularea?", "Confirm cancellation?")}</DialogTitle>
                 <DialogDescription>
-                  {isRenter
+                  {isAdmin && !isParticipant
+                    ? t(
+                        "Anulezi ca admin. Ambele părți vor fi notificate prin email, SMS și notificare în aplicație.",
+                        "Cancelling as admin. Both parties will be notified by email, SMS and in-app notification.",
+                      )
+                    : isRenter
                     ? t(
                         "Rezervarea va fi anulată imediat. Proprietarul va fi notificat prin email, SMS și notificare în aplicație.",
                         "The reservation will be cancelled immediately. The owner will be notified by email, SMS and in-app notification.",

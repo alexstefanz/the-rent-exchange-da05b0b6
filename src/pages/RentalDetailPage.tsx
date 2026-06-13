@@ -711,6 +711,8 @@ const RentalDetailPage = () => {
                 cancelRequestReason={rental.cancel_request_reason}
                 currentUserId={user.id}
                 isRenter={user.id === rental.renter_id}
+                isOwner={user.id === rental.owner_id}
+                isAdmin={!!isAdmin}
                 paymentStatus={rental.payment_status}
                 rentalStatus={rental.status}
                 onChanged={async () => { await refetch(); }}
