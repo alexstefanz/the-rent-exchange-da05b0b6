@@ -167,7 +167,12 @@ const MutualCancellationCard = ({
               <DialogHeader>
                 <DialogTitle>{t("Confirmi anularea?", "Confirm cancellation?")}</DialogTitle>
                 <DialogDescription>
-                  {isRenter
+                  {isAdmin && !isParticipant
+                    ? t(
+                        "Anulezi ca admin. Ambele părți vor fi notificate prin email, SMS și notificare în aplicație.",
+                        "Cancelling as admin. Both parties will be notified by email, SMS and in-app notification.",
+                      )
+                    : isRenter
                     ? t(
                         "Rezervarea va fi anulată imediat. Proprietarul va fi notificat prin email, SMS și notificare în aplicație.",
                         "The reservation will be cancelled immediately. The owner will be notified by email, SMS and in-app notification.",
