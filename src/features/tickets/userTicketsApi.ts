@@ -88,7 +88,9 @@ function mapAntispamError(message: string): string {
     case "HOURLY":
       return `Ați atins limita de ${value} tichete pe oră. Reveniți mai târziu.`;
     case "DAILY":
-      return `Ați atins limita de ${value} tichete pe 24 de ore. Reveniți mâine.`;
+      return value === 1
+        ? `Puteți deschide doar 1 tichet la 24 de ore. Reveniți mâine sau continuați conversația în tichetul existent.`
+        : `Ați atins limita de ${value} tichete pe 24 de ore. Reveniți mâine.`;
     case "OPEN_LIMIT":
       return `Aveți deja ${value} tichete deschise. Închideți sau așteptați rezolvarea celor existente înainte de a deschide unul nou.`;
     case "DUPLICATE":
