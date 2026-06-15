@@ -1,15 +1,38 @@
-## Problemă
+# Fix: titlu duplicat în notificările toast
 
-`FORBIDDEN` apare la apăsarea „Da, anulează" pentru că ești logat cu un cont care nu e nici `renter_id` nici `owner_id` al rezervării (probabil contul tău de admin). RPC-ul `cancel_unpaid_rental` aruncă `FORBIDDEN` în acest caz, iar cardul „Anulează rezervarea" se afișa oricui deschide pagina (inclusiv admini / utilizatori străini).
+## Problema
+În screenshot, cardul toast afișează același text de două ori: pe primul rând (titlu, bold) și pe al doilea rând (descriere, gri). Acest lucru se întâmplă pentru toate apelurile vechi de forma `toast({ title: "..." })` fără `description`, inclusiv "Anunț aprobat cu succes" din `AdminApprovals.tsx`.
 
-## Fix
+## Cauza
+În `src/hooks/use-toast.ts` (bridge-ul legacy către sistemul `notify`):
 
-1) **DB — extinde `cancel_unpaid_rental`** să accepte și adminii (via `has_role(auth.uid(),'admin')`). Când actorul e admin, `cancellation_reason='admin_self_unpaid'`. Restul logicii (status, handover, payment_status) rămâne neschimbat.
+```ts
+notify.success(message || title || "", title || "Succes");
+```
 
-2) **UI — `MutualCancellationCard`**: ascunde complet cardul când utilizatorul curent nu e renter, nu e owner și nu e admin. Adaug prop `isAdmin` calculat în `RentalDetailPage` din `useUserRole`/sursa existentă. Dacă e admin, dialogul afișează un mesaj diferit: „Anulezi ca admin. Ambele părți vor fi notificate."
+Când lipsește `description`, `message` devine gol și fallback-ul folosește `title`, iar `title` este folosit și ca titlu — deci aceeași frază apare de două ori în card.
 
-3) **`RentalDetailPage`** — pasează `isAdmin` și include condiția în gate-ul de rendering: `(isRenter || isOwner || isAdmin) && ...`.
+## Soluția
+O singură modificare, în `src/hooks/use-toast.ts`:
 
-## Out of scope
+- Dacă `description` lipsește (sau coincide cu `title`), trimit `message=""` și păstrez `title` ca titlu unic al cardului.
+- Comportamentul cu titlu + descriere distincte rămâne neschimbat.
+- Cazul `variant: "destructive"` rămâne neschimbat (folosește deja `notifyError`).
 
-Fluxul „request mutual cancellation" rămâne neschimbat. Nu modific notificările sau emailurile existente — adminul declanșează aceleași notificări ca utilizatorii.
+Pseudo-cod:
+```ts
+const t = title || "Succes";
+const m = message && message !== title ? message : "";
+notify.success(m, t);
+```
+
+## Scope
+- Singur fișier modificat: `src/hooks/use-toast.ts`.
+- Nu modific `src/lib/notify.tsx`, cardul vizual, sau apelurile existente — fix-ul este centralizat și acoperă **toate** locurile care încă folosesc `toast({ title })` din shadcn legacy (ListingsPage, ListItem, PublishProduct, ProductPreview, AdminApprovals, HelpCenter, BusinessOnboarding, ProductDetail, UserTickets, Auth, etc.).
+
+## Verificare
+După fix, în `/admin/approvals` la aprobarea unui anunț, cardul va afișa doar:
+- Titlu: "Anunț aprobat cu succes"
+- Fără linie duplicată dedesubt.
+
+Restul toast-urilor care au atât `title` cât și `description` rămân neafectate.
