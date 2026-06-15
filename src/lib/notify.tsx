@@ -217,6 +217,11 @@ function show(variant: NotifyVariant, opts: NotifyOptions) {
       id: GLOBAL_NOTIFICATION_TOAST_ID,
       duration,
       position: "bottom-center",
+      unstyled: true,
+      classNames: {
+        toast:
+          "!bg-transparent !border-0 !shadow-none !p-0 !rounded-none !w-auto",
+      },
     },
   );
 }
