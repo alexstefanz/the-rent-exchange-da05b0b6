@@ -26,7 +26,9 @@ function toast(input: LegacyToastInput = {}) {
   if (isError) {
     notifyError(message || title || "A apărut o eroare.", { fallbackTitle: title || "Eroare" });
   } else {
-    notify.success(message || title || "", title || "Succes");
+    const t = title || "Succes";
+    const m = message && message !== title ? message : "";
+    notify.success(m, t);
   }
   return { id: "0", dismiss: () => {}, update: () => {} };
 }
