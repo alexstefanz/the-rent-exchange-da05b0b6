@@ -68,9 +68,35 @@ export const createUserTicket = async (input: {
   }
 
   const { data, error } = await opsTickets().insert(insertData).select().single();
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(mapAntispamError(error.message));
   return data as unknown as OpsTicket;
 };
+
+/**
+ * Map server-side antispam errors (raised by the `enforce_ticket_antispam` trigger)
+ * to friendly Romanian messages shown in toasts.
+ */
+function mapAntispamError(message: string): string {
+  const m = message || "";
+  const match = m.match(/ANTISPAM_([A-Z_]+):(\d+)/);
+  if (!match) return m;
+  const code = match[1];
+  const value = parseInt(match[2], 10);
+  switch (code) {
+    case "COOLDOWN":
+      return `Vă rugăm să așteptați încă ${value} secunde înainte de a deschide un alt tichet.`;
+    case "HOURLY":
+      return `Ați atins limita de ${value} tichete pe oră. Reveniți mai târziu.`;
+    case "DAILY":
+      return `Ați atins limita de ${value} tichete pe 24 de ore. Reveniți mâine.`;
+    case "OPEN_LIMIT":
+      return `Aveți deja ${value} tichete deschise. Închideți sau așteptați rezolvarea celor existente înainte de a deschide unul nou.`;
+    case "DUPLICATE":
+      return `Ați deschis recent un tichet cu același titlu. Așteptați ${value} minute sau continuați conversația în tichetul existent.`;
+    default:
+      return m;
+  }
+}
 
 /**
  * Fetch non-internal messages for a ticket (RLS ensures only own tickets)
