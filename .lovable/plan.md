@@ -1,22 +1,27 @@
-## Plan
+Adaugă un buton de back fix pe mobil pentru paginile de categorie și produs.
 
-1. **Unific sistemul de toasturi**
-   - Păstrez un singur Toaster montat global: `src/components/ui/sonner.tsx` prin `src/App.tsx`.
-   - Nu reactivez vechiul toaster Radix; `useToast` rămâne doar bridge către sistemul actual.
+## Context
+- Pagina de produs are deja un buton de back încorporat în galeria mobilă (`ProductImageGallery`), dar utilizatorul vrea un buton fix pe ecran, în stânga-sus, vizibil în timpul scroll-ului.
+- Pagina de categorie nu are deloc buton de back mobil.
+- Navbar-ul este fix (`fixed`) pe mobil, deci butonul trebuie poziționat sub el.
 
-2. **Elimin cauza fundalului dublu**
-   - Toasturile custom din `src/lib/notify.tsx` au deja propriul card cu background/border/shadow.
-   - Wrapper-ul Sonner aplică și el background/border/shadow, ceea ce produce efectul din screenshot.
-   - Voi face wrapper-ul Sonner transparent doar pentru `toast.custom(...)`, astfel încât să rămână un singur card vizibil.
+## Ce se construiește
+1. **Componentă reutilizabilă** `src/components/shared/MobileFixedBackButton.tsx`:
+   - Iconiță `ArrowLeft` (lucide-react).
+   - Buton circular cu fundal semi-transparent întunecat (`bg-black/40 backdrop-blur-sm`) și iconiță albă, pentru a fi vizibil pe orice fundal.
+   - Poziționat fix (`fixed`) în stânga-sus: `top-20 left-4` (sub navbar de 64px), cu `z-[40]` și `lg:hidden`.
+   - Acțiune: `navigate(-1)`; fallback la `/` dacă nu există istoric.
 
-3. **Păstrez toasturile simple corecte**
-   - `toast.success(...)`, `toast.error(...)` și celelalte apeluri directe din admin/user flows vor păstra styling-ul standard Sonner, fără card interior suplimentar.
-   - Nu schimb textele, logica de business sau comportamentul notificărilor.
+2. **Pagina de categorie** `src/pages/CategoryDetail.tsx`:
+   - Adaugă `<MobileFixedBackButton />` imediat după `<Navbar />`.
 
-4. **Curăț compatibilitatea legacy**
-   - Verific ca apelurile prin `useToast()` să treacă în continuare prin `notify`, dar fără wrapper dublat.
-   - Vechiul `src/components/ui/toaster.tsx` rămâne nemontat și nu va genera notificări suprapuse.
+3. **Pagina de produs** `src/pages/ProductDetail.tsx`:
+   - Adaugă `<MobileFixedBackButton />` imediat după `<Navbar />`.
+   - Elimină prop-ul `onBack` de la apelul variantei mobile a `<ProductImageGallery>` pentru a evita dublarea butonului.
 
-5. **Verificare după implementare**
-   - Testez vizual cel puțin un toast custom de succes, un toast custom de eroare și un toast direct Sonner.
-   - Confirm că fiecare apare ca un singur card, fără fundal/chenar dublu.
+## Nu se modifică
+- Componenta `ProductImageGallery` rămâne neschimbată; paginile care încă folosesc `onBack` (ex. `ProductPreview`) își păstrează comportamentul existent.
+- Nu se adaugă buton de back pe desktop.
+
+## Verificare
+- Prevualizare mobilă pe pagina de categorie și pagina de produs: butonul trebuie să apară în stânga-sus, sub navbar, și să rămână fix la scroll.
