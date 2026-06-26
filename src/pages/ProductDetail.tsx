@@ -28,6 +28,7 @@ import ProductDetailSkeleton from "@/components/product/ProductDetailSkeleton";
 import BookedDatesAlert from "@/components/product/BookedDatesAlert";
 import DeletedProductNotice from "@/components/product/DeletedProductNotice";
 import PreviewBanner from "@/components/product/PreviewBanner";
+import MobileFixedBackButton from "@/components/shared/MobileFixedBackButton";
 
 // Below-the-fold / interaction-triggered → lazy-loaded to shrink the initial bundle.
 const NearbyProductsSlider = lazy(() => import("@/components/products/NearbyProductsSlider"));
@@ -287,6 +288,7 @@ const ProductDetail = () => {
     <div className="min-h-screen bg-background pb-24 lg:pb-0">
       {isPreview && isOwnProduct && <PreviewBanner />}
       <Navbar />
+      <MobileFixedBackButton />
 
       <StickyProductHeader
         title={displayTitle}
@@ -305,7 +307,6 @@ const ProductDetail = () => {
         isFavorite={isFavorite}
         onToggleFavorite={handleToggleFavorite}
         onShare={handleShare}
-        onBack={() => navigate(-1)}
         onOpenLightbox={openLightbox}
       />
 

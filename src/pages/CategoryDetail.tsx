@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import MobileFixedBackButton from "@/components/shared/MobileFixedBackButton";
 import ProductCard from "@/components/products/ProductCard";
 import CategoryHero from "@/components/category/CategoryHero";
 import SearchFilters, { InlineSearchFilters } from "@/components/search/SearchFilters";
@@ -210,6 +211,7 @@ const CategoryDetail = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
+      <MobileFixedBackButton />
       <CategoryHero
         name={catName}
         bannerImage={bannerImage}
