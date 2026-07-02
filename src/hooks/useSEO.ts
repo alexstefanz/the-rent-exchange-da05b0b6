@@ -31,21 +31,24 @@ const setMeta = (selector: string, attr: string, value: string) => {
   el.setAttribute(attr, value);
 };
 
+const DEFAULT_OG_IMAGE = "https://rentli.ro/og-image.webp";
+
 export const useSEO = ({ title, description, image, url, type = "website", canonical, jsonLd, noindex }: SEOConfig) => {
   useEffect(() => {
+    const resolvedImage = image || DEFAULT_OG_IMAGE;
     if (title) document.title = title;
     if (description) setMeta('meta[name="description"]', "content", description);
 
     if (title) setMeta('meta[property="og:title"]', "content", title);
     if (description) setMeta('meta[property="og:description"]', "content", description);
-    if (image) setMeta('meta[property="og:image"]', "content", image);
+    setMeta('meta[property="og:image"]', "content", resolvedImage);
     if (url) setMeta('meta[property="og:url"]', "content", url);
     setMeta('meta[property="og:type"]', "content", type);
 
-    setMeta('meta[name="twitter:card"]', "content", image ? "summary_large_image" : "summary");
+    setMeta('meta[name="twitter:card"]', "content", "summary_large_image");
     if (title) setMeta('meta[name="twitter:title"]', "content", title);
     if (description) setMeta('meta[name="twitter:description"]', "content", description);
-    if (image) setMeta('meta[name="twitter:image"]', "content", image);
+    setMeta('meta[name="twitter:image"]', "content", resolvedImage);
 
     if (canonical) setMeta('link[rel="canonical"]', "href", canonical);
 
