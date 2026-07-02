@@ -1,0 +1,64 @@
+// Shared caller-auth helper for internal edge functions.
+// Accepts either the platform service-role key (edge-to-edge / cron / DB triggers)
+// or a valid end-user JWT (Supabase auth). Blocks anonymous public callers.
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
+export type CallerKind = "service" | "user";
+export interface Caller {
+  kind: CallerKind;
+  userId?: string;
+  email?: string;
+}
+
+/**
+ * Verify the request bearer token is either the service role key or a valid
+ * end-user JWT. Returns a {@link Caller}. On failure, returns null — the caller
+ * should short-circuit with a 401 response.
+ */
+export async function requireCaller(req: Request): Promise<Caller | null> {
+  const authHeader = req.headers.get("Authorization") || req.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) return null;
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  if (!token) return null;
+
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  if (serviceKey && token === serviceKey) {
+    return { kind: "service" };
+  }
+
+  const url = Deno.env.get("SUPABASE_URL")!;
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  // Reject bare anon-key calls — they are public and not proof of identity.
+  if (anonKey && token === anonKey) return null;
+
+  try {
+    const client = createClient(url, anonKey);
+    const { data, error } = await client.auth.getUser(token);
+    if (error || !data?.user) return null;
+    return { kind: "user", userId: data.user.id, email: data.user.email ?? undefined };
+  } catch {
+    return null;
+  }
+}
+
+/** Returns true if the given user has the given role in `user_roles`. */
+export async function callerHasRole(userId: string, role: string): Promise<boolean> {
+  const url = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const admin = createClient(url, serviceKey);
+  const { data } = await admin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", role)
+    .maybeSingle();
+  return !!data;
+}
+
+export function unauthorizedResponse(corsHeaders: Record<string, string>) {
+  return new Response(JSON.stringify({ error: "Unauthorized" }), {
+    status: 401,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}

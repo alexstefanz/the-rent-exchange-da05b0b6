@@ -17,7 +17,9 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    // Use the service-role key so capture-rental-payment recognises us as an
+    // internal cron caller. The anon key is public and no longer accepted.
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     // Call capture-rental-payment without a specific rental_id
     // so it processes all eligible rentals
@@ -27,7 +29,7 @@ serve(async (req) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${anonKey}`,
+          Authorization: `Bearer ${serviceKey}`,
         },
         body: JSON.stringify({}),
       },

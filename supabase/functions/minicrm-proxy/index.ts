@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { requireCaller, callerHasRole, unauthorizedResponse } from "../_shared/authGuard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,12 @@ serve(async (req) => {
   }
 
   try {
+    const caller = await requireCaller(req);
+    if (!caller) return unauthorizedResponse(corsHeaders);
+    if (caller.kind === "user") {
+      const isAdmin = await callerHasRole(caller.userId!, "admin");
+      if (!isAdmin) return unauthorizedResponse(corsHeaders);
+    }
     const SYSTEM_ID = Deno.env.get("MINICRM_SYSTEM_ID");
     const API_KEY = Deno.env.get("MINICRM_API_KEY");
     const BASE_URL = Deno.env.get("MINICRM_BASE_URL");

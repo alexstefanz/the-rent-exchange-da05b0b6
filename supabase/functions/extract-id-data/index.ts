@@ -4,6 +4,7 @@
 // ignore failures.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { requireCaller, callerHasRole, unauthorizedResponse } from "../_shared/authGuard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -39,6 +40,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
+    const caller = await requireCaller(req);
+    if (!caller) return unauthorizedResponse(corsHeaders);
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -66,6 +69,14 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "case_not_found" }), {
         status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Ownership / role check: only the case's user, an admin, or a service
+    // caller may trigger extraction and see the extracted data.
+    if (caller.kind === "user") {
+      const isOwner = caller.userId === kycCase.user_id;
+      const isAdmin = !isOwner && (await callerHasRole(caller.userId!, "admin"));
+      if (!isOwner && !isAdmin) return unauthorizedResponse(corsHeaders);
     }
 
     // Fetch ID_FRONT (and ID_BACK if present)
@@ -204,7 +215,19 @@ Deno.serve(async (req) => {
       actor_type: "SYSTEM",
     });
 
-    return new Response(JSON.stringify({ ok: true, extracted: row }), {
+    // Do NOT echo full PII back in the response body. Callers that need the
+    // saved values must read them via the RLS-protected `kyc_extracted_data`
+    // table (admins + owner only).
+    const safeSummary = {
+      ok: true,
+      confidence: row.extraction_confidence,
+      has_cnp: !!cnp,
+      has_id_series: !!row.id_series,
+      has_id_number: !!row.id_number,
+      has_full_name: !!row.full_name,
+      has_address: !!row.address,
+    };
+    return new Response(JSON.stringify(safeSummary), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

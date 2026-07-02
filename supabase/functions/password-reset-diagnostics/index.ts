@@ -50,24 +50,15 @@ Deno.serve(async (req) => {
     { auth: { persistSession: false } }
   )
 
-  // Look for the user in the public.profiles table (synced from auth.users via trigger).
-  // We avoid admin.listUsers because it paginates and is slow at scale.
-  const { data: profile, error } = await supabase
+  // Look up the profile server-side for audit logging only. The response
+  // NEVER discloses whether the email is registered — otherwise this endpoint
+  // becomes an account-enumeration oracle. Always return { exists: null }.
+  const { data: profile } = await supabase
     .from('profiles')
-    .select('id, email')
+    .select('id')
     .ilike('email', email)
     .maybeSingle()
 
-  if (error) {
-    console.error('profile lookup failed', error)
-    // Fail open: do not leak details, but tell client to proceed normally.
-    return new Response(
-      JSON.stringify({ exists: null }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-
-  // Best-effort audit log so we know recovery requests are arriving.
   try {
     if (profile?.id) {
       await supabase.from('user_activity_logs').insert({
@@ -87,7 +78,7 @@ Deno.serve(async (req) => {
   }
 
   return new Response(
-    JSON.stringify({ exists: Boolean(profile) }),
+    JSON.stringify({ exists: null }),
     { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
 })

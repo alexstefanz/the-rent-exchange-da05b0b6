@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { PDFDocument, StandardFonts, rgb } from "https://esm.sh/pdf-lib@1.17.1";
+import { requireCaller, callerHasRole, unauthorizedResponse } from "../_shared/authGuard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,6 +45,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const caller = await requireCaller(req);
+    if (!caller) return unauthorizedResponse(corsHeaders);
     const { rental_id, phase } = await req.json() as { rental_id: string; phase: "handover" | "return" };
     if (!rental_id || (phase !== "handover" && phase !== "return")) {
       return new Response(JSON.stringify({ error: "rental_id and phase required" }), {
@@ -55,6 +58,13 @@ Deno.serve(async (req) => {
 
     const { data: rental, error: rErr } = await admin.from("rentals").select("*").eq("id", rental_id).single();
     if (rErr || !rental) throw new Error("Rental not found");
+
+    // Only rental participants (owner/renter) or admins may generate/read the PV.
+    if (caller.kind === "user") {
+      const isParty = caller.userId === rental.owner_id || caller.userId === rental.renter_id;
+      const isAdmin = !isParty && (await callerHasRole(caller.userId!, "admin"));
+      if (!isParty && !isAdmin) return unauthorizedResponse(corsHeaders);
+    }
 
     const [productRes, ownerRes, renterRes, pvRes] = await Promise.all([
       admin.from("products").select("title, category, included_items, daily_price, deposit_value").eq("id", rental.product_id).maybeSingle(),
