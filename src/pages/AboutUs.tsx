@@ -6,10 +6,18 @@ import Footer from "@/components/layout/Footer";
 import TrustBadges from "@/components/trust/TrustBadges";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 const AboutUs = () => {
   const copy = useUxCopy();
   const { language } = useLanguage();
+
+  usePageSeo({
+    title: language === "en" ? "About Rentli — Romania's rental marketplace" : "Despre Rentli — Marketplace-ul de închirieri din România",
+    description: language === "en"
+      ? "Our mission, team and story behind Rentli, the trusted peer-to-peer rental marketplace in Romania."
+      : "Misiunea, echipa și povestea Rentli, marketplace-ul de închirieri peer-to-peer din România.",
+  });
 
   return (
     <div className="min-h-screen bg-background">

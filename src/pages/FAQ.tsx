@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { Link } from "react-router-dom";
 import { ChevronRight, HelpCircle, Search, LifeBuoy } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -327,6 +328,12 @@ const faqDataEn: FaqItem[] = [
 const FAQ = () => {
   const { t, language } = useLanguage();
   const isEn = language === "en";
+  usePageSeo({
+    title: isEn ? "Frequently asked questions — Rentli" : "Întrebări frecvente — Rentli",
+    description: isEn
+      ? "Common questions about rentals, payments, KYC and fees on Rentli."
+      : "Cele mai frecvente întrebări despre închirieri, plăți, KYC și taxe pe Rentli.",
+  });
   const allLabel = isEn ? "All" : "Toate";
   const [activeCategory, setActiveCategory] = useState<string>(allLabel);
   const [searchQuery, setSearchQuery] = useState("");

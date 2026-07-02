@@ -1,3 +1,4 @@
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Store, Package } from "lucide-react";
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { BannedBanner } from "@/components/common/BannedBanner";
 
 const OwnerRentalsPage = () => {
+  usePageSeo({ title: "Închirieri primite — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const { language } = useLanguage();

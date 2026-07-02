@@ -200,8 +200,11 @@ const ProductDetail = () => {
   const seoDesc = rawDesc.length > 0
     ? (rawDesc.length > 160 ? rawDesc.slice(0, 157) + "..." : rawDesc)
     : t(`Închiriază pe Rentli. Plată securizată, predare cu poze, suport 7/7.`, `Rent on Rentli. Secure payment, photo handover, 7/7 support.`);
-  const seoFirstImage = images[0];
-  const seoImage = seoFirstImage?.startsWith("http") ? seoFirstImage : `${typeof window !== "undefined" ? window.location.origin : ""}${seoFirstImage}`;
+  const seoFirstImage = images.find((i) => i && i !== "/placeholder.svg");
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://rentli.ro";
+  const seoImage = seoFirstImage
+    ? (seoFirstImage.startsWith("http") ? seoFirstImage : `${origin}${seoFirstImage}`)
+    : "https://rentli.ro/og-image.webp";
   const canonicalUrl = product ? `${typeof window !== "undefined" ? window.location.origin : ""}${getProductUrl(product)}` : (typeof window !== "undefined" ? window.location.href : "");
   useSEO({
     title: seoTitle,

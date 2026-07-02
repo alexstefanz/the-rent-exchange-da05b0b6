@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import LegalPageLayout from "./LegalPageLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 const sectionsRo = [
   {
@@ -179,6 +180,10 @@ const sectionsEn = [
 ];
 
 const CookiePolicy = () => {
+  usePageSeo({
+    title: "Politica de cookie-uri — Rentli",
+    description: "Ce cookie-uri folosim pe Rentli și cum poți gestiona preferințele tale.",
+  });
   const { language } = useLanguage();
   const isEn = language === "en";
   return (

@@ -33,6 +33,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { getDisplayTitle } from "@/lib/productI18n";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 const ITEMS_PER_PAGE = 6;
 
@@ -61,6 +62,28 @@ const UserProfile = () => {
   const [showAllReviews, setShowAllReviews] = useState(false);
 
   const isLoading = profileLoading;
+
+  const profileName = (profile as any)?.full_name || "Utilizator";
+  const profileAvatar = (profile as any)?.avatar_url || undefined;
+  usePageSeo({
+    title: language === "en"
+      ? `${profileName} — listings on Rentli`
+      : `${profileName} — anunțuri pe Rentli`,
+    description: language === "en"
+      ? `Discover items listed by ${profileName} on Rentli.`
+      : `Descoperă produsele publicate de ${profileName} pe Rentli.`,
+    image: profileAvatar,
+    type: "article",
+    jsonLd: profile ? {
+      "@context": "https://schema.org",
+      "@type": "ProfilePage",
+      mainEntity: {
+        "@type": "Person",
+        name: profileName,
+        image: profileAvatar,
+      },
+    } : null,
+  });
 
   // Handle favorite toggle
   const handleFavoriteToggle = async () => {

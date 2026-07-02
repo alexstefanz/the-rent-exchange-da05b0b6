@@ -14,6 +14,7 @@ import { judete } from "@/data/romaniaLocations";
 import { getProducts, Product } from "@/features/products/productsApi";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 const SubcategoryDetail = () => {
   const { id } = useParams();
@@ -51,6 +52,31 @@ const SubcategoryDetail = () => {
   const catDisplayName = category ? (language === "en" ? category.nameEn : category.name) : "";
   const subDisplayName = subcategory ? (language === "en" ? subcategory.nameEn : subcategory.name) : "";
   const subDisplayDesc = subcategory ? (language === "en" ? subcategory.descriptionEn : subcategory.description) : "";
+
+  usePageSeo({
+    title: subcategory
+      ? (language === "en" ? `${subDisplayName} — Rentli` : `${subDisplayName} — Rentli`)
+      : (language === "en" ? "Subcategory — Rentli" : "Subcategorie — Rentli"),
+    description: subcategory
+      ? ((subDisplayDesc || "").slice(0, 160) || (language === "en"
+          ? `Rent ${subDisplayName.toLowerCase()} from verified people on Rentli.`
+          : `Închiriază ${subDisplayName.toLowerCase()} de la oameni verificați pe Rentli.`))
+      : (language === "en" ? "Browse Rentli subcategories." : "Explorează subcategoriile Rentli."),
+    jsonLd: subcategory && category ? {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: subDisplayName,
+      breadcrumb: {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: language === "en" ? "Home" : "Acasă", item: "https://rentli.ro/" },
+          { "@type": "ListItem", position: 2, name: language === "en" ? "Categories" : "Categorii", item: "https://rentli.ro/categorii" },
+          { "@type": "ListItem", position: 3, name: catDisplayName, item: `https://rentli.ro/categorie/${category.slug}` },
+          { "@type": "ListItem", position: 4, name: subDisplayName, item: `https://rentli.ro/subcategorie/${subcategory.id}` },
+        ],
+      },
+    } : null,
+  });
 
   useEffect(() => {
     const fetchProducts = async () => {

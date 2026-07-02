@@ -1,3 +1,4 @@
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2, Package, ShoppingBag, UserCog, ShieldCheck, Activity } from "lucide-react";
@@ -65,6 +66,7 @@ const getActionColor = (action: string) => {
 };
 
 const ActivityLogPage = () => {
+  usePageSeo({ title: "Activitate cont — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { language } = useLanguage();

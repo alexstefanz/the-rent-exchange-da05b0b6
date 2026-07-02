@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import LegalPageLayout from "./LegalPageLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 const sectionsRo = [
   {
@@ -281,6 +282,10 @@ const sectionsEn = [
 ];
 
 const CancellationPolicy = () => {
+  usePageSeo({
+    title: "Politica de anulare — Rentli",
+    description: "Regulile de anulare și rambursare pentru rezervările făcute pe Rentli.",
+  });
   const { language } = useLanguage();
   const isEn = language === "en";
   return (

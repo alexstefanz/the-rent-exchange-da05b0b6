@@ -1,3 +1,4 @@
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2, ArrowLeft, Shield } from "lucide-react";
@@ -9,6 +10,7 @@ import Footer from "@/components/layout/Footer";
 import KycInlineFlow from "@/components/kyc/KycInlineFlow";
 
 const KycVerification = () => {
+  usePageSeo({ title: "Verificare identitate — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
   const { user, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();

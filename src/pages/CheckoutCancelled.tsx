@@ -1,9 +1,11 @@
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { Link } from "react-router-dom";
 import { ArrowLeft, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const CheckoutCancelled = () => {
+  usePageSeo({ title: "Plată anulată — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
   const { t } = useLanguage();
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-6 px-4">

@@ -8,10 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import WhyChooseUsBento from "@/components/home/WhyChooseUsBento";
 import CycleTimeline from "@/components/howitworks/CycleTimeline";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 const HowItWorks = () => {
   const copy = useUxCopy();
   const p = copy.howItWorksPage;
+
+  usePageSeo({
+    title: "Cum funcționează Rentli — Ghid închirieri",
+    description: "Pași simpli pentru chiriași și proprietari: rezervare, plată blocată, predare cu poze, retur.",
+  });
 
   const cycleSteps = [
     { icon: Send, title: p.cycleStep1Title, desc: p.cycleStep1Desc },
