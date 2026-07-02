@@ -1,3 +1,4 @@
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -56,6 +57,7 @@ function matchesFilter(t: OpsTicket, f: FilterKey): boolean {
 }
 
 const UserTickets = () => {
+  usePageSeo({ title: "Suport — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
   const { user, loading: authLoading } = useAuth();
   const { t, language } = useLanguage();
   const navigate = useNavigate();

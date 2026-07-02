@@ -1,3 +1,4 @@
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2, ArrowLeft, Plus, Package, Inbox, FileText, Trash2 } from "lucide-react";
@@ -38,6 +39,7 @@ const deriveStatus = (p: Product): ListingStatus => {
 };
 
 const ListingsPage = () => {
+  usePageSeo({ title: "Anunțurile mele — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const topTab = searchParams.get("tab") === "cereri" ? "cereri" : "anunturi";

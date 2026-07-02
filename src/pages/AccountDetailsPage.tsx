@@ -1,3 +1,4 @@
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2, ArrowLeft } from "lucide-react";
@@ -9,6 +10,7 @@ import AccountTab from "@/components/profile/AccountTab";
 import { Button } from "@/components/ui/button";
 
 const AccountDetailsPage = () => {
+  usePageSeo({ title: "Contul meu — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const { language } = useLanguage();

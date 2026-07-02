@@ -1,3 +1,4 @@
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -40,6 +41,7 @@ interface CheckoutState {
 }
 
 const Checkout = () => {
+  usePageSeo({ title: "Finalizare rezervare — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state as CheckoutState;

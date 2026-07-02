@@ -1,3 +1,4 @@
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -26,6 +27,7 @@ function useIsDesktop() {
 }
 
 export default function Messages() {
+  usePageSeo({ title: "Mesaje — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
   const { user, loading: authLoading } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();

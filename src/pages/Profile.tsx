@@ -1,3 +1,4 @@
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
@@ -15,6 +16,7 @@ import { NavGroups } from "@/components/profile/dashboard/NavGroups";
 import { DashboardSkeleton } from "@/components/profile/dashboard/DashboardSkeleton";
 
 const ProfilePage = () => {
+  usePageSeo({ title: "Profil — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { data, isLoading } = useAccountDashboard();

@@ -1,3 +1,4 @@
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -10,6 +11,7 @@ import { ro, enUS } from "date-fns/locale";
 import { notify } from "@/lib/notify";
 
 const CheckoutSuccess = () => {
+  usePageSeo({ title: "Plată reușită — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
   const [searchParams] = useSearchParams();
   const sessionId = searchParams.get("session_id");
   const { language } = useLanguage();

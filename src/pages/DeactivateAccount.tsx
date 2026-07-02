@@ -1,3 +1,4 @@
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +8,7 @@ import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const DeactivateAccount = () => {
+  usePageSeo({ title: "Dezactivare cont — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
