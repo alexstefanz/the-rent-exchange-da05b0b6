@@ -11,6 +11,11 @@ Deno.serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  const __caller = await requireCaller(req);
+  if (!__caller) return unauthorizedResponse(corsHeaders);
+
+
+
   try {
     const { productId, force = false } = await req.json()
     if (!productId || typeof productId !== 'string') {
