@@ -12,9 +12,17 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { createUserTicket } from "@/features/tickets/userTicketsApi";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 const Contact = () => {
   const { t } = useLanguage();
+  usePageSeo({
+    title: t("Contact — Rentli", "Contact — Rentli"),
+    description: t(
+      "Contactează echipa Rentli pentru suport, parteneriate sau întrebări.",
+      "Get in touch with the Rentli team for support, partnerships or questions.",
+    ),
+  });
   const { toast } = useToast();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });

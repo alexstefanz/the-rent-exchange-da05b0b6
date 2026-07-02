@@ -12,6 +12,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { createUserTicket, addUserTicketAttachment } from "@/features/tickets/userTicketsApi";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 const EMOJI_RATINGS = [
   { emoji: "😡", label: "Foarte nemulțumit", value: 1 },
@@ -32,6 +33,13 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 const HelpCenter = () => {
   const { t } = useLanguage();
+  usePageSeo({
+    title: t("Centru de asistență — Rentli", "Help center — Rentli"),
+    description: t(
+      "Răspunsuri, ghiduri și articole pentru chiriași și proprietari pe Rentli.",
+      "Answers, guides and articles for renters and owners on Rentli.",
+    ),
+  });
   const { toast } = useToast();
   const navigate = useNavigate();
 
