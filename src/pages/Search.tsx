@@ -14,10 +14,18 @@ import { useUxCopy } from "@/hooks/useUxCopy";
 import { judete } from "@/data/romaniaLocations";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 const Search = () => {
   const copy = useUxCopy();
   const { t } = useLanguage();
+  usePageSeo({
+    title: t("Caută produse de închiriat — Rentli", "Search rentals — Rentli"),
+    description: t(
+      "Filtrează după categorie, oraș și preț. Găsește instant ce ai nevoie pe Rentli.",
+      "Filter by category, city and price. Find what you need instantly on Rentli.",
+    ),
+  });
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
   const categoryFilter = searchParams.get("categorie") || "";

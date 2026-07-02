@@ -9,6 +9,7 @@ import { getCategoryIcon } from "@/data/categoryIcons";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCategoryCounts } from "@/hooks/queries/useCategoryCounts";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 const Categories = () => {
   const copy = useUxCopy();
@@ -16,6 +17,13 @@ const Categories = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   const categoryCounts = useCategoryCounts();
+
+  usePageSeo({
+    title: language === "en" ? "All rental categories — Rentli" : "Toate categoriile de închirieri — Rentli",
+    description: language === "en"
+      ? "Explore tools, sport, photo & video, camping, events and more on Rentli."
+      : "Explorează unelte, sport, foto/video, camping, evenimente și multe altele pe Rentli.",
+  });
 
   const filteredCategories = categories.filter(
     (cat) =>

@@ -15,12 +15,22 @@ import { getCategoryIcon } from "@/data/categoryIcons";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useCategoryCounts } from "@/hooks/queries/useCategoryCounts";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 const Index = () => {
   const copy = useUxCopy();
   const { language } = useLanguage();
 
   const categoryCounts = useCategoryCounts();
+
+  usePageSeo({
+    title: language === "en"
+      ? "Rentli — Rent anything, anywhere in Romania"
+      : "Rentli — Închiriază orice, oriunde în România",
+    description: language === "en"
+      ? "Peer-to-peer rental marketplace in Romania. Tools, camping, photo, sport and more. Secure payments and photo handover."
+      : "Marketplace peer-to-peer pentru închirieri. Unelte, camping, foto, sport și multe altele. Plată securizată, predare cu poze.",
+  });
 
 
   return (
