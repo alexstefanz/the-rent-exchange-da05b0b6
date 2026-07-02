@@ -9,6 +9,29 @@
     <link rel="preload" as="image" href="/images/banner_hero.webp" type="image/webp" media="(min-width: 769px)" fetchpriority="high" />
     <link rel="preload" as="image" href="/images/banner_hero_mobile.webp" type="image/webp" media="(max-width: 768px)" fetchpriority="high" imagesrcset="/images/banner_hero_mobile.webp 1x, /images/banner_hero_mobile@2x.webp 2x, /images/banner_hero_mobile@3x.webp 3x" />
     <title>Rentli - Închiriază Orice de la Oricine</title>
+
+    <!-- Google Analytics 4 (Consent Mode v2 — denied by default until user accepts) -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      window.gtag = gtag;
+      gtag('js', new Date());
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        wait_for_update: 500
+      });
+      try {
+        if (localStorage.getItem('rentli_cookie_consent') === 'accepted') {
+          gtag('consent', 'update', { analytics_storage: 'granted' });
+        }
+      } catch (e) {}
+      gtag('config', 'G-GWKQ78Q43C', { send_page_view: false, anonymize_ip: true });
+    </script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-GWKQ78Q43C"></script>
+
     <meta name="description" content="Marketplace-ul de încredere pentru închirieri în comunitatea ta. Economisește bani, reduce risipa și descoperă noi posibilități cu Rentli.">
     <meta name="author" content="Rentli" />
 

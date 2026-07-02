@@ -8,6 +8,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { Suspense, lazy } from "react";
 import Index from "./pages/Index";
 import ScrollToTop from "./components/ScrollToTop";
+import RouteTracker from "./components/RouteTracker";
 import { useGlobalRealtime } from "@/hooks/useGlobalRealtime";
 
 const SupportChatWidget = lazy(() => import("./components/support/SupportChatWidget"));
@@ -121,6 +122,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <ScrollToTop />
+            <RouteTracker />
             <Suspense fallback={null}>
               <ConditionalWidgets />
               <CookieConsent />

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Cookie } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { setAnalyticsConsent, trackPageview } from "@/lib/analytics";
 
 const COOKIE_KEY = "rentli_cookie_consent";
 
@@ -21,11 +22,15 @@ const CookieConsent = () => {
 
   const handleAccept = () => {
     localStorage.setItem(COOKIE_KEY, "accepted");
+    setAnalyticsConsent(true);
+    // Fire the initial page_view now that consent is granted.
+    trackPageview(window.location.pathname);
     setVisible(false);
   };
 
   const handleReject = () => {
     localStorage.setItem(COOKIE_KEY, "rejected");
+    setAnalyticsConsent(false);
     setVisible(false);
   };
 
