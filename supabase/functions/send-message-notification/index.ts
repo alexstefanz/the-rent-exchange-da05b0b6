@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { requireCaller, unauthorizedResponse } from "../_shared/authGuard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -75,6 +76,10 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const __caller = await requireCaller(req);
+  if (!__caller) return unauthorizedResponse(corsHeaders);
+
 
   try {
     const { conversation_id, sender_id, message_content } = await req.json();
