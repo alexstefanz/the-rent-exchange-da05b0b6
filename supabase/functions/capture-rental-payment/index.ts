@@ -19,19 +19,19 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Accept both authenticated admin calls and service-role cron calls
+    // Accept ONLY: service-role cron/DB-trigger calls, admin JWTs, or the
+    // owner of the specific rental. The public anon key is NOT accepted —
+    // it is shipped in the client bundle and cannot prove authorization.
     const authHeader = req.headers.get("Authorization");
     const token = authHeader?.replace("Bearer ", "") || "";
-    
-    // Check if it's anon key (cron) or service role (DB trigger) or user token
+
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     let isAuthorized = false;
 
-    if (token && (token === anonKey || token === serviceKey)) {
-      // Called from cron or DB trigger via pg_net — authorized
+    if (token && token === serviceKey) {
       isAuthorized = true;
-    } else if (token) {
+    } else if (token && token !== anonKey) {
       const supabase = createClient(Deno.env.get("SUPABASE_URL")!, anonKey);
       const { data: authData } = await supabase.auth.getUser(token);
       if (authData?.user) {
@@ -50,7 +50,7 @@ serve(async (req) => {
     const { rental_id } = body;
 
     // Third authorization path: owner of the specific rental
-    if (!isAuthorized && token && rental_id) {
+    if (!isAuthorized && token && token !== anonKey && rental_id) {
       const supabase = createClient(Deno.env.get("SUPABASE_URL")!, anonKey);
       const { data: authData } = await supabase.auth.getUser(token);
       if (authData?.user) {
