@@ -1,4 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { requireCaller, unauthorizedResponse } from "../_shared/authGuard.ts";
+
+// Per-caller in-memory rate limit to prevent AI cost abuse.
+const aiRateLimit = new Map<string, { count: number; resetAt: number }>();
+function checkAiRateLimit(key: string, max = 20, windowSec = 60): boolean {
+  const now = Date.now();
+  const entry = aiRateLimit.get(key);
+  if (!entry || now > entry.resetAt) {
+    aiRateLimit.set(key, { count: 1, resetAt: now + windowSec * 1000 });
+    return true;
+  }
+  if (entry.count >= max) return false;
+  entry.count++;
+  return true;
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -42,6 +57,15 @@ serve(async (req) => {
   }
 
   try {
+    const caller = await requireCaller(req);
+    if (!caller) return unauthorizedResponse(corsHeaders);
+    const rateKey = caller.userId ?? "service";
+    if (!checkAiRateLimit(rateKey)) {
+      return new Response(
+        JSON.stringify({ error: "Prea multe cereri. Te rugăm să aștepți câteva secunde." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
     const { messages, context } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
