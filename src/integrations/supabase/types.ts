@@ -2677,6 +2677,7 @@ export type Database = {
         Returns: boolean
       }
       delete_payout_iban: { Args: { p_id: string }; Returns: undefined }
+      email_queue_dispatch: { Args: never; Returns: undefined }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
