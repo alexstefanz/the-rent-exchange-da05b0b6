@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { Link } from "react-router-dom";
 import { ChevronRight, HelpCircle, Search, LifeBuoy } from "lucide-react";
 import { Input } from "@/components/ui/input";
