@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import LegalPageLayout from "./LegalPageLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 export const sections = [
   {
@@ -375,6 +376,10 @@ const sectionsEn = [
 ];
 
 const TermsAndConditions = () => {
+  usePageSeo({
+    title: "Termeni și condiții — Rentli",
+    description: "Termenii și condițiile de utilizare a platformei Rentli.",
+  });
   const { language } = useLanguage();
   const isEn = language === "en";
   return (

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import LegalPageLayout from "./LegalPageLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { usePageSeo } from "@/hooks/usePageSeo";
 
 export const sectionsRo = [
   {
@@ -267,6 +268,10 @@ export const sectionsEn = [
 ];
 
 const PrivacyPolicy = () => {
+  usePageSeo({
+    title: "Politica de confidențialitate — Rentli",
+    description: "Cum colectăm, folosim și protejăm datele tale personale pe Rentli.",
+  });
   const { language } = useLanguage();
   const isEn = language === "en";
   return (
