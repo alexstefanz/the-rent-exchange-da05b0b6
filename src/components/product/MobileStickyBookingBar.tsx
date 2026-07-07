@@ -45,42 +45,42 @@ const MobileStickyBookingBar = (props: Props) => {
   return (
     <div
       className="lg:hidden fixed left-3 right-3 z-[60] rounded-3xl border border-white/60 bg-white/70 backdrop-blur-xl backdrop-saturate-150 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.18)]"
-      style={{ bottom: "calc(4rem + 24px + env(safe-area-inset-bottom))" }}
+      style={{ bottom: "calc(3.5rem + 16px + env(safe-area-inset-bottom))" }}
     >
-      <div className="px-4 pt-3 pb-3 flex flex-col gap-2.5">
+      <div className="px-3 pt-1.5 pb-1.5 flex flex-col gap-1.5">
         {/* Row 1: dates + total */}
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
             {hasDates ? (
               <>
-                <div className="font-semibold text-sm text-foreground truncate">
+                <div className="font-semibold text-xs text-foreground truncate">
                   {format(startDate!, "d MMM", { locale: dateLocale })} – {format(endDate!, "d MMM", { locale: dateLocale })}
                 </div>
-                <div className="text-[11px] text-muted-foreground">
+                <div className="text-[10px] text-muted-foreground">
                   {rentalDays} {t(rentalDays === 1 ? "zi" : "zile", rentalDays === 1 ? "day" : "days")}
                 </div>
               </>
             ) : (
               <>
-                <div className="font-semibold text-sm text-foreground">{t("Selectează datele", "Pick dates")}</div>
-                <div className="text-[11px] text-muted-foreground">{t("pentru a vedea totalul", "to see total")}</div>
+                <div className="font-semibold text-xs text-foreground">{t("Selectează datele", "Pick dates")}</div>
+                <div className="text-[10px] text-muted-foreground">{t("pentru a vedea totalul", "to see total")}</div>
               </>
             )}
           </div>
           <div className="text-right shrink-0">
             {hasDates ? (
               <>
-                <div className="font-heading text-lg font-bold text-foreground leading-none">
+                <div className="font-heading text-base font-bold text-foreground leading-none">
                   {formatPriceShort(totalPrice)} RON
                 </div>
-                <div className="text-[11px] text-muted-foreground mt-1">{t("total", "total")}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">{t("total", "total")}</div>
               </>
             ) : (
               <>
-                <div className="font-heading text-lg font-bold text-foreground leading-none">
+                <div className="font-heading text-base font-bold text-foreground leading-none">
                   {formatPriceShort(clientPrice)} RON
                 </div>
-                <div className="text-[11px] text-muted-foreground mt-1">/ {t("zi", "day")}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">/ {t("zi", "day")}</div>
               </>
             )}
           </div>
@@ -88,20 +88,20 @@ const MobileStickyBookingBar = (props: Props) => {
 
         {/* Row 2: buttons side by side */}
         <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" size="lg" className="h-11 rounded-full font-semibold bg-white/70 border-white/70 backdrop-blur" onClick={onAsk}>
-            <MessageCircle className="h-4 w-4 mr-1.5" />
+          <Button variant="outline" size="sm" className="h-9 rounded-full text-xs font-semibold bg-white/70 border-white/70 backdrop-blur" onClick={onAsk}>
+            <MessageCircle className="h-3.5 w-3.5 mr-1" />
             {t("Întreabă", "Ask")}
           </Button>
           {hasDates ? (
-            <Button size="lg" className="h-11 rounded-full font-semibold shadow-[0_6px_20px_-4px_rgba(249,135,21,0.45)]" onClick={onReserve}>
-              <CheckCircle2 className="h-4 w-4 mr-1.5" />
+            <Button size="sm" className="h-9 rounded-full text-xs font-semibold shadow-[0_6px_20px_-4px_rgba(249,135,21,0.45)]" onClick={onReserve}>
+              <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
               {t("Rezervă acum", "Reserve now")}
             </Button>
           ) : (
             <Sheet>
               <SheetTrigger asChild>
-                <Button size="lg" className="h-11 rounded-full font-semibold shadow-[0_6px_20px_-4px_rgba(249,135,21,0.45)]">
-                  <CalendarCheck className="h-4 w-4 mr-1.5" />
+                <Button size="sm" className="h-9 rounded-full text-xs font-semibold shadow-[0_6px_20px_-4px_rgba(249,135,21,0.45)]">
+                  <CalendarCheck className="h-3.5 w-3.5 mr-1" />
                   {t("Verifică datele", "Check dates")}
                 </Button>
               </SheetTrigger>
