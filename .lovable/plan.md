@@ -1,10 +1,20 @@
-## Verificare Google Search Console
+## Plan: Resize mobile booking sticky bar
 
-Fișierul `google93a54c3e4ee420c2.html` este un token de verificare a proprietății pentru Google Search Console. Trebuie servit la URL-ul exact:
-`https://rentli.ro/google93a54c3e4ee420c2.html`
+### Scope
+Adjust only `src/components/product/MobileStickyBookingBar.tsx` to make the mobile booking container more compact.
 
-### Pași
-1. Copiez fișierul în `public/google93a54c3e4ee420c2.html` (Vite servește conținutul din `public/` direct la rădăcina domeniului, fără procesare).
-2. După deploy, revii în Google Search Console și apeși **Verify**.
+### Changes
+1. Scale the container down by ~20%:
+   - Reduce outer padding (`px-4 pt-3 pb-3` → smaller values).
+   - Reduce internal gap (`gap-2.5` → smaller).
+   - Lower bottom positioning offset slightly if needed.
+2. Reduce buttons and button text:
+   - Change `size="lg"` to `size="sm"` (or custom smaller class) and lower `h-11` height.
+   - Reduce button text font size and icon size.
+3. Keep the same layout, interaction logic, and the Sheet content unchanged.
 
-Atât — nicio modificare de cod sau SEO logic.
+### Verification
+- Preview on mobile viewport (390x844).
+- Confirm the bar is visibly smaller but still readable and tappable.
+
+No backend or business-logic changes are required.
