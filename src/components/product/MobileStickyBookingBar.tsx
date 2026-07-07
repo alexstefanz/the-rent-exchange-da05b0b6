@@ -47,7 +47,7 @@ const MobileStickyBookingBar = (props: Props) => {
       className="lg:hidden fixed left-3 right-3 z-[60] rounded-3xl border border-white/60 bg-white/70 backdrop-blur-xl backdrop-saturate-150 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.18)]"
       style={{ bottom: "calc(3.5rem + 16px + env(safe-area-inset-bottom))" }}
     >
-      <div className="px-3 pt-2 pb-2 flex flex-col gap-2">
+      <div className="px-3 pt-1.5 pb-1.5 flex flex-col gap-1.5">
         {/* Row 1: dates + total */}
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
