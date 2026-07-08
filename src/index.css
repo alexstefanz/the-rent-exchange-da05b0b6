@@ -303,6 +303,8 @@ html body[style*="padding-right"] {
     right: 0 !important;
     width: 100% !important;
     transform: none !important;
+    --mobile-offset-left: 0px !important;
+    --mobile-offset-right: 0px !important;
   }
 }
 
