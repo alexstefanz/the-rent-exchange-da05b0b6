@@ -55,14 +55,27 @@ export const sanitizeTextInput = (input: string, maxLength: number = 1000): stri
  */
 export const containsContactInfo = (text: string): 'phone' | 'email' | 'url' | null => {
   if (!text || typeof text !== 'string') return null;
-  
-  // Phone: 7+ digits with optional separators
-  if (/(\+?\d[\d\s\-().]{6,}\d)/.test(text)) return 'phone';
-  // Email
+
+  // Email — specific, low false-positive
   if (/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(text)) return 'email';
-  // URLs: protocols, www, or common TLDs followed by path
-  if (/(https?:\/\/|www\.)|(\.[a-z]{2,4}\/)/i.test(text)) return 'url';
-  
+
+  // URL — require a real domain with a known TLD (optional protocol / www)
+  const tld = '(?:ro|com|net|org|eu|io|co|uk|de|fr|it|es|info|biz|shop|store|online|app|dev)';
+  const urlRe = new RegExp(
+    `(?:https?:\\/\\/|www\\.)[a-z0-9-]+(?:\\.[a-z0-9-]+)*\\.[a-z]{2,}|\\b[a-z0-9-]{2,}\\.${tld}\\b(?:\\/[\\w\\-./?=&%#]*)?`,
+    'i'
+  );
+  if (urlRe.test(text)) return 'url';
+
+  // Phone — candidate must be at least 9 real digits to be plausible.
+  // Avoids matching dimensions like "125 x 63.5 x 40 mm" or "60 g".
+  const phoneCandidate = /(?:\+?\d[\d\s\-().]{7,}\d)/g;
+  let match: RegExpExecArray | null;
+  while ((match = phoneCandidate.exec(text)) !== null) {
+    const digitsOnly = match[0].replace(/\D/g, '');
+    if (digitsOnly.length >= 9 && digitsOnly.length <= 15) return 'phone';
+  }
+
   return null;
 };
 
