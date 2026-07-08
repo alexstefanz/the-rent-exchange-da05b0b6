@@ -1,17 +1,21 @@
-## Issue
 
-On mobile, Sonner stretches each toast slot to nearly full viewport width (measured 375px on a 390px screen, anchored at `left: 16px`). Our `NotificationToast` card inside has a fixed width (`min(380px, calc(100vw - 32px))`) and sits left-aligned inside that slot instead of centered.
+# Auto-login după crearea contului
 
-## Fix
+## Problemă
+După ce un utilizator nou completează înregistrarea și verifică codul SMS, în unele cazuri sesiunea nu este activă și utilizatorul este trimis la pagina de login. Motivul: la `signUp` Supabase nu emite mereu o sesiune (când emailul nu e confirmat), iar `refreshSession()` din `PhoneOtpDialog` eșuează silențios; fallback-ul `signInWithPassword` rulează doar la eroare explicită.
 
-Center the toast on mobile without changing desktop behavior or the card design.
+## Soluție
+După verificarea reușită a OTP-ului telefonic (moment în care edge function-ul `verify-phone-otp` marchează deja emailul ca fiind confirmat), forțăm o autentificare completă cu credențialele salvate în timpul înregistrării, astfel încât utilizatorul să aibă garantat o sesiune activă și să fie dus direct la homepage — fără să mai treacă prin ecranul de login.
 
-1. `src/components/ui/sonner.tsx` — in `toastOptions.classNames.toast`, add utilities so the wrapper shrinks to its content and centers:
-   - `!w-auto !left-1/2 !-translate-x-1/2` (mobile) with an `lg:` reset so desktop `bottom-center` behavior stays unchanged.
-   - Alternatively add `!flex !justify-center !w-full` on the wrapper so the inner fixed-width card centers inside the slot. Prefer this second form since it avoids fighting Sonner's inline transforms.
+## Modificări
 
-2. `src/index.css` — add a small mobile-only safety rule (max-width: 767px) forcing `[data-sonner-toaster][data-y-position="bottom"] > li` to center its content (`display:flex; justify-content:center;`) in case utility specificity is stripped by Sonner's inline styles.
+**`src/components/profile/PhoneOtpDialog.tsx`**
+- În funcția `verify()`, după `toast.success`, dacă sunt disponibile `fallbackCreds` (cazul înregistrării), să apeleze întotdeauna `supabase.auth.signInWithPassword({ email, password })` — nu doar când `refreshSession()` eșuează. Emailul este deja confirmat de edge function, deci login-ul reușește.
+- Dacă nu sunt `fallbackCreds` (cazul verificării din setări de cont), păstrează comportamentul curent (doar `refreshSession`).
 
-## Verification
+**`src/pages/Auth.tsx`**
+- Asigură-te că `PhoneOtpDialog` primește `fallbackCreds={pendingCredsRef.current}` (verificare rapidă, dacă nu e deja pasat).
+- `handlePhoneVerified` rămâne neschimbat: golește credențialele, afișează toast-ul „Bun venit" și navighează la `/`.
 
-Re-run the Playwright mobile snapshot (390×800) and confirm the `NotificationToast` bounding box is horizontally centered (left ≈ (390 − cardWidth) / 2). Re-check desktop (1280 wide) is unchanged.
+## Rezultat
+Fluxul complet devine: completare formular → cod SMS → verificare → utilizator autentificat automat → redirect la homepage. Nu mai apare niciun ecran de login intermediar.
