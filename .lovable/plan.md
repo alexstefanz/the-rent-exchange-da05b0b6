@@ -1,43 +1,45 @@
+
 ## Problem
 
-The "Anunț trimis spre aprobare" popup (and any other `notify.*` / legacy `toast()` call) renders as two stacked cards — a white sonner wrapper with its own background/border/shadow, plus the inner `NotificationToast` card that also has `bg-background`, border, and shadow. That's the "double background" visible in the screenshot.
+The "double background" isn't only about sonner's own transitions — it also happens because parts of the app still call sonner **directly** (`toast.success(...)`, `toast.error(...)`, etc.) from `"sonner"`. Those toasts:
 
-Root cause: every toast in the app goes through `src/lib/notify.tsx` → `toast.custom(..., { unstyled: true, classNames: { toast: "!bg-transparent !border-0 !shadow-none !p-0 !rounded-none !w-auto" } })`. But the global `<Toaster>` in `src/components/ui/sonner.tsx` applies these `!important` classes on `toastOptions.classNames.toast`:
+1. Don't share the global notification id (`rentli:notification-toast`), so they render **alongside** any `notify.*` card that is already visible → two cards stacked = "double background".
+2. Inherit the global Toaster classNames (`!bg-transparent !border-0 !shadow-none !p-0`), which strips their styling and makes them look like broken cards behind the styled `NotificationToast`.
 
-```
-group-[.toaster]:!bg-background
-group-[.toaster]:!border !border-border/60
-group-[.toaster]:!rounded-2xl
-group-[.toaster]:!shadow-[...]
-group-[.toaster]:!px-4 group-[.toaster]:!py-3
-```
+Legacy `useToast` from `@/hooks/use-toast` is already bridged to `notify` — good. The remaining leak is ~48 files importing `toast` directly from `"sonner"`.
 
-Because sonner merges global `toastOptions.classNames` with per-toast `classNames`, and both use `!important`, the global wrapper still shows a background/border behind every custom card.
+## Plan
 
-## Fix — single file, presentation only
+Single fix: make **all** toasts go through the same `notify.*` pipeline (same global id, same card), regardless of which import call sites use. Two coordinated steps:
 
-Update `src/components/ui/sonner.tsx`:
+### 1. Turn `@/components/ui/sonner`'s exported `toast` into a proxy
 
-1. Remove the wrapper background, border, shadow, radius, and padding from `toastOptions.classNames.toast`. The wrapper becomes a transparent, zero-padding container — the visible card is always the `NotificationToast` inside.
-   - New value: `"group toast group-[.toaster]:!bg-transparent group-[.toaster]:!border-0 group-[.toaster]:!shadow-none group-[.toaster]:!p-0 group-[.toaster]:!rounded-none group-[.toaster]:!w-auto group-[.toaster]:!opacity-100"`.
-2. Leave `description`, `actionButton`, `cancelButton`, and `closeButton` classNames as-is (unused by custom toasts, harmless for any future default toast).
-3. Keep `position="bottom-center"`, `offset`, `duration`, `visibleToasts`, `expand`, `gap`, `closeButton={false}` unchanged.
+Replace the re-exported raw `toast` from sonner with a proxy that delegates:
+- `toast(msg)` / `toast.message(...)` → `notify.system` / `notify.info`
+- `toast.success(...)` → `notify.success`
+- `toast.error(...)` → `notify.error` (via `notifyError` for Error objects)
+- `toast.warning(...)` / `toast.warn(...)` → `notify.warning`
+- `toast.info(...)` → `notify.info`
+- `toast.custom / promise / loading / dismiss` → pass through to real sonner (kept for `notify` internals and any edge cases)
 
-No changes to `notify.tsx`, `use-toast.ts`, or any caller. Since every toast in the codebase already uses `toast.custom` via `notify`, moving the styling responsibility fully into `NotificationToast` produces a single, consistent card for:
+Accepts both `toast.success("msg")` and `toast.success("msg", { description })` shapes used in the codebase.
 
-- publish success/resubmit toasts (`PublishWizard`)
-- all `notify.confirmation/cancellation/payment/support/system/message/request/warning/info/kyc/success/error` calls
-- realtime DB notifications via `notifyFromDb`
-- legacy `toast({ title, description, variant })` bridged through `src/hooks/use-toast.ts`
+### 2. Codemod imports from `"sonner"` → `"@/components/ui/sonner"`
+
+Rewrite every `import { toast } from "sonner"` (and any `import { toast, X } from "sonner"`) in `src/**` to import `toast` from `@/components/ui/sonner` instead. `@/lib/notify.tsx` keeps importing from `"sonner"` (it's the one place that must talk to the real API).
+
+### Result
+
+- Every `toast.success/error/info/warning/message(...)` call site — admin pages, checkout, rentals, messaging, KYC, etc. — automatically produces a properly styled `NotificationToast` card.
+- All toasts share the single global id, so a new one atomically replaces the previous one. No two cards can ever overlap → no "double background", anywhere.
+- Zero behavior change at call sites; no need to touch the 48 files beyond the import path.
+
+## Files touched
+
+- `src/components/ui/sonner.tsx` — export a proxy `toast` that routes to `notify`.
+- `src/**/*.{ts,tsx}` (excluding `src/lib/notify.tsx`) — change `from "sonner"` to `from "@/components/ui/sonner"` (sed-based codemod).
 
 ## Verification
 
-1. Publish/resubmit a listing → single card, no double background, close (X) still works.
-2. Trigger an error toast (e.g. failed action) → single red-accent card.
-3. Realtime notification (message/rental request) → single card with correct variant color.
-4. Visual check on mobile + desktop that offset above the chat FAB is preserved.
-
-## Out of scope
-
-- No changes to notification content, variants, icons, spacing inside `NotificationToast`.
-- No backend, RLS, or data changes.
+- Playwright: trigger a `notify.system` immediately followed by a `toast.error(...)` from an admin page pattern; confirm only one card is present in the DOM and screenshot shows a single background.
+- Grep to confirm no remaining `from "sonner"` outside `src/lib/notify.tsx` and `src/components/ui/sonner.tsx`.

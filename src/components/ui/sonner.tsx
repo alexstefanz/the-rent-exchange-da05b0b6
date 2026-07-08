@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
-import { Toaster as Sonner, toast } from "sonner";
+import { Toaster as Sonner, toast as sonnerToast } from "sonner";
+import { notify, notifyError } from "@/lib/notify";
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
