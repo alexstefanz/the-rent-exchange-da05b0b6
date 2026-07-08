@@ -298,5 +298,11 @@ html body[style*="padding-right"] {
     left: 0 !important;
     right: 0 !important;
   }
+  ol[data-sonner-toaster][data-y-position="bottom"] {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    transform: none !important;
+  }
 }
 
