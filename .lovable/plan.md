@@ -1,45 +1,29 @@
-## Problem
+## Plan: repar eroarea Stripe „Edge Function returned a non-2xx status code”
 
-Stripe checkout finalized but the redirect page shows **"Edge Function returned a non-2xx status code"**.
+### Ce am găsit
+- Checkout-ul Stripe se creează corect, dar confirmarea plății eșuează după redirect.
+- Funcția `verify-stripe-payment` încă întoarce eroare când încearcă să actualizeze rezervarea: `Not allowed to modify payment/financial rental fields`.
+- Cauza probabilă: triggerul de protecție pe `rentals` nu recunoaște în mod stabil actualizările făcute de funcțiile backend cu cheia internă, deci blochează câmpurile de plată.
+- Există și o problemă secundară: `send-rental-notification` încearcă să creeze conversația printr-un RPC care cere utilizator autentificat și loghează `not authenticated`. Asta nu pare să fie eroarea toastului din imagine, dar trebuie făcută non-blocantă/sigură pentru fluxul post-plată.
 
-Edge function logs reveal that `verify-stripe-payment` (and the twin `create-test-checkout-session`) fail with HTTP 500:
+### Implementare
+1. **Migrare backend pentru triggerul de protecție**
+   - Voi actualiza `enforce_rentals_participant_update()` astfel încât funcțiile backend trusted să poată modifica doar câmpurile necesare procesării plății.
+   - În loc să depindă doar de `current_setting('request.jwt.claim.role')`, voi adăuga o verificare mai robustă pentru rolul intern folosit de Data API / PostgREST.
+   - Mențin blocarea pentru utilizatorii normali: renter/owner nu pot modifica manual câmpuri financiare.
 
-```
-Update rental error: {
-  code: "P0001",
-  message: "Not allowed to modify payment/financial rental fields"
-}
-```
+2. **Deploi funcțiile relevante**
+   - Voi redeploya funcțiile de plată afectate, în special `verify-stripe-payment`; dacă e nevoie, și `create-checkout-session` / `create-test-checkout-session`.
 
-The error comes from the trigger `enforce_rentals_participant_update()` on `public.rentals`. It only lets updates through when the caller is an admin (`has_role(auth.uid(),'admin')`) or when a transaction-local bypass flag is set. Edge functions call the DB with the **service role key** — `auth.uid()` is NULL, no bypass flag is set, so the trigger blocks writes to `payment_status`, `subtotal`, `platform_fee`, `owner_payout`, `refund_amount`, `dispute_status`, `daily_price`, etc.
+3. **Îmbunătățesc mesajul de eroare din interfață**
+   - Pe pagina de succes checkout, în loc de mesaj generic `Edge Function returned a non-2xx status code`, utilizatorul va vedea un mesaj clar în română și va putea reveni la rezervare / încerca din nou.
 
-Effect: after Stripe returns a session id, `verify-stripe-payment` cannot mark the rental as `authorized` / `paid`, the frontend receives 500, and the user sees the red error screen.
+4. **Verificare**
+   - Voi testa funcția de verificare pe cea mai recentă sesiune Stripe disponibilă în rezervări.
+   - Voi verifica logurile pentru `verify-stripe-payment` după schimbare.
+   - Voi confirma că rezervarea trece în `payment_status = authorized` sau `paid` și că nu mai apare toastul generic.
 
-## Fix
-
-Update `enforce_rentals_participant_update()` so it also lets the **service role** through — that role is only reachable from edge functions and Postgres admin, never from a signed-in client.
-
-Detect the service role via the JWT claim exposed by PostgREST (`auth.jwt() ->> 'role' = 'service_role'`) as the primary check, with `current_user = 'service_role'` as a defensive fallback. Everything else in the trigger stays the same, so regular renters/owners still cannot mutate financial fields.
-
-Ownership of the fix by layer:
-
-```text
-edge function (service_role) ──► rentals UPDATE
-                                    │
-                          enforce_rentals_participant_update
-                                    │
-     ┌──── admin?  ───────────────► allow
-     ├──── bypass flag on? ───────► allow
-     ├──── JWT role = service_role ──► allow   ← NEW
-     └──── otherwise ─► block financial-field changes (unchanged)
-```
-
-## Steps
-
-1. **Migration** — `CREATE OR REPLACE FUNCTION public.enforce_rentals_participant_update()` with the added service-role short-circuit at the top, keeping every other rule identical (admin bypass, `app.bypass_renter_lock` bypass, blocked column list, error message).
-2. **Verification** — from the browser, retry the checkout that failed. Confirm `verify-stripe-payment` returns 200 and the rental moves to `payment_status = authorized`. No client-side code changes required.
-
-## Out of scope
-
-- No change to which fields are protected, to admin logic, to the `pay_rental_with_wallet` bypass flag, or to any RLS policy.
-- No change to `create-checkout-session` — it worked; only the post-Stripe verification write was blocked.
+### Nu schimb
+- Nu modific logica de prețuri/comision.
+- Nu relaxez permisiunile pentru utilizatori normali.
+- Nu schimb flow-ul escrow hold-and-capture Stripe.
