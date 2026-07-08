@@ -75,7 +75,7 @@ export const computeQualityScore = (data: PublishFormData, lang: Lang = "ro"): Q
     },
     {
       id: "location",
-      label: tr(lang, "Locație + pin pe hartă", "Location + map pin"),
+      label: tr(lang, "Locație", "Location"),
       max: 10,
       earned: data.location_city ? (data.pickup_lat && data.pickup_lng ? 10 : 6) : 0,
       done: !!(data.location_city && data.pickup_lat && data.pickup_lng),
