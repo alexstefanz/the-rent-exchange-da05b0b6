@@ -287,3 +287,24 @@ html body[style*="padding-right"] {
   display: none;
 }
 
+/* Center Sonner toasts on mobile. Sonner stretches the slot to full width;
+   we force the inner content to center so the fixed-width NotificationToast
+   card is horizontally centered. */
+@media (max-width: 767px) {
+  ol[data-sonner-toaster] > li[data-sonner-toast] {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+  }
+  ol[data-sonner-toaster][data-y-position="bottom"] {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    transform: none !important;
+    --mobile-offset-left: 0px !important;
+    --mobile-offset-right: 0px !important;
+  }
+}
+
