@@ -26,6 +26,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Sonner: hide any non-front toast so a lingering previous toast can never
+   appear behind the current NotificationToast card ("double background"). */
+[data-sonner-toaster] [data-sonner-toast]:not([data-front="true"]) {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: none !important;
+}
+
 html {
   scrollbar-gutter: stable;
 }
