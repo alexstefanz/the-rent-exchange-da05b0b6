@@ -67,13 +67,20 @@ export const containsContactInfo = (text: string): 'phone' | 'email' | 'url' | n
   );
   if (urlRe.test(text)) return 'url';
 
-  // Phone — candidate must be at least 9 real digits to be plausible.
-  // Avoids matching dimensions like "125 x 63.5 x 40 mm" or "60 g".
-  const phoneCandidate = /(?:\+?\d[\d\s\-().]{7,}\d)/g;
-  let match: RegExpExecArray | null;
-  while ((match = phoneCandidate.exec(text)) !== null) {
-    const digitsOnly = match[0].replace(/\D/g, '');
-    if (digitsOnly.length >= 9 && digitsOnly.length <= 15) return 'phone';
+  // Phone — match realistic contact phone formats, not generic product specs.
+  // This intentionally avoids treating dimensions, weights, years, versions or model codes
+  // such as "125 x 63.5 x 40 mm", "HERO 25K" or "Canon 24-70mm f/2.8" as contact info.
+  const roPhoneRe = /(?:^|[^\w])(?:\+40|0040|0)(?:[\s().-]*\d){9}(?!\d)/;
+  if (roPhoneRe.test(text)) return 'phone';
+
+  const contactCueRe = /\b(?:sun[ăa]|apeleaz[ăa]|apel|sms|whats\s*app|whatsapp|contact|tel\.?|telefon\s*:|phone\s*:|call)\b/i;
+  if (contactCueRe.test(text)) {
+    const genericPhoneRe = /(?:^|[^\w])(?:\+|00)?\d(?:[\s().-]*\d){7,14}(?!\d)/g;
+    let match: RegExpExecArray | null;
+    while ((match = genericPhoneRe.exec(text)) !== null) {
+      const digitsOnly = match[0].replace(/\D/g, '');
+      if (digitsOnly.length >= 8 && digitsOnly.length <= 15) return 'phone';
+    }
   }
 
   return null;
