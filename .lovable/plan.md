@@ -1,41 +1,40 @@
-## Context
+## Problem
 
-Ai raportat că introducând `+40743588802` la înregistrare nu primești SMS, dar cu `0743588802` da. Am verificat:
+Ștergerea din contul propriu (`ListingsPage` → „Șterge definitiv") apelează `deleteProduct()` care face un **soft-delete** printr-un `UPDATE products SET deleted_at = now(), deleted_by = uid`.
 
-- Ambele formate ajung la aceeași funcție `normalizePhoneRO`, care returnează `+40743588802` în ambele cazuri.
-- În log-urile edge function `send-phone-otp` există `code sent to=+40743588802` pentru ambele teste recente (ora 12:52 și 12:54).
-- Tabelul `phone_otp_verifications` arată că OTP-ul din 12:54 a fost consumat (deci un SMS chiar a ajuns) — iar SMS-urile tranzacționale către același număr apar tot cu `+40...` și status `sent`.
+Baza de date are triggerul `trg_enforce_products_owner_update` (BEFORE UPDATE) care ridică excepție dacă un non-admin modifică oricare din câmpurile: `approval_status`, `admin_flagged`, `flag_reason`, `quality_score`, `admin_edited_at`, `admin_edited_by`, `owner_id`, **`deleted_at`**, **`deleted_by`**.
 
-Deci codul nostru trimite request identic în ambele cazuri. Problema, dacă există, este că **SMSalert răspunde HTTP 200 dar cu `status:false` în body** pentru unele numere, iar funcția `send-phone-otp` verifică doar `res.ok`, nu parsează body-ul, deci nu vede eșecul și îi spune UI-ului „cod trimis" chiar dacă providerul l-a respins.
+Deci owner-ul apasă butonul, Supabase returnează eroare („Not allowed to modify admin-controlled product fields"), UI-ul închide dialogul dar produsul rămâne. De aceea „nu se șterge deloc".
 
-## Ce voi face
+Confirmat pe produsul real din DB: `Tastatura Gaming SteelSeries Apex 3` (id `9f481a3d…`), `deleted_at = NULL`.
 
-### 1. `supabase/functions/send-phone-otp/index.ts` — validare completă a răspunsului provider
+## Fix
 
-- După `fetch(SMS_API_URL, ...)` parsăm body-ul JSON.
-- Considerăm succes doar dacă `res.ok && body.status === true`.
-- Dacă providerul întoarce `status:false`, logăm `body` complet (id, error, message) și returnăm `502 { error: "sms_failed", providerDetails }`.
-- Marcăm rândul tocmai inserat în `phone_otp_verifications` ca `consumed_at = now()` pentru a-l invalida (altfel blochează retrimiterea).
+Migrare care înlocuiește `enforce_products_owner_update` astfel încât să **permită** owner-ului să facă tranziția `deleted_at: NULL → timestamp` (împreună cu `deleted_by = auth.uid()`) pe propriul produs. Orice altă modificare a acestor două câmpuri (revert la NULL, schimbare de dată, `deleted_by` diferit) rămâne interzisă non-adminilor.
 
-### 2. Log unificat în `sms_logs`
+Pseudo-cod:
 
-- La finalul funcției (succes sau eșec) inserăm un rând în `sms_logs` cu `template_key = 'phone_otp'`, `recipient_phone`, `status`, `provider_response`, `error_message`.
-- Așa vedem imediat, alături de SMS-urile tranzacționale, exact ce a răspuns providerul pentru OTP.
+```text
+if admin -> allow
+soft_delete_by_owner :=
+   OLD.deleted_at IS NULL
+   AND NEW.deleted_at IS NOT NULL
+   AND NEW.deleted_by = auth.uid()
+   AND OLD.owner_id  = auth.uid()
+if soft_delete_by_owner -> ignora deleted_at/deleted_by la verificare
+altfel pastreaza verificarile existente
+```
 
-### 3. UI: afișare eroare reală
+Restul câmpurilor admin (approval_status etc.) rămân protejate identic.
 
-- În `PhoneOtpDialog.tsx` toast-ul actual pe eșec `sendCode` este generic. Îl extind să afișeze `providerDetails.message` când vine (util pentru debugging live, dar rămâne prietenos: „SMS respins de provider: {motiv}").
+## Ce NU se schimbă
 
-### 4. Verificare live
+- RLS pe `products` (deja corectă: `Owners can update their own products` USING/WITH CHECK pe `owner_id`).
+- `deleteProduct()` din client — logica soft-delete rămâne aceeași.
+- Comportamentul de admin (poate face orice pe produse).
 
-- După deploy, testez cu Playwright: signup cu `+40743588802`, apoi cu `0743588802`, și inspectez rândurile noi din `sms_logs` + edge function logs. Îți raportez exact ce răspunde providerul pentru fiecare format.
+## Verificare
 
-## Ce NU schimb
-
-- Regexurile de normalizare (funcționează corect, ambele formate devin `+40...`).
-- Flow-ul de auto-login post-verificare.
-- Rate limiting-ul.
-
-## Rezultat așteptat
-
-După fix, dacă providerul chiar respinge `+40...`, vei vedea imediat mesajul real în UI și în `sms_logs`, iar noi putem trata cazul (ex. retry fără `+`). Dacă providerul acceptă în ambele cazuri, log-urile vor confirma că problema e la carrier/telefon și nu la aplicație.
+1. Rulez migrarea.
+2. Din UI, șterg produsul de test „Tastatura Gaming SteelSeries Apex 3" și confirm în DB că `deleted_at` este setat.
+3. Verific că listarea „Anunțurile mele" nu-l mai afișează (query filtrează `deleted_at IS NULL`).
