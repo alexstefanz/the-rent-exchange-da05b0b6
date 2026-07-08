@@ -1,7 +1,7 @@
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BookingConfirmation from "@/components/booking/BookingConfirmation";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,7 @@ const CheckoutSuccess = () => {
   const [error, setError] = useState<string | null>(null);
   const [rentalData, setRentalData] = useState<{
     id: string;
+    public_id?: string | null;
     product_title: string;
     product_images: string[];
     start_date: string;
@@ -40,12 +41,28 @@ const CheckoutSuccess = () => {
 
     const verify = async () => {
       try {
+        setError(null);
+        setLoading(true);
         const { data, error: fnError } = await supabase.functions.invoke(
           "verify-stripe-payment",
           { body: { session_id: sessionId } },
         );
 
-        if (fnError) throw fnError;
+        if (fnError) {
+          let payload: any = null;
+          try {
+            payload = await (fnError as any)?.context?.clone?.().json?.();
+          } catch {
+            payload = null;
+          }
+          throw new Error(
+            payload?.message ||
+              payload?.error ||
+              (language === "en"
+                ? "We couldn't confirm the payment yet. Please try again in a moment."
+                : "Nu am putut confirma plata încă. Te rugăm să încerci din nou în câteva secunde."),
+          );
+        }
         if (data?.error) throw new Error(data.error);
 
         setRentalData(data.rental);
@@ -78,7 +95,7 @@ const CheckoutSuccess = () => {
     };
 
     verify();
-  }, [sessionId]);
+  }, [sessionId, language]);
 
   if (loading) {
     return (
@@ -91,11 +108,28 @@ const CheckoutSuccess = () => {
 
   if (error || !rentalData) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-4">
-        <p className="text-destructive font-medium">{error || "Eroare necunoscută"}</p>
-        <Button asChild variant="outline">
-          <Link to="/">Înapoi acasă</Link>
-        </Button>
+      <div className="min-h-screen bg-background flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 text-center shadow-sm">
+          <AlertCircle className="mx-auto mb-4 h-10 w-10 text-destructive" />
+          <h1 className="font-heading text-xl font-semibold">
+            {language === "en" ? "Payment confirmation failed" : "Confirmarea plății a eșuat"}
+          </h1>
+          <p className="mt-3 text-sm text-muted-foreground">
+            {error ||
+              (language === "en"
+                ? "An unexpected error occurred while confirming the payment."
+                : "A apărut o eroare neașteptată la confirmarea plății.")}
+          </p>
+          <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+            <Button onClick={() => window.location.reload()}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              {language === "en" ? "Try again" : "Încearcă din nou"}
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/profile">{language === "en" ? "Go to account" : "Mergi la cont"}</Link>
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
