@@ -79,26 +79,24 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, fallbackCreds }
         return;
       }
       toast.success(ux.phoneOtp.success);
-      // Refresh the session so the JWT picks up the newly confirmed email.
-      // If refresh fails (rare, e.g. session lost), fall back to a fresh
-      // sign-in using the credentials provided by the caller.
-      try {
-        const { error: refreshErr } = await supabase.auth.refreshSession();
-        if (refreshErr && fallbackCreds?.email && fallbackCreds.password) {
+      // If we have signup credentials, always sign the user in fresh — the
+      // edge function has just confirmed their email, so signInWithPassword
+      // is guaranteed to succeed and yields a fully authenticated session
+      // without requiring the user to visit the login screen.
+      if (fallbackCreds?.email && fallbackCreds.password) {
+        try {
           await supabase.auth.signInWithPassword({
             email: fallbackCreds.email,
             password: fallbackCreds.password,
           });
+        } catch {
+          // Last-resort fallback: try to refresh whatever session exists.
+          try { await supabase.auth.refreshSession(); } catch { /* ignore */ }
         }
-      } catch {
-        if (fallbackCreds?.email && fallbackCreds.password) {
-          try {
-            await supabase.auth.signInWithPassword({
-              email: fallbackCreds.email,
-              password: fallbackCreds.password,
-            });
-          } catch { /* ignore — user can retry login manually */ }
-        }
+      } else {
+        // No signup creds (e.g. verifying phone from account settings):
+        // just refresh the existing session to pick up new claims.
+        try { await supabase.auth.refreshSession(); } catch { /* ignore */ }
       }
       onVerified(phone);
       onOpenChange(false);
