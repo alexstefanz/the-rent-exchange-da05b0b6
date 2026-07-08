@@ -1,33 +1,41 @@
+## Context
 
-# Fix auto-login după verificarea SMS
+Ai raportat că introducând `+40743588802` la înregistrare nu primești SMS, dar cu `0743588802` da. Am verificat:
 
-## Cauza reală (confirmată din auth logs)
-Auth logs arată secvența:
-1. `12:43:32` — signup + `immediate_login_after_signup` (sesiune creată) ✓
-2. `12:43:47` — verify-phone-otp confirmă emailul ✓
-3. `12:43:48` — `POST /token` grant=password → login reușit ✓
-4. `12:43:48` — **`POST /logout`** ← contul e deconectat imediat
+- Ambele formate ajung la aceeași funcție `normalizePhoneRO`, care returnează `+40743588802` în ambele cazuri.
+- În log-urile edge function `send-phone-otp` există `code sent to=+40743588802` pentru ambele teste recente (ora 12:52 și 12:54).
+- Tabelul `phone_otp_verifications` arată că OTP-ul din 12:54 a fost consumat (deci un SMS chiar a ajuns) — iar SMS-urile tranzacționale către același număr apar tot cu `+40...` și status `sent`.
 
-Sursa `signOut()`-ului: în `src/pages/Auth.tsx` (linia 789-796), handler-ul `onOpenChange` al `PhoneOtpDialog`:
-```ts
-onOpenChange={(o) => {
-  setPhoneOtpOpen(o);
-  if (!o && gatingLogin) {
-    supabase.auth.signOut(); // ← se execută cu closure învechit
-    ...
-  }
-}}
-```
-`PhoneOtpDialog.verify()` cheamă în ordinea: `signInWithPassword` → `onVerified(phone)` → `onOpenChange(false)`. `onVerified` setează `gatingLogin=false`, dar în React state-urile sunt async — handler-ul `onOpenChange` care se execută imediat după încă vede `gatingLogin=true` (closure vechi), deci deconectează utilizatorul chiar dacă tocmai s-a autentificat cu succes.
+Deci codul nostru trimite request identic în ambele cazuri. Problema, dacă există, este că **SMSalert răspunde HTTP 200 dar cu `status:false` în body** pentru unele numere, iar funcția `send-phone-otp` verifică doar `res.ok`, nu parsează body-ul, deci nu vede eșecul și îi spune UI-ului „cod trimis" chiar dacă providerul l-a respins.
 
-## Soluție
+## Ce voi face
 
-**`src/components/profile/PhoneOtpDialog.tsx`**
-- În `verify()`, după `onVerified(phone)` **elimină** apelul redundant `onOpenChange(false)`. Închiderea dialogului este deja gestionată de callerul `onVerified` (care apelează `setPhoneOtpOpen(false)` în `handlePhoneVerified`). Astfel, `onOpenChange` se va apela doar când utilizatorul închide manual dialogul, nu automat după verificare reușită.
+### 1. `supabase/functions/send-phone-otp/index.ts` — validare completă a răspunsului provider
 
-**`src/pages/Auth.tsx`**
-- Adaugă un `useRef` (`gatingLoginRef`) sincronizat cu state-ul `gatingLogin`, iar handler-ul `onOpenChange` să citească din ref. Asta protejează împotriva oricărui viitor closure învechit similar și e o măsură defensivă.
-- În plus, condiția devine: `if (!o && gatingLoginRef.current && pendingCredsRef.current)` — dacă `pendingCredsRef.current` e null, înseamnă că verificarea a reușit deja (a fost curățat de `handlePhoneVerified`), deci nu deconectăm.
+- După `fetch(SMS_API_URL, ...)` parsăm body-ul JSON.
+- Considerăm succes doar dacă `res.ok && body.status === true`.
+- Dacă providerul întoarce `status:false`, logăm `body` complet (id, error, message) și returnăm `502 { error: "sms_failed", providerDetails }`.
+- Marcăm rândul tocmai inserat în `phone_otp_verifications` ca `consumed_at = now()` pentru a-l invalida (altfel blochează retrimiterea).
 
-## Rezultat
-După verificarea codului SMS, utilizatorul rămâne autentificat, header-ul arată contul lui, iar homepage-ul răspunde ca utilizator logat — fără logout accidental.
+### 2. Log unificat în `sms_logs`
+
+- La finalul funcției (succes sau eșec) inserăm un rând în `sms_logs` cu `template_key = 'phone_otp'`, `recipient_phone`, `status`, `provider_response`, `error_message`.
+- Așa vedem imediat, alături de SMS-urile tranzacționale, exact ce a răspuns providerul pentru OTP.
+
+### 3. UI: afișare eroare reală
+
+- În `PhoneOtpDialog.tsx` toast-ul actual pe eșec `sendCode` este generic. Îl extind să afișeze `providerDetails.message` când vine (util pentru debugging live, dar rămâne prietenos: „SMS respins de provider: {motiv}").
+
+### 4. Verificare live
+
+- După deploy, testez cu Playwright: signup cu `+40743588802`, apoi cu `0743588802`, și inspectez rândurile noi din `sms_logs` + edge function logs. Îți raportez exact ce răspunde providerul pentru fiecare format.
+
+## Ce NU schimb
+
+- Regexurile de normalizare (funcționează corect, ambele formate devin `+40...`).
+- Flow-ul de auto-login post-verificare.
+- Rate limiting-ul.
+
+## Rezultat așteptat
+
+După fix, dacă providerul chiar respinge `+40...`, vei vedea imediat mesajul real în UI și în `sms_logs`, iar noi putem trata cazul (ex. retry fără `+`). Dacă providerul acceptă în ambele cazuri, log-urile vor confirma că problema e la carrier/telefon și nu la aplicație.
