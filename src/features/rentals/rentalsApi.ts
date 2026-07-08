@@ -18,6 +18,45 @@ interface CreateRentalParams {
   messageToOwner?: string;
 }
 
+async function readFunctionErrorPayload(error: unknown): Promise<any | null> {
+  const context = (error as any)?.context;
+  if (!context) return null;
+
+  if (typeof context.clone === "function") {
+    try {
+      return await context.clone().json();
+    } catch {
+      try {
+        return { message: await context.clone().text() };
+      } catch {
+        return null;
+      }
+    }
+  }
+
+  if (typeof context === "object") return context;
+  return null;
+}
+
+function throwCheckoutError(code?: string, message?: string): never {
+  if (code === "KYC_REQUIRED") {
+    const e = new Error("KYC_REQUIRED");
+    (e as any).code = "KYC_REQUIRED";
+    throw e;
+  }
+
+  if (code === "MIN_AMOUNT") {
+    const e = new Error(
+      message ||
+        "Suma totală este sub minimul acceptat de procesatorul de plată (2 RON). Cere proprietarului să actualizeze prețul anunțului.",
+    );
+    (e as any).code = "MIN_AMOUNT";
+    throw e;
+  }
+
+  throw new Error(message || code || "Eroare la inițierea plății.");
+}
+
 export async function createRental(params: CreateRentalParams) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Trebuie să fii autentificat");
@@ -111,17 +150,10 @@ export async function payForConfirmedRental(rentalId: string): Promise<string> {
   });
   if (error) {
     const msg = (error as any)?.message || "";
-    const ctxErr = (error as any)?.context?.error;
-    if (msg.includes("KYC_REQUIRED") || ctxErr === "KYC_REQUIRED") {
-      const e = new Error("KYC_REQUIRED");
-      (e as any).code = "KYC_REQUIRED";
-      throw e;
-    }
-    if (msg.includes("MIN_AMOUNT") || ctxErr === "MIN_AMOUNT") {
-      const e = new Error("Suma totală este sub minimul acceptat de procesatorul de plată (2 RON). Cere proprietarului să actualizeze prețul anunțului.");
-      (e as any).code = "MIN_AMOUNT";
-      throw e;
-    }
+    const payload = await readFunctionErrorPayload(error);
+    const ctxErr = payload?.error || (error as any)?.context?.error;
+    if (msg.includes("KYC_REQUIRED") || ctxErr === "KYC_REQUIRED") throwCheckoutError("KYC_REQUIRED");
+    if (msg.includes("MIN_AMOUNT") || ctxErr === "MIN_AMOUNT") throwCheckoutError("MIN_AMOUNT", payload?.message);
     throw error;
   }
   if (data?.error) {
@@ -270,11 +302,10 @@ export async function createRentalWithStripeCheckout(params: CreateRentalParams)
   if (error) {
     await cleanupOrphanRental();
     const msg = (error as any)?.message || "";
-    if (msg.includes("KYC_REQUIRED") || (error as any)?.context?.error === "KYC_REQUIRED") {
-      const e = new Error("KYC_REQUIRED");
-      (e as any).code = "KYC_REQUIRED";
-      throw e;
-    }
+    const payload = await readFunctionErrorPayload(error);
+    const code = payload?.error || (error as any)?.context?.error;
+    if (msg.includes("KYC_REQUIRED") || code === "KYC_REQUIRED") throwCheckoutError("KYC_REQUIRED");
+    if (msg.includes("MIN_AMOUNT") || code === "MIN_AMOUNT") throwCheckoutError("MIN_AMOUNT", payload?.message);
     throw error;
   }
   if (data?.error) {
@@ -284,6 +315,7 @@ export async function createRentalWithStripeCheckout(params: CreateRentalParams)
       (e as any).code = "KYC_REQUIRED";
       throw e;
     }
+    if (data.error === "MIN_AMOUNT") throwCheckoutError("MIN_AMOUNT", data.message);
     throw new Error(data.error);
   }
   if (!data?.url) {
