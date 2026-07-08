@@ -44,6 +44,24 @@
   overflow: hidden !important;
 }
 
+/* Higher-specificity safety net: the Toaster uses utility classes, so keep
+   hidden/non-front Sonner items invisible even if utility rules are emitted
+   later in the stylesheet. */
+ol[data-sonner-toaster].toaster > [data-sonner-toast]:not([data-front="true"]),
+ol[data-sonner-toaster].toaster > [data-sonner-toast][data-removed="true"],
+ol[data-sonner-toaster].toaster > [data-sonner-toast][data-swipe-out="true"],
+ol[data-sonner-toaster].toaster > [data-sonner-toast][data-visible="false"] {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
 html {
   scrollbar-gutter: stable;
 }
