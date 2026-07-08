@@ -65,7 +65,7 @@ import { MAX_MESSAGE_LENGTH, MAX_SPECIAL_CHARS, countSpecialChars, clampChatInpu
 import { supabase } from "@/integrations/supabase/client";
 import { format, formatDistanceToNow } from "date-fns";
 import { ro as roLocale, enUS } from "date-fns/locale";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import { StatusPill } from "@/components/support/center/StatusPill";
 import { cn } from "@/lib/utils";
 

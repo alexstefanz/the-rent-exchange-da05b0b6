@@ -29,7 +29,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { useWalletBalance } from "@/hooks/useWalletBalance";
 import { useIsAdmin } from "@/hooks/queries/useAdminStats";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import { notify, notifyError } from "@/lib/notify";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";

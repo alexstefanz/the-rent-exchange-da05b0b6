@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getOwnerRentals, respondToRental, type OwnerRental } from "@/features/rentals/ownerRentalsApi";
 import { requestMutualCancellation } from "@/features/rentals/rentalsApi";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";

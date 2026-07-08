@@ -16,7 +16,7 @@ import {
 import { Flag, EyeOff, Ban, MessageCircle, Loader2, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {

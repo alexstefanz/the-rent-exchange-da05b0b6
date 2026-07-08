@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Send, ImagePlus, Loader2, CheckCheck, Check } from "lucide-react";
 import { format, isToday, isYesterday, type Locale } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MAX_MESSAGE_LENGTH, MAX_SPECIAL_CHARS, countSpecialChars, clampChatInput } from "@/features/messaging/messagingApi";

@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import { Loader2 } from "lucide-react";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 import { strongPasswordSchema, isWeakPasswordError } from "@/lib/passwordValidation";

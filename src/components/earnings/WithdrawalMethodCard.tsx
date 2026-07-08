@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Landmark, Plus, ShieldCheck, Trash2, Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";

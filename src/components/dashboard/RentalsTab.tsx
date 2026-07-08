@@ -16,7 +16,7 @@ import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import { useRentalRealtime } from "@/hooks/useRentalRealtime";
 import { requestMutualCancellation } from "@/features/rentals/rentalsApi";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import StatusBadge from "./StatusBadge";
 import RentalsFilterBar, { type RentalStatusFilter, type RentalSortBy } from "./RentalsFilterBar";
 import { bucketOf } from "./rentalBucket";

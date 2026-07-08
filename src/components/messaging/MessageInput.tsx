@@ -3,7 +3,7 @@ import { Paperclip, Send, X, Loader2, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import {
   prepareAttachment,
   uploadAttachment,

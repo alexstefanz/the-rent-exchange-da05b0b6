@@ -26,7 +26,7 @@ import { TypingIndicator } from "@/components/messaging/TypingIndicator";
 import { DateSeparator } from "@/components/messaging/DateSeparator";
 import { MediaLightbox } from "@/components/messaging/MediaLightbox";
 import { isSameDay } from "date-fns";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { getProductUrlFromTitle } from "@/lib/slugUtils";

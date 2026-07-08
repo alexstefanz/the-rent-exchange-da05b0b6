@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { format, isToday, isYesterday } from "date-fns";
 import { ro } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTicketMessages, useTicketAttachments } from "@/hooks/queries/useOpsTickets";
 import { createTicketMessage, uploadTicketAttachment } from "@/features/admin/opsTicketsApi";

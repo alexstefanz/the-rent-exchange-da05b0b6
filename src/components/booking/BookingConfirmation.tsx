@@ -4,7 +4,7 @@ import { CheckCircle, Clock, MessageCircle, ArrowRight, Home, Search } from "luc
 import { Button } from "@/components/ui/button";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 
 interface BookingConfirmationProps {
   productTitle: string;

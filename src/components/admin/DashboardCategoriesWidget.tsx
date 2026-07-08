@@ -18,7 +18,7 @@ import {
   PlatformCategory, PlatformSubcategory
 } from "@/features/admin/categoriesApi";
 import LucideIconPicker from "@/components/admin/LucideIconPicker";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 
 const DashboardCategoriesWidget = () => {
   const queryClient = useQueryClient();

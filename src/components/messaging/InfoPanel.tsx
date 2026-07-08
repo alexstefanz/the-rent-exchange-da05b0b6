@@ -17,7 +17,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import {
   fetchConversationAttachments,
   getSignedChatMedia,
