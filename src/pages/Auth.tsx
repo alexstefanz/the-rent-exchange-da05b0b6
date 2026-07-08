@@ -792,7 +792,10 @@ const Auth = () => {
         phone={pendingPhone}
         onOpenChange={(o) => {
           setPhoneOtpOpen(o);
-          if (!o && gatingLogin) {
+          // Only sign out when user closes the dialog WITHOUT completing
+          // verification. If pendingCredsRef is null, handlePhoneVerified
+          // already cleared it → verification succeeded, keep the session.
+          if (!o && gatingLoginRef.current && pendingCredsRef.current) {
             // User closed the gate without verifying — sign out so they retry.
             supabase.auth.signOut();
             setGatingLogin(false);
