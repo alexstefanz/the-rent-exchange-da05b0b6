@@ -99,7 +99,10 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, fallbackCreds }
         try { await supabase.auth.refreshSession(); } catch { /* ignore */ }
       }
       onVerified(phone);
-      onOpenChange(false);
+      // Do NOT call onOpenChange(false) here — the caller's onVerified
+      // handler already closes the dialog. Calling both would fire the
+      // parent's onOpenChange guard with a stale `gatingLogin` closure
+      // and accidentally sign the freshly-authenticated user out.
     } catch {
       toast.error(ux.phoneOtp.invalidCode);
     } finally {
