@@ -201,7 +201,10 @@ function show(variant: NotifyVariant, opts: NotifyOptions) {
   const duration =
     opts.duration ??
     (variant === "cancellation" || variant === "warning" ? 10000 : 6000);
-  toast.dismiss();
+  // Do NOT call toast.dismiss() here: it would trigger the previous toast's
+  // exit animation while the new one fades in, briefly showing two overlapping
+  // cards ("double background"). Reusing the same id causes sonner to replace
+  // the existing toast atomically instead.
   return toast.custom(
     (id) => (
       <NotificationToast
