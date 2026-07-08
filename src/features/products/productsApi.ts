@@ -374,6 +374,11 @@ export const deleteProduct = async (id: string, ownerId: string): Promise<void> 
   void ownerId; // ownership is verified server-side via auth.uid()
   const { error } = await (supabase.rpc as any)("soft_delete_my_product", { _id: id });
   if (error) {
+    if (typeof error.message === "string" && error.message.includes("PRODUCT_HAS_ACTIVE_RENTALS")) {
+      const e = new Error("PRODUCT_HAS_ACTIVE_RENTALS");
+      (e as any).code = "PRODUCT_HAS_ACTIVE_RENTALS";
+      throw e;
+    }
     handleApiError("Error deleting product", error);
   }
 };

@@ -156,13 +156,33 @@ const ListingsPage = () => {
   };
   const handleDelete = async (p: Product) => {
     if (!user) return;
-    await deleteProduct(p.id, user.id);
-    toast({
-      title: t("Anunț șters", "Listing deleted"),
-      description: t(`Produsul „${p.title}" a fost șters.`, `"${p.title}" has been deleted.`),
-    });
-    refresh();
-    setConfirmDelete(null);
+    try {
+      await deleteProduct(p.id, user.id);
+      toast({
+        title: t("Anunț șters", "Listing deleted"),
+        description: t(`Produsul „${p.title}" a fost șters.`, `"${p.title}" has been deleted.`),
+      });
+      refresh();
+      setConfirmDelete(null);
+    } catch (e: any) {
+      if (e?.code === "PRODUCT_HAS_ACTIVE_RENTALS" || String(e?.message || "").includes("PRODUCT_HAS_ACTIVE_RENTALS")) {
+        toast({
+          variant: "destructive",
+          title: t("Nu poți șterge acest anunț", "Cannot delete this listing"),
+          description: t(
+            "Anunțul are închirieri active în desfășurare. Finalizează sau anulează închirierile înainte de a-l șterge.",
+            "This listing has active rentals in progress. Complete or cancel them before deleting.",
+          ),
+        });
+        setConfirmDelete(null);
+        return;
+      }
+      toast({
+        variant: "destructive",
+        title: t("Eroare la ștergere", "Delete failed"),
+        description: e?.message || t("A apărut o eroare.", "Something went wrong."),
+      });
+    }
   };
 
   if (loading || isLoading) {
