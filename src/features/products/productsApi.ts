@@ -367,12 +367,12 @@ export const updateProduct = async (
 };
 
 export const deleteProduct = async (id: string, ownerId: string): Promise<void> => {
-  const { error } = await supabase
-    .from("products")
-    .update({ deleted_at: new Date().toISOString(), deleted_by: ownerId } as never)
-    .eq("id", id)
-    .eq("owner_id", ownerId);
-
+  // Route through a SECURITY DEFINER RPC so the soft-delete succeeds even if
+  // the caller trips column-level SELECT restrictions on `products` or the
+  // `enforce_products_owner_update` trigger. Deleted listings can only be
+  // restored by admins from the admin dashboard trash.
+  void ownerId; // ownership is verified server-side via auth.uid()
+  const { error } = await (supabase.rpc as any)("soft_delete_my_product", { _id: id });
   if (error) {
     handleApiError("Error deleting product", error);
   }
