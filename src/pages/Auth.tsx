@@ -58,6 +58,10 @@ const Auth = () => {
   const [phoneOtpOpen, setPhoneOtpOpen] = useState(false);
   const [pendingPhone, setPendingPhone] = useState("");
   const [gatingLogin, setGatingLogin] = useState(false);
+  // Ref mirror of gatingLogin so async callbacks (dialog onOpenChange)
+  // never read a stale closure value and accidentally sign the user out.
+  const gatingLoginRef = useRef(false);
+  useEffect(() => { gatingLoginRef.current = gatingLogin; }, [gatingLogin]);
   // Credentials saved during the signup OTP flow so that — if
   // refreshSession() fails after phone verification — we can re-establish
   // a fully authenticated session without forcing the user to re-login.
