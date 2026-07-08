@@ -107,7 +107,26 @@ Deno.serve(async (req) => {
       }
     }
 
-    await supabaseAdmin.from("rentals").update(updateData).eq("id", rental_id);
+    const { data: updated, error: updateErr } = await supabaseAdmin
+      .from("rentals")
+      .update(updateData)
+      .eq("id", rental_id)
+      .select("id, status, payment_status")
+      .maybeSingle();
+    if (updateErr) {
+      console.error("[respond-rental-request] rental update failed:", updateErr);
+      return new Response(
+        JSON.stringify({ error: updateErr.message || "Rental update failed" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    if (!updated || updated.status !== newStatus) {
+      console.error("[respond-rental-request] rental status did not change", { rental_id, newStatus, updated });
+      return new Response(
+        JSON.stringify({ error: "Rental status was not updated" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
 
     // Insert in-app notification + transactions update synchronously (fast, single-table writes)
     if (action === "accept") {
