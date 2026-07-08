@@ -277,6 +277,7 @@ serve(async (req) => {
         payment_status: paymentStatus,
         rental: {
           id: rental.id,
+            public_id: rental.public_id,
           product_title: rental.products?.title,
           product_images: rental.products?.images,
           start_date: rental.start_date,
