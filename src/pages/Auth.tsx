@@ -58,6 +58,10 @@ const Auth = () => {
   const [phoneOtpOpen, setPhoneOtpOpen] = useState(false);
   const [pendingPhone, setPendingPhone] = useState("");
   const [gatingLogin, setGatingLogin] = useState(false);
+  // Ref mirror of gatingLogin so async callbacks (dialog onOpenChange)
+  // never read a stale closure value and accidentally sign the user out.
+  const gatingLoginRef = useRef(false);
+  useEffect(() => { gatingLoginRef.current = gatingLogin; }, [gatingLogin]);
   // Credentials saved during the signup OTP flow so that — if
   // refreshSession() fails after phone verification — we can re-establish
   // a fully authenticated session without forcing the user to re-login.
@@ -788,7 +792,10 @@ const Auth = () => {
         phone={pendingPhone}
         onOpenChange={(o) => {
           setPhoneOtpOpen(o);
-          if (!o && gatingLogin) {
+          // Only sign out when user closes the dialog WITHOUT completing
+          // verification. If pendingCredsRef is null, handlePhoneVerified
+          // already cleared it → verification succeeded, keep the session.
+          if (!o && gatingLoginRef.current && pendingCredsRef.current) {
             // User closed the gate without verifying — sign out so they retry.
             supabase.auth.signOut();
             setGatingLogin(false);
