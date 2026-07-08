@@ -3552,6 +3552,7 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      soft_delete_my_product: { Args: { _id: string }; Returns: undefined }
       unaccent: { Args: { "": string }; Returns: string }
       withdraw_cancellation_request: {
         Args: { _rental_id: string }
