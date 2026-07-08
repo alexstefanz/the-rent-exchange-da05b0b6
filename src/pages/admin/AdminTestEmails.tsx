@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import { Mail, CheckCircle, XCircle, Loader2, RotateCcw } from "lucide-react";
 
 const DEFAULT_TEST_EMAIL = "z.alexstefan@gmail.com";

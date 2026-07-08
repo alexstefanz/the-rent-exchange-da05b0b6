@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Camera, FileText, Loader2, Upload, X, Lock, MessageSquare, Eye } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import { Button } from "@/components/ui/button";
 import {
   getPvDocument,

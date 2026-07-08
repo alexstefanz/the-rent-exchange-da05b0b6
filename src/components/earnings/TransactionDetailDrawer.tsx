@@ -2,7 +2,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Copy, ExternalLink, ImageOff, User as UserIcon } from "lucide-react";
 import { Link } from "react-router-dom";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { StatusBadge, type EarningsStatus } from "./statusBadge";
 import type { EarningsTransaction } from "@/hooks/useEarnings";

@@ -26,7 +26,7 @@ import { compareNames, normalizeName } from "@/lib/nameMatch";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 
 const ACTION_LABELS: Record<string, string> = {
   PRODUCT_CREATED: 'Produs creat',

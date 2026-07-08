@@ -28,7 +28,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 
 const kycStatusLabels: Record<string, { label: string; color: string }> = {
   not_started: { label: "Neînceput", color: "bg-gray-100 text-gray-800" },

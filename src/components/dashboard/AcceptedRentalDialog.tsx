@@ -14,7 +14,7 @@ import { format } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import type { OwnerRental } from "@/features/rentals/ownerRentalsApi";
 import { useLanguage } from "@/contexts/LanguageContext";
 

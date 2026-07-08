@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Inbox, MessageSquare, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { AdminInboxList } from "@/components/admin/tickets/AdminInboxList";
 import { AdminConversation } from "@/components/admin/tickets/AdminConversation";

@@ -17,7 +17,7 @@ import {
   toggleCategoryActive, createSubcategory, updateSubcategory, deleteSubcategory, toggleSubcategoryActive,
   PlatformCategory, PlatformSubcategory
 } from "@/features/admin/categoriesApi";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 
 const AdminCategories = () => {
   const [actionLoading, setActionLoading] = useState<string | null>(null);

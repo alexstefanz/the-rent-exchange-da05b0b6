@@ -14,7 +14,7 @@ import { useAdminRentals } from "@/hooks/queries/useAdminStats";
 import { updateRentalStatus } from "@/features/admin/adminApi";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import RentalTimeline from "@/components/dashboard/RentalTimeline";

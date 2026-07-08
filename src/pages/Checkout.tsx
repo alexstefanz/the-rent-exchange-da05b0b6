@@ -15,7 +15,7 @@ import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { createRentalRequest } from "@/features/rentals/rentalsApi";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import { notify } from "@/lib/notify";
 import { useKycGate } from "@/hooks/queries/useKycGate";
 import KycGateBanner from "@/components/kyc/KycGateBanner";

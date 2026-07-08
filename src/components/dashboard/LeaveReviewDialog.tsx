@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Star, Loader2, CheckCircle2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import {
   Dialog,
   DialogContent,

@@ -15,7 +15,7 @@ import {
   CATEGORY_TYPES,
   PRIORITY_OPTIONS,
 } from "@/features/admin/opsTicketsApi";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 
 const AdminTicketCreate = () => {
   const navigate = useNavigate();

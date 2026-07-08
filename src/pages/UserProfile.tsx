@@ -31,7 +31,7 @@ import { usePublicProfile, useUserStatistics, useUserReviews, useIsUserFavorite 
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getDisplayTitle } from "@/lib/productI18n";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePageSeo } from "@/hooks/usePageSeo";
 
