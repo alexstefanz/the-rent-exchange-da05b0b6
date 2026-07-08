@@ -1,38 +1,45 @@
 ## Problem
 
-La apăsarea butonului „Trimite documentele pentru verificare", clientul face:
+Stripe checkout finalized but the redirect page shows **"Edge Function returned a non-2xx status code"**.
 
-```sql
-UPDATE kyc_cases SET status='SUBMITTED', submitted_at=now() WHERE id=…;
+Edge function logs reveal that `verify-stripe-payment` (and the twin `create-test-checkout-session`) fail with HTTP 500:
+
+```
+Update rental error: {
+  code: "P0001",
+  message: "Not allowed to modify payment/financial rental fields"
+}
 ```
 
-Pe `kyc_cases` există **două** triggere BEFORE UPDATE care se contrazic:
+The error comes from the trigger `enforce_rentals_participant_update()` on `public.rentals`. It only lets updates through when the caller is an admin (`has_role(auth.uid(),'admin')`) or when a transaction-local bypass flag is set. Edge functions call the DB with the **service role key** — `auth.uid()` is NULL, no bypass flag is set, so the trigger blocks writes to `payment_status`, `subtotal`, `platform_fee`, `owner_payout`, `refund_amount`, `dispute_status`, `daily_price`, etc.
 
-1. `enforce_kyc_case_user_immutability` — corect ca intenție: permite tranziții de status între `NOT_STARTED / IN_PROGRESS / SUBMITTED`, dar **blochează orice modificare a `submitted_at` de către user**.
-2. `enforce_kyc_cases_user_update` — prea larg: blochează **orice** schimbare de `status` sau alte câmpuri de către non-admini („Not allowed to modify admin-controlled KYC fields").
+Effect: after Stripe returns a session id, `verify-stripe-payment` cannot mark the rental as `authorized` / `paid`, the frontend receives 500, and the user sees the red error screen.
 
-Rezultat: `UPDATE`-ul din client aruncă excepție → PostgREST returnează eroare → în UI toast-ul de eroare apare foarte scurt/nu este observat, iar cazul rămâne `IN_PROGRESS` cu toate cele 3 documente încărcate.
+## Fix
 
-Confirmat pe cazul real: `alex@advanceonline.co.uk` are `kyc_cases.id=1c3e3670…` `status=IN_PROGRESS` cu 3 documente încărcate la 13:13:58–59.
+Update `enforce_rentals_participant_update()` so it also lets the **service role** through — that role is only reachable from edge functions and Postgres admin, never from a signed-in client.
 
-Același pattern de trigger prea-restrictiv pe care l-am reparat mai devreme pentru `products.deleted_at`.
+Detect the service role via the JWT claim exposed by PostgREST (`auth.jwt() ->> 'role' = 'service_role'`) as the primary check, with `current_user = 'service_role'` as a defensive fallback. Everything else in the trigger stays the same, so regular renters/owners still cannot mutate financial fields.
 
-## Fix (migrație)
+Ownership of the fix by layer:
 
-1. **DROP** triggerul redundant `trg_enforce_kyc_cases_user_update` (funcția rămâne pentru siguranță; doar detașăm triggerul).
-2. **Rescriu** `enforce_kyc_case_user_immutability` pentru a permite user-ului tranziția de submission:
-   - Dacă `OLD.status IN ('NOT_STARTED','IN_PROGRESS','REJECTED')` și `NEW.status = 'SUBMITTED'` și `NEW.submitted_at IS NOT NULL` și `OLD.submitted_at IS NULL` → **acceptă** modificarea `submitted_at` (excepție dedicată). 
-   - Restul câmpurilor administrative rămân protejate identic.
-3. **Data fix**: promovez manual cazul existent (`1c3e3670-d551-4067-b48b-ca7bebd86c3a`) la `status='SUBMITTED', submitted_at=now()` ca admin, ca alex să vadă imediat efectul fără să încarce documentele din nou.
+```text
+edge function (service_role) ──► rentals UPDATE
+                                    │
+                          enforce_rentals_participant_update
+                                    │
+     ┌──── admin?  ───────────────► allow
+     ├──── bypass flag on? ───────► allow
+     ├──── JWT role = service_role ──► allow   ← NEW
+     └──── otherwise ─► block financial-field changes (unchanged)
+```
 
-## Ce NU se schimbă
+## Steps
 
-- RLS pe `kyc_cases` (deja permite user updates când `status IN (NOT_STARTED, IN_PROGRESS, REJECTED, SUBMITTED)`).
-- Flow-ul UI din `KycInlineFlow.tsx` — nicio schimbare de cod frontend.
-- Restricțiile pentru câmpuri gestionate de admin (risk_score, decided_by_admin_id, rejection_reason, etc.).
+1. **Migration** — `CREATE OR REPLACE FUNCTION public.enforce_rentals_participant_update()` with the added service-role short-circuit at the top, keeping every other rule identical (admin bypass, `app.bypass_renter_lock` bypass, blocked column list, error message).
+2. **Verification** — from the browser, retry the checkout that failed. Confirm `verify-stripe-payment` returns 200 and the rental moves to `payment_status = authorized`. No client-side code changes required.
 
-## Verificare
+## Out of scope
 
-1. Aplic migrația.
-2. Verific în DB că `kyc_cases` pentru alex e SUBMITTED și că notificarea admin apare.
-3. Test suplimentar: în UI, dacă utilizatorul reîncarcă documente și apasă „Trimite" din nou, tranziția merge fără eroare.
+- No change to which fields are protected, to admin logic, to the `pay_rental_with_wallet` bypass flag, or to any RLS policy.
+- No change to `create-checkout-session` — it worked; only the post-Stripe verification write was blocked.
