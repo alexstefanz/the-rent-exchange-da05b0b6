@@ -112,13 +112,39 @@ Deno.serve(async (req) => {
       headers: { "Authorization": `Basic ${auth}`, "Content-Type": "application/json" },
       body: JSON.stringify({ phoneNumber: phone, message, cleanupUtf8: true }),
     });
-    if (!res.ok) {
-      const text = await res.text();
-      console.error(`[send-phone-otp] SMS failed ${res.status}: ${text.slice(0, 200)}`);
-      return json({ error: "sms_failed" }, 502);
+    const rawText = await res.text();
+    let providerBody: any = null;
+    try { providerBody = JSON.parse(rawText); } catch { /* non-json */ }
+    const providerOk = res.ok && providerBody && providerBody.status === true;
+
+    // Log the SMS attempt (success or failure) to sms_logs for unified debugging.
+    await supabase.from("sms_logs").insert({
+      user_id: userId,
+      recipient_phone: phone,
+      template_key: "phone_otp",
+      message_body: message,
+      status: providerOk ? "sent" : "failed",
+      provider_message_id: providerBody?.id ?? null,
+      provider_response: providerBody ?? { raw: rawText.slice(0, 500) },
+      error_message: providerOk ? null : (providerBody?.message || providerBody?.error || `http_${res.status}`),
+    }).then(() => {}, (e) => console.error("[send-phone-otp] sms_logs insert failed", e));
+
+    if (!providerOk) {
+      console.error(`[send-phone-otp] SMS failed http=${res.status} body=${rawText.slice(0, 300)}`);
+      // Invalidate the OTP row so the user can retry immediately without hitting rate limit logic incorrectly.
+      await supabase
+        .from("phone_otp_verifications")
+        .update({ consumed_at: new Date().toISOString() })
+        .eq("user_id", userId)
+        .is("consumed_at", null);
+      return json({
+        error: "sms_failed",
+        providerStatus: res.status,
+        providerMessage: providerBody?.message || providerBody?.error || null,
+      }, 502);
     }
 
-    console.log(`[send-phone-otp] code sent to=${phone} user=${userId}`);
+    console.log(`[send-phone-otp] code sent to=${phone} user=${userId} providerId=${providerBody?.id ?? "n/a"}`);
     return json({ success: true, phone });
   } catch (e) {
     console.error("[send-phone-otp] unhandled", e);
