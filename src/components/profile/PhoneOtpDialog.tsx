@@ -49,8 +49,11 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, fallbackCreds }
       const { data, error } = await supabase.functions.invoke("send-phone-otp", { body: { phone } });
       if (error || (data as any)?.error) {
         const err = (data as any)?.error || error?.message;
+        const providerMsg = (data as any)?.providerMessage;
         if (err === "rate_limited" || err === "too_many_requests") {
           toast.error(ux.phoneOtp.rateLimited);
+        } else if (err === "sms_failed" && providerMsg) {
+          toast.error(`${ux.phoneOtp.sendError}: ${providerMsg}`);
         } else {
           toast.error(ux.phoneOtp.sendError);
         }
