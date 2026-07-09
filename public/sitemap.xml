@@ -538,6 +538,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://rentli.ro/produs/bicicleta-electrica-raymon-full-suspension-trailray-deore-negru</loc>
+    <lastmod>2026-07-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://rentli.ro/produs/inchiriez-manitou-mrt-2150-rotativ</loc>
     <lastmod>2026-03-05</lastmod>
     <changefreq>weekly</changefreq>
@@ -558,12 +564,6 @@
   <url>
     <loc>https://rentli.ro/produs/arcada-nunta</loc>
     <lastmod>2026-03-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://rentli.ro/produs/bicicleta</loc>
-    <lastmod>2026-01-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -696,12 +696,6 @@
   <url>
     <loc>https://rentli.ro/produs/inchiriere-masina-de-tuns-iarba-bosch</loc>
     <lastmod>2026-06-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://rentli.ro/produs/bicicleta-electrica-raymon-full-suspension-trailray-negru-deore</loc>
-    <lastmod>2026-07-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
