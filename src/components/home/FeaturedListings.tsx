@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { getOptimizedImageUrl } from "@/lib/imageUtils";
 import { MapPin, ArrowRight, ShieldCheck, Loader2, Heart, Star } from "lucide-react";
 import { useProducts } from "@/hooks/queries/useProducts";
+import { useHomepagePopularProducts } from "@/hooks/queries/useHomepagePopularProducts";
 import { calculateClientPrice } from "@/features/products/productsApi";
 import { getProductUrl } from "@/lib/slugUtils";
 import { useUxCopy } from "@/hooks/useUxCopy";
@@ -17,14 +18,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePrefetchProduct } from "@/hooks/usePrefetch";
 
 const FeaturedListings = () => {
-  const { data: products, isLoading, isError, refetch } = useProducts();
+  const { data: popular, isLoading, isError, refetch } = useHomepagePopularProducts(8);
+  // Fallback source used only when the popularity RPC returns too few results
+  // (e.g. very early stage of the marketplace).
+  const { data: fallback } = useProducts();
   const copy = useUxCopy();
   const { language } = useLanguage();
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const prefetchProduct = usePrefetchProduct();
 
-  const allProducts = products || [];
+  const popularList = popular || [];
+  const fallbackList = fallback || [];
+  const merged = popularList.length >= 4
+    ? popularList
+    : [
+        ...popularList,
+        ...fallbackList.filter((p) => !popularList.some((pp) => pp.id === p.id)),
+      ];
+  const allProducts = merged;
   const displayProducts = allProducts.slice(0, 8);
 
   const [ratings, setRatings] = useState<Record<string, number>>({});

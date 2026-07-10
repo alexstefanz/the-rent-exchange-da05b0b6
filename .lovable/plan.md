@@ -1,29 +1,45 @@
-## Plan: repar eroarea Stripe „Edge Function returned a non-2xx status code”
+## Problem
 
-### Ce am găsit
-- Checkout-ul Stripe se creează corect, dar confirmarea plății eșuează după redirect.
-- Funcția `verify-stripe-payment` încă întoarce eroare când încearcă să actualizeze rezervarea: `Not allowed to modify payment/financial rental fields`.
-- Cauza probabilă: triggerul de protecție pe `rentals` nu recunoaște în mod stabil actualizările făcute de funcțiile backend cu cheia internă, deci blochează câmpurile de plată.
-- Există și o problemă secundară: `send-rental-notification` încearcă să creeze conversația printr-un RPC care cere utilizator autentificat și loghează `not authenticated`. Asta nu pare să fie eroarea toastului din imagine, dar trebuie făcută non-blocantă/sigură pentru fluxul post-plată.
+Secțiunea "Închirieri populare" de pe homepage folosește `useProducts()` (RPC `search_products`) fără sortare de popularitate — ordinea implicită e practic ultimele adăugate. În plus, nu există diversificare pe categorii, așa că grid-ul e dominat de aceeași categorie (ex. Sport apare de 4x în screenshot).
 
-### Implementare
-1. **Migrare backend pentru triggerul de protecție**
-   - Voi actualiza `enforce_rentals_participant_update()` astfel încât funcțiile backend trusted să poată modifica doar câmpurile necesare procesării plății.
-   - În loc să depindă doar de `current_setting('request.jwt.claim.role')`, voi adăuga o verificare mai robustă pentru rolul intern folosit de Data API / PostgREST.
-   - Mențin blocarea pentru utilizatorii normali: renter/owner nu pot modifica manual câmpuri financiare.
+## Soluție
 
-2. **Deploi funcțiile relevante**
-   - Voi redeploya funcțiile de plată afectate, în special `verify-stripe-payment`; dacă e nevoie, și `create-checkout-session` / `create-test-checkout-session`.
+Introducem un mod dedicat "popular + divers" pentru cele 8 carduri de pe homepage, complet izolat de restul aplicației (fără modificări la Search, Category, etc.).
 
-3. **Îmbunătățesc mesajul de eroare din interfață**
-   - Pe pagina de succes checkout, în loc de mesaj generic `Edge Function returned a non-2xx status code`, utilizatorul va vedea un mesaj clar în română și va putea reveni la rezervare / încerca din nou.
+### 1. Backend — nou RPC `get_homepage_popular_products`
 
-4. **Verificare**
-   - Voi testa funcția de verificare pe cea mai recentă sesiune Stripe disponibilă în rezervări.
-   - Voi verifica logurile pentru `verify-stripe-payment` după schimbare.
-   - Voi confirma că rezervarea trece în `payment_status = authorized` sau `paid` și că nu mai apare toastul generic.
+Un singur SECURITY DEFINER care returnează maxim 8 produse `approved` + `deleted_at IS NULL`, scorate după popularitate reală și diversificate pe categorie.
 
-### Nu schimb
-- Nu modific logica de prețuri/comision.
-- Nu relaxez permisiunile pentru utilizatori normali.
-- Nu schimb flow-ul escrow hold-and-capture Stripe.
+Formula scor (produs):
+- rentals confirmate/active/completed în ultimele 90 zile × 3
+- total rentals (istoric) × 1
+- reviews count × 2
+- rating mediu × 1
+- mic tie-break pe `created_at` (recency slabă)
+
+Diversificare: după sortarea pe scor descrescător, aplicăm un pas de "round-robin pe categorie" — maxim 2 produse per categorie în top 8 dacă există suficientă varietate; altfel completăm cu ce a rămas.
+
+Returnează aceleași coloane ca `search_products` (PRODUCT_SAFE_COLS) ca să fie drop-in cu tipul `Product`.
+
+Grant: `EXECUTE ... TO anon, authenticated`.
+
+### 2. Frontend — `FeaturedListings.tsx`
+
+- Înlocuim `useProducts()` cu un nou hook `useHomepagePopularProducts()` care apelează RPC-ul de mai sus, cache 5 min.
+- Restul componentului (grid, favorite, rating overlay) rămâne identic.
+- Fallback: dacă RPC întoarce <4 produse (proiect nou), completăm cu `useProducts()` existente pentru a nu avea secțiune goală.
+
+### 3. Nemodificat
+
+- Categoriile, hero, USP bar, rails din CategoryDetail, Search — toate rămân neatinse.
+- Nicio schimbare la RLS, produse, sau categorii.
+
+## Fișiere afectate
+
+- **Nou:** `supabase/migrations/<timestamp>_homepage_popular_products.sql` — RPC + grants.
+- **Nou:** `src/hooks/queries/useHomepagePopularProducts.ts` — hook TanStack Query.
+- **Editat:** `src/components/home/FeaturedListings.tsx` — swap sursă produse + fallback.
+
+## Rezultat vizual
+
+Cele 8 carduri din "Închirieri populare" vor arăta produse cu istoric real de închirieri / review-uri, distribuite pe categorii diferite (ex. 1-2 Sport, 1 Electronice, 1 Grădinărit, 1 Foto, 1 Camping etc.), în loc de ultimele 8 adăugate.

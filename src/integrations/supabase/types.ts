@@ -2954,6 +2954,61 @@ export type Database = {
         }[]
       }
       get_homepage_activity: { Args: never; Returns: Json }
+      get_homepage_popular_products: {
+        Args: { _limit?: number }
+        Returns: {
+          admin_edited_at: string | null
+          admin_edited_by: string | null
+          admin_flagged: boolean
+          approval_status: string
+          available_from: string | null
+          available_immediately: boolean
+          blocked_dates: string[]
+          category: string | null
+          condition: string | null
+          created_at: string | null
+          daily_price_owner: number
+          deleted_at: string | null
+          deleted_by: string | null
+          delivery_available: boolean
+          delivery_fee: number | null
+          delivery_radius_km: number | null
+          deposit_type: string | null
+          deposit_value: number | null
+          description: string | null
+          description_en: string | null
+          flag_reason: string | null
+          id: string
+          images: string[] | null
+          included_items: string[] | null
+          included_items_en: string[] | null
+          is_active: boolean
+          location_city: string | null
+          location_country: string | null
+          max_rental_days: number | null
+          min_rental_days: number | null
+          min_rental_preset: string | null
+          owner_id: string
+          pickup_address: string | null
+          pickup_available: boolean
+          pickup_lat: number | null
+          pickup_lng: number | null
+          platform_fee_percent: number
+          quality_score: number
+          serial_number: string | null
+          slug: string | null
+          subcategory: string | null
+          title: string
+          title_en: string | null
+          usage_rules: string[]
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "products"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_kyc_duplicate_users: {
         Args: { case_id: string }
         Returns: {
