@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
-import { Search as SearchIcon, Loader2, LayoutGrid, List } from "lucide-react";
+import { Search as SearchIcon, Loader2, LayoutGrid, List, Map as MapIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
@@ -8,6 +8,7 @@ import Footer from "@/components/layout/Footer";
 import MobileFixedBackButton from "@/components/shared/MobileFixedBackButton";
 import ProductCard from "@/components/products/ProductCard";
 import CategoryHero from "@/components/category/CategoryHero";
+import CategoryMapView from "@/components/category/map/CategoryMapView";
 import SearchFilters, { InlineSearchFilters } from "@/components/search/SearchFilters";
 import EmptySearchState from "@/components/search/EmptySearchState";
 import { useProducts } from "@/hooks/queries/useProducts";
@@ -36,7 +37,10 @@ const CategoryDetail = () => {
   const localitateFilter = searchParams.get("localitate") || "";
 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
+  const initialView = (searchParams.get("view") as "map" | "gallery" | "list") || "map";
+  const [viewMode, setViewMode] = useState<"map" | "gallery" | "list">(
+    ["map", "gallery", "list"].includes(initialView) ? initialView : "map",
+  );
   const [selectedSubcategory, setSelectedSubcategory] = useState(subcategoryFilter || "all");
   const [selectedJudet, setSelectedJudet] = useState(judetFilter || "all");
   const [selectedCity, setSelectedCity] = useState(localitateFilter || "all");
