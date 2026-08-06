@@ -193,9 +193,10 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
   );
 
   const listPanel = (
-    <div className="flex h-full flex-col">
+    <div className={isCompact ? "flex flex-col" : "flex h-full flex-col"}>
       {selected ? (
         <MapDetailPanel
+          compact={isCompact}
           product={selected}
           similar={similar}
           onBack={() => setSelectedId(null)}
@@ -204,7 +205,10 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
       ) : (
         <div
           ref={listScrollRef}
-          className="scrollbar-hide h-full overflow-y-auto px-5 pb-10 pt-4 lg:px-6"
+          className={cn(
+            "scrollbar-hide px-5 pb-10 pt-4 lg:px-6",
+            !isCompact && "h-full overflow-y-auto",
+          )}
         >
           <h2 className="text-[15px] font-semibold text-foreground">
             {t(
