@@ -1,6 +1,13 @@
-import { useCallback, useMemo, useState } from "react";
-import { Loader2, Map as MapIcon, List as ListIcon } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Loader2,
+  Map as MapIcon,
+  List as ListIcon,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Product, calculateClientPrice } from "@/features/products/productsApi";
 import { useProductsMapPoints } from "@/hooks/queries/useProductsMapPoints";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -13,6 +20,8 @@ interface Props {
   products: Product[];
   isLoading?: boolean;
 }
+
+const PAGE_SIZE = 19;
 
 const distanceKm = (a: MapItem, b: MapItem) => {
   const R = 6371;
@@ -31,6 +40,8 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [mobilePane, setMobilePane] = useState<"map" | "list">("map");
   const [areaBounds, setAreaBounds] = useState<Bounds | null>(null);
+  const [page, setPage] = useState(1);
+  const listScrollRef = useRef<HTMLDivElement | null>(null);
 
   const ids = useMemo(() => products.map((p) => p.id), [products]);
   const { data: points, isLoading: pointsLoading } = useProductsMapPoints(ids);
@@ -57,12 +68,33 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
     [areaBounds],
   );
 
-  const items = allItems;
   const visibleProducts = useMemo(() => {
     if (!areaBounds) return products;
     const ok = new Set(allItems.filter(inArea).map((i) => i.id));
     return products.filter((p) => ok.has(p.id));
   }, [products, allItems, areaBounds, inArea]);
+
+  const totalPages = Math.max(1, Math.ceil(visibleProducts.length / PAGE_SIZE));
+
+  useEffect(() => {
+    setPage(1);
+    setSelectedId(null);
+  }, [products, areaBounds]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(1);
+  }, [page, totalPages]);
+
+  const pagedProducts = useMemo(
+    () => visibleProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [visibleProducts, page],
+  );
+
+  // Only the current page's listings get pins on the map.
+  const items = useMemo(() => {
+    const ok = new Set(pagedProducts.map((p) => p.id));
+    return allItems.filter((i) => ok.has(i.id));
+  }, [allItems, pagedProducts]);
 
   const byId = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
   const selected = selectedId ? byId.get(selectedId) ?? null : null;
@@ -70,28 +102,86 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
   const similar = useMemo(() => {
     if (!selected) return [];
     const origin = items.find((i) => i.id === selected.id);
-    const candidates = products.filter(
-      (p) =>
-        p.id !== selected.id &&
-        (p.subcategory === selected.subcategory || p.category === selected.category),
-    );
-    if (!origin) return candidates.slice(0, 6);
+    // The remaining listings of the current page (max 18) shown 2 per row.
+    const candidates = pagedProducts.filter((p) => p.id !== selected.id);
+    if (!origin) return candidates;
     return candidates
       .map((p) => {
         const it = items.find((i) => i.id === p.id);
         return { p, d: it ? distanceKm(origin, it) : Number.MAX_SAFE_INTEGER };
       })
       .sort((a, b) => a.d - b.d)
-      .slice(0, 6)
       .map((x) => x.p);
-  }, [selected, products, items]);
+  }, [selected, pagedProducts, items]);
 
   const handleSelect = useCallback((id: string) => {
     setSelectedId(id);
+    listScrollRef.current?.scrollTo({ top: 0 });
     if (window.innerWidth < 1024) setMobilePane("list");
   }, []);
 
-  const withoutPin = visibleProducts.length - allItems.filter(inArea).length;
+  const goToPage = useCallback((p: number) => {
+    setPage(p);
+    setSelectedId(null);
+    listScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
+  const withoutPin = pagedProducts.length - items.length;
+
+  const pagination = totalPages > 1 && (
+    <div className="mt-8 flex items-center justify-center gap-1.5">
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-9 w-9 rounded-full"
+        disabled={page === 1}
+        onClick={() => goToPage(page - 1)}
+        aria-label={t("Pagina anterioară", "Previous page")}
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+      {Array.from({ length: totalPages }, (_, i) => i + 1)
+        .filter(
+          (p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1,
+        )
+        .reduce<(number | "gap")[]>((acc, p, idx, arr) => {
+          if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("gap");
+          acc.push(p);
+          return acc;
+        }, [])
+        .map((p, i) =>
+          p === "gap" ? (
+            <span key={`gap-${i}`} className="px-1 text-sm text-muted-foreground">
+              …
+            </span>
+          ) : (
+            <button
+              key={p}
+              type="button"
+              onClick={() => goToPage(p)}
+              className={cn(
+                "h-9 min-w-9 rounded-full px-3 text-sm transition-colors",
+                p === page
+                  ? "bg-foreground font-semibold text-background"
+                  : "text-foreground hover:bg-muted",
+              )}
+            >
+              {p}
+            </button>
+          ),
+        )}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-9 w-9 rounded-full"
+        disabled={page === totalPages}
+        onClick={() => goToPage(page + 1)}
+        aria-label={t("Pagina următoare", "Next page")}
+      >
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+    </div>
+  );
 
   const listPanel = (
     <div className="flex h-full flex-col">
@@ -103,7 +193,10 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
           onSelectSimilar={(id) => setHoveredId(id)}
         />
       ) : (
-        <div className="h-full overflow-y-auto px-5 pb-10 pt-4 lg:px-6">
+        <div
+          ref={listScrollRef}
+          className="scrollbar-hide h-full overflow-y-auto px-5 pb-10 pt-4 lg:px-6"
+        >
           <h2 className="text-[15px] font-semibold text-foreground">
             {t(
               `${visibleProducts.length} anunțuri disponibile`,
@@ -119,7 +212,7 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-x-5 gap-y-7 sm:grid-cols-2 xl:grid-cols-3">
-              {visibleProducts.map((p) => (
+              {pagedProducts.map((p) => (
                 <div
                   key={p.id}
                   onMouseEnter={() => setHoveredId(p.id)}
@@ -146,6 +239,7 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
               )}
             </p>
           )}
+          {pagination}
         </div>
       )}
     </div>
@@ -165,8 +259,8 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
               onHover={setHoveredId}
               onSearchArea={setAreaBounds}
             />
-            <div className="pointer-events-none absolute inset-x-0 bottom-20 z-10 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
-              {visibleProducts.slice(0, 20).map((p) => (
+            <div className="scrollbar-hide pointer-events-none absolute inset-x-0 bottom-20 z-10 flex gap-3 overflow-x-auto px-4 pb-1">
+              {pagedProducts.map((p) => (
                 <div
                   key={p.id}
                   className="pointer-events-auto w-[68vw] shrink-0 rounded-2xl bg-background p-2.5 shadow-[0_4px_18px_rgba(0,0,0,0.18)]"
@@ -191,17 +285,19 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
   }
 
   return (
-    <div className="grid h-[calc(100vh-4rem)] w-full grid-cols-1 lg:grid-cols-[minmax(0,58%)_minmax(0,42%)]">
+    <div className="grid h-[calc(100vh-4rem)] w-full grid-cols-1 overflow-hidden lg:grid-cols-[minmax(0,58%)_minmax(0,42%)]">
       <div className="min-h-0 overflow-hidden bg-background">{listPanel}</div>
-      <MapCanvas
-        className="relative h-full min-h-0 overflow-hidden"
-        items={items}
-        selectedId={selectedId}
-        hoveredId={hoveredId}
-        onSelect={handleSelect}
-        onHover={setHoveredId}
-        onSearchArea={setAreaBounds}
-      />
+      <div className="sticky top-16 h-[calc(100vh-4rem)] min-h-0 self-start">
+        <MapCanvas
+          className="relative h-full min-h-0 overflow-hidden"
+          items={items}
+          selectedId={selectedId}
+          hoveredId={hoveredId}
+          onSelect={handleSelect}
+          onHover={setHoveredId}
+          onSearchArea={setAreaBounds}
+        />
+      </div>
     </div>
   );
 };
