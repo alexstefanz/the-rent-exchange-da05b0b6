@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, Navigate, useParams, useSearchParams } from "react-router-dom";
-import { Search as SearchIcon, Loader2, LayoutGrid, List } from "lucide-react";
+import { Search as SearchIcon, Loader2, LayoutGrid, List, Map as MapIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
@@ -8,6 +8,7 @@ import Footer from "@/components/layout/Footer";
 import MobileFixedBackButton from "@/components/shared/MobileFixedBackButton";
 import ProductCard from "@/components/products/ProductCard";
 import CategoryHero from "@/components/category/CategoryHero";
+import CategoryMapView from "@/components/category/map/CategoryMapView";
 import SearchFilters, { InlineSearchFilters } from "@/components/search/SearchFilters";
 import EmptySearchState from "@/components/search/EmptySearchState";
 import { useProducts } from "@/hooks/queries/useProducts";
@@ -36,7 +37,10 @@ const CategoryDetail = () => {
   const localitateFilter = searchParams.get("localitate") || "";
 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
+  const initialView = (searchParams.get("view") as "map" | "gallery" | "list") || "map";
+  const [viewMode, setViewMode] = useState<"map" | "gallery" | "list">(
+    ["map", "gallery", "list"].includes(initialView) ? initialView : "map",
+  );
   const [selectedSubcategory, setSelectedSubcategory] = useState(subcategoryFilter || "all");
   const [selectedJudet, setSelectedJudet] = useState(judetFilter || "all");
   const [selectedCity, setSelectedCity] = useState(localitateFilter || "all");
@@ -208,6 +212,13 @@ const CategoryDetail = () => {
     if (value) np.set("q", value); else np.delete("q");
     setSearchParams(np, { replace: true });
   };
+  const handleViewChange = (value: "map" | "gallery" | "list") => {
+    setViewMode(value);
+    const np = new URLSearchParams(searchParams);
+    np.set("view", value);
+    setSearchParams(np, { replace: true });
+    try { localStorage.setItem("rentli:categoryView", value); } catch {}
+  };
   const handleClearFilters = () => {
     setSelectedSubcategory("all");
     setSelectedJudet("all");
@@ -295,12 +306,15 @@ const CategoryDetail = () => {
               </SelectContent>
             </Select>
           </div>
-          {/* Mobile-only: grid/list toggle on the left */}
+          {/* Mobile-only: map/grid/list toggle on the left */}
           <div className="flex lg:hidden items-center gap-1 rounded-lg border border-border p-1">
-            <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("gallery")}>
+            <Button variant={viewMode === "map" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => handleViewChange("map")} aria-label={t("Hartă", "Map")}>
+              <MapIcon className="h-4 w-4" />
+            </Button>
+            <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => handleViewChange("gallery")}>
               <LayoutGrid className="h-4 w-4" />
             </Button>
-            <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("list")}>
+            <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => handleViewChange("list")}>
               <List className="h-4 w-4" />
             </Button>
           </div>
@@ -326,10 +340,13 @@ const CategoryDetail = () => {
               hideLocation
             />
             <div className="hidden lg:flex items-center gap-1 rounded-lg border border-border p-1">
-              <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("gallery")}>
+              <Button variant={viewMode === "map" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => handleViewChange("map")} aria-label={t("Hartă", "Map")}>
+                <MapIcon className="h-4 w-4" />
+              </Button>
+              <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => handleViewChange("gallery")}>
                 <LayoutGrid className="h-4 w-4" />
               </Button>
-              <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("list")}>
+              <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => handleViewChange("list")}>
                 <List className="h-4 w-4" />
               </Button>
             </div>
@@ -357,19 +374,22 @@ const CategoryDetail = () => {
           </div>
         </div>
         <div className="min-w-0">
-          {isLoading && (
+          {viewMode === "map" && (
+            <CategoryMapView products={filteredProducts} isLoading={isLoading} />
+          )}
+          {viewMode !== "map" && isLoading && (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           )}
-          {!isLoading && filteredProducts.length > 0 && (
+          {viewMode !== "map" && !isLoading && filteredProducts.length > 0 && (
             <div className={viewMode === "gallery" ? "grid gap-3 sm:gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4" : "flex flex-col gap-4"}>
               {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} viewMode={viewMode} />
+                <ProductCard key={product.id} product={product} viewMode={viewMode === "list" ? "list" : "gallery"} />
               ))}
             </div>
           )}
-          {!isLoading && filteredProducts.length === 0 && (
+          {viewMode !== "map" && !isLoading && filteredProducts.length === 0 && (
             products.length > 0 && hasActiveFilters ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <p className="text-lg font-medium text-foreground">
