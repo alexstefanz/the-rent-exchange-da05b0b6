@@ -256,41 +256,24 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
     </div>
   );
 
-  if (isMobile) {
+  if (isCompact) {
     return (
-      <div className="relative h-[calc(100dvh-4rem)] overflow-hidden">
-        {mobilePane === "map" ? (
-          <>
-            <MapCanvas
-              className="relative h-full w-full"
-              items={items}
-              selectedId={selectedId}
-              hoveredId={hoveredId}
-              onSelect={handleSelect}
-              onHover={setHoveredId}
-              onSearchArea={setAreaBounds}
-            />
-            <div className="scrollbar-hide pointer-events-none absolute inset-x-0 bottom-20 z-10 flex gap-3 overflow-x-auto px-4 pb-1">
-              {pagedProducts.map((p) => (
-                <div
-                  key={p.id}
-                  className="pointer-events-auto w-[68vw] shrink-0 rounded-2xl bg-background p-2.5 shadow-[0_4px_18px_rgba(0,0,0,0.18)]"
-                >
-                  <MapProductCard product={p} />
-                </div>
-              ))}
-            </div>
-          </>
-        ) : (
-          <div className="h-full bg-background">{listPanel}</div>
-        )}
-        <Button
-          onClick={() => setMobilePane(mobilePane === "map" ? "list" : "map")}
-          className="absolute bottom-5 left-1/2 z-20 -translate-x-1/2 gap-2 rounded-full shadow-lg"
-        >
-          {mobilePane === "map" ? <ListIcon className="h-4 w-4" /> : <MapIcon className="h-4 w-4" />}
-          {mobilePane === "map" ? t("Listă", "List") : t("Hartă", "Map")}
-        </Button>
+      <div className="scrollbar-hide h-[calc(100dvh-4rem)] overflow-y-auto bg-muted/30">
+        <div className="sticky top-0 z-0 h-[45vh] md:h-[40vh]">
+          <MapCanvas
+            className="relative h-full w-full"
+            items={items}
+            selectedId={selectedId}
+            hoveredId={hoveredId}
+            onSelect={handleSelect}
+            onHover={setHoveredId}
+            onSearchArea={setAreaBounds}
+          />
+        </div>
+        <div className="relative z-10 -mt-5 rounded-t-3xl bg-background shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+          <div className="mx-auto mt-2 h-1.5 w-10 rounded-full bg-muted-foreground/30" />
+          {listPanel}
+        </div>
       </div>
     );
   }
