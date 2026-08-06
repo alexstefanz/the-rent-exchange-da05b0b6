@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { Loader2, MapPinOff } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, MapPinOff, Search } from "lucide-react";
 import { useGoogleMaps } from "@/hooks/useGoogleMaps";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { buildClusterPill, buildPricePill } from "./priceMarker";
@@ -11,25 +11,65 @@ export interface MapItem {
   price: number;
 }
 
+export interface Bounds {
+  north: number;
+  south: number;
+  east: number;
+  west: number;
+}
+
 interface Props {
   items: MapItem[];
   selectedId: string | null;
   hoveredId: string | null;
   onSelect: (id: string) => void;
   onHover: (id: string | null) => void;
+  onSearchArea?: (bounds: Bounds | null) => void;
   className?: string;
 }
 
 const RO_CENTER = { lat: 45.9432, lng: 24.9668 };
-const CLUSTER_PX = 64;
+const CLUSTER_PX = 72;
 
-const MapCanvas = ({ items, selectedId, hoveredId, onSelect, onHover, className }: Props) => {
+/** Airbnb-like desaturated map palette. */
+const MAP_STYLES: any[] = [
+  { elementType: "geometry", stylers: [{ color: "#f4f2ee" }] },
+  { elementType: "labels.icon", stylers: [{ visibility: "off" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#6b6b6b" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#ffffff" }, { weight: 2 }] },
+  { featureType: "administrative", elementType: "geometry", stylers: [{ visibility: "off" }] },
+  { featureType: "administrative.land_parcel", stylers: [{ visibility: "off" }] },
+  { featureType: "administrative.neighborhood", stylers: [{ visibility: "off" }] },
+  { featureType: "poi", stylers: [{ visibility: "off" }] },
+  { featureType: "poi.park", elementType: "geometry", stylers: [{ visibility: "on" }, { color: "#dfe9dc" }] },
+  { featureType: "landscape.man_made", elementType: "geometry", stylers: [{ color: "#efece7" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
+  { featureType: "road", elementType: "labels", stylers: [{ visibility: "simplified" }] },
+  { featureType: "road.arterial", elementType: "geometry", stylers: [{ color: "#ffffff" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#fdf6e3" }] },
+  { featureType: "road.highway", elementType: "geometry.stroke", stylers: [{ color: "#f0e6cd" }] },
+  { featureType: "road.local", elementType: "labels", stylers: [{ visibility: "off" }] },
+  { featureType: "transit", stylers: [{ visibility: "off" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#c9dced" }] },
+  { featureType: "water", elementType: "labels.text.fill", stylers: [{ color: "#8aa6bb" }] },
+];
+
+const MapCanvas = ({
+  items,
+  selectedId,
+  hoveredId,
+  onSelect,
+  onHover,
+  onSearchArea,
+  className,
+}: Props) => {
   const { ready, error } = useGoogleMaps();
   const { t } = useLanguage();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const fittedRef = useRef<string>("");
+  const [moved, setMoved] = useState(false);
 
   // Init map
   useEffect(() => {
@@ -42,12 +82,15 @@ const MapCanvas = ({ items, selectedId, hoveredId, onSelect, onHover, className 
       fullscreenControl: false,
       clickableIcons: false,
       zoomControl: true,
+      zoomControlOptions: {
+        position: window.google.maps.ControlPosition.RIGHT_TOP,
+      },
       gestureHandling: "greedy",
-      styles: [
-        { featureType: "poi", elementType: "labels", stylers: [{ visibility: "off" }] },
-        { featureType: "transit", elementType: "labels", stylers: [{ visibility: "off" }] },
-      ],
+      backgroundColor: "#f4f2ee",
+      styles: MAP_STYLES,
     });
+    mapRef.current.addListener("dragend", () => setMoved(true));
+    mapRef.current.addListener("zoom_changed", () => setMoved(true));
   }, [ready]);
 
   // Fit bounds when the set of items changes
@@ -63,8 +106,9 @@ const MapCanvas = ({ items, selectedId, hoveredId, onSelect, onHover, className 
       map.setCenter({ lat: items[0].lat, lng: items[0].lng });
       map.setZoom(13);
     } else {
-      map.fitBounds(bounds, { top: 60, bottom: 60, left: 60, right: 60 });
+      map.fitBounds(bounds, { top: 70, bottom: 70, left: 70, right: 70 });
     }
+    setMoved(false);
   }, [items]);
 
   // Render markers (with simple pixel-grid clustering)
@@ -132,6 +176,7 @@ const MapCanvas = ({ items, selectedId, hoveredId, onSelect, onHover, className 
               anchor: new window.google.maps.Point(pill.width / 2, pill.height / 2),
             },
             zIndex: isActive ? 999 : 20,
+            optimized: false,
           });
           marker.addListener("click", () => onSelect(item.id));
           marker.addListener("mouseover", () => onHover(item.id));
@@ -158,6 +203,17 @@ const MapCanvas = ({ items, selectedId, hoveredId, onSelect, onHover, className 
     if ((map.getZoom() ?? 7) < 12) map.setZoom(13);
   }, [selectedId, items]);
 
+  const searchThisArea = () => {
+    const map = mapRef.current;
+    if (!map || !onSearchArea) return;
+    const b = map.getBounds();
+    if (!b) return;
+    const ne = b.getNorthEast();
+    const sw = b.getSouthWest();
+    onSearchArea({ north: ne.lat(), south: sw.lat(), east: ne.lng(), west: sw.lng() });
+    setMoved(false);
+  };
+
   if (error) {
     return (
       <div className={className}>
@@ -174,6 +230,16 @@ const MapCanvas = ({ items, selectedId, hoveredId, onSelect, onHover, className 
   return (
     <div className={className}>
       <div ref={containerRef} className="h-full w-full" />
+      {onSearchArea && moved && ready && (
+        <button
+          type="button"
+          onClick={searchThisArea}
+          className="absolute left-1/2 top-4 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full bg-background px-4 py-2.5 text-sm font-semibold text-foreground shadow-[0_2px_10px_rgba(0,0,0,0.22)] transition-transform hover:scale-[1.03]"
+        >
+          <Search className="h-4 w-4" />
+          {t("Caută în această zonă", "Search this area")}
+        </button>
+      )}
       {!ready && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted">
           <Loader2 className="h-6 w-6 animate-spin text-primary" />
