@@ -47,6 +47,7 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
   const [areaBounds, setAreaBounds] = useState<Bounds | null>(null);
   const [page, setPage] = useState(1);
   const listScrollRef = useRef<HTMLDivElement | null>(null);
+  const compactScrollRef = useRef<HTMLDivElement | null>(null);
 
   const ids = useMemo(() => products.map((p) => p.id), [products]);
   const { data: points, isLoading: pointsLoading } = useProductsMapPoints(ids);
@@ -122,11 +123,9 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
   const handleSelect = useCallback((id: string) => {
     setSelectedId(id);
     listScrollRef.current?.scrollTo({ top: 0 });
-    if (window.innerWidth < 1024) {
-      window.requestAnimationFrame(() => {
-        listScrollRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
-    }
+    window.requestAnimationFrame(() => {
+      compactScrollRef.current?.scrollTo({ top: window.innerHeight * 0.35, behavior: "smooth" });
+    });
   }, []);
 
   const goToPage = useCallback((p: number) => {
@@ -260,7 +259,10 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
 
   if (isCompact) {
     return (
-      <div className="scrollbar-hide h-[calc(100dvh-4rem)] overflow-y-auto bg-muted/30">
+      <div
+        ref={compactScrollRef}
+        className="scrollbar-hide h-[calc(100dvh-4rem)] overflow-y-auto bg-muted/30"
+      >
         <div className="sticky top-0 z-0 h-[45vh] md:h-[40vh]">
           <MapCanvas
             className="relative h-full w-full"
