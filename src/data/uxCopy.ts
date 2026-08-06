@@ -65,7 +65,7 @@ const createUxCopy = () => ({
     notFound: { ro: "Produsul nu a fost găsit", en: "Product not found" },
     backToCategories: { ro: "Înapoi la Categorii", en: "Back to Categories" },
     allCategories: { ro: "Toate categoriile", en: "All categories" },
-    viewOnMap: { ro: "Vezi pe Google Maps", en: "View on Google Maps" },
+    viewOnMap: { ro: "Vezi pe hartă", en: "View on map" },
     deletedTitle: { ro: "Acest anunț nu mai este disponibil", en: "This listing is no longer available" },
     deletedSubtitle: {
       ro: "Anunțul a fost șters de proprietar sau de echipa Rentli și nu mai poate fi rezervat.",
