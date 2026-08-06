@@ -79,7 +79,7 @@ const MapProductCard = ({ product, active, onClick, className }: Props) => {
     >
       <div
         className={cn(
-          "relative overflow-hidden rounded-xl",
+          "relative overflow-hidden rounded-2xl",
           active && "ring-2 ring-foreground ring-offset-2 ring-offset-background",
         )}
       >
@@ -88,7 +88,7 @@ const MapProductCard = ({ product, active, onClick, className }: Props) => {
           alt={title}
           loading="lazy"
           decoding="async"
-          className="aspect-[20/19] w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          className="aspect-[16/11] w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         />
         <button
           type="button"
