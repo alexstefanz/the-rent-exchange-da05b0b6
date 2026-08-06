@@ -2037,6 +2037,33 @@ export type Database = {
           },
         ]
       }
+      ro_city_coords: {
+        Row: {
+          city: string
+          created_at: string
+          id: string
+          judet: string
+          lat: number
+          lng: number
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          id?: string
+          judet: string
+          lat: number
+          lng: number
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          id?: string
+          judet?: string
+          lat?: number
+          lng?: number
+        }
+        Relationships: []
+      }
       secure_action_tokens: {
         Row: {
           created_at: string
@@ -3111,6 +3138,15 @@ export type Database = {
           pickup_lat: number
           pickup_lng: number
           serial_number: string
+        }[]
+      }
+      get_products_map_points: {
+        Args: { _ids: string[] }
+        Returns: {
+          approx_lat: number
+          approx_lng: number
+          has_precise: boolean
+          id: string
         }[]
       }
       get_pv_identity_data: {
