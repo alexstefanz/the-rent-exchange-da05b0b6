@@ -12,7 +12,7 @@ export const buildPricePill = (label: string, state: "default" | "active" | "vis
       <text x="${width / 2}" y="${height / 2 + 4.5}" text-anchor="middle" font-family="'Plus Jakarta Sans',system-ui,sans-serif" font-size="12.5" font-weight="${weight}" fill="${fg}">${label}</text>
     </g>
   </svg>`;
-  return { url = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`, width, height } as any;
+  return { url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`, width, height };
 };
 
 export const buildClusterPill = (count: number) => {
