@@ -223,7 +223,7 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-x-5 gap-y-7 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-7 xl:grid-cols-3">
               {pagedProducts.map((p) => (
                 <div
                   key={p.id}
