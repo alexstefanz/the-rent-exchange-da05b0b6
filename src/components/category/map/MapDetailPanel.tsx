@@ -73,7 +73,7 @@ const MapDetailPanel = ({ product, similar, onBack, onSelectSimilar }: Props) =>
             <h3 className="font-heading text-base font-semibold text-foreground">
               {t("Anunțuri similare în apropiere", "Similar listings nearby")}
             </h3>
-            <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-6">
+            <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
               {similar.map((p) => (
                 <div key={p.id} onMouseEnter={() => onSelectSimilar(p.id)}>
                   <MapProductCard product={p} />
