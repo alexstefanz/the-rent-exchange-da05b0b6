@@ -1,17 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Loader2,
-  Map as MapIcon,
-  List as ListIcon,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Product, calculateClientPrice } from "@/features/products/productsApi";
 import { useProductsMapPoints } from "@/hooks/queries/useProductsMapPoints";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+const useIsCompact = () => {
+  const [compact, setCompact] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 1024 : false,
+  );
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 1023px)");
+    const onChange = () => setCompact(window.innerWidth < 1024);
+    mql.addEventListener("change", onChange);
+    onChange();
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+  return compact;
+};
 import MapCanvas, { Bounds, MapItem } from "./MapCanvas";
 import MapDetailPanel from "./MapDetailPanel";
 import MapProductCard from "./MapProductCard";
@@ -35,10 +43,9 @@ const distanceKm = (a: MapItem, b: MapItem) => {
 
 const CategoryMapView = ({ products, isLoading }: Props) => {
   const { t } = useLanguage();
-  const isMobile = useIsMobile();
+  const isCompact = useIsCompact();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const [mobilePane, setMobilePane] = useState<"map" | "list">("map");
   const [areaBounds, setAreaBounds] = useState<Bounds | null>(null);
   const [page, setPage] = useState(1);
   const listScrollRef = useRef<HTMLDivElement | null>(null);
