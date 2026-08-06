@@ -30,7 +30,7 @@ const MapDetailPanel = ({ product, similar, onBack, onSelectSimilar }: Props) =>
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-8 pt-4">
+      <div className="scrollbar-hide flex-1 overflow-y-auto px-4 pb-8 pt-4">
         <article className="overflow-hidden rounded-2xl border border-border bg-card">
           <Link to={getProductUrl(product)} className="block">
             <img
