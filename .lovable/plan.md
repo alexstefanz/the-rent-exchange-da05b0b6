@@ -1,45 +1,39 @@
-## Problem
+# Vizualizare Hartă (arie de proximitate) în pagina de categorie
 
-Secțiunea "Închirieri populare" de pe homepage folosește `useProducts()` (RPC `search_products`) fără sortare de popularitate — ordinea implicită e practic ultimele adăugate. În plus, nu există diversificare pe categorii, așa că grid-ul e dominat de aceeași categorie (ex. Sport apare de 4x în screenshot).
+Adăugăm un al treilea mod de vizualizare — **Hartă** — lângă Grid și Listă pe `/categorie/:slug`, setat implicit ca prim mod. Layout în stil Airbnb: listă de anunțuri în stânga, hartă interactivă în dreapta.
 
-## Soluție
+## Ce vede utilizatorul
 
-Introducem un mod dedicat "popular + divers" pentru cele 8 carduri de pe homepage, complet izolat de restul aplicației (fără modificări la Search, Category, etc.).
+- Comutator cu 3 opțiuni: **Hartă** (implicit) · Grid · Listă. Alegerea se reține în URL (`?view=`) și în localStorage.
+- Desktop: listă scrollabilă (stânga, ~55%) + hartă sticky pe toată înălțimea ecranului (dreapta).
+- Mobil: harta pe tot ecranul cu un card-carusel jos + buton de comutare „Listă / Hartă".
+- Pe hartă apar **pastile cu prețul** (ex. „45 RON") în loc de pini clasici, ca la Airbnb. Hover pe un card din listă evidențiază pastila corespondentă și invers.
+- Poziția este **aproximativă** (cerc de proximitate ~700 m, coordonate rotunjite/jitter stabil per anunț). Adresa exactă rămâne privată până la rezervare.
+- Anunțurile fără pin propriu sunt plasate în centrul localității declarate.
+- Clusterizare când sunt multe anunțuri apropiate; buton „Caută în această zonă" la mutarea hărții, care filtrează lista după viewport.
+- Lista rămâne sincronizată cu filtrele existente (subcategorie, județ/localitate, preț, sortare).
 
-### 1. Backend — nou RPC `get_homepage_popular_products`
+## Click pe un anunț
 
-Un singur SECURITY DEFINER care returnează maxim 8 produse `approved` + `deleted_at IS NULL`, scorate după popularitate reală și diversificate pe categorie.
+Se deschide un **panou lateral peste listă** (harta rămâne vizibilă):
+- sus, cardul mare al anunțului selectat (galerie foto, titlu, preț/zi, oraș, rating, buton „Vezi anunțul");
+- dedesubt, „Anunțuri similare în apropiere" — aceeași categorie, sortate după distanța față de anunțul selectat;
+- harta face zoom/centrare pe anunț, iar pastila devine activă; buton „Înapoi la rezultate".
+- Pe mobil, același conținut apare într-un bottom-sheet care poate fi tras în sus.
 
-Formula scor (produs):
-- rentals confirmate/active/completed în ultimele 90 zile × 3
-- total rentals (istoric) × 1
-- reviews count × 2
-- rating mediu × 1
-- mic tie-break pe `created_at` (recency slabă)
+## Detalii tehnice
 
-Diversificare: după sortarea pe scor descrescător, aplicăm un pas de "round-robin pe categorie" — maxim 2 produse per categorie în top 8 dacă există suficientă varietate; altfel completăm cu ce a rămas.
+**Hartă:** conector Google Maps (Lovable-managed). Se leagă prin connect, apoi Maps JS API se încarcă cu `VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY`, `loading=async` + callback, marker-e clasice `google.maps.Marker` cu iconițe HTML personalizate (fără `mapId`).
+Notă: cheia managed este restricționată la domenii `*.lovable.app`. Pentru **rentli.ro** va fi nevoie de o cheie proprie din Google Cloud (proiect cu billing + Maps JavaScript API) legată ca o conexiune nouă — pot ghida pas cu pas când ajungem acolo.
 
-Returnează aceleași coloane ca `search_products` (PRODUCT_SAFE_COLS) ca să fie drop-in cu tipul `Product`.
+**Coordonate (backend):**
+- RPC nou `get_products_map_points(_category, _subcategory, _location_city, _search)` (SECURITY DEFINER, GRANT către `anon` + `authenticated`) care returnează pentru anunțurile active/aprobate: `id, slug, title, title_en, daily_price_owner, images[0], location_city, approx_lat, approx_lng, has_precise`.
+- `approx_lat/lng` = `pickup_lat/lng` rotunjite la ~3 zecimale plus un offset determinist derivat din `id` (rază ≤ ~700 m). Coordonatele exacte NU sunt expuse — column-level grants pe `pickup_lat/lng` rămân neschimbate.
+- Fallback: dacă lipsesc `pickup_lat/lng`, se folosește centrul localității dintr-o tabelă nouă `ro_city_coords (city, judet, lat, lng)` populată prin migrare pentru localitățile din `src/data/romaniaLocations.ts` (SELECT public).
 
-Grant: `EXECUTE ... TO anon, authenticated`.
-
-### 2. Frontend — `FeaturedListings.tsx`
-
-- Înlocuim `useProducts()` cu un nou hook `useHomepagePopularProducts()` care apelează RPC-ul de mai sus, cache 5 min.
-- Restul componentului (grid, favorite, rating overlay) rămâne identic.
-- Fallback: dacă RPC întoarce <4 produse (proiect nou), completăm cu `useProducts()` existente pentru a nu avea secțiune goală.
-
-### 3. Nemodificat
-
-- Categoriile, hero, USP bar, rails din CategoryDetail, Search — toate rămân neatinse.
-- Nicio schimbare la RLS, produse, sau categorii.
-
-## Fișiere afectate
-
-- **Nou:** `supabase/migrations/<timestamp>_homepage_popular_products.sql` — RPC + grants.
-- **Nou:** `src/hooks/queries/useHomepagePopularProducts.ts` — hook TanStack Query.
-- **Editat:** `src/components/home/FeaturedListings.tsx` — swap sursă produse + fallback.
-
-## Rezultat vizual
-
-Cele 8 carduri din "Închirieri populare" vor arăta produse cu istoric real de închirieri / review-uri, distribuite pe categorii diferite (ex. 1-2 Sport, 1 Electronice, 1 Grădinărit, 1 Foto, 1 Camping etc.), în loc de ultimele 8 adăugate.
+**Frontend:**
+- `src/components/category/MapView.tsx` (harta + markere preț + clustering + „caută în zonă"), `MapListPanel.tsx` (listă sincronizată), `MapDetailPanel.tsx` (anunț principal + similare), `PriceMarker.tsx`.
+- Hook nou `src/hooks/queries/useProductsMapPoints.ts` peste RPC-ul de mai sus.
+- `src/pages/CategoryDetail.tsx`: `viewMode` devine `"map" | "gallery" | "list"` cu `"map"` implicit; filtrele și `hasActiveFilters` rămân neschimbate.
+- Similaritatea = aceeași categorie/subcategorie, sortate după distanță haversine față de anunțul selectat.
+- Fără date noi de business: prețurile și filtrele folosesc logica existentă (`calculateClientPrice`).
