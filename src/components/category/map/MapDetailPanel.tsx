@@ -15,14 +15,20 @@ interface Props {
   onSelectSimilar: (id: string) => void;
 }
 
-const MapDetailPanel = ({ product, similar, onBack, onSelectSimilar }: Props) => {
+const MapDetailPanel = ({
+  product,
+  similar,
+  onBack,
+  onSelectSimilar,
+  compact = false,
+}: Props & { compact?: boolean }) => {
   const { t, language } = useLanguage();
   const title = getDisplayTitle(product, language);
   const description = getDisplayDescription(product, language);
   const price = calculateClientPrice(product.daily_price_owner, product.platform_fee_percent);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className={compact ? "flex flex-col" : "flex h-full flex-col"}>
       <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5 px-2">
           <ArrowLeft className="h-4 w-4" />
@@ -30,7 +36,13 @@ const MapDetailPanel = ({ product, similar, onBack, onSelectSimilar }: Props) =>
         </Button>
       </div>
 
-      <div className="scrollbar-hide flex-1 overflow-y-auto px-4 pb-8 pt-4">
+      <div
+        className={
+          compact
+            ? "px-4 pb-8 pt-4"
+            : "scrollbar-hide flex-1 overflow-y-auto px-4 pb-8 pt-4"
+        }
+      >
         <article className="overflow-hidden rounded-2xl border border-border bg-card">
           <Link to={getProductUrl(product)} className="block">
             <img
