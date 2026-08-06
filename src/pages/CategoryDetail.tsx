@@ -212,6 +212,13 @@ const CategoryDetail = () => {
     if (value) np.set("q", value); else np.delete("q");
     setSearchParams(np, { replace: true });
   };
+  const handleViewChange = (value: "map" | "gallery" | "list") => {
+    setViewMode(value);
+    const np = new URLSearchParams(searchParams);
+    np.set("view", value);
+    setSearchParams(np, { replace: true });
+    try { localStorage.setItem("rentli:categoryView", value); } catch {}
+  };
   const handleClearFilters = () => {
     setSelectedSubcategory("all");
     setSelectedJudet("all");
