@@ -124,7 +124,11 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
   const handleSelect = useCallback((id: string) => {
     setSelectedId(id);
     listScrollRef.current?.scrollTo({ top: 0 });
-    if (window.innerWidth < 1024) setMobilePane("list");
+    if (window.innerWidth < 1024) {
+      window.requestAnimationFrame(() => {
+        listScrollRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
   }, []);
 
   const goToPage = useCallback((p: number) => {
