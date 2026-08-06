@@ -252,14 +252,16 @@ const CategoryDetail = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <MobileFixedBackButton />
-      <CategoryHero
-        name={catName}
-        bannerImage={bannerImage}
-        total={products.length}
-        newThisWeek={newThisWeek}
-        topCity={topCity}
-      />
-      <main className="container py-8">
+      {viewMode !== "map" && (
+        <CategoryHero
+          name={catName}
+          bannerImage={bannerImage}
+          total={products.length}
+          newThisWeek={newThisWeek}
+          topCity={topCity}
+        />
+      )}
+      <main className={viewMode === "map" ? "w-full px-4 pt-4 lg:px-8" : "container py-8"}>
         <div className="mb-6 max-w-2xl">
           <div className="relative">
             <SearchIcon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
@@ -373,7 +375,7 @@ const CategoryDetail = () => {
             </div>
           </div>
         </div>
-        <div className="min-w-0">
+        <div className={viewMode === "map" ? "min-w-0 -mx-4 lg:-mx-8" : "min-w-0"}>
           {viewMode === "map" && (
             <CategoryMapView products={filteredProducts} isLoading={isLoading} />
           )}
@@ -414,7 +416,7 @@ const CategoryDetail = () => {
           )}
         </div>
       </main>
-      <Footer />
+      {viewMode !== "map" && <Footer />}
     </div>
   );
 };

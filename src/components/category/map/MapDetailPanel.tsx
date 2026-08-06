@@ -6,7 +6,7 @@ import { getOptimizedImageUrl } from "@/lib/imageUtils";
 import { getProductUrl } from "@/lib/slugUtils";
 import { getDisplayTitle, getDisplayDescription } from "@/lib/productI18n";
 import { useLanguage } from "@/contexts/LanguageContext";
-import ProductCard from "@/components/products/ProductCard";
+import MapProductCard from "./MapProductCard";
 
 interface Props {
   product: Product;
@@ -73,10 +73,10 @@ const MapDetailPanel = ({ product, similar, onBack, onSelectSimilar }: Props) =>
             <h3 className="font-heading text-base font-semibold text-foreground">
               {t("Anunțuri similare în apropiere", "Similar listings nearby")}
             </h3>
-            <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-6">
               {similar.map((p) => (
                 <div key={p.id} onMouseEnter={() => onSelectSimilar(p.id)}>
-                  <ProductCard product={p} />
+                  <MapProductCard product={p} />
                 </div>
               ))}
             </div>
