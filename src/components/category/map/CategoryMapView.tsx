@@ -5,8 +5,6 @@ import { cn } from "@/lib/utils";
 import { Product, calculateClientPrice } from "@/features/products/productsApi";
 import { useProductsMapPoints } from "@/hooks/queries/useProductsMapPoints";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useIsMobile } from "@/hooks/use-mobile";
-
 const useIsCompact = () => {
   const [compact, setCompact] = useState(
     typeof window !== "undefined" ? window.innerWidth < 1024 : false,
