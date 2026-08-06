@@ -106,19 +106,21 @@ const MapProductCard = ({ product, active, onClick, className }: Props) => {
       </div>
 
       <div className="pt-2.5">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="truncate text-[15px] font-semibold text-foreground">{title}</h3>
+        <div className="flex items-start justify-between gap-1.5 sm:gap-2">
+          <h3 className="truncate text-[13.5px] font-semibold text-foreground sm:text-[15px]">
+            {title}
+          </h3>
           {rating && rating.avg > 0 && (
-            <span className="flex shrink-0 items-center gap-1 text-[13px] text-foreground">
-              <Star className="h-3.5 w-3.5 fill-foreground text-foreground" />
+            <span className="flex shrink-0 items-center gap-1 text-[12px] text-foreground sm:text-[13px]">
+              <Star className="h-3 w-3 fill-foreground text-foreground sm:h-3.5 sm:w-3.5" />
               {rating.avg.toFixed(1)}
             </span>
           )}
         </div>
-        <p className="truncate text-[13px] text-muted-foreground">
+        <p className="truncate text-[12px] text-muted-foreground sm:text-[13px]">
           {[product.location_city, category].filter(Boolean).join(" · ")}
         </p>
-        <p className="mt-1 text-[14px] text-foreground">
+        <p className="mt-1 text-[13px] text-foreground sm:text-[14px]">
           <span className="font-semibold">{price} RON</span>
           <span className="text-muted-foreground"> / {t("zi", "day")}</span>
         </p>
