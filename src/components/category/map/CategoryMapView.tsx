@@ -5,9 +5,9 @@ import { Product, calculateClientPrice } from "@/features/products/productsApi";
 import { useProductsMapPoints } from "@/hooks/queries/useProductsMapPoints";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import ProductCard from "@/components/products/ProductCard";
-import MapCanvas, { MapItem } from "./MapCanvas";
+import MapCanvas, { Bounds, MapItem } from "./MapCanvas";
 import MapDetailPanel from "./MapDetailPanel";
+import MapProductCard from "./MapProductCard";
 
 interface Props {
   products: Product[];
@@ -30,11 +30,12 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [mobilePane, setMobilePane] = useState<"map" | "list">("map");
+  const [areaBounds, setAreaBounds] = useState<Bounds | null>(null);
 
   const ids = useMemo(() => products.map((p) => p.id), [products]);
   const { data: points, isLoading: pointsLoading } = useProductsMapPoints(ids);
 
-  const items = useMemo<MapItem[]>(() => {
+  const allItems = useMemo<MapItem[]>(() => {
     if (!points) return [];
     return products
       .filter((p) => points[p.id])
@@ -45,6 +46,23 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
         price: calculateClientPrice(p.daily_price_owner, p.platform_fee_percent),
       }));
   }, [products, points]);
+
+  const inArea = useCallback(
+    (i: MapItem) =>
+      !areaBounds ||
+      (i.lat <= areaBounds.north &&
+        i.lat >= areaBounds.south &&
+        i.lng <= areaBounds.east &&
+        i.lng >= areaBounds.west),
+    [areaBounds],
+  );
+
+  const items = allItems;
+  const visibleProducts = useMemo(() => {
+    if (!areaBounds) return products;
+    const ok = new Set(allItems.filter(inArea).map((i) => i.id));
+    return products.filter((p) => ok.has(p.id));
+  }, [products, allItems, areaBounds, inArea]);
 
   const byId = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
   const selected = selectedId ? byId.get(selectedId) ?? null : null;
@@ -73,7 +91,7 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
     if (window.innerWidth < 1024) setMobilePane("list");
   }, []);
 
-  const withoutPin = products.length - items.length;
+  const withoutPin = visibleProducts.length - allItems.filter(inArea).length;
 
   const listPanel = (
     <div className="flex h-full flex-col">
@@ -85,38 +103,43 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
           onSelectSimilar={(id) => setHoveredId(id)}
         />
       ) : (
-        <div className="h-full overflow-y-auto px-4 pb-8 pt-4">
-          <p className="mb-3 text-sm text-muted-foreground">
+        <div className="h-full overflow-y-auto px-5 pb-10 pt-4 lg:px-6">
+          <h2 className="text-[15px] font-semibold text-foreground">
             {t(
-              `${products.length} anunțuri · locații aproximative`,
-              `${products.length} listings · approximate locations`,
+              `${visibleProducts.length} anunțuri disponibile`,
+              `${visibleProducts.length} listings available`,
             )}
+          </h2>
+          <p className="mb-4 text-[13px] text-muted-foreground">
+            {t("Locațiile afișate sunt aproximative", "Displayed locations are approximate")}
           </p>
           {isLoading || pointsLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {products.map((p) => (
+            <div className="grid grid-cols-1 gap-x-5 gap-y-7 sm:grid-cols-2 xl:grid-cols-3">
+              {visibleProducts.map((p) => (
                 <div
                   key={p.id}
                   onMouseEnter={() => setHoveredId(p.id)}
                   onMouseLeave={() => setHoveredId(null)}
-                  onClick={(e) => {
-                    if (!points?.[p.id]) return;
-                    e.preventDefault();
-                    handleSelect(p.id);
-                  }}
-                  className="cursor-pointer"
                 >
-                  <ProductCard product={p} />
+                  <MapProductCard
+                    product={p}
+                    active={hoveredId === p.id}
+                    onClick={(e) => {
+                      if (!points?.[p.id]) return;
+                      e.preventDefault();
+                      handleSelect(p.id);
+                    }}
+                  />
                 </div>
               ))}
             </div>
           )}
           {withoutPin > 0 && (
-            <p className="mt-4 text-xs text-muted-foreground">
+            <p className="mt-6 text-xs text-muted-foreground">
               {t(
                 `${withoutPin} anunțuri nu au o locație pe hartă, dar apar în listă.`,
                 `${withoutPin} listings have no map location but are shown in the list.`,
@@ -130,16 +153,29 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
 
   if (isMobile) {
     return (
-      <div className="relative h-[calc(100vh-9rem)] overflow-hidden rounded-2xl border border-border">
+      <div className="relative h-[calc(100dvh-4rem)] overflow-hidden">
         {mobilePane === "map" ? (
-          <MapCanvas
-            className="relative h-full w-full"
-            items={items}
-            selectedId={selectedId}
-            hoveredId={hoveredId}
-            onSelect={handleSelect}
-            onHover={setHoveredId}
-          />
+          <>
+            <MapCanvas
+              className="relative h-full w-full"
+              items={items}
+              selectedId={selectedId}
+              hoveredId={hoveredId}
+              onSelect={handleSelect}
+              onHover={setHoveredId}
+              onSearchArea={setAreaBounds}
+            />
+            <div className="pointer-events-none absolute inset-x-0 bottom-20 z-10 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+              {visibleProducts.slice(0, 20).map((p) => (
+                <div
+                  key={p.id}
+                  className="pointer-events-auto w-[68vw] shrink-0 rounded-2xl bg-background p-2.5 shadow-[0_4px_18px_rgba(0,0,0,0.18)]"
+                >
+                  <MapProductCard product={p} />
+                </div>
+              ))}
+            </div>
+          </>
         ) : (
           <div className="h-full bg-background">{listPanel}</div>
         )}
@@ -155,17 +191,16 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
   }
 
   return (
-    <div className="grid h-[calc(100vh-11rem)] grid-cols-1 gap-4 lg:grid-cols-[minmax(0,55%)_minmax(0,45%)]">
-      <div className="min-h-0 overflow-hidden rounded-2xl border border-border bg-background">
-        {listPanel}
-      </div>
+    <div className="grid h-[calc(100vh-4rem)] w-full grid-cols-1 lg:grid-cols-[minmax(0,58%)_minmax(0,42%)]">
+      <div className="min-h-0 overflow-hidden bg-background">{listPanel}</div>
       <MapCanvas
-        className="relative h-full min-h-0 overflow-hidden rounded-2xl border border-border"
+        className="relative h-full min-h-0 overflow-hidden"
         items={items}
         selectedId={selectedId}
         hoveredId={hoveredId}
         onSelect={handleSelect}
         onHover={setHoveredId}
+        onSearchArea={setAreaBounds}
       />
     </div>
   );
