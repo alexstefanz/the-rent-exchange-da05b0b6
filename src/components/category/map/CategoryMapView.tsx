@@ -265,7 +265,7 @@ const CategoryMapView = ({ products, isLoading }: Props) => {
       >
         <div className="sticky top-0 z-0 h-[45vh] md:h-[40vh]">
           <MapCanvas
-            className="relative h-full w-full"
+            className="relative h-full w-full overflow-hidden rounded-[30px]"
             items={items}
             selectedId={selectedId}
             hoveredId={hoveredId}
