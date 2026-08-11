@@ -1,4 +1,4 @@
-import { TrendingUp, Calendar, Eye } from "lucide-react";
+import { TrendingUp, Calendar, Eye, Users } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -7,9 +7,10 @@ interface Props {
   timesRented?: number;
   watchersCount?: number;
   lastBookingAt?: string | null;
+  viewsCount?: number;
 }
 
-const SocialProofStrip = ({ timesRented, watchersCount, lastBookingAt }: Props) => {
+const SocialProofStrip = ({ timesRented, watchersCount, lastBookingAt, viewsCount }: Props) => {
   const { language, t } = useLanguage();
   const dateLocale = language === "ro" ? ro : enUS;
 
@@ -22,7 +23,10 @@ const SocialProofStrip = ({ timesRented, watchersCount, lastBookingAt }: Props) 
     items.push({ icon: Calendar, label: t(`Ultima rezervare ${ago}`, `Last booked ${ago}`) });
   }
   if (watchersCount && watchersCount > 0) {
-    items.push({ icon: Eye, label: t(`${watchersCount} ${watchersCount === 1 ? "persoană urmărește" : "persoane urmăresc"}`, `${watchersCount} watching`) });
+    items.push({ icon: Users, label: t(`${watchersCount} ${watchersCount === 1 ? "persoană urmărește" : "persoane urmăresc"}`, `${watchersCount} watching`) });
+  }
+  if (viewsCount && viewsCount > 0) {
+    items.push({ icon: Eye, label: t(`${viewsCount} ${viewsCount === 1 ? "vizualizare" : "vizualizări"}`, `${viewsCount} ${viewsCount === 1 ? "view" : "views"}`) });
   }
 
   if (items.length === 0) return null;
