@@ -281,15 +281,8 @@ export function useGlobalRealtime(userId: string | undefined) {
           ["favoriteUsers", userId],
         ]),
       )
-      // Favorites — users (when someone favorites me)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "favorite_users", filter: `favorite_user_id=eq.${userId}` },
-        () => invalidate([
-          ["followers", userId],
-          ["userStatistics", userId],
-        ]),
-      )
+      // NOTE: no realtime feed for "someone favorited me" — reverse lookups on
+      // favorite_users are intentionally not readable (follower identities are private).
       // Notifications — show a toast for every new row
       .on(
         "postgres_changes",
