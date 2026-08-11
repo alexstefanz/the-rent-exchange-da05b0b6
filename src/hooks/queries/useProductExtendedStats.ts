@@ -5,6 +5,7 @@ export interface ProductExtendedStats {
   times_rented: number;
   last_booking_at: string | null;
   watchers_count: number;
+  views_count: number;
   owner_total_rentals: number;
   owner_response_minutes: number | null;
   owner_response_rate: number | null;
