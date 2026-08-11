@@ -101,6 +101,22 @@ const ProductDetail = () => {
   const { bookedDates } = useBookedDates(product?.id);
   const { data: extendedStats } = useProductExtendedStats(product?.id);
 
+  // Track product view (deduped server-side per visitor / 24h)
+  useEffect(() => {
+    if (!product?.id) return;
+    let visitorHash = "";
+    try {
+      visitorHash = localStorage.getItem("rentli_visitor_id") || "";
+      if (!visitorHash) {
+        visitorHash = crypto.randomUUID();
+        localStorage.setItem("rentli_visitor_id", visitorHash);
+      }
+    } catch {
+      return;
+    }
+    supabase.rpc("track_product_view", { p_product_id: product.id, p_visitor_hash: visitorHash });
+  }, [product?.id]);
+
   // Track recently viewed
   useEffect(() => {
     if (!product) return;
@@ -370,6 +386,7 @@ const ProductDetail = () => {
                   timesRented={extendedStats?.times_rented}
                   watchersCount={extendedStats?.watchers_count}
                   lastBookingAt={extendedStats?.last_booking_at}
+                  viewsCount={extendedStats?.views_count}
                 />
               </div>
             </div>
