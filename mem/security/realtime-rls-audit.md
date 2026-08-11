@@ -12,7 +12,7 @@ Supabase Realtime `postgres_changes` evaluates each table's SELECT RLS per subsc
 | admin_notifications | admin only | OK |
 | conversations | buyer/owner (+admin) | OK |
 | favorite_products | user_id = auth.uid() | OK |
-| favorite_users | user_id = auth.uid() OR favorite_user_id = auth.uid() | Second policy added so "someone followed me" tick fires |
+| favorite_users | user_id = auth.uid() | Reverse-lookup policy removed (follower identities private); no "someone followed me" realtime feed |
 | kyc_cases | user_id = auth.uid() (+admin) | OK |
 | kyc_documents | owner of parent case (+admin) | OK |
 | messages | participant + not hidden (+admin) | OK |
