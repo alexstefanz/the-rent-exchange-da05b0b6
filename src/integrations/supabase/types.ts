@@ -1423,6 +1423,38 @@ export type Database = {
           },
         ]
       }
+      product_views: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          user_id: string | null
+          visitor_hash: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          user_id?: string | null
+          visitor_hash: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          user_id?: string | null
+          visitor_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_views_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           admin_edited_at: string | null
@@ -3644,6 +3676,10 @@ export type Database = {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       soft_delete_my_product: { Args: { _id: string }; Returns: undefined }
+      track_product_view: {
+        Args: { p_product_id: string; p_visitor_hash: string }
+        Returns: undefined
+      }
       unaccent: { Args: { "": string }; Returns: string }
       withdraw_cancellation_request: {
         Args: { _rental_id: string }
