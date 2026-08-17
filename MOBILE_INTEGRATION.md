@@ -33,10 +33,10 @@ Pentru ca login-ul social (Google / Apple) și resetarea parolei să funcționez
 2. Adaugă următoarele redirect URLs:
    - `https://rentli.ro/auth/callback`
    - `https://www.rentli.ro/auth/callback`
-   - `rentli://auth/callback` (sau schema aleasă pentru aplicația mobilă)
-   - `com.rentli.app://auth/callback` (dacă acesta este bundle ID / app scheme)
+   - `rentli://auth/callback`
+   - `com.emergent.mobilemarketplace.da8t0c://auth/callback`
 
-> Schema exactă (`rentli://` sau `com.rentli.app://`) depinde de setările aplicației generate în Emergent. Trebuie confirmată înainte de configurare.
+> Acestea sunt valorile confirmate pentru aplicația generată de Emergent.
 
 ## 3. Instalare client Supabase în aplicația mobilă
 
