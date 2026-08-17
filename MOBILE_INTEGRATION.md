@@ -203,12 +203,25 @@ După ce aplicația mobilă este funcțională, testează:
 - [ ] Efectuează o plată Stripe test → statusul se actualizează pe ambele platforme.
 - [ ] Completează PV de predare pe mobil → statusul se schimbă și pe web.
 
-## 10. Pași imediați necesari
+## 10. Deep links configurate în Emergent
 
-Pentru a putea configura corect autentificarea și deep linking-ul, am nevoie de:
+Conform configurării `app.json` din Emergent, aplicația mobilă recunoaște următoarele deep links:
 
-1. **Ce tehnologie generează Emergent?** (React Native, Expo, Flutter, PWA etc.)
-2. **Bundle ID / App Scheme** al aplicației mobile (ex. `com.rentli.app` sau `rentli://`)
-3. **Numele bucket-ului de Storage** folosit pentru imagini (dacă nu este `product-images`)
+| Deep link | Acțiune |
+|-----------|---------|
+| `rentli://product/<id>` | Deschide pagina unui produs |
+| `rentli://rental/<id>` | Deschide detaliile unei închirieri |
+| `rentli://chat/<id>` | Deschide o conversație |
+| `rentli://notifications` | Deschide lista de notificări |
 
-Odată ce aceste detalii sunt confirmate, se poate actualiza configurarea Auth și se poate genera un template de inițializare pentru proiectul Emergent.
+Aceste link-uri pot fi folosite în notificări push, emailuri sau SMS-uri pentru a direcționa utilizatorul direct în aplicația mobilă.
+
+## 11. Ce trebuie să faci în continuare
+
+1. **Configurează redirect URLs în Lovable Cloud** cu valorile de la secțiunea 2.
+2. **Setează variabilele de mediu** `SUPABASE_URL` și `SUPABASE_ANON_KEY` în proiectul Emergent.
+3. **Instalează `@supabase/supabase-js`** în proiectul mobil și inițializează clientul (vezi secțiunea 3).
+4. **Replică fluxurile principale** din web app în aplicația mobilă, folosind RPC-urile și edge functions listate mai sus.
+5. **Testează sincronizarea** cu checklist-ul de la secțiunea 9.
+
+Dacă vrei, pot genera un template de proiect Expo/Emergent cu conexiunea Supabase deja configurată și câteva ecrane de bază (login, listare produse, detalii produs).
