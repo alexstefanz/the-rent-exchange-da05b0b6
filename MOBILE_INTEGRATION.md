@@ -10,7 +10,7 @@ Web app-ul și aplicația mobilă sunt două frontend-uri separate care vorbesc 
 
 - **Backend comun**: Lovable Cloud (Supabase) — auth, PostgreSQL, RLS, RPCs, Realtime, Storage, Edge Functions.
 - **Web app**: React + Vite + TypeScript + Tailwind.
-- **Mobile app**: Aplicație nativă generată de Emergent (React Native / Expo / Flutter etc.).
+- **Mobile app**: Aplicație nativă generată de Emergent (Expo + React Native + TypeScript).
 
 Sincronizarea se realizează **nu prin copierea datelor**, ci prin conectarea directă la același backend. Orice modificare făcută pe mobil este vizibilă instant pe web (și invers) pentru că ambele citesc/scriu în aceleași tabele.
 
