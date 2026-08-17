@@ -40,7 +40,7 @@ Pentru ca login-ul social (Google / Apple) și resetarea parolei să funcționez
 
 ## 3. Instalare client Supabase în aplicația mobilă
 
-Dacă Emergent generează cod React Native / Expo, instalează clientul oficial:
+Emergent generează cod Expo / React Native. Instalează clientul oficial Supabase:
 
 ```bash
 npm install @supabase/supabase-js
