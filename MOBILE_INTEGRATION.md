@@ -180,7 +180,7 @@ const { data, error } = await supabase.storage
   });
 ```
 
-> Numele exact al bucket-ului trebuie verificat în Storage. Dacă web app-ul folosește un bucket diferit, documentul va fi actualizat.
+> Bucket-ul folosit de web app pentru imagini de produse este `product-images`.
 
 ## 8. Securitate și constrângeri
 
