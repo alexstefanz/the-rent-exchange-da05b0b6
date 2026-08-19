@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { handleApiError } from "@/lib/errorHandler";
-import { Product } from "@/features/products/productsApi";
+import { Product, PRODUCT_SAFE_COLS } from "@/features/products/productsApi";
 
 export const addFavoriteProduct = async (productId: string): Promise<void> => {
   const { data: { user } } = await supabase.auth.getUser();
@@ -68,7 +68,7 @@ export const getFavoriteProducts = async (): Promise<Product[]> => {
 
   const { data: products, error: prodError } = await supabase
     .from("products")
-    .select("*")
+    .select(PRODUCT_SAFE_COLS as any)
     .in("id", productIds);
 
   if (prodError) {
@@ -76,5 +76,5 @@ export const getFavoriteProducts = async (): Promise<Product[]> => {
     return [];
   }
 
-  return (products as Product[]) || [];
+  return ((products as unknown) as Product[]) || [];
 };
