@@ -76,5 +76,5 @@ export const getFavoriteProducts = async (): Promise<Product[]> => {
     return [];
   }
 
-  return (products as Product[]) || [];
+  return ((products as unknown) as Product[]) || [];
 };
