@@ -6,7 +6,7 @@ import { expandSearchTerms } from "@/lib/searchSynonyms";
 // Sensitive columns (pickup_address, pickup_lat, pickup_lng, serial_number,
 // admin_flagged, flag_reason, admin_edited_at, admin_edited_by) are revoked
 // at column level. They are populated only via the owner/admin RPCs below.
-const PRODUCT_SAFE_COLS =
+export const PRODUCT_SAFE_COLS =
   "id,owner_id,title,slug,description,title_en,description_en," +
   "daily_price_owner,platform_fee_percent,category,subcategory," +
   "location_city,location_country,images,included_items,included_items_en," +
