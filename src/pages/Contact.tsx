@@ -128,10 +128,11 @@ const Contact = () => {
               </Button>
               <p className="text-xs text-muted-foreground text-center">
                 {t(
-                  "Mesajul tău devine un tichet pe care îl poți urmări din Suport & Tichete.",
-                  "Your message becomes a ticket you can track from Support & Tickets.",
+                  "Mesajul tău devine un tichet pe care îl poți urmări din Suport & Tichete. Răspundem în maximum 48 de ore.",
+                  "Your message becomes a ticket you can track from Support & Tickets. We reply within 48 hours.",
                 )}
               </p>
+
             </form>
           </CardContent>
         </Card>
