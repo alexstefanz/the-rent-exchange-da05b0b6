@@ -7,14 +7,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// SLA hours by priority — alert admin once breached on still-open tickets
-const SLA_HOURS: Record<string, number> = {
-  CRITICAL: 1,
-  URGENT: 2,
-  HIGH: 8,
-  MEDIUM: 24,
-  LOW: 72,
-};
+// Flat 48h first-response promise, with an early warning at 24h.
+const SLA_RESPONSE_HOURS = 48;
+const SLA_WARN_HOURS = 24;
+
 
 const OPEN_STATUSES = ["NEW", "IN_PROGRESS", "WAITING_INTERNAL"];
 
