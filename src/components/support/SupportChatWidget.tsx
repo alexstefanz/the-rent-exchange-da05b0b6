@@ -22,6 +22,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -53,7 +61,12 @@ import {
   fetchUserTickets,
   closeUserTicket,
   type OpsTicket,
+  CATEGORY_GROUPS,
+  CATEGORY_GROUP_LABELS,
+  CATEGORY_TYPES,
 } from "@/features/tickets/userTicketsApi";
+import { getSlaInfo, slaLabel } from "@/features/tickets/sla";
+
 import {
   fetchOpsTickets,
   fetchTicketMessages,
@@ -241,7 +254,13 @@ const SupportChatWidget = () => {
   // auto-resume of the existing open ticket for this widget session.
   const [userRequestedNewTicket, setUserRequestedNewTicket] = useState(false);
 
+  // New ticket form (async support — no live chat)
+  const [newTitle, setNewTitle] = useState("");
+  const [newCategoryGroup, setNewCategoryGroup] = useState<string>("USER");
+  const [newDescription, setNewDescription] = useState("");
+
   const [messageText, setMessageText] = useState("");
+
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isCreatingTicket, setIsCreatingTicket] = useState(false);
   const [isInternal, setIsInternal] = useState(false);
@@ -423,20 +442,14 @@ const SupportChatWidget = () => {
   );
   const openTicketsCount = openTickets.length;
 
-  // Auto-resume: dacă userul are un ticket deschis, îl reia automat la
-  // deschiderea widget-ului (sau imediat ce lista se încarcă), astfel încât
-  // back/close să nu îl arunce înapoi pe ecranul de welcome. Sare peste
-  // auto-resume dacă userul a cerut explicit un ticket nou.
+  // Async support: la deschidere nu se reia automat o "conversație".
+  // Dacă userul are deja tichete, îi arătăm lista lor; altfel formularul de
+  // tichet nou. Sare peste dacă a cerut explicit un tichet nou.
   useEffect(() => {
     if (!isOpen || !user || isAdmin) return;
     if (ticketId || showTicketArchive || userRequestedNewTicket) return;
-    if (openTickets.length === 0) return;
-    const mostRecent = [...openTickets].sort(
-      (a, b) =>
-        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
-    )[0];
-    setTicketId(mostRecent.id);
-    setTicketPublicId(mostRecent.public_id ?? null);
+    if (userTickets.length === 0) return;
+    setShowTicketArchive(true);
   }, [
     isOpen,
     user,
@@ -444,8 +457,9 @@ const SupportChatWidget = () => {
     ticketId,
     showTicketArchive,
     userRequestedNewTicket,
-    openTickets,
+    userTickets,
   ]);
+
 
   const handleSelectArchivedTicket = (ticket: OpsTicket) => {
     setTicketId(ticket.id);
@@ -468,7 +482,7 @@ const SupportChatWidget = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ops_tickets" as any)
-        .select("public_id, status")
+        .select("public_id, status, created_at, sla_due_at, first_response_at")
         .eq("id", ticketId!)
         .single();
       if (error) {
@@ -643,6 +657,64 @@ const SupportChatWidget = () => {
     }
   };
 
+  /** Create a ticket from the structured form (async support flow). */
+  const handleCreateTicketFromForm = async () => {
+    if (!user) return;
+    const title = newTitle.trim().slice(0, 120);
+    const description = newDescription.trim().slice(0, MAX_MESSAGE_LENGTH);
+    if (!title || !description) return;
+    if (countSpecialChars(description) > MAX_SPECIAL_CHARS) {
+      toast.error(
+        t(
+          `Maxim ${MAX_SPECIAL_CHARS} simboluri speciale per mesaj.`,
+          `Maximum ${MAX_SPECIAL_CHARS} special symbols per message.`,
+        ),
+      );
+      return;
+    }
+    setIsCreatingTicket(true);
+    try {
+      const categoryType =
+        CATEGORY_TYPES[newCategoryGroup]?.[0]?.value || "GENERAL_INQUIRY";
+      const ticket = await createUserTicket({
+        title,
+        description,
+        category_group: newCategoryGroup,
+        category_type: categoryType,
+      });
+      await addUserTicketMessage(ticket.id, description);
+      setNewTitle("");
+      setNewDescription("");
+      setTicketId(ticket.id);
+      setTicketPublicId(ticket.public_id);
+      setUserLeftTicket(false);
+      setUserRequestedNewTicket(false);
+      queryClient.invalidateQueries({ queryKey: ["userTickets"] });
+      toast.success(
+        t(
+          `Tichet creat: ${ticket.public_id}`,
+          `Ticket created: ${ticket.public_id}`,
+        ),
+        {
+          description: t(
+            "Răspundem în maximum 48 de ore.",
+            "We reply within 48 hours.",
+          ),
+        },
+      );
+    } catch (err) {
+      console.error("Failed to create ticket:", err);
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t("Eroare la crearea tichetului.", "Failed to create the ticket."),
+      );
+    } finally {
+      setIsCreatingTicket(false);
+    }
+  };
+
+
   const handleSendTicketMessage = () => {
     const text = messageText.trim().slice(0, MAX_MESSAGE_LENGTH);
     if (!text) return;
@@ -727,6 +799,9 @@ const SupportChatWidget = () => {
   const isClosed =
     ticketInfo?.status === "CLOSED" || ticketInfo?.status === "RESOLVED";
 
+  const activeSla = ticketInfo ? getSlaInfo(ticketInfo) : null;
+
+
   // FAB & tab badges (role-aware)
   const fabBadgeCount = isAdmin
     ? adminInboxUnread + adminNewCount
@@ -742,19 +817,21 @@ const SupportChatWidget = () => {
     showTicketArchive ||
     !!ticketId;
   const headerTitle = ticketId
-    ? isAdmin
-      ? ticketPublicId || t("Ticket", "Ticket")
-      : t("Suport Rentli", "Rentli Support")
+    ? ticketPublicId || t("Tichet", "Ticket")
     : showTicketArchive
-    ? t("Conversațiile mele", "My conversations")
+    ? t("Tichetele mele", "My tickets")
     : isAdmin
     ? t("Inbox suport", "Support inbox")
-    : t("Suport Rentli", "Rentli Support");
+    : t("Tichet nou", "New ticket");
+  const slaHint = t("Răspuns în maximum 48h", "Reply within 48h");
   const headerSubtitle = ticketId
     ? isAdmin
-      ? activeAdminTicket?.requester_name || activeAdminTicket?.title || "Online"
-      : ticketPublicId || "Online"
-    : "Online";
+      ? activeAdminTicket?.requester_name || activeAdminTicket?.title || slaHint
+      : slaHint
+    : isAdmin
+    ? t("Tichete active", "Active tickets")
+    : slaHint;
+
 
   const handleBack = () => {
     if (ticketId) {
@@ -769,28 +846,27 @@ const SupportChatWidget = () => {
 
   return (
     <>
-      {/* Live Help card — desktop only */}
+      {/* Support ticket card — desktop only */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
           className="fixed bottom-6 right-6 z-50 hidden lg:flex items-center gap-3 rounded-2xl bg-background border border-border pl-2 pr-4 py-2 shadow-xl hover:shadow-2xl transition-all duration-200 hover:scale-[1.02] active:scale-[0.99] text-left"
-          aria-label={t("Suport live", "Live support")}
+          aria-label={t("Suport Rentli", "Rentli Support")}
         >
           <div className="relative shrink-0">
             <div className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center">
               <Headphones className="h-5 w-5 text-primary" aria-hidden />
             </div>
-            <span className="absolute -top-0.5 -left-0.5 h-3 w-3 rounded-full bg-green-500 ring-2 ring-background" aria-hidden />
           </div>
           <div className="flex flex-col leading-tight min-w-0">
             <span className="flex items-center gap-1.5 text-sm font-bold text-foreground">
-              {t("Live Help", "Live Help")}
-              <span className="text-xs font-semibold text-green-600">{t("Online", "Online")}</span>
+              {t("Suport Rentli", "Rentli Support")}
             </span>
             <span className="text-xs text-muted-foreground truncate">
-              {t("Bună! Te putem ajuta?", "Hi! Can we help?")}
+              {t("Deschide un tichet · răspuns în 48h", "Open a ticket · reply within 48h")}
             </span>
           </div>
+
           {fabBadgeCount > 0 && (
             <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center border-2 border-background">
               {fabBadgeCount > 99 ? "99+" : fabBadgeCount}
@@ -828,7 +904,6 @@ const SupportChatWidget = () => {
                     R
                   </span>
                 </div>
-                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-background" />
               </div>
             )}
             {showBack && ticketId && (
@@ -973,8 +1048,8 @@ const SupportChatWidget = () => {
                   <MessageCircle className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
                   <p className="text-sm text-muted-foreground">
                     {t(
-                      "Trebuie să fii autentificat pentru a folosi chat-ul.",
-                      "You must be logged in to use the chat.",
+                      "Trebuie să fii autentificat pentru a deschide un tichet.",
+                      "You must be signed in to open a ticket.",
                     )}
                   </p>
                   <Button variant="default" size="sm" className="mt-3" asChild>
@@ -983,32 +1058,30 @@ const SupportChatWidget = () => {
                 </div>
               </div>
             ) : ticketId ? (
-              /* ----- Active ticket conversation ----- */
+              /* ----- Ticket thread (asynchronous, email-style) ----- */
               <>
                 <ScrollArea className="flex-1 px-4 py-3">
-                  {messages.length === 0 ? (
-                    isAdmin ? (
-                      <p className="text-xs text-muted-foreground text-center py-6">
-                        {t(
-                          "Niciun mesaj încă în acest ticket.",
-                          "No messages in this ticket yet.",
-                        )}
-                      </p>
-                    ) : (
-                    <div className="flex items-start gap-2 mt-2">
-                      <Avatar className="h-7 w-7 shrink-0 mt-0.5">
-                        <AvatarFallback className="bg-primary/10 text-primary text-[11px] font-bold">
-                          R
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="bg-muted rounded-2xl rounded-bl-md px-3 py-2 text-sm max-w-[80%]">
-                        {t(
-                          "Bună! Suntem aici să te ajutăm. Scrie-ne mesajul tău și un membru al echipei Rentli îți va răspunde cât mai curând.",
-                          "Hi! We're here to help. Write us your message and a member of the Rentli team will reply as soon as possible.",
-                        )}
-                      </div>
+                  {activeSla && (
+                    <div
+                      className={cn(
+                        "rounded-xl border px-3 py-2 mb-3 text-[11px] font-medium",
+                        activeSla.state === "breached"
+                          ? "border-destructive/40 bg-destructive/10 text-destructive"
+                          : activeSla.state === "answered"
+                          ? "border-border bg-muted text-muted-foreground"
+                          : "border-primary/30 bg-primary/5 text-foreground",
+                      )}
+                    >
+                      {slaLabel(activeSla, language)}
                     </div>
-                    )
+                  )}
+                  {messages.length === 0 ? (
+                    <p className="text-xs text-muted-foreground text-center py-6">
+                      {t(
+                        "Niciun mesaj încă în acest tichet.",
+                        "No messages in this ticket yet.",
+                      )}
+                    </p>
                   ) : (
                     <div className="space-y-3">
                       {messages.map((msg) => {
@@ -1016,33 +1089,37 @@ const SupportChatWidget = () => {
                           ? msg.author_type === "ADMIN"
                           : msg.author_type === "CUSTOMER";
                         const isInternalNote = (msg as any).is_internal === true;
+                        const authorLabel = isInternalNote
+                          ? t("Notă internă", "Internal note")
+                          : msg.author_type === "CUSTOMER"
+                          ? (msg as any).author_name || t("Tu", "You")
+                          : msg.author_type === "SYSTEM"
+                          ? t("Sistem", "System")
+                          : (msg as any).author_name || t("Echipa Rentli", "Rentli team");
                         return (
                           <div
                             key={msg.id}
-                            className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                            className={cn(
+                              "min-w-0 rounded-xl border p-3 text-sm",
+                              isInternalNote
+                                ? "border-yellow-300 bg-yellow-50"
+                                : isOwn
+                                ? "border-primary/30 bg-primary/5"
+                                : "border-border bg-card",
+                            )}
                           >
-                            <div
-                              className={`min-w-0 max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
-                                isInternalNote
-                                  ? "bg-yellow-100 border border-yellow-300 text-foreground"
-                                  : isOwn
-                                  ? "bg-amber-400 text-foreground rounded-br-md"
-                                  : "bg-muted text-foreground rounded-bl-md"
-                              }`}
-                            >
-                              {isInternalNote && (
-                                <p className="flex items-center gap-1 text-[10px] font-semibold text-yellow-800 mb-1">
-                                  <Lock className="h-3 w-3" />
-                                  {t("Notă internă", "Internal note")}
-                                </p>
-                              )}
-                              {renderMessageContent(msg.message_text)}
-                              <p
-                                className={`text-[10px] mt-1 ${isOwn ? "text-foreground/60" : "text-muted-foreground"}`}
-                              >
-                                {format(new Date(msg.created_at), "HH:mm")}
-                              </p>
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <span className="text-[11px] font-semibold text-foreground truncate inline-flex items-center gap-1">
+                                {isInternalNote && <Lock className="h-3 w-3" />}
+                                {authorLabel}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground shrink-0">
+                                {format(new Date(msg.created_at), "d MMM yyyy, HH:mm", {
+                                  locale: dateLocale,
+                                })}
+                              </span>
                             </div>
+                            {renderMessageContent(msg.message_text)}
                           </div>
                         );
                       })}
@@ -1051,10 +1128,11 @@ const SupportChatWidget = () => {
                   )}
                 </ScrollArea>
 
+
                 {isClosed ? (
                   <div className="px-4 py-3 border-t text-center shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))] lg:pb-3">
                     <p className="text-xs text-muted-foreground mb-2">
-                      {t("Acest ticket a fost închis.", "This ticket has been closed.")}
+                      {t("Acest tichet a fost închis.", "This ticket has been closed.")}
                     </p>
                     <Button variant="outline" size="sm" onClick={handleBackFromTicket}>
                       {t("Înapoi", "Back")}
@@ -1103,7 +1181,10 @@ const SupportChatWidget = () => {
                         onChange={handleMessageChange}
                         maxLength={MAX_MESSAGE_LENGTH}
                         rows={1}
-                        placeholder={t("Scrie mesajul tău...", "Write your message...")}
+                        placeholder={t(
+                          "Adaugă un răspuns la tichet...",
+                          "Add a reply to this ticket...",
+                        )}
                         className="text-sm flex-1 rounded-2xl resize-none overflow-y-auto min-h-9 max-h-40 py-2"
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !e.shiftKey) {
@@ -1112,6 +1193,7 @@ const SupportChatWidget = () => {
                           }
                         }}
                       />
+
                       <Button
                         size="icon"
                         className="h-9 w-9 shrink-0 rounded-full"
@@ -1140,8 +1222,12 @@ const SupportChatWidget = () => {
                       </div>
                     )}
                     <p className="hidden lg:block text-[10px] text-muted-foreground text-center pb-2">
-                      Chat Rentli
+                      {t(
+                        "Suport pe bază de tichete · răspuns în maximum 48 de ore",
+                        "Ticket-based support · reply within 48 hours",
+                      )}
                     </p>
+
                   </div>
                 )}
               </>
@@ -1159,7 +1245,7 @@ const SupportChatWidget = () => {
                           <Inbox className="h-6 w-6 text-primary" />
                         </div>
                         <p className="text-sm font-medium">
-                          {t("Niciun ticket activ", "No active tickets")}
+                          {t("Niciun tichet activ", "No active tickets")}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
                           {t(
@@ -1247,7 +1333,7 @@ const SupportChatWidget = () => {
                       <div className="flex flex-col items-center justify-center text-center py-12 px-4">
                         <Inbox className="h-8 w-8 text-muted-foreground mb-2" />
                         <p className="text-sm text-muted-foreground">
-                          {t("Niciun ticket încă.", "No tickets yet.")}
+                          {t("Niciun tichet încă.", "No tickets yet.")}
                         </p>
                       </div>
                     ) : (
@@ -1257,7 +1343,7 @@ const SupportChatWidget = () => {
                           onClick={handleStartNewTicket}
                           className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-primary/40 bg-primary/5 px-3 py-2.5 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
                         >
-                          + {t("Deschide ticket nou", "Open new ticket")}
+                          + {t("Deschide tichet nou", "Open new ticket")}
                         </button>
                         {userTickets.map((ticket) => (
                           <button
@@ -1286,110 +1372,133 @@ const SupportChatWidget = () => {
                                 "dd MMM yyyy, HH:mm",
                               )}
                             </p>
+                            {(() => {
+                              const info = getSlaInfo(ticket);
+                              return (
+                                <p
+                                  className={cn(
+                                    "text-[11px] mt-0.5 font-medium",
+                                    info.state === "breached"
+                                      ? "text-destructive"
+                                      : info.state === "answered"
+                                      ? "text-muted-foreground"
+                                      : "text-primary",
+                                  )}
+                                >
+                                  {slaLabel(info, language)}
+                                </p>
+                              );
+                            })()}
+
                           </button>
                         ))}
                       </div>
                     )}
                   </div>
                 ) : (
-                  /* ----- Tickete: welcome / direct chat with admin ----- */
-                  <>
-                    <ScrollArea className="flex-1 px-4 py-3">
-                      <div className="flex items-start gap-2 mt-2">
-                        <Avatar className="h-7 w-7 shrink-0 mt-0.5">
-                          <AvatarFallback className="bg-primary/10 text-primary text-[11px] font-bold">
-                            R
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="bg-muted rounded-2xl rounded-bl-md px-3 py-2 text-sm max-w-[85%]">
-                          <p className="font-semibold text-xs mb-0.5">
-                            {t("Echipa Rentli", "Rentli Team")}
-                          </p>
-                          {t(
-                            "Bună! Suntem aici să te ajutăm. Scrie-ne mesajul tău și un membru al echipei Rentli îți va răspunde cât mai curând.",
-                            "Hi! We're here to help. Write us your message and a member of the Rentli team will reply as soon as possible.",
-                          )}
-                        </div>
-                      </div>
-
-                      {userTickets.length > 0 && (
-                        <div className="mt-4 flex justify-center">
-                          <button
-                            type="button"
-                            onClick={() => setShowTicketArchive(true)}
-                            className="inline-flex items-center gap-1.5 text-[11px] text-primary hover:underline"
-                          >
-                            <History className="h-3 w-3" />
-                            {t(
-                              `Vezi conversațiile mele (${userTickets.length})`,
-                              `View my conversations (${userTickets.length})`,
-                            )}
-                          </button>
-                        </div>
-                      )}
-                    </ScrollArea>
-
-                    <div className="shrink-0 border-t pb-[calc(0.625rem+env(safe-area-inset-bottom))] lg:pb-0">
-                      <div className="flex items-end gap-2 px-3 py-2.5">
-                        <button
-                          type="button"
-                          onClick={openImagePicker}
-                          disabled={isUploadingImage || isCreatingTicket}
-                          className="h-9 w-9 shrink-0 flex items-center justify-center rounded-full hover:bg-secondary transition-colors disabled:opacity-50"
-                        >
-                          {isUploadingImage ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                          ) : (
-                            <ImagePlus className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </button>
-                        <Textarea
-                          ref={messageTextareaRef}
-                          value={messageText}
-                          onChange={handleMessageChange}
-                          maxLength={MAX_MESSAGE_LENGTH}
-                          rows={1}
-                          placeholder={t(
-                            "Scrie mesajul tău...",
-                            "Write your message...",
-                          )}
-                          className="text-sm flex-1 rounded-2xl resize-none overflow-y-auto min-h-9 max-h-40 py-2"
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) {
-                              e.preventDefault();
-                              handleSendTicketMessage();
-                            }
-                          }}
-                        />
-                        <Button
-                          size="icon"
-                          className="h-9 w-9 shrink-0 rounded-full"
-                          onClick={handleSendTicketMessage}
-                          disabled={!messageText.trim() || isCreatingTicket}
-                        >
-                          {isCreatingTicket ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Send className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                      {(messageText.length >= MAX_MESSAGE_LENGTH * 0.8 || countSpecialChars(messageText) > 0) && (
-                        <div className="flex justify-between px-3 pb-1 text-[10px] tabular-nums">
-                          <span className={countSpecialChars(messageText) >= MAX_SPECIAL_CHARS ? "text-destructive font-medium" : "text-muted-foreground"}>
-                            {countSpecialChars(messageText) > 0 ? `${t("simboluri", "symbols")}: ${countSpecialChars(messageText)}/${MAX_SPECIAL_CHARS}` : ""}
-                          </span>
-                          <span className={messageText.length >= MAX_MESSAGE_LENGTH ? "text-destructive font-medium" : "text-muted-foreground"}>
-                            {messageText.length}/{MAX_MESSAGE_LENGTH}
-                          </span>
-                        </div>
-                      )}
-                      <p className="hidden lg:block text-[10px] text-muted-foreground text-center pb-2">
-                        Chat Rentli
+                  /* ----- New ticket form (async support, 48h SLA) ----- */
+                  <div className="flex-1 overflow-y-auto px-4 py-4 min-w-0">
+                    <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 mb-4">
+                      <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                        <Ticket className="h-4 w-4 text-primary" />
+                        {t("Deschide un tichet", "Open a ticket")}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t(
+                          "Suportul Rentli funcționează pe bază de tichete. Răspundem la fiecare tichet în maximum 48 de ore, prin email și în contul tău.",
+                          "Rentli support works with tickets. We reply to every ticket within 48 hours, by email and in your account.",
+                        )}
                       </p>
                     </div>
-                  </>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          {t("Subiect", "Subject")}
+                        </label>
+                        <Input
+                          value={newTitle}
+                          maxLength={120}
+                          onChange={(e) => setNewTitle(e.target.value)}
+                          placeholder={t("Ex: Problemă la plata unei rezervări", "E.g. Issue with a booking payment")}
+                          className="text-sm"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          {t("Categorie", "Category")}
+                        </label>
+                        <Select value={newCategoryGroup} onValueChange={setNewCategoryGroup}>
+                          <SelectTrigger className="text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="z-[80]">
+                            {CATEGORY_GROUPS.map((g) => (
+                              <SelectItem key={g} value={g}>
+                                {CATEGORY_GROUP_LABELS[g] || g}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <label className="text-xs font-medium text-foreground mb-1 block">
+                          {t("Detalii", "Details")}
+                        </label>
+                        <Textarea
+                          value={newDescription}
+                          maxLength={MAX_MESSAGE_LENGTH}
+                          rows={5}
+                          onChange={(e) => setNewDescription(clampChatInput(e.target.value).value)}
+                          placeholder={t(
+                            "Descrie pe scurt problema. Include codul rezervării dacă e cazul.",
+                            "Briefly describe the issue. Include the booking code if relevant.",
+                          )}
+                          className="text-sm resize-none"
+                        />
+                        <div className="flex justify-end pt-1 text-[10px] tabular-nums text-muted-foreground">
+                          {newDescription.length}/{MAX_MESSAGE_LENGTH}
+                        </div>
+                      </div>
+
+                      <Button
+                        className="w-full"
+                        onClick={handleCreateTicketFromForm}
+                        disabled={!newTitle.trim() || !newDescription.trim() || isCreatingTicket}
+                      >
+                        {isCreatingTicket ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          t("Trimite tichetul", "Submit ticket")
+                        )}
+                      </Button>
+
+                      <p className="text-[11px] text-muted-foreground text-center">
+                        {t(
+                          "Vei primi un număr de tichet și notificare când echipa răspunde.",
+                          "You'll get a ticket number and a notification when the team replies.",
+                        )}
+                      </p>
+
+                      {userTickets.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowTicketArchive(true)}
+                          className="w-full inline-flex items-center justify-center gap-1.5 text-[11px] text-primary hover:underline pt-1"
+                        >
+                          <History className="h-3 w-3" />
+                          {t(
+                            `Vezi tichetele mele (${userTickets.length})`,
+                            `View my tickets (${userTickets.length})`,
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 )
+
               )
             }
           </div>

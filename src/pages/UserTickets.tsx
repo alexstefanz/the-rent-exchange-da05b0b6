@@ -35,6 +35,7 @@ import {
 import { toast } from "@/components/ui/sonner";
 import { useUserTicketsRealtime } from "@/hooks/useTicketRealtime";
 import { StatusPill } from "@/components/support/center/StatusPill";
+import { getSlaInfo, slaLabel } from "@/features/tickets/sla";
 import { TicketTimeline } from "@/components/support/center/TicketTimeline";
 import { TicketContextPanel } from "@/components/support/center/TicketContextPanel";
 import { TicketChat } from "@/components/support/center/TicketChat";
@@ -263,8 +264,9 @@ const UserTickets = () => {
 function TicketCard({
   ticket, active, onClick, locale,
 }: { ticket: OpsTicket; active: boolean; onClick: () => void; locale: any }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const categoryLabel = CATEGORY_GROUP_LABELS[ticket.category_group] || ticket.category_group;
+  const sla = getSlaInfo(ticket);
   return (
     <motion.button
       layout
@@ -288,6 +290,18 @@ function TicketCard({
           {formatDistanceToNow(new Date(ticket.updated_at || ticket.created_at), { addSuffix: true, locale })}
         </span>
       </div>
+      <p
+        className={cn(
+          "mt-1.5 text-[11px] font-medium",
+          sla.state === "breached"
+            ? "text-destructive"
+            : sla.state === "answered"
+            ? "text-muted-foreground"
+            : "text-primary",
+        )}
+      >
+        {slaLabel(sla, language)}
+      </p>
     </motion.button>
   );
 }

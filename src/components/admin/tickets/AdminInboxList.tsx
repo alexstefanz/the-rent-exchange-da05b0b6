@@ -6,8 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusPill } from "@/components/support/center/StatusPill";
+import { getSlaInfo } from "@/features/tickets/sla";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow, differenceInHours } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { ro } from "date-fns/locale";
 import {
   CATEGORY_GROUP_LABELS,
@@ -29,13 +30,9 @@ const isUnread = (t: Pick<OpsTicket, "status" | "updated_at" | "last_admin_read_
   !["CLOSED", "RESOLVED"].includes(t.status) &&
   (!t.last_admin_read_at || new Date(t.last_admin_read_at) < new Date(t.updated_at));
 
-const slaBreached = (t: Pick<OpsTicket, "priority" | "status" | "created_at">) => {
-  const hrs = differenceInHours(new Date(), new Date(t.created_at));
-  if (["RESOLVED", "CLOSED"].includes(t.status)) return false;
-  if (t.priority === "URGENT" && hrs >= 1) return true;
-  if (t.priority === "HIGH" && hrs >= 8) return true;
-  return false;
-};
+// Promisiune unică: primul răspuns în maximum 48h de la deschiderea tichetului.
+const slaBreached = (t: OpsTicket) => getSlaInfo(t).state === "breached";
+const slaDueSoon = (t: OpsTicket) => getSlaInfo(t).state === "due_soon";
 
 type Tab = "open" | "waiting" | "resolved" | "all";
 
@@ -220,6 +217,15 @@ export function AdminInboxList({ tickets, isLoading, selectedId, onSelect, filte
                         <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-normal">
                           {CATEGORY_GROUP_LABELS[t.category_group] || t.category_group}
                         </Badge>
+                        {slaBreached(t) ? (
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-medium border-destructive/50 text-destructive">
+                            SLA 48h depășit
+                          </Badge>
+                        ) : slaDueSoon(t) ? (
+                          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-medium border-primary/50 text-primary">
+                            SLA aproape
+                          </Badge>
+                        ) : null}
                         {unread && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary" aria-label="necitit" />}
                       </div>
                     </div>
