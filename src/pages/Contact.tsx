@@ -93,10 +93,11 @@ const Contact = () => {
             <CardTitle className="text-2xl">{t("Contactează-ne", "Contact Us")}</CardTitle>
             <CardDescription>
               {t(
-                "Trimite-ne un mesaj și te vom contacta cât mai curând posibil.",
-                "Send us a message and we'll get back to you as soon as possible."
+                "Trimite-ne un mesaj și îți răspundem în maximum 48 de ore.",
+                "Send us a message and we'll reply within 48 hours.",
               )}
             </CardDescription>
+
             <p className="text-sm text-muted-foreground mt-2">
               Email: <a href="mailto:office@rentli.ro" className="text-primary hover:underline">office@rentli.ro</a>
             </p>
