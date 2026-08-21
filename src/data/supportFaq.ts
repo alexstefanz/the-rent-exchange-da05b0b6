@@ -56,8 +56,8 @@ export const SUPPORT_FAQ: SupportFaqEntry[] = [
       en: "What is the platform fee?",
     },
     answer: {
-      ro: "Rentli percepe **5%** din valoarea închirierii, suportat de proprietar. **Primele 3 închirieri sunt gratuite** pentru fiecare utilizator nou. Chiriașii nu plătesc niciun comision suplimentar.",
-      en: "Rentli charges **5%** of the rental value, paid by the owner. **The first 3 rentals are free** for every new user. Renters pay no additional fees.",
+      ro: "Rentli percepe **15%** din valoarea închirierii, suportat de proprietar. **Primele 3 închirieri sunt gratuite** pentru fiecare utilizator nou. Chiriașii nu plătesc niciun comision suplimentar.",
+      en: "Rentli charges **15%** of the rental value, paid by the owner. **The first 3 rentals are free** for every new user. Renters pay no additional fees.",
     },
   },
   {
