@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StatusPill } from "@/components/support/center/StatusPill";
 import { getSlaInfo } from "@/features/tickets/sla";
 import { cn } from "@/lib/utils";
-import { formatDistanceToNow, differenceInHours } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { ro } from "date-fns/locale";
 import {
   CATEGORY_GROUP_LABELS,
