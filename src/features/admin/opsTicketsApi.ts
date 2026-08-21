@@ -27,6 +27,10 @@ export interface OpsTicket {
   updated_at: string;
   closed_at: string | null;
   last_admin_read_at: string | null;
+  first_response_at?: string | null;
+  sla_due_at?: string | null;
+  sla_breached_at?: string | null;
+
 }
 
 export interface OpsTicketMessage {

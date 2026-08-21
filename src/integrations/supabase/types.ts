@@ -1099,6 +1099,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string
+          first_response_at: string | null
           id: string
           last_admin_read_at: string | null
           owner_user_id: string | null
@@ -1108,6 +1109,8 @@ export type Database = {
           rental_user_id: string | null
           requester_user_id: string | null
           reservation_id: string | null
+          sla_breached_at: string | null
+          sla_due_at: string | null
           status: string
           tags: string[] | null
           title: string
@@ -1121,6 +1124,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description: string
+          first_response_at?: string | null
           id?: string
           last_admin_read_at?: string | null
           owner_user_id?: string | null
@@ -1130,6 +1134,8 @@ export type Database = {
           rental_user_id?: string | null
           requester_user_id?: string | null
           reservation_id?: string | null
+          sla_breached_at?: string | null
+          sla_due_at?: string | null
           status?: string
           tags?: string[] | null
           title: string
@@ -1143,6 +1149,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string
+          first_response_at?: string | null
           id?: string
           last_admin_read_at?: string | null
           owner_user_id?: string | null
@@ -1152,6 +1159,8 @@ export type Database = {
           rental_user_id?: string | null
           requester_user_id?: string | null
           reservation_id?: string | null
+          sla_breached_at?: string | null
+          sla_due_at?: string | null
           status?: string
           tags?: string[] | null
           title?: string
