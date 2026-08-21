@@ -34,39 +34,66 @@ serve(async (req) => {
   try {
     const now = Date.now();
 
-    // 1) SLA breach alerts — for open tickets past their SLA without an admin reply
+    // 1) 48h first-response SLA — warn at 24h, alert (and mark) on breach
     const { data: openTickets } = await admin
       .from("ops_tickets")
-      .select("id, public_id, title, priority, status, created_at, updated_at, last_admin_read_at, requester_user_id")
-      .in("status", OPEN_STATUSES);
+      .select(
+        "id, public_id, title, priority, status, created_at, updated_at, last_admin_read_at, requester_user_id, first_response_at, sla_due_at, sla_breached_at",
+      )
+      .in("status", OPEN_STATUSES)
+      .is("first_response_at", null);
 
     for (const t of openTickets || []) {
-      const slaHrs = SLA_HOURS[t.priority] ?? 24;
-      const ageHrs = (now - new Date(t.created_at).getTime()) / 3_600_000;
-      if (ageHrs < slaHrs) continue;
+      const created = new Date(t.created_at).getTime();
+      const dueAt = t.sla_due_at
+        ? new Date(t.sla_due_at).getTime()
+        : created + SLA_RESPONSE_HOURS * 3_600_000;
+      const ageHrs = (now - created) / 3_600_000;
+      const breached = now >= dueAt;
+      const warn = !breached && ageHrs >= SLA_WARN_HOURS;
+      if (!breached && !warn) continue;
 
-      // Skip if a SLA notification was already created for this ticket
+      const entityType = breached ? "ops_ticket_sla" : "ops_ticket_sla_warning";
+
+      if (breached && !t.sla_breached_at) {
+        await admin
+          .from("ops_tickets")
+          .update({ sla_breached_at: new Date().toISOString() })
+          .eq("id", t.id);
+      }
+
+      // Skip if a notification of this kind was already created for this ticket
       const { data: existing } = await admin
         .from("admin_notifications")
         .select("id")
-        .eq("entity_type", "ops_ticket_sla")
+        .eq("entity_type", entityType)
         .eq("entity_id", t.id)
         .maybeSingle();
       if (existing) continue;
 
+      const hoursLeft = Math.max(0, Math.round((dueAt - now) / 3_600_000));
       await admin.from("admin_notifications").insert({
-        type: "sla_breach",
-        priority: t.priority === "CRITICAL" || t.priority === "URGENT" ? "high" : "normal",
-        entity_type: "ops_ticket_sla",
+        type: breached ? "sla_breach" : "sla_warning",
+        priority: breached ? "high" : "normal",
+        entity_type: entityType,
         entity_id: t.id,
         link: `/admin/tickets/${t.id}`,
-        title_ro: `SLA depășit: ${t.public_id}`,
-        title_en: `SLA breached: ${t.public_id}`,
-        description_ro: `${t.title} — prioritate ${t.priority}, deschis de ${Math.round(ageHrs)}h`,
-        description_en: `${t.title} — priority ${t.priority}, open for ${Math.round(ageHrs)}h`,
+        title_ro: breached
+          ? `SLA 48h depășit: ${t.public_id}`
+          : `SLA 48h aproape de expirare: ${t.public_id}`,
+        title_en: breached
+          ? `48h SLA breached: ${t.public_id}`
+          : `48h SLA due soon: ${t.public_id}`,
+        description_ro: breached
+          ? `${t.title} — fără răspuns de ${Math.round(ageHrs)}h.`
+          : `${t.title} — mai sunt ~${hoursLeft}h până la termenul de răspuns.`,
+        description_en: breached
+          ? `${t.title} — no reply for ${Math.round(ageHrs)}h.`
+          : `${t.title} — ~${hoursLeft}h left until the response deadline.`,
       });
       result.sla_alerts++;
     }
+
 
     // 2) Auto-close tickets in WAITING_CUSTOMER inactive >14 days
     const fourteenDaysAgo = new Date(now - 14 * 24 * 3_600_000).toISOString();
