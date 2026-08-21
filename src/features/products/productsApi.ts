@@ -273,7 +273,7 @@ export const createProduct = async (
 ): Promise<Product> => {
   // Count existing products to determine fee
   const existingCount = await getOwnerProductCount(ownerId);
-  const platformFeePercent = existingCount < 3 ? 0 : 5;
+  const platformFeePercent = existingCount < 3 ? 0 : 15;
 
   const insertData: Record<string, unknown> = {
     owner_id: ownerId,
