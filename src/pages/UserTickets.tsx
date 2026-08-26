@@ -433,8 +433,11 @@ function CreateTicketForm({ onSuccess }: { onSuccess: (id: string) => void }) {
   });
 
   const categoryTypes = categoryGroup ? (CATEGORY_TYPES[categoryGroup] || []) : [];
-  const validationError = validateTicketContent(title, description);
-  const valid = !validationError && !!categoryGroup && !!categoryType;
+  const valid =
+    title.trim().length >= TICKET_TITLE_MIN &&
+    description.trim().length >= TICKET_DESCRIPTION_MIN &&
+    !!categoryGroup &&
+    !!categoryType;
 
   return (
     <form
