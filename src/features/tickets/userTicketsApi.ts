@@ -1,6 +1,11 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { OpsTicket, OpsTicketMessage as BaseOpsTicketMessage, CreateOpsTicketInput } from "@/features/admin/opsTicketsApi";
 import { CATEGORY_GROUPS, CATEGORY_TYPES, CATEGORY_GROUP_LABELS } from "@/features/admin/opsTicketsApi";
+import {
+  ticketValidationMessage,
+  validateTicketContent,
+  validateTicketReply,
+} from "@/features/tickets/ticketValidation";
 
 export { CATEGORY_GROUPS, CATEGORY_TYPES, CATEGORY_GROUP_LABELS };
 export type { OpsTicket };
@@ -39,6 +44,9 @@ export const createUserTicket = async (input: {
   product_id?: string | null;
   priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 }): Promise<OpsTicket> => {
+  const validationError = validateTicketContent(input.title, input.description);
+  if (validationError) throw new Error(ticketValidationMessage(validationError));
+
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) throw new Error("Not authenticated");
 
@@ -68,7 +76,7 @@ export const createUserTicket = async (input: {
   }
 
   const { data, error } = await opsTickets().insert(insertData).select().single();
-  if (error) throw new Error(mapAntispamError(error.message));
+  if (error) throw new Error(mapTicketError(error.message));
   return data as unknown as OpsTicket;
 };
 
@@ -76,8 +84,17 @@ export const createUserTicket = async (input: {
  * Map server-side antispam errors (raised by the `enforce_ticket_antispam` trigger)
  * to friendly Romanian messages shown in toasts.
  */
-function mapAntispamError(message: string): string {
+function mapTicketError(message: string): string {
   const m = message || "";
+  if (m.includes("TICKET_PROFANITY_BLOCKED")) return ticketValidationMessage("PROFANITY");
+  if (m.includes("TICKET_TITLE_TOO_SHORT")) return ticketValidationMessage("TITLE_TOO_SHORT");
+  if (m.includes("TICKET_TITLE_TOO_LONG")) return ticketValidationMessage("TITLE_TOO_LONG");
+  if (m.includes("TICKET_DESCRIPTION_TOO_SHORT")) return ticketValidationMessage("DESCRIPTION_TOO_SHORT");
+  if (m.includes("TICKET_DESCRIPTION_TOO_LONG")) return ticketValidationMessage("DESCRIPTION_TOO_LONG");
+  if (m.includes("TICKET_REPLY_TOO_SHORT")) return ticketValidationMessage("REPLY_TOO_SHORT");
+  if (m.includes("TICKET_REPLY_TOO_LONG")) return ticketValidationMessage("REPLY_TOO_LONG");
+  if (m.includes("TICKET_REPLY_RATE_LIMIT")) return "Ai trimis prea multe răspunsuri într-un timp scurt. Așteaptă un minut și încearcă din nou.";
+  if (m.includes("TICKET_REPLY_DUPLICATE")) return "Acest răspuns a fost deja trimis. Completează informațiile într-un singur răspuns.";
   const match = m.match(/ANTISPAM_([A-Z_]+):(\d+)/);
   if (!match) return m;
   const code = match[1];
@@ -136,6 +153,12 @@ export const addUserTicketMessage = async (
   ticketId: string,
   messageText: string
 ): Promise<OpsTicketMessage> => {
+  const isAttachment = isTicketAttachmentRef(messageText) || messageText.startsWith("support-attachments://");
+  if (!isAttachment) {
+    const validationError = validateTicketReply(messageText);
+    if (validationError) throw new Error(ticketValidationMessage(validationError));
+  }
+
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) throw new Error("Not authenticated");
 
@@ -150,7 +173,7 @@ export const addUserTicketMessage = async (
     .select()
     .single();
 
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(mapTicketError(error.message));
   return data as unknown as OpsTicketMessage;
 };
 
