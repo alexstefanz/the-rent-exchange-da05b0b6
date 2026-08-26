@@ -660,7 +660,7 @@ const Step1Category = ({
     <div>
       <StepHeader
         eyebrow={t("Pasul 1 din 4", "Step 1 of 4")}
-        title={t("Ce vrei să închiriezi?", "What do you want to rent out?")}
+        title={t("Ce oferi spre închiriere?", "What do you want to rent out?")}
         subtitle={t(
           "Alege o categorie ca să-ți arătăm câmpurile potrivite și prețul mediu din piață.",
           "Pick a category so we can show you the right fields and average market price.",
