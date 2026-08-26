@@ -13,7 +13,6 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -413,7 +412,6 @@ function TicketDetailView({ ticket, onBack }: { ticket: OpsTicket; onBack: () =>
 
 function CreateTicketForm({ onSuccess }: { onSuccess: (id: string) => void }) {
   const { t, language } = useLanguage();
-  const { toast } = useToast();
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -423,12 +421,12 @@ function CreateTicketForm({ onSuccess }: { onSuccess: (id: string) => void }) {
   const createMutation = useMutation({
     mutationFn: createUserTicket,
     onSuccess: (created) => {
-      toast({ title: t("Ticket creat", "Ticket created") });
+      toast.success(t("Ticket creat", "Ticket created"));
       qc.invalidateQueries({ queryKey: ["userTickets"] });
       onSuccess(created.id);
     },
     onError: (err: Error) => {
-      toast({ title: t("Eroare", "Error"), description: err.message, variant: "destructive" });
+      toast.error(t("Eroare", "Error"), { description: err.message });
     },
   });
 
@@ -446,7 +444,7 @@ function CreateTicketForm({ onSuccess }: { onSuccess: (id: string) => void }) {
         if (!categoryGroup || !categoryType) return;
         const error = validateTicketContent(title, description);
         if (error) {
-          toast({ title: t("Verifică formularul", "Check the form"), description: ticketValidationMessage(error, language === "ro" ? "ro" : "en"), variant: "destructive" });
+          toast.error(t("Verifică formularul", "Check the form"), { description: ticketValidationMessage(error, language === "ro" ? "ro" : "en") });
           return;
         }
         createMutation.mutate({
