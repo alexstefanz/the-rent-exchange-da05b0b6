@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
-import { Send, ImagePlus, Loader2, CheckCheck, Check } from "lucide-react";
+import { Send, ImagePlus, Loader2 } from "lucide-react";
 import { format, isToday, isYesterday, type Locale } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
 import { toast } from "@/components/ui/sonner";
@@ -22,6 +21,11 @@ import {
 } from "@/features/tickets/userTicketsApi";
 import { AttachmentBubble } from "./AttachmentBubble";
 import { cn } from "@/lib/utils";
+import {
+  TICKET_REPLY_MIN,
+  ticketValidationMessage,
+  validateTicketReply,
+} from "@/features/tickets/ticketValidation";
 
 const MAX_DIM = 1920;
 const Q = 0.8;
@@ -111,12 +115,17 @@ export function TicketChat({ ticketId, isClosed }: Props) {
       if (textareaRef.current) textareaRef.current.style.height = "auto";
       qc.invalidateQueries({ queryKey: ["userTicketMessages", ticketId] });
     },
-    onError: () => toast.error(t("Nu s-a putut trimite mesajul.", "Could not send message.")),
+    onError: (error: Error) => toast.error(error.message || t("Nu s-a putut trimite răspunsul.", "Could not send reply.")),
   });
 
   const handleSend = () => {
     const txt = text.trim();
     if (!txt || sendMutation.isPending) return;
+    const validationError = validateTicketReply(txt);
+    if (validationError) {
+      toast.error(ticketValidationMessage(validationError, language === "ro" ? "ro" : "en"));
+      return;
+    }
     if (txt.length > MAX_MESSAGE_LENGTH) {
       toast.error(t(`Maxim ${MAX_MESSAGE_LENGTH} caractere.`, `Maximum ${MAX_MESSAGE_LENGTH} characters.`));
       return;
@@ -190,17 +199,17 @@ export function TicketChat({ ticketId, isClosed }: Props) {
   let lastDay = "";
   return (
     <div className="flex flex-col h-full min-h-0">
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3 bg-gradient-to-b from-background to-muted/20">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3 bg-muted/10">
         {isLoading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : messages.length === 0 ? (
           <p className="text-center text-xs text-muted-foreground py-8">
-            {t("Începe conversația cu echipa de suport.", "Start the conversation with our support team.")}
+            {t("Nu există încă răspunsuri la acest tichet.", "There are no replies to this ticket yet.")}
           </p>
         ) : (
-          <AnimatePresence initial={false}>
+          <div className="space-y-3">
             {messages.map((msg) => {
               const day = format(new Date(msg.created_at), "yyyy-MM-dd");
               const showDay = day !== lastDay;
@@ -218,14 +227,17 @@ export function TicketChat({ ticketId, isClosed }: Props) {
                 </div>
               );
             })}
-          </AnimatePresence>
+          </div>
         )}
         <div ref={endRef} />
       </div>
 
       {!isClosed ? (
         <div className="border-t border-border/60 p-3 bg-background">
-          <div className="flex items-end gap-2">
+          <p className="text-xs text-muted-foreground mb-2">
+            {t("Adaugă informații noi într-un răspuns complet. Echipa revine în maximum 48 de ore.", "Add new information in a complete reply. The team responds within 48 hours.")}
+          </p>
+          <div className="flex items-start gap-2">
             <Button
               type="button"
               size="icon"
@@ -244,7 +256,7 @@ export function TicketChat({ ticketId, isClosed }: Props) {
               autoCorrect="on"
               autoCapitalize="sentences"
               spellCheck
-              enterKeyHint="send"
+              enterKeyHint="enter"
               inputMode="text"
               value={text}
               onChange={(e) => {
@@ -255,26 +267,20 @@ export function TicketChat({ ticketId, isClosed }: Props) {
                 el.style.height = "auto";
                 el.style.height = Math.min(el.scrollHeight, 160) + "px";
               }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              placeholder={t("Scrie un mesaj…", "Write a message…")}
-              rows={1}
+              placeholder={t("Scrie un răspuns detaliat…", "Write a detailed reply…")}
+              rows={3}
               maxLength={MAX_MESSAGE_LENGTH}
-              className="min-h-9 max-h-40 resize-none overflow-y-auto"
+              className="min-h-20 max-h-40 resize-none overflow-y-auto"
             />
             <Button
               type="button"
-              size="icon"
-              className="h-9 w-9 shrink-0"
+              size="sm"
+              className="h-9 shrink-0"
               onClick={handleSend}
-              disabled={!text.trim() || sendMutation.isPending}
+              disabled={text.trim().length < TICKET_REPLY_MIN || sendMutation.isPending}
               aria-label={t("Trimite", "Send")}
             >
-              {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Send className="h-4 w-4 mr-1.5" />{t("Trimite răspunsul", "Send reply")}</>}
             </Button>
           </div>
           {(text.length >= MAX_MESSAGE_LENGTH * 0.8 || countSpecialChars(text) > 0) && (
@@ -329,48 +335,22 @@ function ChatBubble({ msg, userId }: { msg: OpsTicketMessage; userId?: string })
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2 }}
-      className={cn("flex gap-2 items-end", isOwn ? "justify-end" : "justify-start")}
-    >
-      {!isOwn && (
-        <Avatar className="h-7 w-7 shrink-0">
-          <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
-            {msg.author_name?.[0]?.toUpperCase() || "S"}
-          </AvatarFallback>
-        </Avatar>
-      )}
-      <div className={cn("max-w-[75%] flex flex-col", isOwn ? "items-end" : "items-start")}>
-        {!isOwn && (
-          <span className="text-[10px] text-muted-foreground px-1 mb-0.5">
-            {msg.author_name ? `${t("Suport", "Support")} · ${msg.author_name}` : t("Suport", "Support")}
-          </span>
-        )}
+    <div className={cn("rounded-lg border p-3", isOwn ? "border-primary/30 bg-primary/5" : "border-border bg-card")}>
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <span className="text-xs font-semibold">
+          {isOwn ? t("Tu", "You") : msg.author_name ? `${t("Suport", "Support")} · ${msg.author_name}` : t("Echipa Rentli", "Rentli team")}
+        </span>
+        <span className="text-[10px] text-muted-foreground shrink-0">
+          {format(new Date(msg.created_at), "d MMM yyyy, HH:mm", { locale })}
+        </span>
+      </div>
         {isAttachment ? (
           <AttachmentBubble reference={msg.message_text} />
         ) : (
-          <div
-            className={cn(
-              "rounded-2xl px-3.5 py-2 text-sm shadow-[0_1px_2px_rgba(0,0,0,0.04)] whitespace-pre-wrap break-words [overflow-wrap:anywhere]",
-              isOwn
-                ? "bg-primary text-primary-foreground rounded-br-md"
-                : "bg-card border border-border/60 rounded-bl-md text-foreground"
-            )}
-          >
+          <div className="text-sm whitespace-pre-wrap break-words [overflow-wrap:anywhere]">
             {msg.message_text}
           </div>
         )}
-        <div className="flex items-center gap-1 mt-0.5 px-1 text-[10px] text-muted-foreground">
-          <span>{format(new Date(msg.created_at), "HH:mm", { locale })}</span>
-          {isOwn && (
-            <span>
-              {msg.read_at ? <CheckCheck className="h-3 w-3 text-primary" /> : <Check className="h-3 w-3" />}
-            </span>
-          )}
-        </div>
-      </div>
-    </motion.div>
+    </div>
   );
 }

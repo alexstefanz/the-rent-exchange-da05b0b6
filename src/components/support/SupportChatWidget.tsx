@@ -81,6 +81,16 @@ import { ro as roLocale, enUS } from "date-fns/locale";
 import { toast } from "@/components/ui/sonner";
 import { StatusPill } from "@/components/support/center/StatusPill";
 import { cn } from "@/lib/utils";
+import {
+  TICKET_DESCRIPTION_MAX,
+  TICKET_DESCRIPTION_MIN,
+  TICKET_REPLY_MIN,
+  TICKET_TITLE_MAX,
+  TICKET_TITLE_MIN,
+  ticketValidationMessage,
+  validateTicketContent,
+  validateTicketReply,
+} from "@/features/tickets/ticketValidation";
 
 const MAX_DIMENSION = 1920;
 const JPEG_QUALITY = 0.8;
@@ -482,7 +492,7 @@ const SupportChatWidget = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("ops_tickets" as any)
-        .select("public_id, status, created_at, sla_due_at, first_response_at")
+        .select("public_id, status, title, description, created_at, sla_due_at, first_response_at")
         .eq("id", ticketId!)
         .single();
       if (error) {
@@ -539,7 +549,7 @@ const SupportChatWidget = () => {
           ),
         );
       } else {
-        toast.error(t("Eroare la trimiterea mesajului.", "Failed to send message."));
+        toast.error(msg || t("Eroare la trimiterea răspunsului.", "Failed to send reply."));
       }
     },
   });
@@ -618,43 +628,8 @@ const SupportChatWidget = () => {
       );
       return;
     }
-    if (ticketId) {
-      sendMutation.mutate(text);
-      return;
-    }
-    // Admins never auto-create tickets — they only reply to existing ones.
-    if (isAdmin) return;
-    // No active ticket → create one with this first message
-    setIsCreatingTicket(true);
-    try {
-      const title = text.length > 60 ? `${text.slice(0, 60)}…` : text;
-      const ticket = await createUserTicket({
-        title,
-        description: text,
-        category_group: "USER",
-        category_type: "GENERAL_INQUIRY",
-      });
-      await addUserTicketMessage(ticket.id, text);
-      setTicketId(ticket.id);
-      setTicketPublicId(ticket.public_id);
-      setMessageText(""); resetTextareaHeight();
-      setUserLeftTicket(false);
-      setUserRequestedNewTicket(false);
-      queryClient.invalidateQueries({ queryKey: ["userTickets"] });
-      queryClient.invalidateQueries({
-        queryKey: ["supportChatMessages", ticket.id],
-      });
-    } catch (err) {
-      console.error("Failed to create ticket:", err);
-      toast.error(
-        t(
-          "Eroare la crearea ticketului. Încearcă din nou.",
-          "Failed to create ticket. Please try again.",
-        ),
-      );
-    } finally {
-      setIsCreatingTicket(false);
-    }
+    if (!ticketId) return;
+    sendMutation.mutate(text);
   };
 
   /** Create a ticket from the structured form (async support flow). */
@@ -662,7 +637,11 @@ const SupportChatWidget = () => {
     if (!user) return;
     const title = newTitle.trim().slice(0, 120);
     const description = newDescription.trim().slice(0, MAX_MESSAGE_LENGTH);
-    if (!title || !description) return;
+    const validationError = validateTicketContent(title, description);
+    if (validationError) {
+      toast.error(ticketValidationMessage(validationError, language === "ro" ? "ro" : "en"));
+      return;
+    }
     if (countSpecialChars(description) > MAX_SPECIAL_CHARS) {
       toast.error(
         t(
@@ -682,7 +661,6 @@ const SupportChatWidget = () => {
         category_group: newCategoryGroup,
         category_type: categoryType,
       });
-      await addUserTicketMessage(ticket.id, description);
       setNewTitle("");
       setNewDescription("");
       setTicketId(ticket.id);
@@ -718,6 +696,13 @@ const SupportChatWidget = () => {
   const handleSendTicketMessage = () => {
     const text = messageText.trim().slice(0, MAX_MESSAGE_LENGTH);
     if (!text) return;
+    if (!isAdmin) {
+      const validationError = validateTicketReply(text);
+      if (validationError) {
+        toast.error(ticketValidationMessage(validationError, language === "ro" ? "ro" : "en"));
+        return;
+      }
+    }
     if (countSpecialChars(text) > MAX_SPECIAL_CHARS) {
       toast.error(
         t(
@@ -1075,6 +1060,16 @@ const SupportChatWidget = () => {
                       {slaLabel(activeSla, language)}
                     </div>
                   )}
+                  {ticketInfo?.description && (
+                    <div className="rounded-lg border bg-card p-3 mb-3">
+                      <p className="text-[11px] font-semibold text-muted-foreground mb-1">
+                        {t("Descrierea inițială", "Original description")}
+                      </p>
+                      <p className="text-sm whitespace-pre-wrap [overflow-wrap:anywhere]">
+                        {ticketInfo.description}
+                      </p>
+                    </div>
+                  )}
                   {messages.length === 0 ? (
                     <p className="text-xs text-muted-foreground text-center py-6">
                       {t(
@@ -1162,12 +1157,22 @@ const SupportChatWidget = () => {
                         )}
                       </div>
                     )}
-                    <div className="flex items-end gap-2 px-3 py-2.5">
+                    <div className="px-3 py-2.5 space-y-2">
+                      {!isAdmin && (
+                        <p className="text-[11px] text-muted-foreground">
+                          {t(
+                            "Adaugă informații noi într-un răspuns complet. Echipa revine în maximum 48 de ore.",
+                            "Add new information in a complete reply. The team responds within 48 hours.",
+                          )}
+                        </p>
+                      )}
+                      <div className="flex items-start gap-2">
                       <button
                         type="button"
                         onClick={openImagePicker}
                         disabled={sendMutation.isPending || isUploadingImage || isCreatingTicket}
-                        className="h-9 w-9 shrink-0 flex items-center justify-center rounded-full hover:bg-secondary transition-colors disabled:opacity-50"
+                        className="h-9 w-9 shrink-0 flex items-center justify-center rounded-lg hover:bg-secondary transition-colors disabled:opacity-50"
+                        aria-label={t("Atașează imagine", "Attach image")}
                       >
                         {isUploadingImage ? (
                           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -1180,25 +1185,20 @@ const SupportChatWidget = () => {
                         value={messageText}
                         onChange={handleMessageChange}
                         maxLength={MAX_MESSAGE_LENGTH}
-                        rows={1}
+                        rows={3}
                         placeholder={t(
                           "Adaugă un răspuns la tichet...",
                           "Add a reply to this ticket...",
                         )}
-                        className="text-sm flex-1 rounded-2xl resize-none overflow-y-auto min-h-9 max-h-40 py-2"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            handleSendTicketMessage();
-                          }
-                        }}
+                        className="text-sm flex-1 rounded-lg resize-none overflow-y-auto min-h-20 max-h-40 py-2"
                       />
 
                       <Button
-                        size="icon"
-                        className="h-9 w-9 shrink-0 rounded-full"
+                        size="sm"
+                        className="h-9 shrink-0"
                         onClick={handleSendTicketMessage}
                         disabled={
+                          (!isAdmin && messageText.trim().length < TICKET_REPLY_MIN) ||
                           !messageText.trim() ||
                           sendMutation.isPending ||
                           isCreatingTicket
@@ -1207,9 +1207,10 @@ const SupportChatWidget = () => {
                         {isCreatingTicket || sendMutation.isPending ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                          <Send className="h-4 w-4" />
+                          <><Send className="h-4 w-4 mr-1.5" />{t("Trimite răspunsul", "Send reply")}</>
                         )}
                       </Button>
+                      </div>
                     </div>
                     {(messageText.length >= MAX_MESSAGE_LENGTH * 0.8 || countSpecialChars(messageText) > 0) && (
                       <div className="flex justify-between px-3 pb-1 text-[10px] tabular-nums">
@@ -1418,7 +1419,8 @@ const SupportChatWidget = () => {
                         </label>
                         <Input
                           value={newTitle}
-                          maxLength={120}
+                          minLength={TICKET_TITLE_MIN}
+                          maxLength={TICKET_TITLE_MAX}
                           onChange={(e) => setNewTitle(e.target.value)}
                           placeholder={t("Ex: Problemă la plata unei rezervări", "E.g. Issue with a booking payment")}
                           className="text-sm"
@@ -1449,24 +1451,29 @@ const SupportChatWidget = () => {
                         </label>
                         <Textarea
                           value={newDescription}
-                          maxLength={MAX_MESSAGE_LENGTH}
-                          rows={5}
-                          onChange={(e) => setNewDescription(clampChatInput(e.target.value).value)}
+                          minLength={TICKET_DESCRIPTION_MIN}
+                          maxLength={TICKET_DESCRIPTION_MAX}
+                          rows={8}
+                          onChange={(e) => setNewDescription(e.target.value)}
                           placeholder={t(
                             "Descrie pe scurt problema. Include codul rezervării dacă e cazul.",
                             "Briefly describe the issue. Include the booking code if relevant.",
                           )}
-                          className="text-sm resize-none"
+                          className="text-sm resize-y min-h-40"
                         />
                         <div className="flex justify-end pt-1 text-[10px] tabular-nums text-muted-foreground">
-                          {newDescription.length}/{MAX_MESSAGE_LENGTH}
+                          {newDescription.length}/{TICKET_DESCRIPTION_MAX}
                         </div>
                       </div>
 
                       <Button
                         className="w-full"
                         onClick={handleCreateTicketFromForm}
-                        disabled={!newTitle.trim() || !newDescription.trim() || isCreatingTicket}
+                        disabled={
+                          newTitle.trim().length < TICKET_TITLE_MIN ||
+                          newDescription.trim().length < TICKET_DESCRIPTION_MIN ||
+                          isCreatingTicket
+                        }
                       >
                         {isCreatingTicket ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
