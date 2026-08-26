@@ -412,7 +412,7 @@ function TicketDetailView({ ticket, onBack }: { ticket: OpsTicket; onBack: () =>
 // ============= Create Form =============
 
 function CreateTicketForm({ onSuccess }: { onSuccess: (id: string) => void }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
