@@ -13,7 +13,6 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,6 +38,14 @@ import { getSlaInfo, slaLabel } from "@/features/tickets/sla";
 import { TicketTimeline } from "@/components/support/center/TicketTimeline";
 import { TicketContextPanel } from "@/components/support/center/TicketContextPanel";
 import { TicketChat } from "@/components/support/center/TicketChat";
+import {
+  TICKET_DESCRIPTION_MAX,
+  TICKET_DESCRIPTION_MIN,
+  TICKET_TITLE_MAX,
+  TICKET_TITLE_MIN,
+  ticketValidationMessage,
+  validateTicketContent,
+} from "@/features/tickets/ticketValidation";
 
 type FilterKey = "all" | "active" | "waiting" | "resolved";
 
@@ -131,8 +138,8 @@ const UserTickets = () => {
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1 max-w-md">
                   {t(
-                    "Echipa Rentli îți răspunde de obicei în câteva ore.",
-                    "The Rentli team usually replies within a few hours."
+                    "Trimite situația în detaliu. Echipa Rentli îți răspunde în maximum 48 de ore.",
+                    "Describe the situation in detail. The Rentli team replies within 48 hours."
                   )}
                 </p>
               </div>
@@ -247,7 +254,7 @@ const UserTickets = () => {
               <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-center p-8">
                 <MessageSquare className="h-12 w-12 text-muted-foreground/30 mb-3" />
                 <p className="text-sm text-muted-foreground">
-                  {t("Selectează un ticket pentru a vedea conversația.", "Select a ticket to view the conversation.")}
+                  {t("Selectează un tichet pentru a vedea corespondența.", "Select a ticket to view its correspondence.")}
                 </p>
               </div>
             )}
@@ -404,8 +411,7 @@ function TicketDetailView({ ticket, onBack }: { ticket: OpsTicket; onBack: () =>
 // ============= Create Form =============
 
 function CreateTicketForm({ onSuccess }: { onSuccess: (id: string) => void }) {
-  const { t } = useLanguage();
-  const { toast } = useToast();
+  const { t, language } = useLanguage();
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -415,23 +421,32 @@ function CreateTicketForm({ onSuccess }: { onSuccess: (id: string) => void }) {
   const createMutation = useMutation({
     mutationFn: createUserTicket,
     onSuccess: (created) => {
-      toast({ title: t("Ticket creat", "Ticket created") });
+      toast.success(t("Ticket creat", "Ticket created"));
       qc.invalidateQueries({ queryKey: ["userTickets"] });
       onSuccess(created.id);
     },
     onError: (err: Error) => {
-      toast({ title: t("Eroare", "Error"), description: err.message, variant: "destructive" });
+      toast.error(t("Eroare", "Error"), { description: err.message });
     },
   });
 
   const categoryTypes = categoryGroup ? (CATEGORY_TYPES[categoryGroup] || []) : [];
-  const valid = title.trim() && description.trim() && categoryGroup && categoryType;
+  const valid =
+    title.trim().length >= TICKET_TITLE_MIN &&
+    description.trim().length >= TICKET_DESCRIPTION_MIN &&
+    !!categoryGroup &&
+    !!categoryType;
 
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        if (!valid) return;
+        if (!categoryGroup || !categoryType) return;
+        const error = validateTicketContent(title, description);
+        if (error) {
+          toast.error(t("Verifică formularul", "Check the form"), { description: ticketValidationMessage(error, language === "ro" ? "ro" : "en") });
+          return;
+        }
         createMutation.mutate({
           title: title.trim(),
           description: description.trim(),
@@ -467,13 +482,18 @@ function CreateTicketForm({ onSuccess }: { onSuccess: (id: string) => void }) {
       )}
       <div className="space-y-2">
         <Label>{t("Titlu", "Title")}</Label>
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200}
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} minLength={TICKET_TITLE_MIN} maxLength={TICKET_TITLE_MAX}
           placeholder={t("Descrie pe scurt problema", "Briefly describe the issue")} />
       </div>
       <div className="space-y-2">
         <Label>{t("Descriere", "Description")}</Label>
-        <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={4}
+        <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={8} minLength={TICKET_DESCRIPTION_MIN} maxLength={TICKET_DESCRIPTION_MAX}
+          className="min-h-48 resize-y"
           placeholder={t("Explică în detaliu problema…", "Explain the issue in detail…")} />
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>{t(`Minimum ${TICKET_DESCRIPTION_MIN} de caractere`, `Minimum ${TICKET_DESCRIPTION_MIN} characters`)}</span>
+          <span>{description.length}/{TICKET_DESCRIPTION_MAX}</span>
+        </div>
       </div>
       <Button type="submit" className="w-full" disabled={!valid || createMutation.isPending}>
         {createMutation.isPending
