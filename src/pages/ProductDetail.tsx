@@ -42,6 +42,9 @@ import { useProductExtendedStats } from "@/hooks/queries/useProductExtendedStats
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSEO } from "@/hooks/useSEO";
+import { categories } from "@/data/categories";
+import { truncateForMeta, buildMeta, cleanUserDescription, META_TITLE_MAX, META_DESCRIPTION_MAX } from "@/lib/seoText";
+
 import { addFavoriteProduct, removeFavoriteProduct, isProductFavorite } from "@/features/profile/favoriteProductsApi";
 
 interface OwnerInfo { id: string; full_name: string | null; avatar_url: string | null; }
