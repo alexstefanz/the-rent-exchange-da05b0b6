@@ -157,7 +157,13 @@ const CategoryDetail = () => {
     if (sortBy === "price_asc") result = [...result].sort((a, b) => a.daily_price_owner - b.daily_price_owner);
     else if (sortBy === "price_desc") result = [...result].sort((a, b) => b.daily_price_owner - a.daily_price_owner);
     return result;
-  }, [products, selectedSubcategory, judetCitiesSet, selectedCity, priceRange, sortBy]);
+  }, [products, selectedSubcategory, judetCitiesSet, selectedCity, priceRange, sortBy, searchesAllCategories]);
+
+  const suggestions = useSearchSuggestions(
+    searchQuery,
+    !isLoading && Boolean(searchQuery) && filteredProducts.length === 0,
+  );
+
 
   const hasActiveFilters =
     (selectedSubcategory && selectedSubcategory !== "all") ||
