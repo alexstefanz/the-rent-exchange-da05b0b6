@@ -23,21 +23,28 @@ import { useSearchSuggestions } from "@/hooks/queries/useSearchSuggestions";
 const Search = () => {
   const copy = useUxCopy();
   const { t } = useLanguage();
-  usePageSeo({
-    title: t("Caută produse de închiriat — Rentli", "Search rentals — Rentli"),
-    description: t(
-      "Filtrează după categorie, oraș și preț. Găsește instant ce ai nevoie pe Rentli.",
-      "Filter by category, city and price. Find what you need instantly on Rentli.",
-    ),
-  });
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
   const categoryFilter = searchParams.get("categorie") || "";
   const judetFilter = searchParams.get("judet") || "";
   const localitateFilter = searchParams.get("localitate") || "";
 
+  usePageSeo({
+    title: t("Caută produse de închiriat — Rentli", "Search rentals — Rentli"),
+    description: t(
+      "Filtrează după categorie, oraș și preț. Găsește instant ce ai nevoie pe Rentli.",
+      "Filter by category, city and price. Find what you need instantly on Rentli.",
+    ),
+    // Keyword / view variants are near-duplicates of the base search page.
+    noindex: Boolean(initialQuery || searchParams.get("view")),
+  });
+
   const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
+  const initialView = (searchParams.get("view") as "map" | "gallery" | "list") || "map";
+  const [viewMode, setViewMode] = useState<"map" | "gallery" | "list">(
+    ["map", "gallery", "list"].includes(initialView) ? initialView : "map",
+  );
+
   const [selectedCategory, setSelectedCategory] = useState(categoryFilter || "all");
   const [selectedJudet, setSelectedJudet] = useState(judetFilter || "all");
   const [selectedCity, setSelectedCity] = useState(localitateFilter || "all");
