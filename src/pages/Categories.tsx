@@ -19,11 +19,37 @@ const Categories = () => {
   const categoryCounts = useCategoryCounts();
 
   usePageSeo({
-    title: language === "en" ? "All rental categories — Rentli" : "Toate categoriile de închirieri — Rentli",
+    title: language === "en"
+      ? "All rental categories in Romania | Rentli"
+      : "Toate categoriile de închirieri din România | Rentli",
     description: language === "en"
-      ? "Explore tools, sport, photo & video, camping, events and more on Rentli."
-      : "Explorează unelte, sport, foto/video, camping, evenimente și multe altele pe Rentli.",
+      ? "Browse 12 rental categories: tools, events, electronics, gardening, camping, sport, travel, trailers, costumes and heavy equipment."
+      : "Explorează 12 categorii de închirieri: unelte, evenimente, electronice, grădinărit, camping, sport, călătorii, remorci, costume și utilaje.",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: language === "en" ? "Rental categories" : "Categorii de închirieri",
+      url: "https://rentli.ro/categorii",
+      mainEntity: {
+        "@type": "ItemList",
+        numberOfItems: categories.length,
+        itemListElement: categories.map((category, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          name: language === "en" ? (category.nameEn || category.name) : category.name,
+          url: `https://rentli.ro/categorie/${category.slug}`,
+        })),
+      },
+      breadcrumb: {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: language === "en" ? "Home" : "Acasă", item: "https://rentli.ro/" },
+          { "@type": "ListItem", position: 2, name: language === "en" ? "Categories" : "Categorii", item: "https://rentli.ro/categorii" },
+        ],
+      },
+    },
   });
+
 
   const filteredCategories = categories.filter(
     (cat) =>
