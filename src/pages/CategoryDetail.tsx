@@ -502,7 +502,6 @@ const CategoryDetail = () => {
           )}
         </div>
 
-        </div>
       </main>
       {viewMode !== "map" && <Footer />}
     </div>
