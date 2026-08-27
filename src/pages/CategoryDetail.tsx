@@ -83,13 +83,17 @@ const CategoryDetail = () => {
       .sort((a, b) => a.label.localeCompare(b.label, "ro", { sensitivity: "base" }));
   }, [category, language]);
 
+  // A keyword search leaves the category scope unless the user asks to stay in it.
+  const searchesAllCategories = Boolean(searchQuery) && !restrictToCategory;
+
   const productFilters = useMemo((): ProductFilters => {
     const filters: ProductFilters = {};
-    if (category) filters.category = category.name;
+    if (category && !searchesAllCategories) filters.category = category.name;
     if (searchQuery) filters.search = searchQuery;
     if (selectedCity && selectedCity !== "all") filters.location_city = selectedCity;
     return filters;
-  }, [category, searchQuery, selectedCity]);
+  }, [category, searchQuery, selectedCity, searchesAllCategories]);
+
 
   const { data: products = [], isLoading } = useProducts(category ? productFilters : undefined);
 
