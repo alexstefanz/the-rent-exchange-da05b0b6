@@ -242,7 +242,7 @@ const ProductDetail = () => {
     ? (seoFirstImage.startsWith("http") ? seoFirstImage : `${origin}${seoFirstImage}`)
     : "https://rentli.ro/og-image.webp";
   const canonicalUrl = product ? `${typeof window !== "undefined" ? window.location.origin : ""}${getProductUrl(product)}` : (typeof window !== "undefined" ? window.location.href : "");
-  const seoCategory = product?.category ? getCategoryByName(product.category) : null;
+  const seoCategory = product?.category ? (categories.find((c) => c.name === product.category) || null) : null;
   const seoPriceValidUntil = (() => {
     const d = new Date();
     d.setFullYear(d.getFullYear() + 1);
