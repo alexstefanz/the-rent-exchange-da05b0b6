@@ -46,7 +46,15 @@ const distanceKm = (a: MapItem, b: MapItem) => {
   return 2 * R * Math.asin(Math.sqrt(h));
 };
 
-const CategoryMapView = ({ products, isLoading }: Props) => {
+const CategoryMapView = ({
+  products,
+  isLoading,
+  searchQuery,
+  suggestions,
+  onSuggestionClick,
+  onClearSearch,
+}: Props) => {
+
   const { t } = useLanguage();
   const isCompact = useIsCompact();
   const [selectedId, setSelectedId] = useState<string | null>(null);
