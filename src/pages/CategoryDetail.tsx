@@ -11,6 +11,9 @@ import CategoryHero from "@/components/category/CategoryHero";
 import CategoryMapView from "@/components/category/map/CategoryMapView";
 import SearchFilters, { InlineSearchFilters } from "@/components/search/SearchFilters";
 import EmptySearchState from "@/components/search/EmptySearchState";
+import MapEmptyState from "@/components/category/map/MapEmptyState";
+import { useSearchSuggestions } from "@/hooks/queries/useSearchSuggestions";
+
 import { useProducts } from "@/hooks/queries/useProducts";
 import { ProductFilters, calculateClientPrice } from "@/features/products/productsApi";
 import { useUxCopy } from "@/hooks/useUxCopy";
@@ -40,6 +43,9 @@ const CategoryDetail = () => {
   const localitateFilter = searchParams.get("localitate") || "";
 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
+  // When a keyword is typed we search across every category by default.
+  const [restrictToCategory, setRestrictToCategory] = useState(false);
+
   const initialView = (searchParams.get("view") as "map" | "gallery" | "list") || "map";
   const [viewMode, setViewMode] = useState<"map" | "gallery" | "list">(
     ["map", "gallery", "list"].includes(initialView) ? initialView : "map",
@@ -80,13 +86,17 @@ const CategoryDetail = () => {
       .sort((a, b) => a.label.localeCompare(b.label, "ro", { sensitivity: "base" }));
   }, [category, language]);
 
+  // A keyword search leaves the category scope unless the user asks to stay in it.
+  const searchesAllCategories = Boolean(searchQuery) && !restrictToCategory;
+
   const productFilters = useMemo((): ProductFilters => {
     const filters: ProductFilters = {};
-    if (category) filters.category = category.name;
+    if (category && !searchesAllCategories) filters.category = category.name;
     if (searchQuery) filters.search = searchQuery;
     if (selectedCity && selectedCity !== "all") filters.location_city = selectedCity;
     return filters;
-  }, [category, searchQuery, selectedCity]);
+  }, [category, searchQuery, selectedCity, searchesAllCategories]);
+
 
   const { data: products = [], isLoading } = useProducts(category ? productFilters : undefined);
 
@@ -139,7 +149,7 @@ const CategoryDetail = () => {
 
   const filteredProducts = useMemo(() => {
     let result = products.filter((p) => {
-      if (selectedSubcategory !== "all" && p.subcategory !== selectedSubcategory) return false;
+      if (!searchesAllCategories && selectedSubcategory !== "all" && p.subcategory !== selectedSubcategory) return false;
       if (judetCitiesSet && selectedCity === "all") {
         if (!p.location_city || !judetCitiesSet.has(p.location_city)) return false;
       }
@@ -150,7 +160,13 @@ const CategoryDetail = () => {
     if (sortBy === "price_asc") result = [...result].sort((a, b) => a.daily_price_owner - b.daily_price_owner);
     else if (sortBy === "price_desc") result = [...result].sort((a, b) => b.daily_price_owner - a.daily_price_owner);
     return result;
-  }, [products, selectedSubcategory, judetCitiesSet, selectedCity, priceRange, sortBy]);
+  }, [products, selectedSubcategory, judetCitiesSet, selectedCity, priceRange, sortBy, searchesAllCategories]);
+
+  const suggestions = useSearchSuggestions(
+    searchQuery,
+    !isLoading && Boolean(searchQuery) && filteredProducts.length === 0,
+  );
+
 
   const hasActiveFilters =
     (selectedSubcategory && selectedSubcategory !== "all") ||
@@ -417,9 +433,30 @@ const CategoryDetail = () => {
             </div>
           </div>
         </div>
+        {searchQuery && (
+          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-muted/60 px-4 py-3 text-sm">
+            <span className="text-muted-foreground">
+              {searchesAllCategories
+                ? t(`Rezultate pentru „${searchQuery}” din toate categoriile`, `Results for "${searchQuery}" across all categories`)
+                : t(`Rezultate pentru „${searchQuery}” doar în ${catName}`, `Results for "${searchQuery}" only in ${catName}`)}
+            </span>
+            <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setRestrictToCategory((v) => !v)}>
+              {searchesAllCategories
+                ? t(`Caută doar în ${catName}`, `Search only in ${catName}`)
+                : t("Caută în toate categoriile", "Search all categories")}
+            </Button>
+          </div>
+        )}
         <div className={viewMode === "map" ? "min-w-0 -mx-4 lg:-mx-8" : "min-w-0"}>
           {viewMode === "map" && (
-            <CategoryMapView products={filteredProducts} isLoading={isLoading} />
+            <CategoryMapView
+              products={filteredProducts}
+              isLoading={isLoading}
+              searchQuery={searchQuery}
+              suggestions={suggestions}
+              onSuggestionClick={handleSearchChange}
+              onClearSearch={() => handleSearchChange("")}
+            />
           )}
           {viewMode !== "map" && isLoading && (
             <div className="flex items-center justify-center py-12">
@@ -452,11 +489,19 @@ const CategoryDetail = () => {
                   {t("Resetează filtrele", "Reset filters")}
                 </Button>
               </div>
+            ) : searchQuery ? (
+              <MapEmptyState
+                searchQuery={searchQuery}
+                suggestions={suggestions}
+                onSuggestionClick={handleSearchChange}
+                onClearSearch={() => handleSearchChange("")}
+              />
             ) : (
               <EmptySearchState searchQuery={searchQuery} type="products" />
             )
           )}
         </div>
+
       </main>
       {viewMode !== "map" && <Footer />}
     </div>

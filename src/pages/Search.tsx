@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search as SearchIcon, Loader2, LayoutGrid, List } from "lucide-react";
+import { Search as SearchIcon, Loader2, LayoutGrid, List, Map as MapIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
@@ -15,25 +15,36 @@ import { judete } from "@/data/romaniaLocations";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import CategoryMapView from "@/components/category/map/CategoryMapView";
+import MapEmptyState from "@/components/category/map/MapEmptyState";
+import { useSearchSuggestions } from "@/hooks/queries/useSearchSuggestions";
+
 
 const Search = () => {
   const copy = useUxCopy();
   const { t } = useLanguage();
-  usePageSeo({
-    title: t("Caută produse de închiriat — Rentli", "Search rentals — Rentli"),
-    description: t(
-      "Filtrează după categorie, oraș și preț. Găsește instant ce ai nevoie pe Rentli.",
-      "Filter by category, city and price. Find what you need instantly on Rentli.",
-    ),
-  });
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
   const categoryFilter = searchParams.get("categorie") || "";
   const judetFilter = searchParams.get("judet") || "";
   const localitateFilter = searchParams.get("localitate") || "";
 
+  usePageSeo({
+    title: t("Caută produse de închiriat — Rentli", "Search rentals — Rentli"),
+    description: t(
+      "Filtrează după categorie, oraș și preț. Găsește instant ce ai nevoie pe Rentli.",
+      "Filter by category, city and price. Find what you need instantly on Rentli.",
+    ),
+    // Keyword / view variants are near-duplicates of the base search page.
+    noindex: Boolean(initialQuery || searchParams.get("view")),
+  });
+
   const [searchQuery, setSearchQuery] = useState(initialQuery);
-  const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
+  const initialView = (searchParams.get("view") as "map" | "gallery" | "list") || "map";
+  const [viewMode, setViewMode] = useState<"map" | "gallery" | "list">(
+    ["map", "gallery", "list"].includes(initialView) ? initialView : "map",
+  );
+
   const [selectedCategory, setSelectedCategory] = useState(categoryFilter || "all");
   const [selectedJudet, setSelectedJudet] = useState(judetFilter || "all");
   const [selectedCity, setSelectedCity] = useState(localitateFilter || "all");
@@ -115,11 +126,33 @@ const Search = () => {
     setSearchParams(np, { replace: true });
   };
   const handleSearchChange = (value: string) => { setSearchQuery(value); const np = new URLSearchParams(searchParams); if (value) np.set("q", value); else np.delete("q"); setSearchParams(np, { replace: true }); };
+  const handleViewChange = (value: "map" | "gallery" | "list") => {
+    setViewMode(value);
+    const np = new URLSearchParams(searchParams);
+    np.set("view", value);
+    setSearchParams(np, { replace: true });
+  };
+
+  // Alternative keywords proposed when the current search returns nothing.
+  const suggestions = useSearchSuggestions(
+    searchQuery,
+    !isLoading && Boolean(searchQuery) && products.length === 0,
+  );
+
+  const viewToggle = (
+    <div className="flex items-center gap-1 rounded-lg border border-border p-1">
+      <Button variant={viewMode === "map" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => handleViewChange("map")} aria-label={t("Hartă", "Map")}><MapIcon className="h-4 w-4" /></Button>
+      <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => handleViewChange("gallery")}><LayoutGrid className="h-4 w-4" /></Button>
+      <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => handleViewChange("list")}><List className="h-4 w-4" /></Button>
+    </div>
+  );
+
+
 
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="container py-8">
+      <main className={viewMode === "map" ? "w-full px-4 pt-4 lg:px-8" : "container py-8"}>
         <div className="mb-6">
           <h1 className="font-heading text-2xl font-bold text-foreground md:text-3xl">{copy.search_page.title}</h1>
           <p className="mt-1 text-muted-foreground hidden md:block">{searchQuery ? copy.search_page.searchFor(searchQuery) : copy.search_page.allProducts}</p>
@@ -160,47 +193,59 @@ const Search = () => {
               </SelectContent>
             </Select>
           </div>
-          {/* Mobile-only: grid/list on the left */}
-          <div className="flex lg:hidden items-center gap-1 rounded-lg border border-border p-1">
-            <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("gallery")}><LayoutGrid className="h-4 w-4" /></Button>
-            <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("list")}><List className="h-4 w-4" /></Button>
-          </div>
+          {/* Mobile-only: map/grid/list on the left */}
+          <div className="flex lg:hidden">{viewToggle}</div>
           <div className="flex items-center gap-2">
             <InlineSearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedCity={selectedCity} onCityChange={handleCityChange} selectedJudet={selectedJudet} onJudetChange={handleJudetChange} priceRange={priceRange} onPriceRangeChange={handlePriceRangeChange} priceMin={priceBounds[0]} priceMax={priceBounds[1]} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} hideLocation />
-            <div className="hidden lg:flex items-center gap-1 rounded-lg border border-border p-1">
-              <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("gallery")}><LayoutGrid className="h-4 w-4" /></Button>
-              <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => setViewMode("list")}><List className="h-4 w-4" /></Button>
-            </div>
+            <div className="hidden lg:flex">{viewToggle}</div>
             <div className="lg:hidden">
               <SearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedCity={selectedCity} onCityChange={handleCityChange} selectedJudet={selectedJudet} onJudetChange={handleJudetChange} priceRange={priceRange} onPriceRangeChange={handlePriceRangeChange} priceMin={priceBounds[0]} priceMax={priceBounds[1]} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} />
             </div>
           </div>
         </div>
-        <div className="min-w-0">
-          {isLoading && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
-          {!isLoading && filteredProducts.length > 0 && (
+        <div className={viewMode === "map" ? "min-w-0 -mx-4 lg:-mx-8" : "min-w-0"}>
+          {viewMode === "map" && (
+            <CategoryMapView
+              products={filteredProducts}
+              isLoading={isLoading}
+              searchQuery={searchQuery}
+              suggestions={suggestions}
+              onSuggestionClick={handleSearchChange}
+              onClearSearch={() => handleSearchChange("")}
+            />
+          )}
+          {viewMode !== "map" && isLoading && <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}
+          {viewMode !== "map" && !isLoading && filteredProducts.length > 0 && (
             <div>
               <p className="mb-4 text-sm text-muted-foreground">{copy.search.resultsCount(filteredProducts.length)}</p>
               <div className={viewMode === "gallery" ? "grid gap-3 sm:gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4" : "flex flex-col gap-4"}>
-                {filteredProducts.map((product) => <ProductCard key={product.id} product={product} viewMode={viewMode} />)}
+                {filteredProducts.map((product) => <ProductCard key={product.id} product={product} viewMode={viewMode === "list" ? "list" : "gallery"} />)}
               </div>
             </div>
           )}
-          {!isLoading && filteredProducts.length === 0 && (
+          {viewMode !== "map" && !isLoading && filteredProducts.length === 0 && (
             products.length > 0 && hasActiveFilters ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <p className="text-lg font-medium text-foreground">{t("Niciun rezultat cu filtrele curente", "No results with the current filters")}</p>
                 <p className="mt-2 text-sm text-muted-foreground">{t(`Există ${products.length} anunțuri care se potrivesc căutării.`, `There are ${products.length} listings that match your search.`)}</p>
                 <Button className="mt-4" onClick={handleClearFilters}>{t("Resetează filtrele", "Reset filters")}</Button>
               </div>
+            ) : searchQuery ? (
+              <MapEmptyState
+                searchQuery={searchQuery}
+                suggestions={suggestions}
+                onSuggestionClick={handleSearchChange}
+                onClearSearch={() => handleSearchChange("")}
+              />
             ) : (
               <EmptySearchState searchQuery={searchQuery} type="products" />
             )
           )}
         </div>
       </main>
-      <Footer />
+      {viewMode !== "map" && <Footer />}
     </div>
+
   );
 };
 
