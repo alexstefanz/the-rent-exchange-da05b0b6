@@ -1,4 +1,4 @@
-import { containsProfanity } from "@/lib/profanityFilter";
+import { containsProfanityWords } from "@/lib/profanityFilter";
 
 export const TICKET_TITLE_MIN = 8;
 export const TICKET_TITLE_MAX = 120;
@@ -27,7 +27,7 @@ export function validateTicketContent(
   if (cleanTitle.length > TICKET_TITLE_MAX) return "TITLE_TOO_LONG";
   if (cleanDescription.length < TICKET_DESCRIPTION_MIN) return "DESCRIPTION_TOO_SHORT";
   if (cleanDescription.length > TICKET_DESCRIPTION_MAX) return "DESCRIPTION_TOO_LONG";
-  if (containsProfanity(`${cleanTitle} ${cleanDescription}`).hit) return "PROFANITY";
+  if (containsProfanityWords(`${cleanTitle} ${cleanDescription}`).hit) return "PROFANITY";
   return null;
 }
 
@@ -35,7 +35,7 @@ export function validateTicketReply(text: string): TicketValidationError | null 
   const cleanText = text.trim();
   if (cleanText.length < TICKET_REPLY_MIN) return "REPLY_TOO_SHORT";
   if (cleanText.length > TICKET_REPLY_MAX) return "REPLY_TOO_LONG";
-  if (containsProfanity(cleanText).hit) return "PROFANITY";
+  if (containsProfanityWords(cleanText).hit) return "PROFANITY";
   return null;
 }
 

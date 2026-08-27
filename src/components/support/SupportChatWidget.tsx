@@ -636,7 +636,7 @@ const SupportChatWidget = () => {
   const handleCreateTicketFromForm = async () => {
     if (!user) return;
     const title = newTitle.trim().slice(0, 120);
-    const description = newDescription.trim().slice(0, MAX_MESSAGE_LENGTH);
+    const description = newDescription.trim().slice(0, TICKET_DESCRIPTION_MAX);
     const validationError = validateTicketContent(title, description);
     if (validationError) {
       toast.error(ticketValidationMessage(validationError, language === "ro" ? "ro" : "en"));
