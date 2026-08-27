@@ -56,3 +56,29 @@ export function containsProfanity(text: string): { hit: boolean; word?: string }
   }
   return { hit: false };
 }
+
+/**
+ * Word-aware profanity check for long-form text (support tickets).
+ * Avoids the false positives of the collapsed-substring check, where innocent
+ * words like "automată" ("mata") or "populez" ("pule") were flagged.
+ * - each word is normalized and matched exactly against the blocklist;
+ * - the fully collapsed text is only matched against long (>= 8 chars)
+ *   compound insults, to still catch obfuscated spacing.
+ */
+const LONG_BAD_WORDS = BAD_WORDS.filter((w) => w.length >= 8);
+
+export function containsProfanityWords(text: string): { hit: boolean; word?: string } {
+  if (!text) return { hit: false };
+
+  for (const raw of text.split(/[^\p{L}\p{N}@$]+/u)) {
+    const token = normalizeForProfanity(raw);
+    if (!token) continue;
+    if (BAD_WORDS.includes(token)) return { hit: true, word: token };
+  }
+
+  const norm = normalizeForProfanity(text);
+  for (const w of LONG_BAD_WORDS) {
+    if (norm.includes(w)) return { hit: true, word: w };
+  }
+  return { hit: false };
+}
