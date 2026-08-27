@@ -146,7 +146,7 @@ const CategoryDetail = () => {
 
   const filteredProducts = useMemo(() => {
     let result = products.filter((p) => {
-      if (selectedSubcategory !== "all" && p.subcategory !== selectedSubcategory) return false;
+      if (!searchesAllCategories && selectedSubcategory !== "all" && p.subcategory !== selectedSubcategory) return false;
       if (judetCitiesSet && selectedCity === "all") {
         if (!p.location_city || !judetCitiesSet.has(p.location_city)) return false;
       }
