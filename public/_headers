@@ -8,22 +8,22 @@
   Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
 
 /icon-48.png
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cache-Control: public, max-age=0, no-cache, must-revalidate
 
 /favicon.ico
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cache-Control: public, max-age=0, no-cache, must-revalidate
 
 /favicon.png
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cache-Control: public, max-age=0, no-cache, must-revalidate
 
 /favicon-192.png
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cache-Control: public, max-age=0, no-cache, must-revalidate
 
 /favicon-512.png
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cache-Control: public, max-age=0, no-cache, must-revalidate
 
 /apple-touch-icon.png
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cache-Control: public, max-age=0, no-cache, must-revalidate
 
 /index.html
   Cache-Control: public, max-age=0, must-revalidate
