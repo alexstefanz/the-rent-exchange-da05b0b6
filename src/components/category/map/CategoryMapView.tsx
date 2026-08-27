@@ -225,10 +225,15 @@ const CategoryMapView = ({
           )}
         >
           <h2 className="text-[15px] font-semibold text-foreground">
-            {t(
-              `${visibleProducts.length} anunțuri disponibile`,
-              `${visibleProducts.length} listings available`,
-            )}
+            {searchQuery
+              ? t(
+                  `${visibleProducts.length} anunțuri pentru „${searchQuery}”`,
+                  `${visibleProducts.length} listings for “${searchQuery}”`,
+                )
+              : t(
+                  `${visibleProducts.length} anunțuri disponibile`,
+                  `${visibleProducts.length} listings available`,
+                )}
           </h2>
           <p className="mb-4 text-[13px] text-muted-foreground">
             {t("Locațiile afișate sunt aproximative", "Displayed locations are approximate")}
@@ -237,6 +242,13 @@ const CategoryMapView = ({
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
+          ) : pagedProducts.length === 0 ? (
+            <MapEmptyState
+              searchQuery={searchQuery}
+              suggestions={suggestions}
+              onSuggestionClick={onSuggestionClick}
+              onClearSearch={onClearSearch}
+            />
           ) : (
             <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-7 min-[2200px]:grid-cols-3">
               {pagedProducts.map((p) => (
@@ -258,6 +270,7 @@ const CategoryMapView = ({
               ))}
             </div>
           )}
+
           {withoutPin > 0 && (
             <p className="mt-6 text-xs text-muted-foreground">
               {t(
