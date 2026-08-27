@@ -15,6 +15,10 @@ import { judete } from "@/data/romaniaLocations";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import CategoryMapView from "@/components/category/map/CategoryMapView";
+import MapEmptyState from "@/components/category/map/MapEmptyState";
+import { useSearchSuggestions } from "@/hooks/queries/useSearchSuggestions";
+
 
 const Search = () => {
   const copy = useUxCopy();
