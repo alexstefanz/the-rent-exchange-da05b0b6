@@ -40,6 +40,9 @@ const CategoryDetail = () => {
   const localitateFilter = searchParams.get("localitate") || "";
 
   const [searchQuery, setSearchQuery] = useState(initialQuery);
+  // When a keyword is typed we search across every category by default.
+  const [restrictToCategory, setRestrictToCategory] = useState(false);
+
   const initialView = (searchParams.get("view") as "map" | "gallery" | "list") || "map";
   const [viewMode, setViewMode] = useState<"map" | "gallery" | "list">(
     ["map", "gallery", "list"].includes(initialView) ? initialView : "map",
