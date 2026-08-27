@@ -126,6 +126,28 @@ const Search = () => {
     setSearchParams(np, { replace: true });
   };
   const handleSearchChange = (value: string) => { setSearchQuery(value); const np = new URLSearchParams(searchParams); if (value) np.set("q", value); else np.delete("q"); setSearchParams(np, { replace: true }); };
+  const handleViewChange = (value: "map" | "gallery" | "list") => {
+    setViewMode(value);
+    const np = new URLSearchParams(searchParams);
+    np.set("view", value);
+    setSearchParams(np, { replace: true });
+  };
+
+  // Alternative keywords proposed when the current search returns nothing.
+  const suggestions = useSearchSuggestions(
+    searchQuery,
+    !isLoading && Boolean(searchQuery) && products.length === 0,
+  );
+
+  const viewToggle = (
+    <div className="flex items-center gap-1 rounded-lg border border-border p-1">
+      <Button variant={viewMode === "map" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => handleViewChange("map")} aria-label={t("Hartă", "Map")}><MapIcon className="h-4 w-4" /></Button>
+      <Button variant={viewMode === "gallery" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => handleViewChange("gallery")}><LayoutGrid className="h-4 w-4" /></Button>
+      <Button variant={viewMode === "list" ? "secondary" : "ghost"} size="icon" className="h-8 w-8" onClick={() => handleViewChange("list")}><List className="h-4 w-4" /></Button>
+    </div>
+  );
+
+
 
   return (
     <div className="min-h-screen bg-background">
