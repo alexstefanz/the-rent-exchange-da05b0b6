@@ -21,13 +21,20 @@ const useIsCompact = () => {
 import MapCanvas, { Bounds, MapItem } from "./MapCanvas";
 import MapDetailPanel from "./MapDetailPanel";
 import MapProductCard from "./MapProductCard";
+import MapEmptyState from "./MapEmptyState";
 
 interface Props {
   products: Product[];
   isLoading?: boolean;
+  /** Current keyword — the map only shows listings matching it. */
+  searchQuery?: string;
+  suggestions?: string[];
+  onSuggestionClick?: (term: string) => void;
+  onClearSearch?: () => void;
 }
 
 const PAGE_SIZE = 19;
+
 
 const distanceKm = (a: MapItem, b: MapItem) => {
   const R = 6371;
