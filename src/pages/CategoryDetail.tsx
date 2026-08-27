@@ -19,6 +19,9 @@ import { getCategoryBySlug } from "@/data/categories";
 import { judete } from "@/data/romaniaLocations";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { getCategorySeoCopy } from "@/data/categorySeo";
+import { truncateForMeta, META_TITLE_MAX, META_DESCRIPTION_MAX } from "@/lib/seoText";
+
 
 const CategoryDetail = () => {
   const { slug } = useParams();
