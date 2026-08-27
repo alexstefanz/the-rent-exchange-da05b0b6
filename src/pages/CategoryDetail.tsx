@@ -156,6 +156,70 @@ const CategoryDetail = () => {
     (priceTouched && (priceRange[0] !== priceBounds[0] || priceRange[1] !== priceBounds[1])) ||
     sortBy !== "relevance";
 
+  // --- SEO ---------------------------------------------------------------
+  const seoCopy = getCategorySeoCopy(category?.slug);
+  const seoMinPrice = useMemo(() => {
+    if (!products.length) return null;
+    let min = Infinity;
+    for (const p of products) {
+      const cp = calculateClientPrice(p.daily_price_owner, p.platform_fee_percent);
+      if (cp > 0 && cp < min) min = cp;
+    }
+    return Number.isFinite(min) ? Math.floor(min) : null;
+  }, [products]);
+
+  const seoKeyword = seoCopy
+    ? (language === "en" ? seoCopy.titleKeywordEn : seoCopy.titleKeyword)
+    : catName;
+
+  const seoTitle = category
+    ? truncateForMeta(
+        language === "en"
+          ? `${seoKeyword} for rent${seoMinPrice ? ` from ${seoMinPrice} lei/day` : " in Romania"} | Rentli`
+          : `${seoKeyword} de închiriat${seoMinPrice ? ` de la ${seoMinPrice} lei/zi` : " în România"} | Rentli`,
+        META_TITLE_MAX,
+      )
+    : (language === "en" ? "Rental category | Rentli" : "Categorie de închirieri | Rentli");
+
+  const seoDescription = category
+    ? truncateForMeta(
+        seoCopy
+          ? (language === "en" ? seoCopy.descriptionEn : seoCopy.description)
+          : (language === "en"
+              ? `Rent ${catName.toLowerCase()} from verified people. Fair prices, secure payment, photo handover on Rentli.`
+              : `Închiriază ${catName.toLowerCase()} de la oameni verificați. Prețuri corecte, plată securizată, predare cu poze pe Rentli.`),
+        META_DESCRIPTION_MAX,
+      )
+    : (language === "en" ? "Explore rentals by category on Rentli." : "Explorează închirieri pe categorii pe Rentli.");
+
+  usePageSeo({
+    title: seoTitle,
+    description: seoDescription,
+    // Filtered / paginated variants of the same category are near-duplicates.
+    noindex: Boolean(hasActiveFilters || searchQuery),
+    jsonLd: category ? {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: catName,
+      url: `https://rentli.ro/categorie/${category.slug}`,
+      description: seoDescription,
+      mainEntity: {
+        "@type": "ItemList",
+        numberOfItems: products.length,
+      },
+      breadcrumb: {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: language === "en" ? "Home" : "Acasă", item: "https://rentli.ro/" },
+          { "@type": "ListItem", position: 2, name: language === "en" ? "Categories" : "Categorii", item: "https://rentli.ro/categorii" },
+          { "@type": "ListItem", position: 3, name: catName, item: `https://rentli.ro/categorie/${category.slug}` },
+        ],
+      },
+    } : null,
+  });
+
+
+
   const updateParam = (key: string, value: string) => {
     const np = new URLSearchParams(searchParams);
     if (value && value !== "all") np.set(key, value);
