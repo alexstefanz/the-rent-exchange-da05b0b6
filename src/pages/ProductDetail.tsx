@@ -215,14 +215,25 @@ const ProductDetail = () => {
   const seoDisplayDesc = product ? ((language === "en" && product.description_en) ? product.description_en : product.description) : "";
   const seoPrice = Math.round(clientPrice);
   const SEO_BRAND_SUFFIX = " | Rentli";
-  const seoTitle = product
-    ? truncateForMeta(
-        language === "en"
-          ? `Rent ${seoDisplayTitle} in ${seoLocation} — ${seoPrice} lei/day`
-          : `Închiriere ${seoDisplayTitle} în ${seoLocation} — ${seoPrice} lei/zi`,
-        META_TITLE_MAX - SEO_BRAND_SUFFIX.length,
-      ) + SEO_BRAND_SUFFIX
-    : "Rentli";
+  const seoTitle = (() => {
+    if (!product) return "Rentli";
+    const max = META_TITLE_MAX - SEO_BRAND_SUFFIX.length;
+    const priceTail = language === "en" ? `${seoPrice} lei/day` : `${seoPrice} lei/zi`;
+    const withCity = language === "en"
+      ? `Rent ${seoDisplayTitle} in ${seoLocation} — ${priceTail}`
+      : `Închiriere ${seoDisplayTitle} în ${seoLocation} — ${priceTail}`;
+    if (withCity.length <= max) return withCity + SEO_BRAND_SUFFIX;
+    const noCity = language === "en"
+      ? `Rent ${seoDisplayTitle} — ${priceTail}`
+      : `Închiriere ${seoDisplayTitle} — ${priceTail}`;
+    if (noCity.length <= max) return noCity + SEO_BRAND_SUFFIX;
+    // Shorten the product title itself, always keeping the price tail readable.
+    const prefix = language === "en" ? "Rent " : "Închiriere ";
+    const room = max - prefix.length - priceTail.length - 4; // " — " + ellipsis
+    const shortTitle = room > 10 ? `${seoDisplayTitle.slice(0, room).trimEnd()}…` : seoDisplayTitle;
+    return truncateForMeta(`${prefix}${shortTitle} — ${priceTail}`, max) + SEO_BRAND_SUFFIX;
+  })();
+
 
   const cleanedDesc = cleanUserDescription(seoDisplayDesc);
   const seoLead = language === "en"
