@@ -25,12 +25,24 @@ const Index = () => {
 
   usePageSeo({
     title: language === "en"
-      ? "Rentli — Rent anything, anywhere in Romania"
-      : "Rentli — Închiriază orice, oriunde în România",
+      ? "Rent anything in Romania — tools, photo, camping | Rentli"
+      : "Închiriază orice în România — unelte, foto, camping | Rentli",
     description: language === "en"
-      ? "Peer-to-peer rental marketplace in Romania. Tools, camping, photo, sport and more. Secure payments and photo handover."
-      : "Marketplace peer-to-peer pentru închirieri. Unelte, camping, foto, sport și multe altele. Plată securizată, predare cu poze.",
+      ? "Peer-to-peer rental marketplace in Romania: tools, electronics, camping, sport and events. Verified owners, secure payment, photo handover."
+      : "Marketplace de închirieri între oameni: unelte, electronice, camping, sport, evenimente. Proprietari verificați, plată securizată, predare cu poze.",
+    jsonLd: {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: language === "en" ? "Rental categories on Rentli" : "Categorii de închirieri pe Rentli",
+      itemListElement: categories.map((category, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        name: language === "en" ? (category.nameEn || category.name) : category.name,
+        url: `https://rentli.ro/categorie/${category.slug}`,
+      })),
+    },
   });
+
 
 
   return (

@@ -42,6 +42,8 @@ import { useProductExtendedStats } from "@/hooks/queries/useProductExtendedStats
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSEO } from "@/hooks/useSEO";
+import { truncateForMeta, buildMeta, cleanUserDescription, META_TITLE_MAX, META_DESCRIPTION_MAX } from "@/lib/seoText";
+
 import { addFavoriteProduct, removeFavoriteProduct, isProductFavorite } from "@/features/profile/favoriteProductsApi";
 
 interface OwnerInfo { id: string; full_name: string | null; avatar_url: string | null; }
@@ -208,20 +210,57 @@ const ProductDetail = () => {
   const rentalDays = useMemo(() => (startDate && endDate) ? differenceInDays(endDate, startDate) + 1 : 0, [startDate, endDate]);
 
   // SEO (must run before early returns to keep hook order stable)
-  const seoLocation = product?.location_city || "România";
-  const seoTitle = product ? `${(language === "en" && product.title_en) ? product.title_en : product.title} - ${seoLocation} | Rentli` : "Rentli";
+  const seoLocation = product?.location_city || (language === "en" ? "Romania" : "România");
   const seoDisplayTitle = product ? ((language === "en" && product.title_en) ? product.title_en : product.title) : "";
   const seoDisplayDesc = product ? ((language === "en" && product.description_en) ? product.description_en : product.description) : "";
-  const rawDesc = (seoDisplayDesc || "").replace(/\s+/g, " ").trim();
-  const seoDesc = rawDesc.length > 0
-    ? (rawDesc.length > 160 ? rawDesc.slice(0, 157) + "..." : rawDesc)
-    : t(`Închiriază pe Rentli. Plată securizată, predare cu poze, suport 7/7.`, `Rent on Rentli. Secure payment, photo handover, 7/7 support.`);
+  const seoPrice = Math.round(clientPrice);
+  const SEO_BRAND_SUFFIX = " | Rentli";
+  const seoTitle = (() => {
+    if (!product) return "Rentli";
+    const max = META_TITLE_MAX - SEO_BRAND_SUFFIX.length;
+    const priceTail = language === "en" ? `${seoPrice} lei/day` : `${seoPrice} lei/zi`;
+    const withCity = language === "en"
+      ? `Rent ${seoDisplayTitle} in ${seoLocation} — ${priceTail}`
+      : `Închiriere ${seoDisplayTitle} în ${seoLocation} — ${priceTail}`;
+    if (withCity.length <= max) return withCity + SEO_BRAND_SUFFIX;
+    const noCity = language === "en"
+      ? `Rent ${seoDisplayTitle} — ${priceTail}`
+      : `Închiriere ${seoDisplayTitle} — ${priceTail}`;
+    if (noCity.length <= max) return noCity + SEO_BRAND_SUFFIX;
+    // Shorten the product title itself, always keeping the price tail readable.
+    const prefix = language === "en" ? "Rent " : "Închiriere ";
+    const room = max - prefix.length - priceTail.length - 4; // " — " + ellipsis
+    const shortTitle = room > 10 ? `${seoDisplayTitle.slice(0, room).trimEnd()}…` : seoDisplayTitle;
+    return truncateForMeta(`${prefix}${shortTitle} — ${priceTail}`, max) + SEO_BRAND_SUFFIX;
+  })();
+
+
+  const cleanedDesc = cleanUserDescription(seoDisplayDesc);
+  const seoLead = language === "en"
+    ? `${seoDisplayTitle} for rent in ${seoLocation}, ${seoPrice} lei/day.`
+    : `${seoDisplayTitle} de închiriat în ${seoLocation}, ${seoPrice} lei/zi.`;
+  const seoFallback = t(
+    "Plată securizată, predare documentată cu poze și proprietari verificați pe Rentli.",
+    "Secure payment, photo-documented handover and verified owners on Rentli.",
+  );
+  const seoDesc = product
+    ? buildMeta([seoLead, cleanedDesc.length >= 40 ? cleanedDesc : seoFallback], META_DESCRIPTION_MAX)
+    : t(
+        "Închiriază pe Rentli. Plată securizată, predare cu poze, suport 7/7.",
+        "Rent on Rentli. Secure payment, photo handover, 7/7 support.",
+      );
   const seoFirstImage = images.find((i) => i && i !== "/placeholder.svg");
   const origin = typeof window !== "undefined" ? window.location.origin : "https://rentli.ro";
   const seoImage = seoFirstImage
     ? (seoFirstImage.startsWith("http") ? seoFirstImage : `${origin}${seoFirstImage}`)
     : "https://rentli.ro/og-image.webp";
   const canonicalUrl = product ? `${typeof window !== "undefined" ? window.location.origin : ""}${getProductUrl(product)}` : (typeof window !== "undefined" ? window.location.href : "");
+  const seoCategory = product?.category ? (categories.find((c) => c.name === product.category) || null) : null;
+  const seoPriceValidUntil = (() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + 1);
+    return d.toISOString().slice(0, 10);
+  })();
   useSEO({
     title: seoTitle,
     description: seoDesc,
@@ -232,29 +271,60 @@ const ProductDetail = () => {
     noindex: isPreview,
     jsonLd: product ? {
       "@context": "https://schema.org",
-      "@type": "Product",
-      name: seoDisplayTitle,
-      description: seoDesc,
-      image: images.filter(i => i && i !== "/placeholder.svg").map(i => i.startsWith("http") ? i : `${window.location.origin}${i}`),
-      brand: { "@type": "Brand", name: "Rentli" },
-      category: product.category || undefined,
-      offers: {
-        "@type": "Offer",
-        price: clientPrice,
-        priceCurrency: "RON",
-        availability: "https://schema.org/InStock",
-        url: canonicalUrl,
-        seller: { "@type": "Person", name: owner?.full_name || "Rentli" },
-      },
-      ...(extendedStats?.owner_avg_rating && extendedStats.owner_review_count ? {
-        aggregateRating: {
-          "@type": "AggregateRating",
-          ratingValue: Number(extendedStats.owner_avg_rating).toFixed(1),
-          reviewCount: extendedStats.owner_review_count,
+      "@graph": [
+        {
+          "@type": "Product",
+          name: seoDisplayTitle,
+          description: seoDesc,
+          sku: product.id,
+          image: images.filter(i => i && i !== "/placeholder.svg").map(i => i.startsWith("http") ? i : `${origin}${i}`),
+          brand: { "@type": "Brand", name: "Rentli" },
+          category: product.category || undefined,
+          itemCondition: product.condition === "new"
+            ? "https://schema.org/NewCondition"
+            : "https://schema.org/UsedCondition",
+          offers: {
+            "@type": "Offer",
+            price: clientPrice,
+            priceCurrency: "RON",
+            priceValidUntil: seoPriceValidUntil,
+            availability: "https://schema.org/InStock",
+            url: canonicalUrl,
+            areaServed: { "@type": "Place", name: seoLocation },
+            seller: { "@type": "Person", name: owner?.full_name || "Rentli" },
+          },
+          ...(extendedStats?.owner_avg_rating && extendedStats.owner_review_count ? {
+            aggregateRating: {
+              "@type": "AggregateRating",
+              ratingValue: Number(extendedStats.owner_avg_rating).toFixed(1),
+              reviewCount: extendedStats.owner_review_count,
+            },
+          } : {}),
         },
-      } : {}),
+        {
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: language === "en" ? "Home" : "Acasă", item: "https://rentli.ro/" },
+            ...(seoCategory
+              ? [{
+                  "@type": "ListItem",
+                  position: 2,
+                  name: language === "en" ? (seoCategory.nameEn || seoCategory.name) : seoCategory.name,
+                  item: `https://rentli.ro/categorie/${seoCategory.slug}`,
+                }]
+              : []),
+            {
+              "@type": "ListItem",
+              position: seoCategory ? 3 : 2,
+              name: seoDisplayTitle,
+              item: canonicalUrl,
+            },
+          ],
+        },
+      ],
     } : null,
   });
+
 
   const handleReserve = () => {
     if (!product || !startDate || !endDate) return;

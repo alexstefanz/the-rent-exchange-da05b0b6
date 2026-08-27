@@ -19,6 +19,9 @@ import { getCategoryBySlug } from "@/data/categories";
 import { judete } from "@/data/romaniaLocations";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { getCategorySeoCopy } from "@/data/categorySeo";
+import { truncateForMeta, META_TITLE_MAX, META_DESCRIPTION_MAX } from "@/lib/seoText";
+
 
 const CategoryDetail = () => {
   const { slug } = useParams();
@@ -50,33 +53,8 @@ const CategoryDetail = () => {
 
   const catName = category ? (language === "en" ? category.nameEn : category.name) : "";
 
-  usePageSeo({
-    title: category
-      ? (language === "en"
-          ? `${catName} for rent in Romania — Rentli`
-          : `${catName} de închiriat în România — Rentli`)
-      : (language === "en" ? "Category — Rentli" : "Categorie — Rentli"),
-    description: category
-      ? (language === "en"
-          ? `Rent ${catName.toLowerCase()} from verified people. Fair prices, secure payment, photo handover on Rentli.`
-          : `Închiriază ${catName.toLowerCase()} de la oameni verificați. Prețuri corecte, plată securizată, predare cu poze pe Rentli.`)
-      : (language === "en"
-          ? "Explore rentals by category on Rentli."
-          : "Explorează închirieri pe categorii pe Rentli."),
-    jsonLd: category ? {
-      "@context": "https://schema.org",
-      "@type": "CollectionPage",
-      name: catName,
-      breadcrumb: {
-        "@type": "BreadcrumbList",
-        itemListElement: [
-          { "@type": "ListItem", position: 1, name: language === "en" ? "Home" : "Acasă", item: "https://rentli.ro/" },
-          { "@type": "ListItem", position: 2, name: language === "en" ? "Categories" : "Categorii", item: "https://rentli.ro/categorii" },
-          { "@type": "ListItem", position: 3, name: catName, item: `https://rentli.ro/categorie/${category.slug}` },
-        ],
-      },
-    } : null,
-  });
+
+
 
   const bannerImage = useMemo(() => {
     if (!category) return "";
@@ -180,6 +158,70 @@ const CategoryDetail = () => {
     (selectedCity && selectedCity !== "all") ||
     (priceTouched && (priceRange[0] !== priceBounds[0] || priceRange[1] !== priceBounds[1])) ||
     sortBy !== "relevance";
+
+  // --- SEO ---------------------------------------------------------------
+  const seoCopy = getCategorySeoCopy(category?.slug);
+  const seoMinPrice = useMemo(() => {
+    if (!products.length) return null;
+    let min = Infinity;
+    for (const p of products) {
+      const cp = calculateClientPrice(p.daily_price_owner, p.platform_fee_percent);
+      if (cp > 0 && cp < min) min = cp;
+    }
+    return Number.isFinite(min) ? Math.floor(min) : null;
+  }, [products]);
+
+  const seoKeyword = seoCopy
+    ? (language === "en" ? seoCopy.titleKeywordEn : seoCopy.titleKeyword)
+    : catName;
+
+  const seoTitle = category
+    ? truncateForMeta(
+        language === "en"
+          ? `${seoKeyword} for rent${seoMinPrice ? ` from ${seoMinPrice} lei/day` : " in Romania"} | Rentli`
+          : `${seoKeyword} de închiriat${seoMinPrice ? ` de la ${seoMinPrice} lei/zi` : " în România"} | Rentli`,
+        META_TITLE_MAX,
+      )
+    : (language === "en" ? "Rental category | Rentli" : "Categorie de închirieri | Rentli");
+
+  const seoDescription = category
+    ? truncateForMeta(
+        seoCopy
+          ? (language === "en" ? seoCopy.descriptionEn : seoCopy.description)
+          : (language === "en"
+              ? `Rent ${catName.toLowerCase()} from verified people. Fair prices, secure payment, photo handover on Rentli.`
+              : `Închiriază ${catName.toLowerCase()} de la oameni verificați. Prețuri corecte, plată securizată, predare cu poze pe Rentli.`),
+        META_DESCRIPTION_MAX,
+      )
+    : (language === "en" ? "Explore rentals by category on Rentli." : "Explorează închirieri pe categorii pe Rentli.");
+
+  usePageSeo({
+    title: seoTitle,
+    description: seoDescription,
+    // Filtered / paginated variants of the same category are near-duplicates.
+    noindex: Boolean(hasActiveFilters || searchQuery),
+    jsonLd: category ? {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      name: catName,
+      url: `https://rentli.ro/categorie/${category.slug}`,
+      description: seoDescription,
+      mainEntity: {
+        "@type": "ItemList",
+        numberOfItems: products.length,
+      },
+      breadcrumb: {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: language === "en" ? "Home" : "Acasă", item: "https://rentli.ro/" },
+          { "@type": "ListItem", position: 2, name: language === "en" ? "Categories" : "Categorii", item: "https://rentli.ro/categorii" },
+          { "@type": "ListItem", position: 3, name: catName, item: `https://rentli.ro/categorie/${category.slug}` },
+        ],
+      },
+    } : null,
+  });
+
+
 
   const updateParam = (key: string, value: string) => {
     const np = new URLSearchParams(searchParams);
