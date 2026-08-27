@@ -433,9 +433,30 @@ const CategoryDetail = () => {
             </div>
           </div>
         </div>
+        {searchQuery && (
+          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl bg-muted/60 px-4 py-3 text-sm">
+            <span className="text-muted-foreground">
+              {searchesAllCategories
+                ? t(`Rezultate pentru „${searchQuery}” din toate categoriile`, `Results for "${searchQuery}" across all categories`)
+                : t(`Rezultate pentru „${searchQuery}” doar în ${catName}`, `Results for "${searchQuery}" only in ${catName}`)}
+            </span>
+            <Button variant="link" size="sm" className="h-auto p-0" onClick={() => setRestrictToCategory((v) => !v)}>
+              {searchesAllCategories
+                ? t(`Caută doar în ${catName}`, `Search only in ${catName}`)
+                : t("Caută în toate categoriile", "Search all categories")}
+            </Button>
+          </div>
+        )}
         <div className={viewMode === "map" ? "min-w-0 -mx-4 lg:-mx-8" : "min-w-0"}>
           {viewMode === "map" && (
-            <CategoryMapView products={filteredProducts} isLoading={isLoading} />
+            <CategoryMapView
+              products={filteredProducts}
+              isLoading={isLoading}
+              searchQuery={searchQuery}
+              suggestions={suggestions}
+              onSuggestionClick={handleSearchChange}
+              onClearSearch={() => handleSearchChange("")}
+            />
           )}
           {viewMode !== "map" && isLoading && (
             <div className="flex items-center justify-center py-12">
@@ -468,10 +489,19 @@ const CategoryDetail = () => {
                   {t("Resetează filtrele", "Reset filters")}
                 </Button>
               </div>
+            ) : searchQuery ? (
+              <MapEmptyState
+                searchQuery={searchQuery}
+                suggestions={suggestions}
+                onSuggestionClick={handleSearchChange}
+                onClearSearch={() => handleSearchChange("")}
+              />
             ) : (
               <EmptySearchState searchQuery={searchQuery} type="products" />
             )
           )}
+        </div>
+
         </div>
       </main>
       {viewMode !== "map" && <Footer />}
