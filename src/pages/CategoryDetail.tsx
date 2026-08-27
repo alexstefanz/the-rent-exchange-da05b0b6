@@ -11,6 +11,9 @@ import CategoryHero from "@/components/category/CategoryHero";
 import CategoryMapView from "@/components/category/map/CategoryMapView";
 import SearchFilters, { InlineSearchFilters } from "@/components/search/SearchFilters";
 import EmptySearchState from "@/components/search/EmptySearchState";
+import MapEmptyState from "@/components/category/map/MapEmptyState";
+import { useSearchSuggestions } from "@/hooks/queries/useSearchSuggestions";
+
 import { useProducts } from "@/hooks/queries/useProducts";
 import { ProductFilters, calculateClientPrice } from "@/features/products/productsApi";
 import { useUxCopy } from "@/hooks/useUxCopy";
