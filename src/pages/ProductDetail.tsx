@@ -214,14 +214,16 @@ const ProductDetail = () => {
   const seoDisplayTitle = product ? ((language === "en" && product.title_en) ? product.title_en : product.title) : "";
   const seoDisplayDesc = product ? ((language === "en" && product.description_en) ? product.description_en : product.description) : "";
   const seoPrice = Math.round(clientPrice);
+  const SEO_BRAND_SUFFIX = " | Rentli";
   const seoTitle = product
     ? truncateForMeta(
         language === "en"
-          ? `Rent ${seoDisplayTitle} in ${seoLocation} — ${seoPrice} lei/day | Rentli`
-          : `Închiriere ${seoDisplayTitle} în ${seoLocation} — ${seoPrice} lei/zi | Rentli`,
-        META_TITLE_MAX,
-      )
+          ? `Rent ${seoDisplayTitle} in ${seoLocation} — ${seoPrice} lei/day`
+          : `Închiriere ${seoDisplayTitle} în ${seoLocation} — ${seoPrice} lei/zi`,
+        META_TITLE_MAX - SEO_BRAND_SUFFIX.length,
+      ) + SEO_BRAND_SUFFIX
     : "Rentli";
+
   const cleanedDesc = cleanUserDescription(seoDisplayDesc);
   const seoLead = language === "en"
     ? `${seoDisplayTitle} for rent in ${seoLocation}, ${seoPrice} lei/day.`
