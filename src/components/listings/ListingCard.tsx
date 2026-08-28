@@ -40,7 +40,7 @@ const deriveQualityScore = (p: Product): number => {
   return Math.min(100, s);
 };
 
-const ListingCard = ({ product, status, onHide, onActivate, onDelete, onCalendar, onHistory }: Props) => {
+const ListingCard = ({ product, status, onHide, onActivate, onDelete, onCancelDeletion, onCalendar, onHistory }: Props) => {
   const { language } = useLanguage();
   const t = (ro: string, en: string) => (language === "ro" ? ro : en);
   const [imgError, setImgError] = useState(false);
