@@ -96,7 +96,7 @@ export function NotificationCenter({ variant = "popover", onClose }: Props) {
 
   // Layout sizing per variant
   const containerClass = {
-    popover: "flex flex-col h-[min(640px,80vh)] w-full",
+    popover: "flex flex-col h-[min(560px,70vh)] w-full",
     sheet: "flex flex-col h-full w-full",
     page: "flex flex-col w-full",
   }[variant];
@@ -157,7 +157,7 @@ export function NotificationCenter({ variant = "popover", onClose }: Props) {
       </div>
 
       {/* Filters */}
-      <div className="shrink-0 pt-1">
+      <div className="shrink-0">
         <NotificationFilters
           value={filter}
           onChange={setFilter}
@@ -188,14 +188,14 @@ export function NotificationCenter({ variant = "popover", onClose }: Props) {
 
       {/* Footer */}
       {variant !== "page" && (
-        <div className="shrink-0 p-3 border-t border-border/70">
+        <div className="shrink-0 border-t border-border/60">
           <Link
             to="/notificari"
             onClick={onClose}
-            className="flex items-center justify-center gap-1.5 w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
+            className="flex items-center justify-center gap-1.5 w-full py-3 text-[13px] font-semibold text-muted-foreground hover:text-foreground transition-colors"
           >
             {t("Vezi toate notificările", "View all notifications")}
-            <ArrowRight className="h-4 w-4" />
+            <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       )}
