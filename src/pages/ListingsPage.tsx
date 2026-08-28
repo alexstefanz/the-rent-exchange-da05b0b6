@@ -22,7 +22,7 @@ import type { ListingStatus } from "@/components/listings/ListingStatusBadge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { deleteProduct, updateProduct, type Product } from "@/features/products/productsApi";
+import { deleteProduct, cancelProductDeletionRequest, updateProduct, type Product } from "@/features/products/productsApi";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
