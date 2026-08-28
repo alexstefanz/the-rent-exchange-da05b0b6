@@ -30,6 +30,7 @@ import RentalsOutTab from "@/components/dashboard/RentalsOutTab";
 import { getActiveDraft, deleteDraft, type ProductDraft } from "@/features/publish/draftsApi";
 
 const deriveStatus = (p: Product): ListingStatus => {
+  if ((p as any).deletion_requested_at) return "deletion_pending";
   const a = (p as any).approval_status as string | undefined;
   if (a === "pending") return "pending";
   if (a === "rejected") return "rejected";
