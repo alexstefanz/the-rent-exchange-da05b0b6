@@ -56,6 +56,7 @@ export interface Product {
   blocked_dates?: string[] | null;
   quality_score?: number | null;
   available_from?: string | null;
+  deletion_requested_at?: string | null;
 }
 
 export interface ProductFilters {
