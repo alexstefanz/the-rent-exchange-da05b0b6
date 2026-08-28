@@ -19,9 +19,11 @@ interface Props {
   onHide?: () => void;
   onActivate?: () => void;
   onDelete?: () => void;
+  onCancelDeletion?: () => void;
   onCalendar?: () => void;
   onHistory?: () => void;
 }
+
 
 const deriveQualityScore = (p: Product): number => {
   let s = 0;
