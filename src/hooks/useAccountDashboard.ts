@@ -35,6 +35,7 @@ export interface AccountDashboardData {
     availableBalance: number;
     monthlyEarnings: number;
     totalCompletedRentals: number;
+    completedRentalsAsOwner: number;
     newReviews: number;
     ibanMissing: boolean;
   };
