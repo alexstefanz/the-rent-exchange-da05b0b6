@@ -82,22 +82,6 @@ export function NotificationCard({ notification, onSelect, onMarkRead }: Props) 
             {description}
           </p>
         )}
-
-        {action && (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="mt-2 h-7 px-2.5 text-[11px] font-semibold rounded-lg"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleClick();
-            }}
-          >
-            {action.label}
-            <ArrowRight className="h-3 w-3 ml-1" />
-          </Button>
-        )}
       </div>
     </button>
   );
