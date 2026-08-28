@@ -7,26 +7,6 @@ import type { RentalFullDetail } from "@/features/rentals/rentalDetailPageApi";
  * DOCX exporter so all three stay in sync.
  */
 
-// TODO: replace fakeIdentity with real KYC data once available.
-export function fakeIdentity(seed: string | null | undefined) {
-  const s = (seed || "00000000").replace(/[^a-f0-9]/gi, "");
-  const h = (offset: number, len: number, mod: number) => {
-    let n = 0;
-    for (let i = 0; i < s.length; i++) n = (n * 31 + s.charCodeAt(i) + offset) >>> 0;
-    return String(n % mod).padStart(len, "0");
-  };
-  const cnp = `1${h(1, 2, 100)}${h(2, 2, 12).padStart(2, "0")}${h(3, 2, 28).padStart(2, "0")}${h(4, 6, 1000000)}`;
-  const seriiCI = ["RR", "RX", "RT", "RK", "RD", "RZ"];
-  const serie = seriiCI[parseInt(h(5, 1, 6), 10) || 0];
-  const nr = h(6, 6, 1000000);
-  const strazi = ["Florilor", "Mihai Eminescu", "Aviatorilor", "Stefan cel Mare", "Unirii", "Victoriei"];
-  const strada = strazi[parseInt(h(7, 1, 6), 10) || 0];
-  const nrCasa = parseInt(h(8, 2, 99), 10) || 1;
-  const sector = parseInt(h(9, 1, 6), 10) || 1;
-  const adresa = `Str. ${strada} nr. ${nrCasa}, Bucuresti, Sector ${sector}`;
-  return { cnp, serie, nr, adresa };
-}
-
 /** Replace Romanian diacritics — required for jsPDF Helvetica. */
 export function noDia(s: string | null | undefined): string {
   if (!s) return "-";
@@ -52,23 +32,6 @@ export interface PvContent {
 
 export function buildPvContent(rental: RentalFullDetail, phase: "handover" | "return"): PvContent {
   const today = format(new Date(), "dd MMMM yyyy");
-  // Prefer real ID data extracted from KYC; fall back to deterministic fake
-  // identity only when no extracted data is available, so existing rentals
-  // don't break.
-  const ownerFake = fakeIdentity(rental.owner_id);
-  const renterFake = fakeIdentity(rental.renter_id);
-  const ownerId = {
-    cnp: rental.owner_cnp || ownerFake.cnp,
-    serie: rental.owner_id_series || ownerFake.serie,
-    nr: rental.owner_id_number || ownerFake.nr,
-    adresa: rental.owner_address || ownerFake.adresa,
-  };
-  const renterId = {
-    cnp: rental.renter_cnp || renterFake.cnp,
-    serie: rental.renter_id_series || renterFake.serie,
-    nr: rental.renter_id_number || renterFake.nr,
-    adresa: rental.renter_address || renterFake.adresa,
-  };
   const ownerName = rental.owner_name || "Proprietar";
   const renterName = rental.renter_name || "Chirias";
   const ownerPhone = rental.owner_phone || "0740 000 000";
@@ -80,9 +43,7 @@ export function buildPvContent(rental: RentalFullDetail, phase: "handover" | "re
 
   const intro =
     `Incheiat astazi, ${today}, intre domnul/doamna ${ownerName}, in calitate de Predator (proprietar), ` +
-    `identificat cu CNP ${ownerId.cnp}, CI seria ${ownerId.serie} nr. ${ownerId.nr}, domiciliat in ${ownerId.adresa}, ` +
     `telefon ${ownerPhone}, email ${ownerEmail}, si domnul/doamna ${renterName}, in calitate de Primitor (chirias/utilizator), ` +
-    `identificat cu CNP ${renterId.cnp}, CI seria ${renterId.serie} nr. ${renterId.nr}, domiciliat in ${renterId.adresa}, ` +
     `telefon ${renterPhone}, email ${renterEmail}.`;
 
   const cat = rental.product_category || "-";
@@ -168,20 +129,6 @@ export function buildPvRichContent(
   phase: "handover" | "return",
 ): PvRichContent {
   const today = format(new Date(), "dd MMMM yyyy");
-  const ownerFake = fakeIdentity(rental.owner_id);
-  const renterFake = fakeIdentity(rental.renter_id);
-  const ownerId = {
-    cnp: rental.owner_cnp || ownerFake.cnp,
-    serie: rental.owner_id_series || ownerFake.serie,
-    nr: rental.owner_id_number || ownerFake.nr,
-    adresa: rental.owner_address || ownerFake.adresa,
-  };
-  const renterId = {
-    cnp: rental.renter_cnp || renterFake.cnp,
-    serie: rental.renter_id_series || renterFake.serie,
-    nr: rental.renter_id_number || renterFake.nr,
-    adresa: rental.renter_address || renterFake.adresa,
-  };
   const ownerName = rental.owner_name || "Proprietar";
   const renterName = rental.renter_name || "Chirias";
   const ownerPhone = rental.owner_phone || "0740 000 000";
@@ -196,18 +143,10 @@ export function buildPvRichContent(
     T("Incheiat astazi, "), B(today),
     T(", intre domnul/doamna "), B(ownerName),
     T(", in calitate de "), B("Predator (proprietar)"),
-    T(", identificat cu CNP "), B(ownerId.cnp),
-    T(", CI seria "), B(ownerId.serie),
-    T(" nr. "), B(ownerId.nr),
-    T(", domiciliat in "), B(ownerId.adresa),
     T(", telefon "), B(ownerPhone),
     T(", email "), B(ownerEmail),
     T(", si domnul/doamna "), B(renterName),
     T(", in calitate de "), B("Primitor (chirias/utilizator)"),
-    T(", identificat cu CNP "), B(renterId.cnp),
-    T(", CI seria "), B(renterId.serie),
-    T(" nr. "), B(renterId.nr),
-    T(", domiciliat in "), B(renterId.adresa),
     T(", telefon "), B(renterPhone),
     T(", email "), B(renterEmail),
     T("."),
