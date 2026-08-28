@@ -152,7 +152,7 @@ export const PhoneRequiredGate = ({ className = "" }: PhoneRequiredGateProps) =>
         className="w-full sm:w-auto sm:flex-shrink-0"
       >
         <Phone className="mr-2 h-4 w-4" />
-        {ux.smsNotifications.kycGateCta}
+        {ux.smsNotifications.phoneGateCta}
       </Button>
     </div>
   );
