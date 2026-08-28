@@ -1,9 +1,7 @@
-import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
-import { ArrowRight } from "lucide-react";
 import { getCategoryStyle, getTypeIcon } from "@/lib/notificationCategory";
 import type { Notification } from "@/features/profile/notificationsApi";
 
@@ -13,20 +11,6 @@ interface Props {
   onMarkRead: (id: string) => void;
 }
 
-/** CTA only for notifications that genuinely require a user action. */
-function getQuickAction(type: string, language: string): { label: string } | null {
-  const t = (type || "").toLowerCase();
-  const lang = (roText: string, enText: string) => (language === "ro" ? roText : enText);
-  if (t === "rental_request") return { label: lang("Deschide chatul", "Open chat") };
-  if (t === "rental_approved" || t === "rental_accepted" || t === "payment_required")
-    return { label: lang("Plătește acum", "Pay now") };
-  if (t.includes("message")) return { label: lang("Răspunde", "Reply") };
-  if (t.includes("inspection") || t.includes("handover"))
-    return { label: lang("Completează", "Complete") };
-  if (t.includes("ticket_reply") || t.includes("support_reply"))
-    return { label: lang("Deschide ticket", "Open ticket") };
-  return null;
-}
 
 export function NotificationCard({ notification, onSelect, onMarkRead }: Props) {
   const { language } = useLanguage();
@@ -34,7 +18,7 @@ export function NotificationCard({ notification, onSelect, onMarkRead }: Props) 
   const Icon = getTypeIcon(notification.type);
   const dateLocale = language === "ro" ? ro : enUS;
   const isUnread = !notification.is_read;
-  const action = getQuickAction(notification.type, language);
+
 
   const title = language === "ro" ? notification.title_ro : notification.title_en || notification.title_ro;
   const description =
@@ -97,22 +81,6 @@ export function NotificationCard({ notification, onSelect, onMarkRead }: Props) 
           >
             {description}
           </p>
-        )}
-
-        {action && (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="mt-2 h-7 px-2.5 text-[11px] font-semibold rounded-lg"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleClick();
-            }}
-          >
-            {action.label}
-            <ArrowRight className="h-3 w-3 ml-1" />
-          </Button>
         )}
       </div>
     </button>
