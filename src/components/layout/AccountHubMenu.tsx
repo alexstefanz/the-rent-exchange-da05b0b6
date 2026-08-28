@@ -363,30 +363,6 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
           <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition" />
         </button>
 
-        <button
-          onClick={() => onNavigate("/inchirieri?status=completed")}
-          className="group flex w-full items-center gap-3 rounded-xl bg-card border border-border/60 px-3 py-3 text-left shadow-sm transition hover:border-primary/40 hover:shadow"
-        >
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 shrink-0">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-          </span>
-          <span className="flex-1 min-w-0">
-            <span className="block text-sm font-semibold text-foreground">
-              {t("Închirieri încheiate", "Completed rentals")}
-            </span>
-            <span className="block text-[11px] text-muted-foreground">
-              {t("Istoricul închirierilor finalizate ca proprietar.", "History of rentals completed as owner.")}
-            </span>
-          </span>
-          <span className="flex items-center gap-2">
-            {signals?.completedRentalsAsOwner ? (
-              <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-emerald-100 px-1.5 text-[11px] font-semibold text-emerald-700">
-                {signals.completedRentalsAsOwner}
-              </span>
-            ) : null}
-            <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition" />
-          </span>
-        </button>
 
         {(totalActive > 0 || (trust?.completedRentals || 0) > 0) && (
           <button
