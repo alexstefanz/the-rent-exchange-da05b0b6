@@ -19,7 +19,7 @@ import { useEffect } from "react";
 
 /**
  * Emails granted a temporary bypass for the phone requirement (test accounts).
- * These users can proceed with reservations / KYC / publishing without a
+ * These users can proceed with reservations / publishing without a
  * valid Romanian phone number.
  */
 const PHONE_REQUIREMENT_BYPASS_EMAILS = new Set<string>([
@@ -33,7 +33,7 @@ const isPhoneBypassed = (email?: string | null) =>
  * Hook + UI primitives that hard-block actions for users who don't have a
  * valid Romanian phone number in their profile. SMS notifications depend on
  * this number, so we require it before publishing/editing a product, paying
- * for a reservation, or submitting a KYC case.
+ * or for a reservation.
  */
 export const usePhoneRequired = () => {
   const { user } = useAuth();
@@ -53,7 +53,7 @@ export const usePhoneRequired = () => {
       isPhoneBypassed((profile as any)?.email));
 
   // Always refetch the profile when this hook mounts so a freshly-saved
-  // phone number is picked up immediately on Checkout/KYC pages.
+  // phone number is picked up immediately on Checkout pages.
   useEffect(() => {
     if (user?.id) {
       queryClient.invalidateQueries({ queryKey: ["currentUserProfile", user.id] });

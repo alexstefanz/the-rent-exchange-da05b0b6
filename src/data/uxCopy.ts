@@ -722,7 +722,7 @@ const createUxCopy = () => ({
     bentoVerifiedStat: { ro: "VERIFICAT", en: "VERIFIED" },
     bentoVerifiedStatLabel: { ro: "", en: "" },
     bentoVerifiedTitle: { ro: "Identitate verificată", en: "Verified identity" },
-    bentoVerifiedDesc: { ro: "KYC complet pentru toți utilizatorii.", en: "Full KYC for every user." },
+    bentoVerifiedDesc: { ro: "Cont verificat prin telefon pentru toți utilizatorii.", en: "Phone-verified account for every user." },
     bentoVerifiedChip1: { ro: "CI verificat", en: "ID verified" },
     bentoVerifiedChip2: { ro: "Selfie match", en: "Selfie match" },
     bentoVerifiedChip3: { ro: "Telefon", en: "Phone" },
