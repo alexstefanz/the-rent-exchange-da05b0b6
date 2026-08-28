@@ -41,17 +41,23 @@ const OwnerRentalsPage = () => {
           {t("Înapoi la Contul Meu", "Back to My Account")}
         </Button>
         <div className="mb-6 flex items-start gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
-            <Package className="h-6 w-6" />
+          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${isCompletedView ? "bg-emerald-100 text-emerald-600" : "bg-primary/15 text-primary"}`}>
+            {isCompletedView ? <CheckCircle2 className="h-6 w-6" /> : <CalendarCheck className="h-6 w-6" />}
           </div>
           <div>
             <div className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-2.5 py-0.5 text-[11px] font-semibold text-primary">
               <Store className="h-3 w-3" />
               {t("Ca proprietar", "As owner")}
             </div>
-            <h1 className="font-bold tracking-tight text-lg">{t("Istoric închirieri", "Rental history")}</h1>
+            <h1 className="font-bold tracking-tight text-lg">
+              {isCompletedView
+                ? t("Închirieri încheiate", "Completed rentals")
+                : t("Închirieri active", "Active rentals")}
+            </h1>
             <p className="text-muted-foreground mt-1 text-xs">
-              {t("Toate rezervările pe anunțurile tale", "All bookings on your listings")}
+              {isCompletedView
+                ? t("Istoricul rezervărilor finalizate pe anunțurile tale", "History of completed bookings on your listings")
+                : t("Cereri și rezervări în derulare pe anunțurile tale", "Requests and ongoing bookings on your listings")}
             </p>
           </div>
         </div>
