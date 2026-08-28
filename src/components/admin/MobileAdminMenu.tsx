@@ -22,7 +22,6 @@ const menuItems = [
   { title: "Financiar", url: "/admin/finances", icon: Wallet },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Utilizatori", url: "/admin/users", icon: Users },
-  { title: "Verificări KYC", url: "/admin/kyc", icon: ShieldCheck },
   { title: "SMS Logs", url: "/admin/sms-logs", icon: MessageSquare },
 ];
 

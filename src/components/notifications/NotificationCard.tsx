@@ -25,7 +25,6 @@ function getQuickAction(type: string, language: string): { label: string } | nul
   if (t.includes("ticket") || t.includes("support"))
     return { label: lang("Deschide ticket", "Open ticket") };
   if (t.includes("inspection")) return { label: lang("Completează", "Complete") };
-  if (t === "kyc_approved") return { label: lang("Adaugă anunț", "Add listing") };
   if (t === "review_received" || t === "review")
     return { label: lang("Vezi recenzia", "View review") };
   return null;
