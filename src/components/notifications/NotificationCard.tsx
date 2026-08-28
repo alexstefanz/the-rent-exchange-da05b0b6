@@ -18,7 +18,7 @@ export function NotificationCard({ notification, onSelect, onMarkRead }: Props) 
   const Icon = getTypeIcon(notification.type);
   const dateLocale = language === "ro" ? ro : enUS;
   const isUnread = !notification.is_read;
-  const action = getQuickAction(notification.type, language);
+
 
   const title = language === "ro" ? notification.title_ro : notification.title_en || notification.title_ro;
   const description =
