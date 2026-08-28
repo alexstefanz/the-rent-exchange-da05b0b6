@@ -360,6 +360,7 @@ const ListingsPage = () => {
                       onHide={() => setConfirmHide(p)}
                       onActivate={() => handleActivate(p)}
                       onDelete={() => setConfirmDelete(p)}
+                      onCancelDeletion={() => handleCancelDeletion(p)}
                     />
                   );
                 })}
