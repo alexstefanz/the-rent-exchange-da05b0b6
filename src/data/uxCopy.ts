@@ -362,7 +362,7 @@ const createUxCopy = () => ({
   home: {
     heroTitle: { ro: "Închiriază orice,", en: "Rent anything," },
     heroTitleHighlight: { ro: "oriunde în România", en: "anywhere in Romania" },
-     heroSubtitle: { ro: "Mii de produse verificate. Plăți sigure. Suport 24/7.", en: "Thousands of verified items. Secure payments. 24/7 support." },
+     heroSubtitle: { ro: "Mii de produse verificate. Plăți sigure. Suport dedicat.", en: "Thousands of verified items. Secure payments. Dedicated support." },
     popularCategories: { ro: "Categorii principale", en: "Main categories" },
     featuredListings: { ro: "Populare în zona ta", en: "Popular in your area" },
     howItWorks: { ro: "Cum Funcționează", en: "How It Works" },
@@ -378,7 +378,7 @@ const createUxCopy = () => ({
     step3Desc: { ro: "Fiecare închiriere este protejată. Returnează produsul și lasă o recenzie când termini.", en: "Every rental is protected. Return the product and leave a review when you're done." },
   },
   footer: {
-     description: { ro: "Mii de produse verificate. Plăți sigure. Suport 24/7.", en: "Thousands of verified items. Secure payments. 24/7 support." },
+     description: { ro: "Mii de produse verificate. Plăți sigure. Suport dedicat.", en: "Thousands of verified items. Secure payments. Dedicated support." },
     explore: { ro: "Caută", en: "Search" },
     allCategories: { ro: "Toate Categoriile", en: "All Categories" },
     searchProducts: { ro: "Caută Produse", en: "Search Products" },
@@ -735,7 +735,7 @@ const createUxCopy = () => ({
     bentoInsuranceChip3: { ro: "Asistență", en: "Assistance" },
     bentoSupportStat: { ro: "", en: "" },
     bentoSupportStatLabel: { ro: "", en: "" },
-    bentoSupportTitle: { ro: "Suport 24/7", en: "24/7 support" },
+    bentoSupportTitle: { ro: "Suport dedicat", en: "Dedicated support" },
     bentoSupportDesc: { ro: "Echipă reală, disponibilă oricând ai nevoie.", en: "Real team, available whenever you need it." },
     bentoSupportChip1: { ro: "Chat", en: "Chat" },
     bentoSupportChip2: { ro: "Email", en: "Email" },

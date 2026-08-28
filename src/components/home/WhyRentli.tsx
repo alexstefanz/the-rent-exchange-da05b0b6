@@ -8,7 +8,7 @@ const WhyRentli = () => {
     { icon: ShieldCheck, title: t("Produse verificate", "Verified items"), desc: t("Anunțuri aprobate manual de echipa noastră.", "Listings manually reviewed by our team.") },
     { icon: FileText, title: t("Proces verbal digital", "Digital handover record"), desc: t("Foto check-in/out pentru fiecare închiriere.", "Photo check-in/out for every rental.") },
     { icon: CreditCard, title: t("Plăți securizate", "Secure payments"), desc: t("Hold & capture prin Stripe, fonduri protejate.", "Hold & capture via Stripe, funds protected.") },
-    { icon: Headphones, title: t("Suport dedicat", "Dedicated support"), desc: t("Echipă reală 24/7.", "Real team 24/7.") },
+    { icon: Headphones, title: t("Suport dedicat", "Dedicated support"), desc: t("Echipă reală, mereu aproape.", "Real team, always close.") },
   ];
   return (
     <section className="py-12 md:py-16">
