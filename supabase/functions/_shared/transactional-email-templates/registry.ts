@@ -22,10 +22,6 @@ import { template as reviewReceived } from './review-received.tsx'
 import { template as productPublished } from './product-published.tsx'
 import { template as passwordChanged } from './password-changed.tsx'
 import { template as accountDeactivation } from './account-deactivation.tsx'
-import { template as kycApproved } from './kyc-approved.tsx'
-import { template as kycRejected } from './kyc-rejected.tsx'
-import { template as kycReuploadRequested } from './kyc-reupload-requested.tsx'
-import { template as kycSubmitted } from './kyc-submitted.tsx'
 import { template as productRejected } from './product-rejected.tsx'
 import { template as ticketCreated } from './ticket-created.tsx'
 import { template as ticketReplied } from './ticket-replied.tsx'
@@ -68,10 +64,6 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'product-published': productPublished,
   'password-changed': passwordChanged,
   'account-deactivation': accountDeactivation,
-  'kyc-approved': kycApproved,
-  'kyc-rejected': kycRejected,
-  'kyc-reupload-requested': kycReuploadRequested,
-  'kyc-submitted': kycSubmitted,
   'product-rejected': productRejected,
   'ticket-created': ticketCreated,
   'ticket-replied': ticketReplied,

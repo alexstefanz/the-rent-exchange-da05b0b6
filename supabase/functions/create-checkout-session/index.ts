@@ -42,38 +42,6 @@ serve(async (req) => {
     }
     const user = authData.user;
 
-    // KYC gate: only VERIFIED users can initiate payment
-    {
-      const { data: profile, error: profileError } = await supabaseUser
-        .from("profiles")
-        .select("kyc_status")
-        .eq("id", user.id)
-        .maybeSingle();
-      console.log("[create-checkout-session] KYC check", {
-        user_id: user.id,
-        user_email: user.email,
-        profile_found: !!profile,
-        kyc_status: profile?.kyc_status,
-        profile_error: profileError?.message,
-      });
-      if (!profile || profile.kyc_status !== "VERIFIED") {
-        return new Response(
-          JSON.stringify({
-            error: "KYC_REQUIRED",
-            debug: {
-              user_id: user.id,
-              kyc_status: profile?.kyc_status ?? null,
-              profile_found: !!profile,
-            },
-          }),
-          {
-            status: 403,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          },
-        );
-      }
-    }
-
     // Parse body
     const { rental_id, message_to_owner } = await req.json();
     if (!rental_id) {
