@@ -189,6 +189,17 @@ const ListingsPage = () => {
     }
   };
 
+  const handleCancelDeletion = async (p: Product) => {
+    try {
+      await cancelProductDeletionRequest(p.id);
+      toast({ title: t("Cererea de ștergere a fost anulată", "Deletion request cancelled") });
+      refresh();
+    } catch (e: any) {
+      toast({ variant: "destructive", title: t("Eroare", "Error"), description: e?.message });
+    }
+  };
+
+
   if (loading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
