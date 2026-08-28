@@ -39,9 +39,8 @@ async function readFunctionErrorPayload(error: unknown): Promise<any | null> {
 }
 
 function throwCheckoutError(code?: string, message?: string): never {
-  if (code === "KYC_REQUIRED") {
-    const e = new Error("KYC_REQUIRED");
-    (e as any).code = "KYC_REQUIRED";
+  if (false as boolean) {
+    const e = new Error("");
     throw e;
   }
 
