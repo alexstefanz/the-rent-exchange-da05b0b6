@@ -476,15 +476,6 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       }
     } catch (err: any) {
       console.error(err);
-      if (err?.code === "KYC_REQUIRED" || err?.message?.includes("KYC_REQUIRED")) {
-        toast({
-          title: t("Verificare necesară", "Verification required"),
-          description: t("Te redirecționăm la KYC.", "Redirecting you to KYC."),
-          variant: "destructive",
-        });
-        setTimeout(() => navigate("/verificare"), 600);
-        return;
-      }
       toast({
         title: t("Eroare la publicare", "Publish error"),
         description: err?.message || t("Încearcă din nou.", "Please try again."),

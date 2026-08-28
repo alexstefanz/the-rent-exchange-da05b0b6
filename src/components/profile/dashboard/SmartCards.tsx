@@ -111,17 +111,6 @@ export function SmartCards({ data }: { data: AccountDashboardData }) {
       href: "/recenzii",
     });
   }
-  if (s.kycPending) {
-    signals.push({
-      id: "kyc",
-      icon: ShieldCheck,
-      tone: "warning",
-      title: t("Verifică-ți identitatea", "Verify your identity"),
-      description: t("Crește încrederea și deblochează plăți", "Build trust and unlock payouts"),
-      cta: t("Începe verificarea", "Start verification"),
-      href: "/verificare",
-    });
-  }
   if (s.ibanMissing) {
     signals.push({
       id: "iban",
