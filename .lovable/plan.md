@@ -1,28 +1,51 @@
-# Harta funcțională pe rentli.ro
+# Refactor UI centru de notificări
 
-Harta este deja implementată complet (mod Hartă pe categorii + căutare, pastile cu preț, coordonate aproximative din `get_products_map_points`). Singurul lucru care lipsește pentru domeniul propriu este **cheia Google Maps**.
+Rafinare vizuală a panoului existent de notificări (dropdown desktop, sheet mobil, pagina /notificari). Logica, datele, API-urile, statusurile și navigarea rămân neschimbate — se modifică doar layout-ul și stilurile.
 
-## De ce nu merge acum pe rentli.ro
+## Ce se schimbă
 
-Aplicația încarcă Google Maps cu cheia managed de Lovable (`VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY`, folosită în `src/hooks/useGoogleMaps.ts`). Acea cheie este restricționată la domenii `*.lovable.app`, deci pe `rentli.ro` / `www.rentli.ro` Google refuză cererea și harta rămâne goală sau cu mesaj de eroare.
+### Header fix
+Rămâne titlul "Notificări", subtitlul "Ai X notificări noi", iconul de setări și "Citește toate". Header-ul și filtrele rămân fixe; doar lista scrollează.
 
-## Ce îți trebuie (partea ta, în Google Cloud)
+### Filtre mai discrete
+Tab-urile Toate / Necitite / Citite trec de la pill negru la tab-uri text cu underline portocaliu pentru starea activă, pe o linie subtilă comună. Numerele rămân, dar mai mici și în gri, nu ca badge-uri colorate dominante. Filtrul pe categorii (select) rămâne, aliniat discret în dreapta rândului de tab-uri (pe mobil trece pe rândul următor).
 
-1. Proiect Google Cloud cu **facturare activată** (Maps are un credit lunar gratuit, dar cardul este obligatoriu).
-2. Activează API-urile: **Maps JavaScript API** (obligatoriu) și, opțional, **Geocoding API** dacă vrem mai târziu adrese → coordonate.
-3. Creează o **cheie API de browser** și restricționeaz-o:
-   - Application restrictions: HTTP referrers → `https://rentli.ro/*`, `https://www.rentli.ro/*`, `https://*.lovable.app/*` (ca să meargă și preview-ul).
-   - API restrictions: doar Maps JavaScript API.
-4. Recomandat: setează o **limită de buget / alertă** în Google Cloud, ca protecție de cost.
+### Listă compactă în loc de carduri
+Fiecare notificare devine un rând de listă: fără fundal propriu, fără border-radius mare, fără bară de accent laterală. Separator subtil între rânduri. Structura rândului:
 
-## Ce fac eu în aplicație
+```text
+[icon]  Titlu notificare                     ●
+        23 minute în urmă
+        Descriere pe maximum 2 rânduri...
+```
 
-- Adaug cheia ta ca variabilă de mediu proprie (`VITE_GOOGLE_MAPS_BROWSER_KEY`).
-- Modific `src/hooks/useGoogleMaps.ts` să folosească cheia proprie când există și să cadă înapoi pe cheia managed Lovable pentru preview.
-- Păstrez mesajul de eroare prietenos din `MapCanvas.tsx` dacă cheia lipsește sau e respinsă.
-- Verific după publicare că harta se încarcă pe rentli.ro (fără erori „RefererNotAllowedMapError" / „ApiNotActivatedMapError" în consolă).
+Padding vertical redus, icon container mic (32px, rounded, tentă subtilă), descriere limitată la 2 rânduri cu ellipsis.
 
-## Note
+### Necitit vs. citit
+Necitit = titlu semibold + punct portocaliu în dreapta. Citit = titlu normal, text mai discret. Fără fundal portocaliu pe rând. Hover: fundal foarte light + cursor pointer.
 
-- Nu se schimbă nimic la datele de locație: rămân coordonatele aproximative (~700 m) din RPC, adresa exactă rămâne privată până la rezervare.
-- Cheia de browser este publică prin natura ei; protecția reală o dau restricțiile de referrer + limitarea la un singur API.
+### Grupare temporală
+Se păstrează grupurile ASTĂZI / IERI / SĂPTĂMÂNA ACEASTA / MAI VECHI, cu header mic, uppercase, gri, urmat de o linie subtilă.
+
+### CTA doar când e nevoie
+Butoanele de acțiune se afișează doar pentru notificările acționabile (cerere de închiriere, cerere acceptată/plată, mesaj, inspecție, ticket). Notificările pur informative (confirmări, anulări confirmate, recenzii) nu mai primesc buton. Butonul rămâne compact, outline.
+
+### Footer
+Butonul portocaliu full-width "Vezi toate notificările" este înlocuit cu un link discret centrat, cu săgeată la dreapta.
+
+### Înălțime și scroll
+Panoul desktop primește o înălțime maximă mai mică (aprox. 560px / 70vh) ca să nu ocupe tot ecranul; doar zona listei scrollează. Pe mobil sheet-ul rămâne pe toată înălțimea, cu aceeași structură fix/scroll. Pagina /notificari păstrează comportamentul actual de scroll al paginii.
+
+### Iconografie
+Se refolosesc culorile existente pe categorie (rezervare verde, mesaj albastru, plată mov, suport/anulare portocaliu, sistem gri/albastru), doar dedurizate: halo mai subtil, icon mai mic.
+
+## Detalii tehnice
+
+Fișiere atinse (doar prezentare):
+- `src/components/notifications/NotificationCard.tsx` — rescris ca rând de listă compact; se păstrează `onSelect` / `onMarkRead` și `getQuickAction`, restrâns la tipurile acționabile.
+- `src/components/notifications/NotificationGroup.tsx` — headere de grup mai discrete, separatoare între rânduri.
+- `src/components/notifications/NotificationFilters.tsx` — tab-uri cu underline portocaliu în locul pill-urilor.
+- `src/components/notifications/NotificationCenter.tsx` — înălțime max redusă pentru varianta popover, footer ca link discret; logica de filtrare/counts rămâne identică.
+- `src/components/notifications/NotificationSkeleton.tsx` — aliniat la noua densitate.
+
+Nu se modifică: `useNotifications`, `notificationsApi`, `mapLink`, `notificationCategory` (doar eventual valorile de tentă), `NotificationBell`, `NotificationsPage`. Culorile folosesc tokenii existenți din design system.
