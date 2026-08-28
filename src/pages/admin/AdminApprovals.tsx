@@ -388,6 +388,9 @@ const AdminApprovals = () => {
           <TabsContent value="cancellations">
             <AdminCancellationRequestsPanel />
           </TabsContent>
+          <TabsContent value="deletions">
+            <AdminProductDeletionsPanel />
+          </TabsContent>
         </Tabs>
       </div>
 
