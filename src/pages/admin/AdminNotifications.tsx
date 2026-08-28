@@ -27,9 +27,6 @@ const TYPE_LABELS: Record<string, string> = {
   payout_failed: "Plată eșuată",
   // Moderare
   product_pending: "Produs în așteptare",
-  kyc_submitted: "KYC trimis",
-  kyc_needs_review: "KYC necesită revizuire",
-  kyc_rejected: "KYC respins",
   product_reported: "Produs raportat",
   user_reported: "Utilizator raportat",
   // Operațional
@@ -57,9 +54,6 @@ const TYPE_TO_CATEGORY: Record<string, CategoryKey> = {
   cancellation_requested: "urgent",
   payout_failed: "urgent",
   product_pending: "moderation",
-  kyc_submitted: "moderation",
-  kyc_needs_review: "moderation",
-  kyc_rejected: "moderation",
   product_reported: "moderation",
   user_reported: "moderation",
   ticket_opened: "ops",
@@ -82,9 +76,6 @@ const TYPE_DOT: Record<string, string> = {
   cancellation_requested: "bg-orange-500",
   payout_failed: "bg-red-500",
   product_pending: "bg-orange-500",
-  kyc_submitted: "bg-blue-500",
-  kyc_needs_review: "bg-blue-500",
-  kyc_rejected: "bg-red-500",
   product_reported: "bg-orange-500",
   user_reported: "bg-orange-500",
   ticket_opened: "bg-purple-500",
@@ -98,10 +89,6 @@ const TYPE_DOT: Record<string, string> = {
 
 const getIcon = (type: string) => {
   switch (type) {
-    case "kyc_submitted":
-    case "kyc_needs_review":
-    case "kyc_rejected":
-      return <Shield className="h-5 w-5 text-blue-500" />;
     case "product_pending":
     case "product_reported":
     case "user_reported":

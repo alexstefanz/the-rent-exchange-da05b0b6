@@ -25,8 +25,7 @@ export type NotifyVariant =
   | "message"
   | "request"
   | "info"
-  | "warning"
-  | "kyc";
+  | "warning";
 
 interface VariantStyle {
   Icon: LucideIcon;
@@ -99,13 +98,6 @@ const VARIANT_STYLES: Record<NotifyVariant, VariantStyle> = {
     icon: "text-primary",
     accent: "bg-primary",
     badgeBg: "bg-primary",
-  },
-  kyc: {
-    Icon: ShieldCheck,
-    halo: "bg-amber-500/15",
-    icon: "text-amber-600",
-    accent: "bg-amber-500",
-    badgeBg: "bg-amber-500",
   },
 };
 
@@ -239,7 +231,6 @@ export const notify = {
   request: (o: NotifyOptions) => show("request", o),
   warning: (o: NotifyOptions) => show("warning", o),
   info: (o: NotifyOptions) => show("info", o),
-  kyc: (o: NotifyOptions) => show("kyc", o),
   // Back-compat: previous rental toast
   rental: (o: NotifyOptions) => show("request", o),
   // Shortcuts for plain string toasts using the new card
@@ -270,20 +261,6 @@ export function notifyError(
 /** Map a DB notification row to a toast variant. */
 export function variantFromNotificationType(type: string): NotifyVariant {
   const t = (type || "").toLowerCase();
-  // KYC "in progress / under review" — neutral amber (NOT rejection).
-  if (
-    t === "kyc_submitted" ||
-    t === "kyc_pending" ||
-    t === "kyc_under_review" ||
-    t === "kyc_needs_manual_review" ||
-    t === "kyc_in_progress" ||
-    (t.includes("kyc") &&
-      !t.includes("approved") &&
-      !t.includes("verified") &&
-      !t.includes("reject"))
-  ) {
-    return "kyc";
-  }
   // Explicit mappings for rental lifecycle / timeline events.
   const explicit: Record<string, NotifyVariant> = {
     active_rental_started: "confirmation",
@@ -308,8 +285,7 @@ export function variantFromNotificationType(type: string): NotifyVariant {
     t.includes("declin") ||
     t.includes("dispute") ||
     t.includes("ban") ||
-    t.includes("warning") ||
-    (t.includes("kyc") && t.includes("reject"))
+    t.includes("warning")
   ) {
     return "cancellation";
   }
@@ -317,8 +293,7 @@ export function variantFromNotificationType(type: string): NotifyVariant {
     t.includes("confirm") ||
     t.includes("approved") ||
     t.includes("accepted") ||
-    t === "rental_confirmation" ||
-    t === "kyc_approved"
+    t === "rental_confirmation"
   ) {
     return "confirmation";
   }

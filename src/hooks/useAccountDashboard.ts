@@ -12,8 +12,6 @@ export interface AccountDashboardData {
     phone: string | null;
     iban: string | null;
     account_holder_name: string | null;
-    kyc_status: string;
-    kyc_level: string;
     created_at: string | null;
     account_type: string;
   } | null;
@@ -38,7 +36,6 @@ export interface AccountDashboardData {
     monthlyEarnings: number;
     totalCompletedRentals: number;
     newReviews: number;
-    kycPending: boolean;
     ibanMissing: boolean;
   };
   notifications: {
@@ -76,7 +73,7 @@ export function useAccountDashboard() {
         supabase
           .from("profiles")
           .select(
-            "id, full_name, email, avatar_url, phone, iban, account_holder_name, kyc_status, kyc_level, created_at, account_type"
+            "id, full_name, email, avatar_url, phone, iban, account_holder_name, created_at, account_type"
           )
           .eq("id", uid)
           .maybeSingle(),
@@ -176,7 +173,6 @@ export function useAccountDashboard() {
         { key: "name", labelRo: "Nume complet", labelEn: "Full name", done: !!p.full_name, href: "/contul-meu?focus=name" },
         { key: "phone", labelRo: "Telefon valid", labelEn: "Valid phone", done: !!p.phone, href: "/contul-meu?focus=phone" },
         { key: "avatar", labelRo: "Fotografie profil", labelEn: "Profile photo", done: !!p.avatar_url, href: "/contul-meu?focus=avatar" },
-        { key: "kyc", labelRo: "Identitate verificată", labelEn: "Identity verified", done: p.kyc_status === "VERIFIED", href: "/verificare" },
         { key: "iban", labelRo: "IBAN configurat", labelEn: "IBAN set", done: !!p.iban, href: "/contul-meu?focus=iban" },
       ];
       const completion = Math.round((items.filter((i) => i.done).length / items.length) * 100);
@@ -203,7 +199,7 @@ export function useAccountDashboard() {
           reviewsCount: reviewsArr.length,
           completedRentals,
           memberSince,
-          verified: p.kyc_status === "VERIFIED",
+          verified: !!p.phone,
         },
         signals: {
           activeRentalsAsOwner: ownerActive.length,
@@ -215,7 +211,6 @@ export function useAccountDashboard() {
           monthlyEarnings,
           totalCompletedRentals: completedRentals,
           newReviews,
-          kycPending: p.kyc_status !== "VERIFIED",
           ibanMissing: !p.iban,
         },
         notifications: {

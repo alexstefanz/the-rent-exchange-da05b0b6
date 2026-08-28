@@ -16,7 +16,6 @@ const iconForType = (type: string) => {
   if (type.includes("review")) return Star;
   if (type.includes("payout") || type.includes("withdraw") || type.includes("balance")) return Wallet;
   if (type.includes("rental") || type.includes("booking") || type.includes("reservation")) return Package;
-  if (type.includes("kyc") || type.includes("verif")) return ShieldCheck;
   if (type.includes("approved") || type.includes("confirm")) return CheckCircle2;
   return Bell;
 };

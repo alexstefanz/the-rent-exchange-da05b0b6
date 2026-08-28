@@ -17,8 +17,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { createRentalRequest } from "@/features/rentals/rentalsApi";
 import { toast } from "@/components/ui/sonner";
 import { notify } from "@/lib/notify";
-import { useKycGate } from "@/hooks/queries/useKycGate";
-import KycGateBanner from "@/components/kyc/KycGateBanner";
 import { PhoneRequiredGate, PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
 import { getOrCreateConversation } from "@/features/messaging/messagingApi";
 import { calcPlatformFee } from "@/lib/rentalPricing";
@@ -48,7 +46,6 @@ const Checkout = () => {
   const copy = useUxCopy();
   const { language, t } = useLanguage();
   const { user } = useAuth();
-  const kyc = useKycGate();
   const queryClient = useQueryClient();
 
   const [showLoginDialog, setShowLoginDialog] = useState(false);
@@ -106,13 +103,6 @@ const Checkout = () => {
   const handleSendRequest = async () => {
     if (!user) { setShowLoginDialog(true); return; }
     if (isSubmitting) return;
-    if (user && !kyc.isVerified) {
-      toast.error(language === "ro"
-        ? "Trebuie să-ți verifici identitatea înainte de a trimite cererea."
-        : "You must verify your identity before sending a request.");
-      navigate("/verificare");
-      return;
-    }
     if (!phoneGate.requirePhone()) return;
     setIsSubmitting(true);
     try {
@@ -133,14 +123,6 @@ const Checkout = () => {
       navigate(target, { replace: true });
     } catch (e: any) {
       console.error("Send request error:", e);
-      if (e?.code === "KYC_REQUIRED" || (typeof e?.message === "string" && e.message.includes("KYC_REQUIRED"))) {
-        toast.error(language === "ro"
-          ? "Verificare identitate necesară. Te redirecționăm."
-          : "Identity verification required. Redirecting you.");
-        setIsSubmitting(false);
-        setTimeout(() => navigate("/verificare"), 600);
-        return;
-      }
       toast.error(e?.message || (language === "ro"
         ? "Eroare la trimiterea cererii. Încearcă din nou."
         : "Error sending the request. Please try again."));
@@ -167,11 +149,6 @@ const Checkout = () => {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-6 md:py-8">
-        {user && !kyc.isVerified && !kyc.loading && (
-          <div className="mb-5 animate-fade-in">
-            <KycGateBanner reason="book" />
-          </div>
-        )}
         <PhoneRequiredGate className="mb-5" />
         <PhoneRequiredDialog open={phoneGate.dialogOpen} onOpenChange={phoneGate.setDialogOpen} />
 

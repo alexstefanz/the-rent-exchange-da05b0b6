@@ -14,7 +14,6 @@ import { NotificationSkeleton } from "./NotificationSkeleton";
 import { NotificationSettingsSheet } from "./NotificationSettingsSheet";
 
 function mapLink(link: string, type?: string) {
-  if (type === "kyc_approved") return "/owner/new-product";
   if (type === "new_message" || (type ?? "").includes("message")) {
     if (link && link.startsWith("/mesaje")) return link;
     return "/mesaje";
@@ -68,7 +67,6 @@ export function NotificationCenter({ variant = "popover", onClose }: Props) {
       system: 0,
       success: 0,
       urgent: 0,
-      kyc: 0,
     };
     c.all = visibleNotifications.length;
     for (const n of visibleNotifications) {

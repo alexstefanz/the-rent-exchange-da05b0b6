@@ -3,8 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import PublishWizard from "@/components/publish/PublishWizard";
 import { useAuth } from "@/contexts/AuthContext";
-import { useKycGate } from "@/hooks/queries/useKycGate";
-import KycGateBanner from "@/components/kyc/KycGateBanner";
 import { useIsBanned } from "@/hooks/useIsBanned";
 import { BannedBanner } from "@/components/common/BannedBanner";
 import { Button } from "@/components/ui/button";
@@ -21,7 +19,6 @@ const PublishProductPage = ({ mode }: Props) => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
-  const kyc = useKycGate();
   const { isBanned } = useIsBanned();
   const { toast } = useToast();
   const { t } = useLanguage();
@@ -69,7 +66,7 @@ const PublishProductPage = ({ mode }: Props) => {
     })();
   }, [mode, id, user, navigate, toast]);
 
-  if (authLoading || kyc.loading || loadingProduct) {
+  if (authLoading || loadingProduct) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -96,14 +93,6 @@ const PublishProductPage = ({ mode }: Props) => {
         <Button variant="outline" onClick={() => navigate("/")}>
           {t("Înapoi la pagina principală", "Back to home")}
         </Button>
-      </div>
-    );
-  }
-
-  if (user && mode === "create" && !kyc.isVerified) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-12">
-        <KycGateBanner reason="publish" />
       </div>
     );
   }

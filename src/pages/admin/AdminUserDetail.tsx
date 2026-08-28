@@ -30,14 +30,6 @@ import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { toast } from "@/components/ui/sonner";
 
-const kycStatusLabels: Record<string, { label: string; color: string }> = {
-  not_started: { label: "Neînceput", color: "bg-gray-100 text-gray-800" },
-  NOT_VERIFIED: { label: "Neverificat", color: "bg-gray-100 text-gray-800" },
-  pending: { label: "În așteptare", color: "bg-yellow-100 text-yellow-800" },
-  approved: { label: "Aprobat", color: "bg-green-100 text-green-800" },
-  rejected: { label: "Respins", color: "bg-red-100 text-red-800" },
-};
-
 const roleLabels: Record<string, { label: string; icon: React.ReactNode }> = {
   admin: { label: "Admin", icon: <Shield className="h-4 w-4" /> },
   moderator: { label: "Moderator", icon: <ShieldCheck className="h-4 w-4" /> },
@@ -311,12 +303,6 @@ const AdminUserDetail = () => {
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground flex items-center gap-1"><MessageCircle className="h-3 w-3" /> Conversații:</span>
                     <span className="font-medium">{userDetail.conversations_count}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">KYC:</span>
-                    <Badge className={kycStatusLabels[userDetail.kyc_status]?.color || "bg-gray-100"}>
-                      {kycStatusLabels[userDetail.kyc_status]?.label || userDetail.kyc_status}
-                    </Badge>
                   </div>
                 </div>
 

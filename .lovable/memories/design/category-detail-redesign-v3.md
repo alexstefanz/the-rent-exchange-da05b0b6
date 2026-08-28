@@ -14,6 +14,6 @@ Components: src/components/category/{CategoryHero,SubcategoryPills,CategorySearc
 - Discovery rails (Trending / Recente / Aproape de tine) shown only in browse mode (no active filters); Embla carousel
 - Grid 2/3/4 cols, fade-in-up stagger, "Încarcă mai multe" client paging (24)
 - View switcher Grid/List + Map (disabled "În curând")
-- Verified filter fetches profiles.kyc_status='approved' lazily via useQuery
+- Verified filter removed (KYC module discontinued)
 - New tailwind animations: ken-burns, ring-pulse, shimmer-pass, fade-in-up
 - New utility .scrollbar-hide in index.css

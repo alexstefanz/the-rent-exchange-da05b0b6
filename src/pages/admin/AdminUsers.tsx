@@ -16,13 +16,6 @@ import { useAdminUsers } from "@/hooks/queries/useAdminStats";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 
-const kycStatusLabels: Record<string, { label: string; color: string }> = {
-  not_started: { label: "Neînceput", color: "bg-gray-100 text-gray-800" },
-  pending: { label: "În așteptare", color: "bg-yellow-100 text-yellow-800" },
-  approved: { label: "Aprobat", color: "bg-green-100 text-green-800" },
-  rejected: { label: "Respins", color: "bg-red-100 text-red-800" },
-};
-
 const roleLabels: Record<string, { label: string; icon: React.ReactNode }> = {
   admin: { label: "Admin", icon: <Shield className="h-3 w-3" /> },
   moderator: { label: "Moderator", icon: <ShieldCheck className="h-3 w-3" /> },
@@ -73,12 +66,6 @@ const UserExpandedPanel = ({ user, onViewProfile }: { user: any; onViewProfile: 
         <ShoppingBag className="h-4 w-4 text-muted-foreground" />
         <span className="text-muted-foreground">Cheltuit:</span>
         <span className="font-medium">{Number(user.total_spent || 0).toLocaleString('ro-RO')} RON</span>
-      </div>
-      <div>
-        <span className="text-muted-foreground">KYC:</span>{" "}
-        <Badge className={kycStatusLabels[user.kyc_status]?.color || "bg-gray-100"}>
-          {kycStatusLabels[user.kyc_status]?.label || user.kyc_status}
-        </Badge>
       </div>
       <div>
         <span className="text-muted-foreground">Înregistrat:</span>{" "}
@@ -167,7 +154,6 @@ const AdminUsers = () => {
                         <TableHead>Rezervări</TableHead>
                         <TableHead>Câștigat</TableHead>
                         <TableHead>Cheltuit</TableHead>
-                        <TableHead>KYC</TableHead>
                         <TableHead>Rol</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Înregistrat</TableHead>
@@ -189,9 +175,7 @@ const AdminUsers = () => {
                                 </Avatar>
                                 <span className="font-medium">
                                   {u.full_name || (
-                                    <span className="text-muted-foreground italic">
-                                      Fără nume{u.kyc_status && u.kyc_status !== 'NONE' ? ` · KYC ${u.kyc_status}` : ' · KYC neînceput'}
-                                    </span>
+                                    <span className="text-muted-foreground italic">Fără nume</span>
                                   )}
                                 </span>
                                 {expandedUserId === u.id ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
@@ -202,11 +186,6 @@ const AdminUsers = () => {
                             <TableCell>{u.rentals_count}</TableCell>
                             <TableCell className="font-medium text-green-700 whitespace-nowrap">{Number(u.total_earned || 0).toLocaleString('ro-RO')} RON</TableCell>
                             <TableCell className="font-medium whitespace-nowrap">{Number(u.total_spent || 0).toLocaleString('ro-RO')} RON</TableCell>
-                            <TableCell>
-                              <Badge className={kycStatusLabels[u.kyc_status]?.color || "bg-gray-100"}>
-                                {kycStatusLabels[u.kyc_status]?.label || u.kyc_status}
-                              </Badge>
-                            </TableCell>
                             <TableCell>
                               <Badge variant={u.user_role === 'admin' ? 'default' : 'outline'} className="gap-1">
                                 {roleLabels[u.user_role]?.icon}
@@ -251,7 +230,7 @@ const AdminUsers = () => {
                           </TableRow>
                           {expandedUserId === u.id && (
                             <TableRow key={`${u.id}-expand`}>
-                              <TableCell colSpan={10} className="p-0">
+                              <TableCell colSpan={9} className="p-0">
                                 <UserExpandedPanel user={u} onViewProfile={() => navigate(`/admin/users/${u.id}`)} />
                               </TableCell>
                             </TableRow>
@@ -278,9 +257,7 @@ const AdminUsers = () => {
                           <div className="min-w-0">
                             <p className="font-medium text-sm truncate">
                               {u.full_name || (
-                                <span className="text-muted-foreground italic">
-                                  Fără nume{u.kyc_status && u.kyc_status !== 'NONE' ? ` · KYC ${u.kyc_status}` : ' · KYC neînceput'}
-                                </span>
+                                <span className="text-muted-foreground italic">Fără nume</span>
                               )}
                             </p>
                             <p className="text-xs text-muted-foreground truncate">{u.email || '-'}</p>

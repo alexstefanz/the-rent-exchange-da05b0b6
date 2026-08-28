@@ -22,8 +22,6 @@ const actionLabels: Record<string, string> = {
   RENTAL_REJECTED: "Rezervare respinsă",
   RENTAL_ACTIVE: "Rezervare activă",
   PHONE_UPDATED: "Telefon actualizat",
-  KYC_STATUS_CHANGED: "Status KYC schimbat",
-  KYC_CASE_CREATED: "Cerere KYC creată",
 };
 
 const UserActivityTab = ({ userId }: Props) => {

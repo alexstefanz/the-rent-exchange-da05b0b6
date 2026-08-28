@@ -74,7 +74,6 @@ Deno.serve(async (req) => {
       'product_reviews',
       'conversations',
       'messages',
-      'kyc_cases',
       'withdrawal_requests',
       'rentals',
       'products',

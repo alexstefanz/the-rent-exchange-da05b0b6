@@ -437,225 +437,6 @@ export type Database = {
         }
         Relationships: []
       }
-      kyc_audit_log: {
-        Row: {
-          action: string
-          actor_id: string | null
-          actor_type: string
-          created_at: string
-          id: string
-          kyc_case_id: string
-          new_value: string | null
-          old_value: string | null
-        }
-        Insert: {
-          action: string
-          actor_id?: string | null
-          actor_type?: string
-          created_at?: string
-          id?: string
-          kyc_case_id: string
-          new_value?: string | null
-          old_value?: string | null
-        }
-        Update: {
-          action?: string
-          actor_id?: string | null
-          actor_type?: string
-          created_at?: string
-          id?: string
-          kyc_case_id?: string
-          new_value?: string | null
-          old_value?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "kyc_audit_log_kyc_case_id_fkey"
-            columns: ["kyc_case_id"]
-            isOneToOne: false
-            referencedRelation: "kyc_cases"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      kyc_cases: {
-        Row: {
-          attempts_count: number
-          created_at: string
-          decided_at: string | null
-          decided_by_admin_id: string | null
-          id: string
-          level_required: string
-          provider_case_id: string | null
-          provider_name: string | null
-          public_id: string
-          rejection_reason: string | null
-          risk_score: number
-          status: string
-          submitted_at: string | null
-          updated_at: string
-          user_id: string
-          user_role: string
-        }
-        Insert: {
-          attempts_count?: number
-          created_at?: string
-          decided_at?: string | null
-          decided_by_admin_id?: string | null
-          id?: string
-          level_required?: string
-          provider_case_id?: string | null
-          provider_name?: string | null
-          public_id?: string
-          rejection_reason?: string | null
-          risk_score?: number
-          status?: string
-          submitted_at?: string | null
-          updated_at?: string
-          user_id: string
-          user_role?: string
-        }
-        Update: {
-          attempts_count?: number
-          created_at?: string
-          decided_at?: string | null
-          decided_by_admin_id?: string | null
-          id?: string
-          level_required?: string
-          provider_case_id?: string | null
-          provider_name?: string | null
-          public_id?: string
-          rejection_reason?: string | null
-          risk_score?: number
-          status?: string
-          submitted_at?: string | null
-          updated_at?: string
-          user_id?: string
-          user_role?: string
-        }
-        Relationships: []
-      }
-      kyc_documents: {
-        Row: {
-          created_at: string
-          document_type: string
-          file_name: string
-          file_size: number | null
-          file_url: string
-          id: string
-          kyc_case_id: string
-          mime_type: string | null
-          uploaded_by_user_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          document_type: string
-          file_name: string
-          file_size?: number | null
-          file_url: string
-          id?: string
-          kyc_case_id: string
-          mime_type?: string | null
-          uploaded_by_user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          document_type?: string
-          file_name?: string
-          file_size?: number | null
-          file_url?: string
-          id?: string
-          kyc_case_id?: string
-          mime_type?: string | null
-          uploaded_by_user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "kyc_documents_kyc_case_id_fkey"
-            columns: ["kyc_case_id"]
-            isOneToOne: false
-            referencedRelation: "kyc_cases"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      kyc_extracted_data: {
-        Row: {
-          address: string | null
-          birth_date: string | null
-          cnp: string | null
-          created_at: string
-          extracted_at: string
-          extraction_confidence: number | null
-          extraction_model: string | null
-          extraction_raw: Json | null
-          full_name: string | null
-          id: string
-          id_number: string | null
-          id_series: string | null
-          issued_by: string | null
-          kyc_case_id: string | null
-          updated_at: string
-          user_id: string
-          valid_until: string | null
-          verified_at: string | null
-          verified_by_admin: boolean
-          verified_by_admin_id: string | null
-        }
-        Insert: {
-          address?: string | null
-          birth_date?: string | null
-          cnp?: string | null
-          created_at?: string
-          extracted_at?: string
-          extraction_confidence?: number | null
-          extraction_model?: string | null
-          extraction_raw?: Json | null
-          full_name?: string | null
-          id?: string
-          id_number?: string | null
-          id_series?: string | null
-          issued_by?: string | null
-          kyc_case_id?: string | null
-          updated_at?: string
-          user_id: string
-          valid_until?: string | null
-          verified_at?: string | null
-          verified_by_admin?: boolean
-          verified_by_admin_id?: string | null
-        }
-        Update: {
-          address?: string | null
-          birth_date?: string | null
-          cnp?: string | null
-          created_at?: string
-          extracted_at?: string
-          extraction_confidence?: number | null
-          extraction_model?: string | null
-          extraction_raw?: Json | null
-          full_name?: string | null
-          id?: string
-          id_number?: string | null
-          id_series?: string | null
-          issued_by?: string | null
-          kyc_case_id?: string | null
-          updated_at?: string
-          user_id?: string
-          valid_until?: string | null
-          verified_at?: string | null
-          verified_by_admin?: boolean
-          verified_by_admin_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "kyc_extracted_data_kyc_case_id_fkey"
-            columns: ["kyc_case_id"]
-            isOneToOne: false
-            referencedRelation: "kyc_cases"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       message_attachments: {
         Row: {
           conversation_id: string
@@ -1636,9 +1417,6 @@ export type Database = {
           id: string
           is_banned: boolean
           is_deactivated: boolean
-          kyc_last_verified_at: string | null
-          kyc_level: string
-          kyc_status: string
           phone: string | null
           phone_verified: boolean
           reg_com: string | null
@@ -1666,9 +1444,6 @@ export type Database = {
           id: string
           is_banned?: boolean
           is_deactivated?: boolean
-          kyc_last_verified_at?: string | null
-          kyc_level?: string
-          kyc_status?: string
           phone?: string | null
           phone_verified?: boolean
           reg_com?: string | null
@@ -1696,9 +1471,6 @@ export type Database = {
           id?: string
           is_banned?: boolean
           is_deactivated?: boolean
-          kyc_last_verified_at?: string | null
-          kyc_level?: string
-          kyc_status?: string
           phone?: string | null
           phone_verified?: boolean
           reg_com?: string | null
@@ -2781,41 +2553,11 @@ export type Database = {
           total_revenue: number
         }[]
       }
-      get_admin_kyc_cases: {
-        Args: {
-          level_filter?: string
-          limit_count?: number
-          offset_count?: number
-          role_filter?: string
-          search_query?: string
-          status_filter?: string
-        }
-        Returns: {
-          attempts_count: number
-          created_at: string
-          decided_at: string
-          duplicate_count: number
-          id: string
-          level_required: string
-          provider_name: string
-          public_id: string
-          rejection_reason: string
-          risk_score: number
-          status: string
-          submitted_at: string
-          updated_at: string
-          user_email: string
-          user_id: string
-          user_name: string
-          user_role: string
-        }[]
-      }
       get_admin_notification_summary: {
         Args: never
         Returns: {
           open_tickets: number
           pending_cancellations: number
-          pending_kyc: number
           pending_products: number
           pending_reports: number
           pending_withdrawals: number
@@ -2963,7 +2705,6 @@ export type Database = {
         Args: never
         Returns: {
           active_rentals: number
-          pending_kyc: number
           revenue_this_month: number
           total_products: number
           total_rentals: number
@@ -2987,7 +2728,6 @@ export type Database = {
           full_name: string
           id: string
           is_banned: boolean
-          kyc_status: string
           last_warning_at: string
           phone: string
           products_count: number
@@ -3076,19 +2816,6 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
-      }
-      get_kyc_duplicate_users: {
-        Args: { case_id: string }
-        Returns: {
-          avatar_url: string
-          created_at: string
-          email: string
-          full_name: string
-          id: string
-          kyc_status: string
-          products_count: number
-          rentals_count: number
-        }[]
       }
       get_my_product_serial: { Args: { _id: string }; Returns: string }
       get_my_products_sensitive: {
@@ -3190,20 +2917,6 @@ export type Database = {
           id: string
         }[]
       }
-      get_pv_identity_data: {
-        Args: { _rental_id: string }
-        Returns: {
-          address: string
-          birth_date: string
-          cnp: string
-          full_name: string
-          id_number: string
-          id_series: string
-          party: string
-          user_id: string
-          verified_by_admin: boolean
-        }[]
-      }
       get_rental_by_public_id: {
         Args: { p_public_id: string }
         Returns: {
@@ -3260,13 +2973,8 @@ export type Database = {
           handover_pv_renter_signed_at: string
           id: string
           is_test_payment: boolean
-          owner_address: string
-          owner_cnp: string
           owner_email: string
           owner_id: string
-          owner_id_number: string
-          owner_id_series: string
-          owner_identity_verified: boolean
           owner_name: string
           owner_payout: number
           owner_phone: string
@@ -3284,13 +2992,8 @@ export type Database = {
           public_id: string
           rejection_reason: string
           rental_days: number
-          renter_address: string
-          renter_cnp: string
           renter_email: string
           renter_id: string
-          renter_id_number: string
-          renter_id_series: string
-          renter_identity_verified: boolean
           renter_name: string
           renter_phone: string
           return_confirmed_at: string

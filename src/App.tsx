@@ -53,7 +53,6 @@ const OdooTest = lazy(() => import("./pages/OdooTest"));
 const HowItWorks = lazy(() => import("./pages/HowItWorks"));
 const AboutUs = lazy(() => import("./pages/AboutUs"));
 const UserTickets = lazy(() => import("./pages/UserTickets"));
-const KycVerification = lazy(() => import("./pages/KycVerification"));
 const Contact = lazy(() => import("./pages/Contact"));
 const DeactivateAccount = lazy(() => import("./pages/DeactivateAccount"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
@@ -84,14 +83,12 @@ const AdminReservations = lazy(() => import("./pages/admin/AdminReservations"));
 const AdminFinances = lazy(() => import("./pages/admin/AdminFinances"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
-const AdminKYC = lazy(() => import("./pages/admin/AdminKYC"));
 const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
 const AdminTickets = lazy(() => import("./pages/admin/AdminTickets"));
 const AdminTicketDetail = lazy(() => import("./pages/admin/AdminTicketDetail"));
 const AdminTicketCreate = lazy(() => import("./pages/admin/AdminTicketCreate"));
 const AdminSupportAnalytics = lazy(() => import("./pages/admin/AdminSupportAnalytics"));
 const AdminCategories = lazy(() => import("./pages/admin/AdminCategories"));
-const AdminKYCDetail = lazy(() => import("./pages/admin/AdminKYCDetail"));
 const AdminUserDetail = lazy(() => import("./pages/admin/AdminUserDetail"));
 const AdminConversations = lazy(() => import("./pages/admin/AdminConversations"));
 const AdminConversationDetail = lazy(() => import("./pages/admin/AdminConversationDetail"));
@@ -164,9 +161,6 @@ const App = () => (
                 <Route path="/rezervari-old" element={<Navigate to="/rezervari" replace />} />
                 <Route path="/centru-asistenta" element={<HelpCenter />} />
                 <Route path="/suport" element={<UserTickets />} />
-                <Route path="/verificare" element={<KycVerification />} />
-                <Route path="/kyc" element={<Navigate to="/verificare" replace />} />
-                <Route path="/kyc/*" element={<Navigate to="/verificare" replace />} />
                 <Route path="/cum-functioneaza" element={<HowItWorks />} />
                 <Route path="/despre-noi" element={<AboutUs />} />
                 <Route path="/termeni-si-conditii" element={<TermsAndConditions />} />
@@ -194,8 +188,6 @@ const App = () => (
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
                 <Route path="/admin/users" element={<AdminUsers />} />
                 <Route path="/admin/users/:id" element={<AdminUserDetail />} />
-                <Route path="/admin/kyc" element={<AdminKYC />} />
-                <Route path="/admin/kyc/:id" element={<AdminKYCDetail />} />
                 <Route path="/admin/conversations" element={<AdminConversations />} />
                 <Route path="/admin/conversations/:id" element={<AdminConversationDetail />} />
                 <Route path="/admin/approvals" element={<AdminApprovals />} />

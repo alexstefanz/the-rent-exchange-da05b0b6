@@ -96,7 +96,6 @@ const Footer = () => {
               <li><Link to="/rezervari" className="transition-colors hover:text-foreground">{language === "en" ? "Bookings" : "Rezervări"}</Link></li>
               <li><Link to="/favorite" className="transition-colors hover:text-foreground">{language === "en" ? "Favorites" : "Favorite"}</Link></li>
               <li><Link to="/adauga-anunt" className="transition-colors hover:text-foreground">{language === "en" ? "Post a listing" : "Adaugă un anunț"}</Link></li>
-              <li><Link to="/verificare" className="transition-colors hover:text-foreground">{language === "en" ? "eKYC verification" : "Verificare eKYC"}</Link></li>
               <li><Link to="/suport" className="transition-colors hover:text-foreground">{language === "en" ? "Support & Tickets" : "Suport & Tickete"}</Link></li>
             </ul>
           </div>
@@ -113,7 +112,6 @@ const Footer = () => {
               <li><Link to="/politica-cookies" className="transition-colors hover:text-foreground">{language === "en" ? "Cookie policy" : "Politica de cookies"}</Link></li>
               <li><Link to="/centru-asistenta" className="transition-colors hover:text-foreground">{language === "en" ? "Security tips" : "Sfaturi de securitate"}</Link></li>
               <li><Link to="/politica-confidentialitate" className="transition-colors hover:text-foreground">GDPR</Link></li>
-              <li><Link to="/verificare" className="transition-colors hover:text-foreground">Electronic Know Your Customer (eKYC)</Link></li>
               <li><Link to="/cum-functioneaza" className="transition-colors hover:text-foreground">{language === "en" ? "RentProtect - Safe rentals" : "RentProtect - Închiriere sigură"}</Link></li>
               <li><a href="https://anpc.ro" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-foreground">ANPC</a></li>
             </ul>

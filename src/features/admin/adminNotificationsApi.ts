@@ -17,7 +17,6 @@ export interface AdminNotification {
 
 export interface AdminNotificationSummary {
   unread_total: number;
-  pending_kyc: number;
   pending_products: number;
   open_tickets: number;
   pending_withdrawals: number;
@@ -67,7 +66,6 @@ export async function getAdminNotificationSummary(): Promise<AdminNotificationSu
   const row = (data || [])[0];
   return {
     unread_total: Number(row?.unread_total || 0),
-    pending_kyc: Number(row?.pending_kyc || 0),
     pending_products: Number(row?.pending_products || 0),
     open_tickets: Number(row?.open_tickets || 0),
     pending_withdrawals: Number(row?.pending_withdrawals || 0),

@@ -31,7 +31,6 @@ import { useUxCopy } from "@/hooks/useUxCopy";
 import { isValidRomanianPhone } from "@/lib/inputValidation";
 import { useProfileRealtime } from "@/hooks/useProfileRealtime";
 import { AvatarCropperDialog } from "@/components/profile/account/AvatarCropperDialog";
-import KycInlineFlow from "@/components/kyc/KycInlineFlow";
 import PhoneOtpDialog from "@/components/profile/PhoneOtpDialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -53,7 +52,6 @@ type ProfileFormData = z.infer<typeof profileSchema>;
  * ========================================================================== */
 const SECTIONS = [
   { id: "personal", labelRo: "Profil", labelEn: "Profile", icon: User },
-  { id: "verification", labelRo: "Verificare", labelEn: "Verification", icon: ShieldCheck },
   { id: "security", labelRo: "Securitate", labelEn: "Security", icon: Lock },
   { id: "payout", labelRo: "Încasări", labelEn: "Payouts", icon: Wallet },
   { id: "notifications", labelRo: "Notificări", labelEn: "Notifications", icon: Bell },
@@ -95,7 +93,6 @@ const AccountTab = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingAvatar, setPendingAvatar] = useState<File | null>(null);
   const [cropperOpen, setCropperOpen] = useState(false);
-  const [showKycFlow, setShowKycFlow] = useState(false);
   const [otpDialogOpen, setOtpDialogOpen] = useState(false);
   const [pendingPhone, setPendingPhone] = useState<string>("");
 
@@ -197,7 +194,6 @@ const AccountTab = () => {
       { key: "name", label: t("Nume complet", "Full name"), done: !!profile.full_name, section: "personal" },
       { key: "phone", label: t("Telefon valid", "Valid phone"), done: isValidRomanianPhone(profile.phone || ""), section: "personal" },
       { key: "avatar", label: t("Fotografie profil", "Profile photo"), done: !!profile.avatar_url, section: "personal" },
-      { key: "kyc", label: t("Identitate verificată", "Identity verified"), done: profile.kyc_status === "VERIFIED", section: "verification" },
       { key: "iban", label: t("IBAN configurat", "IBAN set"), done: !!(profile as any).iban, section: "payout" },
     ];
     const done = items.filter((i) => i.done).length;
@@ -384,14 +380,6 @@ const AccountTab = () => {
     );
   }
 
-  /* ---- KYC presentation ---- */
-  const kycStatus = profile?.kyc_status || "NOT_VERIFIED";
-  const kycMeta =
-    kycStatus === "VERIFIED" ? { label: t("Identitate verificată", "Identity verified"), tone: "success" as const } :
-    kycStatus === "SUBMITTED" || kycStatus === "NEEDS_MANUAL_REVIEW" ? { label: t("În curs de verificare", "Under review"), tone: "pending" as const } :
-    kycStatus === "REJECTED" ? { label: t("Verificare respinsă", "Verification rejected"), tone: "danger" as const } :
-    { label: t("Verificare necesară", "Verification required"), tone: "neutral" as const };
-
   return (
     <TooltipProvider delayDuration={200}>
       <div className="space-y-8 pb-20 lg:pb-8">
@@ -447,11 +435,6 @@ const AccountTab = () => {
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="font-semibold truncate">{profile?.full_name || t("Utilizator nou", "New user")}</p>
-                {kycStatus === "VERIFIED" && (
-                  <Badge className="bg-emerald-500 hover:bg-emerald-600 gap-1 h-5 text-[10px]">
-                    <BadgeCheck className="h-3 w-3" /> {t("Verificat", "Verified")}
-                  </Badge>
-                )}
               </div>
               <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
             </div>
@@ -482,67 +465,6 @@ const AccountTab = () => {
               </Button>
             </div>
           </form>
-        </Section>
-
-        {/* ============ VERIFICATION ============ */}
-        <Section id="verification" icon={ShieldCheck} title={t("Centru verificare", "Verification center")} description={t("Verifică-ți identitatea pentru a inspira încredere și a debloca închirieri premium.", "Verify your identity to build trust and unlock premium rentals.")}>
-          <div className="rounded-xl border border-border p-5 bg-gradient-to-br from-background to-muted/30">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
-              <div className="flex items-center gap-3">
-                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center ${
-                  kycMeta.tone === "success" ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30" :
-                  kycMeta.tone === "pending" ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 animate-pulse" :
-                  kycMeta.tone === "danger" ? "bg-destructive/10 text-destructive" :
-                  "bg-muted text-muted-foreground"
-                }`}>
-                  <ShieldCheck className="h-6 w-6" />
-                </div>
-                <div>
-                  <p className="font-semibold">{kycMeta.label}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {kycMeta.tone === "success" ? t("Ai acces complet la platformă", "You have full platform access") :
-                     kycMeta.tone === "pending" ? t("Te vom anunța prin email când e gata", "We'll notify you by email when it's ready") :
-                     t("Necesar pentru închirieri și retrageri de bani", "Required for rentals and withdrawals")}
-                  </p>
-                </div>
-              </div>
-              {kycStatus !== "VERIFIED" && kycStatus !== "SUBMITTED" && kycStatus !== "NEEDS_MANUAL_REVIEW" && (
-                <Button
-                  onClick={() => setShowKycFlow((v) => !v)}
-                  variant={showKycFlow ? "outline" : "default"}
-                  className="sm:w-auto w-full"
-                >
-                  <Shield className="mr-2 h-4 w-4" />
-                  {showKycFlow
-                    ? t("Ascunde", "Hide")
-                    : kycStatus === "REJECTED"
-                    ? t("Reîncepe verificarea", "Restart verification")
-                    : t("Începe verificarea", "Start verification")}
-                </Button>
-              )}
-            </div>
-
-            {/* Mini stepper */}
-            <div className="grid grid-cols-3 gap-2">
-              {[
-                { label: t("Date personale", "Personal data"), done: kycStatus !== "NOT_VERIFIED" },
-                { label: t("Documente", "Documents"), done: kycStatus === "SUBMITTED" || kycStatus === "NEEDS_MANUAL_REVIEW" || kycStatus === "VERIFIED" },
-                { label: t("Aprobat", "Approved"), done: kycStatus === "VERIFIED" },
-              ].map((step, i) => (
-                <div key={i} className="flex flex-col gap-1.5">
-                  <div className={`h-1.5 rounded-full ${step.done ? "bg-emerald-500" : "bg-muted"}`} />
-                  <p className="text-xs text-muted-foreground">{step.label}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Inline KYC flow */}
-            {showKycFlow && kycStatus !== "VERIFIED" && kycStatus !== "SUBMITTED" && kycStatus !== "NEEDS_MANUAL_REVIEW" && (
-              <div className="mt-4 pt-4 border-t border-border animate-fade-in">
-                <KycInlineFlow variant="inline" />
-              </div>
-            )}
-          </div>
         </Section>
 
         {/* ============ SECURITY ============ */}

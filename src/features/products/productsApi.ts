@@ -316,11 +316,6 @@ export const createProduct = async (
     .single();
 
   if (error) {
-    if (typeof error.message === "string" && error.message.includes("KYC_REQUIRED")) {
-      const e = new Error("KYC_REQUIRED");
-      (e as any).code = "KYC_REQUIRED";
-      throw e;
-    }
     handleApiError("Error creating product", error);
   }
 

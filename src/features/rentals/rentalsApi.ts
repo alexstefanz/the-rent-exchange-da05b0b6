@@ -39,12 +39,6 @@ async function readFunctionErrorPayload(error: unknown): Promise<any | null> {
 }
 
 function throwCheckoutError(code?: string, message?: string): never {
-  if (code === "KYC_REQUIRED") {
-    const e = new Error("KYC_REQUIRED");
-    (e as any).code = "KYC_REQUIRED";
-    throw e;
-  }
-
   if (code === "MIN_AMOUNT") {
     const e = new Error(
       message ||
@@ -102,11 +96,6 @@ export async function createRental(params: CreateRentalParams) {
     .single();
 
   if (error) {
-    if (typeof error.message === "string" && error.message.includes("KYC_REQUIRED")) {
-      const e = new Error("KYC_REQUIRED");
-      (e as any).code = "KYC_REQUIRED";
-      throw e;
-    }
     throw error;
   }
 
@@ -152,16 +141,10 @@ export async function payForConfirmedRental(rentalId: string): Promise<string> {
     const msg = (error as any)?.message || "";
     const payload = await readFunctionErrorPayload(error);
     const ctxErr = payload?.error || (error as any)?.context?.error;
-    if (msg.includes("KYC_REQUIRED") || ctxErr === "KYC_REQUIRED") throwCheckoutError("KYC_REQUIRED");
     if (msg.includes("MIN_AMOUNT") || ctxErr === "MIN_AMOUNT") throwCheckoutError("MIN_AMOUNT", payload?.message);
     throw error;
   }
   if (data?.error) {
-    if (data.error === "KYC_REQUIRED") {
-      const e = new Error("KYC_REQUIRED");
-      (e as any).code = "KYC_REQUIRED";
-      throw e;
-    }
     if (data.error === "MIN_AMOUNT") {
       const e = new Error(data.message || "Suma totală este sub minimul acceptat (2 RON).");
       (e as any).code = "MIN_AMOUNT";
@@ -304,17 +287,11 @@ export async function createRentalWithStripeCheckout(params: CreateRentalParams)
     const msg = (error as any)?.message || "";
     const payload = await readFunctionErrorPayload(error);
     const code = payload?.error || (error as any)?.context?.error;
-    if (msg.includes("KYC_REQUIRED") || code === "KYC_REQUIRED") throwCheckoutError("KYC_REQUIRED");
     if (msg.includes("MIN_AMOUNT") || code === "MIN_AMOUNT") throwCheckoutError("MIN_AMOUNT", payload?.message);
     throw error;
   }
   if (data?.error) {
     await cleanupOrphanRental();
-    if (data.error === "KYC_REQUIRED") {
-      const e = new Error("KYC_REQUIRED");
-      (e as any).code = "KYC_REQUIRED";
-      throw e;
-    }
     if (data.error === "MIN_AMOUNT") throwCheckoutError("MIN_AMOUNT", data.message);
     throw new Error(data.error);
   }

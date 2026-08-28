@@ -495,7 +495,7 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
 
   const hasActivity =
     !!signals &&
-    (signals.unreadMessages > 0 || totalActive > 0 || signals.kycPending || signals.ibanMissing);
+    (signals.unreadMessages > 0 || totalActive > 0 || signals.ibanMissing);
 
   const handleNav = (path: string) => {
     setOpen(false);

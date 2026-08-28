@@ -331,8 +331,8 @@ const FAQ = () => {
   usePageSeo({
     title: isEn ? "Frequently asked questions — Rentli" : "Întrebări frecvente — Rentli",
     description: isEn
-      ? "Common questions about rentals, payments, KYC and fees on Rentli."
-      : "Cele mai frecvente întrebări despre închirieri, plăți, KYC și taxe pe Rentli.",
+      ? "Common questions about rentals, payments and fees on Rentli."
+      : "Cele mai frecvente întrebări despre închirieri, plăți și taxe pe Rentli.",
   });
   const allLabel = isEn ? "All" : "Toate";
   const [activeCategory, setActiveCategory] = useState<string>(allLabel);

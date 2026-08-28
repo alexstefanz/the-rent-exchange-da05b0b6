@@ -108,12 +108,6 @@ const AdminDashboard = () => {
                 onClick={() => navigate('/admin/finances')}
               />
               <StatsCard
-                title="KYC În Așteptare"
-                value={stats?.pending_kyc || 0}
-                icon={<ShieldCheck className="h-4 w-4" />}
-                onClick={() => navigate('/admin/kyc')}
-              />
-              <StatsCard
                 title="Bani Retrași"
                 value={formatCurrency(stats?.total_withdrawn || 0)}
                 icon={<Banknote className="h-4 w-4" />}
