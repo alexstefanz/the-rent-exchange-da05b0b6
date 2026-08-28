@@ -430,11 +430,11 @@ const ListingsPage = () => {
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("Ștergi anunțul definitiv?", "Delete listing?")}</AlertDialogTitle>
+            <AlertDialogTitle>{t("Trimiți cererea de ștergere?", "Send deletion request?")}</AlertDialogTitle>
             <AlertDialogDescription>
               {t(
-                "Această acțiune nu poate fi anulată. Anunțul va fi eliminat din contul tău.",
-                "This action cannot be undone. The listing will be removed from your account.",
+                "Anunțul va fi ascuns imediat și va fi șters definitiv doar după confirmarea unui administrator.",
+                "The listing will be hidden immediately and permanently deleted only after an admin confirms it.",
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -444,8 +444,9 @@ const ListingsPage = () => {
               className="bg-rose-600 hover:bg-rose-700"
               onClick={() => confirmDelete && handleDelete(confirmDelete)}
             >
-              {t("Șterge definitiv", "Delete permanently")}
+              {t("Trimite cererea", "Send request")}
             </AlertDialogAction>
+
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
