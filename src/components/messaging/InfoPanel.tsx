@@ -46,7 +46,6 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, rental
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [contact, setContact] = useState<{ phone: string | null; email: string | null } | null>(null);
   const [linkUrls, setLinkUrls] = useState<string[]>([]);
-  const [kycLevel, setKycLevel] = useState<string | null>(null);
   const [memberSince, setMemberSince] = useState<string | null>(null);
   const [isPaid, setIsPaid] = useState(false);
 
@@ -106,12 +105,11 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, rental
     }
     supabase
       .from("profiles")
-      .select("kyc_level, created_at")
+      .select("created_at")
       .eq("id", peerId)
       .maybeSingle()
       .then(({ data }) => {
         if (data) {
-          setKycLevel((data as any).kyc_level || null);
           setMemberSince((data as any).created_at || null);
         }
       });
@@ -168,11 +166,6 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, rental
         </Avatar>
         <p className="font-semibold text-base">{peerName || t("Utilizator", "User")}</p>
         <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
-          {kycLevel && kycLevel !== "NONE" && (
-            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-700 border-emerald-500/20 gap-1">
-              <ShieldCheck className="h-3 w-3" /> {t("Verificat", "Verified")}
-            </Badge>
-          )}
           {memberYear && (
             <span className="text-xs text-muted-foreground">
               {t("Membru din", "Member since")} {memberYear}

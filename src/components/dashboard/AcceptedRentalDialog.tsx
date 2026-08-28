@@ -32,21 +32,6 @@ export function AcceptedRentalDialog({ rental, open, onOpenChange, onCancelled }
   const [startingChat, setStartingChat] = useState(false);
   const [cancelling, setCancelling] = useState(false);
 
-  const { data: kycApproved } = useQuery({
-    queryKey: ["renterKyc", rental?.renter_id],
-    queryFn: async () => {
-      if (!rental?.renter_id) return false;
-      const { data } = await supabase
-        .from("kyc_cases" as any)
-        .select("status")
-        .eq("user_id", rental.renter_id)
-        .eq("status", "APPROVED")
-        .maybeSingle();
-      return !!data;
-    },
-    enabled: !!rental?.renter_id && open,
-  });
-
   if (!rental) return null;
 
   const isWithin24h = rental.created_at
@@ -129,12 +114,6 @@ export function AcceptedRentalDialog({ rental, open, onOpenChange, onCancelled }
               >
                 {rental.renter_name || t("Chiriaș", "Renter")}
               </Link>
-              {kycApproved && (
-                <Badge variant="outline" className="gap-1 border-emerald-500/50 text-emerald-600 dark:text-emerald-400">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  {t("Verificat ID", "ID verified")}
-                </Badge>
-              )}
             </div>
 
             {/* Booking info cards */}
