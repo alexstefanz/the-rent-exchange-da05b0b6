@@ -109,8 +109,8 @@ const HeroDynamic = () => {
           </h1>
           <p className="mt-3 text-white/80 text-sm md:text-base max-w-xl mx-auto">
             {t(
-              "Mii de produse verificate. Plăți sigure. Suport 24/7.",
-              "Thousands of verified items. Secure payments. 24/7 support.",
+              "Mii de produse verificate. Plăți sigure. Suport dedicat.",
+              "Thousands of verified items. Secure payments. Dedicated support.",
             )}
           </p>
 
