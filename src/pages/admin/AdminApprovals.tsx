@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { approveProduct, rejectProduct } from "@/features/admin/adminProductsApi";
 import AdminLayout from "@/components/admin/AdminLayout";
 import AdminCancellationRequestsPanel from "@/components/admin/AdminCancellationRequestsPanel";
+import AdminProductDeletionsPanel from "@/components/admin/AdminProductDeletionsPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
