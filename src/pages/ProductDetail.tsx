@@ -526,7 +526,7 @@ const ProductDetail = () => {
                 onAsk={handleStartChat}
                 isOwnProduct={isOwnProduct || !isPubliclyVisible}
                 responseMinutes={extendedStats?.owner_response_minutes}
-                ownerVerified={!!extendedStats?.owner_kyc_verified}
+                ownerVerified={false}
                 minRentalDays={product.min_rental_days}
                 maxRentalDays={(product as any).max_rental_days ?? null}
                 platformFeePercent={product.platform_fee_percent ?? 0}
@@ -568,7 +568,7 @@ const ProductDetail = () => {
         onAsk={handleStartChat}
         isOwnProduct={isOwnProduct || !isPubliclyVisible}
         responseMinutes={extendedStats?.owner_response_minutes}
-        ownerVerified={!!extendedStats?.owner_kyc_verified}
+        ownerVerified={false}
         minRentalDays={product.min_rental_days}
         maxRentalDays={(product as any).max_rental_days ?? null}
         platformFeePercent={product.platform_fee_percent ?? 0}
