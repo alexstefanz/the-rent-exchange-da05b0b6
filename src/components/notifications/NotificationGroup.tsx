@@ -42,17 +42,16 @@ export function NotificationGroups({ notifications, onSelect, onMarkRead }: Prop
   }
 
   return (
-    <div className="flex flex-col gap-1 px-2 pb-3">
+    <div className="flex flex-col pb-2">
       {ORDER.map((b) =>
         groups[b].length > 0 ? (
           <section key={b} className="flex flex-col">
-            <header className="px-2 pt-3 pb-1.5 flex items-center gap-3">
-              <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground/80">
+            <header className="px-4 pt-3 pb-1.5">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground/70">
                 {labels[b]}
               </span>
-              <span className="flex-1 h-px bg-border/60" />
             </header>
-            <div className="flex flex-col">
+            <div className="flex flex-col divide-y divide-border/50 border-t border-border/50">
               {groups[b].map((n) => (
                 <NotificationCard
                   key={n.id}
