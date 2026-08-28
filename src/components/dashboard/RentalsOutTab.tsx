@@ -189,7 +189,7 @@ const RentalsOutTab = () => {
       {/* Filter & sort bar */}
       <RentalsFilterBar
         statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
+        onStatusFilterChange={handleStatusFilterChange}
         sortBy={sortBy}
         onSortChange={setSortBy}
         counts={counts}
