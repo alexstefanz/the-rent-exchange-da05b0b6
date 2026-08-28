@@ -52,7 +52,6 @@ import {
   maskIban,
   type WithdrawalRow,
 } from "@/features/admin/withdrawalsApi";
-import { KYC_STATUS_COLORS } from "@/features/admin/kycApi";
 
 const STATUS_TABS: Array<{ value: string; label: string }> = [
   { value: "pending", label: "În așteptare" },
@@ -76,12 +75,6 @@ const STATUS_LABELS: Record<string, string> = {
   rejected: "Respinsă",
 };
 
-const PROFILE_KYC_LABELS: Record<string, string> = {
-  VERIFIED: "Verificat",
-  PENDING: "În așteptare",
-  REJECTED: "Respins",
-  NOT_VERIFIED: "Neverificat",
-};
 
 const formatCurrency = (v: number) =>
   new Intl.NumberFormat("ro-RO", { style: "currency", currency: "RON", minimumFractionDigits: 0 }).format(v);
@@ -278,12 +271,6 @@ const AdminWithdrawals = () => {
               const expanded = expandedId === w.id;
               const revealed = !!revealedIban[w.id];
               const ibanDisplay = revealed ? w.iban : maskIban(w.iban);
-              const kycLabel = PROFILE_KYC_LABELS[w.kyc_status || ""] || w.kyc_status || "—";
-              const kycColor = w.kyc_status === "VERIFIED"
-                ? "bg-green-100 text-green-800"
-                : w.kyc_status === "REJECTED"
-                  ? "bg-red-100 text-red-800"
-                  : "bg-yellow-100 text-yellow-800";
               const nameMismatch =
                 w.account_holder &&
                 w.user_name &&
@@ -334,9 +321,6 @@ const AdminWithdrawals = () => {
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         <Badge className={STATUS_COLORS[w.status]}>{STATUS_LABELS[w.status] || w.status}</Badge>
-                        <Badge variant="outline" className={`text-[10px] ${kycColor}`}>
-                          KYC: {kycLabel}
-                        </Badge>
                       </div>
                     </div>
 
@@ -473,8 +457,7 @@ const WithdrawalDetailPanel = ({ withdrawal, onPreview, onCopy }: DetailPanelPro
     );
   }
 
-  const { profile, totalWithdrawn, productsCount, rentalsCount, previousRequests, kycCase, kycDocuments } = data;
-  const isVerified = profile.kyc_status === "VERIFIED";
+  const { profile, totalWithdrawn, productsCount, rentalsCount, previousRequests } = data;
 
   return (
     <div className="border-t bg-muted/20 p-4 grid gap-4 lg:grid-cols-3">
@@ -583,95 +566,6 @@ const WithdrawalDetailPanel = ({ withdrawal, onPreview, onCopy }: DetailPanelPro
         </CardContent>
       </Card>
 
-      {/* KYC */}
-      <Card>
-        <CardHeader className="p-3 pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            {isVerified ? (
-              <ShieldCheck className="h-4 w-4 text-green-600" />
-            ) : (
-              <ShieldAlert className="h-4 w-4 text-red-600" />
-            )}
-            Identitate KYC
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-3 pt-0 space-y-2 text-sm">
-          {!isVerified && (
-            <div className="rounded-md border border-red-200 bg-red-50 p-2 text-[11px] text-red-800 flex items-start gap-1.5">
-              <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
-              <span>
-                Utilizator <strong>NEVERIFICAT</strong>. Recomandăm respingerea cererii până la finalizarea KYC.
-              </span>
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div>
-              <p className="text-muted-foreground">Status</p>
-              <Badge className={`${KYC_STATUS_COLORS[kycCase?.status || ""] || "bg-gray-100"} text-[10px]`}>
-                {kycCase?.status || profile.kyc_status || "NOT_STARTED"}
-              </Badge>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Nivel</p>
-              <p className="font-medium">{kycCase?.level_required || profile.kyc_level || "—"}</p>
-            </div>
-            {kycCase && (
-              <>
-                <div>
-                  <p className="text-muted-foreground">Cod caz</p>
-                  <p className="font-mono text-[11px]">{kycCase.public_id}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Decis la</p>
-                  <p className="font-medium">
-                    {kycCase.decided_at
-                      ? format(new Date(kycCase.decided_at), "d MMM yyyy", { locale: ro })
-                      : "—"}
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-
-          {kycCase && (
-            <Button asChild size="sm" variant="outline" className="w-full">
-              <Link to={`/admin/kyc/${kycCase.id}`}>
-                Deschide cazul KYC <ExternalLink className="h-3 w-3 ml-1" />
-              </Link>
-            </Button>
-          )}
-
-          <Separator />
-          <div>
-            <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
-              <FileImage className="h-3 w-3" /> Documente identitate ({kycDocuments.length})
-            </p>
-            {kycDocuments.length === 0 ? (
-              <p className="text-xs italic text-muted-foreground">Niciun document încărcat.</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-2">
-                {kycDocuments.map((d) => (
-                  <button
-                    key={d.id}
-                    onClick={() => onPreview(d.file_url, DOC_LABELS[d.document_type] || d.document_type)}
-                    className="group relative aspect-video bg-background border rounded overflow-hidden hover:border-primary transition-colors"
-                  >
-                    <img
-                      src={d.file_url}
-                      alt={d.document_type}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                    <span className="absolute bottom-0 left-0 right-0 bg-black/60 text-white text-[10px] px-1 py-0.5 truncate">
-                      {DOC_LABELS[d.document_type] || d.document_type}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
