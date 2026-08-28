@@ -86,8 +86,10 @@ const CategoryDetail = () => {
       .sort((a, b) => a.label.localeCompare(b.label, "ro", { sensitivity: "base" }));
   }, [category, language]);
 
-  // A keyword search leaves the category scope unless the user asks to stay in it.
-  const searchesAllCategories = Boolean(searchQuery) && !restrictToCategory;
+  // A keyword search leaves the category scope unless the user asks to stay in it
+  // (picking a subcategory is an explicit request to stay inside this category).
+  const searchesAllCategories =
+    Boolean(searchQuery) && !restrictToCategory && selectedSubcategory === "all";
 
   const productFilters = useMemo((): ProductFilters => {
     const filters: ProductFilters = {};
