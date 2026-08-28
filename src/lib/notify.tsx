@@ -25,8 +25,7 @@ export type NotifyVariant =
   | "message"
   | "request"
   | "info"
-  | "warning"
-  | "kyc";
+  | "warning";
 
 interface VariantStyle {
   Icon: LucideIcon;
@@ -100,7 +99,7 @@ const VARIANT_STYLES: Record<NotifyVariant, VariantStyle> = {
     accent: "bg-primary",
     badgeBg: "bg-primary",
   },
-  kyc: {
+  __unused_kyc_removed: {
     Icon: ShieldCheck,
     halo: "bg-amber-500/15",
     icon: "text-amber-600",

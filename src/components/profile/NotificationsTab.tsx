@@ -84,7 +84,6 @@ const NotificationsTab = () => {
   };
 
   const mapLink = (link: string, type?: string) => {
-    if (type === "kyc_approved") return "/owner/new-product";
     if (link.includes("#anunturi") || link.includes("?tab=lendings")) return "/anunturi";
     if (link.startsWith("/cereri") || link.includes("#cereri") || link.includes("?tab=rentals")) return "/rezervari";
     if (link.includes("#rezervari")) return "/rezervari";
@@ -127,7 +126,7 @@ const NotificationsTab = () => {
     }
 
     // For non-rental notifications, navigate to the linked page
-    if (notification.link || notification.type === "kyc_approved") {
+    if (notification.link) {
       navigate(mapLink(notification.link || "", notification.type));
     }
   };

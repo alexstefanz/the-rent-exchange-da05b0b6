@@ -8,7 +8,6 @@ const iconForType = (type: string) => {
   if (type.includes("review")) return Star;
   if (type.includes("payout") || type.includes("withdraw")) return Wallet;
   if (type.includes("rental") || type.includes("booking")) return Package;
-  if (type.includes("kyc")) return ShieldCheck;
   return Bell;
 };
 
@@ -20,7 +19,6 @@ const labelFor = (type: string, lang: "ro" | "en") => {
     withdrawal: ["Retrageri", "Withdrawals"],
     rental: ["Rezervări", "Bookings"],
     booking: ["Rezervări", "Bookings"],
-    kyc: ["Verificare", "Verification"],
     system: ["Sistem", "System"],
   };
   for (const k of Object.keys(map)) {
