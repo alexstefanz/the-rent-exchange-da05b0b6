@@ -35,6 +35,7 @@ export interface AccountDashboardData {
     availableBalance: number;
     monthlyEarnings: number;
     totalCompletedRentals: number;
+    completedRentalsAsOwner: number;
     newReviews: number;
     ibanMissing: boolean;
   };
@@ -153,9 +154,13 @@ export function useAccountDashboard() {
       const actionableHandover = (rentalsAsOwner || []).filter(
         (r: any) => r.status === "confirmed" && !r.handover_confirmed_at
       ).length;
-      const completedRentals =
-        (rentalsAsOwner || []).filter((r: any) => r.status === "completed").length +
-        (rentalsAsRenter || []).filter((r: any) => r.status === "completed").length;
+      const completedRentalsAsOwner = (rentalsAsOwner || []).filter(
+        (r: any) => r.status === "completed"
+      ).length;
+      const completedRentalsAsRenter = (rentalsAsRenter || []).filter(
+        (r: any) => r.status === "completed"
+      ).length;
+      const completedRentals = completedRentalsAsOwner + completedRentalsAsRenter;
 
       // reviews
       const reviewsArr = reviews || [];
@@ -210,6 +215,7 @@ export function useAccountDashboard() {
           availableBalance,
           monthlyEarnings,
           totalCompletedRentals: completedRentals,
+          completedRentalsAsOwner,
           newReviews,
           ibanMissing: !p.iban,
         },

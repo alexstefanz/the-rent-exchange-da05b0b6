@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { Package, Plus, Check, X, Loader2, Calendar, Inbox, MessageSquare, Clock, Sparkles, ArrowRight, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,10 +21,21 @@ import StatusBadge from "./StatusBadge";
 import RentalsFilterBar, { type RentalStatusFilter, type RentalSortBy } from "./RentalsFilterBar";
 import { bucketOf } from "./rentalBucket";
 
+const VALID_STATUS_FILTERS: RentalStatusFilter[] = [
+  "all",
+  "active",
+  "in_progress",
+  "overdue",
+  "pending",
+  "completed",
+  "cancelled",
+];
+
 const RentalsOutTab = () => {
   const copy = useUxCopy();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useRentalRealtime(user?.id, "owner", [["ownerRentals", user?.id]]);
 
@@ -34,14 +45,38 @@ const RentalsOutTab = () => {
     enabled: !!user?.id,
   });
 
+  const initialStatus = searchParams.get("status");
+  const defaultStatus: RentalStatusFilter =
+    initialStatus && VALID_STATUS_FILTERS.includes(initialStatus as RentalStatusFilter)
+      ? (initialStatus as RentalStatusFilter)
+      : "all";
+
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [rejectDialogRental, setRejectDialogRental] = useState<OwnerRental | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [cancelDialogRental, setCancelDialogRental] = useState<OwnerRental | null>(null);
   const [cancelSubject, setCancelSubject] = useState("");
   const [cancelReason, setCancelReason] = useState("");
-  const [statusFilter, setStatusFilter] = useState<RentalStatusFilter>("all");
+  const [statusFilter, setStatusFilter] = useState<RentalStatusFilter>(defaultStatus);
   const [sortBy, setSortBy] = useState<RentalSortBy>("newest");
+
+  useEffect(() => {
+    const status = searchParams.get("status");
+    if (status && VALID_STATUS_FILTERS.includes(status as RentalStatusFilter)) {
+      setStatusFilter(status as RentalStatusFilter);
+    }
+  }, [searchParams]);
+
+  const handleStatusFilterChange = (value: RentalStatusFilter) => {
+    setStatusFilter(value);
+    const next = new URLSearchParams(searchParams);
+    if (value === "all") {
+      next.delete("status");
+    } else {
+      next.set("status", value);
+    }
+    setSearchParams(next, { replace: true });
+  };
 
   const counts = useMemo(() => {
     const c = { all: rentals.length, active: 0, in_progress: 0, overdue: 0, pending: 0, completed: 0, cancelled: 0 };
@@ -154,7 +189,7 @@ const RentalsOutTab = () => {
       {/* Filter & sort bar */}
       <RentalsFilterBar
         statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
+        onStatusFilterChange={handleStatusFilterChange}
         sortBy={sortBy}
         onSortChange={setSortBy}
         counts={counts}
