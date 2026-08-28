@@ -257,9 +257,7 @@ const AdminUsers = () => {
                           <div className="min-w-0">
                             <p className="font-medium text-sm truncate">
                               {u.full_name || (
-                                <span className="text-muted-foreground italic">
-                                  Fără nume{u.kyc_status && u.kyc_status !== 'NONE' ? ` · KYC ${u.kyc_status}` : ' · KYC neînceput'}
-                                </span>
+                                <span className="text-muted-foreground italic">Fără nume</span>
                               )}
                             </p>
                             <p className="text-xs text-muted-foreground truncate">{u.email || '-'}</p>
