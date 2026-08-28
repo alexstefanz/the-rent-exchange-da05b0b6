@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { fetchKycDocuments, type KycDocument } from "./kycApi";
 
 export interface WithdrawalRequest {
   id: string;
@@ -19,19 +18,8 @@ export interface WithdrawalRow extends WithdrawalRequest {
   user_email: string;
   user_phone: string | null;
   user_avatar: string | null;
-  kyc_status: string | null;
-  kyc_level: string | null;
-  kyc_last_verified_at: string | null;
 }
 
-export interface KycCaseLite {
-  id: string;
-  public_id: string;
-  status: string;
-  level_required: string;
-  decided_at: string | null;
-  created_at: string;
-}
 
 export interface WithdrawalContext {
   profile: {
@@ -41,15 +29,11 @@ export interface WithdrawalContext {
     phone: string | null;
     avatar_url: string | null;
     created_at: string | null;
-    kyc_status: string | null;
-    kyc_level: string | null;
-  };
+      };
   totalWithdrawn: number;
   productsCount: number;
   rentalsCount: number;
   previousRequests: WithdrawalRequest[];
-  kycCase: KycCaseLite | null;
-  kycDocuments: KycDocument[];
 }
 
 export interface WithdrawalFilters {
@@ -73,7 +57,7 @@ export const fetchAdminWithdrawals = async (filters: WithdrawalFilters = {}): Pr
   const userIds = [...new Set(rows.map((r) => r.user_id))];
   const { data: profiles } = await supabase
     .from("profiles")
-    .select("id, full_name, email, phone, avatar_url, kyc_status, kyc_level, kyc_last_verified_at")
+    .select("id, full_name, email, phone, avatar_url")
     .in("id", userIds);
   const map = new Map((profiles || []).map((p: any) => [p.id, p]));
 
@@ -86,9 +70,6 @@ export const fetchAdminWithdrawals = async (filters: WithdrawalFilters = {}): Pr
       user_email: p.email || "",
       user_phone: p.phone || null,
       user_avatar: p.avatar_url || null,
-      kyc_status: p.kyc_status || null,
-      kyc_level: p.kyc_level || null,
-      kyc_last_verified_at: p.kyc_last_verified_at || null,
     } as WithdrawalRow;
   });
 
@@ -109,10 +90,10 @@ export const fetchWithdrawalContext = async (
   userId: string,
   currentRequestId?: string,
 ): Promise<WithdrawalContext> => {
-  const [profileRes, prodRes, rentRes, prevRes, kycRes] = await Promise.all([
+  const [profileRes, prodRes, rentRes, prevRes] = await Promise.all([
     supabase
       .from("profiles")
-      .select("id, full_name, email, phone, avatar_url, created_at, kyc_status, kyc_level")
+      .select("id, full_name, email, phone, avatar_url, created_at")
       .eq("id", userId)
       .single(),
     supabase.from("products").select("id", { count: "exact", head: true }).eq("owner_id", userId),
@@ -126,12 +107,6 @@ export const fetchWithdrawalContext = async (
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(10),
-    supabase
-      .from("kyc_cases" as any)
-      .select("id, public_id, status, level_required, decided_at, created_at")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(1),
   ]);
 
   const previousRequests = ((prevRes.data || []) as any[])
@@ -142,15 +117,6 @@ export const fetchWithdrawalContext = async (
     .filter((r) => r.status === "completed")
     .reduce((s, r) => s + r.amount, 0);
 
-  const kycCase = ((kycRes.data || []) as any[])[0] as KycCaseLite | undefined;
-  let kycDocuments: KycDocument[] = [];
-  if (kycCase) {
-    try {
-      kycDocuments = await fetchKycDocuments(kycCase.id);
-    } catch (e) {
-      console.error("[withdrawalsApi] kyc docs", e);
-    }
-  }
 
   return {
     profile: (profileRes.data as any) || {
@@ -160,15 +126,11 @@ export const fetchWithdrawalContext = async (
       phone: null,
       avatar_url: null,
       created_at: null,
-      kyc_status: null,
-      kyc_level: null,
     },
     totalWithdrawn,
     productsCount: prodRes.count || 0,
     rentalsCount: rentRes.count || 0,
     previousRequests,
-    kycCase: kycCase || null,
-    kycDocuments,
   };
 };
 
