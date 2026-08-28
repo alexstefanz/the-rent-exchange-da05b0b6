@@ -27,9 +27,6 @@ const TYPE_LABELS: Record<string, string> = {
   payout_failed: "Plată eșuată",
   // Moderare
   product_pending: "Produs în așteptare",
-  kyc_submitted: "KYC trimis",
-  kyc_needs_review: "KYC necesită revizuire",
-  kyc_rejected: "KYC respins",
   product_reported: "Produs raportat",
   user_reported: "Utilizator raportat",
   // Operațional
@@ -57,9 +54,6 @@ const TYPE_TO_CATEGORY: Record<string, CategoryKey> = {
   cancellation_requested: "urgent",
   payout_failed: "urgent",
   product_pending: "moderation",
-  kyc_submitted: "moderation",
-  kyc_needs_review: "moderation",
-  kyc_rejected: "moderation",
   product_reported: "moderation",
   user_reported: "moderation",
   ticket_opened: "ops",

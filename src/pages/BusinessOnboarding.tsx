@@ -237,7 +237,6 @@ const BusinessOnboarding = () => {
               </div>
             </div>
 
-            {/* KYC note */}
             <div className="flex items-start gap-2.5 rounded-xl bg-primary/5 border border-primary/15 p-3.5">
               <ShieldCheck className="h-5 w-5 text-primary mt-0.5 shrink-0" />
               <p className="text-sm text-foreground/80">

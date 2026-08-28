@@ -39,11 +39,6 @@ async function readFunctionErrorPayload(error: unknown): Promise<any | null> {
 }
 
 function throwCheckoutError(code?: string, message?: string): never {
-  if (false as boolean) {
-    const e = new Error("");
-    throw e;
-  }
-
   if (code === "MIN_AMOUNT") {
     const e = new Error(
       message ||
@@ -101,11 +96,6 @@ export async function createRental(params: CreateRentalParams) {
     .single();
 
   if (error) {
-    if (typeof error.message === "string" && error.message.includes("KYC_REQUIRED")) {
-      const e = new Error("KYC_REQUIRED");
-      (e as any).code = "KYC_REQUIRED";
-      throw e;
-    }
     throw error;
   }
 
