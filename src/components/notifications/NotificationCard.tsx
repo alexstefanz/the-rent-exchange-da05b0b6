@@ -11,20 +11,6 @@ interface Props {
   onMarkRead: (id: string) => void;
 }
 
-/** CTA only for notifications that genuinely require a user action. */
-function getQuickAction(type: string, language: string): { label: string } | null {
-  const t = (type || "").toLowerCase();
-  const lang = (roText: string, enText: string) => (language === "ro" ? roText : enText);
-  if (t === "rental_request") return { label: lang("Deschide chatul", "Open chat") };
-  if (t === "rental_approved" || t === "rental_accepted" || t === "payment_required")
-    return { label: lang("Plătește acum", "Pay now") };
-  if (t.includes("message")) return { label: lang("Răspunde", "Reply") };
-  if (t.includes("inspection") || t.includes("handover"))
-    return { label: lang("Completează", "Complete") };
-  if (t.includes("ticket_reply") || t.includes("support_reply"))
-    return { label: lang("Deschide ticket", "Open ticket") };
-  return null;
-}
 
 export function NotificationCard({ notification, onSelect, onMarkRead }: Props) {
   const { language } = useLanguage();
