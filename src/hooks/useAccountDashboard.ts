@@ -215,6 +215,7 @@ export function useAccountDashboard() {
           availableBalance,
           monthlyEarnings,
           totalCompletedRentals: completedRentals,
+          completedRentalsAsOwner,
           newReviews,
           ibanMissing: !p.iban,
         },
