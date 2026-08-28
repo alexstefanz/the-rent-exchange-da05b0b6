@@ -322,18 +322,27 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
             <PlusCircle className="h-4 w-4" />
             {t("Adaugă anunț", "Add a listing")}
           </button>
-          {isAdmin && (
-            <button
-              onClick={() => onNavigate("/admin")}
-              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-3 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(16,185,129,0.55)] transition-all hover:shadow-[0_10px_24px_-6px_rgba(16,185,129,0.65)] hover:-translate-y-0.5 active:translate-y-0"
-              aria-label={t("Panou Admin", "Admin Panel")}
-            >
-              <ShieldCheck className="h-4 w-4" />
-              <span className="whitespace-nowrap">{t("Panou Admin", "Admin Panel")}</span>
-            </button>
-          )}
+          <button
+            onClick={() => onNavigate("/anunturi")}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border/60 bg-card px-4 py-2.5 text-sm font-semibold text-foreground shadow-[0_8px_20px_-10px_rgba(15,23,42,0.35)] transition-all hover:shadow-[0_10px_24px_-8px_rgba(15,23,42,0.4)] hover:-translate-y-0.5 active:translate-y-0"
+          >
+            <Package className="h-4 w-4 text-primary" />
+            <span className="whitespace-nowrap">{t("Anunțurile mele", "My listings")}</span>
+          </button>
         </div>
+
+        {isAdmin && (
+          <button
+            onClick={() => onNavigate("/admin")}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(16,185,129,0.55)] transition-all hover:shadow-[0_10px_24px_-6px_rgba(16,185,129,0.65)] hover:-translate-y-0.5 active:translate-y-0"
+            aria-label={t("Panou Admin", "Admin Panel")}
+          >
+            <ShieldCheck className="h-4 w-4" />
+            <span className="whitespace-nowrap">{t("Panou Admin", "Admin Panel")}</span>
+          </button>
+        )}
       </div>
+
 
       <div className="px-3 pb-2 space-y-2">
         <button
