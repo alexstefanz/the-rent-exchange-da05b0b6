@@ -22,8 +22,7 @@ export type NotificationCategory =
   | "support"
   | "system"
   | "success"
-  | "urgent"
-  | "kyc";
+  | "urgent";
 
 export interface CategoryStyle {
   category: NotificationCategory;
@@ -103,38 +102,11 @@ const STYLES: Record<NotificationCategory, Omit<CategoryStyle, "Icon"> & { Icon:
     labelRo: "Verificat",
     labelEn: "Verified",
   },
-  kyc: {
-    category: "kyc",
-    Icon: ShieldCheck,
-    haloClass: "bg-amber-100",
-    iconClass: "text-amber-600",
-    accentClass: "bg-amber-500",
-    labelRo: "Verificare identitate",
-    labelEn: "Identity verification",
-  },
 };
 
 /** Map a backend notification `type` to a presentation category. */
 export function categorize(type: string): NotificationCategory {
   const t = (type || "").toLowerCase();
-  if (
-    t === "kyc_approved" ||
-    t === "kyc_verified" ||
-    (t.includes("kyc") && (t.includes("approved") || t.includes("verified")))
-  ) {
-    return "success";
-  }
-  // KYC in progress / submitted / needs review — amber neutral.
-  if (
-    t === "kyc_submitted" ||
-    t === "kyc_pending" ||
-    t === "kyc_under_review" ||
-    t === "kyc_needs_manual_review" ||
-    t === "kyc_in_progress" ||
-    (t.includes("kyc") && !t.includes("reject"))
-  ) {
-    return "kyc";
-  }
   if (t.includes("message") || t.includes("chat")) return "message";
   if (
     t.includes("rental") ||
@@ -156,7 +128,7 @@ export function categorize(type: string): NotificationCategory {
   if (t.includes("payment") || t.includes("payout") || t.includes("withdraw") || t.includes("invoice"))
     return "payment";
   if (t.includes("ticket") || t.includes("support")) return "support";
-  if (t.includes("kyc") || t.includes("ban") || t.includes("warning") || t.includes("dispute"))
+  if (t.includes("ban") || t.includes("warning") || t.includes("dispute"))
     return "urgent";
   return "system";
 }
@@ -172,16 +144,6 @@ export function getTypeIcon(type: string): LucideIcon {
   if (t === "rental_confirmation" || t === "review") return CheckCircle2;
   if (t === "view") return Eye;
   if (t === "review_received") return Star;
-  if (t === "kyc_approved") return ShieldCheck;
-  if (
-    t === "kyc_submitted" ||
-    t === "kyc_pending" ||
-    t === "kyc_under_review" ||
-    t === "kyc_needs_manual_review" ||
-    t === "kyc_in_progress"
-  ) {
-    return ShieldCheck;
-  }
   if (t === "cancel_request_submitted") return Clock;
   if (t.includes("inspection") || t.includes("handover")) return Camera;
   return getCategoryStyle(type).Icon;
