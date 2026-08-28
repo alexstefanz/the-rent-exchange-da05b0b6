@@ -51,7 +51,6 @@ export interface RentalFullDetail {
   cancel_request_created_at?: string | null;
   cancel_request_responded_at?: string | null;
   cancel_request_response_note?: string | null;
-  renter_identity_verified?: boolean;
 }
 
 export async function getRentalFullDetail(publicId: string): Promise<RentalFullDetail | null> {
