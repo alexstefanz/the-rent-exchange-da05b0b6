@@ -1260,6 +1260,8 @@ export type Database = {
           daily_price_owner: number
           deleted_at: string | null
           deleted_by: string | null
+          deletion_requested_at: string | null
+          deletion_requested_by: string | null
           delivery_available: boolean
           delivery_fee: number | null
           delivery_radius_km: number | null
@@ -1306,6 +1308,8 @@ export type Database = {
           daily_price_owner: number
           deleted_at?: string | null
           deleted_by?: string | null
+          deletion_requested_at?: string | null
+          deletion_requested_by?: string | null
           delivery_available?: boolean
           delivery_fee?: number | null
           delivery_radius_km?: number | null
@@ -1352,6 +1356,8 @@ export type Database = {
           daily_price_owner?: number
           deleted_at?: string | null
           deleted_by?: string | null
+          deletion_requested_at?: string | null
+          deletion_requested_by?: string | null
           delivery_available?: boolean
           delivery_fee?: number | null
           delivery_radius_km?: number | null
@@ -2480,6 +2486,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_confirm_product_deletion: {
+        Args: { _id: string }
+        Returns: undefined
+      }
+      admin_reject_product_deletion: {
+        Args: { _id: string }
+        Returns: undefined
+      }
       admin_respond_cancellation: {
         Args: { _action: string; _note?: string; _rental_id: string }
         Returns: Json
@@ -2489,6 +2503,10 @@ export type Database = {
         Returns: {
           rental_id: string
         }[]
+      }
+      cancel_product_deletion_request: {
+        Args: { _id: string }
+        Returns: undefined
       }
       cancel_unpaid_rental: { Args: { _rental_id: string }; Returns: Json }
       close_user_ticket: { Args: { p_ticket_id: string }; Returns: undefined }
@@ -2563,6 +2581,23 @@ export type Database = {
           pending_withdrawals: number
           unread_high_priority: number
           unread_total: number
+        }[]
+      }
+      get_admin_pending_deletions: {
+        Args: never
+        Returns: {
+          approval_status: string
+          category: string
+          created_at: string
+          daily_price_owner: number
+          deletion_requested_at: string
+          id: string
+          images: string[]
+          location_city: string
+          owner_id: string
+          owner_name: string
+          slug: string
+          title: string
         }[]
       }
       get_admin_pending_products: {
@@ -2778,6 +2813,8 @@ export type Database = {
           daily_price_owner: number
           deleted_at: string | null
           deleted_by: string | null
+          deletion_requested_at: string | null
+          deletion_requested_by: string | null
           delivery_available: boolean
           delivery_fee: number | null
           delivery_radius_km: number | null
@@ -3323,6 +3360,7 @@ export type Database = {
         Args: { _reason: string; _rental_id: string; _subject: string }
         Returns: Json
       }
+      request_product_deletion: { Args: { _id: string }; Returns: undefined }
       resolve_rental_dispute: {
         Args: { _rental_id: string }
         Returns: undefined

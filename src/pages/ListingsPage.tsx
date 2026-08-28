@@ -22,7 +22,7 @@ import type { ListingStatus } from "@/components/listings/ListingStatusBadge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { deleteProduct, updateProduct, type Product } from "@/features/products/productsApi";
+import { deleteProduct, cancelProductDeletionRequest, updateProduct, type Product } from "@/features/products/productsApi";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -30,6 +30,7 @@ import RentalsOutTab from "@/components/dashboard/RentalsOutTab";
 import { getActiveDraft, deleteDraft, type ProductDraft } from "@/features/publish/draftsApi";
 
 const deriveStatus = (p: Product): ListingStatus => {
+  if ((p as any).deletion_requested_at) return "deletion_pending";
   const a = (p as any).approval_status as string | undefined;
   if (a === "pending") return "pending";
   if (a === "rejected") return "rejected";
@@ -159,8 +160,11 @@ const ListingsPage = () => {
     try {
       await deleteProduct(p.id, user.id);
       toast({
-        title: t("Anunț șters", "Listing deleted"),
-        description: t(`Produsul „${p.title}" a fost șters.`, `"${p.title}" has been deleted.`),
+        title: t("Cerere de ștergere trimisă", "Deletion request sent"),
+        description: t(
+          `Anunțul „${p.title}" a fost ascuns și va fi șters după confirmarea unui administrator.`,
+          `"${p.title}" was hidden and will be deleted after an admin confirms it.`,
+        ),
       });
       refresh();
       setConfirmDelete(null);
@@ -184,6 +188,17 @@ const ListingsPage = () => {
       });
     }
   };
+
+  const handleCancelDeletion = async (p: Product) => {
+    try {
+      await cancelProductDeletionRequest(p.id);
+      toast({ title: t("Cererea de ștergere a fost anulată", "Deletion request cancelled") });
+      refresh();
+    } catch (e: any) {
+      toast({ variant: "destructive", title: t("Eroare", "Error"), description: e?.message });
+    }
+  };
+
 
   if (loading || isLoading) {
     return (
@@ -345,6 +360,7 @@ const ListingsPage = () => {
                       onHide={() => setConfirmHide(p)}
                       onActivate={() => handleActivate(p)}
                       onDelete={() => setConfirmDelete(p)}
+                      onCancelDeletion={() => handleCancelDeletion(p)}
                     />
                   );
                 })}
@@ -414,11 +430,11 @@ const ListingsPage = () => {
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("Ștergi anunțul definitiv?", "Delete listing?")}</AlertDialogTitle>
+            <AlertDialogTitle>{t("Trimiți cererea de ștergere?", "Send deletion request?")}</AlertDialogTitle>
             <AlertDialogDescription>
               {t(
-                "Această acțiune nu poate fi anulată. Anunțul va fi eliminat din contul tău.",
-                "This action cannot be undone. The listing will be removed from your account.",
+                "Anunțul va fi ascuns imediat și va fi șters definitiv doar după confirmarea unui administrator.",
+                "The listing will be hidden immediately and permanently deleted only after an admin confirms it.",
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -428,8 +444,9 @@ const ListingsPage = () => {
               className="bg-rose-600 hover:bg-rose-700"
               onClick={() => confirmDelete && handleDelete(confirmDelete)}
             >
-              {t("Șterge definitiv", "Delete permanently")}
+              {t("Trimite cererea", "Send request")}
             </AlertDialogAction>
+
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

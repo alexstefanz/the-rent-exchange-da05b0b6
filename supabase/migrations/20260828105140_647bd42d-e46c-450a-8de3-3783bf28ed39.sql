@@ -1,0 +1,1 @@
+GRANT SELECT (deletion_requested_at, deletion_requested_by) ON public.products TO authenticated;

@@ -19,9 +19,11 @@ interface Props {
   onHide?: () => void;
   onActivate?: () => void;
   onDelete?: () => void;
+  onCancelDeletion?: () => void;
   onCalendar?: () => void;
   onHistory?: () => void;
 }
+
 
 const deriveQualityScore = (p: Product): number => {
   let s = 0;
@@ -38,7 +40,7 @@ const deriveQualityScore = (p: Product): number => {
   return Math.min(100, s);
 };
 
-const ListingCard = ({ product, status, onHide, onActivate, onDelete, onCalendar, onHistory }: Props) => {
+const ListingCard = ({ product, status, onHide, onActivate, onDelete, onCancelDeletion, onCalendar, onHistory }: Props) => {
   const { language } = useLanguage();
   const t = (ro: string, en: string) => (language === "ro" ? ro : en);
   const [imgError, setImgError] = useState(false);
@@ -115,16 +117,27 @@ const ListingCard = ({ product, status, onHide, onActivate, onDelete, onCalendar
               )}
               <DropdownMenuItem onClick={handleShare}><Share2 className="mr-2 h-4 w-4" /> {t("Distribuie", "Share")}</DropdownMenuItem>
               <DropdownMenuSeparator />
-              {status === "active" || status === "unavailable" ? (
-                onHide && <DropdownMenuItem onClick={onHide}><EyeOff className="mr-2 h-4 w-4" /> {t("Ascunde", "Hide")}</DropdownMenuItem>
+              {status === "deletion_pending" ? (
+                onCancelDeletion && (
+                  <DropdownMenuItem onClick={onCancelDeletion}>
+                    <EyeIcon className="mr-2 h-4 w-4" /> {t("Anulează cererea de ștergere", "Cancel deletion request")}
+                  </DropdownMenuItem>
+                )
               ) : (
-                onActivate && <DropdownMenuItem onClick={onActivate}><EyeIcon className="mr-2 h-4 w-4" /> {t("Reactivează", "Reactivate")}</DropdownMenuItem>
+                <>
+                  {status === "active" || status === "unavailable" ? (
+                    onHide && <DropdownMenuItem onClick={onHide}><EyeOff className="mr-2 h-4 w-4" /> {t("Ascunde", "Hide")}</DropdownMenuItem>
+                  ) : (
+                    onActivate && <DropdownMenuItem onClick={onActivate}><EyeIcon className="mr-2 h-4 w-4" /> {t("Reactivează", "Reactivate")}</DropdownMenuItem>
+                  )}
+                  {onDelete && (
+                    <DropdownMenuItem onClick={onDelete} className="text-rose-600 focus:text-rose-600">
+                      <Trash2 className="mr-2 h-4 w-4" /> {t("Șterge", "Delete")}
+                    </DropdownMenuItem>
+                  )}
+                </>
               )}
-              {onDelete && (
-                <DropdownMenuItem onClick={onDelete} className="text-rose-600 focus:text-rose-600">
-                  <Trash2 className="mr-2 h-4 w-4" /> {t("Șterge", "Delete")}
-                </DropdownMenuItem>
-              )}
+
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

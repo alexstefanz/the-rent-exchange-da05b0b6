@@ -13,7 +13,8 @@ export const PRODUCT_SAFE_COLS =
   "is_active,approval_status,created_at,condition,deposit_type,deposit_value," +
   "min_rental_days,min_rental_preset,max_rental_days,delivery_available," +
   "delivery_fee,delivery_radius_km,pickup_available,usage_rules," +
-  "available_immediately,blocked_dates,quality_score,available_from";
+  "available_immediately,blocked_dates,quality_score,available_from," +
+  "deletion_requested_at";
 
 export interface Product {
   id: string;
@@ -55,6 +56,7 @@ export interface Product {
   blocked_dates?: string[] | null;
   quality_score?: number | null;
   available_from?: string | null;
+  deletion_requested_at?: string | null;
 }
 
 export interface ProductFilters {
@@ -361,22 +363,29 @@ export const updateProduct = async (
   return product as unknown as Product;
 };
 
+/**
+ * Owners no longer delete listings directly: they submit a deletion request.
+ * The listing is hidden from the public immediately and is permanently removed
+ * only after an admin confirms it from the admin dashboard.
+ */
 export const deleteProduct = async (id: string, ownerId: string): Promise<void> => {
-  // Route through a SECURITY DEFINER RPC so the soft-delete succeeds even if
-  // the caller trips column-level SELECT restrictions on `products` or the
-  // `enforce_products_owner_update` trigger. Deleted listings can only be
-  // restored by admins from the admin dashboard trash.
   void ownerId; // ownership is verified server-side via auth.uid()
-  const { error } = await (supabase.rpc as any)("soft_delete_my_product", { _id: id });
+  const { error } = await (supabase.rpc as any)("request_product_deletion", { _id: id });
   if (error) {
     if (typeof error.message === "string" && error.message.includes("PRODUCT_HAS_ACTIVE_RENTALS")) {
       const e = new Error("PRODUCT_HAS_ACTIVE_RENTALS");
       (e as any).code = "PRODUCT_HAS_ACTIVE_RENTALS";
       throw e;
     }
-    handleApiError("Error deleting product", error);
+    handleApiError("Error requesting product deletion", error);
   }
 };
+
+export const cancelProductDeletionRequest = async (id: string): Promise<void> => {
+  const { error } = await (supabase.rpc as any)("cancel_product_deletion_request", { _id: id });
+  if (error) handleApiError("Error cancelling deletion request", error);
+};
+
 
 export const getNearbyProducts = async (
   currentProductId: string,

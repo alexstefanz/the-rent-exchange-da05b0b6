@@ -322,18 +322,27 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
             <PlusCircle className="h-4 w-4" />
             {t("Adaugă anunț", "Add a listing")}
           </button>
-          {isAdmin && (
-            <button
-              onClick={() => onNavigate("/admin")}
-              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-3 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(16,185,129,0.55)] transition-all hover:shadow-[0_10px_24px_-6px_rgba(16,185,129,0.65)] hover:-translate-y-0.5 active:translate-y-0"
-              aria-label={t("Panou Admin", "Admin Panel")}
-            >
-              <ShieldCheck className="h-4 w-4" />
-              <span className="whitespace-nowrap">{t("Panou Admin", "Admin Panel")}</span>
-            </button>
-          )}
+          <button
+            onClick={() => onNavigate("/anunturi")}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border/60 bg-card px-4 py-2.5 text-sm font-semibold text-foreground shadow-[0_8px_20px_-10px_rgba(15,23,42,0.35)] transition-all hover:shadow-[0_10px_24px_-8px_rgba(15,23,42,0.4)] hover:-translate-y-0.5 active:translate-y-0"
+          >
+            <Package className="h-4 w-4 text-primary" />
+            <span className="whitespace-nowrap">{t("Anunțurile mele", "My listings")}</span>
+          </button>
         </div>
+
+        {isAdmin && (
+          <button
+            onClick={() => onNavigate("/admin")}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(16,185,129,0.55)] transition-all hover:shadow-[0_10px_24px_-6px_rgba(16,185,129,0.65)] hover:-translate-y-0.5 active:translate-y-0"
+            aria-label={t("Panou Admin", "Admin Panel")}
+          >
+            <ShieldCheck className="h-4 w-4" />
+            <span className="whitespace-nowrap">{t("Panou Admin", "Admin Panel")}</span>
+          </button>
+        )}
       </div>
+
 
       <div className="px-3 pb-2 space-y-2">
         <button
@@ -354,30 +363,6 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
           <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition" />
         </button>
 
-        <button
-          onClick={() => onNavigate("/inchirieri?status=completed")}
-          className="group flex w-full items-center gap-3 rounded-xl bg-card border border-border/60 px-3 py-3 text-left shadow-sm transition hover:border-primary/40 hover:shadow"
-        >
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 shrink-0">
-            <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-          </span>
-          <span className="flex-1 min-w-0">
-            <span className="block text-sm font-semibold text-foreground">
-              {t("Închirieri încheiate", "Completed rentals")}
-            </span>
-            <span className="block text-[11px] text-muted-foreground">
-              {t("Istoricul închirierilor finalizate ca proprietar.", "History of rentals completed as owner.")}
-            </span>
-          </span>
-          <span className="flex items-center gap-2">
-            {signals?.completedRentalsAsOwner ? (
-              <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-emerald-100 px-1.5 text-[11px] font-semibold text-emerald-700">
-                {signals.completedRentalsAsOwner}
-              </span>
-            ) : null}
-            <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition" />
-          </span>
-        </button>
 
         {(totalActive > 0 || (trust?.completedRentals || 0) > 0) && (
           <button

@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { approveProduct, rejectProduct } from "@/features/admin/adminProductsApi";
 import AdminLayout from "@/components/admin/AdminLayout";
 import AdminCancellationRequestsPanel from "@/components/admin/AdminCancellationRequestsPanel";
+import AdminProductDeletionsPanel from "@/components/admin/AdminProductDeletionsPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,7 +69,9 @@ const AdminApprovals = () => {
   const [rejectReason, setRejectReason] = useState("");
   const [imageIndices, setImageIndices] = useState<Record<string, number>>({});
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab") === "cancellations" ? "cancellations" : "products";
+  const tabParam = searchParams.get("tab");
+  const activeTab =
+    tabParam === "cancellations" ? "cancellations" : tabParam === "deletions" ? "deletions" : "products";
   const { data: notifSummary } = useAdminNotificationSummary();
   const pendingProductsCount = Number(notifSummary?.pending_products || 0);
   const pendingCancellationsCount = Number(notifSummary?.pending_cancellations || 0);
@@ -147,8 +150,13 @@ const AdminApprovals = () => {
                 </span>
               )}
             </TabsTrigger>
+            <TabsTrigger value="deletions" className="gap-2">
+              Cereri ștergere
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="products" className="space-y-6">
+
+
         <div className="flex items-center gap-4">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -380,6 +388,9 @@ const AdminApprovals = () => {
           </TabsContent>
           <TabsContent value="cancellations">
             <AdminCancellationRequestsPanel />
+          </TabsContent>
+          <TabsContent value="deletions">
+            <AdminProductDeletionsPanel />
           </TabsContent>
         </Tabs>
       </div>
