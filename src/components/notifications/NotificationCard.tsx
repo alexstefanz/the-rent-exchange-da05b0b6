@@ -1,9 +1,7 @@
-import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
-import { ArrowRight } from "lucide-react";
 import { getCategoryStyle, getTypeIcon } from "@/lib/notificationCategory";
 import type { Notification } from "@/features/profile/notificationsApi";
 
