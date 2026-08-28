@@ -68,7 +68,9 @@ const AdminApprovals = () => {
   const [rejectReason, setRejectReason] = useState("");
   const [imageIndices, setImageIndices] = useState<Record<string, number>>({});
   const [searchParams, setSearchParams] = useSearchParams();
-  const activeTab = searchParams.get("tab") === "cancellations" ? "cancellations" : "products";
+  const tabParam = searchParams.get("tab");
+  const activeTab =
+    tabParam === "cancellations" ? "cancellations" : tabParam === "deletions" ? "deletions" : "products";
   const { data: notifSummary } = useAdminNotificationSummary();
   const pendingProductsCount = Number(notifSummary?.pending_products || 0);
   const pendingCancellationsCount = Number(notifSummary?.pending_cancellations || 0);
