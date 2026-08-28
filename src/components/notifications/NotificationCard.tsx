@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
@@ -14,19 +13,18 @@ interface Props {
   onMarkRead: (id: string) => void;
 }
 
+/** CTA only for notifications that genuinely require a user action. */
 function getQuickAction(type: string, language: string): { label: string } | null {
   const t = (type || "").toLowerCase();
-  const lang = (ro: string, en: string) => (language === "ro" ? ro : en);
+  const lang = (roText: string, enText: string) => (language === "ro" ? roText : enText);
   if (t === "rental_request") return { label: lang("Deschide chatul", "Open chat") };
-  if (t === "rental_confirmation") return { label: lang("Vezi rezervarea", "View booking") };
+  if (t === "rental_approved" || t === "rental_accepted" || t === "payment_required")
+    return { label: lang("Plătește acum", "Pay now") };
   if (t.includes("message")) return { label: lang("Răspunde", "Reply") };
-  if (t.includes("payment") || t.includes("payout") || t.includes("withdraw"))
-    return { label: lang("Vezi plata", "View payment") };
-  if (t.includes("ticket") || t.includes("support"))
+  if (t.includes("inspection") || t.includes("handover"))
+    return { label: lang("Completează", "Complete") };
+  if (t.includes("ticket_reply") || t.includes("support_reply"))
     return { label: lang("Deschide ticket", "Open ticket") };
-  if (t.includes("inspection")) return { label: lang("Completează", "Complete") };
-  if (t === "review_received" || t === "review")
-    return { label: lang("Vezi recenzia", "View review") };
   return null;
 }
 
@@ -50,80 +48,73 @@ export function NotificationCard({ notification, onSelect, onMarkRead }: Props) 
   };
 
   return (
-    <motion.button
+    <button
       type="button"
       onClick={handleClick}
-      initial={{ opacity: 0, y: -4 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.18 }}
       className={cn(
-        "group relative w-full text-left overflow-hidden",
-        "flex items-start gap-3 px-3 py-3 rounded-xl transition-all duration-200",
-        "hover:bg-muted/50",
-        isUnread && "bg-primary/[0.04]",
+        "group w-full text-left cursor-pointer",
+        "flex items-start gap-3 px-4 py-3 transition-colors duration-150",
+        "hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none",
       )}
     >
-      {/* Left accent bar for unread */}
-      {isUnread && (
-        <span
-          className={cn("absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full", style.accentClass)}
-        />
-      )}
-
-      {/* Icon halo */}
+      {/* Icon */}
       <span
         className={cn(
-          "shrink-0 flex items-center justify-center h-10 w-10 rounded-xl",
+          "shrink-0 mt-0.5 flex items-center justify-center h-8 w-8 rounded-lg",
           style.haloClass,
+          "opacity-90",
         )}
       >
-        <Icon className={cn("h-[18px] w-[18px]", style.iconClass)} />
+        <Icon className={cn("h-4 w-4", style.iconClass)} />
       </span>
 
       {/* Body */}
       <div className="flex-1 min-w-0">
-        <p
-          className={cn(
-            "text-sm leading-snug break-words",
-            isUnread ? "font-semibold text-foreground" : "font-medium text-foreground/85",
+        <div className="flex items-start gap-2">
+          <p
+            className={cn(
+              "flex-1 min-w-0 text-[13px] leading-snug break-words",
+              isUnread ? "font-semibold text-foreground" : "font-medium text-muted-foreground",
+            )}
+          >
+            {title}
+          </p>
+          {isUnread && (
+            <span className="shrink-0 mt-1.5 h-2 w-2 rounded-full bg-primary" aria-hidden />
           )}
-        >
-          {title}
-        </p>
+        </div>
+
         <span className="mt-0.5 block text-[11px] text-muted-foreground/70">
           {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: dateLocale })}
         </span>
 
         {description && (
-          <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{description}</p>
+          <p
+            className={cn(
+              "mt-0.5 text-xs line-clamp-2",
+              isUnread ? "text-muted-foreground" : "text-muted-foreground/70",
+            )}
+          >
+            {description}
+          </p>
         )}
 
         {action && (
-          <div className="mt-2 flex items-center gap-1.5">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="h-7 px-2.5 text-[11px] font-semibold rounded-lg"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleClick();
-              }}
-            >
-              {action.label}
-              <ArrowRight className="h-3 w-3 ml-1" />
-            </Button>
-          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="mt-2 h-7 px-2.5 text-[11px] font-semibold rounded-lg"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClick();
+            }}
+          >
+            {action.label}
+            <ArrowRight className="h-3 w-3 ml-1" />
+          </Button>
         )}
       </div>
-
-      {/* Pulse dot unread */}
-      {isUnread && (
-        <span className="shrink-0 mt-1.5 relative flex h-2.5 w-2.5">
-          <span className="absolute inline-flex h-full w-full rounded-full bg-primary opacity-50 animate-ping" />
-          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
-        </span>
-      )}
-    </motion.button>
+    </button>
   );
 }
