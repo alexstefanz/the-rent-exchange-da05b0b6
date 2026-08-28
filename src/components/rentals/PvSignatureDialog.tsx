@@ -18,7 +18,7 @@ import {
   type PvDocument,
 } from "@/features/rentals/rentalDetailPageApi";
 import type { RentalFullDetail } from "@/features/rentals/rentalDetailPageApi";
-import { buildPvContent, buildPvRichContent, fakeIdentity, noDia, COMPANY, MIN_PV_PHOTOS, type PvRun } from "@/lib/pvContent";
+import { buildPvContent, buildPvRichContent, noDia, COMPANY, MIN_PV_PHOTOS, type PvRun } from "@/lib/pvContent";
 import { generatePvDocx, downloadBlob } from "@/lib/pvDocx";
 import rentliLogoUrl from "@/assets/rentli_logo.png";
 
@@ -61,20 +61,6 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   }, [open, rental.id, phase]);
 
   const content = buildPvContent(rental, phase);
-  const ownerFake = fakeIdentity(rental.owner_id);
-  const renterFake = fakeIdentity(rental.renter_id);
-  const ownerId = {
-    cnp: rental.owner_cnp || ownerFake.cnp,
-    serie: rental.owner_id_series || ownerFake.serie,
-    nr: rental.owner_id_number || ownerFake.nr,
-    adresa: rental.owner_address || ownerFake.adresa,
-  };
-  const renterId = {
-    cnp: rental.renter_cnp || renterFake.cnp,
-    serie: rental.renter_id_series || renterFake.serie,
-    nr: rental.renter_id_number || renterFake.nr,
-    adresa: rental.renter_address || renterFake.adresa,
-  };
 
   const uploaderRole: "owner" | "renter" = phase === "handover" ? "owner" : "renter";
   const isUploader = role === uploaderRole;
@@ -433,7 +419,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
               <h2 className="text-center font-bold text-[15px] tracking-wide my-6">{content.title}</h2>
 
               <DocParagraph>
-                Incheiat astazi, <strong>{content.todayLabel}</strong>, intre domnul/doamna <strong>{content.ownerName}</strong>, in calitate de <strong>Predator (proprietar)</strong>, identificat cu CNP <strong>{ownerId.cnp}</strong>, CI seria <strong>{ownerId.serie}</strong> nr. <strong>{ownerId.nr}</strong>, domiciliat in <strong>{ownerId.adresa}</strong>, telefon <strong>{rental.owner_phone || "0740 000 000"}</strong>, email <strong>{rental.owner_email || "owner@rentli.ro"}</strong>, si domnul/doamna <strong>{content.renterName}</strong>, in calitate de <strong>Primitor (chirias/utilizator)</strong>, identificat cu CNP <strong>{renterId.cnp}</strong>, CI seria <strong>{renterId.serie}</strong> nr. <strong>{renterId.nr}</strong>, domiciliat in <strong>{renterId.adresa}</strong>, telefon <strong>{rental.renter_phone || "0740 000 000"}</strong>, email <strong>{rental.renter_email || "renter@rentli.ro"}</strong>.
+                Incheiat astazi, <strong>{content.todayLabel}</strong>, intre domnul/doamna <strong>{content.ownerName}</strong>, in calitate de <strong>Predator (proprietar)</strong>, telefon <strong>{rental.owner_phone || "0740 000 000"}</strong>, email <strong>{rental.owner_email || "owner@rentli.ro"}</strong>, si domnul/doamna <strong>{content.renterName}</strong>, in calitate de <strong>Primitor (chirias/utilizator)</strong>, telefon <strong>{rental.renter_phone || "0740 000 000"}</strong>, email <strong>{rental.renter_email || "renter@rentli.ro"}</strong>.
               </DocParagraph>
 
               <DocParagraph>
