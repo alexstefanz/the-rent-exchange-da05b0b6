@@ -160,8 +160,11 @@ const ListingsPage = () => {
     try {
       await deleteProduct(p.id, user.id);
       toast({
-        title: t("Anunț șters", "Listing deleted"),
-        description: t(`Produsul „${p.title}" a fost șters.`, `"${p.title}" has been deleted.`),
+        title: t("Cerere de ștergere trimisă", "Deletion request sent"),
+        description: t(
+          `Anunțul „${p.title}" a fost ascuns și va fi șters după confirmarea unui administrator.`,
+          `"${p.title}" was hidden and will be deleted after an admin confirms it.`,
+        ),
       });
       refresh();
       setConfirmDelete(null);
