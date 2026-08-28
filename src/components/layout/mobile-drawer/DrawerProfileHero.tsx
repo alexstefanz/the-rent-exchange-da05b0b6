@@ -8,7 +8,6 @@ interface Props {
   email: string;
   avatarUrl?: string | null;
   initials: string;
-  kycStatus?: string | null;
   activeRentals: number;
   onNavigate: () => void;
 }
@@ -18,12 +17,11 @@ export function DrawerProfileHero({
   email,
   avatarUrl,
   initials,
-  kycStatus,
   activeRentals,
   onNavigate,
 }: Props) {
   const { t } = useLanguage();
-  const verified = kycStatus === "APPROVED" || kycStatus === "VERIFIED";
+  const verified = false;
 
   return (
     <Link

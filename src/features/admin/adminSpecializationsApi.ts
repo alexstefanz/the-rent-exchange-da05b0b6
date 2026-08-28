@@ -15,7 +15,7 @@ export const CATEGORY_GROUP_LABELS_RO: Record<AdminCategoryGroup, string> = {
   PRODUCT: "Produse",
   FINANCIAL: "Financiar / plăți",
   DISPUTE: "Dispute / daune",
-  USER: "Cont utilizator / KYC",
+  USER: "Cont utilizator",
 };
 
 export interface AdminSpecialization {

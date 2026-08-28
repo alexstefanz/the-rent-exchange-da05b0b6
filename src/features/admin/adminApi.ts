@@ -6,7 +6,6 @@ export interface AdminStats {
   total_rentals: number;
   active_rentals: number;
   revenue_this_month: number;
-  pending_kyc: number;
   total_withdrawn: number;
 }
 
@@ -44,7 +43,6 @@ export interface AdminUser {
   rentals_count: number;
   total_earned: number;
   total_spent: number;
-  kyc_status: string;
   user_role: string;
   is_banned: boolean;
   ban_reason: string | null;
@@ -89,7 +87,6 @@ export const fetchAdminStats = async (): Promise<AdminStats> => {
       total_rentals: 0,
       active_rentals: 0,
       revenue_this_month: 0,
-      pending_kyc: 0,
       total_withdrawn: 0
     };
   }
@@ -185,69 +182,6 @@ export const updateRentalStatus = async (
   if (error) {
     throw new Error(error.message);
   }
-};
-
-// KYC functions have been moved to src/features/admin/kycApi.ts
-// Legacy updateKycStatus kept for backward compatibility
-export const updateKycStatus = async (
-  kycId: string,
-  status: 'approved' | 'rejected',
-  reviewerId: string,
-  rejectionReason?: string
-): Promise<void> => {
-  const { error } = await supabase
-    .from('kyc_cases' as any)
-    .update({
-      status: status === 'approved' ? 'APPROVED' : 'REJECTED',
-      decided_at: new Date().toISOString(),
-      decided_by_admin_id: reviewerId,
-      rejection_reason: rejectionReason || null,
-    })
-    .eq('id', kycId);
-  
-  if (error) {
-    throw new Error(error.message);
-  }
-};
-
-export const fetchKycVerifications = async (
-  statusFilter?: string
-): Promise<Array<{
-  id: string;
-  user_id: string;
-  status: string;
-  document_type: string | null;
-  document_url: string | null;
-  selfie_url: string | null;
-  submitted_at: string | null;
-  created_at: string;
-}>> => {
-  let query = supabase
-    .from('kyc_cases' as any)
-    .select('*')
-    .order('created_at', { ascending: false });
-  
-  if (statusFilter) {
-    query = query.eq('status', statusFilter);
-  }
-  
-  const { data, error } = await query;
-  
-  if (error) {
-    throw new Error(error.message);
-  }
-  
-  // Map kyc_cases to legacy format
-  return ((data || []) as any[]).map((c: any) => ({
-    id: c.id,
-    user_id: c.user_id,
-    status: c.status?.toLowerCase() || 'not_started',
-    document_type: null,
-    document_url: null,
-    selfie_url: null,
-    submitted_at: c.submitted_at,
-    created_at: c.created_at,
-  }));
 };
 
 export const updateUserRole = async (

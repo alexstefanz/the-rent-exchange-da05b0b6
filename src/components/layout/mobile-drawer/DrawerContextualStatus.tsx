@@ -3,7 +3,6 @@ import { ShieldAlert, Wallet, CalendarClock, LifeBuoy, ChevronRight, LucideIcon 
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
-  kycPending: boolean;
   activeRentals: number;
   balance: number;
   openTickets: number;
@@ -24,7 +23,6 @@ const toneClasses: Record<string, string> = {
 };
 
 export function DrawerContextualStatus({
-  kycPending,
   activeRentals,
   balance,
   openTickets,
@@ -33,14 +31,6 @@ export function DrawerContextualStatus({
   const { t } = useLanguage();
   const banners: StatusBanner[] = [];
 
-  if (kycPending) {
-    banners.push({
-      to: "/verificare",
-      icon: ShieldAlert,
-      text: t("Verifică-ți identitatea", "Verify your identity"),
-      tone: "warning",
-    });
-  }
   if (activeRentals > 0) {
     banners.push({
       to: "/rezervari",

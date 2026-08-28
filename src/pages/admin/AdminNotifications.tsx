@@ -82,9 +82,6 @@ const TYPE_DOT: Record<string, string> = {
   cancellation_requested: "bg-orange-500",
   payout_failed: "bg-red-500",
   product_pending: "bg-orange-500",
-  kyc_submitted: "bg-blue-500",
-  kyc_needs_review: "bg-blue-500",
-  kyc_rejected: "bg-red-500",
   product_reported: "bg-orange-500",
   user_reported: "bg-orange-500",
   ticket_opened: "bg-purple-500",
@@ -98,10 +95,6 @@ const TYPE_DOT: Record<string, string> = {
 
 const getIcon = (type: string) => {
   switch (type) {
-    case "kyc_submitted":
-    case "kyc_needs_review":
-    case "kyc_rejected":
-      return <Shield className="h-5 w-5 text-blue-500" />;
     case "product_pending":
     case "product_reported":
     case "user_reported":

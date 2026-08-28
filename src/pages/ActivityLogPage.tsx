@@ -25,17 +25,9 @@ const actionLabels: Record<string, { ro: string; en: string }> = {
   RENTAL_ACTIVE: { ro: "Rezervare activă", en: "Rental active" },
   RENTAL_PENDING: { ro: "Rezervare în așteptare", en: "Rental pending" },
   PHONE_UPDATED: { ro: "Telefon actualizat", en: "Phone updated" },
-  KYC_STATUS_CHANGED: { ro: "Status KYC schimbat", en: "KYC status changed" },
-  KYC_CASE_CREATED: { ro: "Cerere KYC creată", en: "KYC case created" },
 };
 
 const extraLabels: Record<string, { ro: string; en: string }> = {
-  KYC_APPROVED: { ro: "KYC aprobat", en: "KYC approved" },
-  KYC_REJECTED: { ro: "KYC respins", en: "KYC rejected" },
-  KYC_SUBMITTED: { ro: "KYC trimis", en: "KYC submitted" },
-  KYC_IN_PROGRESS: { ro: "KYC în procesare", en: "KYC in progress" },
-  KYC_NEEDS_MANUAL_REVIEW: { ro: "KYC necesită revizuire", en: "KYC needs review" },
-  KYC_REUPLOAD_REQUESTED: { ro: "KYC reîncărcare cerută", en: "KYC reupload requested" },
   PASSWORD_RESET_REQUESTED: { ro: "Resetare parolă cerută", en: "Password reset requested" },
   RENTAL_EARLY_RETURN_REQUESTED: { ro: "Returnare anticipată cerută", en: "Early return requested" },
 };
@@ -50,7 +42,6 @@ const humanize = (action: string) =>
 const getActionIcon = (action: string) => {
   if (action.startsWith("PRODUCT")) return Package;
   if (action.startsWith("RENTAL")) return ShoppingBag;
-  if (action.startsWith("KYC")) return ShieldCheck;
   if (action.startsWith("PHONE")) return UserCog;
   return Activity;
 };

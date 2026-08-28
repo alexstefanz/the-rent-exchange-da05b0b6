@@ -4,7 +4,6 @@ import {
   fetchAdminRentals, 
   fetchAdminUsers, 
   fetchFinancialSummary,
-  fetchKycVerifications,
   checkIsAdmin,
   AdminStats,
   AdminRental,
@@ -53,10 +52,3 @@ export const useFinancialSummary = (startDate?: Date, endDate?: Date) => {
   });
 };
 
-export const useKycVerifications = (statusFilter?: string) => {
-  return useQuery({
-    queryKey: ['kycVerifications', statusFilter],
-    queryFn: () => fetchKycVerifications(statusFilter),
-    staleTime: 30 * 1000, // 30 seconds
-  });
-};

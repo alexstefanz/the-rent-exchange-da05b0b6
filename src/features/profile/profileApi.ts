@@ -8,8 +8,6 @@ export interface Profile {
   email: string | null;
   avatar_url: string | null;
   created_at: string;
-  kyc_status: string;
-  kyc_level: string;
   account_type: string;
   company_name: string | null;
   cui: string | null;
