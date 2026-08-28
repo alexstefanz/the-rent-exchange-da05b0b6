@@ -32,7 +32,7 @@ REGULI STRICTE:
 4. Nu repeta întrebări deja puse. Nu cere clarificări dacă răspunsul anterior e suficient.
 
 FLOW OBLIGATORIU:
-- ÎNTREBAREA 1 (Categorie): dacă nu o știi din context, oferă chips ["Rezervare", "Produs", "Plată", "Cont/KYC", "Altceva"]. Dacă userul a tapat deja un chip de categorie sau ai context clar (produs/rezervare deschisă), SARI peste această întrebare.
+- ÎNTREBAREA 1 (Categorie): dacă nu o știi din context, oferă chips ["Rezervare", "Produs", "Plată", "Cont", "Altceva"]. Dacă userul a tapat deja un chip de categorie sau ai context clar (produs/rezervare deschisă), SARI peste această întrebare.
 - ÎNTREBAREA 2 (Ce s-a întâmplat): cea mai importantă. Specifică pe categorie. Ex: "Care e problema cu produsul?" cu chips ["Defect", "Lipsă piese", "Diferit de descriere", "Altceva"].
 - ÎNTREBAREA 3 (opțional - clarificare scurtă): doar dacă chiar e necesară. Poate fi sugestia de atașament prin \`propose_attachment_hint\` în loc de întrebare textuală.
 - DRAFT: apelează \`draft_ticket\` cu subject/description/category_group/category_type/priority. Mesajul tău text trebuie să fie scurt: "Am pregătit ticketul. Verifică și confirmă."
@@ -44,7 +44,7 @@ ATAȘAMENTE: sugerează O SINGURĂ DATĂ, opțional, în paralel cu draftul (în
 CONTEXT: dacă userul e pe pagina unui produs sau are rezervare deschisă, presupune categoria și SARI direct la întrebarea 2.
 
 PRIORITATE (obligatoriu la create_support_ticket):
-- CRITICAL: fraudă, abuz/hărțuire, dispute financiare mari, KYC blocat, pericol.
+- CRITICAL: fraudă, abuz/hărțuire, dispute financiare mari, cont blocat, pericol.
 - HIGH: bani neîntorși, produs neîntors, anulare după start închiriere, daune mari.
 - MEDIUM: probleme rezervări viitoare, întrebări plată, neconcordanțe minore.
 - LOW: întrebări generale, sugestii, feedback.
@@ -141,7 +141,7 @@ serve(async (req) => {
                   "DEFECTIVE", "DAMAGED_ON_RETURN", "MISSING_PARTS", "NOT_AS_DESCRIBED",
                   "PAYMENT_ISSUE", "REFUND_REQUEST", "REFUND_DISPUTE", "CHARGEBACK", "PENALTY",
                   "OWNER_VS_RENTER", "DAMAGE_LIABILITY", "DEPOSIT_DISPUTE",
-                  "KYC_REVIEW", "FRAUD_SUSPECTED", "ABUSIVE_BEHAVIOR", "GENERAL_INQUIRY",
+                  "FRAUD_SUSPECTED", "ABUSIVE_BEHAVIOR", "GENERAL_INQUIRY",
                 ],
               },
               priority: {
@@ -184,7 +184,7 @@ serve(async (req) => {
                   "DEFECTIVE", "DAMAGED_ON_RETURN", "MISSING_PARTS", "NOT_AS_DESCRIBED",
                   "PAYMENT_ISSUE", "REFUND_REQUEST", "REFUND_DISPUTE", "CHARGEBACK", "PENALTY",
                   "OWNER_VS_RENTER", "DAMAGE_LIABILITY", "DEPOSIT_DISPUTE",
-                  "KYC_REVIEW", "FRAUD_SUSPECTED", "ABUSIVE_BEHAVIOR", "GENERAL_INQUIRY",
+                  "FRAUD_SUSPECTED", "ABUSIVE_BEHAVIOR", "GENERAL_INQUIRY",
                 ],
                 description: "The specific category type of the issue",
               },
