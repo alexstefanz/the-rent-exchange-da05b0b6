@@ -1,7 +1,7 @@
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Store, Package } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Store, Package, CalendarCheck, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import Navbar from "@/components/layout/Navbar";
@@ -11,8 +11,18 @@ import { Button } from "@/components/ui/button";
 import { BannedBanner } from "@/components/common/BannedBanner";
 
 const OwnerRentalsPage = () => {
-  usePageSeo({ title: "Închirieri primite — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const status = searchParams.get("status");
+  const isCompletedView = status === "completed";
+
+  const title = useMemo(
+    () => (isCompletedView ? "Închirieri încheiate — Rentli" : "Închirieri active — Rentli"),
+    [isCompletedView]
+  );
+
+  usePageSeo({ title, description: "Zona privată a contului tău Rentli.", noindex: true });
+
   const { user, loading } = useAuth();
   const { language } = useLanguage();
   const t = (ro: string, en: string) => (language === "ro" ? ro : en);
