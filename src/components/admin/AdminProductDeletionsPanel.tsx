@@ -35,8 +35,6 @@ const AdminProductDeletionsPanel = () => {
     },
   });
 
-  const run = (fn: string, okMsg: string) =>
-    useMutation;
 
   const confirmMutation = useMutation({
     mutationFn: async (id: string) => {
