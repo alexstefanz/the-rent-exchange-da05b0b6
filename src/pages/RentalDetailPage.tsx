@@ -208,12 +208,7 @@ const RentalDetailPage = () => {
       window.location.href = url;
     } catch (e: any) {
       console.error("payForConfirmedRental error:", e);
-      if (e?.code === "KYC_REQUIRED") {
-        toast.error(t("Verificare identitate necesară.", "Identity verification required."));
-        navigate("/verificare");
-      } else {
-        toast.error(e?.message || t("Eroare la inițierea plății.", "Error initiating payment."));
-      }
+      toast.error(e?.message || t("Eroare la inițierea plății.", "Error initiating payment."));
       setPaying(false);
     }
   }
