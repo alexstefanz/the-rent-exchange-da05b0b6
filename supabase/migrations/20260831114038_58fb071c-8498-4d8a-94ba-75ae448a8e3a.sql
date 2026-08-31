@@ -1,0 +1,1 @@
+GRANT SELECT (deletion_requested_at) ON public.products TO anon;
