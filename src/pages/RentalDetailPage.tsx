@@ -313,63 +313,8 @@ const RentalDetailPage = () => {
           <RentalTimeline rental={tlRental} />
         </section>
 
-        {/* Step 4 — Renter must confirm physical receipt of the product (combined handover step) */}
-        {handoverDoneEarly && !rental.handover_confirmed_at && rental.status !== "cancelled" && rental.status !== "completed" && (
-          <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="h-10 w-10 rounded-full bg-primary/15 grid place-items-center shrink-0">
-                <Package className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-heading text-base font-semibold text-foreground">
-                  {t("Pasul 4 — Predare produs", "Step 4 — Handover")}
-                </h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {isOwner
-                    ? t(
-                        "PV-ul a fost semnat la predare. Așteptăm chiriașul să confirme că a primit produsul.",
-                        "The handover PV was signed in person. Waiting for the renter to confirm receipt.",
-                      )
-                    : t(
-                        "Ai semnat PV-ul de predare împreună cu proprietarul, la fața locului. Confirmă că ai primit produsul pentru a debloca etapa de utilizare.",
-                        "You signed the handover PV together with the owner, in person. Confirm that you received the product to unlock the in-use stage.",
-                      )}
-                </p>
-                <p className="text-xs text-muted-foreground mt-2 italic">
-                  {t(
-                    "Dacă chiriașul nu confirmă în 24h de la semnarea PV-ului, predarea este confirmată automat de sistem, ca produsul să nu rămână blocat.",
-                    "If the renter doesn't confirm within 24h of the PV being signed, the system auto-confirms the handover so the rental doesn't stay blocked.",
-                  )}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-              <Button variant="outline" onClick={() => setPvOpen("handover")}>
-                <FileSignature className="h-4 w-4 mr-2" />
-                {t("Vezi PV", "View PV")}
-              </Button>
-              {!isOwner && (
-                <Button
-                  onClick={() => setReceiptDialogOpen(true)}
-                  disabled={confirmingReceipt}
-                  className="shadow-lg shadow-primary/20"
-                >
-                  {confirmingReceipt ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <PackageCheck className="h-4 w-4 mr-2" />}
-                  {t("Am primit produsul", "I received the product")}
-                </Button>
-              )}
-              {isOwner && (
-                <div className="inline-flex items-center gap-2 rounded-lg bg-amber-100 text-amber-900 text-xs font-medium px-3 py-2">
-                  <Clock className="h-3.5 w-3.5" />
-                  {t("Asteptam confirmarea chiriasului", "Waiting for renter confirmation")}
-                </div>
-              )}
-            </div>
-          </section>
-        )}
-
         {/* Step 5 — Renter must initiate the return phase */}
-        {handoverDoneEarly && rental.handover_confirmed_at && !returnInitiated && !returnDoneEarly && rental.status !== "cancelled" && rental.status !== "completed" && (
+        {handoverDoneEarly && !returnInitiated && !returnDoneEarly && rental.status !== "cancelled" && rental.status !== "completed" && (
           <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
             <div className="flex items-start gap-3 mb-4">
               <div className="h-10 w-10 rounded-full bg-primary/15 grid place-items-center shrink-0">
