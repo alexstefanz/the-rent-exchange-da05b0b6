@@ -67,7 +67,7 @@ export function SmartCards({ data }: { data: AccountDashboardData }) {
         `${s.actionableHandover} predări de făcut`,
         `${s.actionableHandover} handovers to do`
       ),
-      description: t("Confirmă predarea către chiriaș", "Confirm handover to renter"),
+      description: t("Semnează procesul verbal de predare", "Sign the handover report"),
       cta: t("Deschide", "Open"),
       href: "/anunturi?tab=cereri",
     });
