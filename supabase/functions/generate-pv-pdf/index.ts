@@ -67,11 +67,12 @@ Deno.serve(async (req) => {
     }
 
     const [productRes, ownerRes, renterRes, pvRes] = await Promise.all([
-      admin.from("products").select("title, category, included_items, daily_price, deposit_value").eq("id", rental.product_id).maybeSingle(),
+      admin.from("products").select("title, category, included_items, daily_price_owner, deposit_value").eq("id", rental.product_id).maybeSingle(),
       admin.from("profiles").select("full_name, email, phone").eq("id", rental.owner_id).maybeSingle(),
       admin.from("profiles").select("full_name, email, phone").eq("id", rental.renter_id).maybeSingle(),
       admin.from("rental_pv_documents").select("*").eq("rental_id", rental_id).eq("phase", phase).maybeSingle(),
     ]);
+    if (productRes.error) console.error("[generate-pv-pdf] product lookup failed:", productRes.error.message);
     const product = productRes.data;
     const owner = ownerRes.data;
     const renter = renterRes.data;
@@ -165,7 +166,7 @@ Deno.serve(async (req) => {
       10
     );
     drawWrapped(
-      `Pret: ${rental.daily_price ?? product?.daily_price ?? 0} RON/zi  |  Subtotal: ${rental.subtotal ?? 0} RON  |  Garantie: ${product?.deposit_value ?? 0} RON.`,
+      `Pret: ${rental.daily_price ?? product?.daily_price_owner ?? 0} RON/zi  |  Subtotal: ${rental.subtotal ?? 0} RON  |  Garantie: ${product?.deposit_value ?? 0} RON.`,
       10
     );
     const items = (product?.included_items as string[] | null) || [];
