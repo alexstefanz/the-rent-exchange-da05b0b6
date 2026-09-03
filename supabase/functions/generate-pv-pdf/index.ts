@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
     }
 
     const [productRes, ownerRes, renterRes, pvRes] = await Promise.all([
-      admin.from("products").select("title, category, included_items, daily_price, deposit_value").eq("id", rental.product_id).maybeSingle(),
+      admin.from("products").select("title, category, included_items, daily_price_owner, deposit_value").eq("id", rental.product_id).maybeSingle(),
       admin.from("profiles").select("full_name, email, phone").eq("id", rental.owner_id).maybeSingle(),
       admin.from("profiles").select("full_name, email, phone").eq("id", rental.renter_id).maybeSingle(),
       admin.from("rental_pv_documents").select("*").eq("rental_id", rental_id).eq("phase", phase).maybeSingle(),
