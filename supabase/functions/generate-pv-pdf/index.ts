@@ -72,6 +72,7 @@ Deno.serve(async (req) => {
       admin.from("profiles").select("full_name, email, phone").eq("id", rental.renter_id).maybeSingle(),
       admin.from("rental_pv_documents").select("*").eq("rental_id", rental_id).eq("phase", phase).maybeSingle(),
     ]);
+    if (productRes.error) console.error("[generate-pv-pdf] product lookup failed:", productRes.error.message);
     const product = productRes.data;
     const owner = ownerRes.data;
     const renter = renterRes.data;
