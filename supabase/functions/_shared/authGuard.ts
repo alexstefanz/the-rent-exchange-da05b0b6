@@ -35,12 +35,28 @@ export async function requireCaller(req: Request): Promise<Caller | null> {
   try {
     const client = createClient(url, anonKey);
     const { data, error } = await client.auth.getUser(token);
-    if (error || !data?.user) return null;
-    return { kind: "user", userId: data.user.id, email: data.user.email ?? undefined };
+    if (!error && data?.user) {
+      return { kind: "user", userId: data.user.id, email: data.user.email ?? undefined };
+    }
+  } catch {
+    // fall through to service-key verification below
+  }
+
+  // Not a user token. It may still be a service/secret key whose value differs
+  // from the SUPABASE_SERVICE_ROLE_KEY visible to this function (legacy JWT vs
+  // new `sb_secret_*` format). Verify it against an admin-only endpoint.
+  try {
+    const res = await fetch(`${url}/auth/v1/admin/users?page=1&per_page=1`, {
+      headers: { apikey: token, Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) return { kind: "service" };
   } catch {
     return null;
   }
+
+  return null;
 }
+
 
 /** Returns true if the given user has the given role in `user_roles`. */
 export async function callerHasRole(userId: string, role: string): Promise<boolean> {
