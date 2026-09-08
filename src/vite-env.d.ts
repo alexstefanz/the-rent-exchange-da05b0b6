@@ -16,6 +16,11 @@ interface CookiebotApi {
   withdraw: () => void;
 }
 
-interface Window {
-  Cookiebot?: CookiebotApi;
+declare global {
+  interface Window {
+    Cookiebot?: CookiebotApi;
+  }
 }
+
+export {};
+
