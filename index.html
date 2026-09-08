@@ -2,6 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <!-- Cookiebot CMP (must be the first script on the page) -->
+    <script
+      id="Cookiebot"
+      src="https://consent.cookiebot.com/uc.js"
+      data-cbid="22dfb7ae-31ca-4a65-a044-86e4b671a477"
+      data-blockingmode="auto"
+      data-culture="RO"
+      type="text/javascript"
+    ></script>
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://tsffyecastudajmgrckt.supabase.co" crossorigin />
     <link rel="dns-prefetch" href="https://tsffyecastudajmgrckt.supabase.co" />
@@ -10,8 +20,8 @@
     <link rel="preload" as="image" href="/images/banner_hero_mobile.webp" type="image/webp" media="(max-width: 768px)" fetchpriority="high" imagesrcset="/images/banner_hero_mobile.webp 1x, /images/banner_hero_mobile@2x.webp 2x, /images/banner_hero_mobile@3x.webp 3x" />
     <title>Închiriază orice în România — unelte, foto, camping | Rentli</title>
 
-    <!-- Google Analytics 4 (Consent Mode v2 — denied by default until user accepts) -->
-    <script>
+    <!-- Google Analytics 4 (Consent Mode v2 — denied by default, granted via Cookiebot) -->
+    <script data-cookieconsent="ignore">
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       window.gtag = gtag;
@@ -21,16 +31,36 @@
         ad_user_data: 'denied',
         ad_personalization: 'denied',
         analytics_storage: 'denied',
+        functionality_storage: 'denied',
+        personalization_storage: 'denied',
+        security_storage: 'granted',
         wait_for_update: 500
       });
-      try {
-        if (localStorage.getItem('rentli_cookie_consent') === 'accepted') {
-          gtag('consent', 'update', { analytics_storage: 'granted' });
+      function rentliSyncCookiebotConsent() {
+        var c = (window.Cookiebot && window.Cookiebot.consent) || {};
+        gtag('consent', 'update', {
+          analytics_storage: c.statistics ? 'granted' : 'denied',
+          ad_storage: c.marketing ? 'granted' : 'denied',
+          ad_user_data: c.marketing ? 'granted' : 'denied',
+          ad_personalization: c.marketing ? 'granted' : 'denied',
+          functionality_storage: c.preferences ? 'granted' : 'denied',
+          personalization_storage: c.preferences ? 'granted' : 'denied'
+        });
+        if (c.statistics && !window.__rentliGaPageview) {
+          window.__rentliGaPageview = true;
+          gtag('event', 'page_view', {
+            page_path: window.location.pathname,
+            page_location: window.location.origin + window.location.pathname,
+            page_title: document.title
+          });
         }
-      } catch (e) {}
+      }
+      window.addEventListener('CookiebotOnAccept', rentliSyncCookiebotConsent);
+      window.addEventListener('CookiebotOnDecline', rentliSyncCookiebotConsent);
       gtag('config', 'G-GWKQ78Q43C', { send_page_view: false, anonymize_ip: true });
     </script>
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-GWKQ78Q43C"></script>
+    <script async data-cookieconsent="ignore" src="https://www.googletagmanager.com/gtag/js?id=G-GWKQ78Q43C"></script>
+
 
     <meta name="description" content="Marketplace de închirieri între oameni: unelte, electronice, camping, sport, evenimente. Proprietari verificați, plată securizată, predare cu poze.">
     <meta name="author" content="Rentli" />

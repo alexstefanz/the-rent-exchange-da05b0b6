@@ -110,6 +110,7 @@ const Footer = () => {
               <li><Link to="/politica-confidentialitate" className="transition-colors hover:text-foreground">{language === "en" ? "Privacy policy" : "Politica de confidențialitate"}</Link></li>
               <li><Link to="/politica-anulare" className="transition-colors hover:text-foreground">{language === "en" ? "Cancellation policy" : "Politica de anulare"}</Link></li>
               <li><Link to="/politica-cookies" className="transition-colors hover:text-foreground">{language === "en" ? "Cookie policy" : "Politica de cookies"}</Link></li>
+              <li><button type="button" onClick={() => window.Cookiebot?.renew()} className="transition-colors hover:text-foreground text-left">{language === "en" ? "Cookie settings" : "Setări cookie-uri"}</button></li>
               <li><Link to="/centru-asistenta" className="transition-colors hover:text-foreground">{language === "en" ? "Security tips" : "Sfaturi de securitate"}</Link></li>
               <li><Link to="/politica-confidentialitate" className="transition-colors hover:text-foreground">GDPR</Link></li>
               <li><Link to="/cum-functioneaza" className="transition-colors hover:text-foreground">{language === "en" ? "RentProtect - Safe rentals" : "RentProtect - Închiriere sigură"}</Link></li>

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import LegalPageLayout from "./LegalPageLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import CookieDeclaration from "@/components/CookieDeclaration";
 
 const sectionsRo = [
   {
@@ -24,16 +25,13 @@ const sectionsRo = [
     title: "Tipurile de cookie-uri utilizate",
     content: (
       <div className="space-y-3">
-        <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Cookie-uri esențiale:</strong> permit funcționalitățile de bază ale site-ului — navigare, autentificare, acces la zone securizate.</li>
-          <li><strong>Cookie-uri pentru plăți:</strong> utilizate de procesatorul de plăți pentru securizarea tranzacțiilor și gestionarea sesiunilor de plată. Sunt esențiale pentru procesul de plată.</li>
-          <li><strong>Cookie-uri de performanță:</strong> colectează date anonime despre utilizarea site-ului, ajutându-ne să optimizăm experiența. Se activează doar cu acordul dumneavoastră.</li>
-        </ul>
+        <p>Lista completă și mereu actualizată a cookie-urilor folosite pe Rentli este generată automat de platforma noastră de consimțământ (Cookiebot) și este afișată mai jos.</p>
+        <CookieDeclaration culture="ro" />
         <div className="mt-3">
           <h4 className="font-semibold text-foreground mb-2">Temeiuri juridice:</h4>
           <ul className="list-disc pl-5 space-y-1">
             <li><strong>Cookie-uri esențiale:</strong> interes legitim (art. 6 alin. 1 lit. f din GDPR) — strict necesare funcționării corecte.</li>
-            <li><strong>Cookie-uri de performanță:</strong> consimțământ (art. 6 alin. 1 lit. a din GDPR) — pentru analiza și îmbunătățirea site-ului.</li>
+            <li><strong>Cookie-uri de statistică, preferințe și marketing:</strong> consimțământ (art. 6 alin. 1 lit. a din GDPR), colectat prin banner-ul Cookiebot și revocabil oricând.</li>
           </ul>
         </div>
       </div>
@@ -112,16 +110,13 @@ const sectionsEn = [
     title: "Types of cookies used",
     content: (
       <div className="space-y-3">
-        <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Essential cookies:</strong> enable core site functionality — navigation, authentication, access to secure areas.</li>
-          <li><strong>Payment cookies:</strong> used by the payment processor to secure transactions and manage payment sessions. They are essential to the payment process.</li>
-          <li><strong>Performance cookies:</strong> collect anonymous data about site usage, helping us optimize the experience. Activated only with your consent.</li>
-        </ul>
+        <p>The full, always up-to-date list of cookies used on Rentli is generated automatically by our consent management platform (Cookiebot) and shown below.</p>
+        <CookieDeclaration culture="en" />
         <div className="mt-3">
           <h4 className="font-semibold text-foreground mb-2">Legal bases:</h4>
           <ul className="list-disc pl-5 space-y-1">
             <li><strong>Essential cookies:</strong> legitimate interest (Art. 6(1)(f) GDPR) — strictly necessary for proper operation.</li>
-            <li><strong>Performance cookies:</strong> consent (Art. 6(1)(a) GDPR) — for site analysis and improvement.</li>
+            <li><strong>Statistics, preferences and marketing cookies:</strong> consent (Art. 6(1)(a) GDPR), collected through the Cookiebot banner and revocable at any time.</li>
           </ul>
         </div>
       </div>
