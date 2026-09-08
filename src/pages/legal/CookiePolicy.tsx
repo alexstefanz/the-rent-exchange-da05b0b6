@@ -181,7 +181,7 @@ const CookiePolicy = () => {
   return (
     <LegalPageLayout
       title="POLITICA DE COOKIES"
-      subtitle="Politica privind utilizarea modulelor cookie pe website-ul rentli.ro."
+      subtitle=""
       lastUpdated="2 septembrie 2026"
       sections={sections}
       forceRomanianLabels

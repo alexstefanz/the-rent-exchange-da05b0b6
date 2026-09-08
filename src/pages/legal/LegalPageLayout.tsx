@@ -47,7 +47,7 @@ const LegalPageLayout = ({ title, subtitle, lastUpdated, sections, forceRomanian
             </div>
             <div>
               <h1 className="text-2xl md:text-4xl font-heading font-bold text-foreground">{title}</h1>
-              <p className="text-muted-foreground mt-2 max-w-2xl">{subtitle}</p>
+              {subtitle && <p className="text-muted-foreground mt-2 max-w-2xl">{subtitle}</p>}
               <Badge variant="secondary" className="mt-3">
                 {isEnglish ? "Last updated" : "Ultima actualizare"}: {lastUpdated}
               </Badge>
