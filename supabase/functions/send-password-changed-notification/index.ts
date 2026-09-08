@@ -100,8 +100,9 @@ Deno.serve(async (req) => {
     }
 
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    if (!resendApiKey) {
-      throw new Error("RESEND_API_KEY not configured");
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!resendApiKey || !lovableApiKey) {
+      throw new Error("RESEND_API_KEY or LOVABLE_API_KEY not configured");
     }
 
     const now = new Date();
@@ -125,11 +126,12 @@ Deno.serve(async (req) => {
       footerText: "Ai primit acest email deoarece parola contului tău a fost schimbată.",
     });
 
-    const resendRes = await fetch("https://api.resend.com/emails", {
+    const resendRes = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${resendApiKey}`,
+        Authorization: `Bearer ${lovableApiKey}`,
+        "X-Connection-Api-Key": resendApiKey,
       },
       body: JSON.stringify({
         from: "Rentli <noreply@rentli.ro>",
@@ -141,8 +143,8 @@ Deno.serve(async (req) => {
 
     if (!resendRes.ok) {
       const err = await resendRes.text();
-      console.error("Resend error:", err);
-      throw new Error(`Resend error: ${err}`);
+      console.error("Resend gateway error:", err);
+      throw new Error(`Resend gateway error ${resendRes.status}: ${err}`);
     }
 
     return new Response(JSON.stringify({ success: true }), {
