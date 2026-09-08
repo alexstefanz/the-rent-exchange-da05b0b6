@@ -74,26 +74,33 @@ function buildEmailTemplate(opts: {
 </body></html>`;
 }
 
-async function sendEmail(resendApiKey: string, to: string, subject: string, html: string) {
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "Rentli <noreply@rentli.ro>",
-        to: [to],
-        subject,
-        html,
-      }),
-    });
-    const result = await res.text();
-    console.log(`Email sent to ${to}:`, result);
-  } catch (e) {
-    console.error("Email send error:", e);
+async function sendEmail(to: string, subject: string, html: string) {
+  const resendApiKey = Deno.env.get("RESEND_API_KEY");
+  const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!resendApiKey || !lovableApiKey) {
+    throw new Error("Email service not configured: missing LOVABLE_API_KEY or RESEND_API_KEY");
   }
+
+  const res = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${lovableApiKey}`,
+      "X-Connection-Api-Key": resendApiKey,
+    },
+    body: JSON.stringify({
+      from: "Rentli <noreply@rentli.ro>",
+      to: [to],
+      subject,
+      html,
+    }),
+  });
+
+  const result = await res.text();
+  if (!res.ok) {
+    throw new Error(`Email gateway error ${res.status}: ${result}`);
+  }
+  console.log(`Email queued to ${to}:`, result);
 }
 
 Deno.serve(async (req) => {
@@ -117,8 +124,9 @@ Deno.serve(async (req) => {
     }
 
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    if (!resendApiKey) {
-      console.error("RESEND_API_KEY not configured");
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!resendApiKey || !lovableApiKey) {
+      console.error("RESEND_API_KEY or LOVABLE_API_KEY not configured");
       return new Response(JSON.stringify({ error: "Email service not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -183,7 +191,7 @@ Deno.serve(async (req) => {
         footerText: "Mulțumim că te-ai alăturat comunității Rentli!",
       });
 
-      await sendEmail(resendApiKey, email, "Bine ai venit pe Rentli! 🎉", html);
+      await sendEmail(email, "Bine ai venit pe Rentli! 🎉", html);
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -244,7 +252,7 @@ Deno.serve(async (req) => {
         footerText: "Recenziile ajută comunitatea să funcționeze mai bine.",
       });
 
-      await sendEmail(resendApiKey, email, `${titleRo} - ${stars}`, html);
+      await sendEmail(email, `${titleRo} - ${stars}`, html);
 
       // Also insert a notification
       await supabaseAdmin.from("notifications").insert({
@@ -301,7 +309,7 @@ Deno.serve(async (req) => {
         footerText: "Poti gestiona produsele tale oricand din sectiunea Produsele mele.",
       });
 
-      await sendEmail(resendApiKey, email, `Produsul tău „${product_title}" a fost publicat!`, html);
+      await sendEmail(email, `Produsul tău „${product_title}" a fost publicat!`, html);
 
       // Also insert a notification
       await supabaseAdmin.from("notifications").insert({
