@@ -11,6 +11,48 @@
       data-culture="RO"
       type="text/javascript"
     ></script>
+    <script>
+      // Repară diacriticele afișate greșit ("?") în textele implicite Cookiebot (RO)
+      (function () {
+        var fixes = [
+          [/contacta\?i/g, 'contactați'],
+          [/consim\?ământ/g, 'consimțământ'],
+          [/consim\?ăminte/g, 'consimțăminte'],
+          [/preciza\?i/g, 'precizați'],
+          [/\?i data/g, 'și data'],
+          [/pute\?i/g, 'puteți'],
+          [/ave\?i/g, 'aveți'],
+          [/dori\?i/g, 'doriți'],
+          [/selec\?ia/g, 'selecția'],
+          [/informa\?ii/g, 'informații'],
+          [/ștergea\?i/g, 'ștergeți']
+        ];
+        function fixNode(root) {
+          if (!root) return;
+          var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+          var node;
+          while ((node = walker.nextNode())) {
+            var text = node.nodeValue;
+            if (!text || text.indexOf('?') === -1) continue;
+            var updated = text;
+            for (var i = 0; i < fixes.length; i++) updated = updated.replace(fixes[i][0], fixes[i][1]);
+            if (updated !== text) node.nodeValue = updated;
+          }
+        }
+        function fixAll() {
+          fixNode(document.getElementById('CybotCookiebotDialog'));
+          fixNode(document.getElementById('CookieDeclaration'));
+        }
+        window.addEventListener('CookiebotOnDialogDisplay', function () { setTimeout(fixAll, 0); });
+        window.addEventListener('CookiebotOnLoad', function () { setTimeout(fixAll, 0); });
+        document.addEventListener('DOMContentLoaded', function () {
+          setTimeout(fixAll, 500);
+          var obs = new MutationObserver(function () { fixAll(); });
+          obs.observe(document.body, { childList: true, subtree: true });
+        });
+      })();
+    </script>
+
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://tsffyecastudajmgrckt.supabase.co" crossorigin />
