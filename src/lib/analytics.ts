@@ -9,7 +9,7 @@ declare global {
   }
 }
 
-export const GA_MEASUREMENT_ID = "G-GWKQ78Q43C";
+export const GA_MEASUREMENT_ID = "G-5QNFPSKBSM";
 
 function gtag(...args: unknown[]) {
   if (typeof window === "undefined" || typeof window.gtag !== "function") return;
