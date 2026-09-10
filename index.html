@@ -62,13 +62,47 @@
     <link rel="preload" as="image" href="/images/banner_hero_mobile.webp" type="image/webp" media="(max-width: 768px)" fetchpriority="high" imagesrcset="/images/banner_hero_mobile.webp 1x, /images/banner_hero_mobile@2x.webp 2x, /images/banner_hero_mobile@3x.webp 3x" />
     <title>Închiriază orice în România — unelte, foto, camping | Rentli</title>
 
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5QNFPSKBSM"></script>
-    <script>
+    <!-- Google Consent Mode v2 — default denied, updated by Cookiebot -->
+    <script data-cookieconsent="ignore">
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       window.gtag = gtag;
+      gtag('consent', 'default', {
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied',
+        analytics_storage: 'denied',
+        functionality_storage: 'denied',
+        personalization_storage: 'denied',
+        security_storage: 'granted',
+        wait_for_update: 500
+      });
+      gtag('set', 'ads_data_redaction', true);
+      gtag('set', 'url_passthrough', true);
       gtag('js', new Date());
+
+      function rentliSyncConsent() {
+        var c = window.Cookiebot && window.Cookiebot.consent;
+        if (!c) return;
+        gtag('consent', 'update', {
+          ad_storage: c.marketing ? 'granted' : 'denied',
+          ad_user_data: c.marketing ? 'granted' : 'denied',
+          ad_personalization: c.marketing ? 'granted' : 'denied',
+          analytics_storage: c.statistics ? 'granted' : 'denied',
+          functionality_storage: c.preferences ? 'granted' : 'denied',
+          personalization_storage: c.preferences ? 'granted' : 'denied',
+          security_storage: 'granted'
+        });
+        window.dispatchEvent(new CustomEvent('rentli-consent-change'));
+      }
+      window.addEventListener('CookiebotOnAccept', rentliSyncConsent);
+      window.addEventListener('CookiebotOnDecline', rentliSyncConsent);
+      window.addEventListener('CookiebotOnLoad', rentliSyncConsent);
+    </script>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5QNFPSKBSM" data-cookieconsent="ignore"></script>
+    <script data-cookieconsent="ignore">
       gtag('config', 'G-5QNFPSKBSM', { send_page_view: false });
     </script>
 
