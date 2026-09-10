@@ -16,6 +16,25 @@ function gtag(...args: unknown[]) {
   window.gtag(...args);
 }
 
+export interface ConsentSignals {
+  statistics: boolean;
+  marketing: boolean;
+  preferences: boolean;
+}
+
+/** Push a full Google Consent Mode v2 update. */
+export function setConsentSignals({ statistics, marketing, preferences }: ConsentSignals) {
+  gtag("consent", "update", {
+    ad_storage: marketing ? "granted" : "denied",
+    ad_user_data: marketing ? "granted" : "denied",
+    ad_personalization: marketing ? "granted" : "denied",
+    analytics_storage: statistics ? "granted" : "denied",
+    functionality_storage: preferences ? "granted" : "denied",
+    personalization_storage: preferences ? "granted" : "denied",
+    security_storage: "granted",
+  });
+}
+
 export function setAnalyticsConsent(granted: boolean) {
   gtag("consent", "update", {
     analytics_storage: granted ? "granted" : "denied",
