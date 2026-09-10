@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { differenceInDays, isBefore } from "date-fns";
 import { useBookedDates, isDateBooked, hasBookedDateInRange } from "@/hooks/queries/useBookedDates";
 import { computeRentalPrice } from "@/lib/rentalPricing";
+import { hasConsent, purgeIfNoConsent } from "@/lib/consent";
 import { ChevronRight, MapPin, Heart, Share2, AlertTriangle, Clock, Edit } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -106,6 +107,9 @@ const ProductDetail = () => {
   // Track product view (deduped server-side per visitor / 24h)
   useEffect(() => {
     if (!product?.id) return;
+    // Only count views once the visitor accepted statistics cookies.
+    purgeIfNoConsent("statistics", ["rentli_visitor_id"]);
+    if (!hasConsent("statistics")) return;
     let visitorHash = "";
     try {
       visitorHash = localStorage.getItem("rentli_visitor_id") || "";
