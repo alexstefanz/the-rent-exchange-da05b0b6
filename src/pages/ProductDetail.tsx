@@ -106,6 +106,9 @@ const ProductDetail = () => {
   // Track product view (deduped server-side per visitor / 24h)
   useEffect(() => {
     if (!product?.id) return;
+    // Only count views once the visitor accepted statistics cookies.
+    purgeIfNoConsent("statistics", ["rentli_visitor_id"]);
+    if (!hasConsent("statistics")) return;
     let visitorHash = "";
     try {
       visitorHash = localStorage.getItem("rentli_visitor_id") || "";
