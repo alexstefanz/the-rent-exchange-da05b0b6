@@ -28,10 +28,10 @@ export const useAdminStats = () => {
   });
 };
 
-export const useAdminRentals = (statusFilter?: string, limit = 50, offset = 0) => {
+export const useAdminRentals = (statusFilter?: string, limit = 50, offset = 0, createdVia?: string) => {
   return useQuery<AdminRental[]>({
-    queryKey: ['adminRentals', statusFilter, limit, offset],
-    queryFn: () => fetchAdminRentals(statusFilter, limit, offset),
+    queryKey: ['adminRentals', statusFilter, limit, offset, createdVia],
+    queryFn: () => fetchAdminRentals(statusFilter, limit, offset, createdVia),
     staleTime: 30 * 1000, // 30 seconds
   });
 };

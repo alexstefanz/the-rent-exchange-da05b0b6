@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusPill } from "@/components/support/center/StatusPill";
+import SourceBadge from "@/components/admin/SourceBadge";
 import { getSlaInfo } from "@/features/tickets/sla";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
@@ -161,6 +162,17 @@ export function AdminInboxList({ tickets, isLoading, selectedId, onSelect, filte
                 {STATUS_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
               </SelectContent>
             </Select>
+            <Select
+              value={filters.created_via || "all"}
+              onValueChange={(v) => setFilters({ ...filters, created_via: v === "all" ? undefined : v })}
+            >
+              <SelectTrigger className="h-8 text-xs col-span-2"><SelectValue placeholder="Sursă" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toate sursele</SelectItem>
+                <SelectItem value="mobile">Aplicație mobilă</SelectItem>
+                <SelectItem value="web">Web</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         )}
       </div>
@@ -217,6 +229,7 @@ export function AdminInboxList({ tickets, isLoading, selectedId, onSelect, filte
                         <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-normal">
                           {CATEGORY_GROUP_LABELS[t.category_group] || t.category_group}
                         </Badge>
+                        <SourceBadge source={t.created_via} />
                         {slaBreached(t) ? (
                           <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-medium border-destructive/50 text-destructive">
                             SLA 48h depășit

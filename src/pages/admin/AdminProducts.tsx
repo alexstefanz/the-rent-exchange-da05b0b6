@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { toast } from "@/components/ui/sonner";
+import SourceBadge from "@/components/admin/SourceBadge";
 
 // Expanded detail panel showing full product info + action buttons
 const ProductExpandedPanel = ({
@@ -212,6 +213,7 @@ const AdminProducts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const [extraDetails, setExtraDetails] = useState<Record<string, { description: string | null; included_items: string[] | null; location_country: string | null; pickup_address: string | null }>>({});
@@ -262,10 +264,14 @@ const AdminProducts = () => {
   });
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ['adminProducts', debouncedSearch, statusFilter],
+    queryKey: ['adminProducts', debouncedSearch, statusFilter, sourceFilter],
     queryFn: () => fetchAdminProducts(
       debouncedSearch || undefined,
-      statusFilter === 'all' ? undefined : statusFilter
+      statusFilter === 'all' ? undefined : statusFilter,
+      undefined,
+      50,
+      0,
+      sourceFilter === 'all' ? undefined : sourceFilter
     ),
     staleTime: 30000,
   });
@@ -537,6 +543,14 @@ const AdminProducts = () => {
                    <SelectItem value="flagged">Marcate</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Sursă" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toate sursele</SelectItem>
+                  <SelectItem value="mobile">Aplicație mobilă</SelectItem>
+                  <SelectItem value="web">Web</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
@@ -587,7 +601,10 @@ const AdminProducts = () => {
                                   <img src={product.images[0]} alt="" className="h-10 w-10 rounded object-cover" />
                                 )}
                                 <div>
-                                  <span className="font-medium line-clamp-1">{product.title}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium line-clamp-1">{product.title}</span>
+                                    <SourceBadge source={product.created_via} />
+                                  </div>
                                   {product.admin_flagged && (
                                     <div className="flex items-center gap-1 text-xs text-destructive">
                                       <AlertTriangle className="h-3 w-3" /> {product.flag_reason}
@@ -644,6 +661,7 @@ const AdminProducts = () => {
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-sm font-semibold">{formatCurrency(product.daily_price_owner)}</span>
                             <ProductStatusBadges product={product} />
+                            <SourceBadge source={product.created_via} />
                           </div>
                           {product.admin_flagged && (
                             <div className="flex items-center gap-1 text-xs text-destructive mt-1">

@@ -19,6 +19,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import RentalTimeline from "@/components/dashboard/RentalTimeline";
 import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
+import SourceBadge from "@/components/admin/SourceBadge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const statusColors: Record<string, string> = {
@@ -196,6 +197,7 @@ const RentalExpandedPanel = ({
 
 const AdminReservations = () => {
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [sourceFilter, setSourceFilter] = useState<string>("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -222,7 +224,7 @@ const AdminReservations = () => {
     setDateRangeFilters(prev => ({ ...prev, [key]: range }));
   };
 
-  const { data: rentals, isLoading } = useAdminRentals(statusFilter || undefined);
+  const { data: rentals, isLoading } = useAdminRentals(statusFilter || undefined, 50, 0, sourceFilter || undefined);
 
   const cityOptions = useMemo(() => {
     if (!rentals) return [];
@@ -291,7 +293,7 @@ const AdminReservations = () => {
         </div>
 
         <Card>
-          <CardContent className="pt-4">
+          <CardContent className="pt-4 flex flex-col sm:flex-row gap-3">
             <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Toate statusurile" />
@@ -304,6 +306,16 @@ const AdminReservations = () => {
                 <SelectItem value="completed">Finalizate</SelectItem>
                 <SelectItem value="cancelled">Anulate</SelectItem>
                 <SelectItem value="overdue">Întârziate</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sourceFilter || "all"} onValueChange={(v) => setSourceFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Toate sursele" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toate sursele</SelectItem>
+                <SelectItem value="mobile">Aplicație mobilă</SelectItem>
+                <SelectItem value="web">Web</SelectItem>
               </SelectContent>
             </Select>
           </CardContent>
@@ -359,6 +371,7 @@ const AdminReservations = () => {
                                 {rental.public_id}
                                 <Copy className="h-3 w-3 opacity-60" />
                               </button>
+                              <div className="mt-1"><SourceBadge source={rental.created_via} /></div>
                             </TableCell>
                             <TableCell className="font-medium max-w-[200px]">
                               <div className="flex items-center gap-2">
@@ -419,6 +432,7 @@ const AdminReservations = () => {
                             {rental.public_id}
                             <Copy className="h-2.5 w-2.5 opacity-60" />
                           </button>
+                          <SourceBadge source={rental.created_via} className="ml-2 align-middle" />
                           <p className="text-sm font-medium truncate">{rental.product_title}</p>
                           <p className="text-xs text-muted-foreground">{rental.renter_name} → {rental.owner_name} • {format(new Date(rental.start_date), 'd MMM', { locale: ro })} - {format(new Date(rental.end_date), 'd MMM', { locale: ro })}</p>
                         </div>
