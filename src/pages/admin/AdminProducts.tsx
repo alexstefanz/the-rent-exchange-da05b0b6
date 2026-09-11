@@ -263,10 +263,14 @@ const AdminProducts = () => {
   });
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ['adminProducts', debouncedSearch, statusFilter],
+    queryKey: ['adminProducts', debouncedSearch, statusFilter, sourceFilter],
     queryFn: () => fetchAdminProducts(
       debouncedSearch || undefined,
-      statusFilter === 'all' ? undefined : statusFilter
+      statusFilter === 'all' ? undefined : statusFilter,
+      undefined,
+      50,
+      0,
+      sourceFilter === 'all' ? undefined : sourceFilter
     ),
     staleTime: 30000,
   });
