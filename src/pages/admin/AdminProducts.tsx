@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ro } from "date-fns/locale";
 import { toast } from "@/components/ui/sonner";
+import SourceBadge from "@/components/admin/SourceBadge";
 
 // Expanded detail panel showing full product info + action buttons
 const ProductExpandedPanel = ({
@@ -660,6 +661,7 @@ const AdminProducts = () => {
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-sm font-semibold">{formatCurrency(product.daily_price_owner)}</span>
                             <ProductStatusBadges product={product} />
+                            <SourceBadge source={product.created_via} />
                           </div>
                           {product.admin_flagged && (
                             <div className="flex items-center gap-1 text-xs text-destructive mt-1">
