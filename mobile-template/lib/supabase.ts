@@ -19,6 +19,10 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     persistSession: true,
     detectSessionInUrl: false,
   },
+  global: {
+    // Marchează în backend că înregistrările create vin din aplicația mobilă.
+    headers: { "x-client-platform": "mobile" },
+  },
 });
 
 // Refresh automat doar cât timp aplicația e în prim-plan.

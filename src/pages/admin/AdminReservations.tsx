@@ -19,6 +19,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import RentalTimeline from "@/components/dashboard/RentalTimeline";
 import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
+import SourceBadge from "@/components/admin/SourceBadge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const statusColors: Record<string, string> = {
@@ -222,7 +223,7 @@ const AdminReservations = () => {
     setDateRangeFilters(prev => ({ ...prev, [key]: range }));
   };
 
-  const { data: rentals, isLoading } = useAdminRentals(statusFilter || undefined);
+  const { data: rentals, isLoading } = useAdminRentals(statusFilter || undefined, 50, 0, sourceFilter || undefined);
 
   const cityOptions = useMemo(() => {
     if (!rentals) return [];
