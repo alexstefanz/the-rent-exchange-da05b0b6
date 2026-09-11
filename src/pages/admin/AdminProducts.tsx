@@ -542,6 +542,14 @@ const AdminProducts = () => {
                    <SelectItem value="flagged">Marcate</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Sursă" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toate sursele</SelectItem>
+                  <SelectItem value="mobile">Aplicație mobilă</SelectItem>
+                  <SelectItem value="web">Web</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
