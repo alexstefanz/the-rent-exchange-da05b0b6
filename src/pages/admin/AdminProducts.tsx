@@ -600,7 +600,10 @@ const AdminProducts = () => {
                                   <img src={product.images[0]} alt="" className="h-10 w-10 rounded object-cover" />
                                 )}
                                 <div>
-                                  <span className="font-medium line-clamp-1">{product.title}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium line-clamp-1">{product.title}</span>
+                                    <SourceBadge source={product.created_via} />
+                                  </div>
                                   {product.admin_flagged && (
                                     <div className="flex items-center gap-1 text-xs text-destructive">
                                       <AlertTriangle className="h-3 w-3" /> {product.flag_reason}
