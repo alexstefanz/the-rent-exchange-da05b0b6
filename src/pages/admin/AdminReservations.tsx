@@ -371,6 +371,7 @@ const AdminReservations = () => {
                                 {rental.public_id}
                                 <Copy className="h-3 w-3 opacity-60" />
                               </button>
+                              <div className="mt-1"><SourceBadge source={rental.created_via} /></div>
                             </TableCell>
                             <TableCell className="font-medium max-w-[200px]">
                               <div className="flex items-center gap-2">
