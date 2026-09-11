@@ -432,6 +432,7 @@ const AdminReservations = () => {
                             {rental.public_id}
                             <Copy className="h-2.5 w-2.5 opacity-60" />
                           </button>
+                          <SourceBadge source={rental.created_via} className="ml-2 align-middle" />
                           <p className="text-sm font-medium truncate">{rental.product_title}</p>
                           <p className="text-xs text-muted-foreground">{rental.renter_name} → {rental.owner_name} • {format(new Date(rental.start_date), 'd MMM', { locale: ro })} - {format(new Date(rental.end_date), 'd MMM', { locale: ro })}</p>
                         </div>

@@ -212,6 +212,7 @@ const AdminProducts = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [expandedProductId, setExpandedProductId] = useState<string | null>(null);
   const [extraDetails, setExtraDetails] = useState<Record<string, { description: string | null; included_items: string[] | null; location_country: string | null; pickup_address: string | null }>>({});
