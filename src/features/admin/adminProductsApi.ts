@@ -19,6 +19,7 @@ export interface AdminProduct {
   approval_status: string;
   admin_edited_at: string | null;
   admin_edited_by: string | null;
+  created_via?: string | null;
 }
 
 export const approveProduct = async (productId: string): Promise<void> => {
@@ -110,14 +111,16 @@ export const fetchAdminProducts = async (
   statusFilter?: string,
   categoryFilter?: string,
   limit = 50,
-  offset = 0
+  offset = 0,
+  createdViaFilter?: string
 ): Promise<AdminProduct[]> => {
   const { data, error } = await supabase.rpc('get_admin_products', {
     search_query: searchQuery || null,
     status_filter: statusFilter || null,
     category_filter: categoryFilter || null,
     limit_count: limit,
-    offset_count: offset
+    offset_count: offset,
+    created_via_filter: createdViaFilter || null
   });
 
   if (error) throw new Error(error.message);

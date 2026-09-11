@@ -30,6 +30,7 @@ export interface AdminRental {
   created_at: string;
   category: string;
   location_city: string;
+  created_via?: string | null;
 }
 
 export interface AdminUser {
@@ -97,12 +98,14 @@ export const fetchAdminStats = async (): Promise<AdminStats> => {
 export const fetchAdminRentals = async (
   statusFilter?: string,
   limit = 50,
-  offset = 0
+  offset = 0,
+  createdViaFilter?: string
 ): Promise<AdminRental[]> => {
   const { data, error } = await supabase.rpc('get_admin_rentals', {
     status_filter: statusFilter || null,
     limit_count: limit,
-    offset_count: offset
+    offset_count: offset,
+    created_via_filter: createdViaFilter || null
   });
   
   if (error) {
