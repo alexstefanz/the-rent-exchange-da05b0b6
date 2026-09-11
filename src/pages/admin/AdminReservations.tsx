@@ -293,7 +293,7 @@ const AdminReservations = () => {
         </div>
 
         <Card>
-          <CardContent className="pt-4">
+          <CardContent className="pt-4 flex flex-col sm:flex-row gap-3">
             <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue placeholder="Toate statusurile" />
@@ -306,6 +306,16 @@ const AdminReservations = () => {
                 <SelectItem value="completed">Finalizate</SelectItem>
                 <SelectItem value="cancelled">Anulate</SelectItem>
                 <SelectItem value="overdue">Întârziate</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sourceFilter || "all"} onValueChange={(v) => setSourceFilter(v === "all" ? "" : v)}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Toate sursele" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toate sursele</SelectItem>
+                <SelectItem value="mobile">Aplicație mobilă</SelectItem>
+                <SelectItem value="web">Web</SelectItem>
               </SelectContent>
             </Select>
           </CardContent>
