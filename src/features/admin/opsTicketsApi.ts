@@ -30,7 +30,7 @@ export interface OpsTicket {
   first_response_at?: string | null;
   sla_due_at?: string | null;
   sla_breached_at?: string | null;
-
+  created_via?: string | null;
 }
 
 export interface OpsTicketMessage {
@@ -167,6 +167,7 @@ export interface FetchTicketsFilters {
   category_group?: string;
   category_type?: string;
   search?: string;
+  created_via?: string;
 }
 
 export const fetchOpsTickets = async (filters?: FetchTicketsFilters): Promise<OpsTicket[]> => {
@@ -176,6 +177,7 @@ export const fetchOpsTickets = async (filters?: FetchTicketsFilters): Promise<Op
   if (filters?.priority) query = query.eq('priority', filters.priority);
   if (filters?.category_group) query = query.eq('category_group', filters.category_group);
   if (filters?.category_type) query = query.eq('category_type', filters.category_type);
+  if (filters?.created_via) query = query.eq('created_via', filters.created_via);
   if (filters?.search) {
     const term = filters.search.trim();
     // Look up requester ids matching the search term in profiles (name/email)
