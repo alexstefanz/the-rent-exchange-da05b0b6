@@ -879,6 +879,7 @@ export type Database = {
           closed_at: string | null
           created_at: string
           created_by: string | null
+          created_via: string
           description: string
           first_response_at: string | null
           id: string
@@ -904,6 +905,7 @@ export type Database = {
           closed_at?: string | null
           created_at?: string
           created_by?: string | null
+          created_via?: string
           description: string
           first_response_at?: string | null
           id?: string
@@ -929,6 +931,7 @@ export type Database = {
           closed_at?: string | null
           created_at?: string
           created_by?: string | null
+          created_via?: string
           description?: string
           first_response_at?: string | null
           id?: string
@@ -1257,6 +1260,7 @@ export type Database = {
           category: string | null
           condition: string | null
           created_at: string | null
+          created_via: string
           daily_price_owner: number
           deleted_at: string | null
           deleted_by: string | null
@@ -1305,6 +1309,7 @@ export type Database = {
           category?: string | null
           condition?: string | null
           created_at?: string | null
+          created_via?: string
           daily_price_owner: number
           deleted_at?: string | null
           deleted_by?: string | null
@@ -1353,6 +1358,7 @@ export type Database = {
           category?: string | null
           condition?: string | null
           created_at?: string | null
+          created_via?: string
           daily_price_owner?: number
           deleted_at?: string | null
           deleted_by?: string | null
@@ -1649,6 +1655,7 @@ export type Database = {
           completed_at: string | null
           confirmed_at: string | null
           created_at: string | null
+          created_via: string
           daily_price: number
           dispute_opened_at: string | null
           dispute_opened_by: string | null
@@ -1721,6 +1728,7 @@ export type Database = {
           completed_at?: string | null
           confirmed_at?: string | null
           created_at?: string | null
+          created_via?: string
           daily_price: number
           dispute_opened_at?: string | null
           dispute_opened_by?: string | null
@@ -1793,6 +1801,7 @@ export type Database = {
           completed_at?: string | null
           confirmed_at?: string | null
           created_at?: string | null
+          created_via?: string
           daily_price?: number
           dispute_opened_at?: string | null
           dispute_opened_by?: string | null
@@ -2637,35 +2646,67 @@ export type Database = {
           pickup_address: string
         }[]
       }
-      get_admin_products: {
-        Args: {
-          category_filter?: string
-          limit_count?: number
-          offset_count?: number
-          search_query?: string
-          status_filter?: string
-        }
-        Returns: {
-          admin_edited_at: string
-          admin_edited_by: string
-          admin_flagged: boolean
-          approval_status: string
-          category: string
-          created_at: string
-          daily_price_owner: number
-          description: string
-          flag_reason: string
-          id: string
-          images: string[]
-          is_active: boolean
-          location_city: string
-          owner_id: string
-          owner_name: string
-          slug: string
-          subcategory: string
-          title: string
-        }[]
-      }
+      get_admin_products:
+        | {
+            Args: {
+              category_filter?: string
+              limit_count?: number
+              offset_count?: number
+              search_query?: string
+              status_filter?: string
+            }
+            Returns: {
+              admin_edited_at: string
+              admin_edited_by: string
+              admin_flagged: boolean
+              approval_status: string
+              category: string
+              created_at: string
+              daily_price_owner: number
+              description: string
+              flag_reason: string
+              id: string
+              images: string[]
+              is_active: boolean
+              location_city: string
+              owner_id: string
+              owner_name: string
+              slug: string
+              subcategory: string
+              title: string
+            }[]
+          }
+        | {
+            Args: {
+              category_filter?: string
+              created_via_filter?: string
+              limit_count?: number
+              offset_count?: number
+              search_query?: string
+              status_filter?: string
+            }
+            Returns: {
+              admin_edited_at: string
+              admin_edited_by: string
+              admin_flagged: boolean
+              approval_status: string
+              category: string
+              created_at: string
+              created_via: string
+              daily_price_owner: number
+              description: string
+              flag_reason: string
+              id: string
+              images: string[]
+              is_active: boolean
+              location_city: string
+              owner_id: string
+              owner_name: string
+              slug: string
+              subcategory: string
+              title: string
+            }[]
+          }
       get_admin_products_sensitive: {
         Args: { _ids: string[] }
         Returns: {
@@ -2680,35 +2721,67 @@ export type Database = {
           serial_number: string
         }[]
       }
-      get_admin_rentals: {
-        Args: {
-          limit_count?: number
-          offset_count?: number
-          status_filter?: string
-        }
-        Returns: {
-          category: string
-          created_at: string
-          daily_price: number
-          end_date: string
-          id: string
-          location_city: string
-          owner_id: string
-          owner_name: string
-          owner_payout: number
-          payment_status: string
-          platform_fee: number
-          product_id: string
-          product_title: string
-          public_id: string
-          rental_days: number
-          renter_id: string
-          renter_name: string
-          start_date: string
-          status: string
-          subtotal: number
-        }[]
-      }
+      get_admin_rentals:
+        | {
+            Args: {
+              limit_count?: number
+              offset_count?: number
+              status_filter?: string
+            }
+            Returns: {
+              category: string
+              created_at: string
+              daily_price: number
+              end_date: string
+              id: string
+              location_city: string
+              owner_id: string
+              owner_name: string
+              owner_payout: number
+              payment_status: string
+              platform_fee: number
+              product_id: string
+              product_title: string
+              public_id: string
+              rental_days: number
+              renter_id: string
+              renter_name: string
+              start_date: string
+              status: string
+              subtotal: number
+            }[]
+          }
+        | {
+            Args: {
+              created_via_filter?: string
+              limit_count?: number
+              offset_count?: number
+              status_filter?: string
+            }
+            Returns: {
+              category: string
+              created_at: string
+              created_via: string
+              daily_price: number
+              end_date: string
+              id: string
+              location_city: string
+              owner_id: string
+              owner_name: string
+              owner_payout: number
+              payment_status: string
+              platform_fee: number
+              product_id: string
+              product_title: string
+              public_id: string
+              rental_days: number
+              renter_id: string
+              renter_name: string
+              start_date: string
+              status: string
+              subtotal: number
+            }[]
+          }
       get_admin_sms_logs: {
         Args: {
           date_from?: string
@@ -2810,6 +2883,7 @@ export type Database = {
           category: string | null
           condition: string | null
           created_at: string | null
+          created_via: string
           daily_price_owner: number
           deleted_at: string | null
           deleted_by: string | null
