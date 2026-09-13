@@ -37,11 +37,22 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 
 // Configuration
 const SITE_NAME = "Rentli"
+const SENDER_DOMAIN = "notify.rentli.ro"
 const ROOT_DOMAIN = "rentli.ro"
-// TEMP: using resend.dev test sender until rentli.ro DNS is verified in Resend.
-const FROM_DOMAIN = "resend.dev"
-const FROM_LOCAL = "onboarding"
+const FROM_DOMAIN = "rentli.ro" // Domain shown in From address (may be root or sender subdomain)
 
+function redactEmail(email: string | null | undefined): string {
+  if (!email) return '***'
+  const [localPart, domain] = email.split('@')
+  if (!localPart || !domain) return '***'
+  return `${localPart[0]}***@${domain}`
+}
+
+// Sample data for preview mode ONLY (not used in actual email sending).
+// URLs are baked in at scaffold time from the project's real data.
+// The sample email uses a fixed placeholder (RFC 6761 .test TLD) so the Go backend
+// can always find-and-replace it with the actual recipient when sending test emails,
+// even if the project's domain has changed since the template was scaffolded.
 const SAMPLE_PROJECT_URL = "https://rentli.ro"
 const SAMPLE_EMAIL = "user@example.test"
 const SAMPLE_DATA: Record<string, object> = {
@@ -67,6 +78,7 @@ const SAMPLE_DATA: Record<string, object> = {
   },
   email_change: {
     siteName: SITE_NAME,
+    oldEmail: SAMPLE_EMAIL,
     email: SAMPLE_EMAIL,
     newEmail: SAMPLE_EMAIL,
     confirmationUrl: SAMPLE_PROJECT_URL,
@@ -203,7 +215,7 @@ async function handleWebhook(req: Request): Promise<Response> {
   // The email action type is in payload.data.action_type (e.g., "signup", "recovery")
   // payload.type is the hook event type ("auth")
   const emailType = payload.data.action_type
-  console.log('Received auth event', { emailType, email: payload.data.email, run_id })
+  console.log('Received auth event', { emailType, email_redacted: redactEmail(payload.data.email), run_id })
 
   const EmailTemplate = EMAIL_TEMPLATES[emailType]
   if (!EmailTemplate) {
@@ -222,6 +234,7 @@ async function handleWebhook(req: Request): Promise<Response> {
     confirmationUrl: payload.data.url,
     token: payload.data.token,
     email: payload.data.email,
+    oldEmail: payload.data.old_email,
     newEmail: payload.data.new_email,
   }
 
@@ -253,7 +266,8 @@ async function handleWebhook(req: Request): Promise<Response> {
       run_id,
       message_id: messageId,
       to: payload.data.email,
-      from: `${SITE_NAME} <${FROM_LOCAL}@${FROM_DOMAIN}>`,
+      from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+      sender_domain: SENDER_DOMAIN,
       subject: EMAIL_SUBJECTS[emailType] || 'Notification',
       html,
       text,
@@ -264,7 +278,12 @@ async function handleWebhook(req: Request): Promise<Response> {
   })
 
   if (enqueueError) {
-    console.error('Failed to enqueue auth email', { error: enqueueError, run_id, emailType })
+    console.error('Failed to enqueue auth email', {
+      code: enqueueError.code,
+      message: enqueueError.message,
+      run_id,
+      emailType,
+    })
     await supabase.from('email_send_log').insert({
       message_id: messageId,
       template_name: emailType,
@@ -278,7 +297,7 @@ async function handleWebhook(req: Request): Promise<Response> {
     })
   }
 
-  console.log('Auth email enqueued', { emailType, email: payload.data.email, run_id })
+  console.log('Auth email enqueued', { emailType, email_redacted: redactEmail(payload.data.email), run_id })
 
   return new Response(
     JSON.stringify({ success: true, queued: true }),
