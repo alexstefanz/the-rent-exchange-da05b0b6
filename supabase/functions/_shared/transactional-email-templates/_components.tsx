@@ -17,7 +17,7 @@ const INK = '#1A1410'
 const MUTED = '#6B6360'
 const SUBTLE = '#9C9491'
 const CARD_BG = '#FFFFFF'
-const PAGE_BG = '#F5F2EE'
+const PAGE_BG = '#FFFFFF'
 const BORDER = '#EFE9E2'
 const FONT = "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif"
 
