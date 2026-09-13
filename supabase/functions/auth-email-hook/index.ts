@@ -17,12 +17,12 @@ const corsHeaders = {
 }
 
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Confirm your email',
-  invite: "You've been invited",
-  magiclink: 'Your login link',
-  recovery: 'Reset your password',
-  email_change: 'Confirm your new email',
-  reauthentication: 'Your verification code',
+  signup: 'Codul tău de verificare Rentli',
+  invite: 'Ai fost invitat pe Rentli',
+  magiclink: 'Link de autentificare Rentli',
+  recovery: 'Resetare parolă Rentli',
+  email_change: 'Confirmă schimbarea emailului',
+  reauthentication: 'Codul tău de verificare Rentli',
 }
 
 // Template mapping
@@ -53,7 +53,7 @@ function redactEmail(email: string | null | undefined): string {
 // The sample email uses a fixed placeholder (RFC 6761 .test TLD) so the Go backend
 // can always find-and-replace it with the actual recipient when sending test emails,
 // even if the project's domain has changed since the template was scaffolded.
-const SAMPLE_PROJECT_URL = "https://the-rent-exchange.lovable.app"
+const SAMPLE_PROJECT_URL = "https://rentli.ro"
 const SAMPLE_EMAIL = "user@example.test"
 const SAMPLE_DATA: Record<string, object> = {
   signup: {
@@ -61,6 +61,7 @@ const SAMPLE_DATA: Record<string, object> = {
     siteUrl: SAMPLE_PROJECT_URL,
     recipient: SAMPLE_EMAIL,
     confirmationUrl: SAMPLE_PROJECT_URL,
+    token: '123456',
   },
   magiclink: {
     siteName: SITE_NAME,
