@@ -43,7 +43,7 @@ serve(async (req) => {
     const user = authData.user;
 
     // Parse body
-    const { rental_id, message_to_owner } = await req.json();
+    const { rental_id, message_to_owner, platform } = await req.json();
     if (!rental_id) {
       return new Response(JSON.stringify({ error: "rental_id is required" }), {
         status: 400,
@@ -132,6 +132,15 @@ serve(async (req) => {
         ? message_to_owner.trim().slice(0, 480)
         : "";
 
+    const isMobile = platform === "mobile";
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const successUrl = isMobile
+      ? `${supabaseUrl}/functions/v1/stripe-return?session_id={CHECKOUT_SESSION_ID}`
+      : `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = isMobile
+      ? `${supabaseUrl}/functions/v1/stripe-return?status=cancel`
+      : (productSlug ? `${origin}/produs/${productSlug}` : `${origin}/`);
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email!,
@@ -154,8 +163,8 @@ serve(async (req) => {
         ? { payment_intent_data: { capture_method: "manual", metadata: { rental_id: rental.id, renter_id: user.id } } }
         : { payment_intent_data: { metadata: { rental_id: rental.id, renter_id: user.id } } }
       ),
-      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: productSlug ? `${origin}/produs/${productSlug}` : `${origin}/`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       metadata: {
         rental_id: rental.id,
         renter_id: user.id,
