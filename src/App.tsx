@@ -17,7 +17,12 @@ const RentalPopupManager = lazy(() => import("./components/rentals/RentalPopupMa
 
 const ConditionalWidgets = () => {
   const { pathname } = useLocation();
-  if (pathname.startsWith("/auth") || pathname.startsWith("/reset-password") || pathname.startsWith("/onboarding")) return null;
+  if (
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/reset-password") ||
+    pathname.startsWith("/onboarding") ||
+    pathname.startsWith("/checkout/mobile-return")
+  ) return null;
   return (
     <>
       <SupportChatWidget />
@@ -70,6 +75,7 @@ const ListingsPage = lazy(() => import("./pages/ListingsPage"));
 const ActivityLogPage = lazy(() => import("./pages/ActivityLogPage"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const CheckoutCancelled = lazy(() => import("./pages/CheckoutCancelled"));
+const MobileCheckoutReturn = lazy(() => import("./pages/MobileCheckoutReturn"));
 
 // Legal pages
 const TermsAndConditions = lazy(() => import("./pages/legal/TermsAndConditions"));
@@ -136,6 +142,7 @@ const App = () => (
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/checkout/success" element={<CheckoutSuccess />} />
                 <Route path="/checkout/cancelled" element={<CheckoutCancelled />} />
+                <Route path="/checkout/mobile-return" element={<MobileCheckoutReturn />} />
                 <Route path="/cauta" element={<Search />} />
                 <Route path="/adauga-anunt" element={<Navigate to="/owner/new-product" replace />} />
                 <Route path="/utilizator/:id" element={<UserProfile />} />
