@@ -132,6 +132,15 @@ serve(async (req) => {
         ? message_to_owner.trim().slice(0, 480)
         : "";
 
+    const isMobile = platform === "mobile";
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const successUrl = isMobile
+      ? `${supabaseUrl}/functions/v1/stripe-return?session_id={CHECKOUT_SESSION_ID}`
+      : `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = isMobile
+      ? `${supabaseUrl}/functions/v1/stripe-return?status=cancel`
+      : (productSlug ? `${origin}/produs/${productSlug}` : `${origin}/`);
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email!,
