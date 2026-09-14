@@ -205,6 +205,16 @@ export const sectionsRo = [
 
 export const sectionsEn = [
   {
+    id: "operator",
+    title: "Data controller",
+    content: (
+      <div className="space-y-3">
+        <p>The Rentli platform is operated by Rentli SRL, headquartered in Romania. As a data controller, we collect and process personal data in compliance with Regulation (EU) 2016/679 (GDPR) and applicable Romanian law.</p>
+        <p>For any questions about data processing, please contact us via the <Link to="/centru-asistenta" className="text-primary hover:underline">support page</Link>. We respond within 30 days.</p>
+      </div>
+    ),
+  },
+  {
     id: "informatii-colectate",
     title: "What information we collect",
     content: (
@@ -212,11 +222,11 @@ export const sectionsEn = [
         <p>We collect and process the following categories of personal data:</p>
         <ul className="list-disc pl-5 space-y-2">
           <li><strong>Identification data:</strong> name, email address, phone number and other information needed to identify you and grant access to the services.</li>
-          <li><strong>Official documents:</strong> for identity verification, we may request photos of an identity document (ID card, passport or driving license).</li>
-          <li><strong>Information about rented items:</strong> description, technical condition, photos and other relevant details of items listed on the platform.</li>
-          <li><strong>Payment data:</strong> information about your chosen payment method, required for processing transactions. We also keep a payment history for managing refunds.</li>
-          <li><strong>Technical data:</strong> IP address, device type, browser information, operating system and platform activity (pages visited, duration).</li>
-          <li><strong>Other data:</strong> information voluntarily provided, such as preferences or feedback.</li>
+          <li><strong>Information about rented items:</strong> description, technical condition, photos, approximate location and other relevant details of items listed on the platform.</li>
+          <li><strong>Payment data:</strong> information about your chosen payment method, required for processing transactions. We also keep a payment history for managing refunds and disputes.</li>
+          <li><strong>Technical data:</strong> IP address, device type, browser information, operating system, unique device identifiers and platform activity (pages visited, duration, interactions).</li>
+          <li><strong>Communication data:</strong> messages, support tickets and other interactions you have with us or with other users through the platform.</li>
+          <li><strong>Other data:</strong> information voluntarily provided, such as preferences, reviews or feedback.</li>
         </ul>
         <p className="text-sm">Our platform is not intended for minors under 16. If we identify data collected from a minor without parental consent, we will delete it immediately.</p>
       </div>
@@ -228,9 +238,9 @@ export const sectionsEn = [
     content: (
       <div className="space-y-3">
         <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Directly from you:</strong> through registration, booking or contact forms, and by uploading the requested documents.</li>
-          <li><strong>Automatically:</strong> through technologies such as cookies and server logs, which help us improve the platform experience.</li>
-          <li><strong>From third parties:</strong> occasionally, we receive information from partners (identity verification services, payment processors) or from authorities, as required by law.</li>
+          <li><strong>Directly from you:</strong> through registration, listing, booking, payment or contact forms, and by uploading photos and requested documents.</li>
+          <li><strong>Automatically:</strong> through technologies such as cookies, tracking pixels, server logs and geolocation APIs, which help us improve the platform experience, ensure security and measure performance.</li>
+          <li><strong>From third parties:</strong> occasionally, we receive information from partners (payment processors, authentication services such as Google or Apple) or from authorities, as required by law.</li>
         </ul>
       </div>
     ),
@@ -241,10 +251,13 @@ export const sectionsEn = [
     content: (
       <div className="space-y-3">
         <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Service delivery:</strong> processing rentals, identity verification, payment management.</li>
-          <li><strong>Platform improvement:</strong> analyzing usage to optimize features and personalize the experience.</li>
-          <li><strong>Communications and marketing:</strong> with your consent, we may send personalized offers and notifications about platform updates.</li>
-          <li><strong>Legal compliance:</strong> we process data to comply with legal obligations (document archiving, reporting to authorities).</li>
+          <li><strong>Service delivery:</strong> account creation and management, listing publication, rental processing, payment management and issuing fiscal documents.</li>
+          <li><strong>Identity verification:</strong> confirming user identities for transaction safety and fraud prevention.</li>
+          <li><strong>Platform improvement:</strong> analyzing usage to optimize features, fix errors and personalize the experience.</li>
+          <li><strong>Communications and marketing:</strong> with your explicit consent, we may send personalized offers, newsletters and notifications about platform updates.</li>
+          <li><strong>Customer support:</strong> answering questions, handling support tickets, managing disputes and improving the service.</li>
+          <li><strong>Legal compliance:</strong> we process data to comply with legal obligations (invoicing, document archiving, reporting to authorities).</li>
+          <li><strong>Security and fraud prevention:</strong> detecting suspicious activity, protecting accounts and users' assets.</li>
         </ul>
       </div>
     ),
@@ -255,10 +268,10 @@ export const sectionsEn = [
     content: (
       <div className="space-y-3">
         <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Contract performance:</strong> processing required to provide the requested services.</li>
-          <li><strong>Consent:</strong> for marketing or secondary purposes, we ask for your explicit consent.</li>
-          <li><strong>Legal obligations:</strong> identity verification, reporting to authorities.</li>
-          <li><strong>Legitimate interests:</strong> service improvement, fraud prevention, ensuring platform security.</li>
+          <li><strong>Contract performance:</strong> processing required to provide the requested services (account, listings, rentals, payments).</li>
+          <li><strong>Consent:</strong> for marketing, non-essential cookies or other secondary purposes, we ask for your explicit consent, which you may withdraw at any time.</li>
+          <li><strong>Legal obligations:</strong> invoicing, document archiving, reporting to authorities, identity verification.</li>
+          <li><strong>Legitimate interests:</strong> service improvement, fraud prevention, ensuring platform security, protecting our legal rights.</li>
         </ul>
       </div>
     ),
@@ -268,26 +281,65 @@ export const sectionsEn = [
     title: "Sharing information",
     content: (
       <div className="space-y-3">
-        <p>We do not sell your personal data. Information is shared only in limited situations:</p>
+        <p>We do not sell your personal data. Information is shared only in limited and necessary situations:</p>
         <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Service providers:</strong> payment processors, IT services (hosting, maintenance) — contractually required to process data securely.</li>
-          <li><strong>Competent authorities:</strong> when required by law (investigations, court orders).</li>
+          <li><strong>With other platform users:</strong> only the data strictly necessary to perform a rental (e.g. name, phone number, approximate location), in accordance with the <Link to="/termeni-si-conditii" className="text-primary hover:underline">Terms and Conditions</Link>.</li>
+          <li><strong>Service providers:</strong> payment processors (Stripe), IT and cloud services (hosting, database, email), analytics and support services — all contractually required to process data securely and only for agreed purposes.</li>
+          <li><strong>Competent authorities:</strong> when required by law (investigations, court orders, protecting our legal rights).</li>
         </ul>
       </div>
     ),
   },
   {
-    id: "securitate",
-    title: "Security and data storage",
+    id: "transferuri",
+    title: "International data transfers",
     content: (
       <div className="space-y-3">
-        <p>We implement technical and organizational measures to protect personal information:</p>
+        <p>In general, data is stored and processed within the European Union. Some service providers (for hosting, email, payments or analytics) may be located or have infrastructure outside the EU/EEA.</p>
+        <p>In such cases, we ensure transfers are protected by appropriate safeguards, such as Standard Contractual Clauses approved by the European Commission or recognized certifications (e.g. Privacy Shield / Data Privacy Framework for US providers), so that your data benefits from a level of protection equivalent to that in the EU.</p>
+      </div>
+    ),
+  },
+  {
+    id: "stocare",
+    title: "Data retention",
+    content: (
+      <div className="space-y-3">
+        <p>We keep personal data only for as long as necessary to fulfill the purposes for which it was collected, except where the law requires a longer period:</p>
         <ul className="list-disc pl-5 space-y-1">
-          <li>Encryption of sensitive data to prevent unauthorized access</li>
-          <li>Restricted access — only authorized personnel can access the data</li>
-          <li>Regular security audits</li>
+          <li>Account data: until account deletion or 3 years of inactivity, after which it is anonymized or deleted.</li>
+          <li>Payment and invoicing data: according to tax legislation (10 years as a rule).</li>
+          <li>Listings and rental data: for the lifetime of the account and afterwards as necessary to resolve disputes or meet legal obligations.</li>
+          <li>Technical and browsing data: up to 12 months, depending on analysis and security purposes.</li>
         </ul>
-        <p>We retain data only for as long as necessary to fulfill the described purposes, except where law requires a longer period. After that, data is deleted or anonymized.</p>
+        <p>After the relevant periods expire, data is securely deleted or anonymized.</p>
+      </div>
+    ),
+  },
+  {
+    id: "cookie-uri",
+    title: "Cookies and tracking technologies",
+    content: (
+      <div className="space-y-3">
+        <p>We use cookies and similar technologies to operate the platform, analyze traffic, personalize content and advertising. Full details on cookie types, storage duration and how to manage preferences are available in our <Link to="/politica-cookies" className="text-primary hover:underline">Cookie Policy</Link>.</p>
+        <p>Essential cookies cannot be disabled because they are necessary for the basic functioning of the site. For other categories, you can update your preferences at any time through the cookie banner or your browser settings.</p>
+      </div>
+    ),
+  },
+  {
+    id: "securitate",
+    title: "Data security",
+    content: (
+      <div className="space-y-3">
+        <p>We implement appropriate technical and organizational measures to protect personal data against unauthorized access, alteration, disclosure or destruction:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>Encrypted connections via HTTPS and encryption of sensitive data at rest</li>
+          <li>Multi-factor authentication and strict access controls for authorized personnel</li>
+          <li>Regular security audits, vulnerability testing and continuous monitoring</li>
+          <li>Periodic staff training on data protection</li>
+          <li>Confidentiality agreements with all providers and partners processing data on our behalf</li>
+        </ul>
+        <p>Although we make every reasonable effort to secure data, no electronic transmission or storage method is 100% secure.</p>
       </div>
     ),
   },
@@ -296,31 +348,47 @@ export const sectionsEn = [
     title: "Your rights (GDPR)",
     content: (
       <div className="space-y-3">
-        <p>Under the General Data Protection Regulation, you have:</p>
+        <p>Under the General Data Protection Regulation, you have the following rights:</p>
         <ul className="list-disc pl-5 space-y-1">
-          <li><strong>Right of access</strong> — you may request a copy of your personal data</li>
-          <li><strong>Right to rectification</strong> — you may request correction of inaccurate information</li>
-          <li><strong>Right to erasure</strong> — you may request data deletion (under certain conditions)</li>
-          <li><strong>Right to portability</strong> — you may receive the data in a structured format</li>
-          <li><strong>Right to object</strong> — you may refuse processing for marketing purposes</li>
+          <li><strong>Right of access</strong> — you may request a copy of the personal data we hold</li>
+          <li><strong>Right to rectification</strong> — you may request correction of inaccurate or incomplete information</li>
+          <li><strong>Right to erasure ("right to be forgotten")</strong> — you may request deletion of data, to the extent there is no legal obligation to retain it</li>
+          <li><strong>Right to portability</strong> — you may receive the data in a structured, commonly used and machine-readable format, or request transfer to another controller</li>
+          <li><strong>Right to object</strong> — you may refuse processing for direct marketing or based on legitimate interests</li>
+          <li><strong>Right to restriction of processing</strong> — you may request limitation on the use of your data in certain situations</li>
+          <li><strong>Right to withdraw consent</strong> — for processing based on consent, withdrawal does not affect the lawfulness of prior processing</li>
         </ul>
-        <p>To exercise these rights, contact us via the <Link to="/centru-asistenta" className="text-primary hover:underline">support page</Link>. We respond within 30 days at most.</p>
-        <p className="text-sm">If you believe data processing infringes the GDPR, you may file a complaint with the National Supervisory Authority for Personal Data Processing (ANSPDCP).</p>
+        <p>To exercise these rights, contact us via the <Link to="/centru-asistenta" className="text-primary hover:underline">support page</Link>. We respond within 30 days. We may verify your identity before responding to the request.</p>
+        <p className="text-sm">If you believe data processing infringes the GDPR, you have the right to file a complaint with the National Supervisory Authority for Personal Data Processing (ANSPDCP) or with a supervisory authority in the EU.</p>
       </div>
+    ),
+  },
+  {
+    id: "profilare",
+    title: "Profiling and automated decision-making",
+    content: (
+      <p>We do not make decisions with legal or similarly significant effects on you solely by automated means. We may use automated analysis for product recommendations, fraud detection or security improvement, but these do not lead to individual decisions without human involvement.</p>
     ),
   },
   {
     id: "bresa-securitate",
     title: "Notifications in case of a security breach",
     content: (
-      <p>In the event of a security breach affecting your data, we will inform you by email within 72 hours, in line with GDPR requirements. We will also notify the competent authorities (ANSPDCP).</p>
+      <p>In the event of a security breach affecting your personal data, we will inform you by email within 72 hours of discovering the incident, in line with GDPR requirements. We will also notify the competent authorities (ANSPDCP) when required.</p>
     ),
   },
   {
     id: "parteneri",
     title: "Partners",
     content: (
-      <p>Our partners (item owners) are responsible for the confidentiality of data received through the platform. We recommend reviewing partners' privacy policies to understand how they process data.</p>
+      <p>Our partners (item owners) are responsible for the confidentiality of data received through the platform in the context of a rental. We recommend reviewing their privacy policies to understand how they process data.</p>
+    ),
+  },
+  {
+    id: "legea-aplicabila",
+    title: "Applicable law and jurisdiction",
+    content: (
+      <p>This policy is governed by Romanian law and applicable European Union data protection legislation. Any dispute arising from or related to this policy will be resolved by the competent courts in Romania.</p>
     ),
   },
   {
@@ -328,7 +396,7 @@ export const sectionsEn = [
     title: "Policy updates",
     content: (
       <div className="space-y-3">
-        <p>We reserve the right to update this policy. Changes will be communicated through the platform or by email. We recommend checking this page periodically.</p>
+        <p>We reserve the right to update this policy to reflect legislative or operational changes. Changes will be communicated through the platform or by email, and the updated version will be available on this page with the date of the last update.</p>
         <p>For privacy-related questions, contact us via the <Link to="/centru-asistenta" className="text-primary hover:underline">support page</Link>.</p>
       </div>
     ),
