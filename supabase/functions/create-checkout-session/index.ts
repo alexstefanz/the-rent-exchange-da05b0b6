@@ -163,8 +163,8 @@ serve(async (req) => {
         ? { payment_intent_data: { capture_method: "manual", metadata: { rental_id: rental.id, renter_id: user.id } } }
         : { payment_intent_data: { metadata: { rental_id: rental.id, renter_id: user.id } } }
       ),
-      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: productSlug ? `${origin}/produs/${productSlug}` : `${origin}/`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
       metadata: {
         rental_id: rental.id,
         renter_id: user.id,
