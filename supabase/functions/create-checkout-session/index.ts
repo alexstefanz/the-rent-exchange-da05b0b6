@@ -43,7 +43,7 @@ serve(async (req) => {
     const user = authData.user;
 
     // Parse body
-    const { rental_id, message_to_owner } = await req.json();
+    const { rental_id, message_to_owner, platform } = await req.json();
     if (!rental_id) {
       return new Response(JSON.stringify({ error: "rental_id is required" }), {
         status: 400,
