@@ -137,6 +137,7 @@ const App = () => (
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/checkout/success" element={<CheckoutSuccess />} />
                 <Route path="/checkout/cancelled" element={<CheckoutCancelled />} />
+                <Route path="/checkout/mobile-return" element={<MobileCheckoutReturn />} />
                 <Route path="/cauta" element={<Search />} />
                 <Route path="/adauga-anunt" element={<Navigate to="/owner/new-product" replace />} />
                 <Route path="/utilizator/:id" element={<UserProfile />} />
