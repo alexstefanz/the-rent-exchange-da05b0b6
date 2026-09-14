@@ -416,7 +416,7 @@ const PrivacyPolicy = () => {
       subtitle={isEn
         ? "This policy explains how Rentli collects, uses, stores and protects your personal data when you use our rental platform."
         : "Această politică explică modul în care Rentli colectează, utilizează, stochează și protejează datele dumneavoastră personale atunci când folosiți platforma noastră de închirieri."}
-      lastUpdated="28.02.2026"
+      lastUpdated="14.09.2026"
       sections={isEn ? sectionsEn : sectionsRo}
     />
   );
