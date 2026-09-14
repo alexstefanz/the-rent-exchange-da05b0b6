@@ -70,6 +70,7 @@ const ListingsPage = lazy(() => import("./pages/ListingsPage"));
 const ActivityLogPage = lazy(() => import("./pages/ActivityLogPage"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const CheckoutCancelled = lazy(() => import("./pages/CheckoutCancelled"));
+const MobileCheckoutReturn = lazy(() => import("./pages/MobileCheckoutReturn"));
 
 // Legal pages
 const TermsAndConditions = lazy(() => import("./pages/legal/TermsAndConditions"));
