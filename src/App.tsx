@@ -17,7 +17,12 @@ const RentalPopupManager = lazy(() => import("./components/rentals/RentalPopupMa
 
 const ConditionalWidgets = () => {
   const { pathname } = useLocation();
-  if (pathname.startsWith("/auth") || pathname.startsWith("/reset-password") || pathname.startsWith("/onboarding")) return null;
+  if (
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/reset-password") ||
+    pathname.startsWith("/onboarding") ||
+    pathname.startsWith("/checkout/mobile-return")
+  ) return null;
   return (
     <>
       <SupportChatWidget />
