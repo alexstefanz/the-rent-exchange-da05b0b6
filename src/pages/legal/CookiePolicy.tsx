@@ -166,7 +166,7 @@ const sections = [
     content: (
       <div className="space-y-3">
         <p>Pentru modificarea opțiunilor dvs., vă rugăm să accesați link-ul permanent <strong>„Setări cookie-uri"</strong>, disponibil în subsolul fiecărei pagini a website-ului. Prin intermediul acestuia vă puteți acorda, <u>modifica sau retrage consimțământul în orice moment, la fel de simplu cum l-ați acordat.</u></p>
-        <p><u>Pentru orice întrebări privind prezenta politică sau modul în care utilizăm modulele cookie, ne puteți contacta la adresa de e-mail <a href="mailto:gdpr@rentli.ro" className="text-primary underline hover:no-underline">gdpr@rentli.ro</a>. Serviciile de Responsabil cu Protecția Datelor sunt externalizate și oferite de GDPRComplet.”</u></p>
+        <p><u>Pentru orice întrebări privind prezenta politică sau modul în care utilizăm modulele cookie, ne puteți contacta la adresa de e-mail <a href="mailto:gdpr@rentli.ro" className="text-primary underline hover:no-underline"><strong>gdpr@rentli.ro</strong></a>. Serviciile de Responsabil cu Protecția Datelor sunt externalizate și oferite de GDPRComplet, tel. 0365.401.269.</u></p>
       </div>
     ),
   },
