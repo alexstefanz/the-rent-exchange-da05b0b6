@@ -10,8 +10,15 @@
       data-blockingmode="auto"
       data-culture="RO"
       type="text/javascript"
-      crossorigin="anonymous"
     ></script>
+    <script>
+      // Suppress cross-origin script errors that carry no actionable stack trace.
+      window.addEventListener('error', function (event) {
+        if (event && event.error === null && (event.message === 'Script error.' || event.message === 'Script error')) {
+          event.preventDefault();
+        }
+      });
+    </script>
     <script>
       // Repară diacriticele afișate greșit ("?") în textele implicite Cookiebot (RO)
       (function () {
@@ -102,7 +109,7 @@
     </script>
 
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5QNFPSKBSM" data-cookieconsent="ignore" crossorigin="anonymous"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5QNFPSKBSM" data-cookieconsent="ignore"></script>
     <script data-cookieconsent="ignore">
       gtag('config', 'G-5QNFPSKBSM', { send_page_view: false });
     </script>
