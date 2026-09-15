@@ -2,22 +2,22 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- Cookiebot CMP (must be the first script on the page) -->
-    <script
-      id="Cookiebot"
-      src="https://consent.cookiebot.com/uc.js"
-      data-cbid="22dfb7ae-31ca-4a65-a044-86e4b671a477"
-      data-blockingmode="auto"
-      data-culture="RO"
-      type="text/javascript"
-    ></script>
+    <!-- Cookiebot CMP — load only on registered domains to avoid cross-origin script errors in previews -->
     <script>
-      // Suppress cross-origin script errors that carry no actionable stack trace.
-      window.addEventListener('error', function (event) {
-        if (event && event.error === null && (event.message === 'Script error.' || event.message === 'Script error')) {
-          event.preventDefault();
-        }
-      });
+      (function () {
+        var hostname = window.location.hostname;
+        var allowed = /^(www\.)?rentli\.ro$/.test(hostname) ||
+                      /the-rent-exchange\.lovable\.app$/.test(hostname);
+        if (!allowed) return;
+        var s = document.createElement('script');
+        s.id = 'Cookiebot';
+        s.src = 'https://consent.cookiebot.com/uc.js';
+        s.setAttribute('data-cbid', '22dfb7ae-31ca-4a65-a044-86e4b671a477');
+        s.setAttribute('data-blockingmode', 'auto');
+        s.setAttribute('data-culture', 'RO');
+        s.type = 'text/javascript';
+        document.currentScript.parentNode.insertBefore(s, document.currentScript);
+      })();
     </script>
     <script>
       // Repară diacriticele afișate greșit ("?") în textele implicite Cookiebot (RO)
