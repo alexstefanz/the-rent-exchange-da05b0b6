@@ -48,10 +48,10 @@ const sections = [
     title: "Introducere",
     content: (
       <div className="space-y-3">
-        <p>Prezenta politică se aplică website-ului https://rentli.ro (în continuare „website-ul” sau „Platforma”), operat de RENTLI 1 S.R.L., cu sediul social în sat Valea Lupului, comuna Valea Lupului, str. Aleea cu Nuci nr. 42, județul Iași, România, CUI 53914386, înregistrată la Registrul Comerțului sub nr. J2026009653007 (în continuare „Societatea” sau „Noi”).</p>
+        <p>Prezenta politică se aplică website-ului https://rentli.ro (în continuare „website-ul" sau „Platforma"), operat de RENTLI 1 S.R.L., cu sediul social în sat Valea Lupului, comuna Valea Lupului, str. Aleea cu Nuci nr. 42, județul Iași, România, CUI 53914386, înregistrată la Registrul Comerțului sub nr. J2026009653007 (în continuare „Societatea" sau „Noi").</p>
         <p><u>Pentru informații complete privind prelucrarea datelor cu caracter personal, vă rugăm să consultați</u> <Link to="/politica-confidentialitate" className="text-primary underline hover:no-underline"><u>Politica de confidențialitate.</u></Link></p>
         <p>Acest website folosește atât cookie-uri proprii, cât și de la terți, pentru a furniza vizitatorilor o experiență cât mai bună de navigare și servicii adaptate nevoilor și interesului fiecăruia dintre aceștia.</p>
-        <p>În conformitate cu Regulamentul (UE) 2016/679 al Parlamentului European și al Consiliului din 27 aprilie 2016 privind protecția persoanelor fizice în ceea ce privește prelucrarea datelor cu caracter personal și privind libera circulație a acestor date, și de abrogare a Directivei nr. 95/46/CE (,,Regulamentul general privind protecția datelor’’) și cu legislația națională relevantă în materia protecției datelor, tuturor vizitatorilor website-ului li se cere consimțământul înaintea transmiterii de cookie-uri în computerele acestora.</p>
+        <p>În conformitate cu Regulamentul (UE) 2016/679 al Parlamentului European și al Consiliului din 27 aprilie 2016 privind protecția persoanelor fizice în ceea ce privește prelucrarea datelor cu caracter personal și privind libera circulație a acestor date, și de abrogare a Directivei nr. 95/46/CE (,,Regulamentul general privind protecția datelor'') și cu legislația națională relevantă în materia protecției datelor, <strong>tuturor vizitatorilor website-ului li se cere consimțământul înaintea transmiterii de cookie-uri în computerele acestora.</strong></p>
         <p>Când vizitați pagina noastră de Internet, nu sunt transmise date cu caracter personal către serverul nostru, decât dacă ne trimiteți în mod activ astfel de date. Singurele excepții sunt cookie-urile obligatorii din punct de vedere tehnic, care sunt esențiale pentru funcționarea paginii noastre de Internet.</p>
         <p><u>Modulele cookie și tehnologiile similare care nu sunt strict necesare funcționării website-ului nu se instalează și nu se activează înainte de obținerea consimțământului dvs. Până în momentul în care vă exprimați opțiunea prin bannerul de consimțământ, acestea rămân blocate.</u></p>
         <p><u>Conținutul furnizat de terți și integrat în website (de exemplu hărți, materiale video încorporate, module de rețele sociale, instrumente de analiză) este dezactivat în mod implicit, astfel încât să nu se transmită date către acești terți în lipsa acordului dvs.</u></p>
@@ -65,7 +65,7 @@ const sections = [
     content: (
       <div className="space-y-3">
         <p>Cookie-ul este un fișier text de mici dimensiuni pe care un website îl salvează în calculatorul sau dispozitivul dvs. mobil atunci când îl vizitați. Datorită cookie-urilor, website-ul reține, pentru o perioadă de timp, acțiunile și preferințele dvs. (login, limbă, dimensiunea caracterelor și alte preferințe de afișare). Astfel, nu mai trebuie să le reintroduceți ori de câte ori reveniți la website sau navigați de pe o pagină pe alta.</p>
-        <p>Cookie-urile pot conține și date cu caracter personal, precum adresa dvs. IP. Prin urmare, stocăm cookie-uri care nu sunt strict necesare numai dacă ați permis în mod explicit acest lucru prin <u>bannerul de consimțământ. Vă puteți retrage consimțământul în orice moment, la fel de simplu cum l-ați acordat, prin accesarea link-ului permanent „Setări cookie-uri” disponibil în subsolul fiecărei pagini a website-ului. Retragerea consimțământului nu afectează legalitatea prelucrării efectuate anterior retragerii.</u></p>
+        <p>Cookie-urile pot conține și date cu caracter personal, precum adresa dvs. IP. Prin urmare, stocăm cookie-uri care nu sunt strict necesare numai dacă ați permis în mod explicit acest lucru prin <u>bannerul de consimțământ. Vă puteți retrage consimțământul în orice moment, la fel de simplu cum l-ați acordat, prin accesarea link-ului permanent „Setări cookie-uri" disponibil în subsolul fiecărei pagini a website-ului. Retragerea consimțământului nu afectează legalitatea prelucrării efectuate anterior retragerii.</u></p>
         <p>Excepție fac cookie-urile care sunt esențiale din punct de vedere tehnic pentru funcționarea paginii noastre de Internet. Fără acestea nu puteți vizita sau naviga pe pagina noastră de Internet. Prin urmare, aceste cookie-uri sunt activate în general din oficiu.</p>
         <p>De asemenea, aveți posibilitatea de a dezactiva, în general, cookie-urile în browser-ul dvs. în orice moment. Acest lucru împiedică stocarea cookie-urilor pe dispozitivul dvs. În acest sens, atragem atenția că dezactivarea generală a cookie-urilor poate duce la disfuncționalități privind utilizarea paginii noastre de Internet.</p>
       </div>
@@ -83,7 +83,7 @@ const sections = [
           <li><strong>Cookie-urile de marketing:</strong> sunt folosite pentru a urmări vizitatorii pe website-urile lor de navigare. Scopul este de a oferi reclame relevante și captivante pentru fiecare vizitator.</li>
         </ul>
         <p>Mai există și categoria de Cookie-uri neclasificate, care sunt în curs de clasificare, respectiv de încadrare în una dintre cele 3 categorii principale.</p>
-        <p><u>Precizăm că regulile privind consimțământul se aplică nu doar cookie-urilor propriu-zise, ci oricărei operațiuni de stocare sau de accesare a informațiilor pe echipamentul dvs. terminal – inclusiv tehnologiilor de tip localStorage, sessionStorage, pixeli de urmărire, SDK-uri sau amprentare digitală („fingerprinting”) – potrivit art. 5 alin. (3) din Directiva 2002/58/CE, transpus prin art. 4 alin. (5) din Legea nr. 506/2004, astfel cum a fost interpretat prin Ghidul 2/2023 al Comitetului European pentru Protecția Datelor.</u></p>
+        <p><u>Precizăm că regulile privind consimțământul se aplică nu doar cookie-urilor propriu-zise, ci oricărei operațiuni de stocare sau de accesare a informațiilor pe echipamentul dvs. terminal – inclusiv tehnologiilor de tip localStorage, sessionStorage, pixeli de urmărire, SDK-uri sau amprentare digitală („fingerprinting") – potrivit art. 5 alin. (3) din Directiva 2002/58/CE, transpus prin art. 4 alin. (5) din Legea nr. 506/2004, astfel cum a fost interpretat prin Ghidul 2/2023 al Comitetului European pentru Protecția Datelor.</u></p>
         <p>Domeniul rentli.ro folosește module cookie și tehnologii similare. Categoriile efectiv utilizate și lista completă a acestora sunt cele indicate în tabelul de mai jos, generat pe baza raportului de scanare a website-ului.</p>
       </div>
     ),
@@ -93,9 +93,9 @@ const sections = [
     title: "Temeiurile juridice sunt următoarele:",
     content: (
       <div className="space-y-3">
-        <p>– Cookie-urile strict necesare sunt exceptate de la obligația de a obține consimțământul, în temeiul art. 5 alin. (3) teza a II-a din Directiva 2002/58/CE, transpus prin art. 4 alin. (5) din Legea nr. 506/2004, întrucât sunt indispensabile furnizării serviciului solicitat în mod expres de dvs. Prelucrarea datelor cu caracter personal rezultate se întemeiază pe art. 6 alin. (1) lit. f) din R.G.P.D.</p>
-        <p>– Toate celelalte module cookie (statistice, de preferințe, de marketing) se instalează exclusiv în temeiul consimțământului dvs., potrivit art. 5 alin. (3) din Directiva 2002/58/CE și art. 6 alin. (1) lit. a) din R.G.P.D.</p>
-        <p><u>Consimțământul se acordă prin acțiune afirmativă neechivocă. Bannerul de consimțământ vă permite să acceptați, să respingeți sau să selectați în mod granular categoriile de cookie-uri, opțiunea de respingere fiind disponibilă la același nivel vizual cu cea de acceptare. Continuarea navigării, derularea paginii sau închiderea bannerului nu constituie consimțământ valabil. Dovada consimțământului dvs. este păstrată timp de 6 luni, după care vi se va solicita din nou opțiunea.</u></p>
+        <p>– <strong>Cookie-urile strict necesare sunt exceptate de la obligația de a obține consimțământul, în temeiul art. 5 alin. (3) teza a II-a din Directiva 2002/58/CE, transpus prin art. 4 alin. (5) din Legea</strong> <u>nr. 506/2004, întrucât sunt indispensabile furnizării serviciului solicitat în mod expres de dvs.</u> <u>Prelucrarea datelor cu caracter personal rezultate se întemeiază pe art. 6 alin. (1) lit. f) din R.G.P.D.</u></p>
+        <p>– <u>Toate celelalte module cookie (statistice, de preferințe, de marketing) se instalează exclusiv în</u> <u>temeiul consimțământului dvs., potrivit art. 5 alin. (3) din Directiva 2002/58/CE și art. 6 alin. (1)</u> <u>lit. a) din R.G.P.D.</u></p>
+        <p><u>Consimțământul se acordă prin acțiune afirmativă neechivocă. Bannerul de consimțământ vă permite să acceptați, să respingeți sau să selectați în mod granular categoriile de cookie-uri, opțiunea de respingere fiind disponibilă la același nivel vizual cu cea de acceptare. Continuarea navigării, derularea paginii sau închiderea bannerului</u> <strong>nu constituie consimțământ valabil.</strong> <u>Dovada consimțământului dvs. este păstrată timp de 6 luni, după care vi se va solicita din nou</u> <u>opțiunea.</u></p>
       </div>
     ),
   },
@@ -131,13 +131,13 @@ const sections = [
     content: (
       <div className="space-y-5">
         <p>Mai jos puteți consulta în mod specific cookie-urile folosite de <u>rentli.ro</u> după categoria acestora:</p>
-        <p>Rezultatul Raportului de scanare <u>a cookie-urilor</u> („Cookie scan report”) generat de modulul folosit – CookieServe, la data de 2 septembrie 2026:</p>
+        <p>Rezultatul Raportului de scanare <u>a cookie-urilor</u> („Cookie scan report") generat de modulul folosit – CookieServe, la data de 2 septembrie 2026:</p>
         <CookieTable
           heading="Necesare: 2"
           introduction="Cookie-urile necesare ajută la funcționarea unui website, permițând funcțiile de bază precum navigarea pe pagină și accesul la zone securizate ale acestuia. Website-ul nu poate funcționa corect fără aceste cookie-uri. Nu necesită consimțământ."
           rows={[
-            ['__cf_bm', '.rentli.ro', 'HTTP', '1 oră', 'Cookie plasat de Cloudflare, utilizat pentru funcționalitatea Cloudflare Bot Management, respectiv pentru distingerea traficului generat de utilizatori reali de cel generat automat și pentru protejarea website-ului împotriva accesului abuziv.'],
-            ['__cf_bm', 'supabase.co', 'HTTP', '1 oră', 'Cookie plasat de Cloudflare pentru infrastructura furnizorului supabase.co, utilizat pentru funcționalitatea Cloudflare Bot Management, respectiv pentru distingerea traficului generat de utilizatori reali de cel generat automat.'],
+            ['__cf_bm', '.rentli.ro', 'HTTP', '1 oră', 'Cookie plasat deCloudflare, utilizat pentru funcționalitateaCloudflareBot Management, respectiv pentru distingerea traficului generat de utilizatori reali de cel generat automat și pentru protejarea website-ului împotriva accesului abuziv.'],
+            ['__cf_bm', 'supabase.co', 'HTTP', '1 oră', 'Cookie plasat deCloudflarepentru infrastructura furnizorului supabase.co, utilizat pentru funcționalitateaCloudflareBot Management, respectiv pentru distingerea traficului generat de utilizatori reali de cel generat automat.'],
           ]}
         />
         <CookieTable
@@ -154,7 +154,7 @@ const sections = [
             ['__dpl', 'rentli.ro', 'HTTP', '7 zile', 'Cookie neclasificat la data scanării. Scopul și furnizorul urmează a fi confirmate; până la clasificare, acest cookie este tratat ca fiind supus consimțământului.'],
           ]}
         />
-        <p>Precizări privind raportul de scanare:</p>
+        <p><strong>Precizări privind raportul de scanare:</strong></p>
         <p><u>– Scanarea a fost efectuată cu instrumentul CookieServe</u></p>
         <p><u>– Lista se actualizează ori de câte ori se implementează module, scripturi sau tehnologii noi pe website și, în orice caz, prin rescanare periodică.</u></p>
       </div>
@@ -165,8 +165,8 @@ const sections = [
     title: "Modificarea opțiunilor și contact",
     content: (
       <div className="space-y-3">
-        <p>Pentru modificarea opțiunilor dvs., vă rugăm să accesați link-ul permanent „Setări cookie-uri”, disponibil în subsolul fiecărei pagini a website-ului. Prin intermediul acestuia vă puteți acorda, <u>modifica sau retrage consimțământul în orice moment, la fel de simplu cum l-ați acordat.</u></p>
-        <p><u>Pentru orice întrebări privind prezenta politică sau modul în care utilizăm modulele cookie, ne puteți contacta la adresa de e-mail gdpr@rentli.ro. Serviciile de Responsabil cu Protecția Datelor sunt externalizate și oferite de GDPRComplet, tel. 0365.401.269.</u></p>
+        <p>Pentru modificarea opțiunilor dvs., vă rugăm să accesați link-ul permanent <strong>„Setări cookie-uri"</strong>, disponibil în subsolul fiecărei pagini a website-ului. Prin intermediul acestuia vă puteți acorda, <u>modifica sau retrage consimțământul în orice moment, la fel de simplu cum l-ați acordat.</u></p>
+        <p><u>Pentru orice întrebări privind prezenta politică sau modul în care utilizăm modulele cookie, ne puteți contacta la adresa de e-mail <a href="mailto:gdpr@rentli.ro" className="text-primary underline hover:no-underline">gdpr@rentli.ro</a>. Serviciile de Responsabil cu Protecția Datelor sunt externalizate și oferite de GDPRComplet.”</u></p>
       </div>
     ),
   },
