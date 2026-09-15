@@ -30,9 +30,24 @@ const SocialLoginButtons = ({ onSuccess }: SocialLoginButtonsProps) => {
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
   const { t } = useLanguage();
 
+  // On the production domain we go straight to the auth server instead of the
+  // Lovable OAuth broker, so the sign-in flow never leaves the rentli.ro origin.
+  const isProductionDomain = /(^|\.)rentli\.ro$/i.test(window.location.hostname);
+
   const handleSocialLogin = async (provider: "google" | "apple") => {
     setLoadingProvider(provider);
     try {
+      if (isProductionDomain && provider === "google") {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo: "https://rentli.ro/auth/callback" },
+        });
+        if (error) {
+          toast.error(t("Eroare la autentificare. Încearcă din nou.", "Authentication error. Please try again."));
+        }
+        return;
+      }
+
       const result = await lovable.auth.signInWithOAuth(provider, {
         redirect_uri: window.location.origin,
       });
