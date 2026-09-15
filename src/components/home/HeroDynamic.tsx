@@ -79,7 +79,7 @@ const HeroDynamic = () => {
               alt={i === 0 ? slide.alt : ""}
               width={1920}
               height={1088}
-              fetchPriority={i === 0 ? "high" : "low"}
+              {...(i === 0 ? { fetchpriority: "high" } : { fetchpriority: "low" })}
               loading={i === 0 ? "eager" : "lazy"}
               decoding="async"
               className={cn(
