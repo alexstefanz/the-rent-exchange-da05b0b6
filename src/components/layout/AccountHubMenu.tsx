@@ -360,6 +360,11 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
               {t("Vezi cererile și închirierile active ca proprietar.", "View active requests and rentals as owner.")}
             </span>
           </span>
+          {(signals?.activeRentalsAsOwner || 0) > 0 && (
+            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground shrink-0">
+              {signals?.activeRentalsAsOwner}
+            </span>
+          )}
           <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition" />
         </button>
 
@@ -380,6 +385,11 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
                 {t("Găsește produse și rezervă rapid ce ai nevoie.", "Find products and quickly book what you need.")}
               </span>
             </span>
+            {(signals?.activeRentalsAsRenter || 0) > 0 && (
+              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-sky-600 px-1.5 text-xs font-bold text-white shrink-0">
+                {signals?.activeRentalsAsRenter}
+              </span>
+            )}
             <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition" />
           </button>
         )}
