@@ -40,7 +40,7 @@ const SocialLoginButtons = ({ onSuccess }: SocialLoginButtonsProps) => {
       if (isProductionDomain && provider === "google") {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "google",
-          options: { redirectTo: "https://rentli.ro/auth/callback" },
+          options: { redirectTo: "https://rentli.ro/" },
         });
         if (error) {
           toast.error(t("Eroare la autentificare. Încearcă din nou.", "Authentication error. Please try again."));
