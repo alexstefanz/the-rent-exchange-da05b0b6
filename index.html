@@ -12,6 +12,14 @@
       type="text/javascript"
     ></script>
     <script>
+      // Suppress cross-origin script errors that carry no actionable stack trace.
+      window.addEventListener('error', function (event) {
+        if (event && event.error === null && (event.message === 'Script error.' || event.message === 'Script error')) {
+          event.preventDefault();
+        }
+      });
+    </script>
+    <script>
       // Repară diacriticele afișate greșit ("?") în textele implicite Cookiebot (RO)
       (function () {
         var fixes = [
