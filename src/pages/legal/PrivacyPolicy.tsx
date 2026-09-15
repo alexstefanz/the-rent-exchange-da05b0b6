@@ -6,402 +6,157 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 export const sectionsRo = [
   {
     id: "operator",
-    title: "Operatorul de date",
+    title: "1. CINE SUNTEM NOI?",
     content: (
       <div className="space-y-3">
-        <p>Platforma Rentli este operată de Rentli SRL, cu sediul social în România. În calitate de operator de date, colectăm și prelucrăm datele personale în conformitate cu Regulamentul (UE) 2016/679 (GDPR) și legislația română în vigoare.</p>
-        <p>Pentru orice întrebare privind prelucrarea datelor, ne puteți contacta prin <Link to="/centru-asistenta" className="text-primary hover:underline">pagina de suport</Link>. Răspundem în maximum 30 de zile.</p>
-      </div>
-    ),
-  },
-  {
-    id: "informatii-colectate",
-    title: "Ce informații colectăm",
-    content: (
-      <div className="space-y-3">
-        <p>Colectăm și procesăm următoarele categorii de date personale:</p>
+        <p><strong>RENTLI 1 S.R.L.</strong>, în continuare Societatea sau Noi,</p>
+        <p>Datele noastre de contact sunt:</p>
         <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Date de identificare:</strong> numele, adresa de e-mail, numărul de telefon și alte informații necesare pentru a vă identifica și a vă permite accesul la servicii.</li>
-          <li><strong>Informații despre bunurile închiriate:</strong> descrierea, starea tehnică, fotografii, locația aproximativă și alte detalii relevante ale bunurilor publicate pe platformă.</li>
-          <li><strong>Date de plată:</strong> informații despre metoda de plată aleasă, necesare procesării tranzacțiilor. Păstrăm și un istoric al plăților pentru gestionarea rambursărilor și a disputelor.</li>
-          <li><strong>Date tehnice:</strong> adresa IP, tipul dispozitivului, informații despre browser, sistemul de operare, identificatori unici de dispozitiv și activitatea pe platformă (pagini accesate, durată, interacțiuni).</li>
-          <li><strong>Date de comunicare:</strong> mesajele, ticketele de suport și alte interacțiuni pe care le aveți cu noi sau cu ceilalți utilizatori prin intermediul platformei.</li>
-          <li><strong>Alte date:</strong> informații furnizate voluntar, cum ar fi preferințele, recenziile sau feedback-ul oferit.</li>
-        </ul>
-        <p className="text-sm">Platforma noastră nu este destinată minorilor sub 16 ani. Dacă identificăm date colectate de la un minor fără consimțământul părintelui, le vom șterge imediat.</p>
-      </div>
-    ),
-  },
-  {
-    id: "cum-colectam",
-    title: "Cum colectăm informațiile",
-    content: (
-      <div className="space-y-3">
-        <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Direct de la dumneavoastră:</strong> prin completarea formularelor de înregistrare, publicare anunț, rezervare, plată sau contact, precum și prin încărcarea fotografiilor și documentelor solicitate.</li>
-          <li><strong>Automat:</strong> prin tehnologii precum cookie-uri, pixeli de tracking, jurnale de server și API-uri de geolocație, care ne ajută să îmbunătățim experiența pe platformă, să asigurăm securitatea și să măsurăm performanța.</li>
-          <li><strong>De la terți:</strong> ocazional, primim informații de la parteneri (procesatori de plăți, servicii de autentificare precum Google sau Apple) sau de la autorități, conform legii.</li>
+          <li><strong>Adresa sediului:</strong> sat Valea Lupului, comuna Valea Lupului, str. Aleea cu Nuci nr. 42, județul Iași, România</li>
+          <li><strong>Cod unic de înregistrare (CUI):</strong> 53914386</li>
+          <li><strong>Nr. de ordine în Registrul Comerțului:</strong> J2026009653007</li>
+          <li><strong>Website:</strong> <a href="https://rentli.ro" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://rentli.ro</a></li>
+          <li><strong>Adresă de e-mail:</strong> office@rentli.ro, gdpr@rentli.ro</li>
+          <li><strong>Nr. de tel.:</strong> de completat – număr de telefon de contact</li>
         </ul>
       </div>
     ),
   },
   {
-    id: "utilizare",
-    title: "Cum utilizăm informațiile",
+    id: "cum-prelucram",
+    title: "2. CUM PRELUCRĂM DATELE DVS. CU CARACTER PERSONAL?",
     content: (
       <div className="space-y-3">
+        <p>Societatea, în calitatea sa de Operator, prelucrează datele cu caracter personal ale candidaților care aplică pentru posturile disponibile, angajaților, clienților persoane fizice, reprezentanților clienților persoane juridice, partenerilor contractuali și ai colaboratorilor, și datele altor persoane fizice care interacționează cu Societatea și/sau sunt antrenate în relații contractuale cu acesta.</p>
+        <p>Datele cu caracter personal sunt:</p>
         <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Furnizarea serviciilor:</strong> crearea și gestionarea contului, publicarea anunțurilor, procesarea închirierilor, gestionarea plăților și emiterea documentelor fiscale.</li>
-          <li><strong>Verificarea identității:</strong> confirmarea identității utilizatorilor pentru siguranța tranzacțiilor și prevenirea fraudelor.</li>
-          <li><strong>Îmbunătățirea platformei:</strong> analiza modului de utilizare pentru optimizarea funcționalităților, remedierea erorilor și personalizarea experienței.</li>
-          <li><strong>Comunicări și marketing:</strong> cu acordul dumneavoastră explicit, vă putem trimite oferte personalizate, newslettere și notificări despre actualizări ale platformei.</li>
-          <li><strong>Asistență clienți:</strong> răspunderea la întrebări, tickete de suport, gestionarea disputelor și îmbunătățirea serviciului.</li>
-          <li><strong>Conformitate legală:</strong> prelucrăm datele pentru respectarea obligațiilor legale (facturare, arhivare documente, raportări către autorități).</li>
-          <li><strong>Securitate și prevenirea fraudei:</strong> detectarea activităților suspecte, protejarea conturilor și a bunurilor utilizatorilor.</li>
+          <li>prelucrate în mod legal, echitabil și transparent față de persoana vizată;</li>
+          <li>colectate în scopuri determinate, explicite și legitime și nu sunt prelucrate ulterior într-un mod incompatibil cu aceste scopuri;</li>
+          <li>adecvate, relevante și limitate la ceea ce este necesar în raport cu scopurile în care sunt prelucrate;</li>
+          <li>exacte și actualizate în termen;</li>
+          <li>păstrate într-o formă care permite identificarea persoanelor vizate pe o perioadă care nu depășește perioada necesară îndeplinirii scopurilor în care sunt prelucrate datele;</li>
+          <li>prelucrate într-un mod care asigură securitatea adecvată a datelor cu caracter personal, inclusiv protecția împotriva prelucrării neautorizate sau ilegale și împotriva pierderii, a distrugerii sau a deteriorării accidentale, prin luarea de măsuri tehnice sau organizatorice corespunzătoare.</li>
         </ul>
+      </div>
+    ),
+  },
+  {
+    id: "tipuri-date",
+    title: "3. CARE SUNT TIPURILE DE DATE CU CARACTER PERSONAL PRELUCRATE ȘI ÎN CE SCOP SUNT PRELUCRATE ACESTEA?",
+    content: (
+      <div className="space-y-3">
+        <p>În contextul <strong>recrutării de personal</strong>, prelucrăm următoarele tipuri de date cu caracter personal: nume, prenume, adresă, data nașterii, cetățenie, genul, nr. de tel., adresa de e-mail, date privind experiența profesională și/sau socială, educația și formarea profesională, competențe și alte date cu caracter personal care reies din informațiile cuprinse în CV-ul și din scrisoarea de intenție depuse, și după caz, în urma discuțiilor din cadrul interviului de angajare.</p>
+        <p>Pentru <strong>încheierea și executarea</strong> contractelor de <strong>prestări servicii</strong> și de <strong>parteneriat/colaborare</strong>, prelucrăm în principal următoarele tipuri de date cu caracter personal: nume, prenume, serie și număr carte de identitate/pașaport, genul, adresă de domiciliu/reședință, numărul de cont bancar, adresă de e-mail, nr. de tel.</p>
+        <p>În vederea <strong>creării și administrării contului de utilizator</strong> și a <strong>completării formularului de contact</strong> de pe website-ul Societății – <a href="https://rentli.ro" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://rentli.ro</a> (în continuare „website-ul” sau „Platforma”), prelucrăm următoarele tipuri de date cu caracter personal: nume, prenume, adresă de e-mail, număr de telefon, parolă (în formă criptată) și, după caz, alte date lăsate la inițiativa persoanei vizate în câmpul de mesaj.</p>
+        <p>Pentru <strong>verificarea identității</strong> utilizatorilor Platformei, în scopul prevenirii fraudei și al asigurării siguranței tranzacțiilor, putem prelucra: numele și prenumele, data nașterii, seria și numărul actului de identitate, precum și imaginea documentului de identitate prezentat. Codul numeric personal <u>este prelucrat exclusiv atunci când legea o impune și cu respectarea garanțiilor prevăzute de art. 4</u> <u>din Legea nr. 190/2018. Imaginea documentului de identitate este stocată pentru o perioadă strict</u> limitată, iar accesul la aceasta este restricționat personalului anume desemnat.</p>
+        <p>Pentru <strong>intermedierea rezervărilor și procesarea plăților</strong> efectuate prin Platformă, prelucrăm: datele de identificare și de contact ale proprietarului și ale chiriașului, datele privind bunul închiriat, perioada și tariful de închiriere, istoricul rezervărilor, istoricul plăților, al rambursărilor și al eventualelor penalități. Datele complete ale instrumentului de plată (numărul cardului, data expirării, codul de securitate) <strong>nu sunt colectate și nu sunt stocate de Societate</strong>; acestea sunt prelucrate direct de procesatorul de plăți autorizat.</p>
+        <p>Pentru <strong>documentarea stării bunului</strong> la predare și la restituire, utilizatorii pot încărca fotografii ale <u>bunului închiriat. Aceste fotografii sunt destinate exclusiv documentării stării bunului și pot</u> <u>conține, în mod incidental, date cu caracter personal. Utilizatorii au obligația de a nu încărca</u> <u>imagini care să conțină persoane identificabile, numere de înmatriculare, documente sau alte</u> informații personale care nu sunt necesare acestui scop.</p>
+        <p>Pentru <strong>comunicarea dintre utilizatori</strong>, asistența acordată prin canalele de suport și <strong>soluționarea reclamațiilor și a disputelor</strong>, prelucrăm conținutul mesajelor transmise prin Platformă, datele de identificare ale părților implicate, documentele și dovezile transmise, precum și evaluările și recenziile publicate de utilizatori.</p>
+        <p>Pentru <strong>prevenirea fraudei și asigurarea securității Platformei</strong>, preluăm date tehnice și de utilizare (adresa IP, identificatorii dispozitivului, jurnalele de acces și de autentificare, istoricul activității în cont). Aceste prelucrări pot conduce la suspendarea temporară a contului. Nu luăm decizii bazate exclusiv pe prelucrarea automată care să producă efecte juridice sau să vă afecteze în mod similar în mod semnificativ fără a vă asigura dreptul de a obține intervenție umană, de a vă exprima punctul de vedere și de a contesta decizia.</p>
+        <p>Vă atragem atenția că Societatea acționează ca <strong>intermediar</strong> între proprietari și chiriași. Odată confirmată o rezervare, o parte dintre datele dvs. de identificare și de contact sunt comunicate celeilalte părți a contractului de închiriere, în măsura strict necesară executării acestuia. Din acel <u>moment, cealaltă parte prelucrează datele respective în calitate de operator distinct, pe propria</u> răspundere, iar Societatea nu poate controla modul în care aceasta le utilizează.</p>
+        <p>Platforma <strong>nu se adresează minorilor.</strong> Crearea unui cont și încheierea contractelor prin intermediul Platformei sunt permise exclusiv persoanelor care au împlinit vârsta de 18 ani și au capacitate deplină de exercițiu. Dacă luăm cunoștință de faptul că am colectat date ale unei <u>persoane care nu îndeplinește această condiție, vom șterge datele respective fără întârziere.</u></p>
+        <p>Pentru <strong>vizitatorii website-ului</strong> este posibil să colectăm date prin module cookie sau alte tehnologii similare, precum: adresa IP, navigatorul de internet, locația, paginile web accesate pe website-ul nostru, timpul petrecut pe website, rețeaua de internet, dispozitivul utilizat. Pentru mai multe detalii în acest sens, consultați <Link to="/politica-cookies" className="text-primary hover:underline">Politica de cookie-uri.</Link></p>
+        <p>Nu vă utilizăm datele dvs. cu caracter personal pentru a vă transmite <strong>comunicări de tip marketing</strong>, precum <strong>newsletter-uri</strong>, decât dacă vă dați consimțământul în mod expres pentru astfel de comunicări, bifând o căsuță de acord în acest sens. În acest sens, vă prelucrăm doar e-mailul și ne asigurăm că aveți la dispoziție o opțiune simplă de a vă dezabona în orice moment, respectiv de a vă retrage consimțământul cu privire la primirea acestor tipuri de comunicări.</p>
       </div>
     ),
   },
   {
     id: "temeiuri-legale",
-    title: "Temeiurile legale ale prelucrării",
+    title: "4. CARE SUNT TEMEIURILE LEGALE PE CARE SE BAZEAZĂ PRELUCRAREA DATELOR CU CARACTER PERSONAL?",
     content: (
       <div className="space-y-3">
+        <p>Datele dvs. cu caracter personal sunt prelucrate în vederea:</p>
         <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Executarea contractului:</strong> prelucrarea necesară pentru furnizarea serviciilor solicitate (cont, anunțuri, închirieri, plăți).</li>
-          <li><strong>Consimțământ:</strong> pentru activități de marketing, cookie-uri non-esențiale sau alte scopuri secundare, solicităm acordul dumneavoastră explicit, pe care îl puteți retrage oricând.</li>
-          <li><strong>Obligații legale:</strong> facturarea, arhivarea documentelor, raportarea către autorități, verificarea identității.</li>
-          <li><strong>Interese legitime:</strong> îmbunătățirea serviciilor, prevenirea fraudei, asigurarea securității platformei, protejarea drepturilor noastre legale.</li>
+          <li>încheierii și executării diferitelor contracte;</li>
+          <li>pentru îndeplinirea obligațiilor legale care ne revin;</li>
+          <li>în baza consimțământului solicitat și/sau oferit în prealabil (în contextul recrutării de personal, pentru transmiterea comunicărilor de tip marketing etc.);</li>
+          <li>în scopul <strong>intereselor legitime</strong> urmărite de Societate (ex. adoptarea de măsuri de protecție și securitate a angajaților noștri, exercitarea unor drepturi și interese legitime ale Societății în cadrul procedurilor contencioase sau necontencioase etc.).</li>
         </ul>
-      </div>
-    ),
-  },
-  {
-    id: "partajare",
-    title: "Partajarea informațiilor",
-    content: (
-      <div className="space-y-3">
-        <p>Nu comercializăm datele dumneavoastră personale. Informațiile sunt partajate doar în situații limitate și necesare:</p>
+        <p>În concret, temeiurile legale ale prelucrărilor descrise mai sus sunt următoarele:</p>
         <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Cu alți utilizatori ai platformei:</strong> numai datele strict necesare pentru desfășurarea închirierii (ex. nume, număr de telefon, locație aproximativă), conform <Link to="/termeni-si-conditii" className="text-primary hover:underline">Termenilor și condițiilor</Link>.</li>
-          <li><strong>Furnizori de servicii:</strong> procesatori de plăți (Stripe), servicii IT și cloud (hosting, baze de date, e-mail), servicii de analiză și suport — toți obligați contractual să prelucreze datele în siguranță și doar în scopurile convenite.</li>
-          <li><strong>Autorități competente:</strong> când legislația o impune (investigații, ordine judecătorești, protejarea drepturilor noastre legale).</li>
+          <li><strong>art. 6 alin. (1) lit. b) R.G.P.D.</strong> – executarea contractului: crearea și administrarea contului de utilizator, intermedierea rezervărilor, procesarea plăților și a rambursărilor, asistența acordată prin canalele de suport;</li>
+          <li><strong>art. 6 alin. (1) lit. c) R.G.P.D.</strong> – <u>îndeplinirea obligațiilor legale: obligațiile fiscale și contabile,</u> <u>soluționarea reclamațiilor consumatorilor, răspunsul la solicitările autorităților competente;</u></li>
+          <li><strong>art. 6 alin. (1) lit. f) R.G.P.D.</strong> – <u>interesele legitime ale Societății: prevenirea fraudei și a</u> <u>utilizării abuzive a Platformei, verificarea identității utilizatorilor, asigurarea securității</u> <u>sistemelor informatice, documentarea stării bunurilor închiriate, soluționarea disputelor dintre</u> <u>utilizatori, constatarea, exercitarea sau apărarea unui drept în instanță, îmbunătățirea</u> <u>serviciilor. Pentru fiecare dintre aceste prelucrări am realizat o evaluare a echilibrului dintre</u> <u>interesele noastre și drepturile și libertățile dvs., care poate fi pusă la dispoziție la cerere;</u></li>
+          <li><strong>art. 6 alin. (1) lit. a) R.G.P.D.</strong> – <u>consimțământul dvs.: transmiterea comunicărilor de</u> <u>marketing, utilizarea modulelor cookie care nu sunt strict necesare, precum și orice alte</u> <u>prelucrări pentru care vă solicităm în mod expres acordul. Consimțământul poate fi retras în</u> <u>orice moment, fără a afecta legalitatea prelucrării efectuate anterior retragerii.</u></li>
         </ul>
       </div>
     ),
   },
   {
-    id: "transferuri",
-    title: "Transferuri internaționale de date",
+    id: "durata",
+    title: "5. PE CE DURATĂ PRELUCRĂM DATELE DVS. CU CARACTER PERSONAL?",
     content: (
       <div className="space-y-3">
-        <p>În general, datele sunt stocate și prelucrate în Uniunea Europeană. Unii furnizori de servicii (de exemplu, pentru hosting, e-mail, plăți sau analiză) pot avea sediul sau infrastructura în afara UE/SEE.</p>
-        <p>În astfel de cazuri, ne asigurăm că transferurile sunt protejate prin garanții adecvate, cum ar fi clauze contractuale standard aprobate de Comisia Europeană sau certificări recunoscute (de exemplu, Privacy Shield / Data Privacy Framework pentru furnizorii din SUA), astfel încât datele dumneavoastră să beneficieze de un nivel de protecție echivalent cu cel din UE.</p>
-      </div>
-    ),
-  },
-  {
-    id: "stocare",
-    title: "Perioada de stocare",
-    content: (
-      <div className="space-y-3">
-        <p>Păstrăm datele personale doar pe durata necesară îndeplinirii scopurilor pentru care au fost colectate, cu excepția cazurilor în care legea impune o perioadă mai lungă:</p>
-        <ul className="list-disc pl-5 space-y-1">
-          <li>Datele contului: până la ștergerea contului sau inactivitate timp de 3 ani, după care sunt anonimizate sau șterse.</li>
-          <li>Datele de plată și facturare: conform legislației fiscale (10 ani de regulă).</li>
-          <li>Datele anunțurilor și închirierilor: pe durata existenței contului și după aceea, în măsura necesară soluționării disputelor sau obligațiilor legale.</li>
-          <li>Datele tehnice și de navigare: până la 12 luni, în funcție de scopul analizei și securității.</li>
+        <p>Datele cu caracter personal sunt stocate în vederea prelucrării lor pe durata necesară atingerii scopurilor de prelucrare menționate în prezenta Politică sau pe durata impusă de lege (ex. în materie de arhivare, de contabilitate etc.).</p>
+        <p>Cu titlu orientativ, aplicăm următoarele durate de stocare:</p>
+        <ul className="list-disc pl-5 space-y-2">
+          <li><strong>datele contului de utilizator</strong> – pe durata existenței contului și 30 de zile de la închiderea acestuia;</li>
+          <li><strong>imaginea documentului de identitate</strong> <u>– maximum 30 de zile de la finalizarea verificării,</u> ulterior fiind păstrat doar rezultatul verificării;</li>
+          <li><strong>datele privind rezervările, plățile și fotografiile de predare/restituire</strong> <u>– 3 ani de la</u> <u>încheierea închirierii, corespunzător termenului general de prescripție, respectiv până la</u> soluționarea definitivă a unei dispute în curs;</li>
+          <li><strong>documentele justificative care stau la baza înregistrărilor contabile</strong> <u>– 5 ani, calculați de la</u> data de 1 iulie a anului următor celui încheierii exercițiului financiar, conform art. 25 din Legea contabilității nr. 82/1991; situațiile financiare anuale se păstrează 10 ani;</li>
+          <li><strong>datele prelucrate în scop de marketing</strong> – până la retragerea consimțământului;</li>
+          <li><strong>dovada consimțământului pentru module cookie</strong> – 6 luni;</li>
+          <li><strong>jurnalele tehnice și de securitate</strong> – 12 luni.</li>
         </ul>
-        <p>După expirarea perioadelor menționate, datele sunt șterse sau anonimizate în condiții de siguranță.</p>
       </div>
     ),
   },
   {
-    id: "cookie-uri",
-    title: "Cookie-uri și tehnologii de tracking",
+    id: "destinatari",
+    title: "6. CUI TRANSMITEM DATELE CU CARACTER PERSONAL?",
     content: (
       <div className="space-y-3">
-        <p>Folosim cookie-uri și tehnologii similare pentru funcționarea platformei, analiza traficului, personalizarea conținutului și publicitate. Detalii complete despre tipurile de cookie-uri, durata de stocare și modalitățile de gestionare a preferințelor sunt disponibile în <Link to="/politica-cookies" className="text-primary hover:underline">Politica de cookies</Link>.</p>
-        <p>Cookie-urile esențiale nu pot fi dezactivate, deoarece sunt necesare pentru funcționarea de bază a site-ului. Pentru celelalte categorii, vă puteți actualiza preferințele oricând prin bannerul de cookie-uri sau prin setările browserului.</p>
-      </div>
-    ),
-  },
-  {
-    id: "securitate",
-    title: "Securitatea datelor",
-    content: (
-      <div className="space-y-3">
-        <p>Implementăm măsuri tehnice și organizatorice adecvate pentru protejarea informațiilor personale împotriva accesului neautorizat, modificării, divulgării sau distrugerii:</p>
-        <ul className="list-disc pl-5 space-y-1">
-          <li>Criptarea conexiunilor prin HTTPS și criptarea datelor sensibile la stocare</li>
-          <li>Autentificare multi-factor și controale stricte de acces pentru personalul autorizat</li>
-          <li>Audituri regulate de securitate, teste de vulnerabilitate și monitorizare continuă</li>
-          <li>Instruirea periodică a angajaților cu privire la protecția datelor</li>
-          <li>Acorduri de confidențialitate cu toți furnizorii și partenerii care prelucrează date în numele nostru</li>
+        <p>Nu vom comunica sau transfera vreunui terț, niciuna dintre datele cu caracter personal colectate de la dvs. sau despre dvs. cu <strong>excepția</strong>:</p>
+        <ul className="list-disc pl-5 space-y-2">
+          <li><strong>Autorităților și instituțiilor publice</strong> - când există o obligație legală în acest sens sau în scopul unui interes legitim (apărarea drepturilor Societății în procedurile contencioase sau necontencioase etc.).</li>
+          <li><strong>Partenerilor contractuali sau colaboratorilor Societății</strong> care ne oferă servicii de găzduire web, de dezvoltare și mentenanță website, marketing online ș.a..</li>
+          <li><strong>Oricărui terț</strong> – dacă v-ați dat consimțământul în mod expres și punctual, pentru respectiva situație și respectivele date.</li>
+          <li><strong>Celorlalți utilizatori ai Platformei</strong> – proprietarul și chiriașul primesc reciproc datele de identificare și de contact strict necesare executării contractului de închiriere, după confirmarea rezervării.</li>
+          <li><strong>Procesatorului de plăți</strong> – de completat – denumirea procesatorului de plăți – în vederea inițierii și securizării tranzacțiilor.</li>
+          <li><strong>Furnizorului de servicii de găzduire și infrastructură</strong> – de completat – denumirea furnizorului de hosting.</li>
+          <li><strong>Furnizorului de servicii de verificare a identității</strong> – de completat – denumirea furnizorului, dacă este cazul.</li>
         </ul>
-        <p>Deși depunem toate eforturile rezonabile pentru securitatea datelor, nicio metodă de transmitere sau stocare electronică nu este 100% sigură.</p>
+        <p>În cazul în care datele cu caracter personal prelucrate de Societate sunt <strong>transferate</strong> de către aceasta direct sau prin intermediul partenerilor contractuali/colaboratorilor săi <strong>în afara Spațiului Economic European</strong>, vă asigurăm că aceste transferuri au loc cu respectarea R.G.P.D. (în special art. 46 din R.G.P.D.), a prevederilor legale aplicabile în materie, în baza unor garanții adecvate (clauze standard de protecție a datelor adoptate de Comisie) și cu condiția de a exista drepturi opozabile și căi de atac eficiente pentru persoanele vizate.</p>
+        <p>În măsura în care unii dintre furnizorii noștri sunt stabiliți în Statele Unite ale Americii, transferul are loc, după caz, în temeiul <strong>Deciziei de adecvare (UE) 2023/1795 a Comisiei Europene privind Cadrul UE–SUA pentru confidențialitatea datelor</strong>, atunci când furnizorul este certificat în cadrul acestui mecanism, ori în temeiul clauzelor contractuale standard însoțite de o evaluare a <u>impactului transferului. Lista actualizată a destinatarilor și mecanismele de transfer aplicabile pot</u> <u>fi obținute la cerere, la datele de contact indicate în prezenta Politică.</u></p>
       </div>
     ),
   },
   {
-    id: "drepturi-gdpr",
-    title: "Drepturile dumneavoastră (GDPR)",
+    id: "protectie",
+    title: "7. CE MĂSURI DE PROTECȚIE ȘI GARANȚII LUĂM?",
     content: (
       <div className="space-y-3">
-        <p>Conform Regulamentului General privind Protecția Datelor, beneficiați de următoarele drepturi:</p>
-        <ul className="list-disc pl-5 space-y-1">
-          <li><strong>Dreptul de acces</strong> — puteți solicita o copie a datelor personale pe care le deținem</li>
-          <li><strong>Dreptul la rectificare</strong> — puteți cere corectarea informațiilor inexacte sau incomplete</li>
-          <li><strong>Dreptul la ștergere („dreptul de a fi uitat")</strong> — puteți solicita eliminarea datelor, în măsura în care nu există o obligație legală de păstrare</li>
-          <li><strong>Dreptul la portabilitate</strong> — puteți primi datele într-un format structurat, utilizat frecvent și lizibil, sau puteți solicita transmiterea lor către alt operator</li>
-          <li><strong>Dreptul de opoziție</strong> — puteți refuza prelucrarea în scopuri de marketing direct sau în baza intereselor legitime</li>
-          <li><strong>Dreptul la restricționarea prelucrării</strong> — puteți solicita limitarea utilizării datelor în anumite situații</li>
-          <li><strong>Dreptul de a vă retrage consimțământul</strong> — pentru prelucrările bazate pe consimțământ, retragerea nu afectează legalitatea prelucrării anterioare</li>
+        <p>Societatea implementează <u>măsuri tehnice și organizatorice adecvate în vederea asigurării unui</u> nivel înalt de securitate și protecție a datelor cu caracter personal. Utilizăm metode și tehnologii de securitate, împreună cu politici și proceduri interne de lucru, inclusiv de control și audit, pentru a proteja datele cu caracter personal colectate conform prevederilor legale în vigoare relevante în materia protecției datelor cu caracter personal.</p>
+      </div>
+    ),
+  },
+  {
+    id: "drepturi",
+    title: "8. CARE SUNT DREPTURILE DVS. ÎN CALITATE DE PERSOANĂ VIZATĂ?",
+    content: (
+      <div className="space-y-3">
+        <p>Orice persoană vizată își poate exercita următoarele drepturi, așa cum sunt prevăzute de către Regulamentul general privind protecția datelor:</p>
+        <ul className="list-disc pl-5 space-y-2">
+          <li>Dreptul de acces;</li>
+          <li>Dreptul de rectificare;</li>
+          <li>Dreptul la ștergere;</li>
+          <li>Dreptul la restricționarea prelucrării;</li>
+          <li>Dreptul la portabilitate;</li>
+          <li>Dreptul la opoziție a prelucrării;</li>
+          <li><u>Dreptul de a nu face obiectul unei decizii bazate exclusiv pe prelucrarea automată, inclusiv</u> <u>crearea de profiluri;</u></li>
+          <li><strong>Dreptul de a vă retrage consimțământul</strong> în orice moment, atunci când prelucrarea se întemeiază pe consimțământ, fără a afecta legalitatea prelucrării efectuate anterior retragerii;</li>
+          <li>Dreptul de a se adresa Autorității Naționale de Supraveghere a Prelucrării Datelor cu Caracter Personal (www.dataprotection.ro) și instanțelor de judecată.</li>
         </ul>
-        <p>Pentru exercitarea acestor drepturi, contactați-ne prin <Link to="/centru-asistenta" className="text-primary hover:underline">pagina de suport</Link>. Răspundem în maximum 30 de zile. Identitatea dumneavoastră poate fi verificată înainte de a răspunde solicitării.</p>
-        <p className="text-sm">Dacă considerați că prelucrarea datelor încalcă GDPR, aveți dreptul de a depune o plângere la Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal (ANSPDCP) sau la o autoritate de supraveghere din UE.</p>
-      </div>
-    ),
-  },
-  {
-    id: "profilare",
-    title: "Profilare și decizii automate",
-    content: (
-      <p>Nu luăm decizii cu efect legal sau similar semnificativ asupra dumneavoastră exclusiv prin mijloace automate. Putem folosi analize automate pentru recomandări de produse, detectarea fraudei sau îmbunătățirea securității, dar acestea nu duc la decizii individuale fără implicare umană.</p>
-    ),
-  },
-  {
-    id: "bresa-securitate",
-    title: "Notificări în caz de breșă de securitate",
-    content: (
-      <p>În eventualitatea unei breșe de securitate care afectează datele dumneavoastră personale, vă vom informa prin e-mail în termen de 72 de ore de la constatarea incidentului, conform cerințelor GDPR. De asemenea, vom notifica autoritățile competente (ANSPDCP) atunci când este necesar.</p>
-    ),
-  },
-  {
-    id: "parteneri",
-    title: "Parteneri",
-    content: (
-      <p>Partenerii noștri (proprietarii de bunuri) sunt responsabili pentru confidențialitatea datelor primite prin platformă în cadrul unei închirieri. Vă recomandăm să consultați politicile de confidențialitate ale acestora pentru a înțelege modul în care prelucrează datele.</p>
-    ),
-  },
-  {
-    id: "legea-aplicabila",
-    title: "Legea aplicabilă și jurisdicția",
-    content: (
-      <p>Prezenta politică este guvernată de legea română și de legislația Uniunii Europene aplicabilă în materie de protecție a datelor personale. Orice litigiu derivat din sau în legătură cu această politică va fi soluționat de instanțele competente din România.</p>
-    ),
-  },
-  {
-    id: "modificari",
-    title: "Actualizări ale politicii",
-    content: (
-      <div className="space-y-3">
-        <p>Ne rezervăm dreptul de a actualiza această politică pentru a reflecta modificările legislative sau operaționale. Modificările vor fi comunicate prin platformă sau prin e-mail, iar versiunea actualizată va fi disponibilă pe această pagină cu data ultimei actualizări.</p>
-        <p>Pentru întrebări legate de confidențialitate, contactați-ne prin <Link to="/centru-asistenta" className="text-primary hover:underline">pagina de suport</Link>.</p>
+        <p><strong>Autoritatea Națională de Supraveghere a Prelucrării Datelor cu Caracter Personal</strong> poate fi <u>contactată la adresa: B-dul G-ral. Gheorghe Magheru nr. 28-30, sector 1, cod poștal 010336,</u> <u>București, e-mail: anspdcp@dataprotection.ro.</u></p>
+        <p><u>Vom răspunde solicitărilor dvs. fără întârzieri nejustificate și în orice caz în termen de o lună de la</u> <u>primirea cererii. Acest termen poate fi prelungit cu cel mult două luni atunci când este necesar,</u> <u>ținându-se seama de complexitatea și de numărul cererilor, situație în care vă vom informa cu</u> <u>privire la prelungire și la motivele acesteia în termen de o lună de la primirea cererii.</u></p>
+        <p><u>În cazul în care survine o încălcare a securității datelor cu caracter personal, o vom notifica</u> <u>Autorității Naționale de Supraveghere a Prelucrării Datelor cu Caracter Personal în conformitate</u> <u>cu art. 33 din R.G.P.D. și, atunci când încălcarea este susceptibilă să genereze un risc ridicat pentru</u> <u>drepturile și libertățile dvs., vă vom informa fără întârzieri nejustificate, potrivit art. 34 din</u> R.G.P.D.</p>
+        <p>Pentru exercitarea acestor drepturi sau pentru orice întrebări legate de prelucrarea datelor <u>dumneavoastră cu caracter personal, vă rugăm</u> să ne contactați pe adresa de e-mail: <a href="mailto:gdpr@rentli.ro" className="text-primary hover:underline">gdpr@rentli.ro</a> <strong>adresă de e-mail dedicată protecției datelor</strong> sau la numărul de telefon: <strong>0365.401.269</strong>, Serviciile de Responsabil pentru Protecția Datelor <u>(DPO)</u> sunt externalizate și oferite de <u>GDPRComplet.”</u></p>
       </div>
     ),
   },
 ];
 
-export const sectionsEn = [
-  {
-    id: "operator",
-    title: "Data controller",
-    content: (
-      <div className="space-y-3">
-        <p>The Rentli platform is operated by Rentli SRL, headquartered in Romania. As a data controller, we collect and process personal data in compliance with Regulation (EU) 2016/679 (GDPR) and applicable Romanian law.</p>
-        <p>For any questions about data processing, please contact us via the <Link to="/centru-asistenta" className="text-primary hover:underline">support page</Link>. We respond within 30 days.</p>
-      </div>
-    ),
-  },
-  {
-    id: "informatii-colectate",
-    title: "What information we collect",
-    content: (
-      <div className="space-y-3">
-        <p>We collect and process the following categories of personal data:</p>
-        <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Identification data:</strong> name, email address, phone number and other information needed to identify you and grant access to the services.</li>
-          <li><strong>Information about rented items:</strong> description, technical condition, photos, approximate location and other relevant details of items listed on the platform.</li>
-          <li><strong>Payment data:</strong> information about your chosen payment method, required for processing transactions. We also keep a payment history for managing refunds and disputes.</li>
-          <li><strong>Technical data:</strong> IP address, device type, browser information, operating system, unique device identifiers and platform activity (pages visited, duration, interactions).</li>
-          <li><strong>Communication data:</strong> messages, support tickets and other interactions you have with us or with other users through the platform.</li>
-          <li><strong>Other data:</strong> information voluntarily provided, such as preferences, reviews or feedback.</li>
-        </ul>
-        <p className="text-sm">Our platform is not intended for minors under 16. If we identify data collected from a minor without parental consent, we will delete it immediately.</p>
-      </div>
-    ),
-  },
-  {
-    id: "cum-colectam",
-    title: "How we collect information",
-    content: (
-      <div className="space-y-3">
-        <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Directly from you:</strong> through registration, listing, booking, payment or contact forms, and by uploading photos and requested documents.</li>
-          <li><strong>Automatically:</strong> through technologies such as cookies, tracking pixels, server logs and geolocation APIs, which help us improve the platform experience, ensure security and measure performance.</li>
-          <li><strong>From third parties:</strong> occasionally, we receive information from partners (payment processors, authentication services such as Google or Apple) or from authorities, as required by law.</li>
-        </ul>
-      </div>
-    ),
-  },
-  {
-    id: "utilizare",
-    title: "How we use the information",
-    content: (
-      <div className="space-y-3">
-        <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Service delivery:</strong> account creation and management, listing publication, rental processing, payment management and issuing fiscal documents.</li>
-          <li><strong>Identity verification:</strong> confirming user identities for transaction safety and fraud prevention.</li>
-          <li><strong>Platform improvement:</strong> analyzing usage to optimize features, fix errors and personalize the experience.</li>
-          <li><strong>Communications and marketing:</strong> with your explicit consent, we may send personalized offers, newsletters and notifications about platform updates.</li>
-          <li><strong>Customer support:</strong> answering questions, handling support tickets, managing disputes and improving the service.</li>
-          <li><strong>Legal compliance:</strong> we process data to comply with legal obligations (invoicing, document archiving, reporting to authorities).</li>
-          <li><strong>Security and fraud prevention:</strong> detecting suspicious activity, protecting accounts and users' assets.</li>
-        </ul>
-      </div>
-    ),
-  },
-  {
-    id: "temeiuri-legale",
-    title: "Legal bases for processing",
-    content: (
-      <div className="space-y-3">
-        <ul className="list-disc pl-5 space-y-2">
-          <li><strong>Contract performance:</strong> processing required to provide the requested services (account, listings, rentals, payments).</li>
-          <li><strong>Consent:</strong> for marketing, non-essential cookies or other secondary purposes, we ask for your explicit consent, which you may withdraw at any time.</li>
-          <li><strong>Legal obligations:</strong> invoicing, document archiving, reporting to authorities, identity verification.</li>
-          <li><strong>Legitimate interests:</strong> service improvement, fraud prevention, ensuring platform security, protecting our legal rights.</li>
-        </ul>
-      </div>
-    ),
-  },
-  {
-    id: "partajare",
-    title: "Sharing information",
-    content: (
-      <div className="space-y-3">
-        <p>We do not sell your personal data. Information is shared only in limited and necessary situations:</p>
-        <ul className="list-disc pl-5 space-y-2">
-          <li><strong>With other platform users:</strong> only the data strictly necessary to perform a rental (e.g. name, phone number, approximate location), in accordance with the <Link to="/termeni-si-conditii" className="text-primary hover:underline">Terms and Conditions</Link>.</li>
-          <li><strong>Service providers:</strong> payment processors (Stripe), IT and cloud services (hosting, database, email), analytics and support services — all contractually required to process data securely and only for agreed purposes.</li>
-          <li><strong>Competent authorities:</strong> when required by law (investigations, court orders, protecting our legal rights).</li>
-        </ul>
-      </div>
-    ),
-  },
-  {
-    id: "transferuri",
-    title: "International data transfers",
-    content: (
-      <div className="space-y-3">
-        <p>In general, data is stored and processed within the European Union. Some service providers (for hosting, email, payments or analytics) may be located or have infrastructure outside the EU/EEA.</p>
-        <p>In such cases, we ensure transfers are protected by appropriate safeguards, such as Standard Contractual Clauses approved by the European Commission or recognized certifications (e.g. Privacy Shield / Data Privacy Framework for US providers), so that your data benefits from a level of protection equivalent to that in the EU.</p>
-      </div>
-    ),
-  },
-  {
-    id: "stocare",
-    title: "Data retention",
-    content: (
-      <div className="space-y-3">
-        <p>We keep personal data only for as long as necessary to fulfill the purposes for which it was collected, except where the law requires a longer period:</p>
-        <ul className="list-disc pl-5 space-y-1">
-          <li>Account data: until account deletion or 3 years of inactivity, after which it is anonymized or deleted.</li>
-          <li>Payment and invoicing data: according to tax legislation (10 years as a rule).</li>
-          <li>Listings and rental data: for the lifetime of the account and afterwards as necessary to resolve disputes or meet legal obligations.</li>
-          <li>Technical and browsing data: up to 12 months, depending on analysis and security purposes.</li>
-        </ul>
-        <p>After the relevant periods expire, data is securely deleted or anonymized.</p>
-      </div>
-    ),
-  },
-  {
-    id: "cookie-uri",
-    title: "Cookies and tracking technologies",
-    content: (
-      <div className="space-y-3">
-        <p>We use cookies and similar technologies to operate the platform, analyze traffic, personalize content and advertising. Full details on cookie types, storage duration and how to manage preferences are available in our <Link to="/politica-cookies" className="text-primary hover:underline">Cookie Policy</Link>.</p>
-        <p>Essential cookies cannot be disabled because they are necessary for the basic functioning of the site. For other categories, you can update your preferences at any time through the cookie banner or your browser settings.</p>
-      </div>
-    ),
-  },
-  {
-    id: "securitate",
-    title: "Data security",
-    content: (
-      <div className="space-y-3">
-        <p>We implement appropriate technical and organizational measures to protect personal data against unauthorized access, alteration, disclosure or destruction:</p>
-        <ul className="list-disc pl-5 space-y-1">
-          <li>Encrypted connections via HTTPS and encryption of sensitive data at rest</li>
-          <li>Multi-factor authentication and strict access controls for authorized personnel</li>
-          <li>Regular security audits, vulnerability testing and continuous monitoring</li>
-          <li>Periodic staff training on data protection</li>
-          <li>Confidentiality agreements with all providers and partners processing data on our behalf</li>
-        </ul>
-        <p>Although we make every reasonable effort to secure data, no electronic transmission or storage method is 100% secure.</p>
-      </div>
-    ),
-  },
-  {
-    id: "drepturi-gdpr",
-    title: "Your rights (GDPR)",
-    content: (
-      <div className="space-y-3">
-        <p>Under the General Data Protection Regulation, you have the following rights:</p>
-        <ul className="list-disc pl-5 space-y-1">
-          <li><strong>Right of access</strong> — you may request a copy of the personal data we hold</li>
-          <li><strong>Right to rectification</strong> — you may request correction of inaccurate or incomplete information</li>
-          <li><strong>Right to erasure ("right to be forgotten")</strong> — you may request deletion of data, to the extent there is no legal obligation to retain it</li>
-          <li><strong>Right to portability</strong> — you may receive the data in a structured, commonly used and machine-readable format, or request transfer to another controller</li>
-          <li><strong>Right to object</strong> — you may refuse processing for direct marketing or based on legitimate interests</li>
-          <li><strong>Right to restriction of processing</strong> — you may request limitation on the use of your data in certain situations</li>
-          <li><strong>Right to withdraw consent</strong> — for processing based on consent, withdrawal does not affect the lawfulness of prior processing</li>
-        </ul>
-        <p>To exercise these rights, contact us via the <Link to="/centru-asistenta" className="text-primary hover:underline">support page</Link>. We respond within 30 days. We may verify your identity before responding to the request.</p>
-        <p className="text-sm">If you believe data processing infringes the GDPR, you have the right to file a complaint with the National Supervisory Authority for Personal Data Processing (ANSPDCP) or with a supervisory authority in the EU.</p>
-      </div>
-    ),
-  },
-  {
-    id: "profilare",
-    title: "Profiling and automated decision-making",
-    content: (
-      <p>We do not make decisions with legal or similarly significant effects on you solely by automated means. We may use automated analysis for product recommendations, fraud detection or security improvement, but these do not lead to individual decisions without human involvement.</p>
-    ),
-  },
-  {
-    id: "bresa-securitate",
-    title: "Notifications in case of a security breach",
-    content: (
-      <p>In the event of a security breach affecting your personal data, we will inform you by email within 72 hours of discovering the incident, in line with GDPR requirements. We will also notify the competent authorities (ANSPDCP) when required.</p>
-    ),
-  },
-  {
-    id: "parteneri",
-    title: "Partners",
-    content: (
-      <p>Our partners (item owners) are responsible for the confidentiality of data received through the platform in the context of a rental. We recommend reviewing their privacy policies to understand how they process data.</p>
-    ),
-  },
-  {
-    id: "legea-aplicabila",
-    title: "Applicable law and jurisdiction",
-    content: (
-      <p>This policy is governed by Romanian law and applicable European Union data protection legislation. Any dispute arising from or related to this policy will be resolved by the competent courts in Romania.</p>
-    ),
-  },
-  {
-    id: "modificari",
-    title: "Policy updates",
-    content: (
-      <div className="space-y-3">
-        <p>We reserve the right to update this policy to reflect legislative or operational changes. Changes will be communicated through the platform or by email, and the updated version will be available on this page with the date of the last update.</p>
-        <p>For privacy-related questions, contact us via the <Link to="/centru-asistenta" className="text-primary hover:underline">support page</Link>.</p>
-      </div>
-    ),
-  },
-];
+export const sectionsEn = sectionsRo;
 
 const PrivacyPolicy = () => {
   usePageSeo({
@@ -412,11 +167,11 @@ const PrivacyPolicy = () => {
   const isEn = language === "en";
   return (
     <LegalPageLayout
-      title={isEn ? "Privacy Policy" : "Politica de Confidențialitate"}
+      title={isEn ? "Politica de Confidențialitate" : "Politica de Confidențialitate"}
       subtitle={isEn
-        ? "This policy explains how Rentli collects, uses, stores and protects your personal data when you use our rental platform."
-        : "Această politică explică modul în care Rentli colectează, utilizează, stochează și protejează datele dumneavoastră personale atunci când folosiți platforma noastră de închirieri."}
-      lastUpdated="14.09.2026"
+        ? "Prin prezenta Politică vă informăm despre modul în care colectăm, utilizăm, transferăm și protejăm datele dvs. cu caracter personal."
+        : "Prin prezenta Politică vă informăm despre modul în care colectăm, utilizăm, transferăm și protejăm datele dvs. cu caracter personal."}
+      lastUpdated="2 septembrie 2026"
       sections={isEn ? sectionsEn : sectionsRo}
     />
   );
