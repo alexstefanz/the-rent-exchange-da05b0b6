@@ -1,25 +1,27 @@
-# Repararea conectării cu Google
+# Verificare redirecturi mobile pentru login Google
 
-## Diagnostic confirmat
+## Stare curentă
 
-Testul făcut acum pe site-ul public reproduce eroarea `redirect_uri_mismatch`.
+Login-ul cu Google funcționează pe web (`rentli.ro` / `www.rentli.ro`).
+Rămâne de confirmat că backend-ul are configurată adresa de întoarcere în aplicația mobilă, altfel utilizatorul este aruncat pe site-ul web după autentificare.
 
-Google primește această adresă de întoarcere:
+## Ce trebuie verificat
 
-`https://www.rentli.ro/~oauth/callback`
+În **Backend → Authentication → URL Configuration → Redirect URLs** trebuie să existe:
 
-Aceasta nu este acceptată în configurația actuală a clientului OAuth Google. Eroarea apare înainte ca utilizatorul să poată alege contul.
+- `rentli://auth/callback`  
+  (necesar pentru build-ul nativ al aplicației mobile)
+- `exp://<adresa-generată-de-Expo-Go>`  
+  (necesar când testezi în Expo Go; apare în terminal/QR-ul Expo sub forma `exp://...`)
 
-## Pașii de remediere
+## Pași
 
-1. În Google Cloud Console → Google Auth Platform → Clients → clientul web Rentli, adaugă la **Authorized redirect URIs**, exact și fără modificări:
-   - `https://www.rentli.ro/~oauth/callback`
-   - `https://rentli.ro/~oauth/callback`
-2. Păstrează și adresa de callback existentă pentru backend; nu o înlocui.
-3. Salvează configurația și așteaptă propagarea Google, de regulă câteva minute.
-4. Retestez conectarea în incognito pe `rentli.ro` și verific dacă apare ecranul Google pentru Rentli, fără eroarea 400.
-5. Verific separat fluxul mobil. Aplicația mobilă folosește `rentli://auth/callback`, deci această adresă trebuie păstrată în lista de redirecturi din Backend.
+1. Deschide **Backend → Users → Auth Settings → URL Configuration**.
+2. Verifică dacă `rentli://auth/callback` este deja în listă.
+3. Dacă testezi în Expo Go, copiază URL-ul `exp://...` afișat de aplicație/terminal și adaugă-l în aceeași listă.
+4. Salvează.
+5. Spune-mi când ai terminat, ca să retestez login-ul cu Google pe mobil.
 
-## Modificări în aplicație
+## Modificări în cod
 
-Nu este necesară schimbarea codului. Site-ul folosește corect fluxul Google gestionat; blocarea vine exclusiv din lista de adrese autorizate a clientului OAuth din Google Cloud.
+Nu sunt necesare. Aplicația mobilă folosește deja `rentli://auth/callback` în `mobile-template/lib/auth.tsx`.
