@@ -275,7 +275,8 @@ const ProductDetail = () => {
     url: canonicalUrl,
     canonical: canonicalUrl,
     type: "product",
-    noindex: isPreview,
+    // Unavailable / deleted listings must not stay in the index.
+    noindex: isPreview || (!isLoading && !product),
     jsonLd: product ? {
       "@context": "https://schema.org",
       "@graph": [
