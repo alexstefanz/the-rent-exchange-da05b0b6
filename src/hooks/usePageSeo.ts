@@ -18,7 +18,7 @@ interface PageSeoOptions {
  * Wrapper around useSEO that automatically sets canonical + og:url
  * to the current absolute URL (origin + pathname).
  */
-export const usePageSeo = ({ title, description, image, type = "website", jsonLd, noindex }: PageSeoOptions) => {
+export const usePageSeo = ({ title, description, image, imageAlt, type = "website", jsonLd, noindex }: PageSeoOptions) => {
   const { pathname } = useLocation();
   // Canonical always points at the single official host, never www/preview.
   const url = `${CANONICAL_ORIGIN}${pathname}`;
