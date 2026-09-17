@@ -55,21 +55,11 @@ Deno.serve(async (req) => {
       ...STATIC_ENTRIES,
     ];
 
-    // Categories + subcategories from the platform taxonomy
-    const { data: cats } = await admin
-      .from("platform_categories")
-      .select("slug, parent_id, id, is_active")
-      .eq("is_active", true);
-
-    if (cats) {
-      const byId = new Map(cats.map((c: any) => [c.id, c]));
-      for (const c of cats as any[]) {
-        if (!c.slug) continue;
-        if (c.parent_id && byId.has(c.parent_id)) {
-          entries.push({ path: `/subcategorie/${c.slug}`, changefreq: "weekly", priority: "0.6" });
-        } else {
-          entries.push({ path: `/categorie/${c.slug}`, changefreq: "weekly", priority: "0.8" });
-        }
+    // Categories + subcategories (taxonomy mirrors src/data/categories.ts)
+    for (const c of TAXONOMY) {
+      entries.push({ path: `/categorie/${c.slug}`, changefreq: "weekly", priority: "0.8" });
+      for (const sub of c.subcategories) {
+        entries.push({ path: `/subcategorie/${sub}`, changefreq: "weekly", priority: "0.6" });
       }
     }
 
