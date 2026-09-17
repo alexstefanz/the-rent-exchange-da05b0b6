@@ -520,7 +520,7 @@ const CategoryDetail = () => {
           )}
         </div>
 
-        {viewMode !== "map" && category && (
+        {category && (
           <CategorySeoContent
             categorySlug={category.slug}
             heading={language === "en" ? `About renting ${catName.toLowerCase()}` : `Despre închirierea de ${catName.toLowerCase()}`}
