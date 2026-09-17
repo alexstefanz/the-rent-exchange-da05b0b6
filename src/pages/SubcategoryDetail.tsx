@@ -80,6 +80,7 @@ const SubcategoryDetail = () => {
       : (language === "en" ? "Subcategory | Rentli" : "Subcategorie | Rentli"),
     description: subSeoDescription,
     image: subcategoryImage || undefined,
+    imageAlt: subDisplayName,
     jsonLd: subcategory && category ? {
       "@context": "https://schema.org",
       "@type": "CollectionPage",

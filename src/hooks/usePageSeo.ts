@@ -8,6 +8,7 @@ interface PageSeoOptions {
   title: string;
   description: string;
   image?: string;
+  imageAlt?: string;
   type?: "website" | "product" | "article";
   jsonLd?: Record<string, any> | null;
   noindex?: boolean;
@@ -21,5 +22,5 @@ export const usePageSeo = ({ title, description, image, type = "website", jsonLd
   const { pathname } = useLocation();
   // Canonical always points at the single official host, never www/preview.
   const url = `${CANONICAL_ORIGIN}${pathname}`;
-  useSEO({ title, description, image, url, canonical: url, type, jsonLd, noindex });
+  useSEO({ title, description, image, imageAlt, url, canonical: url, type, jsonLd, noindex });
 };

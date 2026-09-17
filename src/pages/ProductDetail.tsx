@@ -256,7 +256,7 @@ const ProductDetail = () => {
       );
   // The first uploaded photo is the listing cover everywhere, including SEO.
   const seoFirstImage = images.find((i) => i && i !== "/placeholder.svg" && !i.includes("placeholder"));
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://rentli.ro";
+  const origin = CANONICAL_ORIGIN;
   const seoImage = seoFirstImage
     ? (seoFirstImage.startsWith("http") ? seoFirstImage : `${origin}${seoFirstImage}`)
     : "https://rentli.ro/og-image.webp";
@@ -273,6 +273,7 @@ const ProductDetail = () => {
     title: seoTitle,
     description: seoDesc,
     image: seoImage,
+    imageAlt: seoDisplayTitle,
     url: canonicalUrl,
     canonical: canonicalUrl,
     type: "product",

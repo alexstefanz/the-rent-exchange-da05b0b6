@@ -229,6 +229,7 @@ const CategoryDetail = () => {
     title: seoTitle,
     description: seoDescription,
     image: categoryImage || undefined,
+    imageAlt: t(`Produse din categoria ${catName}`, `Products in the ${catName} category`),
     // Filtered / paginated variants of the same category are near-duplicates.
     noindex: Boolean(hasActiveFilters || searchQuery),
     jsonLd: category ? {
