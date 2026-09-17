@@ -23,6 +23,8 @@ import { judete } from "@/data/romaniaLocations";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getCategorySeoCopy } from "@/data/categorySeo";
+import { getCategoryContent } from "@/data/categoryContent";
+import CategorySeoContent from "@/components/seo/CategorySeoContent";
 import { truncateForMeta, META_TITLE_MAX, META_DESCRIPTION_MAX } from "@/lib/seoText";
 
 
@@ -503,6 +505,13 @@ const CategoryDetail = () => {
             )
           )}
         </div>
+
+        {viewMode !== "map" && category && (
+          <CategorySeoContent
+            categorySlug={category.slug}
+            heading={language === "en" ? `About renting ${catName.toLowerCase()}` : `Despre închirierea de ${catName.toLowerCase()}`}
+          />
+        )}
 
       </main>
       {viewMode !== "map" && <Footer />}
