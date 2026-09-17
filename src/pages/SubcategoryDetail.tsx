@@ -74,10 +74,16 @@ const SubcategoryDetail = () => {
         ) + " | Rentli"
       : (language === "en" ? "Subcategory | Rentli" : "Subcategorie | Rentli"),
     description: subSeoDescription,
+    image: subcategory?.image || category?.subcategories.find((item) => item.image)?.image || undefined,
     jsonLd: subcategory && category ? {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
       name: subDisplayName,
+      primaryImageOfPage: (subcategory.image || category.subcategories.find((item) => item.image)?.image) ? {
+        "@type": "ImageObject",
+        contentUrl: subcategory.image || category.subcategories.find((item) => item.image)?.image,
+        caption: subDisplayName,
+      } : undefined,
       breadcrumb: {
         "@type": "BreadcrumbList",
         itemListElement: [

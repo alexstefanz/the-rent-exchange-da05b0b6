@@ -220,6 +220,7 @@ const CategoryDetail = () => {
   usePageSeo({
     title: seoTitle,
     description: seoDescription,
+    image: bannerImage || undefined,
     // Filtered / paginated variants of the same category are near-duplicates.
     noindex: Boolean(hasActiveFilters || searchQuery),
     jsonLd: category ? {
@@ -230,6 +231,11 @@ const CategoryDetail = () => {
           name: catName,
           url: `https://rentli.ro/categorie/${category.slug}`,
           description: seoDescription,
+          primaryImageOfPage: bannerImage ? {
+            "@type": "ImageObject",
+            contentUrl: bannerImage,
+            caption: catName,
+          } : undefined,
           mainEntity: {
             "@type": "ItemList",
             numberOfItems: products.length,

@@ -33,6 +33,7 @@ interface Meta {
   description: string;
   canonical: string;
   image: string;
+  imageAlt: string;
   type: "website" | "product";
   jsonLd?: Record<string, unknown> | null;
   noindex?: boolean;
@@ -50,12 +51,14 @@ function renderHtml(base: string, meta: Meta) {
     `<meta property="og:description" content="${esc(meta.description)}">`,
     `<meta property="og:url" content="${esc(meta.canonical)}">`,
     `<meta property="og:image" content="${esc(meta.image)}">`,
+    `<meta property="og:image:alt" content="${esc(meta.imageAlt)}">`,
     `<meta property="og:type" content="${meta.type}">`,
     `<meta property="og:site_name" content="Rentli">`,
     `<meta name="twitter:card" content="summary_large_image">`,
     `<meta name="twitter:title" content="${esc(meta.title)}">`,
     `<meta name="twitter:description" content="${esc(meta.description)}">`,
     `<meta name="twitter:image" content="${esc(meta.image)}">`,
+    `<meta name="twitter:image:alt" content="${esc(meta.imageAlt)}">`,
     meta.jsonLd
       ? `<script type="application/ld+json">${JSON.stringify(meta.jsonLd).replace(/</g, "\\u003c")}</script>`
       : "",
@@ -102,7 +105,8 @@ function categoryMeta(slug: string): Meta | null {
     title,
     description,
     canonical: url,
-    image: DEFAULT_IMAGE,
+    image: c.image || DEFAULT_IMAGE,
+    imageAlt: `Produse din categoria ${c.name} disponibile pentru închiriere`,
     type: "website",
     jsonLd: {
       "@context": "https://schema.org",
@@ -110,6 +114,11 @@ function categoryMeta(slug: string): Meta | null {
       name: c.name,
       url,
       description,
+      primaryImageOfPage: c.image ? {
+        "@type": "ImageObject",
+        contentUrl: c.image,
+        caption: c.name,
+      } : undefined,
       breadcrumb: {
         "@type": "BreadcrumbList",
         itemListElement: [
@@ -135,7 +144,8 @@ function subcategoryMeta(id: string): Meta | null {
     title,
     description,
     canonical: url,
-    image: DEFAULT_IMAGE,
+    image: s.image || DEFAULT_IMAGE,
+    imageAlt: `${s.name} disponibile pentru închiriere`,
     type: "website",
     jsonLd: {
       "@context": "https://schema.org",
@@ -143,6 +153,11 @@ function subcategoryMeta(id: string): Meta | null {
       name: s.name,
       url,
       description,
+      primaryImageOfPage: s.image ? {
+        "@type": "ImageObject",
+        contentUrl: s.image,
+        caption: s.name,
+      } : undefined,
       breadcrumb: {
         "@type": "BreadcrumbList",
         itemListElement: [
@@ -174,7 +189,9 @@ async function productMeta(slug: string): Promise<Meta | null> {
   const url = `${SITE}/produs/${data.slug}`;
   const city = data.location_city || "România";
   const price = Math.round(Number(data.daily_price_owner) || 0);
-  const images: string[] = Array.isArray(data.images) ? data.images.filter(Boolean) : [];
+  const images: string[] = Array.isArray(data.images)
+    ? data.images.filter((value: unknown): value is string => typeof value === "string" && Boolean(value) && !value.includes("placeholder"))
+    : [];
   const image = images[0]?.startsWith("http") ? images[0] : images[0] ? `${SITE}${images[0]}` : DEFAULT_IMAGE;
 
   const title = truncate(`Închiriere ${data.title} în ${city} — ${price} lei/zi`, TITLE_MAX - 9) + " | Rentli";
@@ -192,6 +209,7 @@ async function productMeta(slug: string): Promise<Meta | null> {
     description,
     canonical: url,
     image,
+    imageAlt: data.title,
     type: "product",
     noindex: !available,
     jsonLd: available
@@ -243,6 +261,7 @@ Deno.serve(async (req) => {
         description: "Anunțul sau pagina căutată nu mai este disponibilă pe Rentli.",
         canonical: `${SITE}${path}`,
         image: DEFAULT_IMAGE,
+        imageAlt: "Rentli",
         type: "website",
         noindex: true,
       };

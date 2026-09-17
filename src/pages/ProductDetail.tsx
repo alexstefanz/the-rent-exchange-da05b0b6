@@ -254,7 +254,8 @@ const ProductDetail = () => {
         "Închiriază pe Rentli. Plată securizată, predare cu poze, suport 7/7.",
         "Rent on Rentli. Secure payment, photo handover, 7/7 support.",
       );
-  const seoFirstImage = images.find((i) => i && i !== "/placeholder.svg");
+  // The first uploaded photo is the listing cover everywhere, including SEO.
+  const seoFirstImage = images.find((i) => i && i !== "/placeholder.svg" && !i.includes("placeholder"));
   const origin = typeof window !== "undefined" ? window.location.origin : "https://rentli.ro";
   const seoImage = seoFirstImage
     ? (seoFirstImage.startsWith("http") ? seoFirstImage : `${origin}${seoFirstImage}`)
@@ -285,7 +286,7 @@ const ProductDetail = () => {
           name: seoDisplayTitle,
           description: seoDesc,
           sku: product.id,
-          image: images.filter(i => i && i !== "/placeholder.svg").map(i => i.startsWith("http") ? i : `${origin}${i}`),
+          image: images.filter(i => i && i !== "/placeholder.svg" && !i.includes("placeholder")).map(i => i.startsWith("http") ? i : `${origin}${i}`),
           brand: { "@type": "Brand", name: "Rentli" },
           category: product.category || undefined,
           itemCondition: product.condition === "new"
