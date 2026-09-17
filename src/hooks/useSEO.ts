@@ -35,7 +35,10 @@ const DEFAULT_OG_IMAGE = "https://rentli.ro/og-image.webp";
 
 export const useSEO = ({ title, description, image, url, type = "website", canonical, jsonLd, noindex }: SEOConfig) => {
   useEffect(() => {
-    const resolvedImage = image || DEFAULT_OG_IMAGE;
+    const selectedImage = image || DEFAULT_OG_IMAGE;
+    const resolvedImage = selectedImage.startsWith("http")
+      ? selectedImage
+      : new URL(selectedImage, "https://rentli.ro").href;
     if (title) document.title = title;
     if (description) setMeta('meta[name="description"]', "content", description);
 
