@@ -16,7 +16,7 @@ interface PageSeoOptions {
  */
 export const usePageSeo = ({ title, description, image, type = "website", jsonLd, noindex }: PageSeoOptions) => {
   const { pathname } = useLocation();
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://rentli.ro";
-  const url = `${origin}${pathname}`;
+  // Canonical always points at the single official host, never www/preview.
+  const url = `${CANONICAL_ORIGIN}${pathname}`;
   useSEO({ title, description, image, url, canonical: url, type, jsonLd, noindex });
 };
