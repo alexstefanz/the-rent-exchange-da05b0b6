@@ -164,7 +164,7 @@ async function productMeta(slug: string): Promise<Meta | null> {
   );
   const { data } = await admin
     .from("products")
-    .select("id, title, description, price_per_day, location_city, images, category, condition, slug, is_active, approval_status, deleted_at")
+    .select("id, title, description, daily_price_owner, location_city, images, category, condition, slug, is_active, approval_status, deleted_at")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -173,7 +173,7 @@ async function productMeta(slug: string): Promise<Meta | null> {
   const available = data.is_active && data.approval_status === "approved" && !data.deleted_at;
   const url = `${SITE}/produs/${data.slug}`;
   const city = data.location_city || "România";
-  const price = Math.round(Number(data.price_per_day) || 0);
+  const price = Math.round(Number(data.daily_price_owner) || 0);
   const images: string[] = Array.isArray(data.images) ? data.images.filter(Boolean) : [];
   const image = images[0]?.startsWith("http") ? images[0] : images[0] ? `${SITE}${images[0]}` : DEFAULT_IMAGE;
 
