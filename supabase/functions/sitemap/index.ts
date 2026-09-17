@@ -79,12 +79,12 @@ Deno.serve(async (req) => {
     }
 
     // Approved, active, non-deleted products
-    const products: Array<{ slug: string; updated_at: string | null }> = [];
+    const products: Array<{ slug: string; created_at: string | null }> = [];
     const PAGE = 1000;
     for (let from = 0; ; from += PAGE) {
       const { data, error } = await admin
         .from("products")
-        .select("slug, updated_at")
+        .select("slug, created_at")
         .eq("approval_status", "approved")
         .eq("is_active", true)
         .is("deleted_at", null)
@@ -101,8 +101,8 @@ Deno.serve(async (req) => {
         path: `/produs/${p.slug}`,
         changefreq: "weekly",
         priority: "0.7",
-        // updated_at is a per-product content timestamp, safe as lastmod
-        lastmod: p.updated_at ? p.updated_at.split("T")[0] : undefined,
+        // created_at is a per-product timestamp, safe as lastmod
+        lastmod: p.created_at ? p.created_at.split("T")[0] : undefined,
       });
     }
 
