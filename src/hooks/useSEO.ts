@@ -4,6 +4,7 @@ interface SEOConfig {
   title?: string;
   description?: string;
   image?: string;
+  imageAlt?: string;
   url?: string;
   type?: "website" | "product" | "article";
   canonical?: string;
@@ -33,15 +34,19 @@ const setMeta = (selector: string, attr: string, value: string) => {
 
 const DEFAULT_OG_IMAGE = "https://rentli.ro/og-image.webp";
 
-export const useSEO = ({ title, description, image, url, type = "website", canonical, jsonLd, noindex }: SEOConfig) => {
+export const useSEO = ({ title, description, image, imageAlt, url, type = "website", canonical, jsonLd, noindex }: SEOConfig) => {
   useEffect(() => {
-    const resolvedImage = image || DEFAULT_OG_IMAGE;
+    const selectedImage = image || DEFAULT_OG_IMAGE;
+    const resolvedImage = selectedImage.startsWith("http")
+      ? selectedImage
+      : new URL(selectedImage, "https://rentli.ro").href;
     if (title) document.title = title;
     if (description) setMeta('meta[name="description"]', "content", description);
 
     if (title) setMeta('meta[property="og:title"]', "content", title);
     if (description) setMeta('meta[property="og:description"]', "content", description);
     setMeta('meta[property="og:image"]', "content", resolvedImage);
+    if (imageAlt) setMeta('meta[property="og:image:alt"]', "content", imageAlt);
     if (url) setMeta('meta[property="og:url"]', "content", url);
     setMeta('meta[property="og:type"]', "content", type);
 
@@ -49,6 +54,7 @@ export const useSEO = ({ title, description, image, url, type = "website", canon
     if (title) setMeta('meta[name="twitter:title"]', "content", title);
     if (description) setMeta('meta[name="twitter:description"]', "content", description);
     setMeta('meta[name="twitter:image"]', "content", resolvedImage);
+    if (imageAlt) setMeta('meta[name="twitter:image:alt"]', "content", imageAlt);
 
     if (canonical) setMeta('link[rel="canonical"]', "href", canonical);
 
@@ -80,5 +86,5 @@ export const useSEO = ({ title, description, image, url, type = "website", canon
     } else if (jsonLdEl) {
       jsonLdEl.remove();
     }
-  }, [title, description, image, url, type, canonical, JSON.stringify(jsonLd), noindex]);
+  }, [title, description, image, imageAlt, url, type, canonical, JSON.stringify(jsonLd), noindex]);
 };

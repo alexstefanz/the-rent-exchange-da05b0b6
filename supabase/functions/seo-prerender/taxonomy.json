@@ -3,57 +3,68 @@
     "unelte": {
       "name": "Unelte",
       "titleKeyword": "Unelte și scule",
-      "description": "Bormașini, rotopercutoare, betoniere, lasere de nivel și aspiratoare industriale de închiriat în București, Cluj, Timișoara și restul țării."
+      "description": "Bormașini, rotopercutoare, betoniere, lasere de nivel și aspiratoare industriale de închiriat în București, Cluj, Timișoara și restul țării.",
+      "image": "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=400&q=80"
     },
     "evenimente": {
       "name": "Evenimente",
       "titleKeyword": "Echipamente pentru evenimente",
-      "description": "Mese și scaune, corturi, sonorizare, lumini decorative și aparate de popcorn sau vată de zahăr, închiriate direct de la organizatori locali."
+      "description": "Mese și scaune, corturi, sonorizare, lumini decorative și aparate de popcorn sau vată de zahăr, închiriate direct de la organizatori locali.",
+      "image": "https://images.unsplash.com/photo-1478827536114-da961b7f86d2?w=400&q=80"
     },
     "electronice": {
       "name": "Electronice",
       "titleKeyword": "Electronice",
-      "description": "Laptopuri, proiectoare, console și VR, camere DSLR, drone și boxe de închiriat pe zile. Plată securizată și predare documentată cu poze."
+      "description": "Laptopuri, proiectoare, console și VR, camere DSLR, drone și boxe de închiriat pe zile. Plată securizată și predare documentată cu poze.",
+      "image": "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&q=80"
     },
     "gradinarit": {
       "name": "Grădinărit",
       "titleKeyword": "Echipamente de grădinărit",
-      "description": "Mașini de tuns gazon, motocoase, motosape, motofierăstraie și sisteme de irigații de închiriat de la vecini verificați, pe zile sau weekend."
+      "description": "Mașini de tuns gazon, motocoase, motosape, motofierăstraie și sisteme de irigații de închiriat de la vecini verificați, pe zile sau weekend.",
+      "image": "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80"
     },
     "outdoor": {
       "name": "Drumeții & Natură",
       "titleKeyword": "Echipament de drumeție și camping",
-      "description": "Corturi, saci de dormit, rucsaci, bocanci, caiace, SUP-uri și grătare portabile pentru următoarea ta ieșire în natură. Testează înainte să cumperi."
+      "description": "Corturi, saci de dormit, rucsaci, bocanci, caiace, SUP-uri și grătare portabile pentru următoarea ta ieșire în natură. Testează înainte să cumperi.",
+      "image": "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=400&q=80"
     },
     "jucarii-petrecere-copii": {
       "name": "Jucării și Petrecere Copii",
       "titleKeyword": "Jucării și petreceri pentru copii",
-      "description": "Castele gonflabile, tobogane, mese de joacă, decor tematic și jucării mari pentru zile de naștere, închiriate pentru câteva zile, nu cumpărate."
+      "description": "Castele gonflabile, tobogane, mese de joacă, decor tematic și jucării mari pentru zile de naștere, închiriate pentru câteva zile, nu cumpărate.",
+      "image": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80"
     },
     "sport": {
       "name": "Sport",
       "titleKeyword": "Echipament sportiv",
-      "description": "Biciclete, schiuri și snowboard, aparate fitness, echipament de tenis sau fotbal, închiriate pe zile de la sportivi din orașul tău."
+      "description": "Biciclete, schiuri și snowboard, aparate fitness, echipament de tenis sau fotbal, închiriate pe zile de la sportivi din orașul tău.",
+      "image": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80"
     },
     "travel": {
       "name": "Călătorii",
       "titleKeyword": "Accesorii de călătorie",
-      "description": "Valize, scaune auto pentru copii, cărucioare, rucsaci de voiaj și adaptoare — tot ce îți trebuie pentru o vacanță, fără să cumperi nimic."
+      "description": "Valize, scaune auto pentru copii, cărucioare, rucsaci de voiaj și adaptoare — tot ce îți trebuie pentru o vacanță, fără să cumperi nimic.",
+      "image": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80"
     },
     "transport-utilitare": {
       "name": "Transport și Utilitare",
       "titleKeyword": "Remorci și transport",
-      "description": "Remorci, portbagaje de plafon, cărucioare de transport, rampe și chingi de închiriat pentru mutări sau transport de marfă, pe zile."
+      "description": "Remorci, portbagaje de plafon, cărucioare de transport, rampe și chingi de închiriat pentru mutări sau transport de marfă, pe zile.",
+      "image": "https://rentli.ro/images/categories/transport-utilitare.webp"
     },
     "haine-recuzita": {
       "name": "Haine și Recuzită",
       "titleKeyword": "Costume și recuzită",
-      "description": "Costume de epocă și tematice, ținute de ocazie, accesorii și recuzită pentru ședințe foto, teatru sau petreceri costumate."
+      "description": "Costume de epocă și tematice, ținute de ocazie, accesorii și recuzită pentru ședințe foto, teatru sau petreceri costumate.",
+      "image": "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&q=80"
     },
     "utilaje": {
       "name": "Utilaje",
       "titleKeyword": "Utilaje pentru construcții",
-      "description": "Mini-excavatoare, generatoare, schele, placi compactoare și nacele de închiriat de la firme și proprietari verificați din România."
+      "description": "Mini-excavatoare, generatoare, schele, placi compactoare și nacele de închiriat de la firme și proprietari verificați din România.",
+      "image": "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=400&q=80"
     },
     "diverse": {
       "name": "Diverse",
@@ -66,31 +77,36 @@
       "name": "Scule electrice",
       "description": "Bormașini, rotopercutoare, polizoare",
       "category": "Unelte",
-      "categorySlug": "unelte"
+      "categorySlug": "unelte",
+      "image": "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=400&q=80"
     },
     "1-2": {
       "name": "Scule manuale",
       "description": "Chei, șurubelnițe, clești, truse",
       "category": "Unelte",
-      "categorySlug": "unelte"
+      "categorySlug": "unelte",
+      "image": "https://images.unsplash.com/photo-1581783898377-1c85bf937427?w=400&q=80"
     },
     "1-3": {
       "name": "Construcții",
       "description": "Betoniere, compactoare, buldoexcavatoare",
       "category": "Unelte",
-      "categorySlug": "unelte"
+      "categorySlug": "unelte",
+      "image": "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80"
     },
     "1-4": {
       "name": "Măsurare și nivelare",
       "description": "Lasere, niveluri, rulete profesionale",
       "category": "Unelte",
-      "categorySlug": "unelte"
+      "categorySlug": "unelte",
+      "image": "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=400&q=80"
     },
     "1-5": {
       "name": "Curățenie industrială",
       "description": "Aspiratoare industriale, mașini de curățat",
       "category": "Unelte",
-      "categorySlug": "unelte"
+      "categorySlug": "unelte",
+      "image": "https://images.unsplash.com/photo-1558317374-067fb5f30001?w=400&q=80"
     },
     "1-99": {
       "name": "Altele",
@@ -102,37 +118,43 @@
       "name": "Mobilier evenimente",
       "description": "Mese, scaune, podiumuri pentru evenimente",
       "category": "Evenimente",
-      "categorySlug": "evenimente"
+      "categorySlug": "evenimente",
+      "image": "https://images.unsplash.com/photo-1478827536114-da961b7f86d2?w=400&q=80"
     },
     "2-2": {
       "name": "Decor și lighting",
       "description": "Arcade, aranjamente, lumini decorative",
       "category": "Evenimente",
-      "categorySlug": "evenimente"
+      "categorySlug": "evenimente",
+      "image": "https://images.unsplash.com/photo-1519167758481-83f550bb49b3?w=400&q=80"
     },
     "2-3": {
       "name": "Echipamente audio-video",
       "description": "Boxe, microfoane, proiectoare",
       "category": "Evenimente",
-      "categorySlug": "evenimente"
+      "categorySlug": "evenimente",
+      "image": "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&q=80"
     },
     "2-4": {
       "name": "Corturi și pavilioane",
       "description": "Corturi mari, pavilioane pentru evenimente",
       "category": "Evenimente",
-      "categorySlug": "evenimente"
+      "categorySlug": "evenimente",
+      "image": "https://images.unsplash.com/photo-1478827536114-da961b7f86d2?w=400&q=80"
     },
     "2-5": {
       "name": "Catering și servire",
       "description": "Aparate popcorn, vată de zahăr, grătare",
       "category": "Evenimente",
-      "categorySlug": "evenimente"
+      "categorySlug": "evenimente",
+      "image": "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=400&q=80"
     },
     "2-6": {
       "name": "Echipamente speciale",
       "description": "Mașini de fum, bule, zăpadă artificială",
       "category": "Evenimente",
-      "categorySlug": "evenimente"
+      "categorySlug": "evenimente",
+      "image": "https://images.unsplash.com/photo-1527004013197-933c4bb611b3?w=400&q=80"
     },
     "2-99": {
       "name": "Altele",
@@ -144,43 +166,50 @@
       "name": "Electrocasnice mici",
       "description": "Aparate de uz casnic portabile",
       "category": "Electronice",
-      "categorySlug": "electronice"
+      "categorySlug": "electronice",
+      "image": "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&q=80"
     },
     "3-2": {
       "name": "Laptopuri și PC",
       "description": "Laptopuri, calculatoare, accesorii",
       "category": "Electronice",
-      "categorySlug": "electronice"
+      "categorySlug": "electronice",
+      "image": "https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=400&q=80"
     },
     "3-3": {
       "name": "TV și proiectoare",
       "description": "Televizoare, proiectoare, ecrane",
       "category": "Electronice",
-      "categorySlug": "electronice"
+      "categorySlug": "electronice",
+      "image": "https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=400&q=80"
     },
     "3-4": {
       "name": "Audio",
       "description": "Boxe, căști, echipamente audio",
       "category": "Electronice",
-      "categorySlug": "electronice"
+      "categorySlug": "electronice",
+      "image": "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&q=80"
     },
     "3-5": {
       "name": "Gaming",
       "description": "Console, VR, controllere, jocuri",
       "category": "Electronice",
-      "categorySlug": "electronice"
+      "categorySlug": "electronice",
+      "image": "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=400&q=80"
     },
     "3-6": {
       "name": "Foto și video",
       "description": "Camere DSLR, drone, gimbaluri",
       "category": "Electronice",
-      "categorySlug": "electronice"
+      "categorySlug": "electronice",
+      "image": "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400&q=80"
     },
     "3-7": {
       "name": "Tablete",
       "description": "Tablete și accesorii",
       "category": "Electronice",
-      "categorySlug": "electronice"
+      "categorySlug": "electronice",
+      "image": "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&q=80"
     },
     "3-99": {
       "name": "Altele",
@@ -192,25 +221,29 @@
       "name": "Unelte grădină",
       "description": "Greble, lopeti, foarfeci de grădină",
       "category": "Grădinărit",
-      "categorySlug": "gradinarit"
+      "categorySlug": "gradinarit",
+      "image": "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80"
     },
     "4-2": {
       "name": "Mașini de tuns gazon",
       "description": "Mașini de tuns iarba manuale și electrice",
       "category": "Grădinărit",
-      "categorySlug": "gradinarit"
+      "categorySlug": "gradinarit",
+      "image": "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80"
     },
     "4-3": {
       "name": "Sisteme de irigații",
       "description": "Aspersoare, furtunuri, sisteme automate",
       "category": "Grădinărit",
-      "categorySlug": "gradinarit"
+      "categorySlug": "gradinarit",
+      "image": "https://images.unsplash.com/photo-1558904541-efa843a96f01?w=400&q=80"
     },
     "4-4": {
       "name": "Motounelte",
       "description": "Motosape, motocoase, motofierăstraie",
       "category": "Grădinărit",
-      "categorySlug": "gradinarit"
+      "categorySlug": "gradinarit",
+      "image": "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&q=80"
     },
     "4-99": {
       "name": "Altele",
@@ -222,25 +255,29 @@
       "name": "Camping",
       "description": "Corturi, saltele, saci de dormit",
       "category": "Drumeții & Natură",
-      "categorySlug": "outdoor"
+      "categorySlug": "outdoor",
+      "image": "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=400&q=80"
     },
     "5-2": {
       "name": "Echipament Drumeții",
       "description": "Rucsaci, bocanci, bastoane",
       "category": "Drumeții & Natură",
-      "categorySlug": "outdoor"
+      "categorySlug": "outdoor",
+      "image": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80"
     },
     "5-3": {
       "name": "Grătare",
       "description": "Grătare portabile și profesionale",
       "category": "Drumeții & Natură",
-      "categorySlug": "outdoor"
+      "categorySlug": "outdoor",
+      "image": "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=400&q=80"
     },
     "5-4": {
       "name": "Echipamente de aventură",
       "description": "Caiace, SUP-uri, escaladă",
       "category": "Drumeții & Natură",
-      "categorySlug": "outdoor"
+      "categorySlug": "outdoor",
+      "image": "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&q=80"
     },
     "5-99": {
       "name": "Altele",
@@ -252,25 +289,29 @@
       "name": "Tobogane și gonflabile",
       "description": "Castele, tobogane și piscine gonflabile",
       "category": "Jucării și Petrecere Copii",
-      "categorySlug": "jucarii-petrecere-copii"
+      "categorySlug": "jucarii-petrecere-copii",
+      "image": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80"
     },
     "6-2": {
       "name": "Jocuri interactive",
       "description": "Jocuri interactive pentru petreceri",
       "category": "Jucării și Petrecere Copii",
-      "categorySlug": "jucarii-petrecere-copii"
+      "categorySlug": "jucarii-petrecere-copii",
+      "image": "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=400&q=80"
     },
     "6-3": {
       "name": "Costume copii",
       "description": "Costume tematice pentru copii",
       "category": "Jucării și Petrecere Copii",
-      "categorySlug": "jucarii-petrecere-copii"
+      "categorySlug": "jucarii-petrecere-copii",
+      "image": "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&q=80"
     },
     "6-4": {
       "name": "Decor",
       "description": "Decoruri pentru petreceri copii",
       "category": "Jucării și Petrecere Copii",
-      "categorySlug": "jucarii-petrecere-copii"
+      "categorySlug": "jucarii-petrecere-copii",
+      "image": "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&q=80"
     },
     "6-99": {
       "name": "Altele",
@@ -282,37 +323,43 @@
       "name": "Fitness",
       "description": "Benzi alergare, biciclete indoor, greutăți",
       "category": "Sport",
-      "categorySlug": "sport"
+      "categorySlug": "sport",
+      "image": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80"
     },
     "7-2": {
       "name": "Sporturi de echipă",
       "description": "Echipament fotbal, baschet, volei",
       "category": "Sport",
-      "categorySlug": "sport"
+      "categorySlug": "sport",
+      "image": "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&q=80"
     },
     "7-3": {
       "name": "Biciclete și accesorii",
       "description": "Biciclete, căști, accesorii ciclism",
       "category": "Sport",
-      "categorySlug": "sport"
+      "categorySlug": "sport",
+      "image": "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=400&q=80"
     },
     "7-4": {
       "name": "Sporturi de iarnă",
       "description": "Schiuri, snowboard, sănii, echipament",
       "category": "Sport",
-      "categorySlug": "sport"
+      "categorySlug": "sport",
+      "image": "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&q=80"
     },
     "7-5": {
       "name": "Sporturi de apă",
       "description": "SUP, caiace, echipament scufundări",
       "category": "Sport",
-      "categorySlug": "sport"
+      "categorySlug": "sport",
+      "image": "https://images.unsplash.com/photo-1499260662818-9c4c01d7cf6f?w=400&q=80"
     },
     "7-6": {
       "name": "Recuperare și wellness",
       "description": "Masaj, presoterapie, yoga",
       "category": "Sport",
-      "categorySlug": "sport"
+      "categorySlug": "sport",
+      "image": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&q=80"
     },
     "7-99": {
       "name": "Altele",
@@ -324,25 +371,29 @@
       "name": "Valize și trolere",
       "description": "Valize de diverse dimensiuni",
       "category": "Călătorii",
-      "categorySlug": "travel"
+      "categorySlug": "travel",
+      "image": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80"
     },
     "8-2": {
       "name": "Rucsaci travel",
       "description": "Rucsaci pentru călătorii",
       "category": "Călătorii",
-      "categorySlug": "travel"
+      "categorySlug": "travel",
+      "image": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80"
     },
     "8-3": {
       "name": "Accesorii călătorie",
       "description": "Adaptoare, perne, organizatoare",
       "category": "Călătorii",
-      "categorySlug": "travel"
+      "categorySlug": "travel",
+      "image": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80"
     },
     "8-4": {
       "name": "Cuști și transport animale",
       "description": "Cuști și genți transport animale",
       "category": "Călătorii",
-      "categorySlug": "travel"
+      "categorySlug": "travel",
+      "image": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80"
     },
     "8-99": {
       "name": "Altele",
@@ -354,43 +405,50 @@
       "name": "Remorci",
       "description": "Remorci auto de diverse dimensiuni",
       "category": "Transport și Utilitare",
-      "categorySlug": "transport-utilitare"
+      "categorySlug": "transport-utilitare",
+      "image": "https://rentli.ro/images/categories/transport-utilitare.webp"
     },
     "9-2": {
       "name": "Platforme auto",
       "description": "Platforme pentru transport auto",
       "category": "Transport și Utilitare",
-      "categorySlug": "transport-utilitare"
+      "categorySlug": "transport-utilitare",
+      "image": "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=400&q=80"
     },
     "9-3": {
       "name": "ATV și off-road",
       "description": "ATV-uri și vehicule off-road",
       "category": "Transport și Utilitare",
-      "categorySlug": "transport-utilitare"
+      "categorySlug": "transport-utilitare",
+      "image": "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=400&q=80"
     },
     "9-4": {
       "name": "Motociclete și scutere",
       "description": "Motociclete și scutere de închiriat",
       "category": "Transport și Utilitare",
-      "categorySlug": "transport-utilitare"
+      "categorySlug": "transport-utilitare",
+      "image": "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=400&q=80"
     },
     "9-5": {
       "name": "Transport marfă",
       "description": "Vehicule și echipamente transport marfă",
       "category": "Transport și Utilitare",
-      "categorySlug": "transport-utilitare"
+      "categorySlug": "transport-utilitare",
+      "image": "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=400&q=80"
     },
     "9-6": {
       "name": "Echipamente transport",
       "description": "Portbagaje, boxe transfer, suporturi",
       "category": "Transport și Utilitare",
-      "categorySlug": "transport-utilitare"
+      "categorySlug": "transport-utilitare",
+      "image": "https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=400&q=80"
     },
     "9-7": {
       "name": "Trotinete",
       "description": "Trotinete electrice și clasice",
       "category": "Transport și Utilitare",
-      "categorySlug": "transport-utilitare"
+      "categorySlug": "transport-utilitare",
+      "image": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80"
     },
     "9-99": {
       "name": "Altele",
@@ -402,19 +460,22 @@
       "name": "Costume tematice",
       "description": "Costume pentru diverse ocazii tematice",
       "category": "Haine și Recuzită",
-      "categorySlug": "haine-recuzita"
+      "categorySlug": "haine-recuzita",
+      "image": "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&q=80"
     },
     "10-2": {
       "name": "Ținute elegante",
       "description": "Rochii de seară, costume bărbătești",
       "category": "Haine și Recuzită",
-      "categorySlug": "haine-recuzita"
+      "categorySlug": "haine-recuzita",
+      "image": "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&q=80"
     },
     "10-3": {
       "name": "Costume Halloween",
       "description": "Costume și măști de Halloween",
       "category": "Haine și Recuzită",
-      "categorySlug": "haine-recuzita"
+      "categorySlug": "haine-recuzita",
+      "image": "https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=400&q=80"
     },
     "10-99": {
       "name": "Altele",
@@ -426,79 +487,92 @@
       "name": "Tractoare și mini-tractoare",
       "description": "Tractoare pentru lucrări agricole",
       "category": "Utilaje",
-      "categorySlug": "utilaje"
+      "categorySlug": "utilaje",
+      "image": "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=400&q=80"
     },
     "11-2": {
       "name": "Utilaje de prelucrare sol",
       "description": "Pluguri, grape, freze de sol",
       "category": "Utilaje",
-      "categorySlug": "utilaje"
+      "categorySlug": "utilaje",
+      "image": "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=400&q=80"
     },
     "11-3": {
       "name": "Semănat și plantat",
       "description": "Semănătoare, plantătoare",
       "category": "Utilaje",
-      "categorySlug": "utilaje"
+      "categorySlug": "utilaje",
+      "image": "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=400&q=80"
     },
     "11-4": {
       "name": "Irigare agricolă",
       "description": "Sisteme de irigație pentru agricultură",
       "category": "Utilaje",
-      "categorySlug": "utilaje"
+      "categorySlug": "utilaje",
+      "image": "https://images.unsplash.com/photo-1558904541-efa843a96f01?w=400&q=80"
     },
     "11-5": {
       "name": "Recoltare",
       "description": "Combine, secerătoare, echipament recoltare",
       "category": "Utilaje",
-      "categorySlug": "utilaje"
+      "categorySlug": "utilaje",
+      "image": "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=400&q=80"
     },
     "11-6": {
       "name": "Atașamente și accesorii",
       "description": "Atașamente pentru utilaje agricole",
       "category": "Utilaje",
-      "categorySlug": "utilaje"
+      "categorySlug": "utilaje",
+      "image": "https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=400&q=80"
     },
     "11-7": {
       "name": "Buldoexcavator",
       "description": "Buldoexcavatoare pentru construcții",
       "category": "Utilaje",
-      "categorySlug": "utilaje"
+      "categorySlug": "utilaje",
+      "image": "https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=400&q=80"
     },
     "11-8": {
       "name": "Excavator",
       "description": "Excavatoare de diverse capacități",
       "category": "Utilaje",
-      "categorySlug": "utilaje"
+      "categorySlug": "utilaje",
+      "image": "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80"
     },
     "11-9": {
       "name": "Cilindru Compactor",
       "description": "Cilindri compactori pentru asfalt și sol",
       "category": "Utilaje",
-      "categorySlug": "utilaje"
+      "categorySlug": "utilaje",
+      "image": "https://images.unsplash.com/photo-1517089152318-42ec560349c0?w=400&q=80"
     },
     "11-10": {
       "name": "Macara",
       "description": "Macarale pentru ridicări grele",
       "category": "Utilaje",
-      "categorySlug": "utilaje"
+      "categorySlug": "utilaje",
+      "image": "https://images.unsplash.com/photo-1565008447742-97f6f38c985c?w=400&q=80"
     },
     "11-11": {
       "name": "Nacelă Articulată",
       "description": "Nacele articulate pentru lucrări la înălțime",
       "category": "Utilaje",
-      "categorySlug": "utilaje"
+      "categorySlug": "utilaje",
+      "image": "https://images.unsplash.com/photo-1590496793929-36417d3117de?w=400&q=80"
     },
     "11-12": {
       "name": "Nacelă Foarfecă",
       "description": "Nacele tip foarfecă pentru platforme de lucru",
       "category": "Utilaje",
-      "categorySlug": "utilaje"
+      "categorySlug": "utilaje",
+      "image": "https://images.unsplash.com/photo-1590496794008-383c8070b257?w=400&q=80"
     },
     "11-13": {
       "name": "Încărcător Frontal",
       "description": "Încărcătoare frontale pentru materiale",
       "category": "Utilaje",
-      "categorySlug": "utilaje"
+      "categorySlug": "utilaje",
+      "image": "https://images.unsplash.com/photo-1581094794329-c8112a89af12?w=400&q=80"
     },
     "11-99": {
       "name": "Altele",

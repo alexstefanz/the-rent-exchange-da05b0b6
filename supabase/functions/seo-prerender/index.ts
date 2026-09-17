@@ -10,6 +10,12 @@ const DEFAULT_IMAGE = `${SITE}/og-image.webp`;
 const TITLE_MAX = 60;
 const DESC_MAX = 155;
 
+const admin = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  { auth: { persistSession: false } },
+);
+
 const esc = (s: string) =>
   String(s ?? "")
     .replace(/&/g, "&amp;")
@@ -28,11 +34,40 @@ function truncate(raw: string | null | undefined, max: number) {
   return `${base.replace(/[\s,;:.–—-]+$/, "")}…`;
 }
 
+function firstValidImage(images: unknown): string | null {
+  if (!Array.isArray(images)) return null;
+  const image = images.find(
+    (value): value is string => typeof value === "string" && Boolean(value) && !value.includes("placeholder"),
+  );
+  if (!image) return null;
+  return image.startsWith("http") ? image : `${SITE}${image}`;
+}
+
+async function getCollectionProductImage(category: string, subcategory?: string): Promise<string | null> {
+  let query = admin
+    .from("products")
+    .select("images")
+    .eq("category", category)
+    .eq("is_active", true)
+    .eq("approval_status", "approved")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(12);
+  if (subcategory) query = query.eq("subcategory", subcategory);
+  const { data } = await query;
+  for (const product of data || []) {
+    const image = firstValidImage(product.images);
+    if (image) return image;
+  }
+  return null;
+}
+
 interface Meta {
   title: string;
   description: string;
   canonical: string;
   image: string;
+  imageAlt: string;
   type: "website" | "product";
   jsonLd?: Record<string, unknown> | null;
   noindex?: boolean;
@@ -50,12 +85,14 @@ function renderHtml(base: string, meta: Meta) {
     `<meta property="og:description" content="${esc(meta.description)}">`,
     `<meta property="og:url" content="${esc(meta.canonical)}">`,
     `<meta property="og:image" content="${esc(meta.image)}">`,
+    `<meta property="og:image:alt" content="${esc(meta.imageAlt)}">`,
     `<meta property="og:type" content="${meta.type}">`,
     `<meta property="og:site_name" content="Rentli">`,
     `<meta name="twitter:card" content="summary_large_image">`,
     `<meta name="twitter:title" content="${esc(meta.title)}">`,
     `<meta name="twitter:description" content="${esc(meta.description)}">`,
     `<meta name="twitter:image" content="${esc(meta.image)}">`,
+    `<meta name="twitter:image:alt" content="${esc(meta.imageAlt)}">`,
     meta.jsonLd
       ? `<script type="application/ld+json">${JSON.stringify(meta.jsonLd).replace(/</g, "\\u003c")}</script>`
       : "",
@@ -88,7 +125,7 @@ async function getShell(): Promise<string> {
   return html;
 }
 
-function categoryMeta(slug: string): Meta | null {
+async function categoryMeta(slug: string): Promise<Meta | null> {
   const c = (taxonomy as any).categories[slug];
   if (!c) return null;
   const url = `${SITE}/categorie/${slug}`;
@@ -98,11 +135,13 @@ function categoryMeta(slug: string): Meta | null {
       `Închiriază ${c.name.toLowerCase()} de la oameni verificați. Prețuri corecte, plată securizată, predare cu poze pe Rentli.`,
     DESC_MAX,
   );
+  const image = await getCollectionProductImage(c.name) || c.image || DEFAULT_IMAGE;
   return {
     title,
     description,
     canonical: url,
-    image: DEFAULT_IMAGE,
+    image,
+    imageAlt: `Produse din categoria ${c.name} disponibile pentru închiriere`,
     type: "website",
     jsonLd: {
       "@context": "https://schema.org",
@@ -110,6 +149,11 @@ function categoryMeta(slug: string): Meta | null {
       name: c.name,
       url,
       description,
+      primaryImageOfPage: {
+        "@type": "ImageObject",
+        contentUrl: image,
+        caption: c.name,
+      },
       breadcrumb: {
         "@type": "BreadcrumbList",
         itemListElement: [
@@ -122,7 +166,7 @@ function categoryMeta(slug: string): Meta | null {
   };
 }
 
-function subcategoryMeta(id: string): Meta | null {
+async function subcategoryMeta(id: string): Promise<Meta | null> {
   const s = (taxonomy as any).subcategories[id];
   if (!s) return null;
   const url = `${SITE}/subcategorie/${id}`;
@@ -131,11 +175,13 @@ function subcategoryMeta(id: string): Meta | null {
     `${s.description}. Închiriază ${s.name.toLowerCase()} de la oameni verificați din România: plată securizată și predare documentată cu poze.`,
     DESC_MAX,
   );
+  const image = await getCollectionProductImage(s.category, id) || s.image || DEFAULT_IMAGE;
   return {
     title,
     description,
     canonical: url,
-    image: DEFAULT_IMAGE,
+    image,
+    imageAlt: `${s.name} disponibile pentru închiriere`,
     type: "website",
     jsonLd: {
       "@context": "https://schema.org",
@@ -143,6 +189,11 @@ function subcategoryMeta(id: string): Meta | null {
       name: s.name,
       url,
       description,
+      primaryImageOfPage: {
+        "@type": "ImageObject",
+        contentUrl: image,
+        caption: s.name,
+      },
       breadcrumb: {
         "@type": "BreadcrumbList",
         itemListElement: [
@@ -157,11 +208,6 @@ function subcategoryMeta(id: string): Meta | null {
 }
 
 async function productMeta(slug: string): Promise<Meta | null> {
-  const admin = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    { auth: { persistSession: false } },
-  );
   const { data } = await admin
     .from("products")
     .select("id, title, description, daily_price_owner, location_city, images, category, condition, slug, is_active, approval_status, deleted_at")
@@ -174,7 +220,9 @@ async function productMeta(slug: string): Promise<Meta | null> {
   const url = `${SITE}/produs/${data.slug}`;
   const city = data.location_city || "România";
   const price = Math.round(Number(data.daily_price_owner) || 0);
-  const images: string[] = Array.isArray(data.images) ? data.images.filter(Boolean) : [];
+  const images: string[] = Array.isArray(data.images)
+    ? data.images.filter((value: unknown): value is string => typeof value === "string" && Boolean(value) && !value.includes("placeholder"))
+    : [];
   const image = images[0]?.startsWith("http") ? images[0] : images[0] ? `${SITE}${images[0]}` : DEFAULT_IMAGE;
 
   const title = truncate(`Închiriere ${data.title} în ${city} — ${price} lei/zi`, TITLE_MAX - 9) + " | Rentli";
@@ -192,6 +240,7 @@ async function productMeta(slug: string): Promise<Meta | null> {
     description,
     canonical: url,
     image,
+    imageAlt: data.title,
     type: "product",
     noindex: !available,
     jsonLd: available
@@ -233,8 +282,8 @@ Deno.serve(async (req) => {
     const subcategory = path.match(/^\/subcategorie\/([^/]+)$/);
 
     if (product) meta = await productMeta(product[1]);
-    else if (category) meta = categoryMeta(category[1]);
-    else if (subcategory) meta = subcategoryMeta(subcategory[1]);
+    else if (category) meta = await categoryMeta(category[1]);
+    else if (subcategory) meta = await subcategoryMeta(subcategory[1]);
 
     if (!meta) {
       status = 404;
@@ -243,6 +292,7 @@ Deno.serve(async (req) => {
         description: "Anunțul sau pagina căutată nu mai este disponibilă pe Rentli.",
         canonical: `${SITE}${path}`,
         image: DEFAULT_IMAGE,
+        imageAlt: "Rentli",
         type: "website",
         noindex: true,
       };
