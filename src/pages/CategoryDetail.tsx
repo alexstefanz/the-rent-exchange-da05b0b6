@@ -23,6 +23,8 @@ import { judete } from "@/data/romaniaLocations";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getCategorySeoCopy } from "@/data/categorySeo";
+import { getCategoryContent } from "@/data/categoryContent";
+import CategorySeoContent from "@/components/seo/CategorySeoContent";
 import { truncateForMeta, META_TITLE_MAX, META_DESCRIPTION_MAX } from "@/lib/seoText";
 
 
@@ -213,6 +215,8 @@ const CategoryDetail = () => {
       )
     : (language === "en" ? "Explore rentals by category on Rentli." : "Explorează închirieri pe categorii pe Rentli.");
 
+  const categoryFaq = getCategoryContent(category?.slug)?.faq ?? [];
+
   usePageSeo({
     title: seoTitle,
     description: seoDescription,
@@ -220,22 +224,34 @@ const CategoryDetail = () => {
     noindex: Boolean(hasActiveFilters || searchQuery),
     jsonLd: category ? {
       "@context": "https://schema.org",
-      "@type": "CollectionPage",
-      name: catName,
-      url: `https://rentli.ro/categorie/${category.slug}`,
-      description: seoDescription,
-      mainEntity: {
-        "@type": "ItemList",
-        numberOfItems: products.length,
-      },
-      breadcrumb: {
-        "@type": "BreadcrumbList",
-        itemListElement: [
-          { "@type": "ListItem", position: 1, name: language === "en" ? "Home" : "Acasă", item: "https://rentli.ro/" },
-          { "@type": "ListItem", position: 2, name: language === "en" ? "Categories" : "Categorii", item: "https://rentli.ro/categorii" },
-          { "@type": "ListItem", position: 3, name: catName, item: `https://rentli.ro/categorie/${category.slug}` },
-        ],
-      },
+      "@graph": [
+        {
+          "@type": "CollectionPage",
+          name: catName,
+          url: `https://rentli.ro/categorie/${category.slug}`,
+          description: seoDescription,
+          mainEntity: {
+            "@type": "ItemList",
+            numberOfItems: products.length,
+          },
+          breadcrumb: {
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: language === "en" ? "Home" : "Acasă", item: "https://rentli.ro/" },
+              { "@type": "ListItem", position: 2, name: language === "en" ? "Categories" : "Categorii", item: "https://rentli.ro/categorii" },
+              { "@type": "ListItem", position: 3, name: catName, item: `https://rentli.ro/categorie/${category.slug}` },
+            ],
+          },
+        },
+        ...(categoryFaq.length > 0 ? [{
+          "@type": "FAQPage",
+          mainEntity: categoryFaq.map((f) => ({
+            "@type": "Question",
+            name: language === "en" ? f.qEn : f.q,
+            acceptedAnswer: { "@type": "Answer", text: language === "en" ? f.aEn : f.a },
+          })),
+        }] : []),
+      ],
     } : null,
   });
 
@@ -503,6 +519,13 @@ const CategoryDetail = () => {
             )
           )}
         </div>
+
+        {category && (
+          <CategorySeoContent
+            categorySlug={category.slug}
+            heading={language === "en" ? `About renting ${catName.toLowerCase()}` : `Despre închirierea de ${catName.toLowerCase()}`}
+          />
+        )}
 
       </main>
       {viewMode !== "map" && <Footer />}

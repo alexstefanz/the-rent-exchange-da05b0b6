@@ -43,6 +43,7 @@ import { useProductExtendedStats } from "@/hooks/queries/useProductExtendedStats
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSEO } from "@/hooks/useSEO";
+import { CANONICAL_ORIGIN } from "@/hooks/usePageSeo";
 import { truncateForMeta, buildMeta, cleanUserDescription, META_TITLE_MAX, META_DESCRIPTION_MAX } from "@/lib/seoText";
 
 import { addFavoriteProduct, removeFavoriteProduct, isProductFavorite } from "@/features/profile/favoriteProductsApi";
@@ -258,7 +259,9 @@ const ProductDetail = () => {
   const seoImage = seoFirstImage
     ? (seoFirstImage.startsWith("http") ? seoFirstImage : `${origin}${seoFirstImage}`)
     : "https://rentli.ro/og-image.webp";
-  const canonicalUrl = product ? `${typeof window !== "undefined" ? window.location.origin : ""}${getProductUrl(product)}` : (typeof window !== "undefined" ? window.location.href : "");
+  const canonicalUrl = product
+    ? `${CANONICAL_ORIGIN}${getProductUrl(product)}`
+    : `${CANONICAL_ORIGIN}${typeof window !== "undefined" ? window.location.pathname : ""}`;
   const seoCategory = product?.category ? (categories.find((c) => c.name === product.category) || null) : null;
   const seoPriceValidUntil = (() => {
     const d = new Date();
@@ -272,7 +275,8 @@ const ProductDetail = () => {
     url: canonicalUrl,
     canonical: canonicalUrl,
     type: "product",
-    noindex: isPreview,
+    // Unavailable / deleted listings must not stay in the index.
+    noindex: isPreview || (!isLoading && !product),
     jsonLd: product ? {
       "@context": "https://schema.org",
       "@graph": [

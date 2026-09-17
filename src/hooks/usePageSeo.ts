@@ -1,6 +1,9 @@
 import { useLocation } from "react-router-dom";
 import { useSEO } from "./useSEO";
 
+/** The single official host used for canonical URLs (no www, no preview domains). */
+export const CANONICAL_ORIGIN = "https://rentli.ro";
+
 interface PageSeoOptions {
   title: string;
   description: string;
@@ -16,7 +19,7 @@ interface PageSeoOptions {
  */
 export const usePageSeo = ({ title, description, image, type = "website", jsonLd, noindex }: PageSeoOptions) => {
   const { pathname } = useLocation();
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://rentli.ro";
-  const url = `${origin}${pathname}`;
+  // Canonical always points at the single official host, never www/preview.
+  const url = `${CANONICAL_ORIGIN}${pathname}`;
   useSEO({ title, description, image, url, canonical: url, type, jsonLd, noindex });
 };
