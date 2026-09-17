@@ -485,9 +485,9 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
           <span className="flex-1 text-sm font-medium text-foreground text-left">
             {t("Închirieri încheiate", "Completed rentals")}
           </span>
-          {(trust?.completedRentals || 0) > 0 && (
+          {(signals?.completedRentalsAsOwner || 0) > 0 && (
             <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-primary/15 text-primary text-xs font-semibold">
-              {trust?.completedRentals}
+              {signals?.completedRentalsAsOwner}
             </span>
           )}
           <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition" />

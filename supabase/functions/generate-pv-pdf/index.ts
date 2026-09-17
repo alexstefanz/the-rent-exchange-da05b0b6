@@ -257,7 +257,12 @@ Deno.serve(async (req) => {
     if (signErr || !signed) throw new Error(`Sign URL failed: ${signErr?.message}`);
 
     // Base64 for attachment use
-    const base64 = btoa(String.fromCharCode(...pdfBytes));
+    let binary = "";
+    const CHUNK = 0x8000;
+    for (let i = 0; i < pdfBytes.length; i += CHUNK) {
+      binary += String.fromCharCode(...pdfBytes.subarray(i, i + CHUNK));
+    }
+    const base64 = btoa(binary);
 
     return new Response(JSON.stringify({
       success: true,
