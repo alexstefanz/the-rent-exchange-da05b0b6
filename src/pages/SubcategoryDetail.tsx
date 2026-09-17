@@ -286,6 +286,14 @@ const SubcategoryDetail = () => {
             </div>
           )
         )}
+
+        {category && subcategory && (
+          <CategorySeoContent
+            categorySlug={category.slug}
+            heading={language === "en" ? `About renting ${subDisplayName.toLowerCase()}` : `Despre închirierea de ${subDisplayName.toLowerCase()}`}
+            lead={subSeoDescription}
+          />
+        )}
       </main>
       <Footer />
     </div>
