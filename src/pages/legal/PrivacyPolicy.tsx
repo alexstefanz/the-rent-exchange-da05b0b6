@@ -17,7 +17,7 @@ export const sectionsRo = [
           <li><strong>Nr. de ordine în Registrul Comerțului:</strong> J2026009653007</li>
           <li><strong>Website:</strong> <a href="https://rentli.ro" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">https://rentli.ro</a></li>
           <li><strong>Adresă de e-mail:</strong> office@rentli.ro, gdpr@rentli.ro</li>
-          <li><strong>Nr. de tel.:</strong> de completat – număr de telefon de contact</li>
+          <li><strong>Contact:</strong> prin formularul de contact disponibil pe Platformă sau la adresele de e-mail indicate mai sus</li>
         </ul>
       </div>
     ),
@@ -112,9 +112,9 @@ export const sectionsRo = [
           <li><strong>Partenerilor contractuali sau colaboratorilor Societății</strong> care ne oferă servicii de găzduire web, de dezvoltare și mentenanță website, marketing online ș.a..</li>
           <li><strong>Oricărui terț</strong> – dacă v-ați dat consimțământul în mod expres și punctual, pentru respectiva situație și respectivele date.</li>
           <li><strong>Celorlalți utilizatori ai Platformei</strong> – proprietarul și chiriașul primesc reciproc datele de identificare și de contact strict necesare executării contractului de închiriere, după confirmarea rezervării.</li>
-          <li><strong>Procesatorului de plăți</strong> – de completat – denumirea procesatorului de plăți – în vederea inițierii și securizării tranzacțiilor.</li>
-          <li><strong>Furnizorului de servicii de găzduire și infrastructură</strong> – de completat – denumirea furnizorului de hosting.</li>
-          <li><strong>Furnizorului de servicii de verificare a identității</strong> – de completat – denumirea furnizorului, dacă este cazul.</li>
+          <li><strong>Procesatorului de plăți</strong> – Stripe Payments Europe, Ltd. – în vederea inițierii și securizării tranzacțiilor.</li>
+          <li><strong>Furnizorilor de servicii de găzduire și infrastructură</strong> – Lovable (infrastructură cloud și baze de date), Cyberfolks (găzduire web).</li>
+          <li><strong>Furnizorilor de servicii de comunicare</strong> – Resend (e-mailuri tranzacționale) și SMSAlert (mesaje SMS).</li>
         </ul>
         <p>În cazul în care datele cu caracter personal prelucrate de Societate sunt <strong>transferate</strong> de către aceasta direct sau prin intermediul partenerilor contractuali/colaboratorilor săi <strong>în afara Spațiului Economic European</strong>, vă asigurăm că aceste transferuri au loc cu respectarea R.G.P.D. (în special art. 46 din R.G.P.D.), a prevederilor legale aplicabile în materie, în baza unor garanții adecvate (clauze standard de protecție a datelor adoptate de Comisie) și cu condiția de a exista drepturi opozabile și căi de atac eficiente pentru persoanele vizate.</p>
         <p>În măsura în care unii dintre furnizorii noștri sunt stabiliți în Statele Unite ale Americii, transferul are loc, după caz, în temeiul <strong>Deciziei de adecvare (UE) 2023/1795 a Comisiei Europene privind Cadrul UE–SUA pentru confidențialitatea datelor</strong>, atunci când furnizorul este certificat în cadrul acestui mecanism, ori în temeiul clauzelor contractuale standard însoțite de o evaluare a <u>impactului transferului. Lista actualizată a destinatarilor și mecanismele de transfer aplicabile pot</u> <u>fi obținute la cerere, la datele de contact indicate în prezenta Politică.</u></p>
