@@ -53,15 +53,25 @@ const SubcategoryDetail = () => {
   const subDisplayName = subcategory ? (language === "en" ? subcategory.nameEn : subcategory.name) : "";
   const subDisplayDesc = subcategory ? (language === "en" ? subcategory.descriptionEn : subcategory.description) : "";
 
+  const subSeoDescription = subcategory
+    ? truncateForMeta(
+        language === "en"
+          ? `${subDisplayDesc}. Rent ${subDisplayName.toLowerCase()} from verified people in Romania: secure payment and photo-documented handover.`
+          : `${subDisplayDesc}. Închiriază ${subDisplayName.toLowerCase()} de la oameni verificați din România: plată securizată și predare documentată cu poze.`,
+        META_DESCRIPTION_MAX,
+      )
+    : (language === "en" ? "Browse Rentli subcategories." : "Explorează subcategoriile Rentli.");
+
   usePageSeo({
     title: subcategory
-      ? (language === "en" ? `${subDisplayName} — Rentli` : `${subDisplayName} — Rentli`)
-      : (language === "en" ? "Subcategory — Rentli" : "Subcategorie — Rentli"),
-    description: subcategory
-      ? ((subDisplayDesc || "").slice(0, 160) || (language === "en"
-          ? `Rent ${subDisplayName.toLowerCase()} from verified people on Rentli.`
-          : `Închiriază ${subDisplayName.toLowerCase()} de la oameni verificați pe Rentli.`))
-      : (language === "en" ? "Browse Rentli subcategories." : "Explorează subcategoriile Rentli."),
+      ? truncateForMeta(
+          language === "en"
+            ? `Rent ${subDisplayName} — ${catDisplayName}`
+            : `Închiriere ${subDisplayName} — ${catDisplayName}`,
+          META_TITLE_MAX - 9,
+        ) + " | Rentli"
+      : (language === "en" ? "Subcategory | Rentli" : "Subcategorie | Rentli"),
+    description: subSeoDescription,
     jsonLd: subcategory && category ? {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
