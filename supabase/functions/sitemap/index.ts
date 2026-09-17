@@ -17,6 +17,21 @@ const STATIC_ENTRIES: Array<{ path: string; changefreq: string; priority: string
   { path: "/politica-cookies", changefreq: "yearly", priority: "0.3" },
 ];
 
+const TAXONOMY: Array<{ slug: string; subcategories: string[] }> = [
+  { slug: "unelte", subcategories: ["1-1", "1-2", "1-3", "1-4", "1-5", "1-99"] },
+  { slug: "evenimente", subcategories: ["2-1", "2-2", "2-3", "2-4", "2-5", "2-6", "2-99"] },
+  { slug: "electronice", subcategories: ["3-1", "3-2", "3-3", "3-4", "3-5", "3-6", "3-7", "3-99"] },
+  { slug: "gradinarit", subcategories: ["4-1", "4-2", "4-3", "4-4", "4-99"] },
+  { slug: "outdoor", subcategories: ["5-1", "5-2", "5-3", "5-4", "5-99"] },
+  { slug: "jucarii-petrecere-copii", subcategories: ["6-1", "6-2", "6-3", "6-4", "6-99"] },
+  { slug: "sport", subcategories: ["7-1", "7-2", "7-3", "7-4", "7-5", "7-6", "7-99"] },
+  { slug: "travel", subcategories: ["8-1", "8-2", "8-3", "8-4", "8-99"] },
+  { slug: "transport-utilitare", subcategories: ["9-1", "9-2", "9-3", "9-4", "9-5", "9-6", "9-7", "9-99"] },
+  { slug: "haine-recuzita", subcategories: ["10-1", "10-2", "10-3", "10-99"] },
+  { slug: "utilaje", subcategories: ["11-1", "11-2", "11-3", "11-4", "11-5", "11-6", "11-7", "11-8", "11-9", "11-10", "11-11", "11-12", "11-13", "11-99"] },
+  { slug: "diverse", subcategories: ["12-99"] },
+];
+
 function xmlEscape(s: string) {
   return s
     .replace(/&/g, "&amp;")
