@@ -104,6 +104,14 @@ const CategoryDetail = () => {
 
   const { data: products = [], isLoading } = useProducts(category ? productFilters : undefined);
 
+  // Prefer a real cover photo from this category; fall back to its curated image.
+  const categoryImage = useMemo(() => {
+    const productCover = products
+      .flatMap((product) => product.images || [])
+      .find((image) => image && !image.includes("placeholder"));
+    return productCover || bannerImage;
+  }, [products, bannerImage]);
+
   // Dynamic price bounds based on the products in this category (client price incl. fee).
   const priceBounds = useMemo<[number, number]>(() => {
     if (!products.length) return [0, 1000];
@@ -220,7 +228,7 @@ const CategoryDetail = () => {
   usePageSeo({
     title: seoTitle,
     description: seoDescription,
-    image: bannerImage || undefined,
+    image: categoryImage || undefined,
     // Filtered / paginated variants of the same category are near-duplicates.
     noindex: Boolean(hasActiveFilters || searchQuery),
     jsonLd: category ? {
@@ -231,9 +239,9 @@ const CategoryDetail = () => {
           name: catName,
           url: `https://rentli.ro/categorie/${category.slug}`,
           description: seoDescription,
-          primaryImageOfPage: bannerImage ? {
+          primaryImageOfPage: categoryImage ? {
             "@type": "ImageObject",
-            contentUrl: bannerImage,
+            contentUrl: categoryImage,
             caption: catName,
           } : undefined,
           mainEntity: {
@@ -337,7 +345,7 @@ const CategoryDetail = () => {
       {viewMode !== "map" && (
         <CategoryHero
           name={catName}
-          bannerImage={bannerImage}
+          bannerImage={categoryImage}
           total={products.length}
           newThisWeek={newThisWeek}
           topCity={topCity}

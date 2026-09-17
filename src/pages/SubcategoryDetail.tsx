@@ -54,6 +54,11 @@ const SubcategoryDetail = () => {
   const catDisplayName = category ? (language === "en" ? category.nameEn : category.name) : "";
   const subDisplayName = subcategory ? (language === "en" ? subcategory.nameEn : subcategory.name) : "";
   const subDisplayDesc = subcategory ? (language === "en" ? subcategory.descriptionEn : subcategory.description) : "";
+  const subcategoryImage = products
+    .flatMap((product) => product.images || [])
+    .find((image) => image && !image.includes("placeholder"))
+    || subcategory?.image
+    || category?.subcategories.find((item) => item.image)?.image;
 
   const subSeoDescription = subcategory
     ? truncateForMeta(
@@ -74,14 +79,14 @@ const SubcategoryDetail = () => {
         ) + " | Rentli"
       : (language === "en" ? "Subcategory | Rentli" : "Subcategorie | Rentli"),
     description: subSeoDescription,
-    image: subcategory?.image || category?.subcategories.find((item) => item.image)?.image || undefined,
+    image: subcategoryImage || undefined,
     jsonLd: subcategory && category ? {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
       name: subDisplayName,
-      primaryImageOfPage: (subcategory.image || category.subcategories.find((item) => item.image)?.image) ? {
+      primaryImageOfPage: subcategoryImage ? {
         "@type": "ImageObject",
-        contentUrl: subcategory.image || category.subcategories.find((item) => item.image)?.image,
+        contentUrl: subcategoryImage,
         caption: subDisplayName,
       } : undefined,
       breadcrumb: {

@@ -10,6 +10,12 @@ const DEFAULT_IMAGE = `${SITE}/og-image.webp`;
 const TITLE_MAX = 60;
 const DESC_MAX = 155;
 
+const admin = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  { auth: { persistSession: false } },
+);
+
 const esc = (s: string) =>
   String(s ?? "")
     .replace(/&/g, "&amp;")
@@ -26,6 +32,34 @@ function truncate(raw: string | null | undefined, max: number) {
   const lastSpace = slice.lastIndexOf(" ");
   const base = lastSpace > max * 0.5 ? slice.slice(0, lastSpace) : slice;
   return `${base.replace(/[\s,;:.–—-]+$/, "")}…`;
+}
+
+function firstValidImage(images: unknown): string | null {
+  if (!Array.isArray(images)) return null;
+  const image = images.find(
+    (value): value is string => typeof value === "string" && Boolean(value) && !value.includes("placeholder"),
+  );
+  if (!image) return null;
+  return image.startsWith("http") ? image : `${SITE}${image}`;
+}
+
+async function getCollectionProductImage(category: string, subcategory?: string): Promise<string | null> {
+  let query = admin
+    .from("products")
+    .select("images")
+    .eq("category", category)
+    .eq("is_active", true)
+    .eq("approval_status", "approved")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(12);
+  if (subcategory) query = query.eq("subcategory", subcategory);
+  const { data } = await query;
+  for (const product of data || []) {
+    const image = firstValidImage(product.images);
+    if (image) return image;
+  }
+  return null;
 }
 
 interface Meta {
@@ -91,7 +125,7 @@ async function getShell(): Promise<string> {
   return html;
 }
 
-function categoryMeta(slug: string): Meta | null {
+async function categoryMeta(slug: string): Promise<Meta | null> {
   const c = (taxonomy as any).categories[slug];
   if (!c) return null;
   const url = `${SITE}/categorie/${slug}`;
@@ -101,11 +135,12 @@ function categoryMeta(slug: string): Meta | null {
       `Închiriază ${c.name.toLowerCase()} de la oameni verificați. Prețuri corecte, plată securizată, predare cu poze pe Rentli.`,
     DESC_MAX,
   );
+  const image = await getCollectionProductImage(c.name) || c.image || DEFAULT_IMAGE;
   return {
     title,
     description,
     canonical: url,
-    image: c.image || DEFAULT_IMAGE,
+    image,
     imageAlt: `Produse din categoria ${c.name} disponibile pentru închiriere`,
     type: "website",
     jsonLd: {
@@ -114,11 +149,11 @@ function categoryMeta(slug: string): Meta | null {
       name: c.name,
       url,
       description,
-      primaryImageOfPage: c.image ? {
+      primaryImageOfPage: {
         "@type": "ImageObject",
-        contentUrl: c.image,
+        contentUrl: image,
         caption: c.name,
-      } : undefined,
+      },
       breadcrumb: {
         "@type": "BreadcrumbList",
         itemListElement: [
@@ -131,7 +166,7 @@ function categoryMeta(slug: string): Meta | null {
   };
 }
 
-function subcategoryMeta(id: string): Meta | null {
+async function subcategoryMeta(id: string): Promise<Meta | null> {
   const s = (taxonomy as any).subcategories[id];
   if (!s) return null;
   const url = `${SITE}/subcategorie/${id}`;
@@ -140,11 +175,12 @@ function subcategoryMeta(id: string): Meta | null {
     `${s.description}. Închiriază ${s.name.toLowerCase()} de la oameni verificați din România: plată securizată și predare documentată cu poze.`,
     DESC_MAX,
   );
+  const image = await getCollectionProductImage(s.category, id) || s.image || DEFAULT_IMAGE;
   return {
     title,
     description,
     canonical: url,
-    image: s.image || DEFAULT_IMAGE,
+    image,
     imageAlt: `${s.name} disponibile pentru închiriere`,
     type: "website",
     jsonLd: {
@@ -153,11 +189,11 @@ function subcategoryMeta(id: string): Meta | null {
       name: s.name,
       url,
       description,
-      primaryImageOfPage: s.image ? {
+      primaryImageOfPage: {
         "@type": "ImageObject",
-        contentUrl: s.image,
+        contentUrl: image,
         caption: s.name,
-      } : undefined,
+      },
       breadcrumb: {
         "@type": "BreadcrumbList",
         itemListElement: [
@@ -172,11 +208,6 @@ function subcategoryMeta(id: string): Meta | null {
 }
 
 async function productMeta(slug: string): Promise<Meta | null> {
-  const admin = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    { auth: { persistSession: false } },
-  );
   const { data } = await admin
     .from("products")
     .select("id, title, description, daily_price_owner, location_city, images, category, condition, slug, is_active, approval_status, deleted_at")
@@ -251,8 +282,8 @@ Deno.serve(async (req) => {
     const subcategory = path.match(/^\/subcategorie\/([^/]+)$/);
 
     if (product) meta = await productMeta(product[1]);
-    else if (category) meta = categoryMeta(category[1]);
-    else if (subcategory) meta = subcategoryMeta(subcategory[1]);
+    else if (category) meta = await categoryMeta(category[1]);
+    else if (subcategory) meta = await subcategoryMeta(subcategory[1]);
 
     if (!meta) {
       status = 404;
