@@ -15,6 +15,8 @@ import { getProducts, Product } from "@/features/products/productsApi";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { truncateForMeta, META_TITLE_MAX, META_DESCRIPTION_MAX } from "@/lib/seoText";
+import CategorySeoContent from "@/components/seo/CategorySeoContent";
 
 const SubcategoryDetail = () => {
   const { id } = useParams();
