@@ -1,6 +1,9 @@
 import { useLocation } from "react-router-dom";
 import { useSEO } from "./useSEO";
 
+/** The single official host used for canonical URLs (no www, no preview domains). */
+export const CANONICAL_ORIGIN = "https://rentli.ro";
+
 interface PageSeoOptions {
   title: string;
   description: string;
