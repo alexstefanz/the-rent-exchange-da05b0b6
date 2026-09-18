@@ -439,8 +439,8 @@ const createUxCopy = () => ({
       en: "Min. 8 chars, one uppercase, one lowercase and a digit or symbol",
     },
     passwordTooWeak: {
-      ro: "Parolă prea slabă. Folosește minim 8 caractere, o literă mare, o literă mică și o cifră sau simbol.",
-      en: "Password too weak. Use at least 8 characters, an uppercase, a lowercase and a digit or symbol.",
+      ro: "Această parolă apare în liste publice de parole compromise. Alege alta, diferită de cele folosite pe alte site-uri.",
+      en: "This password appears in public lists of compromised passwords. Choose a different one, not used on other sites.",
     },
     nameMin: { ro: "Numele trebuie să aibă minim 2 caractere", en: "Name must be at least 2 characters" },
     passwordMismatch: { ro: "Parolele nu se potrivesc", en: "Passwords don't match" },
