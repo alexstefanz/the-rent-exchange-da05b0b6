@@ -41,9 +41,12 @@ export default function Messages() {
   const [isClosing, setIsClosing] = useState(false);
   useChatViewport(!isDesktop && !!selectedConversation);
 
-  if (!authLoading && !user) {
-    navigate("/auth", { replace: true });
-  }
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/auth", { replace: true, state: { returnTo: { pathname: "/mesaje" } } });
+    }
+  }, [authLoading, user, navigate]);
+
 
   const { data: conversations = [], isLoading } = useConversations(user?.id);
 
