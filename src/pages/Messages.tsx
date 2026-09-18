@@ -41,9 +41,12 @@ export default function Messages() {
   const [isClosing, setIsClosing] = useState(false);
   useChatViewport(!isDesktop && !!selectedConversation);
 
-  if (!authLoading && !user) {
-    navigate("/auth", { replace: true });
-  }
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/auth", { replace: true, state: { returnTo: { pathname: "/mesaje" } } });
+    }
+  }, [authLoading, user, navigate]);
+
 
   const { data: conversations = [], isLoading } = useConversations(user?.id);
 
@@ -95,7 +98,7 @@ export default function Messages() {
     setIsClosing(false);
   };
 
-  if (authLoading) {
+  if (authLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
