@@ -59,11 +59,8 @@ const RentalsOutTab = () => {
     enabled: !!user?.id,
   });
 
-  const initialStatus = searchParams.get("status");
-  const defaultStatus: RentalStatusFilter =
-    initialStatus && VALID_STATUS_FILTERS.includes(initialStatus as RentalStatusFilter)
-      ? (initialStatus as RentalStatusFilter)
-      : "all";
+  const defaultStatus: RentalStatusFilter = fromUrlStatus(searchParams.get("status")) ?? "all";
+
 
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [rejectDialogRental, setRejectDialogRental] = useState<OwnerRental | null>(null);
