@@ -11,6 +11,7 @@ import {
   TicketCheck,
   FolderTree,
   MessageSquare,
+  Activity,
 } from "lucide-react";
 
 const menuItems = [
@@ -22,6 +23,7 @@ const menuItems = [
   { title: "Financiar", url: "/admin/finances", icon: Wallet },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Utilizatori", url: "/admin/users", icon: Users },
+  { title: "Jurnal activitate", url: "/admin/activity", icon: Activity },
   { title: "SMS Logs", url: "/admin/sms-logs", icon: MessageSquare },
 ];
 

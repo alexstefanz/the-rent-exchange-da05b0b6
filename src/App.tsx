@@ -103,6 +103,7 @@ const AdminApprovals = lazyWithRetry(() => import("./pages/admin/AdminApprovals"
 const AdminTestEmails = lazyWithRetry(() => import("./pages/admin/AdminTestEmails"));
 const AdminNotifications = lazyWithRetry(() => import("./pages/admin/AdminNotifications"));
 const AdminSmsLogs = lazyWithRetry(() => import("./pages/admin/AdminSmsLogs"));
+const AdminActivityLog = lazyWithRetry(() => import("./pages/admin/AdminActivityLog"));
 const AdminNotificationAudit = lazyWithRetry(() => import("./pages/admin/AdminNotificationAudit"));
 const AdminWithdrawals = lazyWithRetry(() => import("./pages/admin/AdminWithdrawals"));
 const AdminReports = lazyWithRetry(() => import("./pages/admin/AdminReports"));
@@ -203,6 +204,7 @@ const App = () => (
                 <Route path="/admin/test-emails" element={<AdminTestEmails />} />
                 <Route path="/admin/sms-logs" element={<AdminSmsLogs />} />
                 <Route path="/admin/notification-audit" element={<AdminNotificationAudit />} />
+                <Route path="/admin/activity" element={<AdminActivityLog />} />
                 <Route path="/a/:token" element={<ShortLinkRedirect />} />
                 <Route path="/setari/notificari" element={<NotificationPreferences />} />
                 

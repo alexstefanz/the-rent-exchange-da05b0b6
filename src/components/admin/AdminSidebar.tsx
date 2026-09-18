@@ -16,7 +16,9 @@ import {
   Bell,
   MessageSquare,
   Banknote,
-  Flag
+  Flag,
+  Activity,
+  ScrollText
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAdminNotificationSummary } from "@/hooks/queries/useAdminNotifications";
@@ -62,7 +64,9 @@ const menuItems: Array<{
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Utilizatori", url: "/admin/users", icon: Users },
   { title: "Test Emailuri", url: "/admin/test-emails", icon: Mail },
+  { title: "Jurnal activitate", url: "/admin/activity", icon: Activity },
   { title: "SMS Logs", url: "/admin/sms-logs", icon: MessageSquare },
+  { title: "Audit notificări", url: "/admin/notification-audit", icon: ScrollText },
 ];
 
 const AdminSidebar = () => {
