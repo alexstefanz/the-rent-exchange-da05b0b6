@@ -19,7 +19,7 @@ import { requestMutualCancellation } from "@/features/rentals/rentalsApi";
 import { toast } from "@/components/ui/sonner";
 import StatusBadge from "./StatusBadge";
 import RentalsFilterBar, { type RentalStatusFilter, type RentalSortBy } from "./RentalsFilterBar";
-import { bucketOf } from "./rentalBucket";
+import { bucketOf, matchesRentalFilter } from "./rentalBucket";
 
 interface MyRental {
   id: string;
@@ -129,10 +129,7 @@ const RentalsTab = () => {
     return c;
   }, [rentals]);
 
-  const matchesStatus = (r: MyRental) => {
-    if (statusFilter === "all") return true;
-    return bucketOf(r) === statusFilter;
-  };
+  const matchesStatus = (r: MyRental) => matchesRentalFilter(r, statusFilter);
 
   const sortRentals = (arr: MyRental[]) => {
     const sorted = [...arr];
