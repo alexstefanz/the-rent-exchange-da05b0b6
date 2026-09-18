@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import AdminLayout from "@/components/admin/AdminLayout";
 import StatsCard from "@/components/admin/StatsCard";
 import DashboardCategoriesWidget from "@/components/admin/DashboardCategoriesWidget";
+import DashboardActivityWidget from "@/components/admin/DashboardActivityWidget";
 import { useAdminStats, useAdminRentals } from "@/hooks/queries/useAdminStats";
 import { useAdminNotificationSummary } from "@/hooks/queries/useAdminNotifications";
 import { format } from "date-fns";
@@ -186,6 +187,9 @@ const AdminDashboard = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Activity feed */}
+          <DashboardActivityWidget />
 
           {/* Categories Widget */}
           <DashboardCategoriesWidget />
