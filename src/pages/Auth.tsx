@@ -296,6 +296,7 @@ const Auth = () => {
       if (alreadyRegistered) {
         message = `${copy.auth.accountExists}. Autentifică-te sau folosește „Am uitat parola”.`;
         toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
+        registerForm.setError("email", { type: "server", message });
         // Switch to login tab and prefill email so users can log in immediately
         setActiveTab("login");
         loginForm.setValue("email", data.email);
@@ -306,16 +307,26 @@ const Auth = () => {
         (error as any)?.status === 429 ||
         /rate limit/i.test(error.message || "");
       if (isRateLimit) {
+        const rateMsg =
+          "Au fost prea multe încercări de înregistrare de pe această rețea. Te rugăm să aștepți câteva minute și să încerci din nou, sau folosește autentificarea cu Google.";
         toast({
           title: "Prea multe încercări",
-          description:
-            "Au fost prea multe încercări de înregistrare de pe această rețea. Te rugăm să aștepți câteva minute și să încerci din nou, sau folosește autentificarea cu Google.",
+          description: rateMsg,
           variant: "destructive",
         });
+        registerForm.setError("email", { type: "server", message: rateMsg });
+        registerForm.setFocus("email");
         return;
       }
-      if (isWeakPasswordError(error.message)) message = copy.auth.passwordTooWeak;
+      if (isWeakPasswordError(error.message)) {
+        message = copy.auth.passwordTooWeak;
+        toast({ title: "Parola nu poate fi folosită", description: message, variant: "destructive" });
+        registerForm.setError("password", { type: "server", message });
+        registerForm.setFocus("password");
+        return;
+      }
       toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
+      registerForm.setError("password", { type: "server", message });
       return;
     }
       const normalizedPhone = normalizePhoneRO(data.phone) as string;
