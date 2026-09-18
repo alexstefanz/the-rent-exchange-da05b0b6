@@ -72,10 +72,8 @@ const RentalsOutTab = () => {
   const [sortBy, setSortBy] = useState<RentalSortBy>("newest");
 
   useEffect(() => {
-    const status = searchParams.get("status");
-    if (status && VALID_STATUS_FILTERS.includes(status as RentalStatusFilter)) {
-      setStatusFilter(status as RentalStatusFilter);
-    }
+    const status = fromUrlStatus(searchParams.get("status"));
+    if (status) setStatusFilter(status);
   }, [searchParams]);
 
   const handleStatusFilterChange = (value: RentalStatusFilter) => {
@@ -95,10 +93,8 @@ const RentalsOutTab = () => {
     return c;
   }, [rentals]);
 
-  const matchesStatus = (r: OwnerRental) => {
-    if (statusFilter === "all") return true;
-    return bucketOf(r) === statusFilter;
-  };
+  const matchesStatus = (r: OwnerRental) => matchesRentalFilter(r, statusFilter);
+
 
   const sortRentals = (arr: OwnerRental[]) => {
     const sorted = [...arr];
