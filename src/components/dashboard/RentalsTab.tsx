@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,7 +18,7 @@ import { requestMutualCancellation } from "@/features/rentals/rentalsApi";
 import { toast } from "@/components/ui/sonner";
 import StatusBadge from "./StatusBadge";
 import RentalsFilterBar, { type RentalStatusFilter, type RentalSortBy } from "./RentalsFilterBar";
-import { bucketOf } from "./rentalBucket";
+import { bucketOf, matchesRentalFilter } from "./rentalBucket";
 
 interface MyRental {
   id: string;
@@ -129,10 +128,7 @@ const RentalsTab = () => {
     return c;
   }, [rentals]);
 
-  const matchesStatus = (r: MyRental) => {
-    if (statusFilter === "all") return true;
-    return bucketOf(r) === statusFilter;
-  };
+  const matchesStatus = (r: MyRental) => matchesRentalFilter(r, statusFilter);
 
   const sortRentals = (arr: MyRental[]) => {
     const sorted = [...arr];
@@ -340,58 +336,53 @@ const RentalsTab = () => {
         </section>
       )}
 
-      {/* History accordion (no images) */}
+      {/* History list (no images) */}
       {historyRentals.length > 0 && (
-        <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value="history" className="border rounded-xl bg-card px-4">
-            <AccordionTrigger className="hover:no-underline">
-              <span className="flex items-center gap-2 font-heading text-lg font-semibold">
-                <Package className="h-5 w-5 text-primary" />
-                Istoric închirieri
-                <Badge variant="secondary">{historyRentals.length}</Badge>
-              </span>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="divide-y divide-border">
-                {historyRentals.map((rental) => {
-                  const to = rental.public_id ? `/rezervari/${rental.public_id}` : `/produs/${rental.product_id}`;
-                  const allowed = ["pending", "accepted", "rejected", "completed", "cancelled", "active", "inactive"];
-                  const statusKey = (allowed.includes(rental.status) ? rental.status : "pending") as any;
-                  return (
-                    <div key={rental.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <p className="font-medium text-foreground truncate">{rental.product_title}</p>
-                          {rental.public_id && (
-                            <span className="font-mono text-[10px] text-muted-foreground bg-muted/60 rounded px-1.5 py-0.5 flex-shrink-0">{rental.public_id}</span>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground truncate">
-                          Proprietar: <span className="text-foreground">{rental.owner_name}</span>
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(rental.start_date), "d MMM yyyy", { locale: roLocale })} – {format(new Date(rental.end_date), "d MMM yyyy", { locale: roLocale })} · {rental.rental_days} zile
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-between sm:justify-end gap-3 flex-shrink-0">
-                        <div className="text-right">
-                          <p className="text-sm font-semibold text-foreground">{rental.subtotal} RON</p>
-                          <StatusBadge status={statusKey} />
-                        </div>
-                        <Button asChild variant="outline" size="sm">
-                          <Link to={to}>
-                            Vezi mai mult <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                          </Link>
-                        </Button>
-                      </div>
+        <section>
+          <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2 text-base">
+            <Package className="h-5 w-5 text-primary" />
+            Istoric închirieri
+            <Badge variant="secondary">{historyRentals.length}</Badge>
+          </h3>
+          <div className="divide-y divide-border border rounded-xl bg-card px-4">
+            {historyRentals.map((rental) => {
+              const to = rental.public_id ? `/rezervari/${rental.public_id}` : `/produs/${rental.product_id}`;
+              const allowed = ["pending", "accepted", "rejected", "completed", "cancelled", "active", "inactive"];
+              const statusKey = (allowed.includes(rental.status) ? rental.status : "pending") as any;
+              return (
+                <div key={rental.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <p className="font-medium text-foreground truncate">{rental.product_title}</p>
+                      {rental.public_id && (
+                        <span className="font-mono text-[10px] text-muted-foreground bg-muted/60 rounded px-1.5 py-0.5 flex-shrink-0">{rental.public_id}</span>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+                    <p className="text-sm text-muted-foreground truncate">
+                      Proprietar: <span className="text-foreground">{rental.owner_name}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(rental.start_date), "d MMM yyyy", { locale: roLocale })} – {format(new Date(rental.end_date), "d MMM yyyy", { locale: roLocale })} · {rental.rental_days} zile
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between sm:justify-end gap-3 flex-shrink-0">
+                    <div className="text-right">
+                      <p className="text-sm font-semibold text-foreground">{rental.subtotal} RON</p>
+                      <StatusBadge status={statusKey} />
+                    </div>
+                    <Button asChild variant="outline" size="sm">
+                      <Link to={to}>
+                        Vezi mai mult <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       )}
+
 
       {/* Mutual cancel dialog */}
       <Dialog open={!!cancelDialogRental} onOpenChange={(open) => !open && setCancelDialogRental(null)}>

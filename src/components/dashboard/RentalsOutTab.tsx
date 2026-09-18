@@ -19,10 +19,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useRentalRealtime } from "@/hooks/useRentalRealtime";
 import StatusBadge from "./StatusBadge";
 import RentalsFilterBar, { type RentalStatusFilter, type RentalSortBy } from "./RentalsFilterBar";
-import { bucketOf } from "./rentalBucket";
+import { bucketOf, matchesRentalFilter } from "./rentalBucket";
 
 const VALID_STATUS_FILTERS: RentalStatusFilter[] = [
   "all",
+  "ongoing",
   "active",
   "in_progress",
   "overdue",
@@ -30,6 +31,19 @@ const VALID_STATUS_FILTERS: RentalStatusFilter[] = [
   "completed",
   "cancelled",
 ];
+
+/**
+ * The account menu links to `?status=active` meaning "everything in progress",
+ * so map that legacy value onto the grouped filter.
+ */
+const fromUrlStatus = (value: string | null): RentalStatusFilter | null => {
+  if (!value) return null;
+  if (value === "active") return "ongoing";
+  return VALID_STATUS_FILTERS.includes(value as RentalStatusFilter)
+    ? (value as RentalStatusFilter)
+    : null;
+};
+
 
 const RentalsOutTab = () => {
   const copy = useUxCopy();
@@ -45,11 +59,8 @@ const RentalsOutTab = () => {
     enabled: !!user?.id,
   });
 
-  const initialStatus = searchParams.get("status");
-  const defaultStatus: RentalStatusFilter =
-    initialStatus && VALID_STATUS_FILTERS.includes(initialStatus as RentalStatusFilter)
-      ? (initialStatus as RentalStatusFilter)
-      : "all";
+  const defaultStatus: RentalStatusFilter = fromUrlStatus(searchParams.get("status")) ?? "all";
+
 
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [rejectDialogRental, setRejectDialogRental] = useState<OwnerRental | null>(null);
@@ -61,10 +72,8 @@ const RentalsOutTab = () => {
   const [sortBy, setSortBy] = useState<RentalSortBy>("newest");
 
   useEffect(() => {
-    const status = searchParams.get("status");
-    if (status && VALID_STATUS_FILTERS.includes(status as RentalStatusFilter)) {
-      setStatusFilter(status as RentalStatusFilter);
-    }
+    const status = fromUrlStatus(searchParams.get("status"));
+    if (status) setStatusFilter(status);
   }, [searchParams]);
 
   const handleStatusFilterChange = (value: RentalStatusFilter) => {
@@ -84,10 +93,8 @@ const RentalsOutTab = () => {
     return c;
   }, [rentals]);
 
-  const matchesStatus = (r: OwnerRental) => {
-    if (statusFilter === "all") return true;
-    return bucketOf(r) === statusFilter;
-  };
+  const matchesStatus = (r: OwnerRental) => matchesRentalFilter(r, statusFilter);
+
 
   const sortRentals = (arr: OwnerRental[]) => {
     const sorted = [...arr];
