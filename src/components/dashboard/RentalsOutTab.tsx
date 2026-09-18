@@ -19,10 +19,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useRentalRealtime } from "@/hooks/useRentalRealtime";
 import StatusBadge from "./StatusBadge";
 import RentalsFilterBar, { type RentalStatusFilter, type RentalSortBy } from "./RentalsFilterBar";
-import { bucketOf } from "./rentalBucket";
+import { bucketOf, matchesRentalFilter } from "./rentalBucket";
 
 const VALID_STATUS_FILTERS: RentalStatusFilter[] = [
   "all",
+  "ongoing",
   "active",
   "in_progress",
   "overdue",
@@ -30,6 +31,19 @@ const VALID_STATUS_FILTERS: RentalStatusFilter[] = [
   "completed",
   "cancelled",
 ];
+
+/**
+ * The account menu links to `?status=active` meaning "everything in progress",
+ * so map that legacy value onto the grouped filter.
+ */
+const fromUrlStatus = (value: string | null): RentalStatusFilter | null => {
+  if (!value) return null;
+  if (value === "active") return "ongoing";
+  return VALID_STATUS_FILTERS.includes(value as RentalStatusFilter)
+    ? (value as RentalStatusFilter)
+    : null;
+};
+
 
 const RentalsOutTab = () => {
   const copy = useUxCopy();
