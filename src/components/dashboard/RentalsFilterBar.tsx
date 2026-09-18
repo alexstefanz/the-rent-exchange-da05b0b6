@@ -1,7 +1,7 @@
 import { ArrowUpDown, Filter } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export type RentalStatusFilter = "all" | "active" | "in_progress" | "overdue" | "pending" | "completed" | "cancelled";
+export type RentalStatusFilter = "all" | "ongoing" | "active" | "in_progress" | "overdue" | "pending" | "completed" | "cancelled";
 export type RentalSortBy = "newest" | "oldest" | "amount_desc" | "amount_asc";
 
 interface Counts {
@@ -31,15 +31,18 @@ const RentalsFilterBar = ({
   counts,
   amountLabel = "Sumă",
 }: Props) => {
+  const ongoing = counts.pending + counts.active + counts.in_progress + counts.overdue;
   const items: { key: RentalStatusFilter; label: string; count: number }[] = [
     { key: "all", label: "Toate", count: counts.all },
-    { key: "active", label: "Active", count: counts.active },
+    { key: "ongoing", label: "În desfășurare", count: ongoing },
+    { key: "active", label: "Confirmate", count: counts.active },
     { key: "in_progress", label: "În derulare", count: counts.in_progress },
     { key: "overdue", label: "Întârziate", count: counts.overdue },
     { key: "pending", label: "În așteptare", count: counts.pending },
     { key: "completed", label: "Finalizate", count: counts.completed },
     { key: "cancelled", label: "Anulate", count: counts.cancelled },
   ];
+
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-3">

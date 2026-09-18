@@ -24,12 +24,15 @@ const isReturned = (r: BucketableRental) =>
  * Assigns a rental to exactly one bucket. The 6 non-"all" buckets partition the
  * full rental set so counts always sum to total.
  */
-export function bucketOf(r: BucketableRental): Exclude<RentalStatusFilter, "all"> {
+export function bucketOf(r: BucketableRental): Exclude<RentalStatusFilter, "all" | "ongoing"> {
   if (r.status === "cancelled" || r.status === "rejected") return "cancelled";
   if (r.status === "completed" || isReturned(r)) return "completed";
   if (r.status === "pending") return "pending";
 
-  const active = r.status === "confirmed" || r.status === "active";
+  const active =
+    r.status === "confirmed" ||
+    r.status === "active" ||
+    r.status === "early_return_requested";
   if (active) {
     const today = startOfToday();
     const end = new Date(r.end_date);
@@ -45,6 +48,18 @@ export function bucketOf(r: BucketableRental): Exclude<RentalStatusFilter, "all"
   }
   return "active";
 }
+
+/** Buckets that make up the "in desfășurare" group. */
+export const ONGOING_BUCKETS = ["pending", "active", "in_progress", "overdue"] as const;
+
+/** True when the rental matches the selected filter (supports the group filter). */
+export function matchesRentalFilter(r: BucketableRental, filter: RentalStatusFilter): boolean {
+  if (filter === "all") return true;
+  const b = bucketOf(r);
+  if (filter === "ongoing") return (ONGOING_BUCKETS as readonly string[]).includes(b);
+  return b === filter;
+}
+
 
 export function isOverdue(r: BucketableRental): boolean {
   return bucketOf(r) === "overdue";
