@@ -16,7 +16,9 @@ import {
   Bell,
   MessageSquare,
   Banknote,
-  Flag
+  Flag,
+  Activity,
+  ScrollText
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAdminNotificationSummary } from "@/hooks/queries/useAdminNotifications";
