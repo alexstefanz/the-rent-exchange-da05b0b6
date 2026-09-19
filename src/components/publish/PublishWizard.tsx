@@ -762,8 +762,17 @@ const Step2Details = ({
 }) => {
   const { t, language } = useLanguage();
   const { toast } = useToast();
-  const [newItem, setNewItem] = useState("");
-  const [newRule, setNewRule] = useState("");
+  const [includedText, setIncludedText] = useState(() => data.included_items.join("\n"));
+  const [rulesText, setRulesText] = useState(() => data.usage_rules.join("\n"));
+
+  const parseLines = (value: string) => {
+    const out: string[] = [];
+    for (const raw of value.split("\n")) {
+      const line = raw.replace(/^\s*(?:[-–—*•]|\d+[.)])\s*/, "").trim();
+      if (line && !out.includes(line)) out.push(line);
+    }
+    return out;
+  };
 
   return (
     <div>
@@ -871,52 +880,41 @@ const Step2Details = ({
 
         {/* Included items */}
         <div className="space-y-2">
-          <Label className="text-sm font-semibold">
+          <Label htmlFor="included-items" className="text-sm font-semibold">
             {t("Ce este inclus", "What's included")} <span className="font-normal text-muted-foreground">{t("(accesorii)", "(accessories)")}</span>
           </Label>
-          <div className="flex gap-2">
-            <Input
-              placeholder={t("Ex: Husă transport, încărcător, manual", "E.g. Carry case, charger, manual")}
-              value={newItem}
-              onChange={(e) => setNewItem(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  const t = newItem.trim();
-                  if (t && !data.included_items.includes(t)) {
-                    update("included_items", [...data.included_items, t]);
-                    setNewItem("");
-                  }
-                }
-              }}
-              className="h-11"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                const t = newItem.trim();
-                if (t && !data.included_items.includes(t)) {
-                  update("included_items", [...data.included_items, t]);
-                  setNewItem("");
-                }
-              }}
-              className="h-11"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
+          <Textarea
+            id="included-items"
+            rows={5}
+            placeholder={t(
+              "Câte un element pe rând:\nHusă transport\nÎncărcător\nManual de utilizare",
+              "One item per line:\nCarry case\nCharger\nUser manual",
+            )}
+            value={includedText}
+            onChange={(e) => {
+              setIncludedText(e.target.value);
+              update("included_items", parseLines(e.target.value));
+            }}
+            className="resize-y text-base"
+          />
+          <p className="text-xs text-muted-foreground">
+            {t("Apasă Enter pentru fiecare element nou — fiecare rând devine un element din listă.", "Press Enter for each new item — every line becomes a list item.")}
+          </p>
           {data.included_items.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-1">
               {data.included_items.map((item, i) => (
                 <span
-                  key={i}
+                  key={`${item}-${i}`}
                   className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-sm text-foreground"
                 >
                   {item}
                   <button
                     type="button"
-                    onClick={() => update("included_items", data.included_items.filter((_, idx) => idx !== i))}
+                    onClick={() => {
+                      const next = data.included_items.filter((_, idx) => idx !== i);
+                      update("included_items", next);
+                      setIncludedText(next.join("\n"));
+                    }}
                     className="text-muted-foreground hover:text-destructive"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -929,64 +927,47 @@ const Step2Details = ({
 
         {/* Usage rules */}
         <div className="space-y-2">
-          <Label className="text-sm font-semibold">
+          <Label htmlFor="usage-rules" className="text-sm font-semibold">
             {t("Reguli de utilizare", "Usage rules")} <span className="font-normal text-muted-foreground">{t("(opțional)", "(optional)")}</span>
           </Label>
-          <div className="flex gap-2">
-            <Input
-              placeholder={t("Ex: Doar în interior, fără copii sub 12 ani", "E.g. Indoor only, no children under 12")}
-              value={newRule}
-              onChange={(e) => setNewRule(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  const t = newRule.trim();
-                  if (t && !data.usage_rules.includes(t)) {
-                    update("usage_rules", [...data.usage_rules, t]);
-                    setNewRule("");
-                  }
-                }
-              }}
-              className="h-11"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                const t = newRule.trim();
-                if (t && !data.usage_rules.includes(t)) {
-                  update("usage_rules", [...data.usage_rules, t]);
-                  setNewRule("");
-                }
-              }}
-              className="h-11"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
+          <Textarea
+            id="usage-rules"
+            rows={5}
+            placeholder={t(
+              "Câte o regulă pe rând:\nDoar în interior\nFără copii sub 12 ani",
+              "One rule per line:\nIndoor use only\nNo children under 12",
+            )}
+            value={rulesText}
+            onChange={(e) => {
+              setRulesText(e.target.value);
+              update("usage_rules", parseLines(e.target.value));
+            }}
+            className="resize-y text-base"
+          />
+          <p className="text-xs text-muted-foreground">
+            {t("Apasă Enter pentru fiecare regulă nouă.", "Press Enter for each new rule.")}
+          </p>
           {data.usage_rules.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-1">
-              {data.usage_rules
-                .map((rule, i) => (
-                  <span
-                    key={`${rule}-${i}`}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-sm text-foreground"
+              {data.usage_rules.map((rule, i) => (
+                <span
+                  key={`${rule}-${i}`}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-sm text-foreground"
+                >
+                  {rule}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = data.usage_rules.filter((_, idx) => idx !== i);
+                      update("usage_rules", next);
+                      setRulesText(next.join("\n"));
+                    }}
+                    className="text-muted-foreground hover:text-destructive"
                   >
-                    {rule}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        update(
-                          "usage_rules",
-                          data.usage_rules.filter((x) => x !== rule),
-                        )
-                      }
-                      className="text-muted-foreground hover:text-destructive"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </span>
-                ))}
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </span>
+              ))}
             </div>
           )}
         </div>
