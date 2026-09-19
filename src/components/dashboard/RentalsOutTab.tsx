@@ -33,12 +33,11 @@ const VALID_STATUS_FILTERS: RentalStatusFilter[] = [
 ];
 
 /**
- * The account menu links to `?status=active` meaning "everything in progress",
- * so map that legacy value onto the grouped filter.
+ * The account menu links to `?status=ongoing` for "everything in progress".
+ * `active` is now reserved for the "Confirmate" filter.
  */
 const fromUrlStatus = (value: string | null): RentalStatusFilter | null => {
   if (!value) return null;
-  if (value === "active") return "ongoing";
   return VALID_STATUS_FILTERS.includes(value as RentalStatusFilter)
     ? (value as RentalStatusFilter)
     : null;
