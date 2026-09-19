@@ -658,6 +658,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://rentli.ro/produs/pompa-manuala-de-stropit</loc>
+    <lastmod>2026-08-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://rentli.ro/produs/inchiriere-placa-snowboard-burton</loc>
     <lastmod>2026-06-10</lastmod>
     <changefreq>weekly</changefreq>
@@ -696,12 +702,6 @@
   <url>
     <loc>https://rentli.ro/produs/inchiriere-masina-de-tuns-iarba-bosch</loc>
     <lastmod>2026-06-10</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-  <url>
-    <loc>https://rentli.ro/produs/pompa-manuala-de-stropit</loc>
-    <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
