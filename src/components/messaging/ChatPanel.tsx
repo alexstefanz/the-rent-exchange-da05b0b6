@@ -229,6 +229,15 @@ export function ChatPanel({
         );
         throw e;
       }
+      if (e?.message === "CONTACT_INFO_BLOCKED") {
+        toast.error(
+          t(
+            "Nu poți trimite date de contact (telefon, email sau link-uri) înainte de plata rezervării.",
+            "You can't share contact details (phone, email or links) before the booking is paid."
+          )
+        );
+        throw e;
+      }
       if (e?.message === "TOO_MANY_SPECIAL_CHARS") {
         toast.error(
           t(
