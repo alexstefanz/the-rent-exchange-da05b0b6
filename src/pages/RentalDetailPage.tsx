@@ -72,6 +72,20 @@ const RentalDetailPage = () => {
     enabled: !!rental?.id,
   });
 
+  // Did the current user already review this rental? Hides the review CTA afterwards.
+  const { data: alreadyReviewed = false, refetch: refetchReview } = useQuery({
+    queryKey: ["rental-review-left", rental?.id, user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("user_reviews")
+        .select("id", { count: "exact", head: true })
+        .eq("rental_id", rental!.id)
+        .eq("reviewer_id", user!.id);
+      return (count ?? 0) > 0;
+    },
+    enabled: !!rental?.id && !!user?.id,
+  });
+
   // Realtime: refetch rental detail on rentals + rental_pv_documents changes.
   useEffect(() => {
     if (!rental?.id || !publicId) return;
