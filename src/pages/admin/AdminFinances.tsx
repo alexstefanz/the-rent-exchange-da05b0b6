@@ -145,6 +145,12 @@ const AdminFinances = () => {
 
   const toggleExpand = (id: string) => setExpandedTxId(prev => prev === id ? null : id);
 
+  // Real commission share, derived from the actual amounts (no hardcoded percentage).
+  const revenueBase = Number(financialSummary?.total_revenue || 0) + Number(financialSummary?.platform_fees || 0);
+  const feePct = revenueBase > 0 ? (Number(financialSummary?.platform_fees || 0) / revenueBase) * 100 : 0;
+  const feeShareLabel = revenueBase > 0 ? `${feePct.toFixed(1)}% din tranzacții` : 'Comision platformă';
+  const payoutShareLabel = revenueBase > 0 ? `${(100 - feePct).toFixed(1)}% din tranzacții` : 'Încasări proprietari';
+
   return (
     <AdminLayout>
       <div className="space-y-4">
