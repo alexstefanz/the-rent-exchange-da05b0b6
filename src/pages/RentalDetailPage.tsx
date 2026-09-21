@@ -560,9 +560,9 @@ const RentalDetailPage = () => {
               <div className="flex flex-col gap-2">
                 <Button size="lg" onClick={handlePay} disabled={paying || payingWallet} className="shadow-lg shadow-primary/20">
                   {paying ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CreditCard className="h-4 w-4 mr-2" />}
-                  {t(`Plătește ${rental.subtotal} RON`, `Pay ${rental.subtotal} RON`)}
+                  {t(`Plătește ${payableTotal.toFixed(2)} RON`, `Pay ${payableTotal.toFixed(2)} RON`)}
                 </Button>
-                {wallet && wallet.available >= Number(rental.subtotal) && (
+                {wallet && wallet.available >= payableTotal && (
                   <Button
                     size="lg"
                     variant="outline"
