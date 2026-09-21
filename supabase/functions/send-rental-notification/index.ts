@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
         await supabaseAdmin.from("transactions").insert({
           rental_id: rental.id,
           user_id: rental.renter_id,
-          amount: rental.subtotal,
+          amount: Number(rental.subtotal || 0) + Number(rental.platform_fee || 0),
           type: "rental_payment",
           status: "authorized",
           description: `Plată închiriere: ${product?.title || "Produs"}`,

@@ -315,6 +315,9 @@ export async function sendMessage(conversationId: string, content: string): Prom
     if ((error.message || '').includes('PROFANITY_BLOCKED')) {
       throw new Error('PROFANITY_BLOCKED');
     }
+    if ((error.message || '').includes('CONTACT_INFO_BLOCKED')) {
+      throw new Error('CONTACT_INFO_BLOCKED');
+    }
     return null;
   }
 

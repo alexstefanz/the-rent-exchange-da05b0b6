@@ -72,6 +72,20 @@ const RentalDetailPage = () => {
     enabled: !!rental?.id,
   });
 
+  // Did the current user already review this rental? Hides the review CTA afterwards.
+  const { data: alreadyReviewed = false, refetch: refetchReview } = useQuery({
+    queryKey: ["rental-review-left", rental?.id, user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("user_reviews")
+        .select("id", { count: "exact", head: true })
+        .eq("rental_id", rental!.id)
+        .eq("reviewer_id", user!.id);
+      return (count ?? 0) > 0;
+    },
+    enabled: !!rental?.id && !!user?.id,
+  });
+
   // Realtime: refetch rental detail on rentals + rental_pv_documents changes.
   useEffect(() => {
     if (!rental?.id || !publicId) return;
@@ -197,6 +211,8 @@ const RentalDetailPage = () => {
 
   const isRejected = rental.status === "rejected" || (rental.status === "cancelled" && !!rental.rejection_reason);
   const needsPayment = !isOwner && rental.status === "confirmed" && rental.payment_status === "pending";
+  // Renter always pays subtotal + platform fee (card and wallet alike).
+  const payableTotal = Math.round((Number(rental.subtotal || 0) + Number(rental.platform_fee || 0)) * 100) / 100;
 
   async function handlePay() {
     if (paying) return;
@@ -450,8 +466,8 @@ const RentalDetailPage = () => {
           </section>
         )}
 
-        {/* Review CTA — visible after rental is completed */}
-        {rental.status === "completed" && (
+        {/* Review CTA — visible after rental is completed and only until the user reviewed */}
+        {rental.status === "completed" && !alreadyReviewed && (
           <section className="rounded-2xl border border-border bg-card p-4 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center">
@@ -560,9 +576,9 @@ const RentalDetailPage = () => {
               <div className="flex flex-col gap-2">
                 <Button size="lg" onClick={handlePay} disabled={paying || payingWallet} className="shadow-lg shadow-primary/20">
                   {paying ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CreditCard className="h-4 w-4 mr-2" />}
-                  {t(`Plătește ${rental.subtotal} RON`, `Pay ${rental.subtotal} RON`)}
+                  {t(`Plătește ${payableTotal.toFixed(2)} RON`, `Pay ${payableTotal.toFixed(2)} RON`)}
                 </Button>
-                {wallet && wallet.available >= Number(rental.subtotal) && (
+                {wallet && wallet.available >= payableTotal && (
                   <Button
                     size="lg"
                     variant="outline"
@@ -716,7 +732,7 @@ const RentalDetailPage = () => {
 
       <LeaveReviewDialog
         open={reviewOpen}
-        onOpenChange={setReviewOpen}
+        onOpenChange={(o) => { setReviewOpen(o); if (!o) refetchReview(); }}
         rental={{
           id: rental.id,
           product_id: rental.product_id,

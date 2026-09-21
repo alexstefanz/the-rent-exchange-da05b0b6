@@ -203,7 +203,7 @@ export default function RentalPopupManager() {
     const title = current.product_title || "";
     removeItem(current.id);
     if (cat) navigate(`/categorie/${cat}`);
-    else navigate(`/cautare?q=${encodeURIComponent(title)}`);
+    else navigate(`/cauta?q=${encodeURIComponent(title)}`);
   };
 
   const handleDismiss = async () => {
