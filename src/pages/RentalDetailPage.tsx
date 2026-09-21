@@ -452,8 +452,8 @@ const RentalDetailPage = () => {
           </section>
         )}
 
-        {/* Review CTA — visible after rental is completed */}
-        {rental.status === "completed" && (
+        {/* Review CTA — visible after rental is completed and only until the user reviewed */}
+        {rental.status === "completed" && !alreadyReviewed && (
           <section className="rounded-2xl border border-border bg-card p-4 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center">
@@ -718,7 +718,7 @@ const RentalDetailPage = () => {
 
       <LeaveReviewDialog
         open={reviewOpen}
-        onOpenChange={setReviewOpen}
+        onOpenChange={(o) => { setReviewOpen(o); if (!o) refetchReview(); }}
         rental={{
           id: rental.id,
           product_id: rental.product_id,
