@@ -162,8 +162,8 @@ const AdminFinances = () => {
           ) : (
             <>
               <StatsCard title="Venituri Totale" value={formatCurrency(financialSummary?.total_revenue || 0)} icon={<TrendingUp className="h-4 w-4" />} description="Luna curentă" />
-              <StatsCard title="Comisioane" value={formatCurrency(financialSummary?.platform_fees || 0)} icon={<ArrowUpRight className="h-4 w-4" />} description="20% din tranzacții" />
-              <StatsCard title="Plăți Proprietari" value={formatCurrency(financialSummary?.owner_payouts || 0)} icon={<ArrowDownRight className="h-4 w-4" />} description="80% din tranzacții" />
+              <StatsCard title="Comisioane" value={formatCurrency(financialSummary?.platform_fees || 0)} icon={<ArrowUpRight className="h-4 w-4" />} description={feeShareLabel} />
+              <StatsCard title="Plăți Proprietari" value={formatCurrency(financialSummary?.owner_payouts || 0)} icon={<ArrowDownRight className="h-4 w-4" />} description={payoutShareLabel} />
               <StatsCard title="Plăți Așteptare" value={formatCurrency(financialSummary?.pending_payments || 0)} icon={<Calendar className="h-4 w-4" />} description={`${financialSummary?.completed_rentals || 0} finalizate`} />
             </>
           )}
