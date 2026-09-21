@@ -105,17 +105,17 @@ const AdminAnalytics = () => {
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Rata de Conversie</CardTitle>
+                  <CardTitle className="text-sm font-medium">Rezervări per anunț</CardTitle>
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {stats?.total_products && stats.total_rentals 
-                      ? ((stats.total_rentals / stats.total_products) * 100).toFixed(1)
-                      : 0}%
+                    {stats?.total_products && stats.total_rentals
+                      ? (stats.total_rentals / stats.total_products).toFixed(1)
+                      : "0,0"}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Rezervări / Produse
+                    Media rezervărilor pe anunț publicat
                   </p>
                 </CardContent>
               </Card>
