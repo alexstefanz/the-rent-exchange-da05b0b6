@@ -197,6 +197,8 @@ const RentalDetailPage = () => {
 
   const isRejected = rental.status === "rejected" || (rental.status === "cancelled" && !!rental.rejection_reason);
   const needsPayment = !isOwner && rental.status === "confirmed" && rental.payment_status === "pending";
+  // Renter always pays subtotal + platform fee (card and wallet alike).
+  const payableTotal = Math.round((Number(rental.subtotal || 0) + Number(rental.platform_fee || 0)) * 100) / 100;
 
   async function handlePay() {
     if (paying) return;
