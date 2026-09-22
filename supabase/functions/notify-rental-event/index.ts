@@ -492,29 +492,46 @@ Deno.serve(async (req) => {
           }
           const otherUser = role === "owner" ? renter : owner;
           try {
-            const { error: smsErr } = await supabase.functions.invoke("send-sms-notification", {
-              body: {
-                templateKey: smsTpl,
-                userId: userObj.id,
-                rentalId: rental.id,
-                idempotencyKey: `${event_key}:${rental_id}:${userObj.id}`,
-                variables: {
-                  productTitle: product?.title,
-                  ownerName: owner?.full_name,
-                  renterName: renter?.full_name,
-                  otherPartyName: otherUser?.full_name,
-                  link: smsLink,
-                  pickupDate: rental.pickup_time ? new Date(rental.pickup_time).toLocaleDateString("ro-RO") : undefined,
-                  pickupLocation: rental.pickup_location || undefined,
+            // Direct fetch (not functions.invoke): guarantees the service-role
+            // Authorization header reaches send-sms-notification's requireCaller
+            // guard, independent of supabase-js client version behaviour.
+            const smsRes = await fetch(
+              `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms-notification`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+                  "apikey": Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
                 },
+                body: JSON.stringify({
+                  templateKey: smsTpl,
+                  userId: userObj.id,
+                  rentalId: rental.id,
+                  idempotencyKey: `${event_key}:${rental_id}:${userObj.id}`,
+                  variables: {
+                    productTitle: product?.title,
+                    ownerName: owner?.full_name,
+                    renterName: renter?.full_name,
+                    otherPartyName: otherUser?.full_name,
+                    link: smsLink,
+                    pickupDate: rental.pickup_time ? new Date(rental.pickup_time).toLocaleDateString("ro-RO") : undefined,
+                    pickupLocation: rental.pickup_location || undefined,
+                  },
+                }),
               },
-            });
+            );
+            const smsBody = await smsRes.text();
+            const smsOk = smsRes.ok;
+            if (!smsOk) {
+              console.error(`[notify-rental-event] SMS failed status=${smsRes.status} body=${smsBody.slice(0, 300)}`);
+            }
             await supabase.from("notification_audit_log").insert({
               rental_id, user_id: userObj.id, event_key, channel: "sms",
-              status: smsErr ? "failed" : "sent",
-              error: smsErr ? String(smsErr.message || smsErr) : null,
+              status: smsOk ? "sent" : "failed",
+              error: smsOk ? null : `HTTP ${smsRes.status}: ${smsBody.slice(0, 300)}`,
             });
-            results.push({ role, channel: "sms", status: smsErr ? "failed" : "sent" });
+            results.push({ role, channel: "sms", status: smsOk ? "sent" : "failed" });
           } catch (e) {
             await supabase.from("notification_audit_log").insert({
               rental_id, user_id: userObj.id, event_key, channel: "sms", status: "failed",
