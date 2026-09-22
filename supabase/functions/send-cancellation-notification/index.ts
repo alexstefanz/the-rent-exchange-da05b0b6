@@ -218,18 +218,32 @@ Deno.serve(async (req) => {
     // SMS to owner (cancellation by renter) — best-effort
     if (rental.owner_id) {
       try {
-        await supabase.functions.invoke("send-sms-notification", {
-          body: {
-            templateKey: "rental_cancelled",
-            userId: rental.owner_id,
-            rentalId: rental.id,
-            variables: {
-              productTitle: productRes.data?.title || "produsul",
-              link: `https://rentli.ro/inchirieri?rental_id=${rental.id}`,
+        const smsRes = await fetch(
+          `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-sms-notification`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+              "apikey": Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
             },
-            idempotencyKey: `rental_cancelled:${rental.id}:${rental.owner_id}`,
+            body: JSON.stringify({
+              templateKey: "rental_cancelled",
+              userId: rental.owner_id,
+              rentalId: rental.id,
+              variables: {
+                productTitle: productRes.data?.title || "produsul",
+                link: `https://rentli.ro/inchirieri?rental_id=${rental.id}`,
+              },
+              idempotencyKey: `rental_cancelled:${rental.id}:${rental.owner_id}`,
+            }),
           },
-        });
+        );
+        if (!smsRes.ok) {
+          console.error(
+            `[send-cancellation-notification] SMS failed status=${smsRes.status} body=${(await smsRes.text()).slice(0, 300)}`,
+          );
+        }
       } catch (e) {
         console.error("[send-cancellation-notification] SMS invoke failed:", e);
       }

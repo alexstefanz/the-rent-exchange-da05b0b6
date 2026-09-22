@@ -18,8 +18,12 @@ export interface Caller {
  */
 export async function requireCaller(req: Request): Promise<Caller | null> {
   const authHeader = req.headers.get("Authorization") || req.headers.get("authorization");
-  if (!authHeader?.startsWith("Bearer ")) return null;
-  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+  // Fall back to the `apikey` header: some supabase-js versions send the key
+  // there only, which would otherwise look like an anonymous call.
+  const apikeyHeader = req.headers.get("apikey") || req.headers.get("Apikey");
+  const token = authHeader?.startsWith("Bearer ")
+    ? authHeader.replace(/^Bearer\s+/i, "").trim()
+    : (apikeyHeader || "").trim();
   if (!token) return null;
 
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
