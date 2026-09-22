@@ -73,7 +73,6 @@ const Footer = () => {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link to="/despre-noi" className="transition-colors hover:text-foreground">{language === "en" ? "About us" : "Despre noi"}</Link></li>
                 <li><Link to="/contact" className="transition-colors hover:text-foreground">{language === "en" ? "Contact us" : "Contactează-ne"}</Link></li>
-                <li><Link to="/despre-noi" className="transition-colors hover:text-foreground">{language === "en" ? "CSR - Circular economy" : "CSR - Economie circulară"}</Link></li>
               </ul>
             </div>
             <div className="space-y-4">
@@ -95,7 +94,6 @@ const Footer = () => {
               <li><Link to="/anunturi?tab=cereri" className="transition-colors hover:text-foreground">{language === "en" ? "Rentals out" : "Închirieri"}</Link></li>
               <li><Link to="/rezervari" className="transition-colors hover:text-foreground">{language === "en" ? "Bookings" : "Rezervări"}</Link></li>
               <li><Link to="/favorite" className="transition-colors hover:text-foreground">{language === "en" ? "Favorites" : "Favorite"}</Link></li>
-              <li><Link to="/adauga-anunt" className="transition-colors hover:text-foreground">{language === "en" ? "Post a listing" : "Adaugă un anunț"}</Link></li>
               <li><Link to="/suport" className="transition-colors hover:text-foreground">{language === "en" ? "Support & Tickets" : "Suport & Tickete"}</Link></li>
             </ul>
           </div>
@@ -111,9 +109,6 @@ const Footer = () => {
               <li><Link to="/politica-anulare" className="transition-colors hover:text-foreground">{language === "en" ? "Cancellation policy" : "Politica de anulare"}</Link></li>
               <li><Link to="/politica-cookies" className="transition-colors hover:text-foreground">{language === "en" ? "Cookie policy" : "Politica de cookies"}</Link></li>
               <li><button type="button" onClick={() => window.Cookiebot?.renew()} className="transition-colors hover:text-foreground text-left">{language === "en" ? "Cookie settings" : "Setări cookie-uri"}</button></li>
-              <li><Link to="/centru-asistenta" className="transition-colors hover:text-foreground">{language === "en" ? "Security tips" : "Sfaturi de securitate"}</Link></li>
-              <li><Link to="/politica-confidentialitate" className="transition-colors hover:text-foreground">GDPR</Link></li>
-              <li><Link to="/cum-functioneaza" className="transition-colors hover:text-foreground">{language === "en" ? "RentProtect - Safe rentals" : "RentProtect - Închiriere sigură"}</Link></li>
               <li><a href="https://anpc.ro" target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-foreground">ANPC</a></li>
             </ul>
           </div>
