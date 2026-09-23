@@ -3279,6 +3279,10 @@ export type Database = {
         Returns: number
       }
       initiate_return: { Args: { _rental_id: string }; Returns: undefined }
+      invoke_edge_function_async: {
+        Args: { _body?: Json; _fn_name: string }
+        Returns: undefined
+      }
       is_user_banned: { Args: { _user_id: string }; Returns: boolean }
       is_user_favorite: { Args: { target_user_id: string }; Returns: boolean }
       kb_record_view: { Args: { p_slug: string }; Returns: undefined }
