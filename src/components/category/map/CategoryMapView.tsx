@@ -338,6 +338,9 @@ const CategoryMapView = ({
           onSelect={handleSelect}
           onHover={setHoveredId}
           onSearchArea={setAreaBounds}
+          focus={focus ?? null}
+          showEmpty={!isLoading && !pointsLoading && !!focus && items.length === 0}
+          onClearLocation={onClearLocation}
         />
       </div>
     </div>
