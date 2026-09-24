@@ -501,7 +501,12 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       <PublishStepper steps={STEPS} current={step} maxReached={maxReached} onJump={jump} />
 
       <main className="flex-1">
-        <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-8 md:px-6 lg:grid-cols-[1fr_360px]">
+        <div
+          className={cn(
+            "mx-auto grid w-full max-w-6xl gap-8 px-4 py-8 md:px-6",
+            step >= 2 && "lg:grid-cols-[1fr_360px]",
+          )}
+        >
           <div className="min-w-0">
             {step === 1 && <Step1Category data={data} update={update} errors={errors} />}
             {step === 2 && user && (
@@ -531,15 +536,17 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
             )}
           </div>
 
-          <aside className="hidden lg:block">
-            <div className="sticky top-24 space-y-4">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                {t("Previzualizare live", "Live preview")}
-              </p>
-              <LivePreviewCard data={data} feePercent={feePercent} />
-              {step >= 2 && <QualityScoreCard data={data} />}
-            </div>
-          </aside>
+          {step >= 2 && (
+            <aside className="hidden lg:block">
+              <div className="sticky top-24 space-y-4">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  {t("Previzualizare live", "Live preview")}
+                </p>
+                <LivePreviewCard data={data} feePercent={feePercent} />
+                <QualityScoreCard data={data} />
+              </div>
+            </aside>
+          )}
         </div>
       </main>
 
@@ -668,7 +675,7 @@ const Step1Category = ({
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
         {filtered.map((cat) => {
           const active = data.category === cat.name;
           const Icon = getCategoryIcon(cat.id);
