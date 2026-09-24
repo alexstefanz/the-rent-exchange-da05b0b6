@@ -45,12 +45,11 @@ export const usePhoneRequired = () => {
   // row hasn't yet been refreshed after a save). This prevents the gate from
   // blocking checkout for users who already added a valid RO number.
   const metadataPhone = (user?.user_metadata as any)?.phone as string | undefined;
+  void metadataPhone;
   const hasValidPhone =
     !!user &&
-    (isValidRomanianPhone((profile as any)?.phone) ||
-      isValidRomanianPhone(metadataPhone) ||
-      isPhoneBypassed(user.email) ||
-      isPhoneBypassed((profile as any)?.email));
+    (profile as any)?.phone_verified === true &&
+    isValidRomanianPhone((profile as any)?.phone);
 
   // Always refetch the profile when this hook mounts so a freshly-saved
   // phone number is picked up immediately on Checkout pages.
@@ -99,14 +98,12 @@ export const PhoneRequiredGate = ({ className = "" }: PhoneRequiredGateProps) =>
   if (!user || isLoading) return null;
 
   // Test-account bypass: hide the gate entirely.
-  if (isPhoneBypassed(user.email) || isPhoneBypassed((profile as any)?.email)) {
-    return null;
-  }
 
   const profilePhone = (profile as any)?.phone as string | null | undefined;
   const metadataPhone = (user.user_metadata as any)?.phone as string | undefined;
-  const phone = isValidRomanianPhone(profilePhone) ? profilePhone : metadataPhone;
-  if (isValidRomanianPhone(phone)) {
+  void metadataPhone;
+  const phone = profilePhone;
+  if ((profile as any)?.phone_verified === true && isValidRomanianPhone(phone)) {
     // Mask middle digits: keep first 4 and last 3 visible.
     const trimmed = (phone || "").replace(/\s+/g, " ").trim();
     const masked =
