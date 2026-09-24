@@ -491,6 +491,9 @@ const CategoryDetail = () => {
               suggestions={suggestions}
               onSuggestionClick={handleSearchChange}
               onClearSearch={() => handleSearchChange("")}
+              judet={selectedJudet}
+              city={selectedCity}
+              onClearLocation={() => handleJudetChange("all")}
             />
           )}
           {viewMode !== "map" && isLoading && (

@@ -26,6 +26,9 @@ interface Props {
   onHover: (id: string | null) => void;
   onSearchArea?: (bounds: Bounds | null) => void;
   className?: string;
+  focus?: { lat: number; lng: number; zoom: number; key: string } | null;
+  showEmpty?: boolean;
+  onClearLocation?: () => void;
 }
 
 const RO_CENTER = { lat: 45.9432, lng: 24.9668 };
@@ -62,6 +65,9 @@ const MapCanvas = ({
   onHover,
   onSearchArea,
   className,
+  focus,
+  showEmpty,
+  onClearLocation,
 }: Props) => {
   const { ready, error } = useGoogleMaps();
   const { t } = useLanguage();
@@ -96,8 +102,17 @@ const MapCanvas = ({
   // Fit bounds when the set of items changes
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || items.length === 0) return;
-    const key = items.map((i) => i.id).sort().join(",");
+    if (!map) return;
+    const key = `${focus?.key ?? ""}#` + items.map((i) => i.id).sort().join(",");
+    if (fittedRef.current === key) return;
+    if (items.length === 0) {
+      if (!focus) return;
+      fittedRef.current = key;
+      map.setCenter({ lat: focus.lat, lng: focus.lng });
+      map.setZoom(focus.zoom);
+      setMoved(false);
+      return;
+    }
     if (fittedRef.current === key) return;
     fittedRef.current = key;
     const bounds = new window.google.maps.LatLngBounds();
@@ -109,7 +124,7 @@ const MapCanvas = ({
       map.fitBounds(bounds, { top: 70, bottom: 70, left: 70, right: 70 });
     }
     setMoved(false);
-  }, [items]);
+  }, [items, focus, ready]);
 
   // Render markers (with simple pixel-grid clustering)
   useEffect(() => {
@@ -239,6 +254,18 @@ const MapCanvas = ({
           <Search className="h-4 w-4" />
           {t("Caută în această zonă", "Search this area")}
         </button>
+      )}
+      {showEmpty && ready && (
+        <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 flex-col items-center gap-2 rounded-2xl bg-background px-4 py-3 text-center shadow-[0_2px_10px_rgba(0,0,0,0.22)]">
+          <p className="text-sm font-semibold text-foreground">
+            {t("Niciun anunț în această zonă încă", "No listings in this area yet")}
+          </p>
+          {onClearLocation && (
+            <button type="button" onClick={onClearLocation} className="text-sm font-medium text-primary underline-offset-2 hover:underline">
+              {t("Șterge filtrele de locație", "Clear location filters")}
+            </button>
+          )}
+        </div>
       )}
       {!ready && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted">

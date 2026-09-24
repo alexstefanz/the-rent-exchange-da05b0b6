@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Product, calculateClientPrice } from "@/features/products/productsApi";
 import { useProductsMapPoints } from "@/hooks/queries/useProductsMapPoints";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useLocationFocus } from "@/hooks/queries/useLocationFocus";
 const useIsCompact = () => {
   const [compact, setCompact] = useState(
     typeof window !== "undefined" ? window.innerWidth < 1024 : false,
@@ -31,6 +32,9 @@ interface Props {
   suggestions?: string[];
   onSuggestionClick?: (term: string) => void;
   onClearSearch?: () => void;
+  judet?: string;
+  city?: string;
+  onClearLocation?: () => void;
 }
 
 const PAGE_SIZE = 19;
@@ -53,6 +57,9 @@ const CategoryMapView = ({
   suggestions,
   onSuggestionClick,
   onClearSearch,
+  judet,
+  city,
+  onClearLocation,
 }: Props) => {
 
   const { t } = useLanguage();
@@ -64,6 +71,7 @@ const CategoryMapView = ({
   const listScrollRef = useRef<HTMLDivElement | null>(null);
   const compactScrollRef = useRef<HTMLDivElement | null>(null);
 
+  const { data: focus } = useLocationFocus(judet, city);
   const ids = useMemo(() => products.map((p) => p.id), [products]);
   const { data: points, isLoading: pointsLoading } = useProductsMapPoints(ids);
 
@@ -305,6 +313,9 @@ const CategoryMapView = ({
             onSelect={handleSelect}
             onHover={setHoveredId}
             onSearchArea={setAreaBounds}
+            focus={focus ?? null}
+            showEmpty={!isLoading && !pointsLoading && !!focus && items.length === 0}
+            onClearLocation={onClearLocation}
           />
         </div>
         <div className="relative z-10 -mt-5 rounded-t-3xl bg-background shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
@@ -327,6 +338,9 @@ const CategoryMapView = ({
           onSelect={handleSelect}
           onHover={setHoveredId}
           onSearchArea={setAreaBounds}
+          focus={focus ?? null}
+          showEmpty={!isLoading && !pointsLoading && !!focus && items.length === 0}
+          onClearLocation={onClearLocation}
         />
       </div>
     </div>
