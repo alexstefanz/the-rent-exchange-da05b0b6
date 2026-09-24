@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { handleApiError } from "@/lib/errorHandler";
-import { containsProfanity } from "@/lib/profanityFilter";
+import { containsProfanityWords } from "@/lib/profanityFilter";
 
 export interface UserReview {
   id: string;
@@ -49,7 +49,7 @@ export const createUserReview = async (
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  if (comment && containsProfanity(comment).hit) {
+  if (comment && containsProfanityWords(comment).hit) {
     throw new Error("Comentariul conține limbaj inadecvat. Te rugăm să-l reformulezi.");
   }
 

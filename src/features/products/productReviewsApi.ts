@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { containsProfanity } from "@/lib/profanityFilter";
+import { containsProfanityWords } from "@/lib/profanityFilter";
 
 export interface ProductReview {
   id: string;
@@ -58,7 +58,7 @@ export async function createProductReview(
 
   const overall = Math.round((ratings.condition + ratings.communication + ratings.punctuality) / 3);
 
-  if (comment && containsProfanity(comment).hit) {
+  if (comment && containsProfanityWords(comment).hit) {
     throw new Error("Comentariul conține limbaj inadecvat. Te rugăm să-l reformulezi.");
   }
 
