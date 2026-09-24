@@ -281,10 +281,12 @@ const CategoryDetail = () => {
 
   const handleCityChange = (value: string) => {
     setSelectedCity(value);
+    setPriceTouched(false);
     updateParam("localitate", value);
   };
   const handleJudetChange = (value: string) => {
     setSelectedJudet(value);
+    setPriceTouched(false);
     updateParam("judet", value);
     // Reset city if it no longer belongs to the new județ
     const j = judete.find((x) => x.name === value);
