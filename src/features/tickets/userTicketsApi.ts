@@ -107,7 +107,7 @@ function mapTicketError(message: string): string {
     case "DAILY":
       return value === 1
         ? `Puteți deschide doar 1 tichet la 24 de ore. Reveniți mâine sau continuați conversația în tichetul existent.`
-        : `Ați atins limita de ${value} tichete pe 24 de ore. Reveniți mâine.`;
+        : `Ai atins limita de ${value} tichete pe zi. Încearcă din nou mâine sau răspunde într-un tichet existent.`;
     case "OPEN_LIMIT":
       return `Aveți deja ${value} tichete deschise. Închideți sau așteptați rezolvarea celor existente înainte de a deschide unul nou.`;
     case "DUPLICATE":
