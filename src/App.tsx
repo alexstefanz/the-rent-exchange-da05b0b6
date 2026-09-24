@@ -51,7 +51,6 @@ const NewProduct = lazyWithRetry(() => import("./pages/NewProduct"));
 const EditProduct = lazyWithRetry(() => import("./pages/EditProduct"));
 const ProductPreview = lazyWithRetry(() => import("./pages/ProductPreview"));
 const Messages = lazyWithRetry(() => import("./pages/Messages"));
-const HelpCenter = lazyWithRetry(() => import("./pages/HelpCenter"));
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"));
 const MiniCrmTest = lazyWithRetry(() => import("./pages/MiniCrmTest"));
 const OdooTest = lazyWithRetry(() => import("./pages/OdooTest"));
@@ -166,7 +165,6 @@ const App = () => (
                 <Route path="/anunturi" element={<ListingsPage />} />
                 <Route path="/activitate" element={<ActivityLogPage />} />
                 <Route path="/rezervari-old" element={<Navigate to="/rezervari" replace />} />
-                <Route path="/centru-asistenta" element={<HelpCenter />} />
                 <Route path="/suport" element={<UserTickets />} />
                 <Route path="/cum-functioneaza" element={<HowItWorks />} />
                 <Route path="/despre-noi" element={<AboutUs />} />

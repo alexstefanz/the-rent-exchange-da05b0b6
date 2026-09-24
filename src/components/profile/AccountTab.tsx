@@ -573,7 +573,6 @@ const AccountTab = () => {
         {/* ============ SUPPORT ============ */}
         <Section id="support" icon={LifeBuoy} title={t("Suport & siguranță", "Support & safety")} description={t("Suntem aici dacă ai nevoie de ajutor.", "We're here if you need help.")}>
           <div className="grid sm:grid-cols-2 gap-3">
-            <SupportLink to="/centru-asistenta" icon={LifeBuoy} title={t("Centru suport", "Support center")} description={t("Răspunsuri rapide și ghiduri", "Quick answers and guides")} />
             <SupportLink to="/suport" icon={MessageCircle} title={t("Tichetele mele", "My tickets")} description={t("Vezi conversațiile cu suportul", "View support conversations")} />
             <SupportLink to="/cum-functioneaza" icon={Shield} title={t("Cum funcționează", "How it works")} description={t("Procesul de închiriere pas cu pas", "The rental process step by step")} />
             <SupportLink to="/termeni-si-conditii" icon={BadgeCheck} title={t("Termeni & condiții", "Terms & conditions")} description={t("Politicile platformei", "Platform policies")} />

@@ -31,11 +31,6 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://rentli.ro/centru-asistenta</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
     <loc>https://rentli.ro/intrebari-frecvente</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>

@@ -183,7 +183,7 @@ export const sections = [
       <div className="space-y-3">
         <p>Rentli își rezervă dreptul de a actualiza prezentele condiții în orice moment. Utilizatorii vor fi notificați cu privire la modificările semnificative, iar continuarea utilizării platformei constituie acceptarea noilor termeni.</p>
         <p>Dacă orice prevedere este considerată nevalidă, celelalte prevederi rămân în vigoare.</p>
-        <p>Pentru întrebări sau nelămuriri, vă rugăm să ne contactați prin <Link to="/centru-asistenta" className="text-primary hover:underline">pagina de suport</Link>.</p>
+        <p>Pentru întrebări sau nelămuriri, vă rugăm să ne contactați prin <Link to="/suport" className="text-primary hover:underline">pagina de suport</Link>.</p>
       </div>
     ),
   },
@@ -369,7 +369,7 @@ const sectionsEn = [
       <div className="space-y-3">
         <p>Rentli reserves the right to update these conditions at any time. Users will be notified of significant changes, and continued use of the platform constitutes acceptance of the new terms.</p>
         <p>If any provision is found to be invalid, the remaining provisions remain in force.</p>
-        <p>For questions or clarifications, please contact us via the <Link to="/centru-asistenta" className="text-primary hover:underline">support page</Link>.</p>
+        <p>For questions or clarifications, please contact us via the <Link to="/suport" className="text-primary hover:underline">support page</Link>.</p>
       </div>
     ),
   },

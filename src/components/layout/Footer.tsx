@@ -103,7 +103,6 @@ const Footer = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/cum-functioneaza" className="transition-colors hover:text-foreground">{language === "en" ? "How it works" : "Cum funcționează"}</Link></li>
               <li><Link to="/intrebari-frecvente" className="transition-colors hover:text-foreground">{language === "en" ? "FAQ" : "Întrebări frecvente"}</Link></li>
-              <li><Link to="/centru-asistenta" className="transition-colors hover:text-foreground">{language === "en" ? "Help center" : "Centru de ajutor"}</Link></li>
               <li><Link to="/termeni-si-conditii" className="transition-colors hover:text-foreground">{language === "en" ? "Terms and conditions" : "Termeni și condiții"}</Link></li>
               <li><Link to="/politica-confidentialitate" className="transition-colors hover:text-foreground">{language === "en" ? "Privacy policy" : "Politica de confidențialitate"}</Link></li>
               <li><Link to="/politica-anulare" className="transition-colors hover:text-foreground">{language === "en" ? "Cancellation policy" : "Politica de anulare"}</Link></li>
