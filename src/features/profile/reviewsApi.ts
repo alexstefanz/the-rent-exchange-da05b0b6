@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { handleApiError } from "@/lib/errorHandler";
-import { containsProfanity } from "@/lib/profanityFilter";
+import { containsProfanityWords } from "@/lib/profanityFilter";
 
 export interface UserReview {
   id: string;

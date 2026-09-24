@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { containsProfanity } from "@/lib/profanityFilter";
+import { containsProfanityWords } from "@/lib/profanityFilter";
 
 export interface ProductReview {
   id: string;
