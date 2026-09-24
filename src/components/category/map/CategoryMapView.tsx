@@ -102,6 +102,11 @@ const CategoryMapView = ({
     setSelectedId(null);
   }, [products, areaBounds]);
 
+  // New filter results should not stay hidden behind a previously chosen map area.
+  useEffect(() => {
+    setAreaBounds(null);
+  }, [products]);
+
   useEffect(() => {
     if (page > totalPages) setPage(1);
   }, [page, totalPages]);
