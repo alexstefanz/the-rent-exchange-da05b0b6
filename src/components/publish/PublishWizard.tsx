@@ -675,79 +675,81 @@ const Step1Category = ({
         />
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-        {filtered.map((cat) => {
-          const active = data.category === cat.name;
-          const Icon = getCategoryIcon(cat.id);
-          return (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => {
-                update("category", cat.name);
-                update("subcategory", "");
-              }}
-              className={cn(
-                "group relative flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border-2 p-4 text-center transition-all",
-                active
-                  ? "border-primary bg-primary/5 shadow-md"
-                  : "border-border bg-card hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm",
-              )}
-            >
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-                <Icon className="h-7 w-7 text-primary" />
-              </span>
-              <span className={cn("text-xs font-medium leading-tight", active ? "text-primary" : "text-foreground")}>
-                {cat.name}
-              </span>
-              {active && (
-                <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                  <Check className="h-3 w-3" />
+      <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_360px]">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+          {filtered.map((cat) => {
+            const active = data.category === cat.name;
+            const Icon = getCategoryIcon(cat.id);
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => {
+                  update("category", cat.name);
+                  update("subcategory", "");
+                }}
+                className={cn(
+                  "group relative flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border-2 p-4 text-center transition-all",
+                  active
+                    ? "border-primary bg-primary/5 shadow-md"
+                    : "border-border bg-card hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm",
+                )}
+              >
+                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+                  <Icon className="h-7 w-7 text-primary" />
                 </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {selectedCat && selectedCat.subcategories.length > 0 && (
-        <div
-          id="subcategory-section"
-          className={cn(
-            "mt-8 rounded-2xl border bg-card p-5 transition-colors",
-            errors.subcategory ? "border-destructive ring-2 ring-destructive/20" : "border-border",
-          )}
-        >
-          <Label className="text-sm font-semibold text-foreground">
-            {t("Subcategorie", "Subcategory")} <span className="text-destructive">*</span>
-          </Label>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {selectedCat.subcategories.map((sub) => {
-              const active = data.subcategory === sub.name;
-              return (
-                <button
-                  key={sub.id}
-                  type="button"
-                  onClick={() => update("subcategory", active ? "" : sub.name)}
-                  className={cn(
-                    "rounded-full border px-4 py-2 text-sm transition-colors",
-                    active
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background text-foreground hover:border-primary/40",
-                  )}
-                >
-                  {sub.name}
-                </button>
-              );
-            })}
-          </div>
-          {errors.subcategory && (
-            <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-destructive">
-              <AlertCircle className="h-4 w-4" /> {errors.subcategory}
-            </p>
-          )}
+                <span className={cn("text-xs font-medium leading-tight", active ? "text-primary" : "text-foreground")}>
+                  {cat.name}
+                </span>
+                {active && (
+                  <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                    <Check className="h-3 w-3" />
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
-      )}
+
+        {selectedCat && selectedCat.subcategories.length > 0 && (
+          <div
+            id="subcategory-section"
+            className={cn(
+              "self-start rounded-2xl border bg-card p-5 transition-colors lg:sticky lg:top-24",
+              errors.subcategory ? "border-destructive ring-2 ring-destructive/20" : "border-border",
+            )}
+          >
+            <Label className="text-sm font-semibold text-foreground">
+              {t("Subcategorie", "Subcategory")} <span className="text-destructive">*</span>
+            </Label>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {selectedCat.subcategories.map((sub) => {
+                const active = data.subcategory === sub.name;
+                return (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => update("subcategory", active ? "" : sub.name)}
+                    className={cn(
+                      "rounded-full border px-4 py-2 text-sm transition-colors",
+                      active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background text-foreground hover:border-primary/40",
+                    )}
+                  >
+                    {sub.name}
+                  </button>
+                );
+              })}
+            </div>
+            {errors.subcategory && (
+              <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-destructive">
+                <AlertCircle className="h-4 w-4" /> {errors.subcategory}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
