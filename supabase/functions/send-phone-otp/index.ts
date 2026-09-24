@@ -118,16 +118,18 @@ Deno.serve(async (req) => {
     const providerOk = res.ok && providerBody && providerBody.status === true;
 
     // Log the SMS attempt (success or failure) to sms_logs for unified debugging.
-    await supabase.from("sms_logs").insert({
+    const { error: logErr } = await supabase.from("sms_logs").insert({
       user_id: userId,
       recipient_phone: phone,
       template_key: "phone_otp",
-      message_body: message,
+      message_body: message.replace(code, "******"),
       status: providerOk ? "sent" : "failed",
-      provider_message_id: providerBody?.id ?? null,
+      provider_message_id: providerBody?.id ? String(providerBody.id) : null,
       provider_response: providerBody ?? { raw: rawText.slice(0, 500) },
       error_message: providerOk ? null : (providerBody?.message || providerBody?.error || `http_${res.status}`),
-    }).then(() => {}, (e) => console.error("[send-phone-otp] sms_logs insert failed", e));
+      idempotency_key: `phone_otp:${userId}:${Date.now()}`,
+    });
+    if (logErr) console.error("[send-phone-otp] sms_logs insert failed", logErr);
 
     if (!providerOk) {
       console.error(`[send-phone-otp] SMS failed http=${res.status} body=${rawText.slice(0, 300)}`);
