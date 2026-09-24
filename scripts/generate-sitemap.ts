@@ -22,7 +22,6 @@ const staticEntries: SitemapEntry[] = [
   { path: "/cum-functioneaza", changefreq: "monthly", priority: "0.7" },
   { path: "/despre-noi", changefreq: "monthly", priority: "0.6" },
   { path: "/contact", changefreq: "monthly", priority: "0.5" },
-  { path: "/centru-asistenta", changefreq: "monthly", priority: "0.5" },
   { path: "/intrebari-frecvente", changefreq: "monthly", priority: "0.5" },
   { path: "/termeni-si-conditii", changefreq: "yearly", priority: "0.3" },
   { path: "/politica-confidentialitate", changefreq: "yearly", priority: "0.3" },

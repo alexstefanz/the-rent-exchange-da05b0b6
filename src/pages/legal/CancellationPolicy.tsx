@@ -51,7 +51,7 @@ const sectionsRo = [
           <li>Dezastre naturale care afectează zona de preluare sau destinația</li>
           <li>Restricții de deplasare impuse de autorități (carantină, interdicții de circulație)</li>
         </ul>
-        <p>Cererea trebuie transmisă în maximum 24 de ore de la eveniment, însoțită de documente justificative (certificat medical, dovadă a restricțiilor etc.), prin <Link to="/centru-asistenta" className="text-primary hover:underline">pagina de suport</Link>.</p>
+        <p>Cererea trebuie transmisă în maximum 24 de ore de la eveniment, însoțită de documente justificative (certificat medical, dovadă a restricțiilor etc.), prin <Link to="/suport" className="text-primary hover:underline">pagina de suport</Link>.</p>
       </div>
     ),
   },
@@ -107,7 +107,7 @@ const sectionsRo = [
             <li>Probleme grave de sănătate ale proprietarului</li>
             <li>Evenimente de forță majoră</li>
           </ul>
-          <p className="mt-2 text-sm">Dovezile trebuie furnizate în 24 de ore prin <Link to="/centru-asistenta" className="text-primary hover:underline">pagina de suport</Link>.</p>
+          <p className="mt-2 text-sm">Dovezile trebuie furnizate în 24 de ore prin <Link to="/suport" className="text-primary hover:underline">pagina de suport</Link>.</p>
         </div>
       </div>
     ),
@@ -118,7 +118,7 @@ const sectionsRo = [
     content: (
       <div className="space-y-3">
         <p>Dacă sunteți eligibil pentru rambursare, suma va fi returnată în contul dumneavoastră în 3–5 zile lucrătoare de la confirmarea anulării. În funcție de banca dumneavoastră, tranzacția poate apărea în extras în maximum 10 zile lucrătoare.</p>
-        <p>Dacă rambursarea nu este vizibilă după această perioadă, vă recomandăm să contactați banca. Pentru probleme suplimentare, accesați <Link to="/centru-asistenta" className="text-primary hover:underline">pagina de suport</Link>.</p>
+        <p>Dacă rambursarea nu este vizibilă după această perioadă, vă recomandăm să contactați banca. Pentru probleme suplimentare, accesați <Link to="/suport" className="text-primary hover:underline">pagina de suport</Link>.</p>
         <p className="text-sm italic">Penalitățile și sumele aferente se aplică conform politicilor platformei, care pot fi actualizate periodic. Prin utilizarea platformei, acceptați acest proces.</p>
       </div>
     ),
@@ -135,7 +135,7 @@ const sectionsRo = [
     title: "Contact și asistență",
     content: (
       <div className="space-y-3">
-        <p>Înainte de a ne contacta, vă recomandăm să consultați <Link to="/centru-asistenta" className="text-primary hover:underline">centrul de asistență</Link> pentru răspunsuri la cele mai frecvente întrebări.</p>
+        <p>Înainte de a ne contacta, vă recomandăm să consultați <Link to="/intrebari-frecvente" className="text-primary hover:underline">întrebările frecvente</Link>.</p>
         <p>Pentru solicitări directe, accesați <Link to="/suport" className="text-primary hover:underline">pagina de suport</Link> unde puteți trimite un mesaj echipei noastre.</p>
       </div>
     ),
@@ -190,7 +190,7 @@ const sectionsEn = [
           <li>Natural disasters affecting the pickup area or destination</li>
           <li>Travel restrictions imposed by authorities (quarantine, movement bans)</li>
         </ul>
-        <p>The request must be submitted within 24 hours of the event, accompanied by supporting documents (medical certificate, proof of restrictions, etc.), via the <Link to="/centru-asistenta" className="text-primary hover:underline">support page</Link>.</p>
+        <p>The request must be submitted within 24 hours of the event, accompanied by supporting documents (medical certificate, proof of restrictions, etc.), via the <Link to="/suport" className="text-primary hover:underline">support page</Link>.</p>
       </div>
     ),
   },
@@ -246,7 +246,7 @@ const sectionsEn = [
             <li>Serious health problems of the owner</li>
             <li>Force majeure events</li>
           </ul>
-          <p className="mt-2 text-sm">Evidence must be provided within 24 hours via the <Link to="/centru-asistenta" className="text-primary hover:underline">support page</Link>.</p>
+          <p className="mt-2 text-sm">Evidence must be provided within 24 hours via the <Link to="/suport" className="text-primary hover:underline">support page</Link>.</p>
         </div>
       </div>
     ),
@@ -257,7 +257,7 @@ const sectionsEn = [
     content: (
       <div className="space-y-3">
         <p>If you are eligible for a refund, the amount will be returned to your account within 3–5 business days from the cancellation confirmation. Depending on your bank, the transaction may appear in your statement within up to 10 business days.</p>
-        <p>If the refund is not visible after this period, we recommend contacting your bank. For further issues, visit the <Link to="/centru-asistenta" className="text-primary hover:underline">support page</Link>.</p>
+        <p>If the refund is not visible after this period, we recommend contacting your bank. For further issues, visit the <Link to="/suport" className="text-primary hover:underline">support page</Link>.</p>
         <p className="text-sm italic">Penalties and related amounts apply according to the platform's policies, which may be updated periodically. By using the platform, you accept this process.</p>
       </div>
     ),
@@ -274,7 +274,7 @@ const sectionsEn = [
     title: "Contact and support",
     content: (
       <div className="space-y-3">
-        <p>Before contacting us, we recommend checking the <Link to="/centru-asistenta" className="text-primary hover:underline">help center</Link> for answers to the most common questions.</p>
+        <p>Before contacting us, we recommend checking the <Link to="/intrebari-frecvente" className="text-primary hover:underline">frequently asked questions</Link>.</p>
         <p>For direct requests, visit the <Link to="/suport" className="text-primary hover:underline">support page</Link> where you can send a message to our team.</p>
       </div>
     ),
