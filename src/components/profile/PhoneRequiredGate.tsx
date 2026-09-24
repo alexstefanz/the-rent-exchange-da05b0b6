@@ -1,3 +1,4 @@
+import { supabase } from "@/integrations/supabase/client";
 import { PhoneVerifyDialog } from "./PhoneVerificationRequiredModal";
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
@@ -41,6 +42,12 @@ export const usePhoneRequired = () => {
   const { data: profile, isLoading, refetch } = useCurrentUserProfile();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  useEffect(() => {
+    setIsAdmin(null);
+    if (!user?.id) return;
+    supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }).then(({ data }) => setIsAdmin(!!data));
+  }, [user?.id]);
 
   // Fall back to phone stored in auth user metadata (e.g. when the profile
   // row hasn't yet been refreshed after a save). This prevents the gate from
@@ -75,6 +82,8 @@ export const usePhoneRequired = () => {
   return {
     hasValidPhone,
     isProfileLoading: isLoading,
+    isAdmin: isAdmin === true,
+    phoneLoaded: !!user && !isLoading && !!profile && isAdmin !== null,
     requirePhone,
     dialogOpen,
     setDialogOpen,
