@@ -676,7 +676,7 @@ const Step1Category = ({
       </div>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_360px]">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {filtered.map((cat) => {
             const active = data.category === cat.name;
             const Icon = getCategoryIcon(cat.id);
@@ -689,14 +689,14 @@ const Step1Category = ({
                   update("subcategory", "");
                 }}
                 className={cn(
-                  "group relative flex aspect-square flex-col items-center justify-center gap-2 rounded-2xl border-2 p-4 text-center transition-all",
+                  "group relative flex aspect-square min-w-0 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 p-2 text-center transition-all",
                   active
                     ? "border-primary bg-primary/5 shadow-md"
                     : "border-border bg-card hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm",
                 )}
               >
-                <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-                  <Icon className="h-7 w-7 text-primary" />
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+                  <Icon className="h-6 w-6 text-primary" />
                 </span>
                 <span className={cn("text-xs font-medium leading-tight", active ? "text-primary" : "text-foreground")}>
                   {cat.name}
