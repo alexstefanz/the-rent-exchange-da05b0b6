@@ -1,3 +1,4 @@
+import { PhoneVerifyDialog } from "./PhoneVerificationRequiredModal";
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Phone, AlertCircle, ArrowRight, CheckCircle2 } from "lucide-react";
@@ -164,39 +165,8 @@ interface PhoneRequiredDialogProps {
  * Modal that appears when the user attempts a blocked action without a phone.
  * Primary CTA navigates to the account page where the phone field lives.
  */
-export const PhoneRequiredDialog = ({ open, onOpenChange }: PhoneRequiredDialogProps) => {
-  const ux = useUxCopy();
-  const navigate = useNavigate();
-
-  const goToAccount = () => {
-    onOpenChange(false);
-    navigate("/contul-meu");
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Phone className="h-5 w-5 text-primary" />
-            {ux.smsNotifications.dialogTitle}
-          </DialogTitle>
-          <DialogDescription className="pt-2">
-            {ux.smsNotifications.dialogDesc}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {ux.smsNotifications.cancel}
-          </Button>
-          <Button onClick={goToAccount}>
-            {ux.smsNotifications.goToAccount}
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
+export const PhoneRequiredDialog = ({ open, onOpenChange }: PhoneRequiredDialogProps) => (
+  <PhoneVerifyDialog open={open} onOpenChange={onOpenChange} />
+);
 
 export default PhoneRequiredGate;

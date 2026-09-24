@@ -1,3 +1,4 @@
+import { PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -89,6 +90,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   const { t, language } = useLanguage();
   const STEPS = useMemo(() => buildSteps(t), [t, language]);
   const queryClient = useQueryClient();
+  const phoneGate = usePhoneRequired();
 
   const [step, setStep] = useState(1);
   const [maxReached, setMaxReached] = useState(1);
@@ -487,6 +489,17 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   };
 
   const selectedCat = categories.find((c) => c.name === data.category);
+
+  if (phoneGate.phoneLoaded && !phoneGate.hasValidPhone && !phoneGate.isAdmin) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-16 text-center">
+        <h1 className="text-2xl font-bold">Verifică numărul de telefon</h1>
+        <p className="mt-2 text-muted-foreground">Pentru a publica un anunț ai nevoie de un număr de telefon verificat prin SMS.</p>
+        <Button className="mt-6" onClick={() => phoneGate.setDialogOpen(true)}>Verifică acum</Button>
+        <PhoneRequiredDialog open={phoneGate.dialogOpen} onOpenChange={phoneGate.setDialogOpen} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
