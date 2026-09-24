@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+import { PhoneVerifyDialog } from "./PhoneVerificationRequiredModal";
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Phone, AlertCircle, ArrowRight, CheckCircle2 } from "lucide-react";
@@ -40,6 +42,12 @@ export const usePhoneRequired = () => {
   const { data: profile, isLoading, refetch } = useCurrentUserProfile();
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
+  useEffect(() => {
+    setIsAdmin(null);
+    if (!user?.id) return;
+    supabase.rpc("has_role", { _user_id: user.id, _role: "admin" }).then(({ data }) => setIsAdmin(!!data));
+  }, [user?.id]);
 
   // Fall back to phone stored in auth user metadata (e.g. when the profile
   // row hasn't yet been refreshed after a save). This prevents the gate from
@@ -74,6 +82,8 @@ export const usePhoneRequired = () => {
   return {
     hasValidPhone,
     isProfileLoading: isLoading,
+    isAdmin: isAdmin === true,
+    phoneLoaded: !!user && !isLoading && !!profile && isAdmin !== null,
     requirePhone,
     dialogOpen,
     setDialogOpen,
@@ -164,39 +174,8 @@ interface PhoneRequiredDialogProps {
  * Modal that appears when the user attempts a blocked action without a phone.
  * Primary CTA navigates to the account page where the phone field lives.
  */
-export const PhoneRequiredDialog = ({ open, onOpenChange }: PhoneRequiredDialogProps) => {
-  const ux = useUxCopy();
-  const navigate = useNavigate();
-
-  const goToAccount = () => {
-    onOpenChange(false);
-    navigate("/contul-meu");
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Phone className="h-5 w-5 text-primary" />
-            {ux.smsNotifications.dialogTitle}
-          </DialogTitle>
-          <DialogDescription className="pt-2">
-            {ux.smsNotifications.dialogDesc}
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {ux.smsNotifications.cancel}
-          </Button>
-          <Button onClick={goToAccount}>
-            {ux.smsNotifications.goToAccount}
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-};
+export const PhoneRequiredDialog = ({ open, onOpenChange }: PhoneRequiredDialogProps) => (
+  <PhoneVerifyDialog open={open} onOpenChange={onOpenChange} />
+);
 
 export default PhoneRequiredGate;
