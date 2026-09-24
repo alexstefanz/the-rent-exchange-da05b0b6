@@ -1,5 +1,4 @@
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
@@ -124,7 +123,6 @@ const App = () => (
     <LanguageProvider>
       <AuthProvider>
         <TooltipProvider>
-          <Sonner />
           <BrowserRouter>
             <ScrollToTop />
             <RouteTracker />
