@@ -76,17 +76,19 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, fallbackCreds }
   const verify = async () => {
     if (code.length !== 6) return;
     setVerifying(true);
+    setErrorMsg(null);
+    setNoticeMsg(null);
     try {
       const { data, error } = await supabase.functions.invoke("verify-phone-otp", { body: { phone, code } });
       const errKey = (data as any)?.error || (error ? "invalid_code" : null);
       if (errKey) {
-        if (errKey === "expired") toast.error(ux.phoneOtp.expired);
-        else if (errKey === "too_many_attempts") toast.error(ux.phoneOtp.tooMany);
-        else toast.error(ux.phoneOtp.invalidCode);
+        if (errKey === "expired") setErrorMsg(ux.phoneOtp.expired);
+        else if (errKey === "too_many_attempts") setErrorMsg(ux.phoneOtp.tooMany);
+        else setErrorMsg(ux.phoneOtp.invalidCode);
         setCode("");
         return;
       }
-      toast.success(ux.phoneOtp.success);
+      setNoticeMsg(ux.phoneOtp.success);
       // If we have signup credentials, always sign the user in fresh — the
       // edge function has just confirmed their email, so signInWithPassword
       // is guaranteed to succeed and yields a fully authenticated session
@@ -112,7 +114,7 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, fallbackCreds }
       // parent's onOpenChange guard with a stale `gatingLogin` closure
       // and accidentally sign the freshly-authenticated user out.
     } catch {
-      toast.error(ux.phoneOtp.invalidCode);
+      setErrorMsg(ux.phoneOtp.invalidCode);
     } finally {
       setVerifying(false);
     }
