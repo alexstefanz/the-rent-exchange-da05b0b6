@@ -345,7 +345,7 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
       <div className="px-3 pb-2 space-y-2">
         <button
           onClick={() => onNavigate("/inchirieri?status=ongoing")}
-          className="group flex w-full items-center gap-3 rounded-xl bg-card border border-border/60 px-3 py-3 text-left shadow-sm transition hover:border-primary/40 hover:shadow"
+          className="group flex w-full items-center gap-3 rounded-xl border border-primary/25 bg-primary/5 px-3 py-3 text-left shadow-sm transition hover:border-primary/45 hover:shadow"
         >
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">
             <CalendarCheck className="h-5 w-5 text-primary" />
