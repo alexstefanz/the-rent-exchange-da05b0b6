@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { Loader2, Smartphone } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Smartphone } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/sonner";
 import { useUxCopy } from "@/hooks/useUxCopy";
 
 interface PhoneOtpDialogProps {
@@ -27,6 +26,8 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, fallbackCreds }
   const [verifying, setVerifying] = useState(false);
   const [sending, setSending] = useState(false);
   const [cooldown, setCooldown] = useState(60);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [noticeMsg, setNoticeMsg] = useState<string | null>(null);
 
   // Send code automatically the first time the dialog opens for this phone.
   useEffect(() => {
