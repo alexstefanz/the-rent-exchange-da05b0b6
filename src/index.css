@@ -105,6 +105,9 @@ html body[style*="padding-right"] {
     --accent: 27 95% 57%;
     --accent-foreground: 0 0% 100%;
 
+    --renter: 220 55% 24%;
+    --renter-foreground: 0 0% 100%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
@@ -156,6 +159,9 @@ html body[style*="padding-right"] {
 
     --accent: 30 90% 60%;
     --accent-foreground: 0 0% 100%;
+
+    --renter: 214 72% 72%;
+    --renter-foreground: 220 55% 14%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;

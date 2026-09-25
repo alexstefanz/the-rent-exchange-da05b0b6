@@ -29,13 +29,10 @@ const MessagesTab = () => {
   const t = (ro: string, en: string) => language === "ro" ? ro : en;
   const { data: conversations = [], isLoading } = useConversations(user?.id);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const [activeTab, setActiveTab] = useState("rezervari");
   const [isClosing, setIsClosing] = useState(false);
   useChatViewport(!isDesktop && !!selectedConversation);
 
   const handleSelect = (conv: Conversation) => {
-    const correctTab = conv.buyer_id === user?.id ? "rezervari" : "de-inchiriat";
-    setActiveTab(correctTab);
     setSelectedConversation(conv);
   };
 
@@ -90,8 +87,6 @@ const MessagesTab = () => {
             conversations={conversations}
             isLoading={isLoading}
             userId={user?.id || ""}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
             onSelect={handleSelect}
           />
         </div>
@@ -128,8 +123,6 @@ const MessagesTab = () => {
         conversations={conversations}
         isLoading={isLoading}
         userId={user?.id || ""}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
         onSelect={handleSelect}
       />
     );
@@ -144,8 +137,6 @@ const MessagesTab = () => {
           isLoading={isLoading}
           userId={user?.id || ""}
           selectedId={selectedConversation?.id}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
           onSelect={handleSelect}
         />
       </div>

@@ -36,7 +36,6 @@ export default function Messages() {
   const queryClient = useQueryClient();
   const isDesktop = useIsDesktop();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const [activeTab, setActiveTab] = useState("rezervari");
   const [mobileInfoOpen, setMobileInfoOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   useChatViewport(!isDesktop && !!selectedConversation);
@@ -56,8 +55,6 @@ export default function Messages() {
     if (convId === selectedConversation?.id) return;
     const found = conversations.find((c) => c.id === convId);
     if (found) {
-      const correctTab = found.buyer_id === user?.id ? "rezervari" : "de-inchiriat";
-      setActiveTab(correctTab);
       setSelectedConversation(found);
     } else if (!isLoading) {
       // Conversation not in the cached list yet (e.g. just created from a
@@ -128,8 +125,6 @@ export default function Messages() {
               conversations={conversations}
               isLoading={isLoading}
               userId={user?.id || ""}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
               onSelect={handleSelect}
             />
           </main>
@@ -186,8 +181,6 @@ export default function Messages() {
             conversations={conversations}
             isLoading={isLoading}
             userId={user?.id || ""}
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
             onSelect={handleSelect}
           />
         </main>
@@ -209,8 +202,6 @@ export default function Messages() {
               isLoading={isLoading}
               userId={user?.id || ""}
               selectedId={selectedConversation?.id}
-              activeTab={activeTab}
-              onTabChange={setActiveTab}
               onSelect={handleSelect}
             />
           </div>

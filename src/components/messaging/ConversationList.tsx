@@ -1,19 +1,18 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, MessageCircle, LifeBuoy } from "lucide-react";
 import { Conversation } from "@/features/messaging/messagingApi";
 import { format, isToday, isYesterday } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface ConversationListProps {
   conversations: Conversation[];
   isLoading: boolean;
   userId: string;
   selectedId?: string;
-  activeTab: string;
-  onTabChange: (tab: string) => void;
   onSelect: (conv: Conversation) => void;
 }
 
@@ -22,31 +21,11 @@ export function ConversationList({
   isLoading,
   userId,
   selectedId,
-  activeTab,
-  onTabChange,
   onSelect,
 }: ConversationListProps) {
   const { language, t } = useLanguage();
   const dateLocale = language === "ro" ? ro : enUS;
-  const handleTabChange = (value: string) => {
-    if (value === "suport") {
-      // Open the global support widget instead of changing the tab.
-      window.dispatchEvent(new CustomEvent("open-support-chat"));
-      return;
-    }
-    onTabChange(value);
-  };
-
-  const rezervariUnread = conversations
-    .filter(c => c.buyer_id === userId)
-    .reduce((acc, c) => acc + (c.unread_count || 0), 0);
-  const deInchiriatUnread = conversations
-    .filter(c => c.owner_id === userId)
-    .reduce((acc, c) => acc + (c.unread_count || 0), 0);
-
-  const filtered = conversations.filter((conv) =>
-    activeTab === "rezervari" ? conv.buyer_id === userId : conv.owner_id === userId
-  );
+  const filtered = conversations;
 
   const sortByRecent = (a: Conversation, b: Conversation) => {
     const ta = a.last_message?.created_at ? new Date(a.last_message.created_at).getTime() : 0;
@@ -71,17 +50,21 @@ export function ConversationList({
 
   const renderItem = (conv: Conversation) => {
     const isUnread = (conv.unread_count || 0) > 0;
+    const isRenter = conv.buyer_id === userId;
+    const roleLabel = isRenter ? t("Chiriaș", "Renter") : t("Proprietar", "Owner");
     return (
     <button
       key={conv.id}
       onClick={() => onSelect(conv)}
-      className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors hover:bg-muted/50 border-l-4 ${
+      className={cn(
+        "w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors hover:bg-muted/50 border-l-4",
+        isRenter ? "border-renter" : "border-primary",
         selectedId === conv.id
-          ? "bg-muted border-primary"
+          ? isRenter ? "bg-renter/10" : "bg-primary/10"
           : isUnread
-          ? "bg-primary/10 border-primary"
-          : "border-transparent"
-      }`}
+          ? isRenter ? "bg-renter/5" : "bg-primary/5"
+          : "bg-transparent"
+      )}
     >
       <Avatar className="h-11 w-11 shrink-0">
         <AvatarImage src={conv.other_user?.avatar_url || undefined} />
@@ -94,7 +77,7 @@ export function ConversationList({
             {conv.product?.title || t("Produs", "Product")}
           </span>
           <div className="flex items-center gap-1.5 shrink-0">
-            {isUnread && <span className="h-2 w-2 rounded-full bg-primary" aria-hidden />}
+            {isUnread && <span className={cn("h-2 w-2 rounded-full", isRenter ? "bg-renter" : "bg-primary")} aria-hidden />}
             {conv.last_message && (
               <span className={`text-xs whitespace-nowrap ${isUnread ? "text-primary font-bold" : "text-muted-foreground"}`}>
                 {formatTime(conv.last_message.created_at)}
@@ -102,8 +85,14 @@ export function ConversationList({
             )}
           </div>
         </div>
+        <span className={cn(
+          "mt-0.5 inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold",
+          isRenter ? "bg-renter/10 text-renter" : "bg-primary/10 text-primary"
+        )}>
+          {roleLabel}
+        </span>
         {conv.rental && (
-          <p className="text-[11px] text-primary font-medium truncate mt-0.5">
+          <p className={cn("text-[11px] font-medium truncate mt-0.5", isRenter ? "text-renter" : "text-primary")}>
             {formatRentalRange(conv.rental.start_date, conv.rental.end_date)}
             {" · "}
             {conv.rental.rental_days}{" "}
@@ -153,31 +142,22 @@ export function ConversationList({
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 pb-2">
-        <h1 className="text-xl font-bold mb-3">{t("Mesaje", "Messages")}</h1>
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="w-full">
-            <TabsTrigger value="rezervari" className="flex-1 gap-1.5">
-              {t("Rezervări", "Reservations")}
-              {rezervariUnread > 0 && (
-                <Badge variant="destructive" className="rounded-full h-5 min-w-5 flex items-center justify-center text-[10px] px-1.5 py-0">
-                  {rezervariUnread}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="de-inchiriat" className="flex-1 gap-1.5">
-              {t("De Închiriat", "For Rent")}
-              {deInchiriatUnread > 0 && (
-                <Badge variant="destructive" className="rounded-full h-5 min-w-5 flex items-center justify-center text-[10px] px-1.5 py-0">
-                  {deInchiriatUnread}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="suport" className="flex-1 gap-1.5 lg:hidden">
-              <LifeBuoy className="h-3.5 w-3.5" />
-              {t("Suport", "Support")}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl font-bold">{t("Mesaje", "Messages")}</h1>
+            <p className="text-xs text-muted-foreground">{t("Toate conversațiile", "All conversations")}</p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="lg:hidden"
+            aria-label={t("Suport", "Support")}
+            onClick={() => window.dispatchEvent(new CustomEvent("open-support-chat"))}
+          >
+            <LifeBuoy className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-2">
@@ -189,9 +169,7 @@ export function ConversationList({
           <div className="flex flex-col items-center justify-center py-16 text-center px-4">
             <MessageCircle className="h-10 w-10 text-muted-foreground mb-3" />
             <p className="text-sm text-muted-foreground">
-              {activeTab === "rezervari"
-                ? t("Nicio conversație despre rezervări.", "No reservation conversations.")
-                : t("Nicio conversație despre produsele tale.", "No conversations about your products.")}
+              {t("Nu ai încă nicio conversație.", "You don't have any conversations yet.")}
             </p>
           </div>
         ) : (
