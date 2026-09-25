@@ -33,6 +33,8 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, fallbackCreds }
   useEffect(() => {
     if (!open) return;
     setCode("");
+    setErrorMsg(null);
+    setNoticeMsg(null);
     setCooldown(60);
     sendCode();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -46,24 +48,26 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, fallbackCreds }
 
   const sendCode = async () => {
     setSending(true);
+    setErrorMsg(null);
+    setNoticeMsg(null);
     try {
       const { data, error } = await supabase.functions.invoke("send-phone-otp", { body: { phone } });
       if (error || (data as any)?.error) {
         const err = (data as any)?.error || error?.message;
         const providerMsg = (data as any)?.providerMessage;
         if (err === "rate_limited" || err === "too_many_requests") {
-          toast.error(ux.phoneOtp.rateLimited);
+          setErrorMsg(ux.phoneOtp.rateLimited);
         } else if (err === "sms_failed" && providerMsg) {
-          toast.error(`${ux.phoneOtp.sendError}: ${providerMsg}`);
+          setErrorMsg(`${ux.phoneOtp.sendError}: ${providerMsg}`);
         } else {
-          toast.error(ux.phoneOtp.sendError);
+          setErrorMsg(ux.phoneOtp.sendError);
         }
         return;
       }
-      toast.success(ux.phoneOtp.sent);
+      setNoticeMsg(ux.phoneOtp.sent);
       setCooldown(60);
     } catch {
-      toast.error(ux.phoneOtp.sendError);
+      setErrorMsg(ux.phoneOtp.sendError);
     } finally {
       setSending(false);
     }
