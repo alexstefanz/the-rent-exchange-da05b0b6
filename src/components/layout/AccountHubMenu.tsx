@@ -275,9 +275,6 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
   const health = data?.health;
   const availableBalance = walletBalance?.available ?? signals?.availableBalance ?? drawerStats?.balance ?? 0;
 
-  const totalActive =
-    (signals?.activeRentalsAsOwner || 0) + (signals?.activeRentalsAsRenter || 0);
-
   const incompleteHealth = useMemo(
     () => (health?.items || []).filter((i) => !i.done).slice(0, 3),
     [health],
@@ -370,30 +367,28 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
         </button>
 
 
-        {(totalActive > 0 || (trust?.completedRentals || 0) > 0) && (
-          <button
-            onClick={() => onNavigate("/rezervari")}
-            className="group flex w-full items-center gap-3 rounded-xl bg-card border border-border/60 px-3 py-3 text-left shadow-sm transition hover:border-primary/40 hover:shadow"
-          >
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-100 shrink-0">
-              <Package className="h-5 w-5 text-sky-600" />
+        <button
+          onClick={() => onNavigate("/rezervari")}
+          className="group flex w-full items-center gap-3 rounded-xl border border-renter/25 bg-renter/5 px-3 py-3 text-left shadow-sm transition hover:border-renter/45 hover:shadow"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-renter/10 shrink-0">
+            <Package className="h-5 w-5 text-renter" />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-semibold text-foreground">
+              {t("Chiriaș", "Renter")}
             </span>
-            <span className="flex-1 min-w-0">
-              <span className="block text-sm font-semibold text-foreground">
-                {t("Chiriaș", "Renter")}
-              </span>
-              <span className="block text-[11px] text-muted-foreground">
-                {t("Găsește produse și rezervă rapid ce ai nevoie.", "Find products and quickly book what you need.")}
-              </span>
+            <span className="block text-[11px] text-muted-foreground">
+              {t("Găsește produse și rezervă rapid ce ai nevoie.", "Find products and quickly book what you need.")}
             </span>
-            {(signals?.activeRentalsAsRenter || 0) > 0 && (
-              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-sky-600 px-1.5 text-xs font-bold text-white shrink-0">
-                {signals?.activeRentalsAsRenter}
-              </span>
-            )}
-            <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition" />
-          </button>
-        )}
+          </span>
+          {(signals?.activeRentalsAsRenter || 0) > 0 && (
+            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-renter px-1.5 text-xs font-bold text-renter-foreground shrink-0">
+              {signals?.activeRentalsAsRenter}
+            </span>
+          )}
+          <ChevronRight className="h-4 w-4 text-renter/60 transition group-hover:text-renter" />
+        </button>
 
         <div
           role="link"

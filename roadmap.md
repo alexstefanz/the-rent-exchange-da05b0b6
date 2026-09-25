@@ -1,0 +1,4 @@
+- [ ] Afișează permanent cardurile Chiriaș și Proprietar cu culorile cerute
+- [ ] Transformă Mesaje într-o listă comună cu roluri colorate
+- [ ] Testează chatul admin–utilizator și curăță datele temporare
+- [ ] Verifică desktop, mobil și compilarea

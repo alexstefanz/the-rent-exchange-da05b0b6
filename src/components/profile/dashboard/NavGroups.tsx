@@ -127,7 +127,7 @@ export function NavGroups() {
         const GIcon = g.icon;
         const headerTone =
           g.tone === "renter"
-            ? "bg-sky-100 text-sky-700"
+            ? "bg-renter/10 text-renter"
             : g.tone === "owner"
               ? "bg-primary/15 text-primary"
               : "bg-muted text-muted-foreground";
