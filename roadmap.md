@@ -1,4 +1,4 @@
-- [ ] Afișează permanent cardurile Chiriaș și Proprietar cu culorile cerute
-- [ ] Transformă Mesaje într-o listă comună cu roluri colorate
-- [ ] Testează chatul admin–utilizator și curăță datele temporare
-- [ ] Verifică desktop, mobil și compilarea
+- [x] Afișează permanent cardurile Chiriaș și Proprietar cu culorile cerute
+- [x] Transformă Mesaje într-o listă comună cu roluri colorate
+- [x] Testează chatul admin–utilizator și curăță datele temporare
+- [x] Verifică desktop, mobil și compilarea
