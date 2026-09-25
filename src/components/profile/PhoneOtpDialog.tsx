@@ -132,7 +132,7 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, fallbackCreds }
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-4 py-2">
-          <InputOTP maxLength={6} value={code} onChange={setCode} inputMode="numeric" pattern="[0-9]*">
+          <InputOTP maxLength={6} value={code} onChange={(v) => { setCode(v); setErrorMsg(null); }} inputMode="numeric" pattern="[0-9]*">
             <InputOTPGroup>
               <InputOTPSlot index={0} />
               <InputOTPSlot index={1} />
@@ -142,6 +142,19 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, fallbackCreds }
               <InputOTPSlot index={5} />
             </InputOTPGroup>
           </InputOTP>
+
+          {errorMsg && (
+            <p role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{errorMsg}</span>
+            </p>
+          )}
+          {noticeMsg && !errorMsg && (
+            <p className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-foreground">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <span>{noticeMsg}</span>
+            </p>
+          )}
 
           <Button
             variant="link"
