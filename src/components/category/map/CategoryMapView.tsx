@@ -263,7 +263,7 @@ const CategoryMapView = ({
               onClearSearch={onClearSearch}
             />
           ) : (
-            <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-7 min-[2200px]:grid-cols-3">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:gap-x-5 sm:gap-y-7 lg:grid-cols-3">
               {pagedProducts.map((p) => (
                 <div
                   key={p.id}
