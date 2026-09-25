@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { Loader2, Smartphone } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Smartphone } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/sonner";
 import { useUxCopy } from "@/hooks/useUxCopy";
 
 interface PhoneOtpDialogProps {
@@ -27,11 +26,15 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, fallbackCreds }
   const [verifying, setVerifying] = useState(false);
   const [sending, setSending] = useState(false);
   const [cooldown, setCooldown] = useState(60);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [noticeMsg, setNoticeMsg] = useState<string | null>(null);
 
   // Send code automatically the first time the dialog opens for this phone.
   useEffect(() => {
     if (!open) return;
     setCode("");
+    setErrorMsg(null);
+    setNoticeMsg(null);
     setCooldown(60);
     sendCode();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -45,24 +48,26 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, fallbackCreds }
 
   const sendCode = async () => {
     setSending(true);
+    setErrorMsg(null);
+    setNoticeMsg(null);
     try {
       const { data, error } = await supabase.functions.invoke("send-phone-otp", { body: { phone } });
       if (error || (data as any)?.error) {
         const err = (data as any)?.error || error?.message;
         const providerMsg = (data as any)?.providerMessage;
         if (err === "rate_limited" || err === "too_many_requests") {
-          toast.error(ux.phoneOtp.rateLimited);
+          setErrorMsg(ux.phoneOtp.rateLimited);
         } else if (err === "sms_failed" && providerMsg) {
-          toast.error(`${ux.phoneOtp.sendError}: ${providerMsg}`);
+          setErrorMsg(`${ux.phoneOtp.sendError}: ${providerMsg}`);
         } else {
-          toast.error(ux.phoneOtp.sendError);
+          setErrorMsg(ux.phoneOtp.sendError);
         }
         return;
       }
-      toast.success(ux.phoneOtp.sent);
+      setNoticeMsg(ux.phoneOtp.sent);
       setCooldown(60);
     } catch {
-      toast.error(ux.phoneOtp.sendError);
+      setErrorMsg(ux.phoneOtp.sendError);
     } finally {
       setSending(false);
     }
@@ -71,17 +76,19 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, fallbackCreds }
   const verify = async () => {
     if (code.length !== 6) return;
     setVerifying(true);
+    setErrorMsg(null);
+    setNoticeMsg(null);
     try {
       const { data, error } = await supabase.functions.invoke("verify-phone-otp", { body: { phone, code } });
       const errKey = (data as any)?.error || (error ? "invalid_code" : null);
       if (errKey) {
-        if (errKey === "expired") toast.error(ux.phoneOtp.expired);
-        else if (errKey === "too_many_attempts") toast.error(ux.phoneOtp.tooMany);
-        else toast.error(ux.phoneOtp.invalidCode);
+        if (errKey === "expired") setErrorMsg(ux.phoneOtp.expired);
+        else if (errKey === "too_many_attempts") setErrorMsg(ux.phoneOtp.tooMany);
+        else setErrorMsg(ux.phoneOtp.invalidCode);
         setCode("");
         return;
       }
-      toast.success(ux.phoneOtp.success);
+      setNoticeMsg(ux.phoneOtp.success);
       // If we have signup credentials, always sign the user in fresh — the
       // edge function has just confirmed their email, so signInWithPassword
       // is guaranteed to succeed and yields a fully authenticated session
@@ -107,7 +114,7 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, fallbackCreds }
       // parent's onOpenChange guard with a stale `gatingLogin` closure
       // and accidentally sign the freshly-authenticated user out.
     } catch {
-      toast.error(ux.phoneOtp.invalidCode);
+      setErrorMsg(ux.phoneOtp.invalidCode);
     } finally {
       setVerifying(false);
     }
@@ -125,7 +132,7 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, fallbackCreds }
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-4 py-2">
-          <InputOTP maxLength={6} value={code} onChange={setCode} inputMode="numeric" pattern="[0-9]*">
+          <InputOTP maxLength={6} value={code} onChange={(v) => { setCode(v); setErrorMsg(null); }} inputMode="numeric" pattern="[0-9]*">
             <InputOTPGroup>
               <InputOTPSlot index={0} />
               <InputOTPSlot index={1} />
@@ -135,6 +142,19 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, fallbackCreds }
               <InputOTPSlot index={5} />
             </InputOTPGroup>
           </InputOTP>
+
+          {errorMsg && (
+            <p role="alert" className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{errorMsg}</span>
+            </p>
+          )}
+          {noticeMsg && !errorMsg && (
+            <p className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-foreground">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              <span>{noticeMsg}</span>
+            </p>
+          )}
 
           <Button
             variant="link"
