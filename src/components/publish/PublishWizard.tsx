@@ -91,6 +91,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   const STEPS = useMemo(() => buildSteps(t), [t, language]);
   const queryClient = useQueryClient();
   const phoneGate = usePhoneRequired();
+  const [publishError, setPublishError] = useState<string | null>(null);
 
   const [step, setStep] = useState(1);
   const [maxReached, setMaxReached] = useState(1);
@@ -405,10 +406,15 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   };
 
   const handlePublish = async () => {
-    if (!user) return;
+    setPublishError(null);
+    if (!user) {
+      setPublishError(t("Sesiunea a expirat. Autentifică-te din nou.", "Session expired. Please sign in again."));
+      return;
+    }
     // Validate critical steps
     for (let s = 1; s <= 3; s++) {
       if (!validateStep(s)) {
+        setPublishError(t("Unele informații lipsesc sau nu sunt valide. Verifică pasul afișat.", "Some details are missing or invalid. Check the step shown."));
         setStep(s);
         return;
       }
@@ -478,6 +484,12 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       }
     } catch (err: any) {
       console.error(err);
+      const raw = String(err?.message || "");
+      setPublishError(
+        raw.includes("PHONE_NOT_VERIFIED")
+          ? t("Trebuie să îți verifici numărul de telefon înainte de a publica.", "Verify your phone number before publishing.")
+          : `${t("Anunțul nu a putut fi publicat", "The listing could not be published")}: ${raw || t("încearcă din nou.", "please try again.")}`,
+      );
       toast({
         title: t("Eroare la publicare", "Publish error"),
         description: err?.message || t("Încearcă din nou.", "Please try again."),
@@ -563,6 +575,11 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         </div>
       </main>
 
+      {publishError && (
+        <div role="alert" className="mx-auto mb-3 max-w-3xl rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {publishError}
+        </div>
+      )}
       <PublishFooter
         current={step}
         total={STEPS.length}
