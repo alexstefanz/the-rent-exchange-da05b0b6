@@ -17,6 +17,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useChatPresence } from "@/hooks/useChatPresence";
 import { ChatHeader } from "@/components/messaging/ChatHeader";
+import { BookingSummaryCard } from "@/components/messaging/BookingSummaryCard";
 import { RentalStageStepper } from "@/components/messaging/RentalStageStepper";
 import { TransactionCard } from "@/components/messaging/TransactionCard";
 import { MessageBubble } from "@/components/messaging/MessageBubble";
