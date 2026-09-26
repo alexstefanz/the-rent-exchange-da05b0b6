@@ -340,6 +340,7 @@ const AccountTab = () => {
         },
       }).catch((e) => console.error("profile-updated email failed:", e));
     }
+    showSaveToast(t("Telefon actualizat", "Phone updated"));
   };
 
   const handlePasswordReset = async () => {
@@ -905,6 +906,7 @@ function PayoutIbansSection({
       setNewIban("");
       setAdding(false);
       await load();
+      showSaveToast(t("IBAN salvat", "IBAN saved"));
     } catch (e: any) {
       const msg = e?.message || "";
       setFormError(msg.includes("duplicate")
@@ -929,6 +931,7 @@ function PayoutIbansSection({
       setIbans(next);
       syncDefaultToParent(next);
       toast({ title: t("Implicit actualizat", "Default updated") });
+      showSaveToast(t("IBAN implicit actualizat", "Default IBAN updated"));
     } catch (e: any) {
       toast({ title: t("Eroare", "Error"), description: e?.message || "", variant: "destructive" });
     } finally {
@@ -942,6 +945,7 @@ function PayoutIbansSection({
       const { error } = await supabase.rpc("delete_payout_iban", { p_id: id } as any);
       if (error) throw error;
       toast({ title: t("Șters", "Deleted") });
+      showSaveToast(t("IBAN șters", "IBAN deleted"));
       await load();
     } catch (e: any) {
       toast({ title: t("Nu se poate șterge", "Cannot delete"), description: e?.message || "", variant: "destructive" });
