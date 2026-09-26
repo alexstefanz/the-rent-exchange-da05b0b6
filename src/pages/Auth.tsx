@@ -71,6 +71,7 @@ const Auth = () => {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showRegisterConfirm, setShowRegisterConfirm] = useState(false);
+  const [registerError, setRegisterError] = useState<string | null>(null);
   const [rememberMeRegister, setRememberMeRegister] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("rentli_remember_me") === "1";
@@ -282,54 +283,51 @@ const Auth = () => {
   };
 
   const handleRegister = async (data: RegisterFormData) => {
+    setRegisterError(null);
     setIsLoading(true);
     // Block redirect-on-user-set while we open the SMS OTP dialog
     if (USE_SMS_OTP) setGatingLogin(true);
-    const { error } = await signUp(data.email, data.password, undefined);
-    setIsLoading(false);
-    if (error) {
-      setGatingLogin(false);
-      let message = error.message;
-      const alreadyRegistered =
-        error.message?.includes("already registered") ||
-        (error as any)?.name === "UserAlreadyExists";
-      if (alreadyRegistered) {
-        message = `${copy.auth.accountExists}. Autentifică-te sau folosește „Am uitat parola”.`;
-        toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
-        registerForm.setError("email", { type: "server", message });
-        // Keep the user on the register tab so the inline error stays visible
-        // (toasts are disabled globally). Prefill login email for convenience.
-        loginForm.setValue("email", data.email);
-        registerForm.setFocus("email");
+    try {
+      const email = data.email.trim().toLowerCase();
+      const { error } = await signUp(email, data.password, undefined);
+      if (error) {
+        setGatingLogin(false);
+        let message = error.message || "Înregistrarea nu a putut fi finalizată. Încearcă din nou.";
+        const alreadyRegistered =
+          /already registered|already exists/i.test(error.message || "") ||
+          (error as any)?.name === "UserAlreadyExists" ||
+          (error as any)?.code === "user_already_exists";
+        if (alreadyRegistered) {
+          message = `${copy.auth.accountExists}. Autentifică-te sau folosește „Am uitat parola”.`;
+          registerForm.setError("email", { type: "server", message });
+          loginForm.setValue("email", email);
+          registerForm.setFocus("email");
+          return;
+        }
+        const isRateLimit =
+          (error as any)?.code === "over_email_send_rate_limit" ||
+          (error as any)?.status === 429 ||
+          /rate limit|too many/i.test(error.message || "");
+        if (isRateLimit) {
+          message = "Au fost prea multe încercări de înregistrare de pe această rețea. Te rugăm să aștepți câteva minute și să încerci din nou, sau folosește autentificarea cu Google.";
+          registerForm.setError("email", { type: "server", message });
+          registerForm.setFocus("email");
+          return;
+        }
+        if (isWeakPasswordError(error.message)) {
+          message = copy.auth.passwordTooWeak;
+          registerForm.setError("password", { type: "server", message });
+          registerForm.setFocus("password");
+          return;
+        }
+        if (/failed to fetch|network|fetch failed/i.test(error.message || "")) {
+          message = language === "ro"
+            ? "Nu ne-am putut conecta. Verifică internetul și încearcă din nou."
+            : "We could not connect. Check your internet connection and try again.";
+        }
+        setRegisterError(message);
         return;
       }
-      const isRateLimit =
-        (error as any)?.code === "over_email_send_rate_limit" ||
-        (error as any)?.status === 429 ||
-        /rate limit/i.test(error.message || "");
-      if (isRateLimit) {
-        const rateMsg =
-          "Au fost prea multe încercări de înregistrare de pe această rețea. Te rugăm să aștepți câteva minute și să încerci din nou, sau folosește autentificarea cu Google.";
-        toast({
-          title: "Prea multe încercări",
-          description: rateMsg,
-          variant: "destructive",
-        });
-        registerForm.setError("email", { type: "server", message: rateMsg });
-        registerForm.setFocus("email");
-        return;
-      }
-      if (isWeakPasswordError(error.message)) {
-        message = copy.auth.passwordTooWeak;
-        toast({ title: "Parola nu poate fi folosită", description: message, variant: "destructive" });
-        registerForm.setError("password", { type: "server", message });
-        registerForm.setFocus("password");
-        return;
-      }
-      toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
-      registerForm.setError("password", { type: "server", message });
-      return;
-    }
       const normalizedPhone = normalizePhoneRO(data.phone) as string;
       try {
         const { data: { user: newUser } } = await supabase.auth.getUser();
@@ -353,11 +351,22 @@ const Auth = () => {
 
       if (rememberMeRegister) {
         localStorage.setItem("rentli_remember_me", "1");
-        localStorage.setItem("rentli_remembered_email", data.email);
+        localStorage.setItem("rentli_remembered_email", email);
       } else {
         localStorage.removeItem("rentli_remember_me");
         localStorage.removeItem("rentli_remembered_email");
       }
+    } catch (error) {
+      console.error("Registration failed:", error);
+      setGatingLogin(false);
+      setRegisterError(
+        language === "ro"
+          ? "Înregistrarea nu a putut fi finalizată. Verifică conexiunea și încearcă din nou."
+          : "Registration could not be completed. Check your connection and try again.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handlePhoneVerified = async () => {
@@ -674,14 +683,41 @@ const Auth = () => {
                 <SocialLoginButtons onSuccess={() => navigate("/", { replace: true })} />
               </div>
 
-              <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-4">
+              <form
+                onSubmit={registerForm.handleSubmit(handleRegister, () => {
+                  setRegisterError(
+                    language === "ro"
+                      ? "Verifică informațiile marcate mai jos."
+                      : "Check the fields marked below.",
+                  );
+                })}
+                className="space-y-4"
+              >
                 <p className="text-xs text-muted-foreground">
                   Cont gratuit, fără card de credit.
                 </p>
 
+                {registerError && (
+                  <div
+                    role="alert"
+                    className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+                  >
+                    <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                    <span>{registerError}</span>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="register-email">{copy.auth.email}</Label>
-                  <Input id="register-email" type="email" className="h-12" placeholder="email@exemplu.ro" {...registerForm.register("email")} />
+                  <Input
+                    id="register-email"
+                    type="email"
+                    className="h-12"
+                    placeholder="email@exemplu.ro"
+                    {...registerForm.register("email", {
+                      onChange: () => { if (registerError) setRegisterError(null); },
+                    })}
+                  />
                   {registerForm.formState.errors.email && <p className="text-sm text-destructive">{registerForm.formState.errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">

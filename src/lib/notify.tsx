@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { categorize } from "@/lib/notificationCategory";
+import { toFriendlyError } from "@/lib/errorHandler";
 
 export type NotifyVariant =
   | "confirmation"
@@ -249,9 +250,6 @@ export function notifyError(
   error: unknown,
   opts: { fallbackTitle?: string } = {},
 ) {
-  // Lazy import to avoid circular deps at module init.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { toFriendlyError } = require("@/lib/errorHandler") as typeof import("@/lib/errorHandler");
   const friendly = toFriendlyError(error, opts.fallbackTitle ?? "Ceva nu a mers");
   if (typeof console !== "undefined") console.warn("[notifyError]", error);
   if (friendly.suppress) return;
