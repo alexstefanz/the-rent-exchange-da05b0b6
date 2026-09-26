@@ -29,6 +29,7 @@ import { uploadAvatar } from "@/features/profile/avatarApi";
 import { supabase } from "@/integrations/supabase/client";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { isValidRomanianPhone } from "@/lib/inputValidation";
+import { showSaveToast } from "@/lib/saveToast";
 import { useProfileRealtime } from "@/hooks/useProfileRealtime";
 import { AvatarCropperDialog } from "@/components/profile/account/AvatarCropperDialog";
 import PhoneOtpDialog from "@/components/profile/PhoneOtpDialog";
@@ -228,6 +229,7 @@ const AccountTab = () => {
       setProfile((p) => (p ? { ...p, avatar_url: newUrl } : p));
       await queryClient.invalidateQueries({ queryKey: ["currentUserProfile", user.id] });
       toast({ title: t("Succes", "Success"), description: t("Fotografia a fost actualizată", "Photo updated") });
+      showSaveToast(t("Fotografie actualizată", "Photo updated"));
     } catch (e) {
       console.error(e);
       toast({ title: t("Eroare", "Error"), description: t("Nu s-a putut încărca fotografia", "Could not upload photo"), variant: "destructive" });
