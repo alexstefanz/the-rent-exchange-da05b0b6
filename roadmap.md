@@ -2,3 +2,5 @@
 - [x] Transformă Mesaje într-o listă comună cu roluri colorate
 - [x] Testează chatul admin–utilizator și curăță datele temporare
 - [x] Verifică desktop, mobil și compilarea
+- [ ] Repară feedback-ul și blocarea formularului de înregistrare
+- [ ] Testează înregistrarea în incognito și verifică fluxul SMS
