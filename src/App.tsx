@@ -14,6 +14,7 @@ import { useGlobalRealtime } from "@/hooks/useGlobalRealtime";
 const SupportChatWidget = lazyWithRetry(() => import("./components/support/SupportChatWidget"));
 
 const PhoneVerificationRequiredModal = lazyWithRetry(() => import("./components/profile/PhoneVerificationRequiredModal"));
+const FullNameConfirmDialog = lazyWithRetry(() => import("./components/profile/FullNameConfirmDialog"));
 const RentalPopupManager = lazyWithRetry(() => import("./components/rentals/RentalPopupManager"));
 
 const ConditionalWidgets = () => {
