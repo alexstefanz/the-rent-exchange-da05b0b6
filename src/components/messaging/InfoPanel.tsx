@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Flag, Ban, Mail, Phone, Image as ImageIcon, Video, ChevronRight, Calendar, Tag, Moon, FileText, User as UserIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/contexts/AuthContext";
 import { getRentalContext, type RentalContextRow } from "@/features/messaging/messagingApi";
 import { RentalStatusBadge } from "./RentalStatusBadge";
 import { formatRentalPeriod, formatRon, rentalUrl } from "./BookingSummaryCard";
@@ -39,11 +38,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { MediaLightbox } from "./MediaLightbox";
 import { cn } from "@/lib/utils";
 
-function isOwnerOf(_r: RentalContextRow, _me: string, _peer: string) {
-  // Viewer role is decided by the parent; default to renter route which works for both roles.
-  return false;
-}
-
 interface Props {
   conversationId: string;
   peerId: string;
@@ -55,7 +49,6 @@ interface Props {
 
 export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, rentalsId, className }: Props) {
   const { t, language } = useLanguage();
-  const { user } = useAuth();
   const { data: rental } = useQuery<RentalContextRow | null>({
     queryKey: ["rental-context", rentalsId],
     queryFn: () => (rentalsId ? getRentalContext(rentalsId) : Promise.resolve(null)),
@@ -63,7 +56,7 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, rental
     staleTime: 30_000,
   });
   const productHref = rental ? `/produs/${rental.product_slug || rental.product_id}` : null;
-  const bookingHref = rental ? rentalUrl(rental, user?.id !== peerId && rental ? !!user && user.id !== undefined && isOwnerOf(rental, user.id, peerId) : false) : "#";
+  const bookingHref = rental ? rentalUrl(rental, false) : "#";
   const [attachments, setAttachments] = useState<AttachmentRow[]>([]);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [contact, setContact] = useState<{ phone: string | null; email: string | null } | null>(null);
