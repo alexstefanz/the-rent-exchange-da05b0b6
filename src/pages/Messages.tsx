@@ -37,6 +37,14 @@ export default function Messages() {
   const isDesktop = useIsDesktop();
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [mobileInfoOpen, setMobileInfoOpen] = useState(false);
+  const [sideInfoOpen, setSideInfoOpen] = useState(true);
+  const [isXl, setIsXl] = useState(typeof window !== "undefined" ? window.innerWidth >= 1280 : true);
+  useEffect(() => {
+    const mql = window.matchMedia("(min-width: 1280px)");
+    const h = (e: MediaQueryListEvent) => setIsXl(e.matches);
+    mql.addEventListener("change", h);
+    return () => mql.removeEventListener("change", h);
+  }, []);
   const [isClosing, setIsClosing] = useState(false);
   useChatViewport(!isDesktop && !!selectedConversation);
 
@@ -196,7 +204,7 @@ export default function Messages() {
       <main className="flex-1 container mx-auto px-4 py-6">
         <div className="flex h-[calc(100vh-10rem)] border rounded-2xl overflow-hidden bg-background shadow-sm">
           {/* Left: list */}
-          <div className="w-[340px] shrink-0 border-r flex flex-col">
+          <div className="w-[320px] shrink-0 border-r flex flex-col">
             <ConversationList
               conversations={conversations}
               isLoading={isLoading}
@@ -218,9 +226,10 @@ export default function Messages() {
                 buyerId={selectedConversation.buyer_id}
                 rentalsId={selectedConversation.rentals_id || null}
                 productId={selectedConversation.product_id || null}
+                onOpenInfo={() => (isXl ? setSideInfoOpen((v) => !v) : setMobileInfoOpen(true))}
               />
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground bg-[#FCFAF8]">
+              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground bg-background">
                 <MessageCircle className="h-12 w-12 mb-3" />
                 <p className="text-sm">{t("Selectează o conversație pentru a vedea mesajele", "Select a conversation to view the messages")}</p>
               </div>
@@ -228,8 +237,8 @@ export default function Messages() {
           </div>
 
           {/* Right: info panel */}
-          {selectedConversation && peerId && (
-            <div className="w-[320px] shrink-0 border-l hidden xl:flex flex-col">
+          {selectedConversation && peerId && isXl && sideInfoOpen && (
+            <div className="w-[360px] shrink-0 border-l flex flex-col">
               <InfoPanel
                 conversationId={selectedConversation.id}
                 peerId={peerId}
@@ -241,6 +250,19 @@ export default function Messages() {
           )}
         </div>
       </main>
+      <Sheet open={mobileInfoOpen && !isXl} onOpenChange={setMobileInfoOpen}>
+        <SheetContent side="right" className="w-[380px] sm:max-w-[380px] p-0">
+          {selectedConversation && peerId && (
+            <InfoPanel
+              conversationId={selectedConversation.id}
+              peerId={peerId}
+              peerName={selectedConversation.other_user?.full_name || null}
+              peerAvatar={selectedConversation.other_user?.avatar_url || null}
+              rentalsId={selectedConversation.rentals_id || null}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
       <Footer />
     </div>
   );
