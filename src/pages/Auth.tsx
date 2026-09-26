@@ -256,17 +256,15 @@ const Auth = () => {
               .select("phone, phone_verified")
               .eq("id", signedIn.id)
               .maybeSingle();
-            if (prof && prof.phone_verified === false) {
-              if (!prof.phone) {
-                toast({
-                  title: "Verificare necesară",
-                  description: "Contul tău nu are un număr de telefon. Te rugăm să creezi contul din nou cu un număr valid.",
-                  variant: "destructive",
-                });
-                await supabase.auth.signOut();
-                setGatingLogin(false);
-                return;
-              }
+            const { data: adminRole } = await supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", signedIn.id)
+              .eq("role", "admin")
+              .maybeSingle();
+            // Admins and accounts without a phone are let in; verification is
+            // requested later (publish / checkout) via the site-wide notice.
+            if (prof && prof.phone_verified === false && !adminRole && prof.phone) {
               setPendingPhone(prof.phone);
               setPhoneOtpOpen(true);
               return;
