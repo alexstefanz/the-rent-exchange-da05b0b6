@@ -243,10 +243,21 @@ const ProfileTab = ({ onProfileLoaded }: ProfileTabProps) => {
                 id="full_name"
                 type="text"
                 placeholder="Ion Popescu"
+                disabled={(profile as any)?.full_name_locked === true}
+                className={(profile as any)?.full_name_locked ? "bg-muted" : undefined}
                 {...form.register("full_name")}
               />
-              {form.formState.errors.full_name && (
-                <p className="text-sm text-destructive">{form.formState.errors.full_name.message}</p>
+              {(profile as any)?.full_name_locked === true ? (
+                <p className="text-xs text-muted-foreground">
+                  {t(
+                    "Numele a fost confirmat și nu poate fi modificat. Contactează-ne dacă ai nevoie de o corecție.",
+                    "Your name has been confirmed and cannot be changed. Contact us if you need a correction."
+                  )}
+                </p>
+              ) : (
+                form.formState.errors.full_name && (
+                  <p className="text-sm text-destructive">{form.formState.errors.full_name.message}</p>
+                )
               )}
             </div>
             
