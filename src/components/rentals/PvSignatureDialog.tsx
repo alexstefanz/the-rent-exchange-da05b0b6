@@ -383,11 +383,17 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   }
 
   async function handleViewSignedPdf() {
-    if (!pv?.pdf_path) return;
+    if (!pv) return;
+    // Same document as the PDF/DOCX downloads (single source of truth).
+    const win = window.open("", "_blank");
     try {
-      const url = await getPvFileSignedUrl(pv.pdf_path);
-      window.open(url, "_blank");
-    } catch (e: any) { notifyError(e, { fallbackTitle: "Nu s-a putut deschide PDF" }); }
+      const blob = await generatePdf(pv);
+      const url = URL.createObjectURL(blob);
+      if (win) win.location.href = url; else window.open(url, "_blank");
+    } catch (e: any) {
+      win?.close();
+      notifyError(e, { fallbackTitle: "Nu s-a putut deschide PDF" });
+    }
   }
 
   return (
@@ -495,7 +501,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
               </p>
             )}
 
-            {ownerSigned && renterSigned && pv.pdf_path && (
+            {ownerSigned && renterSigned && (
               <button
                 type="button"
                 onClick={handleViewSignedPdf}

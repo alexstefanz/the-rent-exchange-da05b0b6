@@ -80,7 +80,32 @@ Deno.serve(async (req) => {
 
     if (!pv) throw new Error("PV document not found");
 
-    // ─── Build PDF ────────────────────────────────────────────────────────
+    // ─── Reuse the signed PV generated in the app (single source of truth) ──
+    if (pv.pdf_path && !String(pv.pdf_path).includes("/generated/")) {
+      const { data: file, error: dlErr } = await admin.storage.from(BUCKET).download(pv.pdf_path);
+      if (!dlErr && file) {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const { data: signedExisting } = await admin.storage.from(BUCKET)
+          .createSignedUrl(pv.pdf_path, 60 * 60 * 24 * 7);
+        if (signedExisting) {
+          let bin = "";
+          for (let i = 0; i < bytes.length; i += 0x8000) {
+            bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+          }
+          return new Response(JSON.stringify({
+            success: true,
+            path: pv.pdf_path,
+            signed_url: signedExisting.signedUrl,
+            filename: `PV-${phase}-${rental.public_id ?? rental_id.slice(0, 8)}.pdf`,
+            base64: btoa(bin),
+            size: bytes.length,
+          }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        }
+      }
+      console.error("[generate-pv-pdf] could not reuse app PDF, falling back:", dlErr?.message);
+    }
+
+    // ─── Build PDF (fallback only) ────────────────────────────────────────
     const pdf = await PDFDocument.create();
     const font = await pdf.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
