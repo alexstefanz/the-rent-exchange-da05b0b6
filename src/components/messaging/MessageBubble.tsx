@@ -55,7 +55,7 @@ export function MessageBubble({
               "rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden",
               isOwn
                 ? "bg-primary text-primary-foreground rounded-br-md"
-                : "bg-white border border-border/60 rounded-bl-md text-foreground",
+                : "bg-muted rounded-bl-md text-foreground",
               !hasText && attachments.length > 0 && "p-1.5"
             )}
           >

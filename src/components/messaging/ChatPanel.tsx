@@ -17,8 +17,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useChatPresence } from "@/hooks/useChatPresence";
 import { ChatHeader } from "@/components/messaging/ChatHeader";
-import { RentalStageStepper } from "@/components/messaging/RentalStageStepper";
-import { TransactionCard } from "@/components/messaging/TransactionCard";
+import { BookingSummaryCard } from "@/components/messaging/BookingSummaryCard";
 import { MessageBubble } from "@/components/messaging/MessageBubble";
 import { SystemMessageBubble } from "@/components/messaging/SystemMessageBubble";
 import { MessageInput } from "@/components/messaging/MessageInput";
@@ -337,18 +336,18 @@ export function ChatPanel({
   const isPaid = isRentalPaidLike(rentalCtx?.payment_status, rentalCtx?.paid_at);
 
   return (
-    <div className={`flex flex-col h-full bg-[#FCFAF8] ${className}`}>
+    <div className={`flex flex-col h-full bg-background ${className}`}>
       {!hideHeader && (
         <ChatHeader
           name={otherUserName}
           avatarUrl={otherUserAvatar}
-          productTitle={productTitle}
           online={peerOnline}
           typing={peerTyping}
           onBack={onBack}
           onInfo={onOpenInfo}
           phone={peerPhone}
           showPhone={isPaid}
+          profileUrl={peerId ? `/utilizator/${peerId}` : null}
           productUrl={
             rentalCtx?.product_slug
               ? `/produs/${rentalCtx.product_slug}`
@@ -362,100 +361,12 @@ export function ChatPanel({
       )}
 
       {rentalCtx && (
-        <div className="border-b bg-background shrink-0">
-          {(() => {
-            if (!isPaid) {
-              const productUrl = rentalCtx.product_slug
-                ? `/produs/${rentalCtx.product_slug}`
-                : getProductUrlFromTitle(rentalCtx.product_title || productTitle, rentalCtx.product_id);
-              return (
-                <div className="w-full flex items-center gap-2 px-3 py-2">
-                  {rentalCtx.product_image ? (
-                    <img
-                      src={rentalCtx.product_image}
-                      alt=""
-                      className="h-8 w-8 rounded-md object-cover shrink-0"
-                    />
-                  ) : (
-                    <div className="h-8 w-8 rounded-md bg-muted shrink-0" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">
-                      {rentalCtx.product_title || productTitle}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground truncate">
-                      {rentalCtx.public_id} ·{" "}
-                      {t("În așteptarea plății", "Awaiting payment")}
-                    </p>
-                  </div>
-                  <Button asChild variant="outline" size="sm" className="shrink-0">
-                    <Link to={productUrl}>
-                      <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                      {t("Vezi produs", "View product")}
-                    </Link>
-                  </Button>
-                </div>
-              );
-            }
-            return (
-              <>
-          <button
-            type="button"
-            onClick={() => setRentalCtxOpen((v) => !v)}
-            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-muted/50 transition-colors text-left"
-            aria-expanded={rentalCtxOpen}
-          >
-            {rentalCtx.product_image ? (
-              <img
-                src={rentalCtx.product_image}
-                alt=""
-                className="h-8 w-8 rounded-md object-cover shrink-0"
-              />
-            ) : (
-              <div className="h-8 w-8 rounded-md bg-muted shrink-0" />
-            )}
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium truncate">
-                {rentalCtx.product_title || productTitle}
-              </p>
-              <p className="text-[10px] text-muted-foreground truncate">
-                {rentalCtx.public_id} · {rentalCtx.rental_days}{" "}
-                {rentalCtx.rental_days === 1 ? t("zi", "day") : t("zile", "days")} ·{" "}
-                {rentalCtx.subtotal} RON
-              </p>
-            </div>
-            <ChevronDown
-              className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform ${
-                rentalCtxOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
-          {rentalCtxOpen && (
-            <div className="border-t">
-              <RentalStageStepper rental={rentalCtx} />
-              <TransactionCard
-                data={{
-                  publicId: rentalCtx.public_id,
-                  productTitle: rentalCtx.product_title || productTitle,
-                  productImage: rentalCtx.product_image,
-                  startDate: rentalCtx.start_date,
-                  endDate: rentalCtx.end_date,
-                  rentalDays: rentalCtx.rental_days,
-                  subtotal: rentalCtx.subtotal,
-                  status: rentalCtx.status,
-                  paymentStatus: rentalCtx.payment_status,
-                  role: isOwner ? "owner" : "renter",
-                }}
-              />
-            </div>
-          )}
-              </>
-            );
-          })()}
+        <div className="shrink-0">
+          <BookingSummaryCard rental={rentalCtx} isOwner={isOwner} fallbackTitle={productTitle} />
         </div>
       )}
 
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-3" style={{ touchAction: "pan-y" }}>
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-4" style={{ touchAction: "pan-y" }}>
         {isLoading ? (
           <div className="flex items-center justify-center h-32">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
