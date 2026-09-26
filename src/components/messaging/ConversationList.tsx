@@ -1,6 +1,8 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MessageCircle, LifeBuoy } from "lucide-react";
+import { Loader2, MessageCircle, LifeBuoy, Search } from "lucide-react";
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
 import { Conversation } from "@/features/messaging/messagingApi";
 import { format, isToday, isYesterday } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
@@ -25,7 +27,18 @@ export function ConversationList({
 }: ConversationListProps) {
   const { language, t } = useLanguage();
   const dateLocale = language === "ro" ? ro : enUS;
-  const filtered = conversations;
+  const [query, setQuery] = useState("");
+  const [tab, setTab] = useState<"all" | "active" | "archived">("all");
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const isArchived = (c: Conversation) => !!c.rental && new Date(c.rental.end_date) < today;
+  const q = query.trim().toLowerCase();
+  const filtered = conversations.filter((c) => {
+    if (tab === "active" && isArchived(c)) return false;
+    if (tab === "archived" && !isArchived(c)) return false;
+    if (!q) return true;
+    return [c.other_user?.full_name, c.product?.title, c.last_message?.content].some((v) => v?.toLowerCase().includes(q));
+  });
+  const totalUnread = conversations.filter((c) => (c.unread_count || 0) > 0).length;
 
   const sortByRecent = (a: Conversation, b: Conversation) => {
     const ta = a.last_message?.created_at ? new Date(a.last_message.created_at).getTime() : 0;
@@ -50,20 +63,13 @@ export function ConversationList({
 
   const renderItem = (conv: Conversation) => {
     const isUnread = (conv.unread_count || 0) > 0;
-    const isRenter = conv.buyer_id === userId;
-    const roleLabel = isRenter ? t("Chiriaș", "Renter") : t("Proprietar", "Owner");
     return (
     <button
       key={conv.id}
       onClick={() => onSelect(conv)}
       className={cn(
-        "w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors hover:bg-muted/50 border-l-4",
-        isRenter ? "border-renter" : "border-primary",
-        selectedId === conv.id
-          ? isRenter ? "bg-renter/10" : "bg-primary/10"
-          : isUnread
-          ? isRenter ? "bg-renter/5" : "bg-primary/5"
-          : "bg-transparent"
+        "w-full flex items-center gap-3 p-3 rounded-xl text-left transition-colors hover:bg-muted/50 border-l-[3px]",
+        selectedId === conv.id ? "bg-primary/10 border-primary" : "border-transparent"
       )}
     >
       <Avatar className="h-11 w-11 shrink-0">
@@ -73,33 +79,15 @@ export function ConversationList({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <span className={`text-sm truncate ${isUnread ? "font-extrabold text-foreground" : "font-medium"}`}>
-            {conv.product?.title || t("Produs", "Product")}
+          <span className={`text-sm truncate ${isUnread ? "font-bold text-foreground" : "font-semibold"}`}>
+            {conv.other_user?.full_name || t("Utilizator", "User")}
           </span>
-          <div className="flex items-center gap-1.5 shrink-0">
-            {isUnread && <span className={cn("h-2 w-2 rounded-full", isRenter ? "bg-renter" : "bg-primary")} aria-hidden />}
-            {conv.last_message && (
-              <span className={`text-xs whitespace-nowrap ${isUnread ? "text-primary font-bold" : "text-muted-foreground"}`}>
-                {formatTime(conv.last_message.created_at)}
-              </span>
-            )}
-          </div>
+          {conv.last_message && (
+            <span className={`text-xs whitespace-nowrap shrink-0 ${isUnread ? "text-primary font-semibold" : "text-muted-foreground"}`}>
+              {formatTime(conv.last_message.created_at)}
+            </span>
+          )}
         </div>
-        <span className={cn(
-          "mt-0.5 inline-flex w-fit rounded-full px-2 py-0.5 text-[10px] font-semibold",
-          isRenter ? "bg-renter/10 text-renter" : "bg-primary/10 text-primary"
-        )}>
-          {roleLabel}
-        </span>
-        {conv.rental && (
-          <p className={cn("text-[11px] font-medium truncate mt-0.5", isRenter ? "text-renter" : "text-primary")}>
-            {formatRentalRange(conv.rental.start_date, conv.rental.end_date)}
-            {" · "}
-            {conv.rental.rental_days}{" "}
-            {conv.rental.rental_days === 1 ? t("zi", "day") : t("zile", "days")}
-          </p>
-        )}
-        <p className={`text-xs truncate ${isUnread ? "text-foreground font-bold" : "text-muted-foreground"}`}>{conv.other_user?.full_name || t("Utilizator", "User")}</p>
         {conv.last_message && (
           <p
             className={`text-sm truncate mt-0.5 ${
@@ -128,9 +116,10 @@ export function ConversationList({
             })()}
           </p>
         )}
+        <p className="text-xs text-muted-foreground/80 truncate mt-0.5">{conv.product?.title || t("Produs", "Product")}</p>
       </div>
 
-      {conv.unread_count && conv.unread_count > 0 && (
+      {(conv.unread_count || 0) > 0 && (
         <Badge variant="default" className="rounded-full h-5 min-w-5 flex items-center justify-center text-[11px] bg-primary text-primary-foreground shadow-sm">
           {conv.unread_count}
         </Badge>
@@ -144,8 +133,9 @@ export function ConversationList({
       <div className="p-4 pb-2">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold">{t("Mesaje", "Messages")}</h1>
-            <p className="text-xs text-muted-foreground">{t("Toate conversațiile", "All conversations")}</p>
+            <h1 className="text-xl font-bold flex items-center gap-2">{t("Mesaje", "Messages")}
+              {totalUnread > 0 && <span className="h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-semibold flex items-center justify-center">{totalUnread}</span>}
+            </h1>
           </div>
           <Button
             type="button"
@@ -157,6 +147,17 @@ export function ConversationList({
           >
             <LifeBuoy className="h-4 w-4" />
           </Button>
+        </div>
+        <div className="relative mt-3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t("Caută conversații...", "Search conversations...")} className="pl-9 rounded-xl" />
+        </div>
+        <div className="flex gap-1 mt-3 border-b border-border/60">
+          {([["all", "Toate", "All"], ["active", "Active", "Active"], ["archived", "Arhivate", "Archived"]] as const).map(([k, r, e]) => (
+            <button key={k} type="button" onClick={() => setTab(k)} className={cn("px-3 py-2 text-sm -mb-px border-b-2 transition-colors", tab === k ? "border-primary text-primary font-semibold" : "border-transparent text-muted-foreground hover:text-foreground")}>
+              {t(r, e)}{k === "all" ? ` (${conversations.length})` : ""}
+            </button>
+          ))}
         </div>
       </div>
 
