@@ -77,8 +77,15 @@ export const computeQualityScore = (data: PublishFormData, lang: Lang = "ro"): Q
       id: "location",
       label: tr(lang, "Locație", "Location"),
       max: 10,
-      earned: data.location_city ? (data.pickup_lat && data.pickup_lng ? 10 : 6) : 0,
-      done: !!(data.location_city && data.pickup_lat && data.pickup_lng),
+      earned: data.location_city
+        ? (data.pickup_lat && data.pickup_lng) || data.pickup_address.trim().length >= 5
+          ? 10
+          : 6
+        : 0,
+      done: !!(
+        data.location_city &&
+        ((data.pickup_lat && data.pickup_lng) || data.pickup_address.trim().length >= 5)
+      ),
     },
     {
       id: "price",
@@ -122,7 +129,14 @@ export const computeQualityScore = (data: PublishFormData, lang: Lang = "ro"): Q
   if (!data.condition) suggestions.push(tr(lang, "Setează starea produsului", "Set the product condition"));
   if (data.usage_rules.length === 0) suggestions.push(tr(lang, "Adaugă reguli clare de utilizare", "Add clear usage rules"));
   if (!data.subcategory) suggestions.push(tr(lang, "Alege și o subcategorie", "Pick a subcategory too"));
-  if (!data.pickup_lat) suggestions.push(tr(lang, "Plasează pinul pe hartă pentru locație exactă", "Place the map pin for the exact location"));
+  if (!data.pickup_lat && data.pickup_address.trim().length < 5)
+    suggestions.push(
+      tr(
+        lang,
+        "Adaugă adresa (stradă și număr) sau plasează pinul pe hartă",
+        "Add the address (street and number) or place the map pin",
+      ),
+    );
 
   return { total, items, suggestions: suggestions.slice(0, 4) };
 };
