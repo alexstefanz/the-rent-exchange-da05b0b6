@@ -8,6 +8,7 @@ import AdminLayout from "@/components/admin/AdminLayout";
 import AdminCancellationRequestsPanel from "@/components/admin/AdminCancellationRequestsPanel";
 import AdminProductDeletionsPanel from "@/components/admin/AdminProductDeletionsPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -183,15 +184,71 @@ const AdminApprovals = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-6">
-            {products.map((product) => {
+          <Accordion type="multiple" className="rounded-xl border border-border bg-card overflow-hidden">
+            {products.map((product, index) => {
               const images = product.images || [];
               const currentIdx = getImageIndex(product.id);
 
               return (
-                <Card key={product.id} className="overflow-hidden">
-                  <CardContent className="p-0">
-                    <div className="grid md:grid-cols-[400px_1fr] gap-0">
+                <AccordionItem
+                  key={product.id}
+                  value={product.id}
+                  className={index > 0 ? "border-t border-border" : "border-b-0"}
+                >
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:hidden">
+                    <div className="flex flex-1 items-center gap-3 min-w-0 text-left">
+                      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted">
+                        {images.length > 0 ? (
+                          <img
+                            src={images[0]}
+                            alt={product.title}
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                            <ImageIcon className="h-5 w-5" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-semibold text-foreground">
+                          {product.title}
+                        </div>
+                        <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <User className="h-3 w-3" />
+                          <span className="truncate">{product.owner_name}</span>
+                          <span className="mx-0.5">•</span>
+                          <Calendar className="h-3 w-3" />
+                          <span className="shrink-0">
+                            {format(new Date(product.created_at), "dd MMM yyyy, HH:mm", { locale: ro })}
+                          </span>
+                        </div>
+                      </div>
+                      {product.category && (
+                        <Badge variant="secondary" className="hidden md:inline-flex shrink-0">
+                          {product.category}
+                        </Badge>
+                      )}
+                      {images.length > 0 && (
+                        <span className="hidden lg:inline-flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                          <ImageIcon className="h-3.5 w-3.5" />
+                          {images.length}
+                        </span>
+                      )}
+                      <div className="text-right shrink-0">
+                        <div className="text-sm font-bold text-primary">
+                          {product.daily_price_owner} RON
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">/ zi</div>
+                      </div>
+                      <span className="shrink-0 text-muted-foreground">
+                        <ChevronRight className="h-4 w-4" />
+                      </span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pb-4 pt-0">
+                    <div className="grid md:grid-cols-[400px_1fr] gap-0 border-t border-border">
                       {/* Images */}
                       <div className="relative bg-muted aspect-square md:aspect-auto md:min-h-[320px]">
                         {images.length > 0 ? (
@@ -379,11 +436,11 @@ const AdminApprovals = () => {
                         </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </AccordionContent>
+                </AccordionItem>
               );
             })}
-          </div>
+          </Accordion>
         )}
           </TabsContent>
           <TabsContent value="cancellations">
