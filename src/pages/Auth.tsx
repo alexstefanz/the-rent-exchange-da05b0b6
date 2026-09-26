@@ -320,6 +320,11 @@ const Auth = () => {
           registerForm.setFocus("password");
           return;
         }
+        if (/failed to fetch|network|fetch failed/i.test(error.message || "")) {
+          message = language === "ro"
+            ? "Nu ne-am putut conecta. Verifică internetul și încearcă din nou."
+            : "We could not connect. Check your internet connection and try again.";
+        }
         setRegisterError(message);
         return;
       }
