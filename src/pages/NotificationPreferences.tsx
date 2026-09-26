@@ -5,6 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
+import { showSaveToast } from "@/lib/saveToast";
 import { Loader2 } from "lucide-react";
 
 interface Prefs {
@@ -49,6 +50,7 @@ const NotificationPreferences = () => {
     const { error } = await supabase.from("notification_preferences").upsert({ user_id: user.id, ...next });
     setSaving(false);
     if (error) toast({ title: "Eroare la salvare", description: error.message, variant: "destructive" });
+    else showSaveToast("Preferințe actualizate");
   };
 
   if (!user) return <div className="container py-12">Trebuie să fii autentificat.</div>;
