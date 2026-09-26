@@ -835,6 +835,7 @@ function PayoutIbansSection({
   const [newIban, setNewIban] = useState("");
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const ibanRegex = /^RO[0-9]{2}[A-Z0-9]{20}$/;
 
@@ -863,40 +864,39 @@ function PayoutIbansSection({
   };
 
   const handleAdd = async () => {
-    if (!userId) return;
+    setFormError(null);
+    if (!userId) { setFormError(t("Sesiunea a expirat. Autentifică-te din nou.", "Session expired. Please sign in again.")); return; }
     const clean = newIban.toUpperCase().replace(/\s/g, "");
     if (!ibanRegex.test(clean)) {
-      toast({ title: t("IBAN invalid", "Invalid IBAN"), description: t("Verifică formatul IBAN-ului (RO + 22 caractere).", "Check the IBAN format (RO + 22 chars)."), variant: "destructive" });
+      setFormError(t("IBAN invalid. Verifică formatul (RO + 22 caractere).", "Invalid IBAN. Check the format (RO + 22 chars)."));
       return;
     }
-    if (!fullName || fullName.length < 3) {
-      toast({
-        title: t("Nume incomplet", "Name missing"),
-        description: t("Completează mai întâi numele complet în secțiunea Profil.", "Please fill in your full name in the Profile section first."),
-        variant: "destructive",
-      });
+    // Read the latest name from the database (profile prop may be stale)
+    let holder = fullName;
+    const { data: prof } = await supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle();
+    if (prof?.full_name?.trim()) holder = prof.full_name.trim();
+    if (!holder || holder.length < 3) {
+      setFormError(t("Completează mai întâi numele complet în secțiunea Profil.", "Please fill in your full name in the Profile section first."));
       return;
     }
     if (ibans.length >= MAX_IBANS) {
-      toast({ title: t("Limită atinsă", "Limit reached"), description: t("Poți avea maxim 3 IBAN-uri salvate.", "You can save up to 3 IBANs."), variant: "destructive" });
+      setFormError(t("Poți avea maxim 3 IBAN-uri salvate.", "You can save up to 3 IBANs."));
       return;
     }
     setSaving(true);
     try {
       const { error } = await supabase
         .from("payout_ibans")
-        .insert({ user_id: userId, iban: clean, account_holder_name: fullName, is_default: ibans.length === 0 } as any);
+        .insert({ user_id: userId, iban: clean, account_holder_name: holder, is_default: ibans.length === 0 } as any);
       if (error) throw error;
       setNewIban("");
       setAdding(false);
-      toast({ title: t("Salvat", "Saved"), description: t("IBAN adăugat cu succes.", "IBAN added successfully.") });
       await load();
     } catch (e: any) {
       const msg = e?.message || "";
-      const friendly = msg.includes("duplicate")
+      setFormError(msg.includes("duplicate")
         ? t("IBAN-ul este deja salvat.", "This IBAN is already saved.")
-        : msg || t("Nu s-a putut salva IBAN-ul.", "Could not save IBAN.");
-      toast({ title: t("Eroare", "Error"), description: friendly, variant: "destructive" });
+        : msg || t("Nu s-a putut salva IBAN-ul.", "Could not save IBAN."));
     } finally {
       setSaving(false);
     }
@@ -1015,7 +1015,7 @@ function PayoutIbansSection({
             <Input
               id="new-iban"
               value={formatIbanMask(newIban)}
-              onChange={(e) => setNewIban(e.target.value.toUpperCase().replace(/\s/g, ""))}
+              onChange={(e) => { setFormError(null); setNewIban(e.target.value.toUpperCase().replace(/\s/g, "")); }}
               placeholder="RO49 AAAA 1B31 0075 9384 0000"
               maxLength={42}
               className="font-mono tracking-wider"
@@ -1035,6 +1035,9 @@ function PayoutIbansSection({
               )}
             </div>
           </div>
+          {formError && (
+            <p role="alert" className="text-sm text-destructive">{formError}</p>
+          )}
           <div className="flex flex-col sm:flex-row gap-2">
             <Button onClick={handleAdd} disabled={saving || !newIban} className="w-full sm:w-auto">
               {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("Se salvează...", "Saving...")}</> : t("Salvează IBAN", "Save IBAN")}
