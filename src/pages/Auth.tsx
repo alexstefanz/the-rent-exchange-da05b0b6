@@ -297,9 +297,10 @@ const Auth = () => {
         message = `${copy.auth.accountExists}. Autentifică-te sau folosește „Am uitat parola”.`;
         toast({ title: copy.auth.registerError, description: message, variant: "destructive" });
         registerForm.setError("email", { type: "server", message });
-        // Switch to login tab and prefill email so users can log in immediately
-        setActiveTab("login");
+        // Keep the user on the register tab so the inline error stays visible
+        // (toasts are disabled globally). Prefill login email for convenience.
         loginForm.setValue("email", data.email);
+        registerForm.setFocus("email");
         return;
       }
       const isRateLimit =
