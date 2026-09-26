@@ -318,6 +318,12 @@ export const createProduct = async (
     .single();
 
   if (error) {
+    if (String(error.message || "").includes("PHONE_NOT_VERIFIED")) {
+      throw new Error("PHONE_NOT_VERIFIED");
+    }
+    if (error.code === "23514") {
+      throw new Error("Unele date nu sunt valide (ex. titlu 5–100 caractere, descriere max. 2000 caractere).");
+    }
     handleApiError("Error creating product", error);
   }
 
