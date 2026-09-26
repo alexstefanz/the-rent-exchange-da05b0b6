@@ -302,6 +302,16 @@ const AccountTab = () => {
         setOtpDialogOpen(true);
       } else {
         toast({ title: t("Salvat", "Saved"), description: t("Profil actualizat cu succes", "Profile updated") });
+        // Per-field confirmation pill
+        if (changes.some((c) => c.label === "Nume complet")) {
+          showSaveToast(t("Nume actualizat", "Name updated"));
+        } else if (changes.some((c) => c.label === "Email")) {
+          showSaveToast(t("Email actualizat", "Email updated"));
+        } else if (changes.some((c) => c.label === "Telefon")) {
+          showSaveToast(t("Telefon actualizat", "Phone updated"));
+        } else {
+          showSaveToast(t("Profil actualizat", "Profile updated"));
+        }
       }
     } catch (e) {
       console.error(e);
@@ -352,6 +362,7 @@ const AccountTab = () => {
       const updated = await updateProfile(user.id, { sms_notifications_enabled: next });
       setProfile(updated);
       toast({ title: t("Salvat", "Saved"), description: ux.smsNotifications.saved });
+      showSaveToast(next ? t("Notificări SMS activate", "SMS notifications on") : t("Notificări SMS dezactivate", "SMS notifications off"));
     } catch {
       toast({ title: t("Eroare", "Error"), description: ux.smsNotifications.saveError, variant: "destructive" });
     } finally {
