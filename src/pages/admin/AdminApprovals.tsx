@@ -195,7 +195,7 @@ const AdminApprovals = () => {
                   value={product.id}
                   className={index > 0 ? "border-t border-border" : "border-b-0"}
                 >
-                  <AccordionTrigger className="px-4 py-3 hover:no-underline [&[data-state=open]>svg]:hidden">
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline [&>svg]:hidden">
                     <div className="flex flex-1 items-center gap-3 min-w-0 text-left">
                       <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-muted">
                         {images.length > 0 ? (
