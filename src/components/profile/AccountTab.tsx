@@ -29,6 +29,7 @@ import { uploadAvatar } from "@/features/profile/avatarApi";
 import { supabase } from "@/integrations/supabase/client";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { isValidRomanianPhone } from "@/lib/inputValidation";
+import { showSaveToast } from "@/lib/saveToast";
 import { useProfileRealtime } from "@/hooks/useProfileRealtime";
 import { AvatarCropperDialog } from "@/components/profile/account/AvatarCropperDialog";
 import PhoneOtpDialog from "@/components/profile/PhoneOtpDialog";
@@ -228,6 +229,7 @@ const AccountTab = () => {
       setProfile((p) => (p ? { ...p, avatar_url: newUrl } : p));
       await queryClient.invalidateQueries({ queryKey: ["currentUserProfile", user.id] });
       toast({ title: t("Succes", "Success"), description: t("Fotografia a fost actualizată", "Photo updated") });
+      showSaveToast(t("Fotografie actualizată", "Photo updated"));
     } catch (e) {
       console.error(e);
       toast({ title: t("Eroare", "Error"), description: t("Nu s-a putut încărca fotografia", "Could not upload photo"), variant: "destructive" });
@@ -300,6 +302,16 @@ const AccountTab = () => {
         setOtpDialogOpen(true);
       } else {
         toast({ title: t("Salvat", "Saved"), description: t("Profil actualizat cu succes", "Profile updated") });
+        // Per-field confirmation pill
+        if (changes.some((c) => c.label === "Nume complet")) {
+          showSaveToast(t("Nume actualizat", "Name updated"));
+        } else if (changes.some((c) => c.label === "Email")) {
+          showSaveToast(t("Email actualizat", "Email updated"));
+        } else if (changes.some((c) => c.label === "Telefon")) {
+          showSaveToast(t("Telefon actualizat", "Phone updated"));
+        } else {
+          showSaveToast(t("Profil actualizat", "Profile updated"));
+        }
       }
     } catch (e) {
       console.error(e);
@@ -328,6 +340,7 @@ const AccountTab = () => {
         },
       }).catch((e) => console.error("profile-updated email failed:", e));
     }
+    showSaveToast(t("Telefon actualizat", "Phone updated"));
   };
 
   const handlePasswordReset = async () => {
@@ -350,6 +363,7 @@ const AccountTab = () => {
       const updated = await updateProfile(user.id, { sms_notifications_enabled: next });
       setProfile(updated);
       toast({ title: t("Salvat", "Saved"), description: ux.smsNotifications.saved });
+      showSaveToast(next ? t("Notificări SMS activate", "SMS notifications on") : t("Notificări SMS dezactivate", "SMS notifications off"));
     } catch {
       toast({ title: t("Eroare", "Error"), description: ux.smsNotifications.saveError, variant: "destructive" });
     } finally {
@@ -892,6 +906,7 @@ function PayoutIbansSection({
       setNewIban("");
       setAdding(false);
       await load();
+      showSaveToast(t("IBAN salvat", "IBAN saved"));
     } catch (e: any) {
       const msg = e?.message || "";
       setFormError(msg.includes("duplicate")
@@ -916,6 +931,7 @@ function PayoutIbansSection({
       setIbans(next);
       syncDefaultToParent(next);
       toast({ title: t("Implicit actualizat", "Default updated") });
+      showSaveToast(t("IBAN implicit actualizat", "Default IBAN updated"));
     } catch (e: any) {
       toast({ title: t("Eroare", "Error"), description: e?.message || "", variant: "destructive" });
     } finally {
@@ -929,6 +945,7 @@ function PayoutIbansSection({
       const { error } = await supabase.rpc("delete_payout_iban", { p_id: id } as any);
       if (error) throw error;
       toast({ title: t("Șters", "Deleted") });
+      showSaveToast(t("IBAN șters", "IBAN deleted"));
       await load();
     } catch (e: any) {
       toast({ title: t("Nu se poate șterge", "Cannot delete"), description: e?.message || "", variant: "destructive" });

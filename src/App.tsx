@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import ScrollToTop from "./components/ScrollToTop";
 import RouteTracker from "./components/RouteTracker";
 import { useGlobalRealtime } from "@/hooks/useGlobalRealtime";
+import { SaveToastHost } from "@/lib/saveToast";
 
 const SupportChatWidget = lazyWithRetry(() => import("./components/support/SupportChatWidget"));
 
@@ -215,8 +216,9 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Suspense>
-          </BrowserRouter>
-        </TooltipProvider>
+           </BrowserRouter>
+           <SaveToastHost />
+         </TooltipProvider>
       </AuthProvider>
     </LanguageProvider>
   </QueryClientProvider>
