@@ -575,17 +575,13 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         </div>
       </main>
 
-      {publishError && (
-        <div role="alert" className="mx-auto mb-3 max-w-3xl rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {publishError}
-        </div>
-      )}
       <PublishFooter
         current={step}
         total={STEPS.length}
         onBack={goBack}
         onNext={goNext}
         isLoading={isPublishing}
+        error={publishError}
         isFinal={step === STEPS.length}
         nextLabel={
           mode === "edit" && editingFromSummary && step !== 4
