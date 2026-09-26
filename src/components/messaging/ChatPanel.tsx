@@ -18,8 +18,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useChatPresence } from "@/hooks/useChatPresence";
 import { ChatHeader } from "@/components/messaging/ChatHeader";
 import { BookingSummaryCard } from "@/components/messaging/BookingSummaryCard";
-import { RentalStageStepper } from "@/components/messaging/RentalStageStepper";
-import { TransactionCard } from "@/components/messaging/TransactionCard";
 import { MessageBubble } from "@/components/messaging/MessageBubble";
 import { SystemMessageBubble } from "@/components/messaging/SystemMessageBubble";
 import { MessageInput } from "@/components/messaging/MessageInput";
