@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { ShieldCheck, Flag, Ban, Mail, Phone, MessageCircle, Image as ImageIcon, Video, Link2 } from "lucide-react";
+import { Flag, Ban, Mail, Phone, Image as ImageIcon, Video, ChevronRight, Calendar, Tag, Moon, FileText, User as UserIcon } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/contexts/AuthContext";
+import { getRentalContext, type RentalContextRow } from "@/features/messaging/messagingApi";
+import { RentalStatusBadge } from "./RentalStatusBadge";
+import { formatRentalPeriod, formatRon, rentalUrl } from "./BookingSummaryCard";
+
+const actionCls = "flex flex-col items-center justify-center gap-1 rounded-xl border border-border/60 py-2.5 text-xs font-medium hover:bg-muted/50 transition-colors";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,6 +39,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { MediaLightbox } from "./MediaLightbox";
 import { cn } from "@/lib/utils";
 
+function isOwnerOf(_r: RentalContextRow, _me: string, _peer: string) {
+  // Viewer role is decided by the parent; default to renter route which works for both roles.
+  return false;
+}
+
 interface Props {
   conversationId: string;
   peerId: string;
@@ -41,7 +54,16 @@ interface Props {
 }
 
 export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, rentalsId, className }: Props) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { user } = useAuth();
+  const { data: rental } = useQuery<RentalContextRow | null>({
+    queryKey: ["rental-context", rentalsId],
+    queryFn: () => (rentalsId ? getRentalContext(rentalsId) : Promise.resolve(null)),
+    enabled: !!rentalsId,
+    staleTime: 30_000,
+  });
+  const productHref = rental ? `/produs/${rental.product_slug || rental.product_id}` : null;
+  const bookingHref = rental ? rentalUrl(rental, user?.id !== peerId && rental ? !!user && user.id !== undefined && isOwnerOf(rental, user.id, peerId) : false) : "#";
   const [attachments, setAttachments] = useState<AttachmentRow[]>([]);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [contact, setContact] = useState<{ phone: string | null; email: string | null } | null>(null);
@@ -159,29 +181,70 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, rental
 
   return (
     <div className={cn("flex flex-col h-full bg-background", className)}>
-      <div className="p-5 border-b text-center">
-        <Avatar className="h-20 w-20 mx-auto mb-3">
-          <AvatarImage src={peerAvatar || undefined} />
-          <AvatarFallback className="text-xl">{peerName?.charAt(0) || "U"}</AvatarFallback>
-        </Avatar>
-        <p className="font-semibold text-base">{peerName || t("Utilizator", "User")}</p>
-        <div className="flex items-center justify-center gap-2 mt-2 flex-wrap">
-          {memberYear && (
-            <span className="text-xs text-muted-foreground">
-              {t("Membru din", "Member since")} {memberYear}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <Tabs defaultValue="media" className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="mx-4 mt-3 grid grid-cols-3">
+      <Tabs defaultValue="details" className="flex-1 flex flex-col overflow-hidden">
+        <TabsList className="mx-4 mt-3 grid grid-cols-2">
+          <TabsTrigger value="details" className="text-xs">{t("Detalii", "Details")}</TabsTrigger>
           <TabsTrigger value="media" className="text-xs">{t("Media", "Media")}</TabsTrigger>
-          <TabsTrigger value="links" className="text-xs">{t("Linkuri", "Links")}</TabsTrigger>
-          <TabsTrigger value="contact" className="text-xs">{t("Contact", "Contact")}</TabsTrigger>
         </TabsList>
 
         <div className="flex-1 overflow-y-auto p-4">
+          <TabsContent value="details" className="mt-0 space-y-5">
+            {rental && (
+              <section>
+                <h4 className="text-sm font-semibold mb-2">{t("Produs închiriat", "Rented item")}</h4>
+                <div className="rounded-2xl border border-border/60 p-3 space-y-2.5">
+                  <Link to={productHref || "#"} className="flex items-center gap-3 pb-2.5 border-b border-border/60">
+                    {rental.product_image ? <img src={rental.product_image} alt="" className="h-12 w-12 rounded-xl object-cover" /> : <div className="h-12 w-12 rounded-xl bg-muted" />}
+                    <span className="flex-1 text-sm font-medium line-clamp-2">{rental.product_title}</span>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </Link>
+                  <p className="flex items-center gap-2 text-sm text-muted-foreground"><Calendar className="h-4 w-4" />{formatRentalPeriod(rental.start_date, rental.end_date, language)} ({rental.rental_days} {rental.rental_days === 1 ? t("zi", "day") : t("zile", "days")})</p>
+                  <p className="flex items-center gap-2 text-sm"><Tag className="h-4 w-4 text-muted-foreground" />{formatRon(rental.subtotal)}</p>
+                  <RentalStatusBadge rental={rental} />
+                </div>
+              </section>
+            )}
+
+            <section>
+              <h4 className="text-sm font-semibold mb-2">{t("Persoană", "Person")}</h4>
+              <Link to={`/utilizator/${peerId}`} className="flex items-center gap-3 rounded-xl p-1.5 hover:bg-muted/50">
+                <Avatar className="h-11 w-11">
+                  <AvatarImage src={peerAvatar || undefined} />
+                  <AvatarFallback>{peerName?.charAt(0) || "U"}</AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{peerName || t("Utilizator", "User")}</p>
+                  {memberYear && <p className="text-xs text-muted-foreground">{t("Membru din", "Member since")} {memberYear}</p>}
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </Link>
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                {isPaid && contact?.phone ? (
+                  <a href={`tel:${contact.phone}`} className={actionCls}><Phone className="h-4 w-4" />{t("Sună", "Call")}</a>
+                ) : (
+                  <span className={cn(actionCls, "opacity-50 cursor-not-allowed")} title={t("Disponibil după plată", "Available after payment")}><Phone className="h-4 w-4" />{t("Sună", "Call")}</span>
+                )}
+                <Link to={`/utilizator/${peerId}`} className={actionCls}><UserIcon className="h-4 w-4" />{t("Vezi profil", "Profile")}</Link>
+                <button type="button" onClick={() => setReportOpen(true)} className={actionCls}><Flag className="h-4 w-4" />{t("Raportează", "Report")}</button>
+              </div>
+              {isPaid && contact?.email && (
+                <a href={`mailto:${contact.email}`} className="mt-2 flex items-center gap-2 text-xs text-muted-foreground truncate"><Mail className="h-3.5 w-3.5" />{contact.email}</a>
+              )}
+            </section>
+
+            {rental && (
+              <section>
+                <h4 className="text-sm font-semibold mb-2">{t("Detalii rezervare", "Booking details")}</h4>
+                <Link to={bookingHref} className="block space-y-2.5 rounded-xl p-1.5 hover:bg-muted/50 text-sm">
+                  <p className="flex items-center gap-2"><Calendar className="h-4 w-4 text-muted-foreground" />{formatRentalPeriod(rental.start_date, rental.end_date, language)}<ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" /></p>
+                  <p className="flex items-center gap-2"><Moon className="h-4 w-4 text-muted-foreground" />{rental.rental_days} {rental.rental_days === 1 ? t("zi", "day") : t("zile", "days")}</p>
+                  <p className="flex items-center gap-2"><Tag className="h-4 w-4 text-muted-foreground" />{formatRon(rental.subtotal)}</p>
+                  <p className="flex items-center gap-2 text-muted-foreground"><FileText className="h-4 w-4" />ID: {rental.public_id}</p>
+                </Link>
+              </section>
+            )}
+          </TabsContent>
+
           <TabsContent value="media" className="mt-0 space-y-4">
             <section>
               <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
@@ -236,70 +299,11 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, rental
             </section>
           </TabsContent>
 
-          <TabsContent value="links" className="mt-0">
-            {linkUrls.length === 0 ? (
-              <p className="text-xs text-muted-foreground">{t("Niciun link partajat", "No shared links")}</p>
-            ) : (
-              <ul className="space-y-2">
-                {linkUrls.map((u) => (
-                  <li key={u} className="text-xs">
-                    <a
-                      href={u}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 p-2 rounded-lg border border-border/60 hover:bg-muted truncate"
-                    >
-                      <Link2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <span className="truncate">{u}</span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </TabsContent>
-
-          <TabsContent value="contact" className="mt-0 space-y-2">
-            {!isPaid ? (
-              <p className="text-xs text-muted-foreground">
-                {t(
-                  "Datele de contact vor fi vizibile după efectuarea plății.",
-                  "Contact info will be visible after the payment is completed."
-                )}
-              </p>
-            ) : !contact || (!contact.phone && !contact.email) ? (
-              <p className="text-xs text-muted-foreground">
-                {t(
-                  "Datele de contact vor fi vizibile după plată.",
-                  "Contact info will be visible after payment."
-                )}
-              </p>
-            ) : (
-              <>
-                {contact.phone && (
-                  <a href={`tel:${contact.phone}`} className="flex items-center gap-2 p-2.5 rounded-lg border border-border/60 hover:bg-muted text-sm">
-                    <Phone className="h-4 w-4 text-primary" />
-                    {contact.phone}
-                  </a>
-                )}
-                {contact.email && (
-                  <a href={`mailto:${contact.email}`} className="flex items-center gap-2 p-2.5 rounded-lg border border-border/60 hover:bg-muted text-sm truncate">
-                    <Mail className="h-4 w-4 text-primary" />
-                    <span className="truncate">{contact.email}</span>
-                  </a>
-                )}
-              </>
-            )}
-          </TabsContent>
         </div>
       </Tabs>
 
-      <div className="border-t p-3 grid grid-cols-2 gap-2">
+      <div className="border-t p-4">
         <Dialog open={reportOpen} onOpenChange={setReportOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-1.5">
-              <Flag className="h-3.5 w-3.5" /> {t("Raportează", "Report")}
-            </Button>
-          </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>{t("Raportează conversația", "Report conversation")}</DialogTitle>
@@ -350,8 +354,8 @@ export function InfoPanel({ conversationId, peerId, peerName, peerAvatar, rental
 
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive">
-              <Ban className="h-3.5 w-3.5" /> {t("Blochează", "Block")}
+            <Button variant="outline" className="w-full gap-2 rounded-xl border-destructive/40 text-destructive hover:bg-destructive/5 hover:text-destructive">
+              <Ban className="h-4 w-4" /> {t("Blochează utilizatorul", "Block user")}
             </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
