@@ -797,17 +797,6 @@ const Step2Details = ({
 }) => {
   const { t, language } = useLanguage();
   const { toast } = useToast();
-  const [includedText, setIncludedText] = useState(() => data.included_items.join("\n"));
-  const [rulesText, setRulesText] = useState(() => data.usage_rules.join("\n"));
-
-  const parseLines = (value: string) => {
-    const out: string[] = [];
-    for (const raw of value.split("\n")) {
-      const line = raw.replace(/^\s*(?:[-–—*•]|\d+[.)])\s*/, "").trim();
-      if (line && !out.includes(line)) out.push(line);
-    }
-    return out;
-  };
 
   return (
     <div>
