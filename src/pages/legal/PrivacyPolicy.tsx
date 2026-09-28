@@ -76,7 +76,7 @@ export const sectionsRo = [
   },
   {
     id: "temeiuri-legale",
-    title: "4. CARE SUNT TEMEIURILE LEGALE PE CARE SE BAZEAZĂ PRELUCRAREA DATELOR CU CARACTER PERSONAL?",
+    title: "5. CARE SUNT TEMEIURILE LEGALE PE CARE SE BAZEAZĂ PRELUCRAREA DATELOR CU CARACTER PERSONAL?",
     content: (
       <div className="space-y-3">
         <p>Datele dvs. cu caracter personal sunt prelucrate în vederea:</p>
@@ -98,7 +98,7 @@ export const sectionsRo = [
   },
   {
     id: "durata",
-    title: "5. PE CE DURATĂ PRELUCRĂM DATELE DVS. CU CARACTER PERSONAL?",
+    title: "6. PE CE DURATĂ PRELUCRĂM DATELE DVS. CU CARACTER PERSONAL?",
     content: (
       <div className="space-y-3">
         <p>Datele cu caracter personal sunt stocate în vederea prelucrării lor pe durata necesară atingerii scopurilor de prelucrare menționate în prezenta Politică sau pe durata impusă de lege (ex. în materie de arhivare, de contabilitate etc.).</p>
@@ -117,7 +117,7 @@ export const sectionsRo = [
   },
   {
     id: "destinatari",
-    title: "6. CUI TRANSMITEM DATELE CU CARACTER PERSONAL?",
+    title: "7. CUI TRANSMITEM DATELE CU CARACTER PERSONAL?",
     content: (
       <div className="space-y-3">
         <p>Nu vom comunica sau transfera vreunui terț, niciuna dintre datele cu caracter personal colectate de la dvs. sau despre dvs. cu <strong>excepția</strong>:</p>
@@ -137,7 +137,7 @@ export const sectionsRo = [
   },
   {
     id: "protectie",
-    title: "7. CE MĂSURI DE PROTECȚIE ȘI GARANȚII LUĂM?",
+    title: "8. CE MĂSURI DE PROTECȚIE ȘI GARANȚII LUĂM?",
     content: (
       <div className="space-y-3">
         <p>Societatea implementează <u>măsuri tehnice și organizatorice adecvate în vederea asigurării unui</u> nivel înalt de securitate și protecție a datelor cu caracter personal. Utilizăm metode și tehnologii de securitate, împreună cu politici și proceduri interne de lucru, inclusiv de control și audit, pentru a proteja datele cu caracter personal colectate conform prevederilor legale în vigoare relevante în materia protecției datelor cu caracter personal.</p>
@@ -146,7 +146,7 @@ export const sectionsRo = [
   },
   {
     id: "drepturi",
-    title: "8. CARE SUNT DREPTURILE DVS. ÎN CALITATE DE PERSOANĂ VIZATĂ?",
+    title: "9. CARE SUNT DREPTURILE DVS. ÎN CALITATE DE PERSOANĂ VIZATĂ?",
     content: (
       <div className="space-y-3">
         <p>Orice persoană vizată își poate exercita următoarele drepturi, așa cum sunt prevăzute de către Regulamentul general privind protecția datelor:</p>
