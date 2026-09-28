@@ -16,8 +16,8 @@ interface Prefs {
 }
 
 const DEFAULTS: Prefs = {
-  email_marketing: true,
-  sms_marketing: true,
+  email_marketing: false,
+  sms_marketing: false,
   email_transactional: true,
   sms_transactional: true,
 };
