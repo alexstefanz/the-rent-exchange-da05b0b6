@@ -69,14 +69,21 @@ const RentalsOutTab = () => {
   const [cancelReason, setCancelReason] = useState("");
   const [statusFilter, setStatusFilter] = useState<RentalStatusFilter>(defaultStatus);
   const [sortBy, setSortBy] = useState<RentalSortBy>("newest");
+  const [view, setView] = useState<"active" | "history">(
+    defaultStatus === "completed" || defaultStatus === "cancelled" ? "history" : "active",
+  );
 
   useEffect(() => {
     const status = fromUrlStatus(searchParams.get("status"));
-    if (status) setStatusFilter(status);
+    if (!status) return;
+    setStatusFilter(status);
+    setView(status === "completed" || status === "cancelled" ? "history" : "active");
   }, [searchParams]);
 
   const handleStatusFilterChange = (value: RentalStatusFilter) => {
     setStatusFilter(value);
+    // Picking a finished-only filter jumps straight to the history tab.
+    if (value === "completed" || value === "cancelled") setView("history");
     const next = new URLSearchParams(searchParams);
     if (value === "all") {
       next.delete("status");
@@ -118,7 +125,13 @@ const RentalsOutTab = () => {
   const premiumActiveRentals = filtered.filter(
     r => r.status !== "pending" && !isFinalized(r)
   );
-  const historyRentals = filtered.filter(isFinalized);
+  // History lives in its own tab and is never affected by the active-tab filters.
+  const historyRentals = useMemo(
+    () => sortRentals(rentals.filter(isFinalized)),
+    [rentals, sortBy],
+  );
+  const activeCount = rentals.filter((r) => !isFinalized(r)).length;
+
 
   const handleAccept = async (rental: OwnerRental) => {
     setRespondingId(rental.id);
@@ -192,18 +205,56 @@ const RentalsOutTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Two clear tabs: ongoing vs. finished */}
+      <div className="inline-flex w-full sm:w-auto rounded-xl border border-border bg-muted/40 p-1">
+        <button
+          type="button"
+          onClick={() => setView("active")}
+          className={`flex-1 sm:flex-none rounded-lg px-4 py-2 text-sm font-semibold transition ${
+            view === "active"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Active & cereri
+          <span className="ml-2 rounded-full bg-background/25 px-1.5 text-xs">{activeCount}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setView("history")}
+          className={`flex-1 sm:flex-none rounded-lg px-4 py-2 text-sm font-semibold transition ${
+            view === "history"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Istoric încheiate
+          <span className="ml-2 rounded-full bg-background/25 px-1.5 text-xs">{historyRentals.length}</span>
+        </button>
+      </div>
+
       {/* Filter & sort bar */}
-      <RentalsFilterBar
-        statusFilter={statusFilter}
-        onStatusFilterChange={handleStatusFilterChange}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        counts={counts}
-        amountLabel="Câștig"
-      />
+      {view === "active" && (
+        <RentalsFilterBar
+          statusFilter={statusFilter}
+          onStatusFilterChange={handleStatusFilterChange}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          counts={counts}
+          amountLabel="Câștig"
+        />
+      )}
+
+      {view === "active" && pendingRentals.length === 0 && premiumActiveRentals.length === 0 && (
+        <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            Nu ai cereri noi sau închirieri în derulare în acest moment.
+          </p>
+        </div>
+      )}
 
       {/* Premium request cards */}
-      {(pendingRentals.length > 0 || premiumActiveRentals.length > 0) && (
+      {view === "active" && (pendingRentals.length > 0 || premiumActiveRentals.length > 0) && (
         <section>
           <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2 text-base">
             <Sparkles className="h-5 w-5 text-primary" />
@@ -362,8 +413,14 @@ const RentalsOutTab = () => {
         </section>
       )}
 
+      {view === "history" && historyRentals.length === 0 && (
+        <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center">
+          <p className="text-sm text-muted-foreground">Nu ai încă închirieri încheiate.</p>
+        </div>
+      )}
+
       {/* History list (no images) */}
-      {historyRentals.length > 0 && (
+      {view === "history" && historyRentals.length > 0 && (
         <section>
           <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2 text-base">
             <Package className="h-5 w-5 text-primary" />

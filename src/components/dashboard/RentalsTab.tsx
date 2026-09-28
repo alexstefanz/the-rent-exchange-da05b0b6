@@ -121,6 +121,7 @@ const RentalsTab = () => {
   const [submitting, setSubmitting] = useState(false);
   const [statusFilter, setStatusFilter] = useState<RentalStatusFilter>("all");
   const [sortBy, setSortBy] = useState<RentalSortBy>("newest");
+  const [view, setView] = useState<"active" | "history">("active");
 
   const counts = useMemo(() => {
     const c = { all: rentals.length, active: 0, in_progress: 0, overdue: 0, pending: 0, completed: 0, cancelled: 0 };
@@ -153,8 +154,20 @@ const RentalsTab = () => {
   // Keep the filtered sort order (default: newest first) so the most recent rental
   // always shows up as the first card, regardless of status.
   const premiumRentals = filtered.filter(isPremium);
-  const premiumIds = new Set(premiumRentals.map(r => r.id));
-  const historyRentals = filtered.filter(r => !premiumIds.has(r.id));
+  // History lives in its own tab and is never affected by the active-tab filters.
+  const historyRentals = useMemo(
+    () => sortRentals(rentals.filter(isFinalized)),
+    [rentals, sortBy],
+  );
+  const activeCount = rentals.filter((r) => !isFinalized(r)).length;
+
+  // Picking a finished-only filter jumps straight to the history tab.
+  const handleStatusFilterChange = (value: RentalStatusFilter) => {
+    setStatusFilter(value);
+    if (value === "completed" || value === "cancelled") setView("history");
+  };
+
+
 
   const handleRequestCancel = async () => {
     if (!cancelDialogRental) return;
@@ -210,18 +223,56 @@ const RentalsTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Two clear tabs: ongoing vs. finished */}
+      <div className="inline-flex w-full sm:w-auto rounded-xl border border-border bg-muted/40 p-1">
+        <button
+          type="button"
+          onClick={() => setView("active")}
+          className={`flex-1 sm:flex-none rounded-lg px-4 py-2 text-sm font-semibold transition ${
+            view === "active"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Active & cereri
+          <span className="ml-2 rounded-full bg-background/25 px-1.5 text-xs">{activeCount}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setView("history")}
+          className={`flex-1 sm:flex-none rounded-lg px-4 py-2 text-sm font-semibold transition ${
+            view === "history"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Istoric încheiate
+          <span className="ml-2 rounded-full bg-background/25 px-1.5 text-xs">{historyRentals.length}</span>
+        </button>
+      </div>
+
       {/* Filter & sort bar */}
-      <RentalsFilterBar
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        counts={counts}
-        amountLabel="Preț"
-      />
+      {view === "active" && (
+        <RentalsFilterBar
+          statusFilter={statusFilter}
+          onStatusFilterChange={handleStatusFilterChange}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          counts={counts}
+          amountLabel="Preț"
+        />
+      )}
+
+      {view === "active" && premiumRentals.length === 0 && (
+        <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            Nu ai rezervări active sau cereri în acest moment.
+          </p>
+        </div>
+      )}
 
       {/* Premium reservation cards */}
-      {premiumRentals.length > 0 && (
+      {view === "active" && premiumRentals.length > 0 && (
         <section>
           <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2 text-base">
             Rezervările mele
@@ -336,8 +387,14 @@ const RentalsTab = () => {
         </section>
       )}
 
+      {view === "history" && historyRentals.length === 0 && (
+        <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center">
+          <p className="text-sm text-muted-foreground">Nu ai încă închirieri încheiate.</p>
+        </div>
+      )}
+
       {/* History list (no images) */}
-      {historyRentals.length > 0 && (
+      {view === "history" && historyRentals.length > 0 && (
         <section>
           <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2 text-base">
             <Package className="h-5 w-5 text-primary" />
