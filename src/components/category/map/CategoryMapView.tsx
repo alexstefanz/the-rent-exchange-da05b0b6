@@ -247,11 +247,6 @@ const CategoryMapView = ({
                   <MapProductCard
                     product={p}
                     active={hoveredId === p.id}
-                    onClick={(e) => {
-                      if (!points?.[p.id]) return;
-                      e.preventDefault();
-                      handleSelect(p.id);
-                    }}
                   />
                 </div>
               ))}
@@ -268,7 +263,6 @@ const CategoryMapView = ({
           )}
           {pagination}
         </div>
-      )}
     </div>
   );
 
@@ -282,7 +276,7 @@ const CategoryMapView = ({
           <MapCanvas
             className="relative h-full w-full overflow-hidden rounded-[30px]"
             items={items}
-            selectedId={selectedId}
+            selectedId={null}
             hoveredId={hoveredId}
             onSelect={handleSelect}
             onHover={setHoveredId}
@@ -307,7 +301,7 @@ const CategoryMapView = ({
         <MapCanvas
           className="relative h-full min-h-0 overflow-hidden rounded-[30px]"
           items={items}
-          selectedId={selectedId}
+          selectedId={null}
           hoveredId={hoveredId}
           onSelect={handleSelect}
           onHover={setHoveredId}
