@@ -389,30 +389,22 @@ export const createTicketMessage = async (
     actor_id: userData.user?.id,
   });
 
-  // If admin replied publicly, email the requester — only for the FIRST
-  // public admin reply on the ticket (one reply email per ticket).
+  // If admin replied publicly, email the requester — one email per admin message.
   if (!isInternal && authorType === 'ADMIN') {
     try {
-      const { count } = await opsMessages()
-        .select('id', { count: 'exact', head: true })
-        .eq('ticket_id', ticketId)
-        .eq('author_type', 'ADMIN')
-        .eq('is_internal', false)
-        .neq('id', (data as any).id);
-      if ((count ?? 0) === 0) {
-        const { data: t } = await opsTickets().select('requester_user_id, public_id').eq('id', ticketId).single();
-        const tAny = t as any;
-        if (tAny?.requester_user_id) {
-          sendTicketEmail(
-            tAny.requester_user_id,
-            'ticket-replied',
-            `ticket-replied-${ticketId}`,
-            { ticketId: tAny.public_id, messagePreview: messageText.substring(0, 200) }
-          );
-        }
+      const { data: t } = await opsTickets().select('requester_user_id, public_id').eq('id', ticketId).single();
+      const tAny = t as any;
+      if (tAny?.requester_user_id) {
+        sendTicketEmail(
+          tAny.requester_user_id,
+          'ticket-replied',
+          `ticket-replied-${(data as any).id}`,
+          { ticketId: tAny.public_id, messagePreview: messageText.substring(0, 200) }
+        );
       }
     } catch (e) { console.error('[opsTicketsApi] replied email failed:', e); }
   }
+
 
   return data as unknown as OpsTicketMessage;
 };
