@@ -80,6 +80,8 @@ const RentalsOutTab = () => {
 
   const handleStatusFilterChange = (value: RentalStatusFilter) => {
     setStatusFilter(value);
+    // Picking a finished-only filter jumps straight to the history tab.
+    if (value === "completed" || value === "cancelled") setView("history");
     const next = new URLSearchParams(searchParams);
     if (value === "all") {
       next.delete("status");
