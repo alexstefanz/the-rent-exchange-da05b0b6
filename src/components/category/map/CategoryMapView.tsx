@@ -65,7 +65,7 @@ const CategoryMapView = ({
 
   const { t } = useLanguage();
   const isCompact = useIsCompact();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const navigate = useNavigate();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [areaBounds, setAreaBounds] = useState<Bounds | null>(null);
   const [page, setPage] = useState(1);
