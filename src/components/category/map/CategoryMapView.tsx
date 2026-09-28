@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -20,8 +21,8 @@ const useIsCompact = () => {
   return compact;
 };
 import MapCanvas, { Bounds, MapItem } from "./MapCanvas";
-import MapDetailPanel from "./MapDetailPanel";
 import MapProductCard from "./MapProductCard";
+import { getProductUrl } from "@/lib/slugUtils";
 import MapEmptyState from "./MapEmptyState";
 
 interface Props {
@@ -39,17 +40,6 @@ interface Props {
 
 const PAGE_SIZE = 19;
 
-
-const distanceKm = (a: MapItem, b: MapItem) => {
-  const R = 6371;
-  const dLat = ((b.lat - a.lat) * Math.PI) / 180;
-  const dLng = ((b.lng - a.lng) * Math.PI) / 180;
-  const lat1 = (a.lat * Math.PI) / 180;
-  const lat2 = (b.lat * Math.PI) / 180;
-  const h = Math.sin(dLat / 2) ** 2 + Math.sin(dLng / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
-  return 2 * R * Math.asin(Math.sqrt(h));
-};
-
 const CategoryMapView = ({
   products,
   isLoading,
@@ -64,7 +54,7 @@ const CategoryMapView = ({
 
   const { t } = useLanguage();
   const isCompact = useIsCompact();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const navigate = useNavigate();
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [areaBounds, setAreaBounds] = useState<Bounds | null>(null);
   const [page, setPage] = useState(1);
@@ -107,7 +97,6 @@ const CategoryMapView = ({
 
   useEffect(() => {
     setPage(1);
-    setSelectedId(null);
   }, [products, areaBounds]);
 
   // New filter results should not stay hidden behind a previously chosen map area.
@@ -131,34 +120,17 @@ const CategoryMapView = ({
   }, [allItems, pagedProducts]);
 
   const byId = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
-  const selected = selectedId ? byId.get(selectedId) ?? null : null;
 
-  const similar = useMemo(() => {
-    if (!selected) return [];
-    const origin = items.find((i) => i.id === selected.id);
-    // The remaining listings of the current page (max 18) shown 2 per row.
-    const candidates = pagedProducts.filter((p) => p.id !== selected.id);
-    if (!origin) return candidates;
-    return candidates
-      .map((p) => {
-        const it = items.find((i) => i.id === p.id);
-        return { p, d: it ? distanceKm(origin, it) : Number.MAX_SAFE_INTEGER };
-      })
-      .sort((a, b) => a.d - b.d)
-      .map((x) => x.p);
-  }, [selected, pagedProducts, items]);
-
-  const handleSelect = useCallback((id: string) => {
-    setSelectedId(id);
-    listScrollRef.current?.scrollTo({ top: 0 });
-    window.requestAnimationFrame(() => {
-      compactScrollRef.current?.scrollTo({ top: window.innerHeight * 0.35, behavior: "smooth" });
-    });
-  }, []);
+  const handleSelect = useCallback(
+    (id: string) => {
+      const p = byId.get(id);
+      if (p) navigate(getProductUrl(p));
+    },
+    [byId, navigate],
+  );
 
   const goToPage = useCallback((p: number) => {
     setPage(p);
-    setSelectedId(null);
     listScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
@@ -221,16 +193,7 @@ const CategoryMapView = ({
 
   const listPanel = (
     <div className={isCompact ? "flex flex-col" : "flex h-full flex-col"}>
-      {selected ? (
-        <MapDetailPanel
-          compact={isCompact}
-          product={selected}
-          similar={similar}
-          onBack={() => setSelectedId(null)}
-          onSelectSimilar={(id) => setHoveredId(id)}
-        />
-      ) : (
-        <div
+      <div
           ref={listScrollRef}
           className={cn(
             "scrollbar-hide px-5 pb-10 pt-4 lg:px-6",
@@ -273,11 +236,6 @@ const CategoryMapView = ({
                   <MapProductCard
                     product={p}
                     active={hoveredId === p.id}
-                    onClick={(e) => {
-                      if (!points?.[p.id]) return;
-                      e.preventDefault();
-                      handleSelect(p.id);
-                    }}
                   />
                 </div>
               ))}
@@ -294,7 +252,6 @@ const CategoryMapView = ({
           )}
           {pagination}
         </div>
-      )}
     </div>
   );
 
@@ -308,7 +265,7 @@ const CategoryMapView = ({
           <MapCanvas
             className="relative h-full w-full overflow-hidden rounded-[30px]"
             items={items}
-            selectedId={selectedId}
+            selectedId={null}
             hoveredId={hoveredId}
             onSelect={handleSelect}
             onHover={setHoveredId}
@@ -333,7 +290,7 @@ const CategoryMapView = ({
         <MapCanvas
           className="relative h-full min-h-0 overflow-hidden rounded-[30px]"
           items={items}
-          selectedId={selectedId}
+          selectedId={null}
           hoveredId={hoveredId}
           onSelect={handleSelect}
           onHover={setHoveredId}
