@@ -75,7 +75,9 @@ const RentalsOutTab = () => {
 
   useEffect(() => {
     const status = fromUrlStatus(searchParams.get("status"));
-    if (status) setStatusFilter(status);
+    if (!status) return;
+    setStatusFilter(status);
+    setView(status === "completed" || status === "cancelled" ? "history" : "active");
   }, [searchParams]);
 
   const handleStatusFilterChange = (value: RentalStatusFilter) => {
