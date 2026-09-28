@@ -204,16 +204,7 @@ const CategoryMapView = ({
 
   const listPanel = (
     <div className={isCompact ? "flex flex-col" : "flex h-full flex-col"}>
-      {selected ? (
-        <MapDetailPanel
-          compact={isCompact}
-          product={selected}
-          similar={similar}
-          onBack={() => setSelectedId(null)}
-          onSelectSimilar={(id) => setHoveredId(id)}
-        />
-      ) : (
-        <div
+      <div
           ref={listScrollRef}
           className={cn(
             "scrollbar-hide px-5 pb-10 pt-4 lg:px-6",
