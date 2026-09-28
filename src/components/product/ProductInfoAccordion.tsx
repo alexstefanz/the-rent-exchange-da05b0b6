@@ -1,4 +1,4 @@
-import { Check, ListChecks } from "lucide-react";
+import { Check, UserCheck } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ProductIncludes from "./ProductIncludes";
@@ -41,13 +41,13 @@ const ProductInfoAccordion = ({ description, includedItems, usageRules }: Props)
         {usageRules && usageRules.length > 0 && (
           <AccordionItem value="usage-rules" className="border-b">
             <AccordionTrigger className="px-5 py-4 hover:no-underline font-heading text-base font-semibold">
-              {t("Reguli de utilizare", "Usage rules")}
+              {t("Regulile proprietarului", "Owner's rules")}
             </AccordionTrigger>
             <AccordionContent className="px-5 pb-4">
               <div className="rounded-xl border border-border bg-card p-6">
                 <h2 className="mb-4 font-heading text-xl font-semibold text-foreground flex items-center gap-2">
-                  <ListChecks className="h-5 w-5 text-primary" />
-                  {t("Reguli de utilizare", "Usage rules")}
+                  <UserCheck className="h-5 w-5 text-primary" />
+                  {t("Regulile proprietarului", "Owner's rules")}
                 </h2>
                 <ul className="space-y-3">
                   {usageRules.map((rule, index) => (
@@ -66,7 +66,7 @@ const ProductInfoAccordion = ({ description, includedItems, usageRules }: Props)
 
         <AccordionItem value="rules" className="border-b-0">
           <AccordionTrigger className="px-5 py-4 hover:no-underline font-heading text-base font-semibold">
-            {t("Reguli & politici", "Rules & policies")}
+            {t("Politici Rentli & siguranță", "Rentli policies & safety")}
           </AccordionTrigger>
           <AccordionContent className="px-5 pb-4">
             <div className="-mx-5 -mb-4">

@@ -49,7 +49,7 @@ const UsageRules = ({ rules, depositAmount }: UsageRulesProps) => {
   return (
     <div className="rounded-xl border border-border bg-card p-6">
       <h2 className="mb-4 font-heading text-xl font-semibold text-foreground flex items-center gap-2">
-        <AlertCircle className="h-5 w-5 text-primary" />
+        <ShieldCheck className="h-5 w-5 text-primary" />
         {copy.product.rules}
       </h2>
       <div className="space-y-4">

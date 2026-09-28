@@ -923,12 +923,40 @@ const Step2Details = ({
         {/* Usage rules */}
         <div className="space-y-2">
           <Label className="text-sm font-semibold">
-            {t("Reguli de utilizare", "Usage rules")} <span className="font-normal text-muted-foreground">{t("(opțional)", "(optional)")}</span>
+            {t("Regulile proprietarului", "Owner's rules")} <span className="font-normal text-muted-foreground">{t("(opțional)", "(optional)")}</span>
           </Label>
+          <p className="text-xs text-muted-foreground">
+            {t(
+              "Specifică cerințele tale pentru utilizarea bunului (interdicții, condiții de transport sau curățenie).",
+              "Specify your requirements for using the item (restrictions, transport or cleaning conditions).",
+            )}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { ro: "Doar în interior", en: "Indoor use only" },
+              { ro: "Fără fumat", en: "No smoking" },
+              { ro: "Curățat la returnare", en: "Cleaned on return" },
+              { ro: "Baterie încărcată la retur", en: "Battery charged on return" },
+            ].map((s) => {
+              const label = t(s.ro, s.en);
+              const already = data.usage_rules.includes(label);
+              return (
+                <button
+                  key={s.ro}
+                  type="button"
+                  disabled={already}
+                  onClick={() => update("usage_rules", [...data.usage_rules, label])}
+                  className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-40 disabled:hover:border-border disabled:hover:text-muted-foreground"
+                >
+                  + {label}
+                </button>
+              );
+            })}
+          </div>
           <ListItemsInput
             items={data.usage_rules}
             onChange={(rules) => update("usage_rules", rules)}
-            placeholder={t("Ex: Doar în interior", "E.g. Indoor use only")}
+            placeholder={t("Ex: Doar în interior, Fără fumat, Curățat la returnare", "E.g. Indoor use only, No smoking, Cleaned on return")}
             addLabel={t("Adaugă regulă", "Add rule")}
             emptyHint={t(
               "Scrie câte o regulă sau lipește o listă întreagă — fiecare rând devine o regulă din listă.",

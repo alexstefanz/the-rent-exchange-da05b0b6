@@ -52,7 +52,8 @@ const createUxCopy = () => ({
   },
   product: {
     includes: { ro: "Ce este inclus", en: "What's included" },
-    rules: { ro: "Reguli de utilizare", en: "Usage rules" },
+    rules: { ro: "Politici Rentli & siguranță", en: "Rentli policies & safety" },
+    ownerRules: { ro: "Regulile proprietarului", en: "Owner's rules" },
     reviews: { ro: "Recenzii", en: "Reviews" },
     seeAllReviews: { ro: "Vezi toate recenziile", en: "See all reviews" },
     noReviews: { ro: "Încă nu există recenzii", en: "No reviews yet" },

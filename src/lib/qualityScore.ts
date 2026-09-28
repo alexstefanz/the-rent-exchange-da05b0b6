@@ -61,7 +61,7 @@ export const computeQualityScore = (data: PublishFormData, lang: Lang = "ro"): Q
     },
     {
       id: "rules",
-      label: tr(lang, "Reguli de utilizare definite", "Usage rules defined"),
+      label: tr(lang, "Regulile proprietarului definite", "Owner's rules defined"),
       max: 5,
       earned: data.usage_rules.length > 0 ? 5 : 0,
       done: data.usage_rules.length > 0,
