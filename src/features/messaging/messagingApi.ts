@@ -41,13 +41,17 @@ export async function getOrCreateConversation(productId: string, ownerId: string
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  // Check if an "organic" (non-rental) conversation exists for this product+buyer
+  // Reuse ANY existing conversation for this product+buyer+owner — including
+  // one already linked to a rental — so questions and the rental itself share
+  // a single chat thread.
   const { data: existing } = await supabase
     .from('conversations')
     .select('*')
     .eq('product_id', productId)
     .eq('buyer_id', user.id)
-    .is('rentals_id', null)
+    .eq('owner_id', ownerId)
+    .order('created_at', { ascending: true })
+    .limit(1)
     .maybeSingle();
 
   if (existing) return existing as Conversation;
