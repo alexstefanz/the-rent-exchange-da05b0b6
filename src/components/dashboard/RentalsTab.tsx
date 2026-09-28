@@ -159,6 +159,15 @@ const RentalsTab = () => {
     () => sortRentals(rentals.filter(isFinalized)),
     [rentals, sortBy],
   );
+  const activeCount = rentals.filter((r) => !isFinalized(r)).length;
+
+  // Picking a finished-only filter jumps straight to the history tab.
+  const handleStatusFilterChange = (value: RentalStatusFilter) => {
+    setStatusFilter(value);
+    if (value === "completed" || value === "cancelled") setView("history");
+  };
+
+
 
   const handleRequestCancel = async () => {
     if (!cancelDialogRental) return;
