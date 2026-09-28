@@ -169,10 +169,10 @@ Deno.serve(async (req) => {
       try {
         const { data: prefs } = await supabase
           .from("notification_preferences")
-          .select("email_transactional")
+          .select("email_transactional, email_chat")
           .eq("user_id", recipientId)
           .maybeSingle();
-        if (prefs?.email_transactional !== false) {
+        if (prefs?.email_transactional !== false && prefs?.email_chat !== false) {
           const preview = message_content.length > 140
             ? message_content.substring(0, 140) + "…"
             : message_content;

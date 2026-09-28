@@ -9,16 +9,14 @@ import { showSaveToast } from "@/lib/saveToast";
 import { Loader2 } from "lucide-react";
 
 interface Prefs {
-  email_marketing: boolean;
-  sms_marketing: boolean;
   email_transactional: boolean;
+  email_chat: boolean;
   sms_transactional: boolean;
 }
 
 const DEFAULTS: Prefs = {
-  email_marketing: false,
-  sms_marketing: false,
   email_transactional: true,
+  email_chat: true,
   sms_transactional: true,
 };
 
@@ -33,10 +31,9 @@ const NotificationPreferences = () => {
     (async () => {
       const { data } = await supabase.from("notification_preferences").select("*").eq("user_id", user.id).maybeSingle();
       if (data) setPrefs({
-        email_marketing: data.email_marketing,
-        sms_marketing: data.sms_marketing,
-        email_transactional: data.email_transactional,
-        sms_transactional: data.sms_transactional,
+        email_transactional: data.email_transactional !== false,
+        email_chat: (data as any).email_chat !== false,
+        sms_transactional: data.sms_transactional !== false,
       });
       setLoading(false);
     })();
@@ -73,10 +70,9 @@ const NotificationPreferences = () => {
         Gestionează cum primești notificările Rentli. Notificările critice de siguranță (proces verbal, dispute, predare) nu pot fi dezactivate.
       </p>
       <Card className="p-6">
-        <Row k="email_transactional" label="Email tranzacțional" desc="Confirmări de cereri, finalizări, recipisuri." />
+        <Row k="email_transactional" label="Email — actualizări închirieri" desc="Confirmări de cereri, acceptări, predări și finalizări." />
+        <Row k="email_chat" label="Email — chat & mesaje" desc="Primești un email când ai un mesaj nou în chat." />
         <Row k="sms_transactional" label="SMS tranzacțional" desc="Notificări scurte cu link direct către acțiune." />
-        <Row k="email_marketing" label="Email marketing" desc="Noutăți Rentli, promoții, recomandări." />
-        <Row k="sms_marketing" label="SMS marketing" desc="Reminderele non-critice și sugestii." />
       </Card>
     </div>
   );

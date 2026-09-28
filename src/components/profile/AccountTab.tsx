@@ -87,6 +87,8 @@ const AccountTab = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isSavingSms, setIsSavingSms] = useState(false);
+  const [emailPrefs, setEmailPrefs] = useState({ email_transactional: true, email_chat: true });
+  const [isSavingEmailPref, setIsSavingEmailPref] = useState<string | null>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [passwordResetSentOpen, setPasswordResetSentOpen] = useState(false);
   const [isDeactivating, setIsDeactivating] = useState(false);
@@ -371,6 +373,47 @@ const AccountTab = () => {
     }
   };
 
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("notification_preferences")
+        .select("email_transactional, email_chat")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!cancelled && data) {
+        setEmailPrefs({
+          email_transactional: data.email_transactional !== false,
+          email_chat: (data as any).email_chat !== false,
+        });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+
+  const handleEmailPrefToggle = async (
+    key: "email_transactional" | "email_chat",
+    next: boolean,
+    label: string,
+  ) => {
+    if (!user) return;
+    const prev = emailPrefs;
+    setEmailPrefs({ ...emailPrefs, [key]: next });
+    setIsSavingEmailPref(key);
+    const { error } = await supabase
+      .from("notification_preferences")
+      .upsert({ user_id: user.id, [key]: next }, { onConflict: "user_id" });
+    setIsSavingEmailPref(null);
+    if (error) {
+      setEmailPrefs(prev);
+      toast({ title: t("Eroare", "Error"), description: error.message, variant: "destructive" });
+    } else {
+      showSaveToast(label);
+    }
+  };
+
   const handleDeactivateAccount = async () => {
     setIsDeactivating(true);
     try {
@@ -548,24 +591,42 @@ const AccountTab = () => {
             <NotificationToggle
               title={t("Email — actualizări închirieri", "Email — rental updates")}
               description={t("Primești emailuri pentru cereri, acceptări și predări.", "You receive emails for requests, approvals and handovers.")}
-              checked={true}
-              disabled
-              comingSoon
+              checked={emailPrefs.email_transactional}
+              disabled={isSavingEmailPref === "email_transactional"}
+              onChange={(next) =>
+                handleEmailPrefToggle(
+                  "email_transactional",
+                  next,
+                  next
+                    ? t("Emailuri închirieri activate", "Rental emails on")
+                    : t("Emailuri închirieri dezactivate", "Rental emails off"),
+                )
+              }
+              warning={
+                !emailPrefs.email_transactional
+                  ? t(
+                      "Emailurile critice (proces verbal, dispute, plăți) se trimit oricum.",
+                      "Critical emails (inspection reports, disputes, payments) are always sent.",
+                    )
+                  : undefined
+              }
             />
             <NotificationToggle
               title={t("Email — chat & mesaje", "Email — chat & messages")}
               description={t("Notificare când primești un mesaj nou.", "Notify me when I receive a new message.")}
-              checked={true}
-              disabled
-              comingSoon
+              checked={emailPrefs.email_chat}
+              disabled={isSavingEmailPref === "email_chat"}
+              onChange={(next) =>
+                handleEmailPrefToggle(
+                  "email_chat",
+                  next,
+                  next
+                    ? t("Emailuri mesaje activate", "Message emails on")
+                    : t("Emailuri mesaje dezactivate", "Message emails off"),
+                )
+              }
             />
-            <NotificationToggle
-              title={t("Marketing & noutăți", "Marketing & news")}
-              description={t("Oferte, ghiduri și anunțuri importante.", "Offers, guides and important announcements.")}
-              checked={false}
-              disabled
-              comingSoon
-            />
+
             <Link
               to="/setari/notificari"
               className="group flex items-center gap-3 rounded-xl border border-border p-4 hover:border-primary/40 hover:bg-primary/5 transition-all"
