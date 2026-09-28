@@ -326,6 +326,13 @@ const ImageUpload = ({ userId, images, onChange, maxImages = 5 }: ImageUploadPro
         </div>
       )}
 
+      <p className="text-xs text-muted-foreground">
+        {t(
+          "Fotografiile trebuie să surprindă doar bunul. Nu încărca imagini cu fețe de persoane, numere de înmatriculare sau documente fără acordul scris al persoanelor vizate (GDPR, art. 6 și Codul Civil, art. 73).",
+          "Photos must show only the item. Do not upload images with people's faces, licence plates or documents without the written consent of the persons concerned (GDPR art. 6 and Romanian Civil Code art. 73).",
+        )}
+      </p>
+
       {images.length === 0 && (
         <div 
           className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground cursor-pointer hover:border-primary/50 transition-colors"
