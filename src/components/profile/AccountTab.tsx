@@ -738,6 +738,7 @@ const AccountTab = () => {
         open={otpDialogOpen}
         phone={pendingPhone}
         onOpenChange={setOtpDialogOpen}
+        onPhoneChange={setPendingPhone}
         onVerified={handlePhoneVerified}
       />
     </TooltipProvider>
