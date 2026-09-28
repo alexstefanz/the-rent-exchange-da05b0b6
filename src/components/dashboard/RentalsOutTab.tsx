@@ -411,8 +411,14 @@ const RentalsOutTab = () => {
         </section>
       )}
 
+      {view === "history" && historyRentals.length === 0 && (
+        <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center">
+          <p className="text-sm text-muted-foreground">Nu ai încă închirieri încheiate.</p>
+        </div>
+      )}
+
       {/* History list (no images) */}
-      {historyRentals.length > 0 && (
+      {view === "history" && historyRentals.length > 0 && (
         <section>
           <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2 text-base">
             <Package className="h-5 w-5 text-primary" />
