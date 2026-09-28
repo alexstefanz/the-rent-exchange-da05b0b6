@@ -371,6 +371,27 @@ const AccountTab = () => {
     }
   };
 
+  const handleEmailPrefToggle = async (
+    key: "email_transactional" | "email_chat",
+    next: boolean,
+    label: string,
+  ) => {
+    if (!user) return;
+    const prev = emailPrefs;
+    setEmailPrefs({ ...emailPrefs, [key]: next });
+    setIsSavingEmailPref(key);
+    const { error } = await supabase
+      .from("notification_preferences")
+      .upsert({ user_id: user.id, [key]: next }, { onConflict: "user_id" });
+    setIsSavingEmailPref(null);
+    if (error) {
+      setEmailPrefs(prev);
+      toast({ title: t("Eroare", "Error"), description: error.message, variant: "destructive" });
+    } else {
+      showSaveToast(label);
+    }
+  };
+
   const handleDeactivateAccount = async () => {
     setIsDeactivating(true);
     try {
