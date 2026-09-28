@@ -1,4 +1,4 @@
-import { Check, ListChecks } from "lucide-react";
+import { Check, UserCheck } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import ProductIncludes from "./ProductIncludes";
@@ -66,7 +66,7 @@ const ProductInfoAccordion = ({ description, includedItems, usageRules }: Props)
 
         <AccordionItem value="rules" className="border-b-0">
           <AccordionTrigger className="px-5 py-4 hover:no-underline font-heading text-base font-semibold">
-            {t("Reguli & politici", "Rules & policies")}
+            {t("Politici Rentli & siguranță", "Rentli policies & safety")}
           </AccordionTrigger>
           <AccordionContent className="px-5 pb-4">
             <div className="-mx-5 -mb-4">
