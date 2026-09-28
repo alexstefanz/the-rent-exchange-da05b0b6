@@ -848,6 +848,7 @@ const Auth = () => {
             pendingCredsRef.current = null;
           }
         }}
+        onPhoneChange={setPendingPhone}
         onVerified={handlePhoneVerified}
         fallbackCreds={pendingCredsRef.current}
       />

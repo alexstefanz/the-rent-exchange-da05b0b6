@@ -359,6 +359,10 @@ const createUxCopy = () => ({
     rateLimited: { ro: "Așteaptă câteva secunde înainte să ceri un cod nou.", en: "Wait a few seconds before requesting a new code." },
     success: { ro: "Numărul de telefon a fost verificat!", en: "Phone number verified!" },
     cancel: { ro: "Anulează", en: "Cancel" },
+    wrongNumber: { ro: "Număr greșit? Modifică numărul", en: "Wrong number? Change it" },
+    newPhoneLabel: { ro: "Număr nou de telefon", en: "New phone number" },
+    saveAndSend: { ro: "Salvează și trimite codul", en: "Save and send code" },
+    invalidPhone: { ro: "Număr de telefon invalid. Folosește formatul 07xx xxx xxx.", en: "Invalid phone number. Use the format 07xx xxx xxx." },
   },
   home: {
     heroTitle: { ro: "Închiriază orice,", en: "Rent anything," },
