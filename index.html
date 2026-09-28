@@ -109,11 +109,12 @@
       window.addEventListener('CookiebotOnLoad', rentliSyncConsent);
     </script>
 
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5QNFPSKBSM" data-cookieconsent="ignore"></script>
-    <script data-cookieconsent="ignore">
+    <!-- Google tag (gtag.js) — blocat strict: nu se încarcă deloc înainte de consimțământ (categoria Statistici) -->
+    <script type="text/plain" data-cookieconsent="statistics" async src="https://www.googletagmanager.com/gtag/js?id=G-5QNFPSKBSM"></script>
+    <script type="text/plain" data-cookieconsent="statistics">
       gtag('config', 'G-5QNFPSKBSM', { send_page_view: false });
     </script>
+
 
 
     <meta name="description" content="Marketplace de închirieri între oameni: unelte, electronice, camping, sport, evenimente. Proprietari verificați, plată securizată, predare cu poze.">
