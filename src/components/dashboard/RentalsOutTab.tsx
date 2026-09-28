@@ -69,6 +69,9 @@ const RentalsOutTab = () => {
   const [cancelReason, setCancelReason] = useState("");
   const [statusFilter, setStatusFilter] = useState<RentalStatusFilter>(defaultStatus);
   const [sortBy, setSortBy] = useState<RentalSortBy>("newest");
+  const [view, setView] = useState<"active" | "history">(
+    defaultStatus === "completed" || defaultStatus === "cancelled" ? "history" : "active",
+  );
 
   useEffect(() => {
     const status = fromUrlStatus(searchParams.get("status"));
