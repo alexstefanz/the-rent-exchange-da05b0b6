@@ -203,18 +203,56 @@ const RentalsOutTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Two clear tabs: ongoing vs. finished */}
+      <div className="inline-flex w-full sm:w-auto rounded-xl border border-border bg-muted/40 p-1">
+        <button
+          type="button"
+          onClick={() => setView("active")}
+          className={`flex-1 sm:flex-none rounded-lg px-4 py-2 text-sm font-semibold transition ${
+            view === "active"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Active & cereri
+          <span className="ml-2 rounded-full bg-background/25 px-1.5 text-xs">{activeCount}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setView("history")}
+          className={`flex-1 sm:flex-none rounded-lg px-4 py-2 text-sm font-semibold transition ${
+            view === "history"
+              ? "bg-primary text-primary-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          Istoric încheiate
+          <span className="ml-2 rounded-full bg-background/25 px-1.5 text-xs">{historyRentals.length}</span>
+        </button>
+      </div>
+
       {/* Filter & sort bar */}
-      <RentalsFilterBar
-        statusFilter={statusFilter}
-        onStatusFilterChange={handleStatusFilterChange}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-        counts={counts}
-        amountLabel="Câștig"
-      />
+      {view === "active" && (
+        <RentalsFilterBar
+          statusFilter={statusFilter}
+          onStatusFilterChange={handleStatusFilterChange}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          counts={counts}
+          amountLabel="Câștig"
+        />
+      )}
+
+      {view === "active" && pendingRentals.length === 0 && premiumActiveRentals.length === 0 && (
+        <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            Nu ai cereri noi sau închirieri în derulare în acest moment.
+          </p>
+        </div>
+      )}
 
       {/* Premium request cards */}
-      {(pendingRentals.length > 0 || premiumActiveRentals.length > 0) && (
+      {view === "active" && (pendingRentals.length > 0 || premiumActiveRentals.length > 0) && (
         <section>
           <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2 text-base">
             <Sparkles className="h-5 w-5 text-primary" />
