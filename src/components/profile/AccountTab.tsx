@@ -591,24 +591,42 @@ const AccountTab = () => {
             <NotificationToggle
               title={t("Email — actualizări închirieri", "Email — rental updates")}
               description={t("Primești emailuri pentru cereri, acceptări și predări.", "You receive emails for requests, approvals and handovers.")}
-              checked={true}
-              disabled
-              comingSoon
+              checked={emailPrefs.email_transactional}
+              disabled={isSavingEmailPref === "email_transactional"}
+              onChange={(next) =>
+                handleEmailPrefToggle(
+                  "email_transactional",
+                  next,
+                  next
+                    ? t("Emailuri închirieri activate", "Rental emails on")
+                    : t("Emailuri închirieri dezactivate", "Rental emails off"),
+                )
+              }
+              warning={
+                !emailPrefs.email_transactional
+                  ? t(
+                      "Emailurile critice (proces verbal, dispute, plăți) se trimit oricum.",
+                      "Critical emails (inspection reports, disputes, payments) are always sent.",
+                    )
+                  : undefined
+              }
             />
             <NotificationToggle
               title={t("Email — chat & mesaje", "Email — chat & messages")}
               description={t("Notificare când primești un mesaj nou.", "Notify me when I receive a new message.")}
-              checked={true}
-              disabled
-              comingSoon
+              checked={emailPrefs.email_chat}
+              disabled={isSavingEmailPref === "email_chat"}
+              onChange={(next) =>
+                handleEmailPrefToggle(
+                  "email_chat",
+                  next,
+                  next
+                    ? t("Emailuri mesaje activate", "Message emails on")
+                    : t("Emailuri mesaje dezactivate", "Message emails off"),
+                )
+              }
             />
-            <NotificationToggle
-              title={t("Marketing & noutăți", "Marketing & news")}
-              description={t("Oferte, ghiduri și anunțuri importante.", "Offers, guides and important announcements.")}
-              checked={false}
-              disabled
-              comingSoon
-            />
+
             <Link
               to="/setari/notificari"
               className="group flex items-center gap-3 rounded-xl border border-border p-4 hover:border-primary/40 hover:bg-primary/5 transition-all"
