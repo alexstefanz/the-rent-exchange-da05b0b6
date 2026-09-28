@@ -626,22 +626,6 @@ const AccountTab = () => {
                 )
               }
             />
-
-            <Link
-              to="/setari/notificari"
-              className="group flex items-center gap-3 rounded-xl border border-border p-4 hover:border-primary/40 hover:bg-primary/5 transition-all"
-            >
-              <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <Bell className="h-5 w-5 text-primary" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-medium text-sm">{t("Setări avansate notificări", "Advanced notification settings")}</p>
-                <p className="text-xs text-muted-foreground">
-                  {t("Personalizează ce notificări primești și pe ce canale.", "Customize which notifications you receive and on which channels.")}
-                </p>
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
-            </Link>
           </div>
         </Section>
 
