@@ -31,10 +31,9 @@ const NotificationPreferences = () => {
     (async () => {
       const { data } = await supabase.from("notification_preferences").select("*").eq("user_id", user.id).maybeSingle();
       if (data) setPrefs({
-        email_marketing: data.email_marketing,
-        sms_marketing: data.sms_marketing,
-        email_transactional: data.email_transactional,
-        sms_transactional: data.sms_transactional,
+        email_transactional: data.email_transactional !== false,
+        email_chat: (data as any).email_chat !== false,
+        sms_transactional: data.sms_transactional !== false,
       });
       setLoading(false);
     })();
