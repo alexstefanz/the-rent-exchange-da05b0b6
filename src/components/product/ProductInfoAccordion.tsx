@@ -31,9 +31,7 @@ const ProductInfoAccordion = ({ description, includedItems, usageRules }: Props)
               {t("Ce e inclus", "What's included")}
             </AccordionTrigger>
             <AccordionContent className="px-5 pb-4">
-              <div className="-mx-5 -mb-4">
-                <ProductIncludes items={includedItems} />
-              </div>
+              <ProductIncludes items={includedItems} />
             </AccordionContent>
           </AccordionItem>
         )}
