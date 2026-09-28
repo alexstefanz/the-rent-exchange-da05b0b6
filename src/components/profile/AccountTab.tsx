@@ -373,6 +373,26 @@ const AccountTab = () => {
     }
   };
 
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("notification_preferences")
+        .select("email_transactional, email_chat")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!cancelled && data) {
+        setEmailPrefs({
+          email_transactional: data.email_transactional !== false,
+          email_chat: (data as any).email_chat !== false,
+        });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
+
   const handleEmailPrefToggle = async (
     key: "email_transactional" | "email_chat",
     next: boolean,
