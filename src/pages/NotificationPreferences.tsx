@@ -9,16 +9,14 @@ import { showSaveToast } from "@/lib/saveToast";
 import { Loader2 } from "lucide-react";
 
 interface Prefs {
-  email_marketing: boolean;
-  sms_marketing: boolean;
   email_transactional: boolean;
+  email_chat: boolean;
   sms_transactional: boolean;
 }
 
 const DEFAULTS: Prefs = {
-  email_marketing: false,
-  sms_marketing: false,
   email_transactional: true,
+  email_chat: true,
   sms_transactional: true,
 };
 
