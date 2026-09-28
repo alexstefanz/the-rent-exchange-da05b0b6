@@ -87,6 +87,8 @@ const AccountTab = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isSavingSms, setIsSavingSms] = useState(false);
+  const [emailPrefs, setEmailPrefs] = useState({ email_transactional: true, email_chat: true });
+  const [isSavingEmailPref, setIsSavingEmailPref] = useState<string | null>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [passwordResetSentOpen, setPasswordResetSentOpen] = useState(false);
   const [isDeactivating, setIsDeactivating] = useState(false);
