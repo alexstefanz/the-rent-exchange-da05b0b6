@@ -125,6 +125,48 @@ Deno.serve(async (req) => {
       console.error("[verify-phone-otp] email_confirm threw", e);
     }
 
+    // Send a confirmation SMS that the phone number was added/changed.
+    // Non-blocking: a failure here must not fail the verification itself.
+    try {
+      const username = Deno.env.get("SMS_ALERT_USERNAME");
+      const apiKey = Deno.env.get("SMS_ALERT_API_KEY");
+      if (username && apiKey) {
+        const message = `Rentli: numarul de telefon ${phone} a fost verificat si asociat contului tau. Daca nu ai facut tu aceasta schimbare, contacteaza-ne pe rentli.ro.`;
+        const res = await fetch("https://smsalert.mobi/api/v2/message/send", {
+          method: "POST",
+          headers: {
+            "Authorization": `Basic ${btoa(`${username}:${apiKey}`)}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ phoneNumber: phone, message, cleanupUtf8: true }),
+        });
+        const rawText = await res.text();
+        let providerBody: any = null;
+        try { providerBody = JSON.parse(rawText); } catch { /* non-json */ }
+        const providerOk = res.ok && providerBody && providerBody.status === true;
+
+        const { error: logErr } = await supabase.from("sms_logs").insert({
+          user_id: userId,
+          recipient_phone: phone,
+          template_key: "phone_verified_confirm",
+          message_body: message,
+          status: providerOk ? "sent" : "failed",
+          provider_message_id: providerBody?.id ? String(providerBody.id) : null,
+          provider_response: providerBody ?? { raw: rawText.slice(0, 500) },
+          error_message: providerOk ? null : (providerBody?.message || providerBody?.error || `http_${res.status}`),
+          idempotency_key: `phone_verified_confirm:${userId}:${Date.now()}`,
+        });
+        if (logErr) console.error("[verify-phone-otp] sms_logs insert failed", logErr);
+        if (!providerOk) {
+          console.error(`[verify-phone-otp] confirm SMS failed http=${res.status} body=${rawText.slice(0, 300)}`);
+        }
+      } else {
+        console.error("[verify-phone-otp] missing SMS_ALERT creds for confirm SMS");
+      }
+    } catch (e) {
+      console.error("[verify-phone-otp] confirm SMS threw", e);
+    }
+
     console.log(`[verify-phone-otp] verified user=${userId} phone=${phone}`);
     return json({ success: true, phone });
   } catch (e) {
