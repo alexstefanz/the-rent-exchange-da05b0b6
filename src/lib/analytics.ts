@@ -41,7 +41,14 @@ export function setAnalyticsConsent(granted: boolean) {
   });
 }
 
+/** True only when the visitor accepted the statistics category in Cookiebot. */
+function statisticsAllowed(): boolean {
+  if (typeof window === "undefined") return false;
+  return Boolean(window.Cookiebot?.consent?.statistics);
+}
+
 export function trackPageview(path: string, title?: string) {
+  if (!statisticsAllowed()) return;
   // Strip query string / hash — never send tokens or user input to GA.
   const cleanPath = path.split("?")[0].split("#")[0];
   gtag("event", "page_view", {
@@ -52,5 +59,6 @@ export function trackPageview(path: string, title?: string) {
 }
 
 export function trackEvent(name: string, params?: Record<string, unknown>) {
+  if (!statisticsAllowed()) return;
   gtag("event", name, params ?? {});
 }
