@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -20,8 +21,8 @@ const useIsCompact = () => {
   return compact;
 };
 import MapCanvas, { Bounds, MapItem } from "./MapCanvas";
-import MapDetailPanel from "./MapDetailPanel";
 import MapProductCard from "./MapProductCard";
+import { getProductUrl } from "@/lib/slugUtils";
 import MapEmptyState from "./MapEmptyState";
 
 interface Props {
