@@ -179,6 +179,7 @@ const App = () => (
                 <Route path="/politica-de-confidentialitate" element={<Navigate to="/politica-confidentialitate" replace />} />
                 <Route path="/politica-anulare" element={<CancellationPolicy />} />
                 <Route path="/politica-cookies" element={<CookiePolicy />} />
+                <Route path="/formular-consimtamant-imagine" element={<ImageConsentForm />} />
                 <Route path="/intrebari-frecvente" element={<FAQ />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/dezactivare-cont" element={<DeactivateAccount />} />
