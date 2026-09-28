@@ -674,6 +674,7 @@ export type Database = {
       }
       notification_preferences: {
         Row: {
+          email_chat: boolean
           email_marketing: boolean
           email_transactional: boolean
           sms_marketing: boolean
@@ -682,6 +683,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          email_chat?: boolean
           email_marketing?: boolean
           email_transactional?: boolean
           sms_marketing?: boolean
@@ -690,6 +692,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          email_chat?: boolean
           email_marketing?: boolean
           email_transactional?: boolean
           sms_marketing?: boolean
