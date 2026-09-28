@@ -105,4 +105,5 @@ const ListItemsInput = ({ items, onChange, placeholder, addLabel, emptyHint }: L
   );
 };
 
+export { ListItemsInput };
 export default ListItemsInput;
