@@ -153,8 +153,11 @@ const RentalsTab = () => {
   // Keep the filtered sort order (default: newest first) so the most recent rental
   // always shows up as the first card, regardless of status.
   const premiumRentals = filtered.filter(isPremium);
-  const premiumIds = new Set(premiumRentals.map(r => r.id));
-  const historyRentals = filtered.filter(r => !premiumIds.has(r.id));
+  // History lives in its own tab and is never affected by the active-tab filters.
+  const historyRentals = useMemo(
+    () => sortRentals(rentals.filter(isFinalized)),
+    [rentals, sortBy],
+  );
 
   const handleRequestCancel = async () => {
     if (!cancelDialogRental) return;
