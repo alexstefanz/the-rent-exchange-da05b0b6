@@ -108,7 +108,6 @@ const CategoryMapView = ({
 
   useEffect(() => {
     setPage(1);
-    setSelectedId(null);
   }, [products, areaBounds]);
 
   // New filter results should not stay hidden behind a previously chosen map area.
@@ -143,7 +142,6 @@ const CategoryMapView = ({
 
   const goToPage = useCallback((p: number) => {
     setPage(p);
-    setSelectedId(null);
     listScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
