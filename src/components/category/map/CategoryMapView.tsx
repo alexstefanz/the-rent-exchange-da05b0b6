@@ -132,30 +132,14 @@ const CategoryMapView = ({
   }, [allItems, pagedProducts]);
 
   const byId = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
-  const selected = selectedId ? byId.get(selectedId) ?? null : null;
 
-  const similar = useMemo(() => {
-    if (!selected) return [];
-    const origin = items.find((i) => i.id === selected.id);
-    // The remaining listings of the current page (max 18) shown 2 per row.
-    const candidates = pagedProducts.filter((p) => p.id !== selected.id);
-    if (!origin) return candidates;
-    return candidates
-      .map((p) => {
-        const it = items.find((i) => i.id === p.id);
-        return { p, d: it ? distanceKm(origin, it) : Number.MAX_SAFE_INTEGER };
-      })
-      .sort((a, b) => a.d - b.d)
-      .map((x) => x.p);
-  }, [selected, pagedProducts, items]);
-
-  const handleSelect = useCallback((id: string) => {
-    setSelectedId(id);
-    listScrollRef.current?.scrollTo({ top: 0 });
-    window.requestAnimationFrame(() => {
-      compactScrollRef.current?.scrollTo({ top: window.innerHeight * 0.35, behavior: "smooth" });
-    });
-  }, []);
+  const handleSelect = useCallback(
+    (id: string) => {
+      const p = byId.get(id);
+      if (p) navigate(getProductUrl(p));
+    },
+    [byId, navigate],
+  );
 
   const goToPage = useCallback((p: number) => {
     setPage(p);
