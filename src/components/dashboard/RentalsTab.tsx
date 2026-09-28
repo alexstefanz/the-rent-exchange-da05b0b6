@@ -121,6 +121,7 @@ const RentalsTab = () => {
   const [submitting, setSubmitting] = useState(false);
   const [statusFilter, setStatusFilter] = useState<RentalStatusFilter>("all");
   const [sortBy, setSortBy] = useState<RentalSortBy>("newest");
+  const [view, setView] = useState<"active" | "history">("active");
 
   const counts = useMemo(() => {
     const c = { all: rentals.length, active: 0, in_progress: 0, overdue: 0, pending: 0, completed: 0, cancelled: 0 };
