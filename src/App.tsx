@@ -84,6 +84,7 @@ const TermsAndConditions = lazyWithRetry(() => import("./pages/legal/TermsAndCon
 const PrivacyPolicy = lazyWithRetry(() => import("./pages/legal/PrivacyPolicy"));
 const CancellationPolicy = lazyWithRetry(() => import("./pages/legal/CancellationPolicy"));
 const CookiePolicy = lazyWithRetry(() => import("./pages/legal/CookiePolicy"));
+const ImageConsentForm = lazyWithRetry(() => import("./pages/legal/ImageConsentForm"));
 const FAQ = lazyWithRetry(() => import("./pages/FAQ"));
 // Admin pages
 const AdminDashboard = lazyWithRetry(() => import("./pages/admin/AdminDashboard"));
@@ -178,6 +179,7 @@ const App = () => (
                 <Route path="/politica-de-confidentialitate" element={<Navigate to="/politica-confidentialitate" replace />} />
                 <Route path="/politica-anulare" element={<CancellationPolicy />} />
                 <Route path="/politica-cookies" element={<CookiePolicy />} />
+                <Route path="/formular-consimtamant-imagine" element={<ImageConsentForm />} />
                 <Route path="/intrebari-frecvente" element={<FAQ />} />
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/dezactivare-cont" element={<DeactivateAccount />} />
