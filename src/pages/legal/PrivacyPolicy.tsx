@@ -61,6 +61,20 @@ export const sectionsRo = [
     ),
   },
   {
+    id: "dreptul-la-imagine",
+    title: "4. PRELUCRAREA FOTOGRAFIILOR ȘI DREPTUL LA PROPRIA IMAGINE",
+    content: (
+      <div className="space-y-3">
+        <p>Imaginea unei persoane fizice identificabile constituie dată cu caracter personal. Prelucrarea acesteia de către Societate se realizează cu respectarea <strong>art. 6 alin. (1) lit. a) și art. 7 din R.G.P.D.</strong>, precum și a <strong>art. 73–74 din Codul civil</strong> privind dreptul la propria imagine.</p>
+        <p><strong>a) Fotografii și materiale video realizate de Societate.</strong> Atunci când realizăm fotografii sau înregistrări video în care apar angajați, colaboratori, clienți sau alte persoane vizate, iar acestea urmează a fi utilizate în scopuri de promovare, comunicare publică, materiale interne sau comunicate de presă, prelucrarea are loc <strong>exclusiv în baza consimțământului prealabil, scris, liber exprimat, specific, informat și neechivoc</strong> al persoanei vizate, obținut printr-un formular de consimțământ distinct. Consimțământul nu este o condiție pentru încheierea sau executarea contractului de muncă ori a contractului de colaborare, iar refuzul nu atrage niciun dezavantaj.</p>
+        <p>Formularul tipizat poate fi consultat și descărcat aici: <Link to="/formular-consimtamant-imagine" className="text-primary hover:underline">Formular de consimțământ privind dreptul la propria imagine</Link>.</p>
+        <p><strong>b) Retragerea consimțământului.</strong> Persoana vizată își poate retrage consimțământul în orice moment, printr-o solicitare transmisă la <a href="mailto:gdpr@rentli.ro" className="text-primary hover:underline">gdpr@rentli.ro</a>. Retragerea produce efecte pentru viitor, iar materialele aflate sub controlul nostru vor fi eliminate sau anonimizate fără întârzieri nejustificate; retragerea nu afectează legalitatea prelucrării efectuate anterior.</p>
+        <p><strong>c) Fotografii încărcate de utilizatori pe Platformă.</strong> Fotografiile aferente anunțurilor și celor de predare/restituire a bunului sunt destinate exclusiv prezentării și documentării stării bunului. Utilizatorii au obligația de a nu încărca imagini care conțin persoane identificabile, numere de înmatriculare, documente sau alte informații personale care nu sunt necesare acestui scop. În cazul în care un utilizator încarcă totuși o imagine cu o persoană identificabilă, acesta răspunde pentru obținerea prealabilă a acordului persoanei respective. Societatea poate elimina, la sesizare sau din oficiu, orice imagine care încalcă aceste reguli.</p>
+        <p><strong>d) Durata.</strong> Materialele foto/video realizate în baza consimțământului se păstrează pe durata indicată în formular sau până la retragerea consimțământului, oricare intervine prima.</p>
+      </div>
+    ),
+  },
+  {
     id: "temeiuri-legale",
     title: "4. CARE SUNT TEMEIURILE LEGALE PE CARE SE BAZEAZĂ PRELUCRAREA DATELOR CU CARACTER PERSONAL?",
     content: (
