@@ -123,7 +123,13 @@ const RentalsOutTab = () => {
   const premiumActiveRentals = filtered.filter(
     r => r.status !== "pending" && !isFinalized(r)
   );
-  const historyRentals = filtered.filter(isFinalized);
+  // History lives in its own tab and is never affected by the active-tab filters.
+  const historyRentals = useMemo(
+    () => sortRentals(rentals.filter(isFinalized)),
+    [rentals, sortBy],
+  );
+  const activeCount = rentals.filter((r) => !isFinalized(r)).length;
+
 
   const handleAccept = async (rental: OwnerRental) => {
     setRespondingId(rental.id);
