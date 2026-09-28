@@ -170,6 +170,10 @@ export default function PvPhotoUploadCard({ rental, phase, role, onOpenDocument,
                 Incarca poze ({photoCount} · min {MIN_PV_PHOTOS})
               </span>
             </label>
+
+            <p className="mt-3 text-xs text-muted-foreground">
+              Fotografiaza doar bunul. Nu include fete de persoane, numere de inmatriculare sau documente fara acordul scris al persoanelor vizate (GDPR art. 6 si Codul Civil art. 73).
+            </p>
           </>
         )}
       </section>
