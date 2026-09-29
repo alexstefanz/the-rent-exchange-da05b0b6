@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Plus, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,10 +29,20 @@ const mergeParts = (items: string[], value: string) => {
 /**
  * List-builder input: every item is its own row (add row by row, remove with X).
  * Pasting a multi-line block is split automatically into separate items.
+ * Unsubmitted text is committed on blur and on unmount so it is never lost.
  */
 const ListItemsInput = ({ items, onChange, placeholder, addLabel, emptyHint }: ListItemsInputProps) => {
   const { t } = useLanguage();
   const [value, setValue] = useState("");
+
+  const latest = useRef({ value, items, onChange });
+  latest.current = { value, items, onChange };
+  useEffect(() => {
+    return () => {
+      const { value: v, items: it, onChange: cb } = latest.current;
+      if (v.trim()) cb(mergeParts(it, v));
+    };
+  }, []);
 
   const commit = () => {
     if (!value.trim()) return;
@@ -80,6 +90,7 @@ const ListItemsInput = ({ items, onChange, placeholder, addLabel, emptyHint }: L
         <Input
           value={value}
           onChange={(e) => handleChange(e.target.value)}
+          onBlur={commit}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();

@@ -266,16 +266,17 @@ const AccountTab = () => {
         isValidRomanianPhone(normalizedPhone) &&
         normalizedPhone !== (profile?.phone || "");
       // Save everything EXCEPT phone when it changed — phone is gated by OTP.
+      const nameLocked = !!(profile as any)?.full_name_locked;
       const updated = await updateProfile(user.id, {
-        full_name: data.full_name || undefined,
+        full_name: nameLocked ? undefined : (data.full_name || undefined),
         phone: phoneChanged ? undefined : (normalizedPhone || undefined),
         email: data.email || undefined,
       });
       // Detect changes to send security confirmation email (fire-and-forget)
       const changes: { label: string; value: string }[] = [];
       const prevName = (profile?.full_name || "").trim();
-      const newName = (data.full_name || "").trim();
-      if (newName && newName !== prevName) {
+      const newName = ((updated as any)?.full_name || "").trim();
+      if (!nameLocked && newName && newName !== prevName) {
         changes.push({ label: "Nume complet", value: newName });
       }
       const prevEmail = (profile?.email || "").trim().toLowerCase();
@@ -503,7 +504,10 @@ const AccountTab = () => {
                 <Input value={user?.email || ""} disabled className="bg-muted" />
               </Field>
               <Field label={t("Nume complet", "Full name")} icon={<User className="h-4 w-4" />} error={form.formState.errors.full_name?.message}>
-                <Input placeholder="Ion Popescu" {...form.register("full_name")} />
+                <Input placeholder="Ion Popescu" {...form.register("full_name")} disabled={!!(profile as any)?.full_name_locked} />
+                {(profile as any)?.full_name_locked && (
+                  <p className="mt-1 text-xs text-muted-foreground">{t("Numele confirmat poate fi modificat doar de echipa Rentli (contactează Suportul).", "Your confirmed name can only be changed by the Rentli team (contact Support).")}</p>
+                )}
               </Field>
               <Field label={t("Telefon", "Phone")} icon={<Phone className="h-4 w-4" />} error={form.formState.errors.phone?.message}>
                 <Input type="tel" placeholder="+40 7XX XXX XXX" maxLength={20} {...form.register("phone")} />
