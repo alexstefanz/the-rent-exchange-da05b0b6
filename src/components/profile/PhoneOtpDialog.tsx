@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertCircle, CheckCircle2, Loader2, Smartphone } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -38,9 +38,13 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, onPhoneChange, 
   const [draftPhone, setDraftPhone] = useState(phone);
   const [editError, setEditError] = useState<string | null>(null);
 
-  // Send code automatically the first time the dialog opens for this phone.
+  // Send code automatically when the dialog opens. Phone changes made from
+  // inside the dialog (saveNewPhone) already send a code, so ignore those.
+  const internalPhoneRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!open) return;
+    if (!open) { internalPhoneRef.current = null; return; }
+    if (internalPhoneRef.current !== null && internalPhoneRef.current === phone) return;
+    internalPhoneRef.current = null;
     setActivePhone(phone);
     setDraftPhone(phone);
     setEditing(false);
@@ -98,6 +102,7 @@ const PhoneOtpDialog = ({ open, phone, onOpenChange, onVerified, onPhoneChange, 
     setEditError(null);
     setActivePhone(cleaned);
     setCode("");
+    internalPhoneRef.current = cleaned;
     onPhoneChange?.(cleaned);
     const ok = await sendCode(cleaned);
     if (ok) setEditing(false);
