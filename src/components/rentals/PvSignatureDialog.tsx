@@ -528,17 +528,39 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
                     <Eraser className="h-4 w-4 mr-1" />Sterge
                   </Button>
                 </div>
-                <div className="rounded-lg border border-dashed border-border bg-white overflow-hidden">
+                <div
+                  className="rounded-lg border border-dashed border-border bg-white overflow-hidden touch-none"
+                  style={{ touchAction: "none", overscrollBehavior: "contain" }}
+                  onPointerDown={() => { setSignError(null); }}
+                >
                   <SignatureCanvas
                     ref={sigRef}
-                    canvasProps={{ className: "w-full h-40 touch-none", style: { width: "100%", height: 160 } }}
+                    canvasProps={{
+                      className: "w-full h-40 touch-none block",
+                      style: { width: "100%", height: 160, touchAction: "none" },
+                    }}
                     backgroundColor="#fff"
                     penColor="#111"
+                    minWidth={0.8}
+                    maxWidth={2.6}
                   />
                 </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Poti semna cu degetul pe telefon sau cu mouse-ul pe calculator.
+                </p>
                 {photos.length < MIN_PV_PHOTOS && (
                   <p className="mt-2 text-xs text-muted-foreground">
                     Sunt necesare {MIN_PV_PHOTOS} fotografii inainte de semnare.
+                  </p>
+                )}
+                {signError && (
+                  <p className="mt-3 text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg p-3">
+                    {signError}
+                  </p>
+                )}
+                {signNotice && !signError && (
+                  <p className="mt-3 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                    {signNotice}
                   </p>
                 )}
               </section>
