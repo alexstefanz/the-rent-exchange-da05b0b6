@@ -14,6 +14,7 @@ import {
   getPvDocument,
   uploadPvPdf,
   savePvSignatureAndPdf,
+  updatePvPdfPath,
   getPvFileSignedUrl,
   type PvDocument,
 } from "@/features/rentals/rentalDetailPageApi";
