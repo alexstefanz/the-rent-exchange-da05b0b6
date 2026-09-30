@@ -40,6 +40,8 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingDocx, setDownloadingDocx] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [signError, setSignError] = useState<string | null>(null);
+  const [signNotice, setSignNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
