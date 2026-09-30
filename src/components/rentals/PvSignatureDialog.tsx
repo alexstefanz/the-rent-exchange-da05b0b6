@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Loader2, Eraser, FileSignature, Download, FileText, ExternalLink, Send } from "lucide-react";
 import { X, ZoomIn } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
-import { notify, notifyError } from "@/lib/notify";
+import { notifyError } from "@/lib/notify";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
