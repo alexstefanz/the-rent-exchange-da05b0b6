@@ -566,6 +566,13 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
               </section>
             )}
 
+            {signError && (!isMyTurn || mySigned) && (
+              <p className="mt-4 text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg p-3">
+                {signError}
+              </p>
+            )}
+
+
             {!isMyTurn && !mySigned && (
               <p className="mt-4 text-xs text-muted-foreground bg-muted/40 rounded-lg p-3">
                 {isUploader
