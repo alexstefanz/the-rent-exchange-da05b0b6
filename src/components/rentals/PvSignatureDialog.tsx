@@ -370,29 +370,48 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   }
 
   async function handleSign() {
-    if (!sigRef.current || sigRef.current.isEmpty()) {
-      notify.warning({ title: "Semnătură lipsă", message: "Te rugăm să semnezi în casetă." });
+    setSignError(null);
+    setSignNotice(null);
+
+    if (!canSign) {
+      setSignError(
+        photos.length < MIN_PV_PHOTOS
+          ? `Sunt necesare cel putin ${MIN_PV_PHOTOS} fotografii inainte de semnare.`
+          : "Nu este randul tau sa semnezi acest document.",
+      );
       return;
     }
+    if (!sigRef.current || sigRef.current.isEmpty()) {
+      setSignError("Nu am detectat nicio semnatura. Deseneaza semnatura in caseta alba, apoi apasa din nou.");
+      return;
+    }
+
     const dataUrl = sigRef.current.getCanvas().toDataURL("image/png");
     setSigning(true);
     try {
       await savePvSignatureAndPdf({ rentalId: rental.id, phase, role, signatureDataUrl: dataUrl });
       const refreshed = await getPvDocument(rental.id, phase);
-      if (!refreshed) throw new Error("PV not found");
+      if (!refreshed) throw new Error("Documentul nu a putut fi reincarcat dupa semnare.");
+      setPv(refreshed);
+      setSignNotice("Semnatura ta a fost inregistrata.");
 
       if (refreshed.owner_signature_data && refreshed.renter_signature_data) {
         try {
           const blob = await generatePdf(refreshed);
           const path = await uploadPvPdf(blob, rental.id, phase);
-          await savePvSignatureAndPdf({ rentalId: rental.id, phase, role, signatureDataUrl: dataUrl, pdfPath: path });
+          // Only the pdf_path is written here — resending the signature fields
+          // would be rejected as an attempt to modify a captured signature.
+          await updatePvPdfPath(rental.id, phase, path);
           const afterPdf = await getPvDocument(rental.id, phase);
           if (afterPdf) setPv(afterPdf);
         } catch (pdfErr: any) {
           console.error("PV PDF gen failed:", pdfErr);
-          notifyError(pdfErr, { fallbackTitle: "Eroare la generare PDF" });
+          setSignNotice(null);
+          setSignError(
+            `Semnatura a fost salvata, dar documentul PDF nu a putut fi finalizat: ${pdfErr?.message || "eroare necunoscuta"}`,
+          );
         }
-      } else { setPv(refreshed); }
+      }
 
       try {
         const event_key = phase === "handover" ? "pv_pickup_completed_by_party" : "pv_return_completed_by_party";
@@ -412,9 +431,10 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       onSigned?.();
       const finalPv = await getPvDocument(rental.id, phase);
       if (finalPv) setPv(finalPv);
-      if (finalPv?.pdf_path) onOpenChange(false);
+      if (finalPv?.pdf_path && finalPv.owner_signed_at && finalPv.renter_signed_at) onOpenChange(false);
     } catch (e: any) {
-      notifyError(e, { fallbackTitle: "Eroare la semnare" });
+      console.error("PV sign failed:", e);
+      setSignError(e?.message || "Semnatura nu a putut fi salvata. Incearca din nou.");
     } finally { setSigning(false); }
   }
 
