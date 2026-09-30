@@ -76,6 +76,40 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   const canSign = isMyTurn && photos.length >= MIN_PV_PHOTOS;
   const ctaLabel = isUploader ? "Semneaza si trimite clientului" : "Semneaza acordul";
 
+  // Keep the signature canvas pixel buffer in sync with its rendered size.
+  // Without this, on mobile / high-DPI screens the drawn strokes are offset
+  // from the pointer and the pad can be reported as empty.
+  useEffect(() => {
+    if (!open || loading || !isMyTurn || mySigned) return;
+    const resize = () => {
+      const canvas = sigRef.current?.getCanvas();
+      if (!canvas) return;
+      const ratio = Math.max(window.devicePixelRatio || 1, 1);
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      if (!w || !h) return;
+      if (canvas.width === Math.round(w * ratio) && canvas.height === Math.round(h * ratio)) return;
+      canvas.width = Math.round(w * ratio);
+      canvas.height = Math.round(h * ratio);
+      canvas.getContext("2d")?.scale(ratio, ratio);
+      sigRef.current?.clear();
+    };
+    const t = window.setTimeout(resize, 80);
+    window.addEventListener("resize", resize);
+    window.addEventListener("orientationchange", resize);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("orientationchange", resize);
+    };
+  }, [open, loading, isMyTurn, mySigned, pv?.id]);
+
+  useEffect(() => {
+    if (!open) { setSignError(null); setSignNotice(null); }
+  }, [open]);
+
+
+
   // ===================== PDF (jsPDF) =====================
   async function generatePdf(updatedPv: PvDocument): Promise<Blob> {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
