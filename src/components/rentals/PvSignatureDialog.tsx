@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Loader2, Eraser, FileSignature, Download, FileText, ExternalLink, Send } from "lucide-react";
 import { X, ZoomIn } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
-import { notify, notifyError } from "@/lib/notify";
+import { notifyError } from "@/lib/notify";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,7 @@ import {
   getPvDocument,
   uploadPvPdf,
   savePvSignatureAndPdf,
+  updatePvPdfPath,
   getPvFileSignedUrl,
   type PvDocument,
 } from "@/features/rentals/rentalDetailPageApi";
@@ -40,6 +41,8 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadingDocx, setDownloadingDocx] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [signError, setSignError] = useState<string | null>(null);
+  const [signNotice, setSignNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -73,6 +76,40 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   const isMyTurn = !mySigned && (isUploader || otherSigned);
   const canSign = isMyTurn && photos.length >= MIN_PV_PHOTOS;
   const ctaLabel = isUploader ? "Semneaza si trimite clientului" : "Semneaza acordul";
+
+  // Keep the signature canvas pixel buffer in sync with its rendered size.
+  // Without this, on mobile / high-DPI screens the drawn strokes are offset
+  // from the pointer and the pad can be reported as empty.
+  useEffect(() => {
+    if (!open || loading || !isMyTurn || mySigned) return;
+    const resize = () => {
+      const canvas = sigRef.current?.getCanvas();
+      if (!canvas) return;
+      const ratio = Math.max(window.devicePixelRatio || 1, 1);
+      const w = canvas.offsetWidth;
+      const h = canvas.offsetHeight;
+      if (!w || !h) return;
+      if (canvas.width === Math.round(w * ratio) && canvas.height === Math.round(h * ratio)) return;
+      canvas.width = Math.round(w * ratio);
+      canvas.height = Math.round(h * ratio);
+      canvas.getContext("2d")?.scale(ratio, ratio);
+      sigRef.current?.clear();
+    };
+    const t = window.setTimeout(resize, 80);
+    window.addEventListener("resize", resize);
+    window.addEventListener("orientationchange", resize);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("orientationchange", resize);
+    };
+  }, [open, loading, isMyTurn, mySigned, pv?.id]);
+
+  useEffect(() => {
+    if (!open) { setSignError(null); setSignNotice(null); }
+  }, [open]);
+
+
 
   // ===================== PDF (jsPDF) =====================
   async function generatePdf(updatedPv: PvDocument): Promise<Blob> {
@@ -334,29 +371,48 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   }
 
   async function handleSign() {
-    if (!sigRef.current || sigRef.current.isEmpty()) {
-      notify.warning({ title: "Semnătură lipsă", message: "Te rugăm să semnezi în casetă." });
+    setSignError(null);
+    setSignNotice(null);
+
+    if (!canSign) {
+      setSignError(
+        photos.length < MIN_PV_PHOTOS
+          ? `Sunt necesare cel putin ${MIN_PV_PHOTOS} fotografii inainte de semnare.`
+          : "Nu este randul tau sa semnezi acest document.",
+      );
       return;
     }
+    if (!sigRef.current || sigRef.current.isEmpty()) {
+      setSignError("Nu am detectat nicio semnatura. Deseneaza semnatura in caseta alba, apoi apasa din nou.");
+      return;
+    }
+
     const dataUrl = sigRef.current.getCanvas().toDataURL("image/png");
     setSigning(true);
     try {
       await savePvSignatureAndPdf({ rentalId: rental.id, phase, role, signatureDataUrl: dataUrl });
       const refreshed = await getPvDocument(rental.id, phase);
-      if (!refreshed) throw new Error("PV not found");
+      if (!refreshed) throw new Error("Documentul nu a putut fi reincarcat dupa semnare.");
+      setPv(refreshed);
+      setSignNotice("Semnatura ta a fost inregistrata.");
 
       if (refreshed.owner_signature_data && refreshed.renter_signature_data) {
         try {
           const blob = await generatePdf(refreshed);
           const path = await uploadPvPdf(blob, rental.id, phase);
-          await savePvSignatureAndPdf({ rentalId: rental.id, phase, role, signatureDataUrl: dataUrl, pdfPath: path });
+          // Only the pdf_path is written here — resending the signature fields
+          // would be rejected as an attempt to modify a captured signature.
+          await updatePvPdfPath(rental.id, phase, path);
           const afterPdf = await getPvDocument(rental.id, phase);
           if (afterPdf) setPv(afterPdf);
         } catch (pdfErr: any) {
           console.error("PV PDF gen failed:", pdfErr);
-          notifyError(pdfErr, { fallbackTitle: "Eroare la generare PDF" });
+          setSignNotice(null);
+          setSignError(
+            `Semnatura a fost salvata, dar documentul PDF nu a putut fi finalizat: ${pdfErr?.message || "eroare necunoscuta"}`,
+          );
         }
-      } else { setPv(refreshed); }
+      }
 
       try {
         const event_key = phase === "handover" ? "pv_pickup_completed_by_party" : "pv_return_completed_by_party";
@@ -376,9 +432,10 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       onSigned?.();
       const finalPv = await getPvDocument(rental.id, phase);
       if (finalPv) setPv(finalPv);
-      if (finalPv?.pdf_path) onOpenChange(false);
+      if (finalPv?.pdf_path && finalPv.owner_signed_at && finalPv.renter_signed_at) onOpenChange(false);
     } catch (e: any) {
-      notifyError(e, { fallbackTitle: "Eroare la semnare" });
+      console.error("PV sign failed:", e);
+      setSignError(e?.message || "Semnatura nu a putut fi salvata. Incearca din nou.");
     } finally { setSigning(false); }
   }
 
@@ -471,21 +528,50 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
                     <Eraser className="h-4 w-4 mr-1" />Sterge
                   </Button>
                 </div>
-                <div className="rounded-lg border border-dashed border-border bg-white overflow-hidden">
+                <div
+                  className="rounded-lg border border-dashed border-border bg-white overflow-hidden touch-none"
+                  style={{ touchAction: "none", overscrollBehavior: "contain" }}
+                  onPointerDown={() => { setSignError(null); }}
+                >
                   <SignatureCanvas
                     ref={sigRef}
-                    canvasProps={{ className: "w-full h-40 touch-none", style: { width: "100%", height: 160 } }}
+                    canvasProps={{
+                      className: "w-full h-40 touch-none block",
+                      style: { width: "100%", height: 160, touchAction: "none" },
+                    }}
                     backgroundColor="#fff"
                     penColor="#111"
+                    minWidth={0.8}
+                    maxWidth={2.6}
                   />
                 </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Poti semna cu degetul pe telefon sau cu mouse-ul pe calculator.
+                </p>
                 {photos.length < MIN_PV_PHOTOS && (
                   <p className="mt-2 text-xs text-muted-foreground">
                     Sunt necesare {MIN_PV_PHOTOS} fotografii inainte de semnare.
                   </p>
                 )}
+                {signError && (
+                  <p className="mt-3 text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg p-3">
+                    {signError}
+                  </p>
+                )}
+                {signNotice && !signError && (
+                  <p className="mt-3 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                    {signNotice}
+                  </p>
+                )}
               </section>
             )}
+
+            {signError && (!isMyTurn || mySigned) && (
+              <p className="mt-4 text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg p-3">
+                {signError}
+              </p>
+            )}
+
 
             {!isMyTurn && !mySigned && (
               <p className="mt-4 text-xs text-muted-foreground bg-muted/40 rounded-lg p-3">
