@@ -119,7 +119,7 @@ function mapPvError(error: unknown): Error {
   if (msg.includes("PV_INCOMPLETE_RETURN")) {
     return new Error("Așteptăm ca ambele părți să completeze procesul verbal de retur (minim 3 poze fiecare).");
   }
-  if (msg.includes("PV_DISPUTE_OPEN")) {
+  if (msg.includes("DISPUTE_OPEN")) {
     return new Error("Rezervarea este în verificare. Suportul trebuie să rezolve disputa înainte de a continua.");
   }
   if (msg.includes("PV_LOCKED")) {
