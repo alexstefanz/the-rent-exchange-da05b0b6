@@ -23,6 +23,9 @@ import { buildPvContent, buildPvRichContent, noDia, COMPANY, MIN_PV_PHOTOS, type
 import { generatePvDocx, downloadBlob } from "@/lib/pvDocx";
 import rentliLogoUrl from "@/assets/rentli_logo.png";
 
+const DISPUTE_MSG =
+  "Rezervarea este in verificare la echipa Rentli (disputa deschisa). Semnarea va fi posibila dupa rezolvarea disputei.";
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -74,7 +77,8 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   const mySigned = role === "owner" ? ownerSigned : renterSigned;
   const otherSigned = role === "owner" ? renterSigned : ownerSigned;
   const isMyTurn = !mySigned && (isUploader || otherSigned);
-  const canSign = isMyTurn && photos.length >= MIN_PV_PHOTOS;
+  const disputeOpen = rental.dispute_status === "open";
+  const canSign = isMyTurn && !disputeOpen && photos.length >= MIN_PV_PHOTOS;
   const ctaLabel = isUploader ? "Semneaza si trimite clientului" : "Semneaza acordul";
 
   // Keep the signature canvas pixel buffer in sync with its rendered size.
@@ -435,7 +439,12 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       if (finalPv?.pdf_path && finalPv.owner_signed_at && finalPv.renter_signed_at) onOpenChange(false);
     } catch (e: any) {
       console.error("PV sign failed:", e);
-      setSignError(e?.message || "Semnatura nu a putut fi salvata. Incearca din nou.");
+      const m = String(e?.message || "");
+      setSignError(
+        m.includes("DISPUTE_OPEN")
+          ? DISPUTE_MSG
+          : m || "Semnatura nu a putut fi salvata. Incearca din nou.",
+      );
     } finally { setSigning(false); }
   }
 
@@ -516,8 +525,14 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
               </section>
             </article>
 
+            {disputeOpen && (
+              <div className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+                {DISPUTE_MSG}
+              </div>
+            )}
+
             {/* Signature pad */}
-            {isMyTurn && !mySigned && (
+            {isMyTurn && !mySigned && !disputeOpen && (
               <section className="mt-4 rounded-xl border border-border bg-muted/30 p-4">
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-sm font-semibold flex items-center gap-2">
