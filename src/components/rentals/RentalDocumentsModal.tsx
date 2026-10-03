@@ -6,8 +6,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import type { RentalFullDetail } from "@/features/rentals/rentalDetailPageApi";
+import { useRentalExtensions, lateInfo } from "@/components/rentals/RentalExtensionCard";
 
-type Tab = "contract" | "anexa1" | "anexa2";
+type Tab = "contract" | "anexa1" | "anexa2" | "anexa3";
 type Pv = { phase: string; owner_signature_data: string | null; renter_signature_data: string | null; owner_signed_at: string | null; renter_signed_at: string | null };
 
 interface Props {
@@ -51,6 +52,9 @@ export default function RentalDocumentsModal({ open, onOpenChange, rental, initi
   const ret = pvs?.find((p) => p.phase === "return");
   const items = rental.product_included_items || [];
   const daily = Number(rental.daily_price || 0);
+  const { data: exts = [] } = useRentalExtensions(rental.id);
+  const paidExts = exts.filter((e) => e.status === "approved" && e.payment_status === "paid").reverse();
+  const late = lateInfo(rental.end_date, daily, rental.return_confirmed_at ? new Date(rental.return_confirmed_at) : new Date());
 
   const print = (allBlank: boolean) => {
     setBlank(allBlank);
