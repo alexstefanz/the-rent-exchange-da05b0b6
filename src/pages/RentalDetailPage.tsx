@@ -2,7 +2,7 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical, Wallet, Check, X, MessageCircle, RotateCcw, PackageOpen } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical, Wallet, Check, X, MessageCircle, RotateCcw, PackageOpen, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import Navbar from "@/components/layout/Navbar";
@@ -929,17 +929,33 @@ const RentalDetailPage = () => {
 function ProcessCard({ part, status, title, steps, current, done = false, locked = false, children }: {
   part: number; status: string; title: string; steps: string[]; current: number; done?: boolean; locked?: boolean; children: React.ReactNode;
 }) {
+  const [collapsed, setCollapsed] = useState(done);
+  const [wasDone, setWasDone] = useState(done);
+  if (done !== wasDone) { setWasDone(done); setCollapsed(done); }
+  const canToggle = done && !locked;
   return (
-    <section className={locked ? "rounded-2xl border border-dashed border-border bg-muted/60 overflow-hidden" : "rounded-2xl border border-border bg-card shadow-sm overflow-hidden"}>
-      <div className="flex items-start justify-between gap-3 px-5 sm:px-6 py-5 border-b border-border">
+    <section id={`part-${part}`} className={`scroll-mt-24 ${locked ? "rounded-2xl border border-dashed border-border bg-muted/60 overflow-hidden" : "rounded-2xl border border-border bg-card shadow-sm overflow-hidden"}`}>
+      <div
+        className={`flex items-start justify-between gap-3 px-5 sm:px-6 py-5 ${collapsed ? "" : "border-b border-border"} ${canToggle ? "cursor-pointer hover:bg-muted/40" : ""}`}
+        onClick={canToggle ? () => setCollapsed((c) => !c) : undefined}
+        role={canToggle ? "button" : undefined}
+        aria-expanded={canToggle ? !collapsed : undefined}
+      >
         <div className="min-w-0">
           <p className={`font-mono text-[11px] uppercase tracking-wider ${locked ? "text-muted-foreground" : "text-primary"}`}>Partea {part} · {status}</p>
           <h2 className="font-heading text-lg sm:text-xl font-bold mt-1">{title}</h2>
+          {canToggle && (
+            <p className="text-xs text-muted-foreground mt-1 inline-flex items-center gap-1">
+              {collapsed ? "Vezi detalii" : "Ascunde detaliile"}
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${collapsed ? "" : "rotate-180"}`} />
+            </p>
+          )}
         </div>
         <span className={`h-9 w-9 rounded-full grid place-items-center shrink-0 ${locked ? "text-muted-foreground" : "bg-primary/15 text-primary"}`}>
           {locked ? <Lock className="h-4 w-4" /> : done ? <CheckCircle2 className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
         </span>
       </div>
+      {!collapsed && (<>
       <div className="px-3 sm:px-6 py-5 border-b border-border">
         <ol className="flex items-start">
           {steps.map((label, i) => {
@@ -961,6 +977,7 @@ function ProcessCard({ part, status, title, steps, current, done = false, locked
         </ol>
       </div>
       <div className="p-5 sm:p-6">{children}</div>
+      </>)}
     </section>
   );
 }
