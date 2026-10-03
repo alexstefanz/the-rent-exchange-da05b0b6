@@ -191,7 +191,7 @@ export default function RentalExtensionCard({ rental, role, active }: { rental: 
           {role === "renter" ? (
             <div className="flex justify-end gap-2">
               <Button size="sm" variant="ghost" disabled={busy} onClick={() => run(() => supabase.rpc("cancel_rental_extension", { _extension_id: current.id }))}>{t("Renunț", "Cancel")}</Button>
-              <Button size="sm" disabled={busy} onClick={() => run(() => supabase.rpc("pay_rental_extension_with_wallet", { _extension_id: current.id }))}>
+              <Button size="sm" variant="outline" disabled={busy} onClick={() => run(() => supabase.rpc("pay_rental_extension_with_wallet", { _extension_id: current.id }))}>
                 {busy ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Wallet className="h-4 w-4 mr-1" />}{t("Plătește din portofel", "Pay from wallet")}
               </Button>
               <Button size="sm" disabled={busy} onClick={() => payByCard(current.id)}>
