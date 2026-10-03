@@ -2650,6 +2650,10 @@ export type Database = {
       }
       cancel_unpaid_rental: { Args: { _rental_id: string }; Returns: Json }
       close_user_ticket: { Args: { p_ticket_id: string }; Returns: undefined }
+      complete_rental_extension_card_payment: {
+        Args: { _extension_id: string; _session_id: string }
+        Returns: boolean
+      }
       confirm_handover_received: {
         Args: { _rental_id: string }
         Returns: undefined
