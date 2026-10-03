@@ -1011,6 +1011,59 @@ function ProcessCard({ part, status, title, steps, current, done = false, locked
   );
 }
 
+function RentalProgressBar({ stage, cancelled, onStageClick, t }: {
+  stage: number; cancelled: boolean; onStageClick: (stage: number) => void; t: (ro: string, en: string) => string;
+}) {
+  const stages = [
+    t("Cerere trimisă", "Request sent"),
+    t("Confirmat", "Confirmed"),
+    t("Plată efectuată", "Paid"),
+    t("Predare produs", "Item handover"),
+    t("Returnare", "Return"),
+    t("Finalizat", "Completed"),
+  ];
+  return (
+    <section className="rounded-2xl border border-border bg-card px-4 py-4 shadow-sm mb-6">
+      <ol className="flex items-center overflow-x-auto">
+        {stages.map((label, i) => {
+          const isDone = !cancelled && i < stage;
+          const isActive = !cancelled && i === stage;
+          const clickable = !cancelled && i <= stage;
+          return (
+            <li key={label} className="flex items-center shrink-0">
+              <button
+                type="button"
+                disabled={!clickable}
+                onClick={() => onStageClick(i)}
+                className={`flex items-center gap-2 rounded-full px-2.5 py-1.5 text-[11px] font-semibold transition-colors ${
+                  isActive ? "bg-primary text-primary-foreground shadow-sm"
+                  : isDone ? "bg-primary/10 text-primary hover:bg-primary/20"
+                  : "bg-muted text-muted-foreground"
+                } ${clickable ? "cursor-pointer" : "cursor-default"}`}
+              >
+                <span className={`flex items-center justify-center h-5 w-5 rounded-full text-[10px] ${
+                  isActive ? "bg-primary-foreground/25" : isDone ? "bg-primary text-primary-foreground" : "bg-background/70"
+                }`}>
+                  {isDone ? <Check className="h-3 w-3" /> : i + 1}
+                </span>
+                {label}
+              </button>
+              {i < stages.length - 1 && <span className={`w-4 sm:w-6 h-px mx-1 ${isDone ? "bg-primary" : "bg-border"}`} />}
+            </li>
+          );
+        })}
+        {cancelled && (
+          <li className="ml-3 shrink-0">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-2.5 py-1.5 text-[11px] font-semibold">
+              <X className="h-3 w-3" />{t("Anulată", "Cancelled")}
+            </span>
+          </li>
+        )}
+      </ol>
+    </section>
+  );
+}
+
 function PvRow({ label, ownerSignedAt, renterSignedAt, onOpen }: { label: string; ownerSignedAt: string | null; renterSignedAt: string | null; onOpen: () => void }) {
   const ownerOk = !!ownerSignedAt;
   const renterOk = !!renterSignedAt;
