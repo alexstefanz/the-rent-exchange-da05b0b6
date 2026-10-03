@@ -409,6 +409,7 @@ const RentalDetailPage = () => {
             steps={[t("Rezervare", "Booking"), t("Plată", "Payment"), t("Contract", "Contract")]}
             current={p1Current}
             done={p1Done}
+            expandSignal={expandP1}
           >
             <div className="space-y-4">
         {/* Owner: accept/reject pending request */}
@@ -601,6 +602,7 @@ const RentalDetailPage = () => {
             current={p2Current}
             done={p2Done}
             locked={!p2Unlocked}
+            expandSignal={expandP2}
           >
             {!p2Unlocked ? (
               <div className="text-center py-6">
