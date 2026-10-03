@@ -587,11 +587,12 @@ const RentalDetailPage = () => {
                 <Button className="mt-3" size="sm" onClick={() => { setDocsBlank(false); setDocsTab("contract"); setDocsOpen(true); }}><FileSignature className="h-4 w-4 mr-1" />{t("Vezi documentele", "View documents")}</Button>
               </div>
             </div>
-            <RentalDocumentsModal open={docsOpen} onOpenChange={setDocsOpen} rental={rental} initialTab={docsTab} initialBlank={docsBlank} />
           </section>
         )}
             </div>
           </ProcessCard>
+
+          <RentalDocumentsModal open={docsOpen} onOpenChange={setDocsOpen} rental={rental} initialTab={docsTab} initialBlank={docsBlank} />
 
           {/* ============ PARTEA 2 ============ */}
           <ProcessCard
