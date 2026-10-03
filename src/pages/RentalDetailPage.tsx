@@ -21,6 +21,7 @@ import PvPhotoUploadCard from "@/components/rentals/PvPhotoUploadCard";
 import ReturnCountdownBadge from "@/components/rentals/ReturnCountdownBadge";
 import LeaveReviewDialog from "@/components/dashboard/LeaveReviewDialog";
 import EarlyReturnCard from "@/components/rentals/EarlyReturnCard";
+import MeetingDetailsCard from "@/components/rentals/MeetingDetailsCard";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 
 import { payForConfirmedRental, payRentalWithWallet } from "@/features/rentals/rentalsApi";
@@ -327,55 +328,9 @@ const RentalDetailPage = () => {
           <RentalTimeline rental={tlRental} />
         </section>
 
-        {/* Step 5 — Renter must initiate the return phase */}
-        {handoverDoneEarly && !returnInitiated && !returnDoneEarly && rental.status !== "cancelled" && rental.status !== "completed" && (
-          <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="h-10 w-10 rounded-full bg-primary/15 grid place-items-center shrink-0">
-                <PackageOpen className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="font-heading text-base font-semibold text-foreground">
-                  {t("Pasul 5 — Produsul este in folosire", "Step 5 — Product is in use")}
-                </h3>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {isOwner
-                    ? t(
-                        "Asteptam chiriasul sa initieze returnarea cand este gata.",
-                        "Waiting for the renter to initiate the return when ready.",
-                      )
-                    : t(
-                        "Bucura-te de produs! Cand termini, initiaza returnarea — tot tu vei fotografia produsul si vei genera PV-ul de returnare.",
-                        "Enjoy the product! When you're done, initiate the return — you'll photograph the product and complete the return PV.",
-                      )}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-              {isOwner ? (
-                <>
-                  <div className="inline-flex items-center gap-2 rounded-lg bg-amber-100 text-amber-900 text-xs font-medium px-3 py-2">
-                    <Clock className="h-3.5 w-3.5" />
-                    {t("Asteptam chiriasul sa initieze returnarea", "Waiting for renter to initiate return")}
-                  </div>
-                  <Button variant="outline" onClick={handleChat}>
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    {t("Discuta in chat", "Chat with renter")}
-                  </Button>
-                </>
-              ) : (
-                <Button
-                  onClick={() => setReturnDialogOpen(true)}
-                  disabled={initiatingReturn}
-                  className="shadow-lg shadow-primary/20"
-                >
-                  {initiatingReturn ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-2" />}
-                  {t("Initiaza returnarea", "Initiate return")}
-                </Button>
-              )}
-            </div>
-          </section>
-        )}
+
+        {/* ============ PARTEA 1 ============ */}
+        <PartHeader index={1} title={t("Rezervarea produsului", "Booking the product")} subtitle={t("Online — cerere, plată și programarea întâlnirii", "Online — request, payment and meeting setup")} />
 
         {/* Owner: waiting for renter payment */}
         {isOwner && rental.status === "confirmed" && rental.payment_status === "pending" && (
@@ -492,63 +447,6 @@ const RentalDetailPage = () => {
           </section>
         )}
 
-        {/* PV (Procese verbale) — full width under the timeline */}
-        {(showHandoverPv || showReturnPv) && (
-          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
-            <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
-              <FileSignature className="h-4 w-4 text-primary" />
-              {t("Procese verbale", "Handover documents")}
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {showHandoverPv && (
-                rental.handover_pv_owner_signed_at ? (
-                  <PvPanel
-                    label={t("PV Predare", "Handover PV")}
-                    phase="handover"
-                    role={role}
-                    ownerSignedAt={rental.handover_pv_owner_signed_at}
-                    renterSignedAt={rental.handover_pv_renter_signed_at}
-                    onOpen={() => setPvOpen("handover")}
-                    t={t}
-                    notStarted={false}
-                    isCurrentStep={handoverIsCurrent}
-                  />
-                ) : (
-                  <PvPhotoUploadCard
-                    rental={rental}
-                    phase="handover"
-                    role={role}
-                    onOpenDocument={() => setPvOpen("handover")}
-                    onOpenChat={handleChat}
-                  />
-                )
-              )}
-              {showReturnPv && (
-                rental.return_pv_renter_signed_at ? (
-                  <PvPanel
-                    label={t("PV Returnare", "Return PV")}
-                    phase="return"
-                    role={role}
-                    ownerSignedAt={rental.return_pv_owner_signed_at}
-                    renterSignedAt={rental.return_pv_renter_signed_at}
-                    onOpen={() => setPvOpen("return")}
-                    t={t}
-                    notStarted={!handoverDoneEarly}
-                    isCurrentStep={returnIsCurrent}
-                  />
-                ) : (
-                  <PvPhotoUploadCard
-                    rental={rental}
-                    phase="return"
-                    role={role}
-                    onOpenDocument={() => setPvOpen("return")}
-                    onOpenChat={handleChat}
-                  />
-                )
-              )}
-            </div>
-          </section>
-        )}
 
         {/* Rejection reason */}
         {isRejected && rental.rejection_reason && (
@@ -637,6 +535,150 @@ const RentalDetailPage = () => {
                 </p>
               </div>
             )}
+          </section>
+        )}
+
+        {isPaidEarly && rental.status !== "cancelled" && rental.status !== "rejected" && rental.status !== "completed" && !handoverDoneEarly && (
+          <div className="mb-6">
+            <MeetingDetailsCard
+              rentalId={rental.id}
+              role={role}
+              startDate={rental.start_date}
+              defaultPlace={rental.pickup_location || rental.product_location_city}
+              onOpenChat={handleChat}
+              t={t}
+            />
+          </div>
+        )}
+
+        {/* ============ PARTEA 2 ============ */}
+        {isPaidEarly && rental.status !== "cancelled" && rental.status !== "rejected" && (
+          <>
+            <PartHeader index={2} title={t("Predarea, închirierea și returnarea", "Handover, rental and return")} subtitle={t("Fizic, la întâlnire — fotografii și semnături", "In person — photos and signatures")} />
+            {!handoverDoneEarly && (
+              <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
+                <h3 className="font-heading font-semibold mb-3">{t("Ghid rapid la întâlnire", "Quick meeting guide")}</h3>
+                <ol className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    t("Verificați bunul și accesoriile împreună", "Check the item and accessories together"),
+                    t("Fotografiați și semnați procesul-verbal", "Photograph and sign the handover report"),
+                    t("Închirierea se activează automat", "The rental activates automatically"),
+                  ].map((s, i) => (
+                    <li key={i} className="rounded-xl border border-border p-3 flex gap-3">
+                      <span className="font-heading text-lg font-bold text-primary">0{i + 1}</span>
+                      <span className="text-sm">{s}</span>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
+          </>
+        )}
+
+        {/* Step 5 — Renter must initiate the return phase */}
+        {handoverDoneEarly && !returnInitiated && !returnDoneEarly && rental.status !== "cancelled" && rental.status !== "completed" && (
+          <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="h-10 w-10 rounded-full bg-primary/15 grid place-items-center shrink-0">
+                <PackageOpen className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-heading text-base font-semibold text-foreground">
+                  {t("Pasul 5 — Produsul este in folosire", "Step 5 — Product is in use")}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {isOwner
+                    ? t(
+                        "Asteptam chiriasul sa initieze returnarea cand este gata.",
+                        "Waiting for the renter to initiate the return when ready.",
+                      )
+                    : t(
+                        "Bucura-te de produs! Cand termini, initiaza returnarea — tot tu vei fotografia produsul si vei genera PV-ul de returnare.",
+                        "Enjoy the product! When you're done, initiate the return — you'll photograph the product and complete the return PV.",
+                      )}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+              {isOwner ? (
+                <>
+                  <div className="inline-flex items-center gap-2 rounded-lg bg-amber-100 text-amber-900 text-xs font-medium px-3 py-2">
+                    <Clock className="h-3.5 w-3.5" />
+                    {t("Asteptam chiriasul sa initieze returnarea", "Waiting for renter to initiate return")}
+                  </div>
+                  <Button variant="outline" onClick={handleChat}>
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    {t("Discuta in chat", "Chat with renter")}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={() => setReturnDialogOpen(true)}
+                  disabled={initiatingReturn}
+                  className="shadow-lg shadow-primary/20"
+                >
+                  {initiatingReturn ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RotateCcw className="h-4 w-4 mr-2" />}
+                  {t("Initiaza returnarea", "Initiate return")}
+                </Button>
+              )}
+            </div>
+          </section>
+        )}
+        {/* PV (Procese verbale) — full width under the timeline */}
+        {(showHandoverPv || showReturnPv) && (
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
+            <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
+              <FileSignature className="h-4 w-4 text-primary" />
+              {t("Procese verbale", "Handover documents")}
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {showHandoverPv && (
+                rental.handover_pv_owner_signed_at ? (
+                  <PvPanel
+                    label={t("PV Predare", "Handover PV")}
+                    phase="handover"
+                    role={role}
+                    ownerSignedAt={rental.handover_pv_owner_signed_at}
+                    renterSignedAt={rental.handover_pv_renter_signed_at}
+                    onOpen={() => setPvOpen("handover")}
+                    t={t}
+                    notStarted={false}
+                    isCurrentStep={handoverIsCurrent}
+                  />
+                ) : (
+                  <PvPhotoUploadCard
+                    rental={rental}
+                    phase="handover"
+                    role={role}
+                    onOpenDocument={() => setPvOpen("handover")}
+                    onOpenChat={handleChat}
+                  />
+                )
+              )}
+              {showReturnPv && (
+                rental.return_pv_renter_signed_at ? (
+                  <PvPanel
+                    label={t("PV Returnare", "Return PV")}
+                    phase="return"
+                    role={role}
+                    ownerSignedAt={rental.return_pv_owner_signed_at}
+                    renterSignedAt={rental.return_pv_renter_signed_at}
+                    onOpen={() => setPvOpen("return")}
+                    t={t}
+                    notStarted={!handoverDoneEarly}
+                    isCurrentStep={returnIsCurrent}
+                  />
+                ) : (
+                  <PvPhotoUploadCard
+                    rental={rental}
+                    phase="return"
+                    role={role}
+                    onOpenDocument={() => setPvOpen("return")}
+                    onOpenChat={handleChat}
+                  />
+                )
+              )}
+            </div>
           </section>
         )}
 
@@ -823,6 +865,19 @@ const RentalDetailPage = () => {
   );
 };
 
+
+function PartHeader({ index, title, subtitle }: { index: number; title: string; subtitle: string }) {
+  return (
+    <div className="flex items-center gap-3 mb-4 mt-2">
+      <span className="h-9 w-9 rounded-full bg-primary text-primary-foreground grid place-items-center font-heading font-bold shrink-0">{index}</span>
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">{index === 1 ? "Partea 1" : "Partea 2"}</p>
+        <h2 className="font-heading text-lg font-bold leading-tight">{title}</h2>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
+      </div>
+    </div>
+  );
+}
 
 function PvRow({ label, ownerSignedAt, renterSignedAt, onOpen }: { label: string; ownerSignedAt: string | null; renterSignedAt: string | null; onOpen: () => void }) {
   const ownerOk = !!ownerSignedAt;
