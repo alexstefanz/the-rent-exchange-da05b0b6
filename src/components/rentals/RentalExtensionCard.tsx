@@ -58,7 +58,7 @@ export default function RentalExtensionCard({ rental, role, active }: { rental: 
   const [err, setErr] = useState<string | null>(null);
 
   const daily = Number(rental.daily_price || 0);
-  const feePct = Number(rental.platform_fee_percent || 0);
+  const feePct = Number(rental.subtotal) > 0 && Number(rental.platform_fee) > 0 ? 15 : 0;
   const current = exts.find((e) => e.status === "pending" || (e.status === "approved" && e.payment_status === "pending"));
   const late = lateInfo(rental.end_date, daily);
   const sub = days * daily;
