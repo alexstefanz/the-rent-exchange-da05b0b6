@@ -97,53 +97,42 @@ export default function HandoverPvCard({ rentalId, startDate, signed, onOpenPv, 
   }
 
   return (
-    <section className="rounded-2xl border-2 border-primary bg-card p-5 shadow-sm">
+    <section className="rounded-2xl border-2 border-primary bg-card p-4 shadow-sm">
       {signed && (
         <button type="button" onClick={() => setCollapsed(true)} className="mb-2 text-xs text-muted-foreground inline-flex items-center gap-1 hover:text-foreground">
           {t("Ascunde detaliile", "Hide details")}<ChevronDown className="h-3.5 w-3.5 rotate-180" />
         </button>
       )}
-      <div className="flex items-start justify-between gap-3">
-        <div>
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="h-9 w-9 rounded-xl bg-primary/10 text-primary grid place-items-center shrink-0"><Icon className="h-4 w-4" /></span>
+        <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-heading font-semibold">{t("Proces-verbal de predare", "Handover report")}</h3>
-            <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">{t("Obligatoriu", "Required")}</span>
+            <h3 className="font-heading font-semibold text-sm">{t("Proces-verbal de predare", "Handover report")}</h3>
+            <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${badge.c}`}>{badge.l}</span>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            {t("Fără semnarea PV-ului de către ambele părți, închirierea nu se validează.", "Without both parties signing the report, the rental is not validated.")}
+          <p className="text-xs text-muted-foreground">
+            {signed ? t("Semnat de ambele părți — predarea e confirmată.", "Signed by both parties — handover confirmed.")
+              : t("Obligatoriu · Fotografiați bunul, apoi semnați PV-ul.", "Required · Photograph the item, then sign.")}
           </p>
         </div>
-        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${badge.c}`}>{badge.l}</span>
-      </div>
-
-      <div className="mt-4 rounded-xl bg-muted/40 p-5 text-center">
-        <div className="mx-auto h-12 w-12 rounded-2xl bg-primary/10 text-primary grid place-items-center"><Icon className="h-6 w-6" /></div>
-        <p className="font-semibold mt-3">
-          {signed ? t("PV semnat de ambele părți", "Report signed by both parties")
-            : locked ? t("PV-ul se deschide în ziua predării", "The report opens on handover day")
-            : t("PV-ul este pregătit pentru completare", "The report is ready to complete")}
-        </p>
-        <p className="text-xs text-muted-foreground mt-1">
-          {signed ? t("Predarea este confirmată în platformă.", "The handover is confirmed on the platform.")
-            : t("Verificați starea bunului înainte de semnare.", "Check the item's condition before signing.")}
-        </p>
-        <Button className="mt-4" onClick={onOpenPv}>
-          <FileSignature className="h-4 w-4 mr-1" />
-          {signed ? t("Vezi anexa de predare", "View handover annex") : t("Deschide PV de predare", "Open handover report")}
+        <Button size="sm" onClick={onOpenPv} className="w-full sm:w-auto">
+          {signed ? <FileSignature className="h-4 w-4 mr-1" /> : <Camera className="h-4 w-4 mr-1" />}
+          {signed ? t("Vezi anexa", "View annex") : t("Fotografii & PV", "Photos & report")}
         </Button>
       </div>
 
       {!signed && (
-        <div className="mt-4 rounded-xl border border-dashed border-border bg-background p-4">
-          <p className="flex items-center gap-2 text-xs font-bold uppercase text-muted-foreground">
-            <Camera className="h-4 w-4" />{t("Ai semnat pe hârtie? Încarcă PV-ul fizic", "Signed on paper? Upload the physical report")}
-          </p>
-          <ol className="mt-3 space-y-1.5 text-sm">
+        <details className="mt-3 group rounded-lg border border-dashed border-border bg-background px-3 py-2">
+          <summary className="flex items-center gap-2 text-xs font-medium text-muted-foreground cursor-pointer list-none">
+            <Upload className="h-3.5 w-3.5" />{t("Ai semnat pe hârtie? Încarcă scanul sau poza", "Signed on paper? Upload scan or photo")}
+            <ChevronDown className="h-3.5 w-3.5 ml-auto group-open:rotate-180 transition-transform" />
+          </summary>
+          <ol className="mt-2 space-y-1 text-xs">
             <li>1. <button type="button" className="underline text-primary" onClick={onOpenBlank}>{t("Descarcă setul de documente nesemnat", "Download the unsigned document set")}</button></li>
             <li>2. {t("Completați și semnați PV-ul pe hârtie, ambele părți", "Fill in and sign the report on paper, both parties")}</li>
-            <li>3. {t("Fotografiază sau scanează documentul semnat", "Photograph or scan the signed document")}</li>
-            <li>4. {t("Încarcă-l aici — echipa Rentli îl verifică și validează", "Upload it here — the Rentli team reviews and validates it")}</li>
+            <li>3. {t("Fotografiază sau scanează documentul și încarcă-l aici", "Photograph or scan it and upload it here")}</li>
           </ol>
+
 
           {latest?.status === "approved" ? (
             <div className="mt-3 border-l-2 border-primary bg-primary/10 p-3 text-xs rounded-r-lg">
