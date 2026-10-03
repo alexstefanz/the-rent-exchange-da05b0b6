@@ -910,16 +910,42 @@ const RentalDetailPage = () => {
 };
 
 
-function PartHeader({ index, title, subtitle }: { index: number; title: string; subtitle: string }) {
+function ProcessCard({ part, status, title, steps, current, done = false, locked = false, children }: {
+  part: number; status: string; title: string; steps: string[]; current: number; done?: boolean; locked?: boolean; children: React.ReactNode;
+}) {
   return (
-    <div className="flex items-center gap-3 mb-4 mt-2">
-      <span className="h-9 w-9 rounded-full bg-primary text-primary-foreground grid place-items-center font-heading font-bold shrink-0">{index}</span>
-      <div className="min-w-0">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-primary">{index === 1 ? "Partea 1" : "Partea 2"}</p>
-        <h2 className="font-heading text-lg font-bold leading-tight">{title}</h2>
-        <p className="text-xs text-muted-foreground">{subtitle}</p>
+    <section className={locked ? "rounded-2xl border border-dashed border-border bg-muted/60 overflow-hidden" : "rounded-2xl border border-border bg-card shadow-sm overflow-hidden"}>
+      <div className="flex items-start justify-between gap-3 px-5 sm:px-6 py-5 border-b border-border">
+        <div className="min-w-0">
+          <p className={`font-mono text-[11px] uppercase tracking-wider ${locked ? "text-muted-foreground" : "text-primary"}`}>Partea {part} · {status}</p>
+          <h2 className="font-heading text-lg sm:text-xl font-bold mt-1">{title}</h2>
+        </div>
+        <span className={`h-9 w-9 rounded-full grid place-items-center shrink-0 ${locked ? "text-muted-foreground" : "bg-primary/15 text-primary"}`}>
+          {locked ? <Lock className="h-4 w-4" /> : done ? <CheckCircle2 className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
+        </span>
       </div>
-    </div>
+      <div className="px-3 sm:px-6 py-5 border-b border-border">
+        <ol className="flex items-start">
+          {steps.map((label, i) => {
+            const isDone = !locked && (done || i < current);
+            const isActive = !locked && !done && i === current;
+            return (
+              <li key={label} className="flex-1 flex flex-col items-center relative min-w-0">
+                {i > 0 && <span className={`absolute top-4 right-1/2 w-full h-px ${isDone || isActive ? "bg-primary" : "bg-border"}`} />}
+                <span className={`relative z-10 h-8 w-8 rounded-full grid place-items-center text-xs font-bold border ${
+                  isActive ? "bg-primary text-primary-foreground border-primary ring-4 ring-primary/15"
+                  : isDone ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background text-muted-foreground border-border"}`}>
+                  {locked ? <Lock className="h-3.5 w-3.5" /> : isDone ? <Check className="h-4 w-4" /> : i + 1}
+                </span>
+                <span className={`mt-2 text-[9px] sm:text-[10px] font-bold uppercase tracking-wide text-center leading-tight ${isActive ? "text-primary" : "text-muted-foreground"}`}>{label}</span>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+      <div className="p-5 sm:p-6">{children}</div>
+    </section>
   );
 }
 
