@@ -711,7 +711,7 @@ const RentalDetailPage = () => {
               <FileSignature className="h-4 w-4 text-primary" />
               {t("Procese verbale", "Handover documents")}
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-4">
               {showHandoverPv && (
                 rental.handover_pv_owner_signed_at ? (
                   <PvPanel
