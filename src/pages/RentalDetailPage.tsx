@@ -22,6 +22,7 @@ import ReturnCountdownBadge from "@/components/rentals/ReturnCountdownBadge";
 import LeaveReviewDialog from "@/components/dashboard/LeaveReviewDialog";
 import EarlyReturnCard from "@/components/rentals/EarlyReturnCard";
 import MeetingDetailsCard from "@/components/rentals/MeetingDetailsCard";
+import RentalDocumentsModal from "@/components/rentals/RentalDocumentsModal";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 
 import { payForConfirmedRental, payRentalWithWallet } from "@/features/rentals/rentalsApi";
@@ -53,6 +54,7 @@ const RentalDetailPage = () => {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [initiatingReturn, setInitiatingReturn] = useState(false);
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(false);
   const queryClient = useQueryClient();
   const { data: isAdmin } = useIsAdmin(user?.id);
   const { data: wallet, refetch: refetchWallet } = useWalletBalance();
@@ -549,6 +551,24 @@ const RentalDetailPage = () => {
               t={t}
             />
           </div>
+        )}
+
+        {isPaidEarly && rental.status !== "cancelled" && rental.status !== "rejected" && (
+          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center shrink-0"><FileSignature className="h-5 w-5" /></div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-heading font-semibold">{t("Contract de închiriere & Documentele rezervării", "Rental contract & booking documents")}</h3>
+                <ul className="mt-2 space-y-1 text-sm">
+                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" />{t("Contract cadru — generat", "Framework contract — generated")}</li>
+                  <li className="flex items-center gap-2">{rental.handover_pv_owner_signed_at && rental.handover_pv_renter_signed_at ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Clock className="h-4 w-4 text-muted-foreground" />}{t("Anexa 1 · Predare", "Annex 1 · Handover")}</li>
+                  <li className="flex items-center gap-2">{rental.return_pv_owner_signed_at && rental.return_pv_renter_signed_at ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Clock className="h-4 w-4 text-muted-foreground" />}{t("Anexa 2 · Returnare", "Annex 2 · Return")}</li>
+                </ul>
+                <Button className="mt-3" size="sm" onClick={() => setDocsOpen(true)}><FileSignature className="h-4 w-4 mr-1" />{t("Deschide documentele", "Open documents")}</Button>
+              </div>
+            </div>
+            <RentalDocumentsModal open={docsOpen} onOpenChange={setDocsOpen} rental={rental} />
+          </section>
         )}
 
         {/* ============ PARTEA 2 ============ */}
