@@ -39,7 +39,7 @@ export default function HandoverPvCard({ rentalId, startDate, signed, onOpenPv, 
 
   const locked = isAfter(startOfDay(new Date(startDate)), startOfDay(new Date()));
   const badge = signed
-    ? { l: t("Semnat", "Signed"), c: "bg-success/15 text-success" }
+    ? { l: t("Semnat", "Signed"), c: "bg-primary/15 text-primary" }
     : locked
       ? { l: t(`Disponibil pe ${format(new Date(startDate), "dd.MM.yyyy")}`, `Available on ${format(new Date(startDate), "dd.MM.yyyy")}`), c: "bg-muted text-muted-foreground" }
       : { l: t("Disponibil acum", "Available now"), c: "bg-primary/15 text-primary" };
@@ -115,8 +115,8 @@ export default function HandoverPvCard({ rentalId, startDate, signed, onOpenPv, 
           </ol>
 
           {latest?.status === "approved" ? (
-            <div className="mt-3 border-l-2 border-success bg-success/10 p-3 text-xs rounded-r-lg">
-              <p className="font-semibold flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-success" />{t("PV fizic încărcat și validat", "Physical report uploaded and validated")}</p>
+            <div className="mt-3 border-l-2 border-primary bg-primary/10 p-3 text-xs rounded-r-lg">
+              <p className="font-semibold flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-primary" />{t("PV fizic încărcat și validat", "Physical report uploaded and validated")}</p>
               <p className="text-muted-foreground mt-0.5">{latest.file_name} · {t("Verificat de echipa Rentli.", "Verified by the Rentli team.")}</p>
             </div>
           ) : latest?.status === "pending" ? (
