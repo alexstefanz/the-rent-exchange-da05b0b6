@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarClock, CheckCircle2, ExternalLink, Loader2, MapPin, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
@@ -28,6 +28,7 @@ interface Props {
 }
 
 export default function MeetingDetailsCard({ rentalId, role, startDate, defaultPlace, onOpenChat, t }: Props) {
+  const qc = useQueryClient();
   const { data, refetch } = useQuery({
     queryKey: ["rental-meeting", rentalId],
     queryFn: async () => {
@@ -52,6 +53,34 @@ export default function MeetingDetailsCard({ rentalId, role, startDate, defaultP
   const [place, setPlace] = useState<string>(proposal.place || defaultPlace || "");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+
+  // Realtime: refresh as soon as the other party proposes or confirms.
+  useEffect(() => {
+    const channel = supabase
+      .channel(`rental-meeting-rt-${rentalId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "rentals", filter: `id=eq.${rentalId}` },
+        () => {
+          refetch();
+          qc.invalidateQueries({ queryKey: ["rental-pickup-agreed", rentalId] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [rentalId, refetch, qc]);
+
+  // Sync form fields with the latest proposal when not editing.
+  const proposalKey = `${proposal.time || ""}|${proposal.place || ""}`;
+  useEffect(() => {
+    if (editing) return;
+    const s = proposal.time ? format(new Date(proposal.time), "HH:mm") : "";
+    if (SLOTS.includes(s)) setSlot(s);
+    if (proposal.place) setPlace(proposal.place);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proposalKey, editing]);
 
   const showForm = !agreed && (!hasProposal || editing);
   const day = new Date(startDate);
