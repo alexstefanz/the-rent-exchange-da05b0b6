@@ -169,7 +169,11 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
         {isRet && (
           <>
             <H2>Întârziere și penalități (art. 8)</H2>
-            <p>Zile de întârziere: ______ × {b ? "______" : ron(daily * 2)} = ______ RON</p>
+            {b ? (
+              <p>Zile de întârziere: ______ × ______ = ______ RON</p>
+            ) : (
+              <p>Zile de întârziere: <b>{late.days}</b> × {ron(late.perDay)} = <b>{ron(late.total)}</b>{late.days === 0 ? " (restituire la termen)" : ""}</p>
+            )}
           </>
         )}
         <Sig pv={pv} />
@@ -177,10 +181,36 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
     );
   };
 
+  const anexa3 = (
+    <div className="page">
+      <Head title="ANEXA 3 — ACT ADIȚIONAL DE PRELUNGIRE" sub={`la Contractul de locațiune nr. ${rental.public_id}`} />
+      {b || !paidExts.length ? (
+        <>
+          <H2>Art. 1. Prelungirea duratei</H2>
+          <p>Părțile convin prelungirea locațiunii cu ______ zile, de la ____________ până la ____________.</p>
+          <H2>Art. 2. Chiria suplimentară</H2>
+          <p>Chiria suplimentară: ______ zile × ______ RON = ______ RON, plus comisionul platformei, achitată prin Rentli.ro.</p>
+          {!b && <p className="text-xs text-muted-foreground">Nu există încă o prelungire aprobată și plătită.</p>}
+        </>
+      ) : (
+        paidExts.map((e, i) => (
+          <div key={e.id}>
+            <H2>Act adițional nr. {i + 1} — din {fmtD(e.paid_at)}</H2>
+            <p><b>Art. 1.</b> Părțile, {rental.owner_name} (Locator) și {rental.renter_name} (Locatar), convin prelungirea locațiunii bunului {rental.product_title} cu <b>{e.approved_days} zile</b>, de la {fmtD(e.original_end_date)} până la <b>{fmtD(e.approved_end_date)}</b>.</p>
+            <p><b>Art. 2.</b> Chiria suplimentară este {e.approved_days} × {ron(e.daily_price)} = {ron(e.subtotal_amount)}, plus comisionul platformei de {ron(e.platform_fee)}, total {ron(e.total_amount)}, achitată prin Rentli.ro.</p>
+            <p><b>Art. 3.</b> Restituirea se face la noua dată, în aceleași condiții. Toate celelalte clauze ale contractului rămân neschimbate.</p>
+          </div>
+        ))
+      )}
+      <Sig pv={handover} />
+    </div>
+  );
+
   const tabs: { k: Tab; l: string }[] = [
     { k: "contract", l: "Contract" },
     { k: "anexa1", l: "Anexa 1 · Predare" },
     { k: "anexa2", l: "Anexa 2 · Returnare" },
+    { k: "anexa3", l: "Anexa 3 · Act adițional" },
   ];
 
   return (
@@ -201,7 +231,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
         </DialogHeader>
         <div className="flex-1 overflow-y-auto bg-muted/40 p-4">
           <div className="mx-auto max-w-[210mm] bg-card text-card-foreground shadow-md rounded-sm p-8 font-serif text-[13px] leading-relaxed">
-            {tab === "contract" ? contract : tab === "anexa1" ? anexa("handover") : anexa("return")}
+            {tab === "contract" ? contract : tab === "anexa1" ? anexa("handover") : tab === "anexa2" ? anexa("return") : anexa3}
           </div>
         </div>
         {/* full set for printing */}
@@ -209,6 +239,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
           {contract}
           {anexa("handover")}
           {anexa("return")}
+          {(b || paidExts.length > 0) && anexa3}
         </div>
       </DialogContent>
     </Dialog>
