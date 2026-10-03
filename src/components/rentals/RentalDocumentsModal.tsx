@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Printer, FileDown, FileText } from "lucide-react";
@@ -14,6 +14,8 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   rental: RentalFullDetail;
+  initialTab?: Tab;
+  initialBlank?: boolean;
 }
 
 const fmtD = (d?: string | null) => (d ? format(new Date(d), "dd.MM.yyyy") : "____________");
@@ -25,9 +27,10 @@ const slot = (t?: string | null) => {
 };
 const ron = (n?: number | null) => (n == null ? "______" : `${Number(n).toFixed(2)} RON`);
 
-export default function RentalDocumentsModal({ open, onOpenChange, rental }: Props) {
-  const [tab, setTab] = useState<Tab>("contract");
-  const [blank, setBlank] = useState(false);
+export default function RentalDocumentsModal({ open, onOpenChange, rental, initialTab = "contract", initialBlank = false }: Props) {
+  const [tab, setTab] = useState<Tab>(initialTab);
+  const [blank, setBlank] = useState(initialBlank);
+  useEffect(() => { if (open) { setTab(initialTab); setBlank(initialBlank); } }, [open, initialTab, initialBlank]);
   const docRef = useRef<HTMLDivElement>(null);
 
   const { data: pvs } = useQuery({

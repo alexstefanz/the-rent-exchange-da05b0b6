@@ -1,0 +1,153 @@
+import { useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { format, isAfter, startOfDay } from "date-fns";
+import { Camera, CheckCircle2, FileCheck, FileSignature, Loader2, Lock, Upload, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Props {
+  rentalId: string;
+  startDate: string;
+  signed: boolean;
+  onOpenPv: () => void;
+  onOpenBlank: () => void;
+  t: (ro: string, en: string) => string;
+}
+
+type PhysicalPv = { id: string; file_name: string; status: string; admin_note: string | null; created_at: string };
+
+export default function HandoverPvCard({ rentalId, startDate, signed, onOpenPv, onOpenBlank, t }: Props) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const { data: uploads, refetch } = useQuery({
+    queryKey: ["physical-pv", rentalId, "handover"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("rental_physical_pvs" as any)
+        .select("id, file_name, status, admin_note, created_at")
+        .eq("rental_id", rentalId)
+        .eq("phase", "handover")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as PhysicalPv[];
+    },
+  });
+  const latest = uploads?.[0];
+
+  const locked = isAfter(startOfDay(new Date(startDate)), startOfDay(new Date()));
+  const badge = signed
+    ? { l: t("Semnat", "Signed"), c: "bg-success/15 text-success" }
+    : locked
+      ? { l: t(`Disponibil pe ${format(new Date(startDate), "dd.MM.yyyy")}`, `Available on ${format(new Date(startDate), "dd.MM.yyyy")}`), c: "bg-muted text-muted-foreground" }
+      : { l: t("Disponibil acum", "Available now"), c: "bg-primary/15 text-primary" };
+  const Icon = signed ? FileCheck : locked ? Lock : FileSignature;
+
+  async function submit() {
+    if (!file) return;
+    setErr(null);
+    if (file.size > 15 * 1024 * 1024) return setErr(t("Fișierul depășește 15 MB.", "File exceeds 15 MB."));
+    if (!file.type.startsWith("image/") && file.type !== "application/pdf")
+      return setErr(t("Acceptăm doar poze sau PDF.", "Only images or PDF are accepted."));
+    setBusy(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${rentalId}/physical/handover-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("rental-pvs").upload(path, file, { contentType: file.type });
+      if (upErr) throw upErr;
+      const { error } = await supabase.from("rental_physical_pvs" as any).insert({
+        rental_id: rentalId, phase: "handover", file_path: path, file_name: file.name,
+      } as any);
+      if (error) throw error;
+      setFile(null);
+      await refetch();
+    } catch (e: any) {
+      setErr(e?.message || t("Încărcarea a eșuat.", "Upload failed."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="rounded-2xl border-2 border-primary bg-card p-5 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="font-heading font-semibold">{t("Proces-verbal de predare", "Handover report")}</h3>
+            <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground">{t("Obligatoriu", "Required")}</span>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            {t("Fără semnarea PV-ului de către ambele părți, închirierea nu se validează.", "Without both parties signing the report, the rental is not validated.")}
+          </p>
+        </div>
+        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${badge.c}`}>{badge.l}</span>
+      </div>
+
+      <div className="mt-4 rounded-xl bg-muted/40 p-5 text-center">
+        <div className="mx-auto h-12 w-12 rounded-2xl bg-primary/10 text-primary grid place-items-center"><Icon className="h-6 w-6" /></div>
+        <p className="font-semibold mt-3">
+          {signed ? t("PV semnat de ambele părți", "Report signed by both parties")
+            : locked ? t("PV-ul se deschide în ziua predării", "The report opens on handover day")
+            : t("PV-ul este pregătit pentru completare", "The report is ready to complete")}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {signed ? t("Predarea este confirmată în platformă.", "The handover is confirmed on the platform.")
+            : t("Verificați starea bunului înainte de semnare.", "Check the item's condition before signing.")}
+        </p>
+        <Button className="mt-4" onClick={onOpenPv}>
+          <FileSignature className="h-4 w-4 mr-1" />
+          {signed ? t("Vezi anexa de predare", "View handover annex") : t("Deschide PV de predare", "Open handover report")}
+        </Button>
+      </div>
+
+      {!signed && (
+        <div className="mt-4 rounded-xl border border-dashed border-border bg-background p-4">
+          <p className="flex items-center gap-2 text-xs font-bold uppercase text-muted-foreground">
+            <Camera className="h-4 w-4" />{t("Ai semnat pe hârtie? Încarcă PV-ul fizic", "Signed on paper? Upload the physical report")}
+          </p>
+          <ol className="mt-3 space-y-1.5 text-sm">
+            <li>1. <button type="button" className="underline text-primary" onClick={onOpenBlank}>{t("Descarcă setul de documente nesemnat", "Download the unsigned document set")}</button></li>
+            <li>2. {t("Completați și semnați PV-ul pe hârtie, ambele părți", "Fill in and sign the report on paper, both parties")}</li>
+            <li>3. {t("Fotografiază sau scanează documentul semnat", "Photograph or scan the signed document")}</li>
+            <li>4. {t("Încarcă-l aici — echipa Rentli îl verifică și validează", "Upload it here — the Rentli team reviews and validates it")}</li>
+          </ol>
+
+          {latest?.status === "approved" ? (
+            <div className="mt-3 border-l-2 border-success bg-success/10 p-3 text-xs rounded-r-lg">
+              <p className="font-semibold flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-success" />{t("PV fizic încărcat și validat", "Physical report uploaded and validated")}</p>
+              <p className="text-muted-foreground mt-0.5">{latest.file_name} · {t("Verificat de echipa Rentli.", "Verified by the Rentli team.")}</p>
+            </div>
+          ) : latest?.status === "pending" ? (
+            <div className="mt-3 border-l-2 border-primary bg-primary/10 p-3 text-xs rounded-r-lg">
+              <p className="font-semibold flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-primary" />{t("Trimis spre verificare", "Sent for review")}</p>
+              <p className="text-muted-foreground mt-0.5">{latest.file_name} · {format(new Date(latest.created_at), "dd.MM.yyyy HH:mm")}</p>
+            </div>
+          ) : (
+            <>
+              {latest?.status === "rejected" && (
+                <p className="mt-3 text-xs text-destructive">{t("PV-ul anterior a fost respins", "Previous report was rejected")}{latest.admin_note ? `: ${latest.admin_note}` : "."}</p>
+              )}
+              <input ref={inputRef} type="file" accept="image/*,.pdf" className="hidden"
+                onChange={(e) => { setErr(null); setFile(e.target.files?.[0] ?? null); e.target.value = ""; }} />
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={busy}>
+                  <Upload className="h-4 w-4 mr-1" />{t("Alege poza sau scanul PV-ului", "Choose photo or scan")}
+                </Button>
+                {file && (
+                  <Button size="sm" onClick={submit} disabled={busy}>
+                    {busy ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+                    {t("Trimite spre verificare", "Send for review")}
+                  </Button>
+                )}
+              </div>
+              {file && <p className="mt-2 text-xs text-muted-foreground truncate">{file.name}</p>}
+            </>
+          )}
+          {err && <p className="mt-2 text-xs text-destructive">{err}</p>}
+        </div>
+      )}
+    </section>
+  );
+}
