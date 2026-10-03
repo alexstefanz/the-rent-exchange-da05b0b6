@@ -100,7 +100,11 @@ const RentalDetailPage = () => {
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "rentals", filter: `id=eq.${rental.id}` },
-        () => queryClient.invalidateQueries({ queryKey: ["rental-detail", publicId] }),
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["rental-detail", publicId] });
+          queryClient.invalidateQueries({ queryKey: ["rental-meeting", rental.id] });
+          queryClient.invalidateQueries({ queryKey: ["rental-pickup-agreed", rental.id] });
+        },
       )
       .on(
         "postgres_changes",
