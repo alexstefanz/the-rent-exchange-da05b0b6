@@ -1546,6 +1546,56 @@ export type Database = {
           },
         ]
       }
+      rental_physical_pvs: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          phase: string
+          rental_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          uploaded_by: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          phase: string
+          rental_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          uploaded_by?: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          phase?: string
+          rental_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rental_physical_pvs_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rental_pv_documents: {
         Row: {
           created_at: string
