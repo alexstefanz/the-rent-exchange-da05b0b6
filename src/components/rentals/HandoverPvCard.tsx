@@ -166,7 +166,7 @@ export default function HandoverPvCard({ rentalId, startDate, signed, onOpenPv, 
             </>
           )}
           {err && <p className="mt-2 text-xs text-destructive">{err}</p>}
-        </div>
+        </details>
       )}
     </section>
   );
