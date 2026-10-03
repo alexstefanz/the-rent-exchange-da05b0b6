@@ -331,31 +331,43 @@ const RentalDetailPage = () => {
         </section>
 
 
-        {/* ============ PARTEA 1 ============ */}
-        <PartHeader index={1} title={t("Rezervarea produsului", "Booking the product")} subtitle={t("Online — cerere, plată și programarea întâlnirii", "Online — request, payment and meeting setup")} />
-
-        {/* Owner: waiting for renter payment */}
-        {isOwner && rental.status === "confirmed" && rental.payment_status === "pending" && (
-          <section className="rounded-2xl border border-primary/30 bg-primary/5 p-5 shadow-sm mb-6">
-            <div className="flex items-start gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/15 grid place-items-center shrink-0">
-                <Clock className="h-5 w-5 text-primary" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          <div className="lg:col-span-2 space-y-6 min-w-0">
+        {/* Review CTA — visible after rental is completed and only until the user reviewed */}
+        {rental.status === "completed" && !alreadyReviewed && (
+          <section className="rounded-2xl border border-border bg-card p-4 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center">
+                <Star className="h-5 w-5 text-primary" />
               </div>
-              <div className="flex-1">
-                <h3 className="font-heading text-base font-semibold text-foreground">
-                  {t("Așteptăm plata chiriașului", "Waiting for renter payment")}
-                </h3>
-                <p className="text-sm text-muted-foreground mt-1">
+              <div>
+                <p className="font-semibold text-sm">
+                  {t("Lasă un review", "Leave a review")}
+                </p>
+                <p className="text-xs text-muted-foreground">
                   {t(
-                    "Ai acceptat cererea. Chiriașul urmează să facă plata — te rugăm să aștepți. Vei fi notificat imediat ce plata este confirmată.",
-                    "You accepted the request. The renter is about to pay — please wait. You'll be notified as soon as the payment is confirmed.",
+                    "Părerea ta ajută comunitatea Rentli să rămână de încredere.",
+                    "Your feedback keeps the Rentli community trustworthy.",
                   )}
                 </p>
               </div>
             </div>
+            <Button onClick={() => setReviewOpen(true)} className="shrink-0">
+              <Star className="h-4 w-4 mr-2" />
+              {t("Lasă un review", "Leave a review")}
+            </Button>
           </section>
         )}
-
+          {/* ============ PARTEA 1 ============ */}
+          <ProcessCard
+            part={1}
+            status={p1Done ? t("Finalizat", "Completed") : t("În desfășurare", "In progress")}
+            title={t("Rezervarea produsului", "Booking the product")}
+            steps={[t("Rezervare", "Booking"), t("Plată", "Payment"), t("Contract", "Contract")]}
+            current={p1Current}
+            done={p1Done}
+          >
+            <div className="space-y-4">
         {/* Owner: accept/reject pending request */}
         {isOwner && rental.status === "pending" && (
           <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
@@ -390,66 +402,27 @@ const RentalDetailPage = () => {
             </div>
           </section>
         )}
-
-        {/* Chat CTA — visible in all states except completed/cancelled/rejected */}
-        {rental.status !== "completed" && rental.status !== "cancelled" && rental.status !== "rejected" && (
-          <section className="rounded-2xl border border-border bg-card p-4 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center">
-                <MessageSquare className="h-5 w-5 text-primary" />
+        {/* Owner: waiting for renter payment */}
+        {isOwner && rental.status === "confirmed" && rental.payment_status === "pending" && (
+          <section className="rounded-2xl border border-primary/30 bg-primary/5 p-5 shadow-sm mb-6">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/15 grid place-items-center shrink-0">
+                <Clock className="h-5 w-5 text-primary" />
               </div>
-              <div>
-                <p className="font-semibold text-sm">
-                  {isOwner
-                    ? t("Discuta cu chiriasul", "Chat with the renter")
-                    : t("Discuta cu proprietarul", "Chat with the owner")}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {isPaidEarly
-                    ? t("Coordonati predarea, locatia si detaliile direct in chat.", "Coordinate handover, location and details directly in chat.")
-                    : t(
-                        "Poți discuta în chat și înainte de plată. Datele de contact devin vizibile după ce plata este efectuată.",
-                        "You can chat before payment too. Contact details become visible after the payment is completed."
-                      )}
-                </p>
-              </div>
-            </div>
-            <Button onClick={handleChat} className="shrink-0">
-              <MessageSquare className="h-4 w-4 mr-2" />
-              {isOwner
-                ? t("Discuta cu Chiriasul", "Chat with Renter")
-                : t("Discuta cu Proprietarul", "Chat with Owner")}
-            </Button>
-          </section>
-        )}
-
-        {/* Review CTA — visible after rental is completed and only until the user reviewed */}
-        {rental.status === "completed" && !alreadyReviewed && (
-          <section className="rounded-2xl border border-border bg-card p-4 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center">
-                <Star className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-semibold text-sm">
-                  {t("Lasă un review", "Leave a review")}
-                </p>
-                <p className="text-xs text-muted-foreground">
+              <div className="flex-1">
+                <h3 className="font-heading text-base font-semibold text-foreground">
+                  {t("Așteptăm plata chiriașului", "Waiting for renter payment")}
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">
                   {t(
-                    "Părerea ta ajută comunitatea Rentli să rămână de încredere.",
-                    "Your feedback keeps the Rentli community trustworthy.",
+                    "Ai acceptat cererea. Chiriașul urmează să facă plata — te rugăm să aștepți. Vei fi notificat imediat ce plata este confirmată.",
+                    "You accepted the request. The renter is about to pay — please wait. You'll be notified as soon as the payment is confirmed.",
                   )}
                 </p>
               </div>
             </div>
-            <Button onClick={() => setReviewOpen(true)} className="shrink-0">
-              <Star className="h-4 w-4 mr-2" />
-              {t("Lasă un review", "Leave a review")}
-            </Button>
           </section>
         )}
-
-
         {/* Rejection reason */}
         {isRejected && rental.rejection_reason && (
           <section className="rounded-2xl border border-rose-200 bg-rose-50 p-4 mb-6">
@@ -457,7 +430,6 @@ const RentalDetailPage = () => {
             <p className="text-sm text-rose-800 whitespace-pre-wrap">{rental.rejection_reason}</p>
           </section>
         )}
-
         {/* Pay-now CTA: owner accepted, renter hasn't paid yet */}
         {needsPayment && (
           <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
@@ -539,7 +511,12 @@ const RentalDetailPage = () => {
             )}
           </section>
         )}
-
+            {!isOwner && rental.status === "pending" && (
+              <div className="rounded-xl bg-primary/10 p-5">
+                <p className="font-semibold">{t("Cerere trimisă către ", "Request sent to ")}{rental.owner_name}</p>
+                <p className="text-sm text-muted-foreground mt-1">{t("Așteptăm răspunsul proprietarului. După acceptare vei putea plăti, iar contractul și anexele se generează pentru ambele părți.", "Waiting for the owner. After acceptance you can pay; the contract and annexes are generated for both parties.")}</p>
+              </div>
+            )}
         {isPaidEarly && rental.status !== "cancelled" && rental.status !== "rejected" && rental.status !== "completed" && !handoverDoneEarly && (
           <div className="mb-6">
             <MeetingDetailsCard
@@ -552,7 +529,6 @@ const RentalDetailPage = () => {
             />
           </div>
         )}
-
         {isPaidEarly && rental.status !== "cancelled" && rental.status !== "rejected" && (
           <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
             <div className="flex items-start gap-3">
@@ -570,31 +546,48 @@ const RentalDetailPage = () => {
             <RentalDocumentsModal open={docsOpen} onOpenChange={setDocsOpen} rental={rental} />
           </section>
         )}
+            </div>
+          </ProcessCard>
 
-        {/* ============ PARTEA 2 ============ */}
-        {isPaidEarly && rental.status !== "cancelled" && rental.status !== "rejected" && (
-          <>
-            <PartHeader index={2} title={t("Predarea, închirierea și returnarea", "Handover, rental and return")} subtitle={t("Fizic, la întâlnire — fotografii și semnături", "In person — photos and signatures")} />
-            {!handoverDoneEarly && (
-              <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
-                <h3 className="font-heading font-semibold mb-3">{t("Ghid rapid la întâlnire", "Quick meeting guide")}</h3>
-                <ol className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {[
-                    t("Verificați bunul și accesoriile împreună", "Check the item and accessories together"),
-                    t("Fotografiați și semnați procesul-verbal", "Photograph and sign the handover report"),
-                    t("Închirierea se activează automat", "The rental activates automatically"),
-                  ].map((s, i) => (
-                    <li key={i} className="rounded-xl border border-border p-3 flex gap-3">
-                      <span className="font-heading text-lg font-bold text-primary">0{i + 1}</span>
-                      <span className="text-sm">{s}</span>
-                    </li>
-                  ))}
-                </ol>
-              </section>
-            )}
-          </>
-        )}
-
+          {/* ============ PARTEA 2 ============ */}
+          <ProcessCard
+            part={2}
+            status={!p2Unlocked ? t("Urmează", "Next") : p2Done ? t("Finalizat", "Completed") : t("În desfășurare", "In progress")}
+            title={t("Predarea și închirierea", "Handover and rental")}
+            steps={[t("Proces-verbal", "Report"), t("Predare", "Handover"), t("Închiriere", "Rental"), t("Returnare", "Return"), t("Finalizare", "Completion")]}
+            current={p2Current}
+            done={p2Done}
+            locked={!p2Unlocked}
+          >
+            {!p2Unlocked ? (
+              <div className="text-center py-6">
+                <Lock className="h-6 w-6 mx-auto text-muted-foreground" />
+                <p className="font-heading font-bold text-lg mt-3">{t("Această parte se deschide după discuție", "This part unlocks after the discussion")}</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {!isPaidEarly
+                    ? t("Disponibilă după plata rezervării și stabilirea întâlnirii.", "Available after payment and agreeing on the meeting.")
+                    : t(`Stabiliți întâlnirea cu ${isOwner ? "chiriașul" : "proprietarul"}, apoi confirmați mai sus pentru a continua procesul.`, "Agree on the meeting, then confirm above to continue.")}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+              {!handoverDoneEarly && (
+                <div className="border-l-2 border-primary bg-primary/10 p-5 rounded-r-xl">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-primary mb-3">{t("Ce trebuie să faceți la întâlnire", "What to do at the meeting")}</p>
+                  <ol className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {[
+                      [t("Verificați bunul", "Check the item"), t("Inspectați împreună starea și accesoriile.", "Inspect condition and accessories together.")],
+                      [t("Completați PV-ul", "Complete the report"), t("Ambele părți confirmă predarea în aplicație.", "Both parties confirm the handover in the app.")],
+                      [t("Activați închirierea", "Activate the rental"), t("Doar PV-ul semnat validează închirierea.", "Only the signed report validates the rental.")],
+                    ].map(([h, d], i) => (
+                      <li key={i} className="flex gap-3">
+                        <span className="font-mono text-sm font-bold text-primary">0{i + 1}</span>
+                        <span className="text-sm"><span className="font-semibold block">{h}</span><span className="text-muted-foreground text-xs">{d}</span></span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
         {/* Step 5 — Renter must initiate the return phase */}
         {handoverDoneEarly && !returnInitiated && !returnDoneEarly && rental.status !== "cancelled" && rental.status !== "completed" && (
           <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
@@ -701,24 +694,15 @@ const RentalDetailPage = () => {
             </div>
           </section>
         )}
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: product + parties */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Counterparty */}
-            <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-              <h3 className="font-heading font-semibold mb-3">{counterparty.label}</h3>
-              <p className="font-medium">{counterparty.name || "—"}</p>
-              {step >= 3 ? (
-                <div className="mt-2 space-y-1 text-sm">
-                  {counterparty.email && <p className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-muted-foreground" />{counterparty.email}</p>}
-                  {counterparty.phone && <p className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-muted-foreground" />{counterparty.phone}</p>}
+              {returnDoneEarly && (
+                <div className="border-l-2 border-primary bg-primary/10 p-4 rounded-r-xl text-sm">
+                  <p className="font-semibold">{t("Închiriere finalizată", "Rental completed")}</p>
+                  <p className="text-muted-foreground text-xs mt-1">{t("Ambele procese-verbale sunt semnate. Dosarul complet este disponibil în documentele rezervării.", "Both reports are signed. The full file is available in the booking documents.")}</p>
                 </div>
-              ) : (
-                <p className="text-xs text-muted-foreground mt-2">{t("Datele de contact se vor afisa dupa confirmarea platii.", "Contact info appears after payment is confirmed.")}</p>
               )}
-            </section>
-
+              </div>
+            )}
+          </ProcessCard>
             {/* Mutual cancellation — visible until owner signs handover PV */}
             {user?.id && rental.status !== "cancelled" && rental.status !== "completed" && rental.status !== "rejected" && !rental.handover_pv_owner_signed_at && (
               <MutualCancellationCard
@@ -738,8 +722,30 @@ const RentalDetailPage = () => {
             )}
           </div>
 
-          {/* Right: pricing */}
-          <aside className="space-y-3">
+          <aside className="space-y-4 lg:sticky lg:top-24">
+            <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-3">{counterparty.label}</p>
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-full bg-primary/15 text-primary grid place-items-center font-bold shrink-0">
+                  {(counterparty.name || "?").split(" ").map((p: string) => p[0]).slice(0, 2).join("").toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold truncate">{counterparty.name || "—"}</p>
+                  {step >= 3 && counterparty.email && <p className="text-xs text-muted-foreground truncate">{counterparty.email}</p>}
+                </div>
+              </div>
+              {step >= 3 ? (
+                counterparty.phone && <p className="flex items-center gap-2 text-sm text-muted-foreground mt-3"><Phone className="h-3.5 w-3.5" />{counterparty.phone}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-3">{t("Datele de contact se afișează după confirmarea plății.", "Contact info appears after payment is confirmed.")}</p>
+              )}
+              {rental.status !== "cancelled" && rental.status !== "rejected" && (
+                <Button onClick={handleChat} className="w-full mt-4">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  {isOwner ? t("Discută cu chiriașul", "Chat with the renter") : t("Discută cu proprietarul", "Chat with the owner")}
+                </Button>
+              )}
+            </section>
             <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
               <h3 className="font-heading font-semibold mb-3">{t("Sumar financiar", "Financial summary")}</h3>
               <dl className="space-y-2 text-sm">
@@ -762,7 +768,10 @@ const RentalDetailPage = () => {
                 <Badge variant="secondary" className="mt-3 text-xs">{t("Plata de test", "Test payment")}</Badge>
               )}
             </section>
-
+            <section className="rounded-r-xl border-l-2 border-primary bg-primary/10 p-4">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-primary mb-1">{t("Protecția închirierii", "Rental protection")}</p>
+              <p className="text-xs text-foreground/80">{t("Plata este blocată pe card până la predare. Documentele devin disponibile după plata chiriașului.", "Payment is held until handover. Documents become available after the renter pays.")}</p>
+            </section>
             {/* Early return prompt — sub Sumar financiar, aceeași lățime */}
             {handoverDoneEarly && !returnDoneEarly && rental.status !== "completed" && rental.status !== "cancelled" && (
               <EarlyReturnCard
