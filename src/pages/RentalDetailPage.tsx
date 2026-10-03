@@ -359,7 +359,7 @@ const RentalDetailPage = () => {
 
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          <div className="lg:col-span-2 space-y-6 min-w-0">
+          <div className="lg:col-span-2 flex flex-col gap-6 min-w-0">
         {/* Review CTA — visible after rental is completed and only until the user reviewed */}
         {rental.status === "completed" && !alreadyReviewed && (
           <section className="rounded-2xl border border-border bg-card p-4 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -579,6 +579,7 @@ const RentalDetailPage = () => {
           <RentalDocumentsModal open={docsOpen} onOpenChange={setDocsOpen} rental={rental} initialTab={docsTab} initialBlank={docsBlank} />
 
           {/* ============ PARTEA 2 ============ */}
+          <div className={p2Unlocked && !p2Done ? "-order-1" : ""}>
           <ProcessCard
             part={2}
             status={!p2Unlocked ? t("Urmează", "Next") : p2Done ? t("Finalizat", "Completed") : t("În desfășurare", "In progress")}
@@ -761,6 +762,7 @@ const RentalDetailPage = () => {
               </div>
             )}
           </ProcessCard>
+          </div>
             {/* Mutual cancellation — visible until owner signs handover PV */}
             {user?.id && rental.status !== "cancelled" && rental.status !== "completed" && rental.status !== "rejected" && !rental.handover_pv_owner_signed_at && (
               <MutualCancellationCard
