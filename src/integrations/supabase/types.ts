@@ -125,6 +125,24 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_notification_cooldown: {
+        Row: {
+          conversation_id: string
+          last_sent_at: string
+          recipient_id: string
+        }
+        Insert: {
+          conversation_id: string
+          last_sent_at?: string
+          recipient_id: string
+        }
+        Update: {
+          conversation_id?: string
+          last_sent_at?: string
+          recipient_id?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           buyer_id: string
@@ -2649,6 +2667,14 @@ export type Database = {
         Returns: undefined
       }
       cancel_unpaid_rental: { Args: { _rental_id: string }; Returns: Json }
+      claim_chat_notification: {
+        Args: {
+          _conversation_id: string
+          _minutes?: number
+          _recipient_id: string
+        }
+        Returns: boolean
+      }
       close_user_ticket: { Args: { p_ticket_id: string }; Returns: undefined }
       complete_rental_extension_card_payment: {
         Args: { _extension_id: string; _session_id: string }
