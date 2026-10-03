@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format, isAfter, startOfDay } from "date-fns";
-import { Camera, CheckCircle2, FileCheck, FileSignature, Loader2, Lock, Upload, Clock } from "lucide-react";
+import { Camera, CheckCircle2, ChevronDown, FileCheck, FileSignature, Loader2, Lock, Upload, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -21,6 +21,7 @@ export default function HandoverPvCard({ rentalId, startDate, signed, onOpenPv, 
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(true);
 
   const { data: uploads, refetch } = useQuery({
     queryKey: ["physical-pv", rentalId, "handover"],
@@ -70,8 +71,38 @@ export default function HandoverPvCard({ rentalId, startDate, signed, onOpenPv, 
     }
   }
 
+  if (signed && collapsed) {
+    return (
+      <section className="rounded-2xl border border-border bg-card shadow-sm">
+        <div
+          role="button"
+          aria-expanded={false}
+          onClick={() => setCollapsed(false)}
+          className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-muted/40 rounded-2xl"
+        >
+          <span className="h-8 w-8 rounded-full bg-primary/15 text-primary grid place-items-center shrink-0"><CheckCircle2 className="h-4 w-4" /></span>
+          <div className="min-w-0 flex-1">
+            <p className="font-heading font-semibold text-sm">{t("Proces-verbal de predare", "Handover report")}</p>
+            <p className="text-xs text-muted-foreground inline-flex items-center gap-1">
+              {t("Semnat de ambele părți · Vezi detalii", "Signed by both parties · View details")}
+              <ChevronDown className="h-3.5 w-3.5" />
+            </p>
+          </div>
+          <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); onOpenPv(); }}>
+            <FileSignature className="h-4 w-4 mr-1" />{t("Vezi anexa", "View annex")}
+          </Button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-2xl border-2 border-primary bg-card p-5 shadow-sm">
+      {signed && (
+        <button type="button" onClick={() => setCollapsed(true)} className="mb-2 text-xs text-muted-foreground inline-flex items-center gap-1 hover:text-foreground">
+          {t("Ascunde detaliile", "Hide details")}<ChevronDown className="h-3.5 w-3.5 rotate-180" />
+        </button>
+      )}
       <div className="flex items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
