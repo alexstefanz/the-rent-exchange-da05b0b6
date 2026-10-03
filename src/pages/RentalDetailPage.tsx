@@ -953,13 +953,15 @@ const RentalDetailPage = () => {
 };
 
 
-function ProcessCard({ part, status, title, steps, current, done = false, locked = false, children }: {
-  part: number; status: string; title: string; steps: string[]; current: number; done?: boolean; locked?: boolean; children: React.ReactNode;
+function ProcessCard({ part, status, title, steps, current, done = false, locked = false, expandSignal = 0, children }: {
+  part: number; status: string; title: string; steps: string[]; current: number; done?: boolean; locked?: boolean; expandSignal?: number; children: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(done);
   const [wasDone, setWasDone] = useState(done);
   if (done !== wasDone) { setWasDone(done); setCollapsed(done); }
   const canToggle = done && !locked;
+  const [lastSignal, setLastSignal] = useState(expandSignal);
+  if (expandSignal !== lastSignal) { setLastSignal(expandSignal); if (canToggle) setCollapsed(false); }
   return (
     <section id={`part-${part}`} className={`scroll-mt-24 ${locked ? "rounded-2xl border border-dashed border-border bg-muted/60 overflow-hidden" : "rounded-2xl border border-border bg-card shadow-sm overflow-hidden"}`}>
       <div
