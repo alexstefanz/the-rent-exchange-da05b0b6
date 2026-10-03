@@ -158,6 +158,28 @@ const RentalDetailPage = () => {
   const p2Done = returnDoneEarly || rental?.status === "completed";
   const p2Current = p2Done ? 4 : returnInitiated ? 3 : handoverDoneEarly ? 2 : 0;
 
+  // General progress bar stage (0-5) + expand signals for collapsed parts
+  const isCancelledEarly = rental?.status === "cancelled" || rental?.status === "rejected";
+  const overallStage = !rental ? 0
+    : isCancelledEarly ? -1
+    : rental.status === "pending" ? 0
+    : !isPaidEarly ? 1
+    : !handoverDoneEarly ? 2
+    : !returnDoneEarly && rental.status !== "completed" ? (returnInitiated ? 4 : 3)
+    : 5;
+  const [expandP1, setExpandP1] = useState(0);
+  const [expandP2, setExpandP2] = useState(0);
+  const handleStageClick = (stage: number) => {
+    if (overallStage < 0 || stage > overallStage) return;
+    if (stage <= 2) {
+      setExpandP1((n) => n + 1);
+      requestAnimationFrame(() => document.getElementById("part-1")?.scrollIntoView({ behavior: "smooth" }));
+    } else if (p2Unlocked) {
+      setExpandP2((n) => n + 1);
+      requestAnimationFrame(() => document.getElementById(stage === 3 ? "pv-section" : "part-2")?.scrollIntoView({ behavior: "smooth" }));
+    }
+  };
+
   // Deep-link: ?pv=handover|return auto-opens dialog when allowed
   useEffect(() => {
     if (!rental) return;
@@ -347,6 +369,9 @@ const RentalDetailPage = () => {
         <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
           <RentalTimeline rental={tlRental} />
         </section>
+
+        {/* General progress bar */}
+        <RentalProgressBar stage={overallStage} cancelled={isCancelledEarly} onStageClick={handleStageClick} t={t} />
 
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
