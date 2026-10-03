@@ -8,6 +8,13 @@
       "when": 1791008670086,
       "tag": "0000_pickup_rpcs_bypass_renter_lock",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791016791243,
+      "tag": "0001_rental_extensions",
+      "breakpoints": true
     }
   ]
 }

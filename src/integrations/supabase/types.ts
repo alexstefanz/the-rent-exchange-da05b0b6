@@ -1493,6 +1493,80 @@ export type Database = {
         }
         Relationships: []
       }
+      rental_extensions: {
+        Row: {
+          approved_days: number | null
+          approved_end_date: string | null
+          created_at: string
+          daily_price: number
+          decided_at: string | null
+          id: string
+          note: string | null
+          original_end_date: string
+          paid_at: string | null
+          payment_status: string
+          platform_fee: number | null
+          rejection_reason: string | null
+          rental_id: string
+          requested_by: string
+          requested_days: number
+          requested_end_date: string
+          status: string
+          subtotal_amount: number | null
+          total_amount: number | null
+        }
+        Insert: {
+          approved_days?: number | null
+          approved_end_date?: string | null
+          created_at?: string
+          daily_price: number
+          decided_at?: string | null
+          id?: string
+          note?: string | null
+          original_end_date: string
+          paid_at?: string | null
+          payment_status?: string
+          platform_fee?: number | null
+          rejection_reason?: string | null
+          rental_id: string
+          requested_by: string
+          requested_days: number
+          requested_end_date: string
+          status?: string
+          subtotal_amount?: number | null
+          total_amount?: number | null
+        }
+        Update: {
+          approved_days?: number | null
+          approved_end_date?: string | null
+          created_at?: string
+          daily_price?: number
+          decided_at?: string | null
+          id?: string
+          note?: string | null
+          original_end_date?: string
+          paid_at?: string | null
+          payment_status?: string
+          platform_fee?: number | null
+          rejection_reason?: string | null
+          rental_id?: string
+          requested_by?: string
+          requested_days?: number
+          requested_end_date?: string
+          status?: string
+          subtotal_amount?: number | null
+          total_amount?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rental_extensions_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rental_inspections: {
         Row: {
           checklist: Json
@@ -2570,6 +2644,10 @@ export type Database = {
         Args: { _id: string }
         Returns: undefined
       }
+      cancel_rental_extension: {
+        Args: { _extension_id: string }
+        Returns: undefined
+      }
       cancel_unpaid_rental: { Args: { _rental_id: string }; Returns: Json }
       close_user_ticket: { Args: { p_ticket_id: string }; Returns: undefined }
       confirm_handover_received: {
@@ -2591,6 +2669,14 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      decide_rental_extension: {
+        Args: {
+          _approved_days: number
+          _extension_id: string
+          _reason?: string
+        }
+        Returns: undefined
       }
       delete_email: {
         Args: { message_id: number; queue_name: string }
@@ -3457,6 +3543,10 @@ export type Database = {
         Args: { _phase: string; _reason: string; _rental_id: string }
         Returns: undefined
       }
+      pay_rental_extension_with_wallet: {
+        Args: { _extension_id: string }
+        Returns: undefined
+      }
       pay_rental_with_wallet: { Args: { _rental_id: string }; Returns: Json }
       pick_admin_for_ticket_category: {
         Args: { p_group: string }
@@ -3492,6 +3582,10 @@ export type Database = {
         Returns: Json
       }
       request_product_deletion: { Args: { _id: string }; Returns: undefined }
+      request_rental_extension: {
+        Args: { _days: number; _note?: string; _rental_id: string }
+        Returns: string
+      }
       resolve_rental_dispute: {
         Args: { _rental_id: string }
         Returns: undefined
