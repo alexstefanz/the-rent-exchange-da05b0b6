@@ -140,6 +140,21 @@ const RentalDetailPage = () => {
   const handoverIsCurrent = isPaidEarly && !handoverDoneEarly;
   const returnIsCurrent = handoverDoneEarly && !returnDoneEarly;
 
+  const { data: pickupAgreed = false } = useQuery({
+    queryKey: ["rental-pickup-agreed", rental?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("rentals").select("pickup_agreed_at").eq("id", rental!.id).maybeSingle();
+      return !!(data as any)?.pickup_agreed_at;
+    },
+    enabled: !!rental?.id && isPaidEarly,
+    refetchInterval: (q) => (q.state.data ? false : 8000),
+  });
+  const p1Current = !rental ? 0 : rental.status === "pending" ? 0 : !isPaidEarly ? 1 : 2;
+  const p1Done = isPaidEarly && (pickupAgreed || handoverDoneEarly);
+  const p2Unlocked = isPaidEarly && (pickupAgreed || handoverDoneEarly) && rental?.status !== "cancelled" && rental?.status !== "rejected";
+  const p2Done = returnDoneEarly || rental?.status === "completed";
+  const p2Current = p2Done ? 4 : returnInitiated ? 3 : handoverDoneEarly ? 2 : 0;
+
   // Deep-link: ?pv=handover|return auto-opens dialog when allowed
   useEffect(() => {
     if (!rental) return;
