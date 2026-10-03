@@ -736,6 +736,7 @@ const RentalDetailPage = () => {
                 )
               )}
               {showReturnPv && (
+                <div className={handoverDoneEarly && !returnDoneEarly ? "-order-1" : ""}>{
                 rental.return_pv_renter_signed_at ? (
                   <PvPanel
                     label={t("PV Returnare", "Return PV")}
@@ -757,6 +758,7 @@ const RentalDetailPage = () => {
                     onOpenChat={handleChat}
                   />
                 )
+                }</div>
               )}
             </div>
           </section>
