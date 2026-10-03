@@ -158,6 +158,28 @@ const RentalDetailPage = () => {
   const p2Done = returnDoneEarly || rental?.status === "completed";
   const p2Current = p2Done ? 4 : returnInitiated ? 3 : handoverDoneEarly ? 2 : 0;
 
+  // General progress bar stage (0-5) + expand signals for collapsed parts
+  const isCancelledEarly = rental?.status === "cancelled" || rental?.status === "rejected";
+  const overallStage = !rental ? 0
+    : isCancelledEarly ? -1
+    : rental.status === "pending" ? 0
+    : !isPaidEarly ? 1
+    : !handoverDoneEarly ? 2
+    : !returnDoneEarly && rental.status !== "completed" ? (returnInitiated ? 4 : 3)
+    : 5;
+  const [expandP1, setExpandP1] = useState(0);
+  const [expandP2, setExpandP2] = useState(0);
+  const handleStageClick = (stage: number) => {
+    if (overallStage < 0 || stage > overallStage) return;
+    if (stage <= 2) {
+      setExpandP1((n) => n + 1);
+      requestAnimationFrame(() => document.getElementById("part-1")?.scrollIntoView({ behavior: "smooth" }));
+    } else if (p2Unlocked) {
+      setExpandP2((n) => n + 1);
+      requestAnimationFrame(() => document.getElementById(stage === 3 ? "pv-section" : "part-2")?.scrollIntoView({ behavior: "smooth" }));
+    }
+  };
+
   // Deep-link: ?pv=handover|return auto-opens dialog when allowed
   useEffect(() => {
     if (!rental) return;
@@ -348,6 +370,9 @@ const RentalDetailPage = () => {
           <RentalTimeline rental={tlRental} />
         </section>
 
+        {/* General progress bar */}
+        <RentalProgressBar stage={overallStage} cancelled={isCancelledEarly} onStageClick={handleStageClick} t={t} />
+
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           <div className="lg:col-span-2 space-y-6 min-w-0">
@@ -384,6 +409,7 @@ const RentalDetailPage = () => {
             steps={[t("Rezervare", "Booking"), t("Plată", "Payment"), t("Contract", "Contract")]}
             current={p1Current}
             done={p1Done}
+            expandSignal={expandP1}
           >
             <div className="space-y-4">
         {/* Owner: accept/reject pending request */}
@@ -576,6 +602,7 @@ const RentalDetailPage = () => {
             current={p2Current}
             done={p2Done}
             locked={!p2Unlocked}
+            expandSignal={expandP2}
           >
             {!p2Unlocked ? (
               <div className="text-center py-6">
@@ -926,13 +953,15 @@ const RentalDetailPage = () => {
 };
 
 
-function ProcessCard({ part, status, title, steps, current, done = false, locked = false, children }: {
-  part: number; status: string; title: string; steps: string[]; current: number; done?: boolean; locked?: boolean; children: React.ReactNode;
+function ProcessCard({ part, status, title, steps, current, done = false, locked = false, expandSignal = 0, children }: {
+  part: number; status: string; title: string; steps: string[]; current: number; done?: boolean; locked?: boolean; expandSignal?: number; children: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(done);
   const [wasDone, setWasDone] = useState(done);
   if (done !== wasDone) { setWasDone(done); setCollapsed(done); }
   const canToggle = done && !locked;
+  const [lastSignal, setLastSignal] = useState(expandSignal);
+  if (expandSignal !== lastSignal) { setLastSignal(expandSignal); if (canToggle) setCollapsed(false); }
   return (
     <section id={`part-${part}`} className={`scroll-mt-24 ${locked ? "rounded-2xl border border-dashed border-border bg-muted/60 overflow-hidden" : "rounded-2xl border border-border bg-card shadow-sm overflow-hidden"}`}>
       <div
@@ -978,6 +1007,59 @@ function ProcessCard({ part, status, title, steps, current, done = false, locked
       </div>
       <div className="p-5 sm:p-6">{children}</div>
       </>)}
+    </section>
+  );
+}
+
+function RentalProgressBar({ stage, cancelled, onStageClick, t }: {
+  stage: number; cancelled: boolean; onStageClick: (stage: number) => void; t: (ro: string, en: string) => string;
+}) {
+  const stages = [
+    t("Cerere trimisă", "Request sent"),
+    t("Confirmat", "Confirmed"),
+    t("Plată efectuată", "Paid"),
+    t("Predare produs", "Item handover"),
+    t("Returnare", "Return"),
+    t("Finalizat", "Completed"),
+  ];
+  return (
+    <section className="rounded-2xl border border-border bg-card px-4 py-4 shadow-sm mb-6">
+      <ol className="flex items-center overflow-x-auto">
+        {stages.map((label, i) => {
+          const isDone = !cancelled && i < stage;
+          const isActive = !cancelled && i === stage;
+          const clickable = !cancelled && i <= stage;
+          return (
+            <li key={label} className="flex items-center shrink-0">
+              <button
+                type="button"
+                disabled={!clickable}
+                onClick={() => onStageClick(i)}
+                className={`flex items-center gap-2 rounded-full px-2.5 py-1.5 text-[11px] font-semibold transition-colors ${
+                  isActive ? "bg-primary text-primary-foreground shadow-sm"
+                  : isDone ? "bg-primary/10 text-primary hover:bg-primary/20"
+                  : "bg-muted text-muted-foreground"
+                } ${clickable ? "cursor-pointer" : "cursor-default"}`}
+              >
+                <span className={`flex items-center justify-center h-5 w-5 rounded-full text-[10px] ${
+                  isActive ? "bg-primary-foreground/25" : isDone ? "bg-primary text-primary-foreground" : "bg-background/70"
+                }`}>
+                  {isDone ? <Check className="h-3 w-3" /> : i + 1}
+                </span>
+                {label}
+              </button>
+              {i < stages.length - 1 && <span className={`w-4 sm:w-6 h-px mx-1 ${isDone ? "bg-primary" : "bg-border"}`} />}
+            </li>
+          );
+        })}
+        {cancelled && (
+          <li className="ml-3 shrink-0">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-foreground text-background px-2.5 py-1.5 text-[11px] font-semibold">
+              <X className="h-3 w-3" />{t("Anulată", "Cancelled")}
+            </span>
+          </li>
+        )}
+      </ol>
     </section>
   );
 }
