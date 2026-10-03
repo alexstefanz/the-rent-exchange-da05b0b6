@@ -164,8 +164,23 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Anti-spam: max one external notification (email/SMS) per conversation
+    // per recipient every 30 minutes. In-app notifications above are unaffected.
+    let allowExternal = true;
+    try {
+      const { data: claimed, error: claimErr } = await supabase.rpc("claim_chat_notification", {
+        _conversation_id: conversation_id,
+        _recipient_id: recipientId,
+        _minutes: 30,
+      });
+      if (!claimErr) allowExternal = claimed === true;
+      else console.error("[send-message-notification] cooldown claim failed:", claimErr);
+    } catch (e) {
+      console.error("[send-message-notification] cooldown error:", e);
+    }
+
     // Send branded transactional email (respect notification_preferences)
-    if (recipientEmail) {
+    if (recipientEmail && allowExternal) {
       try {
         const { data: prefs } = await supabase
           .from("notification_preferences")

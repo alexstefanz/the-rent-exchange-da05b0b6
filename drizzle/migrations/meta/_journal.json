@@ -15,6 +15,13 @@
       "when": 1791016791243,
       "tag": "0001_rental_extensions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791028126213,
+      "tag": "0002_chat_notification_cooldown",
+      "breakpoints": true
     }
   ]
 }
