@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, differenceInCalendarDays } from "date-fns";
-import { CalendarPlus, Loader2, AlertTriangle, Check, X, Wallet, FileText } from "lucide-react";
+import { CalendarPlus, Loader2, AlertTriangle, Check, X, Wallet, FileText, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,6 +74,31 @@ export default function RentalExtensionCard({ rental, role, active }: { rental: 
     setBusy(false);
     if (error) { setErr(error.message); return false; }
     refresh(); return true;
+  };
+
+  // Returning from Stripe Checkout: confirm the card payment once.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sid = params.get("ext_session");
+    if (!sid) return;
+    params.delete("ext_session");
+    const qs = params.toString();
+    window.history.replaceState(null, "", window.location.pathname + (qs ? `?${qs}` : ""));
+    setBusy(true);
+    supabase.functions.invoke("extension-checkout", { body: { action: "verify", session_id: sid } }).then(({ data, error }) => {
+      setBusy(false);
+      if (error || data?.error) setErr(data?.error || error?.message || "Eroare la confirmarea plății.");
+      else if (!data?.paid) setErr(t("Plata cu cardul nu a fost finalizată.", "The card payment was not completed."));
+      refresh();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const payByCard = async (extensionId: string) => {
+    setBusy(true); setErr(null);
+    const { data, error } = await supabase.functions.invoke("extension-checkout", { body: { action: "create", extension_id: extensionId } });
+    if (error || data?.error || !data?.url) { setBusy(false); setErr(data?.error || error?.message || "Eroare Stripe."); return; }
+    window.location.href = data.url;
   };
 
   if (!active && !exts.length) return null;
@@ -168,6 +193,9 @@ export default function RentalExtensionCard({ rental, role, active }: { rental: 
               <Button size="sm" variant="ghost" disabled={busy} onClick={() => run(() => supabase.rpc("cancel_rental_extension", { _extension_id: current.id }))}>{t("Renunț", "Cancel")}</Button>
               <Button size="sm" disabled={busy} onClick={() => run(() => supabase.rpc("pay_rental_extension_with_wallet", { _extension_id: current.id }))}>
                 {busy ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Wallet className="h-4 w-4 mr-1" />}{t("Plătește din portofel", "Pay from wallet")}
+              </Button>
+              <Button size="sm" disabled={busy} onClick={() => payByCard(current.id)}>
+                <CreditCard className="h-4 w-4 mr-1" />{t("Plătește cu cardul", "Pay by card")}
               </Button>
             </div>
           ) : (
