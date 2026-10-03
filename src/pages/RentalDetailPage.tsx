@@ -23,6 +23,7 @@ import LeaveReviewDialog from "@/components/dashboard/LeaveReviewDialog";
 import EarlyReturnCard from "@/components/rentals/EarlyReturnCard";
 import MeetingDetailsCard from "@/components/rentals/MeetingDetailsCard";
 import RentalDocumentsModal from "@/components/rentals/RentalDocumentsModal";
+import HandoverPvCard from "@/components/rentals/HandoverPvCard";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 
 import { payForConfirmedRental, payRentalWithWallet } from "@/features/rentals/rentalsApi";
@@ -55,6 +56,8 @@ const RentalDetailPage = () => {
   const [initiatingReturn, setInitiatingReturn] = useState(false);
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
+  const [docsTab, setDocsTab] = useState<"contract" | "anexa1" | "anexa2">("contract");
+  const [docsBlank, setDocsBlank] = useState(false);
   const queryClient = useQueryClient();
   const { data: isAdmin } = useIsAdmin(user?.id);
   const { data: wallet, refetch: refetchWallet } = useWalletBalance();
@@ -555,10 +558,10 @@ const RentalDetailPage = () => {
                   <li className="flex items-center gap-2">{rental.handover_pv_owner_signed_at && rental.handover_pv_renter_signed_at ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Clock className="h-4 w-4 text-muted-foreground" />}{t("Anexa 1 · Predare", "Annex 1 · Handover")}</li>
                   <li className="flex items-center gap-2">{rental.return_pv_owner_signed_at && rental.return_pv_renter_signed_at ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Clock className="h-4 w-4 text-muted-foreground" />}{t("Anexa 2 · Returnare", "Annex 2 · Return")}</li>
                 </ul>
-                <Button className="mt-3" size="sm" onClick={() => setDocsOpen(true)}><FileSignature className="h-4 w-4 mr-1" />{t("Deschide documentele", "Open documents")}</Button>
+                <Button className="mt-3" size="sm" onClick={() => { setDocsBlank(false); setDocsTab("contract"); setDocsOpen(true); }}><FileSignature className="h-4 w-4 mr-1" />{t("Vezi documentele", "View documents")}</Button>
               </div>
             </div>
-            <RentalDocumentsModal open={docsOpen} onOpenChange={setDocsOpen} rental={rental} />
+            <RentalDocumentsModal open={docsOpen} onOpenChange={setDocsOpen} rental={rental} initialTab={docsTab} initialBlank={docsBlank} />
           </section>
         )}
             </div>
@@ -602,6 +605,19 @@ const RentalDetailPage = () => {
                     ))}
                   </ol>
                 </div>
+              )}
+              {rental.status !== "cancelled" && rental.status !== "rejected" && (
+                <HandoverPvCard
+                  rentalId={rental.id}
+                  startDate={rental.start_date}
+                  signed={handoverDoneEarly}
+                  onOpenPv={() => {
+                    if (handoverDoneEarly) { setDocsBlank(false); setDocsTab("anexa1"); setDocsOpen(true); }
+                    else document.getElementById("pv-section")?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  onOpenBlank={() => { setDocsBlank(true); setDocsTab("anexa1"); setDocsOpen(true); }}
+                  t={t}
+                />
               )}
         {/* Step 5 — Renter must initiate the return phase */}
         {handoverDoneEarly && !returnInitiated && !returnDoneEarly && rental.status !== "cancelled" && rental.status !== "completed" && (
@@ -654,7 +670,7 @@ const RentalDetailPage = () => {
         )}
         {/* PV (Procese verbale) — full width under the timeline */}
         {(showHandoverPv || showReturnPv) && (
-          <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
+          <section id="pv-section" className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6 scroll-mt-24">
             <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
               <FileSignature className="h-4 w-4 text-primary" />
               {t("Procese verbale", "Handover documents")}
