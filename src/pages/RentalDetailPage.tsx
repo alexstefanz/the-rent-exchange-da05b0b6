@@ -58,6 +58,7 @@ const RentalDetailPage = () => {
   const [docsOpen, setDocsOpen] = useState(false);
   const [docsTab, setDocsTab] = useState<"contract" | "anexa1" | "anexa2">("contract");
   const [docsBlank, setDocsBlank] = useState(false);
+  const [pvSectionOpen, setPvSectionOpen] = useState(false);
   const queryClient = useQueryClient();
   const { data: isAdmin } = useIsAdmin(user?.id);
   const { data: wallet, refetch: refetchWallet } = useWalletBalance();
@@ -680,8 +681,23 @@ const RentalDetailPage = () => {
           </section>
         )}
         {/* PV (Procese verbale) — full width under the timeline */}
-        {(showHandoverPv || showReturnPv) && (
+        {(showHandoverPv || showReturnPv) && handoverDoneEarly && (!showReturnPv || returnDoneEarly) && !pvSectionOpen ? (
+          <section id="pv-section" className="rounded-2xl border border-border bg-card shadow-sm mb-6 scroll-mt-24">
+            <div role="button" onClick={() => setPvSectionOpen(true)} className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-muted/40 rounded-2xl">
+              <span className="h-8 w-8 rounded-full bg-primary/15 text-primary grid place-items-center shrink-0"><CheckCircle2 className="h-4 w-4" /></span>
+              <div className="min-w-0 flex-1">
+                <p className="font-heading font-semibold text-sm">{t("Procese verbale", "Handover documents")}</p>
+                <p className="text-xs text-muted-foreground inline-flex items-center gap-1">{t("Toate semnăturile aplicate · Vezi detalii", "All signatures applied · View details")}<ChevronDown className="h-3.5 w-3.5" /></p>
+              </div>
+            </div>
+          </section>
+        ) : (showHandoverPv || showReturnPv) && (
           <section id="pv-section" className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6 scroll-mt-24">
+            {handoverDoneEarly && (!showReturnPv || returnDoneEarly) && (
+              <button type="button" onClick={() => setPvSectionOpen(false)} className="mb-2 text-xs text-muted-foreground inline-flex items-center gap-1 hover:text-foreground">
+                {t("Ascunde detaliile", "Hide details")}<ChevronDown className="h-3.5 w-3.5 rotate-180" />
+              </button>
+            )}
             <h3 className="font-heading font-semibold mb-4 flex items-center gap-2">
               <FileSignature className="h-4 w-4 text-primary" />
               {t("Procese verbale", "Handover documents")}
