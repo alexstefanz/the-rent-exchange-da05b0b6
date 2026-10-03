@@ -23,6 +23,7 @@ import LeaveReviewDialog from "@/components/dashboard/LeaveReviewDialog";
 import EarlyReturnCard from "@/components/rentals/EarlyReturnCard";
 import MeetingDetailsCard from "@/components/rentals/MeetingDetailsCard";
 import RentalDocumentsModal from "@/components/rentals/RentalDocumentsModal";
+import RentalExtensionCard from "@/components/rentals/RentalExtensionCard";
 import HandoverPvCard from "@/components/rentals/HandoverPvCard";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 
@@ -680,6 +681,13 @@ const RentalDetailPage = () => {
               )}
             </div>
           </section>
+        )}
+        {handoverDoneEarly && (
+          <RentalExtensionCard
+            rental={rental}
+            role={role}
+            active={!returnInitiated && !returnDoneEarly && rental.status !== "cancelled" && rental.status !== "completed"}
+          />
         )}
         {/* PV (Procese verbale) — full width under the timeline */}
         {(showHandoverPv || showReturnPv) && handoverDoneEarly && (!showReturnPv || returnDoneEarly) && !pvSectionOpen ? (
