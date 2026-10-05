@@ -12,6 +12,8 @@ import { formatPriceShort } from "@/lib/utils";
 
 interface Props {
   clientPrice: number;
+  /** Owner-net daily price used for totals; clientPrice is display-only (fee included). */
+  ownerPrice?: number;
   priceWeek: number;
   priceMonth: number;
   startDate?: Date;
@@ -31,7 +33,7 @@ interface Props {
 }
 
 const PremiumBookingCard = ({
-  clientPrice, priceWeek, priceMonth, startDate, endDate, bookedDates,
+  clientPrice, ownerPrice, priceWeek, priceMonth, startDate, endDate, bookedDates,
   onSelectDate, onClear, onReserve, onAsk, isOwnProduct,
   responseMinutes, ownerVerified, compact, minRentalDays, maxRentalDays,
   platformFeePercent = 0,
@@ -41,8 +43,8 @@ const PremiumBookingCard = ({
 
   const rentalDays = useMemo(() => (startDate && endDate) ? differenceInDays(endDate, startDate) + 1 : 0, [startDate, endDate]);
   const breakdown = useMemo(
-    () => computeRentalPrice(rentalDays, clientPrice, priceWeek, priceMonth, platformFeePercent),
-    [rentalDays, clientPrice, priceWeek, priceMonth, platformFeePercent],
+    () => computeRentalPrice(rentalDays, ownerPrice ?? clientPrice, priceWeek, priceMonth, platformFeePercent),
+    [rentalDays, ownerPrice, clientPrice, priceWeek, priceMonth, platformFeePercent],
   );
   const totalPrice = breakdown.total;
 
@@ -63,10 +65,7 @@ const PremiumBookingCard = ({
         </div>
         {platformFeePercent > 0 && (
           <p className="mt-1 text-[11px] text-muted-foreground">
-            {t(
-              `+ ${platformFeePercent}% comision Rentli (min 1 RON) la finalizare`,
-              `+ ${platformFeePercent}% Rentli fee (min 1 RON) at checkout`,
-            )}
+            {t("Comision Rentli inclus", "Rentli fee included")}
           </p>
         )}
       </div>
@@ -152,13 +151,12 @@ const PremiumBookingCard = ({
             <span className="text-muted-foreground">
               {rentalDays} {language === "en" ? (rentalDays === 1 ? "day" : "days") : (rentalDays === 1 ? "zi" : "zile")} × {formatPriceShort(clientPrice)} RON
             </span>
-            <span className="font-medium">{formatPriceShort(rentalDays * clientPrice)} RON</span>
+            <span className="font-medium">{formatPriceShort(totalPrice)} RON</span>
           </div>
           {breakdown.platformFee > 0 && (
-            <div className="flex justify-between mt-1">
-              <span className="text-muted-foreground">{t("Comision Rentli", "Rentli fee")}</span>
-              <span className="font-medium">{formatPriceShort(breakdown.platformFee)} RON</span>
-            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {t(`Include ${formatPriceShort(breakdown.platformFee)} RON comision Rentli`, `Includes ${formatPriceShort(breakdown.platformFee)} RON Rentli fee`)}
+            </p>
           )}
           <div className="flex justify-between mt-2.5 font-semibold text-base"><span>{t("Total", "Total")}</span><span className="text-primary">{formatPriceShort(totalPrice)} RON</span></div>
         </div>
