@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Printer, FileDown, FileText } from "lucide-react";
+import { Printer, FileDown, FileText, FileSignature } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { useContractAcceptance } from "./useContractAcceptance";
+import ContractSignDialog from "./ContractSignDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,6 +53,13 @@ export default function RentalDocumentsModal({ open, onOpenChange, rental, initi
   const v = (val: string | null | undefined) => (b || !val ? "______________________" : val);
   const handover = pvs?.find((p) => p.phase === "handover");
   const ret = pvs?.find((p) => p.phase === "return");
+  const { user } = useAuth();
+  const acc = useContractAcceptance(rental.id);
+  const [signOpen, setSignOpen] = useState(false);
+  const isPaid = ["authorized", "paid", "captured"].includes(rental.payment_status as string);
+  const myRole = user?.id === rental.owner_id ? "owner" : user?.id === rental.renter_id ? "renter" : null;
+  const canSignContract = isPaid && !!myRole && !(myRole === "owner" ? acc.owner : acc.renter);
+  const contractPv: Pv = { phase: "contract", owner_signature_data: acc.ownerSig, renter_signature_data: acc.renterSig, owner_signed_at: acc.owner, renter_signed_at: acc.renter };
   const items = rental.product_included_items || [];
   const daily = Number(rental.daily_price || 0);
   const { data: exts = [] } = useRentalExtensions(rental.id);
@@ -131,7 +141,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
       <p>Orice defecțiune, pierdere sau furt se comunică imediat celeilalte părți și Rentli, prin chatul intern sau tichet de suport. Locatarul răspunde pentru deteriorările produse din culpa sa. Niciuna dintre părți nu răspunde pentru neexecutarea cauzată de forță majoră.</p>
       <H2>Art. 10. Dispoziții finale</H2>
       <p>Contractul se completează cu Anexa 1 (PV de predare), Anexa 2 (PV de returnare) și eventualele acte adiționale. Litigiile se soluționează amiabil, prin medierea Rentli, iar în caz contrar de instanțele competente din România. Acceptarea electronică și semnăturile digitale din platformă au valoarea semnăturii olografe.</p>
-      <Sig pv={handover} />
+      <Sig pv={contractPv} />
     </div>
   );
 
@@ -227,9 +237,12 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
             {tabs.map((x) => (
               <Button key={x.k} size="sm" variant={tab === x.k ? "default" : "outline"} onClick={() => setTab(x.k)}>{x.l}</Button>
             ))}
-            <div className="ml-auto flex gap-2">
+            <div className="ml-auto flex gap-2 flex-wrap">
+              {tab === "contract" && canSignContract && (
+                <Button size="sm" onClick={() => setSignOpen(true)}><FileSignature className="h-4 w-4 mr-1" />Semnează contractul</Button>
+              )}
               <Button size="sm" variant="outline" onClick={() => print(true)}><FileDown className="h-4 w-4 mr-1" />Set nesemnat</Button>
-              <Button size="sm" onClick={() => print(false)}><Printer className="h-4 w-4 mr-1" />Salvează PDF / Tipărește</Button>
+              <Button size="sm" variant={tab === "contract" && canSignContract ? "outline" : "default"} onClick={() => print(false)}><Printer className="h-4 w-4 mr-1" />Salvează PDF / Tipărește</Button>
             </div>
           </div>
         </DialogHeader>
