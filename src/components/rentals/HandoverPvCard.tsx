@@ -8,14 +8,34 @@ interface Props {
   rentalId: string;
   startDate: string;
   signed: boolean;
+  contractReady?: boolean;
+  onOpenContract?: () => void;
   onOpenPv: () => void;
   onOpenBlank: () => void;
   t: (ro: string, en: string) => string;
 }
 
 
-export default function HandoverPvCard({ rentalId, startDate, signed, onOpenPv, onOpenBlank, t }: Props) {
+export default function HandoverPvCard({ rentalId, startDate, signed, contractReady = true, onOpenContract, onOpenPv, onOpenBlank, t }: Props) {
   const [collapsed, setCollapsed] = useState(true);
+  if (!signed && !contractReady) {
+    return (
+      <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="h-9 w-9 rounded-xl bg-muted text-muted-foreground grid place-items-center shrink-0"><Lock className="h-4 w-4" /></span>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-heading font-semibold text-sm">{t("Proces-verbal de predare", "Handover report")}</h3>
+            <p className="text-xs text-muted-foreground">{t("Semnați întâi contractul. PV-ul se deblochează după ce ambele părți îl acceptă.", "Sign the contract first. The report unlocks once both parties accept it.")}</p>
+          </div>
+          {onOpenContract && (
+            <Button size="sm" variant="outline" onClick={onOpenContract} className="w-full sm:w-auto">
+              <FileSignature className="h-4 w-4 mr-1" />{t("Vezi contractul", "View contract")}
+            </Button>
+          )}
+        </div>
+      </section>
+    );
+  }
 
   const locked = isAfter(startOfDay(new Date(startDate)), startOfDay(new Date()));
   const badge = signed

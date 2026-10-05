@@ -22,6 +22,13 @@
       "when": 1791028126213,
       "tag": "0002_chat_notification_cooldown",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791182225130,
+      "tag": "0003_rental_contract_acceptances",
+      "breakpoints": true
     }
   ]
 }
