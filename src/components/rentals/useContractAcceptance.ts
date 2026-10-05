@@ -45,6 +45,10 @@ export function useContractAcceptance(rentalId?: string) {
     const res = data as { ok?: boolean; error?: string } | null;
     if (!res?.ok) throw new Error(res?.error || "Cod incorect");
     await qc.invalidateQueries({ queryKey: key });
+    const { data: rows } = await supabase
+      .from("rental_contract_acceptances").select("role").eq("rental_id", rentalId!);
+    const roles = new Set((rows ?? []).map((r: any) => r.role));
+    return { bothAccepted: roles.has("owner") && roles.has("renter") };
   };
 
   return {
