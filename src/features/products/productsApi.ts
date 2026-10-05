@@ -1,3 +1,4 @@
+import { calcClientTotal } from "@/lib/rentalPricing";
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeSearchInput } from "@/lib/inputValidation";
 import { handleApiError } from "@/lib/errorHandler";
@@ -74,8 +75,9 @@ export interface ProductFilters {
  * with a floor of 1 RON enforced server-side. `feePercent` is kept for
  * backwards compatibility with existing call sites.
  */
-export const calculateClientPrice = (ownerPrice: number, _feePercent: number): number => {
-  return Math.round((Number(ownerPrice) || 0) * 100) / 100;
+export const calculateClientPrice = (ownerPrice: number, feePercent: number): number => {
+  const owner = Number(ownerPrice) || 0;
+  return calcClientTotal(owner, Number(feePercent) || 0);
 };
 
 export const getProducts = async (filters?: ProductFilters): Promise<Product[]> => {
