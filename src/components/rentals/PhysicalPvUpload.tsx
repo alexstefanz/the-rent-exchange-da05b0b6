@@ -74,6 +74,10 @@ export default function PhysicalPvUpload({ rentalId, phase, onOpenBlank, t, clas
         <li>2. {t(`Completați și semnați ${doc} pe hârtie, ambele părți`, `Fill in and sign ${doc} on paper, both parties`)}</li>
         <li>3. {t("Fotografiază sau scanează documentul și încarcă-l aici", "Photograph or scan it and upload it here")}</li>
       </ol>
+      <p className="mt-2 rounded-md bg-primary/10 px-2 py-1.5 text-xs font-medium">
+        {t("Bunul nu se predă până nu este încărcată în platformă poza sau scanul PV-ului semnat. Până atunci, închirierea nu se consideră începută.",
+           "Do not hand over the item until the photo or scan of the signed report is uploaded. Until then, the rental is not considered started.")}
+      </p>
       {latest?.status === "approved" ? (
         <div className="mt-3 border-l-2 border-primary bg-primary/10 p-3 text-xs rounded-r-lg">
           <p className="font-semibold flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-primary" />{t("PV fizic încărcat și validat", "Physical report uploaded and validated")}</p>

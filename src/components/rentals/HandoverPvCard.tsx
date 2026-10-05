@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { format, isAfter, startOfDay } from "date-fns";
-import { Camera, CheckCircle2, ChevronDown, FileCheck, FileSignature, Loader2, Lock, Upload, Clock } from "lucide-react";
+import { Camera, CheckCircle2, ChevronDown, FileCheck, FileSignature, Loader2, Lock, Upload, Clock, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import PhysicalPvUpload from "./PhysicalPvUpload";
 
@@ -76,6 +76,18 @@ export default function HandoverPvCard({ rentalId, startDate, signed, contractRe
         <button type="button" onClick={() => setCollapsed(true)} className="mb-2 text-xs text-muted-foreground inline-flex items-center gap-1 hover:text-foreground">
           {t("Ascunde detaliile", "Hide details")}<ChevronDown className="h-3.5 w-3.5 rotate-180" />
         </button>
+      )}
+      {!signed && (
+        <div role="alert" className="mb-3 flex gap-2 rounded-lg border border-primary/40 bg-primary/10 p-3 text-xs">
+          <ShieldAlert className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+          <p>
+            <strong>{t("Important pentru siguranța ta:", "Important for your safety:")}</strong>{" "}
+            {t(
+              "Nu predați și nu preluați bunul fizic până când ambele părți nu au semnat procesul-verbal în platformă. Orice daună produsă înainte de înregistrarea PV-ului nu este acoperită de garanție sau de protecția Rentli.",
+              "Do not hand over or take the item until both parties have signed the report in the platform. Any damage before the report is recorded is not covered by the guarantee or Rentli protection."
+            )}
+          </p>
+        </div>
       )}
       <div className="flex items-center gap-3 flex-wrap">
         <span className="h-9 w-9 rounded-xl bg-primary/10 text-primary grid place-items-center shrink-0"><Icon className="h-4 w-4" /></span>
