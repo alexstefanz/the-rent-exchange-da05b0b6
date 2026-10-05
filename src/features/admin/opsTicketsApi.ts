@@ -389,12 +389,21 @@ export const createTicketMessage = async (
     actor_id: userData.user?.id,
   });
 
-  // If admin replied publicly, email the requester — one email per admin message.
+  // If admin replied publicly, email the requester — max one email per ticket
+  // every 30 minutes (later replies in that window are in-app only).
   if (!isInternal && authorType === 'ADMIN') {
     try {
+      const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      const { count: recent } = await opsMessages()
+        .select('id', { count: 'exact', head: true })
+        .eq('ticket_id', ticketId)
+        .eq('author_type', 'ADMIN')
+        .eq('is_internal', false)
+        .neq('id', (data as any).id)
+        .gte('created_at', since);
       const { data: t } = await opsTickets().select('requester_user_id, public_id').eq('id', ticketId).single();
       const tAny = t as any;
-      if (tAny?.requester_user_id) {
+      if ((recent ?? 0) === 0 && tAny?.requester_user_id) {
         sendTicketEmail(
           tAny.requester_user_id,
           'ticket-replied',
