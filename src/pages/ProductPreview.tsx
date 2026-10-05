@@ -245,6 +245,7 @@ const ProductPreview = () => {
             <div className="lg:sticky lg:top-24">
               <PremiumBookingCard
                 clientPrice={clientPrice}
+                ownerPrice={Number(product.daily_price_owner) || 0}
                 priceWeek={priceWeek}
                 priceMonth={priceMonth}
                 startDate={startDate}
@@ -270,6 +271,7 @@ const ProductPreview = () => {
 
       <MobileStickyBookingBar
         clientPrice={clientPrice}
+                ownerPrice={Number(product.daily_price_owner) || 0}
         priceWeek={priceWeek}
         priceMonth={priceMonth}
         startDate={startDate}

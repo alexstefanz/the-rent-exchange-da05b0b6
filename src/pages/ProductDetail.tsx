@@ -338,8 +338,8 @@ const ProductDetail = () => {
 
   const handleReserve = () => {
     if (!product || !startDate || !endDate) return;
-    const totalPrice = computeRentalPrice(rentalDays, clientPrice, priceWeek, priceMonth, product.platform_fee_percent ?? 0).subtotal;
-    navigate('/checkout', { state: { product: { id: product.id, title: displayTitle, images, price: clientPrice, priceUnit: "zi", location, ownerId: product.owner_id, platformFeePercent: product.platform_fee_percent }, startDate, endDate, rentalDays, totalPrice } });
+    const totalPrice = computeRentalPrice(rentalDays, Number(product.daily_price_owner) || 0, priceWeek, priceMonth, product.platform_fee_percent ?? 0).subtotal;
+    navigate('/checkout', { state: { product: { id: product.id, title: displayTitle, images, price: Number(product.daily_price_owner) || 0, priceUnit: "zi", location, ownerId: product.owner_id, platformFeePercent: product.platform_fee_percent }, startDate, endDate, rentalDays, totalPrice } });
   };
 
   const handleShare = () => setShareOpen(true);
@@ -392,6 +392,7 @@ const ProductDetail = () => {
       <StickyProductHeader
         title={displayTitle}
         clientPrice={clientPrice}
+                ownerPrice={Number(product.daily_price_owner) || 0}
         rating={extendedStats?.owner_avg_rating}
         reviewCount={extendedStats?.owner_review_count}
         triggerRef={titleBlockRef}
@@ -525,6 +526,7 @@ const ProductDetail = () => {
             <div className="lg:sticky lg:top-24">
               <PremiumBookingCard
                 clientPrice={clientPrice}
+                ownerPrice={Number(product.daily_price_owner) || 0}
                 priceWeek={priceWeek}
                 priceMonth={priceMonth}
                 startDate={startDate}
@@ -567,6 +569,7 @@ const ProductDetail = () => {
       {/* Mobile sticky booking bar */}
       <MobileStickyBookingBar
         clientPrice={clientPrice}
+                ownerPrice={Number(product.daily_price_owner) || 0}
         priceWeek={priceWeek}
         priceMonth={priceMonth}
         startDate={startDate}
