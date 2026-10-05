@@ -1,9 +1,19 @@
 import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { CheckCircle2, ChevronDown, Clock, Loader2, Upload } from "lucide-react";
+import { CheckCircle2, ChevronDown, Clock, Loader2, Mail, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+
+export const PV_EMAIL = "pv@rentli.ro";
+
+export const PV_REASONS: { value: string; ro: string; en: string }[] = [
+  { value: "battery", ro: "Telefon descărcat / fără baterie", en: "Dead phone / no battery" },
+  { value: "no_signal", ro: "Fără semnal / internet în locație", en: "No signal / internet at location" },
+  { value: "upload_error", ro: "Eroare la încărcare pe platformă", en: "Platform upload error" },
+  { value: "platform_down", ro: "Platformă indisponibilă", en: "Platform unavailable" },
+  { value: "other", ro: "Alt motiv tehnic", en: "Other technical reason" },
+];
 
 interface Props {
   rentalId: string;
@@ -11,15 +21,18 @@ interface Props {
   onOpenBlank: () => void;
   t: (ro: string, en: string) => string;
   className?: string;
+  publicId?: string;
 }
 
 type PhysicalPv = { id: string; file_name: string; status: string; admin_note: string | null; created_at: string };
 
-export default function PhysicalPvUpload({ rentalId, phase, onOpenBlank, t, className = "" }: Props) {
+export default function PhysicalPvUpload({ rentalId, phase, onOpenBlank, t, className = "", publicId }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
+  const [details, setDetails] = useState("");
 
   const { data: uploads, refetch } = useQuery({
     queryKey: ["physical-pv", rentalId, phase],
@@ -39,6 +52,9 @@ export default function PhysicalPvUpload({ rentalId, phase, onOpenBlank, t, clas
   async function submit() {
     if (!file) return;
     setErr(null);
+    if (!reason) return setErr(t("Alege motivul tehnic.", "Choose the technical reason."));
+    if (reason === "other" && details.trim().length < 5)
+      return setErr(t("Descrie motivul tehnic (minim 5 caractere).", "Describe the technical reason (min 5 chars)."));
     if (file.size > 15 * 1024 * 1024) return setErr(t("Fișierul depășește 15 MB.", "File exceeds 15 MB."));
     if (!file.type.startsWith("image/") && file.type !== "application/pdf")
       return setErr(t("Acceptăm doar poze sau PDF.", "Only images or PDF are accepted."));
@@ -50,9 +66,10 @@ export default function PhysicalPvUpload({ rentalId, phase, onOpenBlank, t, clas
       if (upErr) throw upErr;
       const { error } = await supabase.from("rental_physical_pvs" as any).insert({
         rental_id: rentalId, phase, file_path: path, file_name: file.name,
+        reason, reason_details: details.trim().slice(0, 500) || null,
       } as any);
       if (error) throw error;
-      setFile(null);
+      setFile(null); setReason(""); setDetails("");
       await refetch();
     } catch (e: any) {
       setErr(e?.message || t("Încărcarea a eșuat.", "Upload failed."));
@@ -69,6 +86,10 @@ export default function PhysicalPvUpload({ rentalId, phase, onOpenBlank, t, clas
         <Upload className="h-3.5 w-3.5" />{t("Ai semnat pe hârtie? Încarcă scanul sau poza", "Signed on paper? Upload scan or photo")}
         <ChevronDown className="h-3.5 w-3.5 ml-auto group-open:rotate-180 transition-transform" />
       </summary>
+      <p className="mt-2 text-xs text-muted-foreground">
+        {t("Procedură de rezervă: PV-ul fizic se folosește doar din motive tehnice (telefon descărcat, fără semnal, platformă indisponibilă etc.).",
+           "Backup procedure: the paper report is used only for technical reasons (dead phone, no signal, platform down, etc.).")}
+      </p>
       <ol className="mt-2 space-y-1 text-xs">
         <li>1. <button type="button" className="underline text-primary" onClick={onOpenBlank}>{t("Descarcă setul de documente nesemnat", "Download the unsigned document set")}</button></li>
         <li>2. {t(`Completați și semnați ${doc} pe hârtie, ambele părți`, `Fill in and sign ${doc} on paper, both parties`)}</li>
@@ -78,6 +99,20 @@ export default function PhysicalPvUpload({ rentalId, phase, onOpenBlank, t, clas
         {t("Bunul nu se predă până nu este încărcată în platformă poza sau scanul PV-ului semnat. Până atunci, închirierea nu se consideră începută.",
            "Do not hand over the item until the photo or scan of the signed report is uploaded. Until then, the rental is not considered started.")}
       </p>
+      <p className="mt-2 rounded-md border border-border px-2 py-1.5 text-xs">
+        <strong>{t("Păstrați originalul!", "Keep the original!")}</strong>{" "}
+        {t("Ambele părți păstrează exemplarul fizic semnat până când este încărcat și validat în platformă. În caz de dispută sau daună, originalul este proba principală.",
+           "Both parties keep the signed paper copy until it is uploaded and validated. In case of dispute or damage, the original is the main evidence.")}
+      </p>
+      <div className="mt-2 rounded-md border border-border px-2 py-1.5 text-xs flex gap-2">
+        <Mail className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" />
+        <span>
+          {t("Site-ul nu funcționează? Trimite pozele PV-ului semnat și ale bunului la ", "Site down? Email photos of the signed report and the item to ")}
+          <a className="underline text-primary font-medium" href={`mailto:${PV_EMAIL}?subject=${encodeURIComponent(`[PV URGENT - ${publicId ?? "RNT"}]`)}`}>{PV_EMAIL}</a>
+          {t(`, cu subiectul „[PV URGENT - ${publicId ?? "RNT-XXXXXX"}]". Încarcă-l apoi și aici când platforma revine.`,
+             `, subject "[PV URGENT - ${publicId ?? "RNT-XXXXXX"}]". Then upload it here once the platform is back.`)}
+        </span>
+      </div>
       {latest?.status === "approved" ? (
         <div className="mt-3 border-l-2 border-primary bg-primary/10 p-3 text-xs rounded-r-lg">
           <p className="font-semibold flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-primary" />{t("PV fizic încărcat și validat", "Physical report uploaded and validated")}</p>
@@ -93,6 +128,15 @@ export default function PhysicalPvUpload({ rentalId, phase, onOpenBlank, t, clas
           {latest?.status === "rejected" && (
             <p className="mt-3 text-xs text-destructive">{t("PV-ul anterior a fost respins", "Previous report was rejected")}{latest.admin_note ? `: ${latest.admin_note}` : "."}</p>
           )}
+          <label className="mt-3 block text-xs font-medium">{t("Din ce motiv tehnic s-a făcut PV fizic?", "Why was a paper report used?")}</label>
+          <select value={reason} onChange={(e) => setReason(e.target.value)}
+            className="mt-1 w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs">
+            <option value="">{t("Alege motivul…", "Choose reason…")}</option>
+            {PV_REASONS.map((r) => <option key={r.value} value={r.value}>{t(r.ro, r.en)}</option>)}
+          </select>
+          <textarea value={details} onChange={(e) => setDetails(e.target.value)} maxLength={500} rows={2}
+            placeholder={reason === "other" ? t("Descrie motivul (obligatoriu)", "Describe the reason (required)") : t("Detalii (opțional)", "Details (optional)")}
+            className="mt-2 w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs" />
           <input ref={inputRef} type="file" accept="image/*,.pdf" className="hidden"
             onChange={(e) => { setErr(null); setFile(e.target.files?.[0] ?? null); e.target.value = ""; }} />
           <div className="mt-3 flex flex-wrap items-center gap-2">
