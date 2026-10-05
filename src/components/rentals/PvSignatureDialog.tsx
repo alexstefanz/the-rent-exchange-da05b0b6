@@ -399,6 +399,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       if (!refreshed) throw new Error("Documentul nu a putut fi reincarcat dupa semnare.");
       setPv(refreshed);
       setSignNotice("Semnatura ta a fost inregistrata.");
+      let pdfFailed = false;
 
       if (refreshed.owner_signature_data && refreshed.renter_signature_data) {
         try {
@@ -411,6 +412,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
           if (afterPdf) setPv(afterPdf);
         } catch (pdfErr: any) {
           console.error("PV PDF gen failed:", pdfErr);
+          pdfFailed = true;
           setSignNotice(null);
           setSignError(
             `Semnatura a fost salvata, dar documentul PDF nu a putut fi finalizat: ${pdfErr?.message || "eroare necunoscuta"}`,
