@@ -3,13 +3,14 @@ import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
 
-// Provider: Resend via Lovable connector gateway. From-address fixed on rentli.ro.
-// Once Resend has verified rentli.ro, emails ship from noreply@rentli.ro.
+// Provider: Lovable email queue (process-email-queue worker). The root domain
+// rentli.ro cannot be verified by third-party providers because notify.rentli.ro
+// is NS-delegated to Lovable, so all sends go through the internal queue.
 const SITE_NAME = "Rentli"
-const FROM_DOMAIN = "rentli.ro"
+const FROM_DOMAIN = "rentli.ro" // Domain shown in From address (display_from_root)
+const SENDER_DOMAIN = "notify.rentli.ro" // Verified sending domain
 const FROM_LOCAL = "noreply"
 const FROM_ADDRESS = `${SITE_NAME} <${FROM_LOCAL}@${FROM_DOMAIN}>`
-const RESEND_GATEWAY_URL = "https://connector-gateway.lovable.dev/resend/emails"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -343,65 +344,31 @@ Deno.serve(async (req) => {
     status: 'pending',
   })
 
-  // 6. Send via Resend connector gateway
-  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')
-  const resendApiKey = Deno.env.get('RESEND_API_KEY')
-  if (!lovableApiKey || !resendApiKey) {
-    console.error('Resend gateway credentials missing', {
-      hasLovableKey: !!lovableApiKey,
-      hasResendKey: !!resendApiKey,
-    })
-    await supabase.from('email_send_log').insert({
+  // 6. Enqueue for async delivery by the process-email-queue worker.
+  // The worker appends the unsubscribe footer and sends via the verified
+  // notify.rentli.ro domain.
+  const { error: enqueueError } = await supabase.rpc('enqueue_email', {
+    queue_name: 'transactional_emails',
+    payload: {
       message_id: messageId,
-      template_name: templateName,
-      recipient_email: effectiveRecipient,
-      status: 'failed',
-      error_message: 'Resend gateway credentials missing',
-    })
-    return new Response(JSON.stringify({ error: 'Email provider not configured' }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
-  }
+      to: effectiveRecipient,
+      from: FROM_ADDRESS,
+      sender_domain: SENDER_DOMAIN,
+      subject: finalSubject,
+      html,
+      text: plainText,
+      purpose: 'transactional',
+      label: templateName,
+      idempotency_key: idempotencyKey,
+      thread_headers: threadHeaders,
+      queued_at: new Date().toISOString(),
+    },
+  })
 
-  let providerMessageId: string | null = null
-  let providerError: string | null = null
-  try {
-    const resendRes = await fetch(RESEND_GATEWAY_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${lovableApiKey}`,
-        'X-Connection-Api-Key': resendApiKey,
-      },
-      body: JSON.stringify({
-        from: FROM_ADDRESS,
-        to: [effectiveRecipient],
-        subject: finalSubject,
-        html,
-        text: plainText,
-        headers: {
-          'X-Entity-Ref-ID': idempotencyKey,
-          ...threadHeaders,
-        },
-        ...(attachments.length ? { attachments } : {}),
-      }),
-    })
-
-    const resendBody = await resendRes.json().catch(() => ({}))
-
-    if (!resendRes.ok) {
-      providerError = `Resend ${resendRes.status}: ${JSON.stringify(resendBody)}`
-    } else {
-      providerMessageId = resendBody?.id ?? null
-    }
-  } catch (e) {
-    providerError = e instanceof Error ? e.message : String(e)
-  }
-
-  if (providerError) {
-    console.error('Resend send failed', {
-      providerError,
+  if (enqueueError) {
+    console.error('Failed to enqueue transactional email', {
+      code: enqueueError.code,
+      message: enqueueError.message,
       templateName,
       effectiveRecipient,
     })
@@ -410,10 +377,10 @@ Deno.serve(async (req) => {
       template_name: templateName,
       recipient_email: effectiveRecipient,
       status: 'failed',
-      error_message: providerError.slice(0, 1000),
+      error_message: `Enqueue failed: ${enqueueError.message}`.slice(0, 1000),
     })
-    return new Response(JSON.stringify({ error: 'Failed to send email', detail: providerError }), {
-      status: 502,
+    return new Response(JSON.stringify({ error: 'Failed to enqueue email' }), {
+      status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
@@ -422,18 +389,17 @@ Deno.serve(async (req) => {
     message_id: messageId,
     template_name: templateName,
     recipient_email: effectiveRecipient,
-    status: 'sent',
-    metadata: { provider: 'resend', provider_message_id: providerMessageId, idempotency_key: idempotencyKey },
+    status: 'queued',
+    metadata: { provider: 'lovable_queue', idempotency_key: idempotencyKey },
   })
 
-  console.log('Transactional email sent via Resend', {
+  console.log('Transactional email enqueued', {
     templateName,
     effectiveRecipient,
-    providerMessageId,
   })
 
   return new Response(
-    JSON.stringify({ success: true, sent: true, providerMessageId }),
+    JSON.stringify({ success: true, sent: true, queued: true }),
     {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
