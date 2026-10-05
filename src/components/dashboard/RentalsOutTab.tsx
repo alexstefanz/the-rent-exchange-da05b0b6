@@ -228,7 +228,7 @@ const RentalsOutTab = () => {
       {isLiveView && liveList.length === 0 && (
         <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center">
           <p className="text-sm text-muted-foreground">
-            Nu ai cereri noi sau închirieri în derulare în acest moment.
+            {emptyTabText(view, "owner")}
           </p>
         </div>
       )}
@@ -395,7 +395,7 @@ const RentalsOutTab = () => {
 
       {isDoneView && doneList.length === 0 && (
         <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center">
-          <p className="text-sm text-muted-foreground">Nu ai încă închirieri încheiate.</p>
+          <p className="text-sm text-muted-foreground">{emptyTabText(view, "owner")}</p>
         </div>
       )}
 
