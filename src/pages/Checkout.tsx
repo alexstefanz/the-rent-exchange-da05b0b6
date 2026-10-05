@@ -71,6 +71,22 @@ const Checkout = () => {
   const platformFee = calcPlatformFee(totalPrice, product.platformFeePercent ?? 0);
   const clientTotal = Math.round((totalPrice + platformFee) * 100) / 100;
 
+  if (user && user.id === product.ownerId) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="max-w-md w-full rounded-2xl border border-border bg-card p-6 text-center space-y-3">
+          <h1 className="font-heading text-lg font-semibold text-foreground">
+            {t("Nu poți închiria propriul tău produs", "You can't rent your own listing")}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {t("Acesta este anunțul tău. Rezervările pot fi făcute doar de alți utilizatori.", "This is your listing. Only other users can book it.")}
+          </p>
+          <Button onClick={() => navigate(-1)}>{t("Înapoi la anunț", "Back to listing")}</Button>
+        </div>
+      </div>
+    );
+  }
+
   const handleOpenChat = async () => {
     if (!user) { setShowLoginDialog(true); return; }
     if (openingChat) return;

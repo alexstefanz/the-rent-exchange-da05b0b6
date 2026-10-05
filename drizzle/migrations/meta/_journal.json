@@ -64,6 +64,13 @@
       "when": 1791202897732,
       "tag": "0008_physical_pv_approval_unlock",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791207487916,
+      "tag": "0009_rentals_no_self_rental",
+      "breakpoints": true
     }
   ]
 }

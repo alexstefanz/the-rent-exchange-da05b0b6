@@ -1,0 +1,1 @@
+ALTER TABLE public.rentals ADD CONSTRAINT rentals_renter_not_owner CHECK (renter_id <> owner_id);
