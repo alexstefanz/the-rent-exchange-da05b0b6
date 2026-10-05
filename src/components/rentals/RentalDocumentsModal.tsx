@@ -66,7 +66,7 @@ export default function RentalDocumentsModal({ open, onOpenChange, rental, initi
     if (!wasBothRef.current && acc.bothAccepted) {
       wasBothRef.current = true;
       if (justSignedRef.current) { justSignedRef.current = false; return; }
-      toast.success("Felicitări! Contractul a fost semnat de ambele părți.", { description: "Procesele-verbale de predare sunt acum deblocate." });
+      window.dispatchEvent(new CustomEvent("rentli:contract-signed"));
       onOpenChange(false);
     }
   }, [open, acc.loading, acc.bothAccepted, onOpenChange]);
