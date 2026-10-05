@@ -150,8 +150,9 @@ const RentalDetailPage = () => {
   // Both PVs are always visible once the rental is paid; activation/locking is handled inside the panels.
   const showHandoverPvEarly = isPaidEarly && stepEarly >= 3;
   const showReturnPvEarly = isPaidEarly && stepEarly >= 3 && returnInitiated;
-  const handoverDoneEarly = !!(rental?.handover_pv_owner_signed_at && rental?.handover_pv_renter_signed_at);
-  const returnDoneEarly = !!(rental?.return_pv_owner_signed_at && rental?.return_pv_renter_signed_at);
+  // Done = digital PV signed by both, OR a physical PV validated by admin (server sets *_confirmed_at).
+  const handoverDoneEarly = !!(rental?.handover_pv_owner_signed_at && rental?.handover_pv_renter_signed_at) || !!rental?.handover_confirmed_at;
+  const returnDoneEarly = !!(rental?.return_pv_owner_signed_at && rental?.return_pv_renter_signed_at) || !!rental?.return_confirmed_at;
   const handoverIsCurrent = isPaidEarly && !handoverDoneEarly;
   const returnIsCurrent = handoverDoneEarly && !returnDoneEarly;
 

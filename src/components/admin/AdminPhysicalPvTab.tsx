@@ -70,8 +70,11 @@ export default function AdminPhysicalPvTab({ rentalId }: { rentalId: string }) {
               <div className="space-y-2">
                 <input value={notes[r.id] ?? ""} onChange={(e) => setNotes({ ...notes, [r.id]: e.target.value })}
                   placeholder="Notă (obligatorie la respingere)" className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm" />
+                <p className="text-xs text-muted-foreground">
+                  Validarea confirmă automat {r.phase === "handover" ? "predarea (închirierea devine activă)" : "returnarea (închirierea se finalizează)"}.
+                </p>
                 <div className="flex gap-2">
-                  <Button size="sm" disabled={busy === r.id} onClick={() => review(r.id, "approved")}>Validează</Button>
+                  <Button size="sm" disabled={busy === r.id} onClick={() => { if (confirm(r.phase === "handover" ? "Validezi PV-ul fizic? Predarea va fi confirmată și închirierea devine activă." : "Validezi PV-ul fizic? Returnarea va fi confirmată și închirierea se finalizează.")) review(r.id, "approved"); }}>Validează</Button>
                   <Button size="sm" variant="destructive" disabled={busy === r.id} onClick={() => review(r.id, "rejected")}>Respinge</Button>
                 </div>
               </div>
