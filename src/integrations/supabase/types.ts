@@ -1743,6 +1743,8 @@ export type Database = {
           file_path: string
           id: string
           phase: string
+          reason: string
+          reason_details: string | null
           rental_id: string
           reviewed_at: string | null
           reviewed_by: string | null
@@ -1756,6 +1758,8 @@ export type Database = {
           file_path: string
           id?: string
           phase: string
+          reason?: string
+          reason_details?: string | null
           rental_id: string
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -1769,6 +1773,8 @@ export type Database = {
           file_path?: string
           id?: string
           phase?: string
+          reason?: string
+          reason_details?: string | null
           rental_id?: string
           reviewed_at?: string | null
           reviewed_by?: string | null
