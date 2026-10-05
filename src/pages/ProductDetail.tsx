@@ -392,7 +392,6 @@ const ProductDetail = () => {
       <StickyProductHeader
         title={displayTitle}
         clientPrice={clientPrice}
-                ownerPrice={Number(product.daily_price_owner) || 0}
         rating={extendedStats?.owner_avg_rating}
         reviewCount={extendedStats?.owner_review_count}
         triggerRef={titleBlockRef}

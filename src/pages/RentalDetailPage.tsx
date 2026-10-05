@@ -897,8 +897,17 @@ const RentalDetailPage = () => {
             <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
               <h3 className="font-heading font-semibold mb-3">{t("Sumar financiar", "Financial summary")}</h3>
               <dl className="space-y-2 text-sm">
-                <div className="flex justify-between"><dt className="text-muted-foreground">{rental.daily_price} RON × {rental.rental_days} {t("zile", "days")}</dt><dd>{rental.subtotal} RON</dd></div>
-                <div className="flex justify-between"><dt className="text-muted-foreground">{t("Comision Rentli", "Platform fee")}</dt><dd>{rental.platform_fee} RON</dd></div>
+                {isOwner ? (
+                  <>
+                    <div className="flex justify-between"><dt className="text-muted-foreground">{rental.daily_price} RON × {rental.rental_days} {t("zile", "days")}</dt><dd>{rental.subtotal} RON</dd></div>
+                    <div className="flex justify-between"><dt className="text-muted-foreground">{t("Comision Rentli (plătit de chiriaș)", "Rentli fee (paid by renter)")}</dt><dd>{rental.platform_fee} RON</dd></div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between"><dt className="text-muted-foreground">{Math.round(((Number(rental.subtotal || 0) + Number(rental.platform_fee || 0)) / Math.max(1, Number(rental.rental_days || 1))) * 100) / 100} RON × {rental.rental_days} {t("zile", "days")}</dt><dd>{Math.round((Number(rental.subtotal || 0) + Number(rental.platform_fee || 0)) * 100) / 100} RON</dd></div>
+                    <div className="flex justify-between text-xs"><dt className="text-muted-foreground">{t("din care comision Rentli", "of which Rentli fee")}</dt><dd className="text-muted-foreground">{rental.platform_fee} RON</dd></div>
+                  </>
+                )}
                 {rental.product_deposit_value ? (
                   <div className="flex justify-between"><dt className="text-muted-foreground">{t("Garantie", "Deposit")}</dt><dd>{rental.product_deposit_value} RON</dd></div>
                 ) : null}
