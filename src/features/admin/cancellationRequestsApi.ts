@@ -34,17 +34,89 @@ export async function listPendingCancellationRequests(): Promise<PendingCancella
 }
 
 export interface ResolvedCancellationRequest extends PendingCancellationRequest {
-  cancel_request_status: "approved" | "rejected";
+  cancel_request_status: "approved" | "rejected" | "direct";
   cancel_request_responded_at: string | null;
   cancel_request_admin_note: string | null;
   cancel_request_response_note: string | null;
   cancel_request_admin_id: string | null;
+  cancellation_reason?: string | null;
+}
+
+async function listDirectCancellations(excludeIds: Set<string>): Promise<ResolvedCancellationRequest[]> {
+  const { data: rentals, error } = await (supabase.from("rentals") as any)
+    .select("id, public_id, product_id, start_date, end_date, rental_days, subtotal, platform_fee, status, payment_status, renter_id, owner_id, cancellation_reason, cancelled_at, updated_at, created_at")
+    .eq("status", "cancelled")
+    .order("updated_at", { ascending: false })
+    .limit(500);
+  if (error) throw error;
+  const rows = ((rentals || []) as any[]).filter((r) => !excludeIds.has(r.id));
+  if (!rows.length) return [];
+  const productIds = [...new Set(rows.map((r) => r.product_id).filter(Boolean))];
+  const userIds = [...new Set(rows.flatMap((r) => [r.renter_id, r.owner_id]))];
+  const [{ data: products }, { data: profiles }] = await Promise.all([
+    productIds.length ? supabase.from("products").select("id, title, images").in("id", productIds) : Promise.resolve({ data: [] as any[] }),
+    supabase.from("profiles").select("id, full_name, email").in("id", userIds),
+  ]);
+  const pMap = new Map(((products || []) as any[]).map((p) => [p.id, p]));
+  const uMap = new Map(((profiles || []) as any[]).map((u) => [u.id, u]));
+  return rows.map((r) => {
+    const p = pMap.get(r.product_id);
+    const rp = uMap.get(r.renter_id);
+    const op = uMap.get(r.owner_id);
+    const reason: string = r.cancellation_reason || "";
+    const byOwner = reason.startsWith("owner");
+    const when = r.cancelled_at || r.updated_at || r.created_at;
+    return {
+      rental_id: r.id,
+      rental_public_id: r.public_id,
+      product_id: r.product_id,
+      product_title: p?.title ?? null,
+      product_image: p?.images?.[0] ?? null,
+      start_date: r.start_date,
+      end_date: r.end_date,
+      total_days: r.rental_days,
+      subtotal: r.subtotal,
+      platform_fee: r.platform_fee,
+      status: r.status,
+      payment_status: r.payment_status,
+      renter_id: r.renter_id,
+      renter_name: rp?.full_name ?? null,
+      renter_email: rp?.email ?? null,
+      owner_id: r.owner_id,
+      owner_name: op?.full_name ?? null,
+      owner_email: op?.email ?? null,
+      initiator_id: byOwner ? r.owner_id : r.renter_id,
+      initiator_role: byOwner ? "owner" : "renter",
+      cancel_request_subject: null,
+      cancel_request_reason: null,
+      cancel_request_created_at: when,
+      cancel_request_status: "direct",
+      cancel_request_responded_at: when,
+      cancel_request_admin_note: null,
+      cancel_request_response_note: null,
+      cancel_request_admin_id: null,
+      cancellation_reason: reason || null,
+    } as ResolvedCancellationRequest;
+  });
 }
 
 export async function listResolvedCancellationRequests(): Promise<ResolvedCancellationRequest[]> {
   const { data, error } = await (supabase as any).rpc("list_resolved_cancellation_requests");
   if (error) throw error;
-  return (data || []) as ResolvedCancellationRequest[];
+  const mutual = (data || []) as ResolvedCancellationRequest[];
+  const direct = await listDirectCancellations(new Set(mutual.map((m) => m.rental_id)));
+  return [...mutual, ...direct].sort(
+    (a, b) => new Date(b.cancel_request_responded_at || 0).getTime() - new Date(a.cancel_request_responded_at || 0).getTime(),
+  );
+}
+
+export function describeCancellationReason(reason?: string | null): string {
+  switch (reason) {
+    case "renter_self_unpaid": return "Anulată direct de chiriaș (neplătită)";
+    case "owner_self_unpaid": return "Anulată direct de proprietar (neplătită)";
+    case "admin_self_unpaid": return "Anulată de admin (neplătită)";
+    default: return reason ? `Anulată (${reason})` : "Anulată";
+  }
 }
 
 export async function adminApproveCancellation(rentalId: string, note?: string) {
