@@ -77,6 +77,7 @@ const RentalDetailPage = () => {
     queryFn: () => getRentalFullDetail(publicId!),
     enabled: !!publicId && !!user?.id,
   });
+  const contractAcc = useContractAcceptance(rental?.id);
 
   const { data: returnInitiated = false, refetch: refetchReturnInitiated } = useQuery({
     queryKey: ["return-initiated", rental?.id],
