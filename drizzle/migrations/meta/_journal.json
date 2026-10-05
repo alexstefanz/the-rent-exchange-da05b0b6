@@ -29,6 +29,13 @@
       "when": 1791182225130,
       "tag": "0003_rental_contract_acceptances",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791183015577,
+      "tag": "0004_contract_signature_data",
+      "breakpoints": true
     }
   ]
 }
