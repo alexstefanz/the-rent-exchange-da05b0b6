@@ -399,6 +399,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       if (!refreshed) throw new Error("Documentul nu a putut fi reincarcat dupa semnare.");
       setPv(refreshed);
       setSignNotice("Semnatura ta a fost inregistrata.");
+      let pdfFailed = false;
 
       if (refreshed.owner_signature_data && refreshed.renter_signature_data) {
         try {
@@ -411,6 +412,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
           if (afterPdf) setPv(afterPdf);
         } catch (pdfErr: any) {
           console.error("PV PDF gen failed:", pdfErr);
+          pdfFailed = true;
           setSignNotice(null);
           setSignError(
             `Semnatura a fost salvata, dar documentul PDF nu a putut fi finalizat: ${pdfErr?.message || "eroare necunoscuta"}`,
@@ -434,9 +436,9 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       } catch { /* non-blocking */ }
 
       onSigned?.();
-      const finalPv = await getPvDocument(rental.id, phase);
-      if (finalPv) setPv(finalPv);
-      if (finalPv?.pdf_path && finalPv.owner_signed_at && finalPv.renter_signed_at) onOpenChange(false);
+      const bothDone = !!(refreshed.owner_signed_at && refreshed.renter_signed_at);
+      toast.success(bothDone ? "Procesul-verbal a fost semnat de ambele parti." : "Semnatura ta a fost inregistrata.");
+      onOpenChange(false);
     } catch (e: any) {
       console.error("PV sign failed:", e);
       const m = String(e?.message || "");
