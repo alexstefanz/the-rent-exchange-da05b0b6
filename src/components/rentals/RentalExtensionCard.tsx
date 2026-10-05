@@ -180,16 +180,16 @@ export default function RentalExtensionCard({ rental, role, active }: { rental: 
       )}
 
       {current && current.status === "pending" && (
-        <div className="rounded-xl border border-primary/40 bg-primary/5 p-4 space-y-3">
+        <div className="rounded-xl bg-primary text-primary-foreground p-4 space-y-3 shadow-md">
           <p className="text-sm">
             <b>{t(`Cerere de prelungire: +${current.requested_days} zile`, `Extension request: +${current.requested_days} days`)}</b>{" "}
             ({fmt(current.original_end_date)} → {fmt(current.requested_end_date)})
           </p>
-          {current.note && <p className="text-sm text-muted-foreground italic">„{current.note}”</p>}
+          {current.note && <p className="text-sm text-primary-foreground/85 italic">„{current.note}”</p>}
           {role === "renter" ? (
             <div className="flex items-center justify-between gap-2">
-              <p className="text-sm text-muted-foreground">{t("Se așteaptă răspunsul proprietarului.", "Waiting for the owner's answer.")}</p>
-              <Button size="sm" variant="ghost" disabled={busy} onClick={() => run(() => supabase.rpc("cancel_rental_extension", { _extension_id: current.id }))}>{t("Anulează cererea", "Cancel request")}</Button>
+              <p className="text-sm text-primary-foreground/90">{t("Se așteaptă răspunsul proprietarului.", "Waiting for the owner's answer.")}</p>
+              <Button size="sm" variant="ghost" className="text-primary-foreground hover:bg-primary-foreground/15 hover:text-primary-foreground" disabled={busy} onClick={() => run(() => supabase.rpc("cancel_rental_extension", { _extension_id: current.id }))}>{t("Anulează cererea", "Cancel request")}</Button>
             </div>
           ) : (
             <div className="space-y-2">
@@ -197,16 +197,16 @@ export default function RentalExtensionCard({ rental, role, active }: { rental: 
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   <span>{t("Aprobă parțial:", "Approve partially:")}</span>
                   {Array.from({ length: current.requested_days - 1 }, (_, i) => i + 1).map((d) => (
-                    <Button key={d} size="sm" variant={partial === d ? "default" : "outline"} onClick={() => setPartial(partial === d ? null : d)}>{d} {t("zile", "days")}</Button>
+                    <Button key={d} size="sm" variant="outline" className={partial === d ? "bg-primary-foreground text-primary border-primary-foreground hover:bg-primary-foreground hover:text-primary" : "bg-transparent text-primary-foreground border-primary-foreground/60 hover:bg-primary-foreground/15 hover:text-primary-foreground"} onClick={() => setPartial(partial === d ? null : d)}>{d} {t("zile", "days")}</Button>
                   ))}
                 </div>
               )}
               <div className="flex flex-wrap gap-2 justify-end">
-                <Button size="sm" variant="outline" disabled={busy} onClick={() => run(() => supabase.rpc("decide_rental_extension", { _extension_id: current.id, _approved_days: 0 }))}><X className="h-4 w-4 mr-1" />{t("Refuză", "Decline")}</Button>
+                <Button size="sm" variant="outline" className="bg-transparent text-primary-foreground border-primary-foreground/60 hover:bg-primary-foreground/15 hover:text-primary-foreground" disabled={busy} onClick={() => run(() => supabase.rpc("decide_rental_extension", { _extension_id: current.id, _approved_days: 0 }))}><X className="h-4 w-4 mr-1" />{t("Refuză", "Decline")}</Button>
                 {partial && (
-                  <Button size="sm" variant="secondary" disabled={busy} onClick={() => run(() => supabase.rpc("decide_rental_extension", { _extension_id: current.id, _approved_days: partial }))}>{t(`Aprobă ${partial} zile`, `Approve ${partial} days`)}</Button>
+                  <Button size="sm" variant="outline" className="bg-primary-foreground/15 text-primary-foreground border-primary-foreground hover:bg-primary-foreground/25 hover:text-primary-foreground" disabled={busy} onClick={() => run(() => supabase.rpc("decide_rental_extension", { _extension_id: current.id, _approved_days: partial }))}>{t(`Aprobă ${partial} zile`, `Approve ${partial} days`)}</Button>
                 )}
-                <Button size="sm" disabled={busy} onClick={() => run(() => supabase.rpc("decide_rental_extension", { _extension_id: current.id, _approved_days: current.requested_days }))}><Check className="h-4 w-4 mr-1" />{t("Aprobă total", "Approve all")}</Button>
+                <Button size="sm" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90" disabled={busy} onClick={() => run(() => supabase.rpc("decide_rental_extension", { _extension_id: current.id, _approved_days: current.requested_days }))}><Check className="h-4 w-4 mr-1" />{t("Aprobă total", "Approve all")}</Button>
               </div>
             </div>
           )}

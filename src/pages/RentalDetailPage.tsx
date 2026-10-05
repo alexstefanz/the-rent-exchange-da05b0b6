@@ -629,6 +629,13 @@ const RentalDetailPage = () => {
               </div>
             ) : (
               <div className="space-y-4">
+              {handoverDoneEarly && (
+                <RentalExtensionCard
+                  rental={rental}
+                  role={role}
+                  active={!returnInitiated && !returnDoneEarly && rental.status !== "cancelled" && rental.status !== "completed"}
+                />
+              )}
               {!handoverDoneEarly && (
                 <div className="border-l-2 border-primary bg-primary/10 p-5 rounded-r-xl">
                   <p className="text-[11px] font-bold uppercase tracking-wider text-primary mb-3">{t("Ce trebuie să faceți la întâlnire", "What to do at the meeting")}</p>
@@ -709,13 +716,6 @@ const RentalDetailPage = () => {
               )}
             </div>
           </section>
-        )}
-        {handoverDoneEarly && (
-          <RentalExtensionCard
-            rental={rental}
-            role={role}
-            active={!returnInitiated && !returnDoneEarly && rental.status !== "cancelled" && rental.status !== "completed"}
-          />
         )}
         {/* PV (Procese verbale) — full width under the timeline */}
         {(showHandoverPv || showReturnPv) && handoverDoneEarly && (!showReturnPv || returnDoneEarly) && !pvSectionOpen ? (
