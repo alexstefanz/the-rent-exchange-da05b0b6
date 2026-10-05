@@ -193,7 +193,12 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
           <tbody>
             {[
               ["Bun", v(rental.product_title)],
-              ["Data", b ? "____________" : fmtD(isRet ? rental.end_date : rental.start_date)],
+              ["Data", b ? "____________" : (() => {
+                const signed = [pv?.owner_signed_at, pv?.renter_signed_at].filter(Boolean) as string[];
+                const confirmed = isRet ? rental.return_confirmed_at : rental.handover_confirmed_at;
+                const eff = signed.length ? signed.sort().at(-1)! : confirmed;
+                return eff ? `${fmtDT(eff)} (data semnării)` : `${fmtD(isRet ? rental.end_date : rental.start_date)} (programată — se confirmă la semnare)`;
+              })()],
               ["Interval orar", b ? "____:____" : slot(rental.pickup_time)],
               ["Locație", v(rental.pickup_location || rental.product_location_city)],
               [isRet ? "Predă (Locatar)" : "Predă (Locator)", v(isRet ? rental.renter_name : rental.owner_name)],
