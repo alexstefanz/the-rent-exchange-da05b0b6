@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, differenceInCalendarDays } from "date-fns";
-import { CalendarPlus, Loader2, AlertTriangle, Check, X, Wallet, FileText, CreditCard } from "lucide-react";
+import { CalendarPlus, Loader2, AlertTriangle, Check, X, Wallet, FileText, CreditCard, FileSignature } from "lucide-react";
+import ExtensionSignDialog from "./ExtensionSignDialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +15,7 @@ export type RentalExtension = {
   approved_days: number | null; approved_end_date: string | null; daily_price: number; subtotal_amount: number | null;
   platform_fee: number | null; total_amount: number | null; status: string; payment_status: string; note: string | null;
   rejection_reason: string | null; created_at: string; decided_at: string | null; paid_at: string | null;
+  owner_signature_data: string | null; renter_signature_data: string | null; owner_signed_at: string | null; renter_signed_at: string | null;
 };
 
 export function useRentalExtensions(rentalId: string) {
@@ -45,8 +47,9 @@ const fmt = (d?: string | null) => (d ? format(new Date(d), "dd.MM.yyyy") : "—
 const ron = (n?: number | null) => `${Number(n || 0).toFixed(2)} RON`;
 const QUICK = [1, 2, 3, 5, 7];
 
-export default function RentalExtensionCard({ rental, role, active }: { rental: RentalFullDetail; role: "owner" | "renter"; active: boolean }) {
+export default function RentalExtensionCard({ rental, role, active, onOpenAnnex }: { rental: RentalFullDetail; role: "owner" | "renter"; active: boolean; onOpenAnnex?: () => void }) {
   const { language } = useLanguage();
+  const [signId, setSignId] = useState<string | null>(null);
   const t = (r: string, e: string) => (language === "ro" ? r : e);
   const qc = useQueryClient();
   const { data: exts = [] } = useRentalExtensions(rental.id);
@@ -128,9 +131,12 @@ export default function RentalExtensionCard({ rental, role, active }: { rental: 
 
       {(() => {
         const lastPaid = exts.find((e) => e.status === "approved" && e.payment_status === "paid");
-        const step = open ? 1 : current?.status === "pending" ? 2 : current?.status === "approved" ? 3 : lastPaid ? 6 : 0;
+        const lastSigned = !!lastPaid?.owner_signed_at && !!lastPaid?.renter_signed_at;
+        const step = open ? 1 : current?.status === "pending" ? 2 : current?.status === "approved" ? 3 : lastPaid ? (lastSigned ? 6 : 4) : 0;
         if (!step) return null;
-        const labels = [t("Solicitare", "Request"), t("Răspuns proprietar", "Owner answer"), t("Plată diferență", "Payment"), t("Actualizare asigurare", "Insurance update"), t("Nou termen", "New term")];
+        const labels = [t("Solicitare", "Request"), t("Răspuns proprietar", "Owner answer"), t("Plată diferență", "Payment"), t("Semnare Anexa 3", "Sign Annex 3"), t("Nou termen", "New term")];
+        const mySigned = lastPaid ? !!(role === "owner" ? lastPaid.owner_signed_at : lastPaid.renter_signed_at) : true;
+        const otherSigned = lastPaid ? !!(role === "owner" ? lastPaid.renter_signed_at : lastPaid.owner_signed_at) : true;
         return (
           <>
             <ol className="grid grid-cols-5 gap-1">
@@ -144,16 +150,33 @@ export default function RentalExtensionCard({ rental, role, active }: { rental: 
                 );
               })}
             </ol>
-            {lastPaid && !current && !open && (
+            {lastPaid && !current && !open && !lastSigned && (
+              <div className="rounded-xl border-2 border-primary bg-primary/5 p-4 text-sm space-y-2">
+                <p className="font-semibold">{t("Anexa 3 — Act adițional de prelungire", "Annex 3 — Extension addendum")}</p>
+                <p className="text-muted-foreground">
+                  {!mySigned
+                    ? t(`Prelungirea (+${lastPaid.approved_days} zile, până la ${fmt(lastPaid.approved_end_date)}) a fost plătită. Semnează Anexa 3 pentru a o confirma.`, `The extension was paid. Sign Annex 3 to confirm it.`)
+                    : t(`Ai semnat. Se așteaptă semnătura ${role === "owner" ? "chiriașului" : "proprietarului"}.`, "You signed. Waiting for the other party.")}
+                </p>
+                <div className="flex flex-wrap gap-2 justify-end">
+                  {onOpenAnnex && <Button size="sm" variant="outline" onClick={onOpenAnnex}><FileText className="h-4 w-4 mr-1" />{t("Vezi Anexa 3", "View Annex 3")}</Button>}
+                  {!mySigned && <Button size="sm" onClick={() => setSignId(lastPaid.id)}><FileSignature className="h-4 w-4 mr-1" />{t("Semnează Anexa 3", "Sign Annex 3")}</Button>}
+                </div>
+                {otherSigned && !mySigned && <p className="text-xs text-muted-foreground">{t("Cealaltă parte a semnat deja.", "The other party already signed.")}</p>}
+              </div>
+            )}
+            {lastPaid && !current && !open && lastSigned && (
               <div className="rounded-xl border border-border bg-muted/40 p-3 text-sm space-y-1">
-                <p className="font-medium">{t("Poliță de asigurare & Protecție Rentli", "Insurance policy & Rentli protection")} <span className="ml-1 text-[10px] uppercase rounded bg-muted px-1.5 py-0.5 text-muted-foreground">{t("în curând", "coming soon")}</span></p>
-                <p className="text-muted-foreground">{t(`Protecția bunului se extinde pentru noul interval: ${fmt(lastPaid.original_end_date)} → ${fmt(lastPaid.approved_end_date)}.`, `Protection extends for the new period: ${fmt(lastPaid.original_end_date)} → ${fmt(lastPaid.approved_end_date)}.`)}</p>
+                <p className="text-muted-foreground">{t(`Anexa 3 semnată de ambele părți. Protecția bunului se extinde: ${fmt(lastPaid.original_end_date)} → ${fmt(lastPaid.approved_end_date)}.`, `Annex 3 signed by both parties. Protection extends: ${fmt(lastPaid.original_end_date)} → ${fmt(lastPaid.approved_end_date)}.`)}</p>
                 <p className="font-medium text-primary">{t(`Nou termen de returnare: ${fmt(lastPaid.approved_end_date)}`, `New return date: ${fmt(lastPaid.approved_end_date)}`)}</p>
               </div>
             )}
           </>
         );
       })()}
+      {signId && (
+        <ExtensionSignDialog open={!!signId} onOpenChange={(v) => { if (!v) setSignId(null); }} extensionId={signId} publicId={rental.public_id} onSigned={refresh} onOpenAnnex={onOpenAnnex ? () => { setSignId(null); onOpenAnnex(); } : undefined} />
+      )}
 
       {open && (
         <div className="rounded-xl border border-border p-4 space-y-3">
