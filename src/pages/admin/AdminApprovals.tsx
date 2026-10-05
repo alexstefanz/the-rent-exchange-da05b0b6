@@ -7,6 +7,7 @@ import { approveProduct, rejectProduct } from "@/features/admin/adminProductsApi
 import AdminLayout from "@/components/admin/AdminLayout";
 import AdminCancellationRequestsPanel from "@/components/admin/AdminCancellationRequestsPanel";
 import AdminProductDeletionsPanel from "@/components/admin/AdminProductDeletionsPanel";
+import AdminReviewModerationPanel, { usePendingReviewsCount } from "@/components/admin/AdminReviewModerationPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Card, CardContent } from "@/components/ui/card";
@@ -129,6 +130,8 @@ const AdminApprovals = () => {
     setImageIndices((prev) => ({ ...prev, [productId]: index }));
   };
 
+  const pendingReviewsCount = usePendingReviewsCount();
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -153,6 +156,14 @@ const AdminApprovals = () => {
             </TabsTrigger>
             <TabsTrigger value="deletions" className="gap-2">
               Cereri ștergere
+            </TabsTrigger>
+            <TabsTrigger value="reviews" className="gap-2">
+              Recenzii
+              {pendingReviewsCount > 0 && (
+                <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-semibold text-destructive-foreground">
+                  {pendingReviewsCount > 9 ? "9+" : pendingReviewsCount}
+                </span>
+              )}
             </TabsTrigger>
           </TabsList>
           <TabsContent value="products" className="space-y-6">
@@ -448,6 +459,9 @@ const AdminApprovals = () => {
           </TabsContent>
           <TabsContent value="deletions">
             <AdminProductDeletionsPanel />
+          </TabsContent>
+          <TabsContent value="reviews">
+            <AdminReviewModerationPanel />
           </TabsContent>
         </Tabs>
       </div>
