@@ -24,7 +24,7 @@ interface Props {
   publicId?: string;
 }
 
-type PhysicalPv = { id: string; file_name: string; status: string; admin_note: string | null; created_at: string };
+type PhysicalPv = { id: string; file_name: string; status: string; admin_note: string | null; created_at: string; uploaded_by: string };
 
 export default function PhysicalPvUpload({ rentalId, phase, onOpenBlank, t, className = "", publicId }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -34,20 +34,28 @@ export default function PhysicalPvUpload({ rentalId, phase, onOpenBlank, t, clas
   const [reason, setReason] = useState("");
   const [details, setDetails] = useState("");
 
+  const { data: me } = useQuery({
+    queryKey: ["auth-uid"],
+    queryFn: async () => (await supabase.auth.getUser()).data.user?.id ?? null,
+  });
+
   const { data: uploads, refetch } = useQuery({
     queryKey: ["physical-pv", rentalId, phase],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rental_physical_pvs" as any)
-        .select("id, file_name, status, admin_note, created_at")
+        .select("id, file_name, status, admin_note, created_at, uploaded_by")
         .eq("rental_id", rentalId)
         .eq("phase", phase)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as PhysicalPv[];
     },
+    refetchInterval: (q) => ((q.state.data as PhysicalPv[] | undefined)?.[0]?.status === "pending" ? 15000 : false),
   });
   const latest = uploads?.[0];
+  const byMe = latest && me && latest.uploaded_by === me;
+  const who = byMe ? t("de tine", "by you") : t("de cealaltă parte", "by the other party");
 
   async function submit() {
     if (!file) return;
