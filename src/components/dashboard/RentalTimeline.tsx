@@ -1,4 +1,4 @@
-import { Check, Send, ThumbsUp, CreditCard, Package, RotateCcw, CheckCircle2, X } from "lucide-react";
+import { Check, Send, CreditCard, Package, RotateCcw, X, FileSignature, KeyRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -20,47 +20,36 @@ export interface RentalForTimeline {
   return_pv_renter_signed?: boolean;
   /** True when owner signed the return PV. Promotes timeline to step 7 (Finalizat). */
   return_pv_owner_signed?: boolean;
+  /** True when both parties signed the rental contract. */
+  contract_signed?: boolean;
 }
 
-function startOfDay(d: Date) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
-
 /**
- * 6-step rental timeline.
- * 1. Cerere trimisă        — pending, owner has not responded yet
- * 2. Confirmat             — owner accepted the request, payment not yet captured/authorized
- * 3. Plată efectuată       — payment authorized (Stripe hold) OR paid
- * 4. Predare produs        — PV is being signed AND renter must confirm receipt (handover_confirmed_at)
- * 5. Returnare             — return phase started (end of period or early-return)
- * 6. Finalizat             — completed OR return_confirmed_at set
+ * 6-step rental timeline:
+ * 1. Rezervare  2. Plată  3. Contract  4. Predare & PV  5. Închiriere  6. Returnare
+ * `done` = whole flow finished (all steps green).
  */
-export function getTimelineStep(rental: RentalForTimeline): { current: number; cancelled: boolean } {
-  if (rental.status === "cancelled") return { current: 2, cancelled: true };
-  if (rental.return_pv_owner_signed) return { current: 6, cancelled: false };
-  if (rental.status === "completed" || rental.return_confirmed_at) return { current: 6, cancelled: false };
-  if (rental.return_pv_renter_signed) return { current: 5, cancelled: false };
-  if (rental.handover_confirmed_at || rental.status === "active") {
-    if (rental.return_initiated) return { current: 5, cancelled: false };
-    return { current: 5, cancelled: false };
+export function getTimelineStep(rental: RentalForTimeline): { current: number; cancelled: boolean; done: boolean } {
+  const paid = rental.payment_status === "authorized" || rental.payment_status === "paid" || rental.payment_status === "captured";
+  if (rental.status === "cancelled") return { current: paid ? 3 : 1, cancelled: true, done: false };
+  if (rental.return_pv_owner_signed || rental.status === "completed" || rental.return_confirmed_at) return { current: 6, cancelled: false, done: true };
+  if (rental.return_pv_renter_signed || rental.return_initiated) return { current: 6, cancelled: false, done: false };
+  if (rental.handover_confirmed_at || rental.status === "active") return { current: 5, cancelled: false, done: false };
+  if (paid || rental.handover_pv_signed) {
+    if (rental.contract_signed || rental.handover_pv_signed) return { current: 4, cancelled: false, done: false };
+    return { current: 3, cancelled: false, done: false };
   }
-  if (rental.status === "confirmed") {
-    // PV signed but renter hasn't confirmed receipt yet → still in handover step
-    if (rental.handover_pv_signed) return { current: 4, cancelled: false };
-    if (rental.payment_status === "authorized" || rental.payment_status === "paid") return { current: 4, cancelled: false };
-    return { current: 2, cancelled: false };
-  }
-  if (rental.payment_status === "authorized" || rental.payment_status === "paid") {
-    return { current: 3, cancelled: false };
-  }
-  return { current: 1, cancelled: false };
+  if (rental.status === "confirmed") return { current: 2, cancelled: false, done: false };
+  return { current: 1, cancelled: false, done: false };
 }
 
 const STEPS = [
-  { icon: Send, ro: "Cerere trimisă", en: "Request sent", roShort: "Cerere", enShort: "Request" },
-  { icon: ThumbsUp, ro: "Confirmat", en: "Confirmed", roShort: "Confirmat", enShort: "Confirmed" },
-  { icon: CreditCard, ro: "Plată efectuată", en: "Payment done", roShort: "Plată", enShort: "Payment" },
-  { icon: Package, ro: "Predare produs", en: "Handover", roShort: "Predare", enShort: "Handover" },
+  { icon: Send, ro: "Rezervare", en: "Booking", roShort: "Rezervare", enShort: "Booking" },
+  { icon: CreditCard, ro: "Plată", en: "Payment", roShort: "Plată", enShort: "Payment" },
+  { icon: FileSignature, ro: "Contract", en: "Contract", roShort: "Contract", enShort: "Contract" },
+  { icon: Package, ro: "Predare & PV", en: "Handover & PV", roShort: "Predare", enShort: "Handover" },
+  { icon: KeyRound, ro: "Închiriere", en: "Rental", roShort: "Închiriere", enShort: "Rental" },
   { icon: RotateCcw, ro: "Returnare", en: "Return", roShort: "Returnare", enShort: "Return" },
-  { icon: CheckCircle2, ro: "Finalizat", en: "Completed", roShort: "Finalizat", enShort: "Done" },
 ] as const;
 
 interface Props {
@@ -70,14 +59,14 @@ interface Props {
 
 const RentalTimeline = ({ rental, className }: Props) => {
   const { language } = useLanguage();
-  const { current, cancelled } = getTimelineStep(rental);
+  const { current, cancelled, done } = getTimelineStep(rental);
 
   return (
     <div className={cn("w-full", className)}>
       <div className="flex items-start">
         {STEPS.map((s, idx) => {
           const stepNum = idx + 1;
-          const completedAll = current === STEPS.length && !cancelled;
+          const completedAll = done && !cancelled;
           const isPast = !cancelled && (stepNum < current || completedAll);
           const isActive = stepNum === current && !cancelled && !completedAll;
           const isCancel = cancelled && stepNum === current;
