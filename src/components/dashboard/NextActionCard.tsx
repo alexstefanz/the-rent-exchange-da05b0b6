@@ -1,3 +1,4 @@
+import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import { ReactNode, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -63,7 +64,12 @@ const NextActionCard = ({
     accent: string;
   };
 
-  const handleChat = onChat ?? (() => navigate("/mesaje"));
+  const handleChat = onChat ?? (async () => {
+    const convId = await getOrCreateRentalConversation(rental.id);
+    navigate(convId ? `/mesaje?conv=${convId}` : "/mesaje", {
+      state: { returnTo: { pathname: window.location.pathname, search: window.location.search } },
+    });
+  });
   const disputePhase: "handover" | "return" =
     rental.handover_confirmed_at ? "return" : "handover";
   const showReportIssue = !isDisputed && step >= 3 && step <= 6;
