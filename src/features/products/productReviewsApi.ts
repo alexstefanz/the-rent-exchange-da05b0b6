@@ -1,5 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import { containsProfanityWords } from "@/lib/profanityFilter";
+import { containsContactInfo } from "@/lib/inputValidation";
+
+export const CONTACT_REVIEW_ERROR = "Recenzia nu poate conține numere de telefon, adrese de email sau link-uri.";
 
 export interface ProductReview {
   id: string;
@@ -21,6 +24,7 @@ export async function getProductReviews(productId: string): Promise<{ owner: Pro
     .from("product_reviews")
     .select("*, profiles:reviewer_id(full_name, avatar_url)")
     .eq("product_id", productId)
+    .eq("status", "approved")
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -62,6 +66,10 @@ export async function createProductReview(
     throw new Error("Comentariul conține limbaj inadecvat. Te rugăm să-l reformulezi.");
   }
 
+  if (comment && containsContactInfo(comment)) {
+    throw new Error(CONTACT_REVIEW_ERROR);
+  }
+
   const { error } = await supabase.from("product_reviews").insert({
     product_id: productId,
     reviewer_id: user.id,
@@ -75,6 +83,9 @@ export async function createProductReview(
   });
 
   if (error) throw error;
+
+  // Low ratings are held for moderation — notify only once published.
+  if (overall <= 3) return;
 
   // Send review notification (fire and forget)
   try {

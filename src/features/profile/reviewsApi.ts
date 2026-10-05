@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { handleApiError } from "@/lib/errorHandler";
 import { containsProfanityWords } from "@/lib/profanityFilter";
+import { containsContactInfo } from "@/lib/inputValidation";
 
 export interface UserReview {
   id: string;
@@ -53,6 +54,10 @@ export const createUserReview = async (
     throw new Error("Comentariul conține limbaj inadecvat. Te rugăm să-l reformulezi.");
   }
 
+  if (comment && containsContactInfo(comment)) {
+    throw new Error("Recenzia nu poate conține numere de telefon, adrese de email sau link-uri.");
+  }
+
   const { data, error } = await supabase
     .from("user_reviews")
     .insert({
@@ -68,6 +73,9 @@ export const createUserReview = async (
   if (error) {
     handleApiError("Error creating review", error);
   }
+
+  // Low ratings are held for moderation — notify only once published.
+  if (rating <= 3) return data;
 
   // Send review notification (fire and forget)
   try {
