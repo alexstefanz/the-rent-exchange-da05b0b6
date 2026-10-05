@@ -434,9 +434,9 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       } catch { /* non-blocking */ }
 
       onSigned?.();
-      const finalPv = await getPvDocument(rental.id, phase);
-      if (finalPv) setPv(finalPv);
-      if (finalPv?.pdf_path && finalPv.owner_signed_at && finalPv.renter_signed_at) onOpenChange(false);
+      const bothDone = !!(refreshed.owner_signed_at && refreshed.renter_signed_at);
+      toast.success(bothDone ? "Procesul-verbal a fost semnat de ambele parti." : "Semnatura ta a fost inregistrata.");
+      onOpenChange(false);
     } catch (e: any) {
       console.error("PV sign failed:", e);
       const m = String(e?.message || "");
