@@ -3,13 +3,14 @@ import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
 
-// Provider: Resend via Lovable connector gateway. From-address fixed on rentli.ro.
-// Once Resend has verified rentli.ro, emails ship from noreply@rentli.ro.
+// Provider: Lovable email queue (process-email-queue worker). The root domain
+// rentli.ro cannot be verified by third-party providers because notify.rentli.ro
+// is NS-delegated to Lovable, so all sends go through the internal queue.
 const SITE_NAME = "Rentli"
-const FROM_DOMAIN = "rentli.ro"
+const FROM_DOMAIN = "rentli.ro" // Domain shown in From address (display_from_root)
+const SENDER_DOMAIN = "notify.rentli.ro" // Verified sending domain
 const FROM_LOCAL = "noreply"
 const FROM_ADDRESS = `${SITE_NAME} <${FROM_LOCAL}@${FROM_DOMAIN}>`
-const RESEND_GATEWAY_URL = "https://connector-gateway.lovable.dev/resend/emails"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
