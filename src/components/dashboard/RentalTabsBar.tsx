@@ -29,9 +29,13 @@ interface Props {
   sortBy: RentalSortBy;
   onSortChange: (v: RentalSortBy) => void;
   amountLabel: string;
+  accent?: "primary" | "blue";
 }
 
-const RentalTabsBar = ({ view, onChange, counts, sortBy, onSortChange, amountLabel }: Props) => (
+const RentalTabsBar = ({ view, onChange, counts, sortBy, onSortChange, amountLabel, accent = "primary" }: Props) => {
+  const activeCls = accent === "blue" ? "bg-sky-600 text-white shadow-sm" : "bg-primary text-primary-foreground shadow-sm";
+  const pulseCls = accent === "blue" ? "animate-pulse bg-sky-600 text-white" : "animate-pulse bg-primary text-primary-foreground";
+  return (
   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
     <div className="grid w-full grid-cols-4 rounded-xl border border-border bg-muted/40 p-1 sm:inline-grid sm:w-auto">
       {TABS.map((t) => {
@@ -43,11 +47,11 @@ const RentalTabsBar = ({ view, onChange, counts, sortBy, onSortChange, amountLab
             type="button"
             onClick={() => onChange(t.key)}
             className={`rounded-lg px-2 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${
-              active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+              active ? activeCls : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {t.label}
-            <span className={`ml-1.5 rounded-full px-1.5 text-xs ${active ? "bg-background/25" : pulse ? "animate-pulse bg-primary text-primary-foreground" : "bg-background"}`}>
+            <span className={`ml-1.5 rounded-full px-1.5 text-xs ${active ? "bg-background/25" : pulse ? pulseCls : "bg-background"}`}>
               {counts[t.key]}
             </span>
           </button>
@@ -66,6 +70,7 @@ const RentalTabsBar = ({ view, onChange, counts, sortBy, onSortChange, amountLab
       <option value="amount_asc">{amountLabel}: crescător</option>
     </select>
   </div>
-);
+  );
+};
 
 export default RentalTabsBar;
