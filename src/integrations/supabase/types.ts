@@ -1636,11 +1636,15 @@ export type Database = {
           id: string
           note: string | null
           original_end_date: string
+          owner_signature_data: string | null
+          owner_signed_at: string | null
           paid_at: string | null
           payment_status: string
           platform_fee: number | null
           rejection_reason: string | null
           rental_id: string
+          renter_signature_data: string | null
+          renter_signed_at: string | null
           requested_by: string
           requested_days: number
           requested_end_date: string
@@ -1657,11 +1661,15 @@ export type Database = {
           id?: string
           note?: string | null
           original_end_date: string
+          owner_signature_data?: string | null
+          owner_signed_at?: string | null
           paid_at?: string | null
           payment_status?: string
           platform_fee?: number | null
           rejection_reason?: string | null
           rental_id: string
+          renter_signature_data?: string | null
+          renter_signed_at?: string | null
           requested_by: string
           requested_days: number
           requested_end_date: string
@@ -1678,11 +1686,15 @@ export type Database = {
           id?: string
           note?: string | null
           original_end_date?: string
+          owner_signature_data?: string | null
+          owner_signed_at?: string | null
           paid_at?: string | null
           payment_status?: string
           platform_fee?: number | null
           rejection_reason?: string | null
           rental_id?: string
+          renter_signature_data?: string | null
+          renter_signed_at?: string | null
           requested_by?: string
           requested_days?: number
           requested_end_date?: string
@@ -3837,6 +3849,10 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      sign_rental_extension: {
+        Args: { _extension_id: string; _signature: string }
+        Returns: boolean
+      }
       soft_delete_my_product: { Args: { _id: string }; Returns: undefined }
       track_product_view: {
         Args: { p_product_id: string; p_visitor_hash: string }
