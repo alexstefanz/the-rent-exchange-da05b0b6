@@ -2,7 +2,10 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export interface ContractAcceptance { role: "owner" | "renter"; accepted_at: string; signature_data: string | null }
+export interface ContractAcceptance {
+  role: "owner" | "renter"; accepted_at: string; signature_data: string | null;
+  validation_channel: string | null; validation_destination: string | null; validation_ref: string | null; validated_at: string | null;
+}
 
 export function useContractAcceptance(rentalId?: string) {
   const qc = useQueryClient();
@@ -13,7 +16,7 @@ export function useContractAcceptance(rentalId?: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("rental_contract_acceptances")
-        .select("role, accepted_at, signature_data")
+        .select("role, accepted_at, signature_data, validation_channel, validation_destination, validation_ref, validated_at")
         .eq("rental_id", rentalId!);
       if (error) throw error;
       return (data ?? []) as ContractAcceptance[];
@@ -34,9 +37,13 @@ export function useContractAcceptance(rentalId?: string) {
   const ownerRow = q.data?.find((a) => a.role === "owner");
   const renterRow = q.data?.find((a) => a.role === "renter");
 
-  const sign = async (signature: string) => {
-    const { error } = await supabase.rpc("accept_rental_contract_signed", { p_rental_id: rentalId!, p_signature: signature, p_user_agent: navigator.userAgent });
+  const sign = async (signature: string, code: string) => {
+    const { data, error } = await supabase.rpc("verify_and_sign_rental_contract", {
+      p_rental_id: rentalId!, p_code: code, p_signature: signature, p_user_agent: navigator.userAgent,
+    });
     if (error) throw error;
+    const res = data as { ok?: boolean; error?: string } | null;
+    if (!res?.ok) throw new Error(res?.error || "Cod incorect");
     await qc.invalidateQueries({ queryKey: key });
   };
 
@@ -45,6 +52,7 @@ export function useContractAcceptance(rentalId?: string) {
     renter: renterRow?.accepted_at ?? null,
     ownerSig: ownerRow?.signature_data ?? null,
     renterSig: renterRow?.signature_data ?? null,
+    ownerRow, renterRow,
     bothAccepted: !!ownerRow && !!renterRow,
     loading: q.isLoading,
     sign,
