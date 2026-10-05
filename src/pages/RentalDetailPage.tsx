@@ -520,8 +520,8 @@ const RentalDetailPage = () => {
         {/* Pay-now CTA: owner accepted, renter hasn't paid yet */}
         {needsPayment && (
           <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <div className="flex-1">
+            <div className="flex flex-col gap-4">
+              <div>
                 <h3 className="font-heading text-lg font-semibold text-foreground">
                   {t("Proprietarul a acceptat cererea", "The owner accepted your request")}
                 </h3>
@@ -532,7 +532,7 @@ const RentalDetailPage = () => {
                   )}
                 </p>
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 [&>button]:sm:flex-1">
                 <Button size="lg" onClick={handlePay} disabled={paying || payingWallet} className="shadow-lg shadow-primary/20">
                   {paying ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <CreditCard className="h-4 w-4 mr-2" />}
                   {t(`Plătește ${payableTotal.toFixed(2)} RON`, `Pay ${payableTotal.toFixed(2)} RON`)}
