@@ -4,7 +4,7 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical, Wallet, Check, X, MessageCircle, RotateCcw, PackageOpen, ChevronDown, CalendarClock } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical, Wallet, Check, X, MessageCircle, RotateCcw, PackageOpen, ChevronDown, CalendarClock, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import Navbar from "@/components/layout/Navbar";
@@ -42,6 +42,7 @@ import { toast } from "@/components/ui/sonner";
 import { notify, notifyError } from "@/lib/notify";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
+import OpenDisputeDialog from "@/components/dashboard/OpenDisputeDialog";
 
 const RentalDetailPage = () => {
   usePageSeo({ title: "Detalii rezervare — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
@@ -65,6 +66,7 @@ const RentalDetailPage = () => {
   const [docsTab, setDocsTab] = useState<"contract" | "anexa1" | "anexa2">("contract");
   const [docsBlank, setDocsBlank] = useState(false);
   const [pvSectionOpen, setPvSectionOpen] = useState(false);
+  const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { data: isAdmin } = useIsAdmin(user?.id);
   const { data: wallet, refetch: refetchWallet } = useWalletBalance();
