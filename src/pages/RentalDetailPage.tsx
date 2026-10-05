@@ -1,4 +1,5 @@
 import Confetti from "@/components/common/Confetti";
+import ReceiptLink from "@/components/rentals/ReceiptLink";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
