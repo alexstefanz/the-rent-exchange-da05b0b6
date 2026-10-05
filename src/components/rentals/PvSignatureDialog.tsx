@@ -545,6 +545,9 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
                     <Eraser className="h-4 w-4 mr-1" />Sterge
                   </Button>
                 </div>
+                <p className="mb-2 rounded-lg border-l-2 border-primary bg-primary/10 px-3 py-2 text-xs">
+                  Prin semnarea prezentului PV, confirmați că ați inspectat bunul și ați verificat starea fizică a acestuia chiar în momentul {phase === "return" ? "returnării" : "predării"}.
+                </p>
                 <div
                   className="rounded-lg border border-dashed border-border bg-white overflow-hidden touch-none"
                   style={{ touchAction: "none", overscrollBehavior: "contain" }}
