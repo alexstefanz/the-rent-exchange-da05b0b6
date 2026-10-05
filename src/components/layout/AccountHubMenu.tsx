@@ -20,7 +20,6 @@ import {
   LifeBuoy,
   Package,
   CalendarCheck,
-  CheckCheck,
   ArrowUpRight,
   Eye,
   EyeOff,
