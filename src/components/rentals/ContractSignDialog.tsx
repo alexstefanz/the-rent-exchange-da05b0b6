@@ -13,11 +13,12 @@ interface Props {
   onOpenChange: (v: boolean) => void;
   rentalId?: string;
   publicId?: string | null;
-  onSign: (signatureDataUrl: string, code: string) => Promise<void>;
+  onSign: (signatureDataUrl: string, code: string) => Promise<{ bothAccepted: boolean } | void>;
   onOpenContract?: () => void;
+  onBothSigned?: () => void;
 }
 
-export default function ContractSignDialog({ open, onOpenChange, rentalId, publicId, onSign, onOpenContract }: Props) {
+export default function ContractSignDialog({ open, onOpenChange, rentalId, publicId, onSign, onOpenContract, onBothSigned }: Props) {
   const sigRef = useRef<SignatureCanvas | null>(null);
   const [step, setStep] = useState<1 | 2>(1);
   const [sent, setSent] = useState<{ phone: string; ref: string } | null>(null);
@@ -57,9 +58,14 @@ export default function ContractSignDialog({ open, onOpenChange, rentalId, publi
     if (!sigRef.current || sigRef.current.isEmpty()) return;
     setBusy(true);
     try {
-      await onSign(sigRef.current.getTrimmedCanvas().toDataURL("image/png"), code);
-      toast.success("Contract validat prin SMS și semnat.");
+      const res = await onSign(sigRef.current.getTrimmedCanvas().toDataURL("image/png"), code);
       onOpenChange(false);
+      if (res && res.bothAccepted) {
+        toast.success("Felicitări! Contractul a fost semnat de ambele părți.", { description: "Procesele-verbale de predare sunt acum deblocate." });
+        onBothSigned?.();
+      } else {
+        toast.success("Semnătura ta a fost înregistrată.", { description: "Se așteaptă semnătura celeilalte părți." });
+      }
     } catch (e: any) {
       const msg = e?.message || "Nu s-a putut semna contractul.";
       toast.error(msg);
