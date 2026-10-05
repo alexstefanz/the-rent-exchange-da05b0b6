@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Printer, FileDown, FileText, FileSignature } from "lucide-react";
+import { Printer, FileText, FileSignature } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useContractAcceptance } from "./useContractAcceptance";
 import ContractSignDialog from "./ContractSignDialog";
@@ -282,7 +282,6 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
               {tab === "contract" && canSignContract && (
                 <Button size="sm" onClick={() => setSignOpen(true)}><FileSignature className="h-4 w-4 mr-1" />Semnează contractul</Button>
               )}
-              <Button size="sm" variant="outline" onClick={() => print(true)}><FileDown className="h-4 w-4 mr-1" />Set nesemnat</Button>
               <Button size="sm" variant={tab === "contract" && canSignContract ? "outline" : "default"} onClick={() => print(false)}><Printer className="h-4 w-4 mr-1" />Salvează PDF / Tipărește</Button>
             </div>
           </div>
