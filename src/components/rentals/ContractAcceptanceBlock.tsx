@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { format } from "date-fns";
-import { CheckCircle2, Clock, FileSignature } from "lucide-react";
+import { CheckCircle2, Clock, FileSignature, PartyPopper } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useContractAcceptance } from "./useContractAcceptance";
 import ContractSignDialog from "./ContractSignDialog";
 
@@ -16,6 +17,12 @@ interface Props {
 export default function ContractAcceptanceBlock({ rentalId, publicId, isOwner, onOpenContract, t }: Props) {
   const { owner, renter, sign } = useContractAcceptance(rentalId);
   const [signOpen, setSignOpen] = useState(false);
+  const [congrats, setCongrats] = useState(false);
+  useEffect(() => {
+    const h = () => setCongrats(true);
+    window.addEventListener("rentli:contract-signed", h);
+    return () => window.removeEventListener("rentli:contract-signed", h);
+  }, []);
   const mine = isOwner ? owner : renter;
   const other = isOwner ? renter : owner;
   const fmt = (d: string) => format(new Date(d), "dd.MM.yyyy HH:mm");
@@ -49,6 +56,16 @@ export default function ContractAcceptanceBlock({ rentalId, publicId, isOwner, o
         <p className="mt-2 text-xs font-semibold text-primary">{t("Contract semnat de ambele părți.", "Contract signed by both parties.")}</p>
       )}
       <ContractSignDialog open={signOpen} onOpenChange={setSignOpen} rentalId={rentalId} publicId={publicId} onSign={sign} onOpenContract={() => { setSignOpen(false); onOpenContract(); }} />
+      <Dialog open={congrats} onOpenChange={setCongrats}>
+        <DialogContent className="max-w-sm text-center">
+          <DialogHeader className="items-center">
+            <div className="mx-auto h-14 w-14 rounded-full bg-primary/15 grid place-items-center"><PartyPopper className="h-7 w-7 text-primary" /></div>
+            <DialogTitle className="text-center">{t("Felicitări! Contractul a fost semnat", "Congratulations! The contract is signed")}</DialogTitle>
+            <DialogDescription className="text-center">{t("Ambele părți au semnat contractul. Procesele-verbale de predare sunt acum deblocate.", "Both parties signed. Handover reports are now unlocked.")}</DialogDescription>
+          </DialogHeader>
+          <Button onClick={() => setCongrats(false)}>{t("Continuă", "Continue")}</Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
