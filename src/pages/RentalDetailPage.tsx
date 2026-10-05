@@ -4,7 +4,7 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical, Wallet, Check, X, MessageCircle, RotateCcw, PackageOpen, ChevronDown, CalendarClock } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, MessageSquare, FileSignature, Loader2, Package, ShieldX, ExternalLink, Phone, Mail, CreditCard, Lock, CheckCircle2, Clock, Star, FlaskConical, Wallet, Check, X, MessageCircle, RotateCcw, PackageOpen, ChevronDown, CalendarClock, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import Navbar from "@/components/layout/Navbar";
@@ -42,6 +42,7 @@ import { toast } from "@/components/ui/sonner";
 import { notify, notifyError } from "@/lib/notify";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
+import OpenDisputeDialog from "@/components/dashboard/OpenDisputeDialog";
 
 const RentalDetailPage = () => {
   usePageSeo({ title: "Detalii rezervare — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
@@ -65,6 +66,7 @@ const RentalDetailPage = () => {
   const [docsTab, setDocsTab] = useState<"contract" | "anexa1" | "anexa2">("contract");
   const [docsBlank, setDocsBlank] = useState(false);
   const [pvSectionOpen, setPvSectionOpen] = useState(false);
+  const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { data: isAdmin } = useIsAdmin(user?.id);
   const { data: wallet, refetch: refetchWallet } = useWalletBalance();
@@ -229,6 +231,11 @@ const RentalDetailPage = () => {
     contract_signed: contractAcc.bothAccepted,
   };
   const { current: step, cancelled } = getTimelineStep(tlRental);
+  const disputeOpen = rental.dispute_status === "open";
+  const disputePhase: "handover" | "return" = rental.handover_confirmed_at ? "return" : "handover";
+  const disputePhaseLabel = ((rental as any).dispute_phase ?? disputePhase) === "return" ? t("faza de returnare", "return phase") : t("faza de predare", "handover phase");
+  const canOpenDispute = !disputeOpen && !cancelled && rental.payment_status === "paid"
+    && !["completed", "cancelled", "rejected"].includes(rental.status) && !rental.return_confirmed_at;
 
   const counterparty = isOwner
     ? { name: rental.renter_name, email: rental.renter_email, phone: rental.renter_phone, label: t("Chirias", "Renter") }
@@ -365,6 +372,30 @@ const RentalDetailPage = () => {
         <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
           <RentalTimeline rental={tlRental} />
         </section>
+
+        {disputeOpen && (
+          <section className="rounded-2xl border border-destructive/40 bg-destructive/10 p-5 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <p className="font-bold text-destructive">
+                  {t("Dispută deschisă", "Dispute open")} — {disputePhaseLabel}
+                </p>
+                <p className="text-sm text-foreground/80 mt-1">
+                  {t("Echipa Rentli analizează cazul. Semnăturile și acțiunile sunt suspendate temporar.", "The Rentli team is reviewing the case. Signatures and actions are temporarily suspended.")}
+                </p>
+                {(rental as any).dispute_reason && (
+                  <p className="text-sm mt-2 rounded-lg bg-card border border-border p-3 whitespace-pre-wrap break-words">
+                    {(rental as any).dispute_reason}
+                  </p>
+                )}
+                <Button size="sm" variant="outline" className="mt-3" onClick={() => navigate("/suport")}>
+                  {t("Contactează asistența", "Contact support")}
+                </Button>
+              </div>
+            </div>
+          </section>
+        )}
 
 
 
@@ -898,6 +929,25 @@ const RentalDetailPage = () => {
               <p className="text-[11px] font-bold uppercase tracking-wider text-primary mb-1">{t("Protecția închirierii", "Rental protection")}</p>
               <p className="text-xs text-foreground/80">{t("Plata este blocată pe card până la predare. Documentele devin disponibile după plata chiriașului.", "Payment is held until handover. Documents become available after the renter pays.")}</p>
             </section>
+            {canOpenDispute && (
+              <section className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-sm font-semibold mb-1">{t("Ai întâmpinat o problemă?", "Having a problem?")}</p>
+                <p className="text-xs text-muted-foreground mb-3">{t("Cealaltă parte nu se prezintă, refuză semnarea PV sau bunul are avarii nedeclarate? Echipa Rentli intervine.", "The other party doesn't show up, refuses to sign the report or the item has undeclared damage? The Rentli team steps in.")}</p>
+                <Button size="sm" variant="outline" className="w-full border-destructive/40 text-destructive hover:bg-destructive/10" onClick={() => setDisputeDialogOpen(true)}>
+                  <AlertTriangle className="h-4 w-4 mr-1.5" />
+                  {t("Deschide o dispută", "Open a dispute")}
+                </Button>
+              </section>
+            )}
+            <OpenDisputeDialog
+              open={disputeDialogOpen}
+              onOpenChange={(o) => {
+                setDisputeDialogOpen(o);
+                if (!o) queryClient.invalidateQueries({ queryKey: ["rental-detail", publicId] });
+              }}
+              rentalId={rental.id}
+              phase={disputePhase}
+            />
             {/* Early return prompt — sub Sumar financiar, aceeași lățime */}
             {handoverDoneEarly && !returnDoneEarly && rental.status !== "completed" && rental.status !== "cancelled" && (
               <EarlyReturnCard
