@@ -40,7 +40,7 @@ export default function ContractSignDialog({ open, onOpenChange, rentalId, publi
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("send-contract-otp", { body: { rental_id: rentalId } });
-      const payload: any = data ?? (error as any)?.context && (await (error as any).context.json().catch(() => null));
+      const payload: any = data ?? ((error as any)?.context ? await (error as any).context.json().catch(() => null) : null);
       if (!payload?.success) {
         if (payload?.retryIn) setCooldown(payload.retryIn);
         throw new Error(payload?.message || payload?.error || "Nu s-a putut trimite codul.");
