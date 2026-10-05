@@ -259,6 +259,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
           {(b || paidExts.length > 0) && anexa3}
         </div>
       </DialogContent>
+      <ContractSignDialog open={signOpen} onOpenChange={setSignOpen} publicId={rental.public_id} onSign={acc.sign} />
     </Dialog>
   );
 }
