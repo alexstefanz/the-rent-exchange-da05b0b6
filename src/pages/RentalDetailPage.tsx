@@ -1,4 +1,5 @@
 import Confetti from "@/components/common/Confetti";
+import ReceiptLink from "@/components/rentals/ReceiptLink";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -882,6 +883,15 @@ const RentalDetailPage = () => {
               </dl>
               {rental.is_test_payment && (
                 <Badge variant="secondary" className="mt-3 text-xs">{t("Plata de test", "Test payment")}</Badge>
+              )}
+              {!isOwner && <ReceiptLink rentalId={rental.id} t={t} />}
+              {!isOwner && (
+                <p className="mt-3 text-[11px] leading-snug text-muted-foreground">
+                  {t(
+                    "Pentru închirierile între persoane fizice, documentele justificative oficiale sunt Contractul de locațiune semnat (cu anexele) și chitanța electronică de plată.",
+                    "For rentals between individuals, the official supporting documents are the signed rental contract (with annexes) and the electronic payment receipt.",
+                  )}
+                </p>
               )}
             </section>
             <section className="rounded-r-xl border-l-2 border-primary bg-primary/10 p-4">

@@ -255,6 +255,8 @@ serve(async (req) => {
       transactions: isAdmin ? transactions ?? [] : null,
       discrepancies: isAdmin ? discrepancies : discrepancies.filter((d) => d.severity === "info"),
       is_admin: isAdmin,
+      // Payment receipt is visible only to the payer (renter) and admins.
+      receipt_url: (isAdmin || rental.renter_id === user.id) ? ((stripeData as any)?.charge?.receipt_url ?? null) : null,
       is_synced: discrepancies.filter((d) => d.severity !== "info").length === 0,
     };
 
