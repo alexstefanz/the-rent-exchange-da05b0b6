@@ -1,3 +1,4 @@
+import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -45,12 +46,8 @@ export function AcceptedRentalDialog({ rental, open, onOpenChange, onCancelled }
     setStartingChat(true);
     try {
       // Find existing conversation for this product where the renter is the buyer
-      const { data: existing } = await supabase
-        .from("conversations")
-        .select("id")
-        .eq("product_id", rental.product_id)
-        .eq("buyer_id", rental.renter_id)
-        .maybeSingle();
+      const convId = await getOrCreateRentalConversation(rental.id);
+      const existing = convId ? { id: convId } : null;
 
       onOpenChange(false);
       const returnTo = { pathname: window.location.pathname, search: window.location.search };

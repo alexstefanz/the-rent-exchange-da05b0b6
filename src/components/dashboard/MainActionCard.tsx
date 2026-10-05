@@ -1,3 +1,4 @@
+import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -67,7 +68,12 @@ const MainActionCard = ({
 
   const isDisputed = rental.dispute_status === "open";
   const isCancelled = !!cancelled;
-  const handleChat = onChat ?? (() => navigate("/mesaje"));
+  const handleChat = onChat ?? (async () => {
+    const convId = await getOrCreateRentalConversation(rental.id);
+    navigate(convId ? `/mesaje?conv=${convId}` : "/mesaje", {
+      state: { returnTo: { pathname: window.location.pathname, search: window.location.search } },
+    });
+  });
   const paymentMade = rental.payment_status === "authorized" || rental.payment_status === "paid" || rental.payment_status === "captured";
   const showChatButton = paymentMade || isDisputed;
 
