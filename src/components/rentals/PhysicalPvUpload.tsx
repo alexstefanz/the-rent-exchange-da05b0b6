@@ -121,20 +121,28 @@ export default function PhysicalPvUpload({ rentalId, phase, onOpenBlank, t, clas
              `, subject "[PV URGENT - ${publicId ?? "RNT-XXXXXX"}]". Then upload it here once the platform is back.`)}
         </span>
       </div>
+      <p className="mt-2 rounded-md border border-border px-2 py-1.5 text-xs">
+        <strong>{t("Încărcare ulterioară:", "Later upload:")}</strong>{" "}
+        {t("după remedierea problemei tehnice, oricare dintre părți încarcă aici poza/scanul PV-ului semnat, în maximum 24 de ore. După validarea de către echipa Rentli, etapa se confirmă automat pentru ambele părți.",
+           "once the technical issue is fixed, either party uploads the photo/scan of the signed report here, within 24 hours. After the Rentli team validates it, the step is confirmed automatically for both parties.")}
+      </p>
       {latest?.status === "approved" ? (
         <div className="mt-3 border-l-2 border-primary bg-primary/10 p-3 text-xs rounded-r-lg">
-          <p className="font-semibold flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-primary" />{t("PV fizic încărcat și validat", "Physical report uploaded and validated")}</p>
-          <p className="text-muted-foreground mt-0.5">{latest.file_name} · {t("Verificat de echipa Rentli.", "Verified by the Rentli team.")}</p>
+          <p className="font-semibold flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-primary" />{t("PV fizic validat — etapa a fost confirmată", "Physical report validated — step confirmed")}</p>
+          <p className="text-muted-foreground mt-0.5">{latest.file_name} · {t(`Încărcat ${who}, verificat de echipa Rentli.`, `Uploaded ${who}, verified by the Rentli team.`)}</p>
         </div>
       ) : latest?.status === "pending" ? (
         <div className="mt-3 border-l-2 border-primary bg-primary/10 p-3 text-xs rounded-r-lg">
-          <p className="font-semibold flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-primary" />{t("Trimis spre verificare", "Sent for review")}</p>
-          <p className="text-muted-foreground mt-0.5">{latest.file_name} · {format(new Date(latest.created_at), "dd.MM.yyyy HH:mm")}</p>
+          <p className="font-semibold flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-primary" />{t(`PV fizic încărcat ${who} — în verificare`, `Physical report uploaded ${who} — under review`)}</p>
+          <p className="text-muted-foreground mt-0.5">{latest.file_name} · {format(new Date(latest.created_at), "dd.MM.yyyy HH:mm")} · {t("Păstrați originalul până la validare.", "Keep the original until validated.")}</p>
         </div>
       ) : (
         <>
           {latest?.status === "rejected" && (
-            <p className="mt-3 text-xs text-destructive">{t("PV-ul anterior a fost respins", "Previous report was rejected")}{latest.admin_note ? `: ${latest.admin_note}` : "."}</p>
+            <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive">
+              <p className="font-semibold">{t("PV-ul încărcat a fost respins — încarcă din nou o poză lizibilă", "The uploaded report was rejected — upload a clear photo again")}</p>
+              {latest.admin_note && <p className="mt-0.5">{t("Motiv: ", "Reason: ")}{latest.admin_note}</p>}
+            </div>
           )}
           <label className="mt-3 block text-xs font-medium">{t("Din ce motiv tehnic s-a făcut PV fizic?", "Why was a paper report used?")}</label>
           <select value={reason} onChange={(e) => setReason(e.target.value)}
