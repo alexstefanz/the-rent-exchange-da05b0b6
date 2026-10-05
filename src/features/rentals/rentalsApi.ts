@@ -61,6 +61,10 @@ export async function createRental(params: CreateRentalParams) {
     paymentMethod,
   } = params;
 
+  if (user.id === ownerId) {
+    throw new Error("Nu poți închiria propriul tău produs");
+  }
+
   // NEW MODEL (2026-05):
   // - `subtotal` is the owner-net amount (dailyPrice × days).
   // - `platformFee` is charged on top, with a minimum of 1 RON when fee > 0.
