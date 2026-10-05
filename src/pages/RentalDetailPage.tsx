@@ -63,7 +63,7 @@ const RentalDetailPage = () => {
   const [initiatingReturn, setInitiatingReturn] = useState(false);
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
-  const [docsTab, setDocsTab] = useState<"contract" | "anexa1" | "anexa2">("contract");
+  const [docsTab, setDocsTab] = useState<"contract" | "anexa1" | "anexa2" | "anexa3">("contract");
   const [docsBlank, setDocsBlank] = useState(false);
   const [pvSectionOpen, setPvSectionOpen] = useState(false);
   const [disputeDialogOpen, setDisputeDialogOpen] = useState(false);
