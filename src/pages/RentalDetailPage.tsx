@@ -27,6 +27,8 @@ import RentalDocumentsModal from "@/components/rentals/RentalDocumentsModal";
 import RentalExtensionCard from "@/components/rentals/RentalExtensionCard";
 import HandoverPvCard from "@/components/rentals/HandoverPvCard";
 import PhysicalPvUpload from "@/components/rentals/PhysicalPvUpload";
+import ContractAcceptanceBlock from "@/components/rentals/ContractAcceptanceBlock";
+import { useContractAcceptance } from "@/components/rentals/useContractAcceptance";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 
 import { payForConfirmedRental, payRentalWithWallet } from "@/features/rentals/rentalsApi";
@@ -59,7 +61,6 @@ const RentalDetailPage = () => {
   const [initiatingReturn, setInitiatingReturn] = useState(false);
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
-  const contractAcc = useContractAcceptance(rentalIdForContract(params));
   const [docsTab, setDocsTab] = useState<"contract" | "anexa1" | "anexa2">("contract");
   const [docsBlank, setDocsBlank] = useState(false);
   const [pvSectionOpen, setPvSectionOpen] = useState(false);
