@@ -244,6 +244,7 @@ const RentalsTab = () => {
         sortBy={sortBy}
         onSortChange={setSortBy}
         amountLabel="Preț"
+        accent="blue"
       />
 
       {/* Filter & sort bar */}
