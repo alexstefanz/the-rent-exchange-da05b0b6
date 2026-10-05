@@ -22,6 +22,7 @@ import RentalPaymentStatus from "@/components/admin/RentalPaymentStatus";
 import SourceBadge from "@/components/admin/SourceBadge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminContractAuditTab from "@/components/admin/AdminContractAuditTab";
+import AdminPhysicalPvTab from "@/components/admin/AdminPhysicalPvTab";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -116,8 +117,10 @@ const RentalExpandedPanel = ({
           <TabsTrigger value="summary">Sumar</TabsTrigger>
           <TabsTrigger value="payment">Status plăți</TabsTrigger>
           <TabsTrigger value="contract">Audit contract</TabsTrigger>
+          <TabsTrigger value="physical-pv">PV fizic</TabsTrigger>
         </TabsList>
         <TabsContent value="contract"><AdminContractAuditTab rental={rental} /></TabsContent>
+        <TabsContent value="physical-pv"><AdminPhysicalPvTab rentalId={rental.id} /></TabsContent>
         <TabsContent value="summary" className="space-y-3">
           <div className="rounded-lg bg-card p-3 border">
             <p className="text-xs font-semibold text-muted-foreground uppercase mb-3">Timeline rezervare</p>
