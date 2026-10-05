@@ -4,7 +4,7 @@ import { jsPDF } from "jspdf";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Eraser, FileSignature, Download, FileText, ExternalLink, Send } from "lucide-react";
-import { X, ZoomIn } from "lucide-react";
+import { X, ZoomIn, Lock } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { notifyError } from "@/lib/notify";
 import { format } from "date-fns";
