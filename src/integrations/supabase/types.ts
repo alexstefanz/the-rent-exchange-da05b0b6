@@ -1511,6 +1511,41 @@ export type Database = {
         }
         Relationships: []
       }
+      rental_contract_acceptances: {
+        Row: {
+          accepted_at: string
+          id: string
+          rental_id: string
+          role: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          id?: string
+          rental_id: string
+          role: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted_at?: string
+          id?: string
+          rental_id?: string
+          role?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rental_contract_acceptances_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rental_extensions: {
         Row: {
           approved_days: number | null
@@ -2640,6 +2675,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_rental_contract: {
+        Args: { p_rental_id: string; p_user_agent?: string }
+        Returns: string
+      }
       admin_confirm_product_deletion: {
         Args: { _id: string }
         Returns: undefined
