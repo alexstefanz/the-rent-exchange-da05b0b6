@@ -3,13 +3,12 @@ import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { ArrowLeft, Send, Info, Shield, MessageCircle } from "lucide-react";
+import { ArrowLeft, Send, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LoginDialog from "@/components/checkout/LoginDialog";
 import TermsDialog from "@/components/checkout/TermsDialog";
 import PrivacyDialog from "@/components/checkout/PrivacyDialog";
 import PremiumBookingSummary from "@/components/checkout/PremiumBookingSummary";
-import PaymentTrustStrip from "@/components/checkout/PaymentTrustStrip";
 import StickyCheckoutBar from "@/components/checkout/StickyCheckoutBar";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -178,31 +177,16 @@ const Checkout = () => {
                   </Button>
             </div>
 
-            <div className="bg-card rounded-2xl border border-border p-5 space-y-4 animate-fade-in">
-                  <div>
-                    <h2 className="font-semibold text-lg text-foreground">
-                      {t("Trimite cererea de închiriere", "Send your rental request")}
-                    </h2>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      {t(
-                        "Cardul tău nu este debitat acum. Plătești doar după ce proprietarul îți confirmă disponibilitatea.",
-                        "Your card is not charged now. You'll pay only after the owner confirms availability."
-                      )}
-                    </p>
-                  </div>
-                  <PaymentTrustStrip />
-            </div>
-
-            <div className="bg-card rounded-2xl border border-border p-5 animate-fade-in" style={{ animationDelay: "60ms" }}>
-                  <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-100">
-                    <Shield className="h-5 w-5 text-emerald-600 mt-0.5 shrink-0" />
-                    <p className="text-sm text-emerald-900">
-                      {t(
-                        "Proprietarul are 24h să răspundă. După ce acceptă, vei primi notificare cu link de plată securizată Stripe.",
-                        "The owner has 24h to respond. After acceptance you'll get a notification with a secure Stripe payment link."
-                      )}
-                    </p>
-                  </div>
+            <div className="bg-card rounded-2xl border border-border p-5 animate-fade-in">
+                  <h2 className="font-semibold text-lg text-foreground">
+                    {t("Trimite cererea de închiriere", "Send your rental request")}
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    {t(
+                      "Cardul nu este debitat acum. După acceptare primești linkul de plată securizată.",
+                      "No charge now. After acceptance you'll get a secure payment link."
+                    )}
+                  </p>
 
                   <p className="text-xs text-muted-foreground mt-4">
                     {copy.checkout.termsNotice}{" "}
@@ -226,11 +210,6 @@ const Checkout = () => {
                       ? t("Se trimite...", "Sending...")
                       : t("Trimite cererea", "Send request")}
                   </Button>
-
-                  <p className="mt-3 text-xs text-center text-muted-foreground flex items-center justify-center gap-1">
-                    <Info className="h-3 w-3" />
-                    {t("Cardul nu este debitat acum — plătești doar după acceptarea proprietarului.", "No charge now — you pay only after the owner accepts.")}
-                  </p>
             </div>
           </div>
 
