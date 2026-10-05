@@ -546,10 +546,7 @@ const RentalDetailPage = () => {
                     className="border-primary/40 text-primary hover:bg-primary/5"
                   >
                     {payingWallet ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Wallet className="h-4 w-4 mr-2" />}
-                    {t(
-                      `Plătește din wallet (${wallet.available.toFixed(2)} RON disponibili)`,
-                      `Pay from wallet (${wallet.available.toFixed(2)} RON available)`
-                    )}
+                    {t("Plătește din wallet", "Pay from wallet")}
                   </Button>
                 )}
               </div>
