@@ -189,7 +189,7 @@ export async function uploadPvPhoto(file: Blob, rentalId: string, phase: "handov
 export async function uploadPvPdf(blob: Blob, rentalId: string, phase: "handover" | "return"): Promise<string> {
   const filename = `${rentalId}/${phase}/proces-verbal-${phase}-${Date.now()}.pdf`;
   const { error } = await supabase.storage.from("rental-pvs").upload(filename, blob, {
-    upsert: true,
+    upsert: false,
     contentType: "application/pdf",
   });
   if (error) throw error;

@@ -4,7 +4,7 @@ import { jsPDF } from "jspdf";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Eraser, FileSignature, Download, FileText, ExternalLink, Send } from "lucide-react";
-import { X, ZoomIn } from "lucide-react";
+import { X, ZoomIn, Lock } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { notifyError } from "@/lib/notify";
 import { format } from "date-fns";
@@ -608,6 +608,13 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
             )}
 
             {ownerSigned && renterSigned && (
+              <p className="mt-4 flex items-center gap-2 rounded-lg border-l-2 border-primary bg-primary/10 px-3 py-2 text-xs font-medium text-foreground">
+                <Lock className="h-4 w-4 text-primary shrink-0" />
+                Document finalizat si sigilat · Format securizat needitabil (PDF). Semnaturile si fotografiile nu mai pot fi modificate.
+              </p>
+            )}
+
+            {ownerSigned && renterSigned && (
               <button
                 type="button"
                 onClick={handleViewSignedPdf}
@@ -630,13 +637,9 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
 
         <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-between sm:items-center gap-2">
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleDownloadDocx} disabled={!pv || downloadingDocx}>
-              {downloadingDocx ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-              DOCX
-            </Button>
             <Button variant="outline" size="sm" onClick={handleDownloadPdf} disabled={!pv || downloadingPdf}>
               {downloadingPdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-              PDF
+              Descarca PDF
             </Button>
           </div>
           <div className="flex gap-2">
