@@ -17,6 +17,7 @@ interface Props {
 
 
 export default function HandoverPvCard({ rentalId, startDate, signed, contractReady = true, onOpenContract, onOpenPv, onOpenBlank, t }: Props) {
+  const [collapsed, setCollapsed] = useState(true);
   if (!signed && !contractReady) {
     return (
       <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
@@ -35,7 +36,6 @@ export default function HandoverPvCard({ rentalId, startDate, signed, contractRe
       </section>
     );
   }
-  const [collapsed, setCollapsed] = useState(true);
 
   const locked = isAfter(startOfDay(new Date(startDate)), startOfDay(new Date()));
   const badge = signed
