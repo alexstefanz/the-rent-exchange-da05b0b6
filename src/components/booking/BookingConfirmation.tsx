@@ -106,7 +106,7 @@ const BookingConfirmation = ({
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row animate-fade-up" style={{ animationDelay: "0.25s" }}>
         <Button className="flex-1" asChild>
-          <Link to={`/inchiriere/${publicId || rentalId}`}>
+          <Link to={`/rezervari/${publicId || rentalId}`}>
             {t("Stabilește ora predării", "Set the handover time")}<ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>

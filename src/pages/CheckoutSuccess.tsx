@@ -152,13 +152,13 @@ const CheckoutSuccess = () => {
       <main className="max-w-2xl mx-auto px-4 py-6">
         <BookingConfirmation
           productTitle={rentalData.product_title}
-          ownerName="proprietar"
+          productImage={rentalData.product_images?.[0]}
+          publicId={rentalData.public_id}
           startDate={format(new Date(rentalData.start_date), "d MMM", { locale: dateLocale })}
           endDate={format(new Date(rentalData.end_date), "d MMM yyyy", { locale: dateLocale })}
+          handoverDate={format(new Date(rentalData.start_date), "EEEE, d MMMM", { locale: dateLocale })}
           totalPrice={rentalData.subtotal}
           rentalDays={rentalData.rental_days}
-          productId={rentalData.product_id}
-          ownerId={rentalData.owner_id}
           rentalId={rentalData.id}
         />
       </main>
