@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { createProductReview } from "@/features/products/productReviewsApi";
 import { createUserReview } from "@/features/profile/reviewsApi";
 import { containsProfanity } from "@/lib/profanityFilter";
+import { containsContactInfo } from "@/lib/inputValidation";
 
 export interface LeaveReviewRental {
   id: string;
@@ -92,6 +93,7 @@ export default function LeaveReviewDialog({
     currentUserRole === "renter" ? "owner" : "renter";
 
   const profanityHit = comment.trim().length > 0 && containsProfanity(comment).hit;
+  const contactHit = comment.trim().length > 0 && !!containsContactInfo(comment);
 
   // Reset & check existing reviews when dialog opens
   useEffect(() => {
@@ -140,6 +142,7 @@ export default function LeaveReviewDialog({
     !submitting &&
     rating > 0 &&
     !profanityHit &&
+    !contactHit &&
     !(productReviewExists && userReviewExists);
 
   const handleSubmit = async () => {
@@ -188,7 +191,16 @@ export default function LeaveReviewDialog({
         queryClient.invalidateQueries({ queryKey: ["ownerRentals"] });
         queryClient.invalidateQueries({ queryKey: ["userReviews"] });
         queryClient.invalidateQueries({ queryKey: ["productReviews", rental.product_id] });
-        toast.success(t("Mulțumim pentru review!", "Thanks for your review!"));
+        if (rating <= 3) {
+          toast.success(
+            t(
+              "Recenzia ta a fost trimisă și este în curs de verificare de către echipa Rentli înainte de a fi publicată.",
+              "Your review was submitted and is being checked by the Rentli team before it is published."
+            )
+          );
+        } else {
+          toast.success(t("Mulțumim pentru review!", "Thanks for your review!"));
+        }
         onOpenChange(false);
       } else if (firstError) {
         toast.error(firstError);
@@ -277,6 +289,14 @@ export default function LeaveReviewDialog({
                     {t(
                       "Comentariul conține limbaj inadecvat. Te rugăm să-l reformulezi.",
                       "Comment contains inappropriate language. Please rephrase."
+                    )}
+                  </p>
+                )}
+                {contactHit && (
+                  <p className="text-xs text-destructive">
+                    {t(
+                      "Recenzia nu poate conține numere de telefon, adrese de email sau link-uri.",
+                      "Reviews cannot contain phone numbers, email addresses or links."
                     )}
                   </p>
                 )}
