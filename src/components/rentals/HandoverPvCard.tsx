@@ -1,9 +1,8 @@
-import { useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { format, isAfter, startOfDay } from "date-fns";
 import { Camera, CheckCircle2, ChevronDown, FileCheck, FileSignature, Loader2, Lock, Upload, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import PhysicalPvUpload from "./PhysicalPvUpload";
 
 interface Props {
   rentalId: string;
@@ -14,29 +13,9 @@ interface Props {
   t: (ro: string, en: string) => string;
 }
 
-type PhysicalPv = { id: string; file_name: string; status: string; admin_note: string | null; created_at: string };
 
 export default function HandoverPvCard({ rentalId, startDate, signed, onOpenPv, onOpenBlank, t }: Props) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(true);
-
-  const { data: uploads, refetch } = useQuery({
-    queryKey: ["physical-pv", rentalId, "handover"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("rental_physical_pvs" as any)
-        .select("id, file_name, status, admin_note, created_at")
-        .eq("rental_id", rentalId)
-        .eq("phase", "handover")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as unknown as PhysicalPv[];
-    },
-  });
-  const latest = uploads?.[0];
 
   const locked = isAfter(startOfDay(new Date(startDate)), startOfDay(new Date()));
   const badge = signed
@@ -45,31 +24,6 @@ export default function HandoverPvCard({ rentalId, startDate, signed, onOpenPv, 
       ? { l: t(`Disponibil pe ${format(new Date(startDate), "dd.MM.yyyy")}`, `Available on ${format(new Date(startDate), "dd.MM.yyyy")}`), c: "bg-muted text-muted-foreground" }
       : { l: t("Disponibil acum", "Available now"), c: "bg-primary/15 text-primary" };
   const Icon = signed ? FileCheck : locked ? Lock : FileSignature;
-
-  async function submit() {
-    if (!file) return;
-    setErr(null);
-    if (file.size > 15 * 1024 * 1024) return setErr(t("Fișierul depășește 15 MB.", "File exceeds 15 MB."));
-    if (!file.type.startsWith("image/") && file.type !== "application/pdf")
-      return setErr(t("Acceptăm doar poze sau PDF.", "Only images or PDF are accepted."));
-    setBusy(true);
-    try {
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `${rentalId}/physical/handover-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("rental-pvs").upload(path, file, { contentType: file.type });
-      if (upErr) throw upErr;
-      const { error } = await supabase.from("rental_physical_pvs" as any).insert({
-        rental_id: rentalId, phase: "handover", file_path: path, file_name: file.name,
-      } as any);
-      if (error) throw error;
-      setFile(null);
-      await refetch();
-    } catch (e: any) {
-      setErr(e?.message || t("Încărcarea a eșuat.", "Upload failed."));
-    } finally {
-      setBusy(false);
-    }
-  }
 
   if (signed && collapsed) {
     return (
