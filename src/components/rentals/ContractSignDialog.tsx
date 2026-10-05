@@ -61,7 +61,7 @@ export default function ContractSignDialog({ open, onOpenChange, rentalId, publi
       const res = await onSign(sigRef.current.getTrimmedCanvas().toDataURL("image/png"), code);
       onOpenChange(false);
       if (res && res.bothAccepted) {
-        toast.success("Felicitări! Contractul a fost semnat de ambele părți.", { description: "Procesele-verbale de predare sunt acum deblocate." });
+        window.dispatchEvent(new CustomEvent("rentli:contract-signed"));
         onBothSigned?.();
       } else {
         toast.success("Semnătura ta a fost înregistrată.", { description: "Se așteaptă semnătura celeilalte părți." });

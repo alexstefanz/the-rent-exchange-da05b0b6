@@ -39,6 +39,7 @@ const MutualCancellationCard = ({
   const [reason, setReason] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const isPending = cancelRequestStatus === "pending";
   const iAmInitiator = isPending && cancelRequestInitiator === currentUserId;
@@ -67,16 +68,17 @@ const MutualCancellationCard = ({
   }
 
   async function submitRequest() {
+    setFormError(null);
     if (subject.trim().length < 3) {
-      toast.error(t("Subiectul e prea scurt (minim 3 caractere).", "Subject too short (min 3 characters)."));
+      setFormError(t("Subiectul e prea scurt (minim 3 caractere).", "Subject too short (min 3 characters)."));
       return;
     }
     if (reason.trim().length < 10) {
-      toast.error(t("Te rugăm să oferi un motiv (minim 10 caractere).", "Please provide a reason (min 10 characters)."));
+      setFormError(t("Te rugăm să descrii motivul în minim 10 caractere.", "Please provide a reason (min 10 characters)."));
       return;
     }
     if (!accepted) {
-      toast.error(t("Confirmă că cererea va fi revizuită de un admin.", "Confirm that an admin will review the request."));
+      setFormError(t("Confirmă că cererea va fi revizuită de un admin.", "Confirm that an admin will review the request."));
       return;
     }
     setBusy(true);
@@ -86,7 +88,7 @@ const MutualCancellationCard = ({
       setOpen(false); setSubject(""); setReason(""); setAccepted(false);
       await onChanged();
     } catch (e: any) {
-      toast.error(e?.message || t("Eroare la trimitere.", "Error sending request."));
+      setFormError(e?.message || t("Eroare la trimitere.", "Error sending request."));
     } finally { setBusy(false); }
   }
 
@@ -264,6 +266,9 @@ const MutualCancellationCard = ({
                 </Label>
               </div>
             </div>
+            {formError && (
+              <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{formError}</p>
+            )}
             <DialogFooter>
               <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>
                 {t("Renunță", "Cancel")}
