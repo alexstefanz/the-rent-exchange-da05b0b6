@@ -1,4 +1,6 @@
 import { useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
+import RentalTabsBar, { parseTab, emptyTabText, type RentalTabView } from "./RentalTabsBar";
 import { Link } from "react-router-dom";
 import { Calendar, Search, Loader2, Package, Inbox, Clock, Sparkles, ArrowRight, Ban, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -121,7 +123,9 @@ const RentalsTab = () => {
   const [submitting, setSubmitting] = useState(false);
   const [statusFilter, setStatusFilter] = useState<RentalStatusFilter>("all");
   const [sortBy, setSortBy] = useState<RentalSortBy>("newest");
-  const [view, setView] = useState<"active" | "history">("active");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view: RentalTabView = parseTab(searchParams.get("tab"));
+  const changeView = (v: RentalTabView) => { const n = new URLSearchParams(searchParams); n.set("tab", v); setSearchParams(n, { replace: true }); };
 
   const counts = useMemo(() => {
     const c = { all: rentals.length, active: 0, in_progress: 0, overdue: 0, pending: 0, completed: 0, cancelled: 0 };
@@ -164,10 +168,20 @@ const RentalsTab = () => {
   // Picking a finished-only filter jumps straight to the history tab.
   const handleStatusFilterChange = (value: RentalStatusFilter) => {
     setStatusFilter(value);
-    if (value === "completed" || value === "cancelled") setView("history");
   };
 
 
+
+  const sortedAll = useMemo(() => sortRentals(rentals), [rentals, sortBy]);
+  const isCancelled = (r: any) => r.status === "cancelled" || r.status === "rejected";
+  const requestsList = sortedAll.filter((r) => r.status === "pending");
+  const activeList = sortedAll.filter((r) => r.status !== "pending" && !isFinalized(r));
+  const completedList = sortedAll.filter((r) => isFinalized(r) && !isCancelled(r));
+  const cancelledList = sortedAll.filter(isCancelled);
+  const isLiveView = view === "requests" || view === "active";
+  const isDoneView = !isLiveView;
+  const liveList = view === "requests" ? requestsList : activeList;
+  const doneList = view === "completed" ? completedList : cancelledList;
 
   const handleRequestCancel = async () => {
     if (!cancelDialogRental) return;
@@ -223,47 +237,18 @@ const RentalsTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Two clear tabs: ongoing vs. finished */}
-      <div className="inline-flex w-full sm:w-auto rounded-xl border border-border bg-muted/40 p-1">
-        <button
-          type="button"
-          onClick={() => setView("active")}
-          className={`flex-1 sm:flex-none rounded-lg px-4 py-2 text-sm font-semibold transition ${
-            view === "active"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Active & cereri
-          <span className="ml-2 rounded-full bg-background/25 px-1.5 text-xs">{activeCount}</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setView("history")}
-          className={`flex-1 sm:flex-none rounded-lg px-4 py-2 text-sm font-semibold transition ${
-            view === "history"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Istoric încheiate
-          <span className="ml-2 rounded-full bg-background/25 px-1.5 text-xs">{historyRentals.length}</span>
-        </button>
-      </div>
+      <RentalTabsBar
+        view={view}
+        onChange={changeView}
+        counts={{ requests: requestsList.length, active: activeList.length, completed: completedList.length, cancelled: cancelledList.length }}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        amountLabel="Preț"
+      />
 
       {/* Filter & sort bar */}
-      {view === "active" && (
-        <RentalsFilterBar
-          statusFilter={statusFilter}
-          onStatusFilterChange={handleStatusFilterChange}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          counts={counts}
-          amountLabel="Preț"
-        />
-      )}
-
-      {view === "active" && premiumRentals.length === 0 && (
+ 
+      {isLiveView && liveList.length === 0 && (
         <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center">
           <p className="text-sm text-muted-foreground">
             Nu ai rezervări active sau cereri în acest moment.
@@ -272,14 +257,14 @@ const RentalsTab = () => {
       )}
 
       {/* Premium reservation cards */}
-      {view === "active" && premiumRentals.length > 0 && (
+      {isLiveView && liveList.length > 0 && (
         <section>
           <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2 text-base">
             Rezervările mele
-            <Badge className="bg-primary text-primary-foreground">{premiumRentals.length}</Badge>
+            <Badge className="bg-primary text-primary-foreground">{liveList.length}</Badge>
           </h3>
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-            {premiumRentals.map((rental) => {
+            {liveList.map((rental) => {
               const isPending = rental.status === "pending";
               const canRequestCancel = !isPending && !rental.handover_confirmed_at;
               return (
@@ -387,22 +372,22 @@ const RentalsTab = () => {
         </section>
       )}
 
-      {view === "history" && historyRentals.length === 0 && (
+      {isDoneView && doneList.length === 0 && (
         <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center">
           <p className="text-sm text-muted-foreground">Nu ai încă închirieri încheiate.</p>
         </div>
       )}
 
       {/* History list (no images) */}
-      {view === "history" && historyRentals.length > 0 && (
+      {isDoneView && doneList.length > 0 && (
         <section>
           <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2 text-base">
             <Package className="h-5 w-5 text-primary" />
             Istoric închirieri
-            <Badge variant="secondary">{historyRentals.length}</Badge>
+            <Badge variant="secondary">{doneList.length}</Badge>
           </h3>
           <div className="divide-y divide-border border rounded-xl bg-card px-4">
-            {historyRentals.map((rental) => {
+            {doneList.map((rental) => {
               const to = rental.public_id ? `/rezervari/${rental.public_id}` : `/produs/${rental.product_id}`;
               const allowed = ["pending", "accepted", "rejected", "completed", "cancelled", "active", "inactive"];
               const statusKey = (allowed.includes(rental.status) ? rental.status : "pending") as any;

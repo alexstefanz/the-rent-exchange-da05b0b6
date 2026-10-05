@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import RentalTabsBar, { parseTab, emptyTabText, type RentalTabView } from "./RentalTabsBar";
 import { Link, useSearchParams } from "react-router-dom";
 import { Package, Plus, Check, X, Loader2, Calendar, Inbox, MessageSquare, Clock, Sparkles, ArrowRight, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -69,21 +70,18 @@ const RentalsOutTab = () => {
   const [cancelReason, setCancelReason] = useState("");
   const [statusFilter, setStatusFilter] = useState<RentalStatusFilter>(defaultStatus);
   const [sortBy, setSortBy] = useState<RentalSortBy>("newest");
-  const [view, setView] = useState<"active" | "history">(
-    defaultStatus === "completed" || defaultStatus === "cancelled" ? "history" : "active",
-  );
+  const view: RentalTabView = parseTab(searchParams.get("tab") ?? (searchParams.get("status") === "pending" ? "requests" : searchParams.get("status") === "completed" ? "completed" : searchParams.get("status") === "cancelled" ? "cancelled" : null));
+  const changeView = (v: RentalTabView) => { const n = new URLSearchParams(searchParams); n.set("tab", v); n.delete("status"); setSearchParams(n, { replace: true }); };
 
   useEffect(() => {
     const status = fromUrlStatus(searchParams.get("status"));
     if (!status) return;
     setStatusFilter(status);
-    setView(status === "completed" || status === "cancelled" ? "history" : "active");
   }, [searchParams]);
 
   const handleStatusFilterChange = (value: RentalStatusFilter) => {
     setStatusFilter(value);
     // Picking a finished-only filter jumps straight to the history tab.
-    if (value === "completed" || value === "cancelled") setView("history");
     const next = new URLSearchParams(searchParams);
     if (value === "all") {
       next.delete("status");
@@ -132,6 +130,17 @@ const RentalsOutTab = () => {
   );
   const activeCount = rentals.filter((r) => !isFinalized(r)).length;
 
+
+  const sortedAll = useMemo(() => sortRentals(rentals), [rentals, sortBy]);
+  const isCancelled = (r: any) => r.status === "cancelled" || r.status === "rejected";
+  const requestsList = sortedAll.filter((r) => r.status === "pending");
+  const activeList = sortedAll.filter((r) => r.status !== "pending" && !isFinalized(r));
+  const completedList = sortedAll.filter((r) => isFinalized(r) && !isCancelled(r));
+  const cancelledList = sortedAll.filter(isCancelled);
+  const isLiveView = view === "requests" || view === "active";
+  const isDoneView = !isLiveView;
+  const liveList = view === "requests" ? requestsList : activeList;
+  const doneList = view === "completed" ? completedList : cancelledList;
 
   const handleAccept = async (rental: OwnerRental) => {
     setRespondingId(rental.id);
@@ -205,47 +214,18 @@ const RentalsOutTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Two clear tabs: ongoing vs. finished */}
-      <div className="inline-flex w-full sm:w-auto rounded-xl border border-border bg-muted/40 p-1">
-        <button
-          type="button"
-          onClick={() => setView("active")}
-          className={`flex-1 sm:flex-none rounded-lg px-4 py-2 text-sm font-semibold transition ${
-            view === "active"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Active & cereri
-          <span className="ml-2 rounded-full bg-background/25 px-1.5 text-xs">{activeCount}</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setView("history")}
-          className={`flex-1 sm:flex-none rounded-lg px-4 py-2 text-sm font-semibold transition ${
-            view === "history"
-              ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Istoric încheiate
-          <span className="ml-2 rounded-full bg-background/25 px-1.5 text-xs">{historyRentals.length}</span>
-        </button>
-      </div>
+      <RentalTabsBar
+        view={view}
+        onChange={changeView}
+        counts={{ requests: requestsList.length, active: activeList.length, completed: completedList.length, cancelled: cancelledList.length }}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        amountLabel="Câștig"
+      />
 
       {/* Filter & sort bar */}
-      {view === "active" && (
-        <RentalsFilterBar
-          statusFilter={statusFilter}
-          onStatusFilterChange={handleStatusFilterChange}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          counts={counts}
-          amountLabel="Câștig"
-        />
-      )}
-
-      {view === "active" && pendingRentals.length === 0 && premiumActiveRentals.length === 0 && (
+ 
+      {isLiveView && liveList.length === 0 && (
         <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center">
           <p className="text-sm text-muted-foreground">
             Nu ai cereri noi sau închirieri în derulare în acest moment.
@@ -254,15 +234,15 @@ const RentalsOutTab = () => {
       )}
 
       {/* Premium request cards */}
-      {view === "active" && (pendingRentals.length > 0 || premiumActiveRentals.length > 0) && (
+      {isLiveView && (liveList.length > 0) && (
         <section>
           <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2 text-base">
             <Sparkles className="h-5 w-5 text-primary" />
             Cereri de închiriere
-            <Badge className="bg-primary text-primary-foreground">{pendingRentals.length + premiumActiveRentals.length}</Badge>
+            <Badge className="bg-primary text-primary-foreground">{liveList.length}</Badge>
           </h3>
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
-            {[...pendingRentals, ...premiumActiveRentals].map((rental) => {
+            {liveList.map((rental) => {
               const isPending = rental.status === "pending";
               const canRequestCancel = !isPending && !rental.handover_confirmed_at;
               const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
@@ -413,22 +393,22 @@ const RentalsOutTab = () => {
         </section>
       )}
 
-      {view === "history" && historyRentals.length === 0 && (
+      {isDoneView && doneList.length === 0 && (
         <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center">
           <p className="text-sm text-muted-foreground">Nu ai încă închirieri încheiate.</p>
         </div>
       )}
 
       {/* History list (no images) */}
-      {view === "history" && historyRentals.length > 0 && (
+      {isDoneView && doneList.length > 0 && (
         <section>
           <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2 text-base">
             <Package className="h-5 w-5 text-primary" />
             Istoric închirieri
-            <Badge variant="secondary">{historyRentals.length}</Badge>
+            <Badge variant="secondary">{doneList.length}</Badge>
           </h3>
           <div className="divide-y divide-border border rounded-xl bg-card px-4">
-            {historyRentals.map((rental) => {
+            {doneList.map((rental) => {
               const to = rental.public_id ? `/inchirieri/${rental.public_id}` : `/produs/${rental.product_id}`;
               const allowed = ["pending", "accepted", "rejected", "completed", "cancelled", "active", "inactive"];
               const statusKey = (allowed.includes(rental.status) ? rental.status : "pending") as any;
