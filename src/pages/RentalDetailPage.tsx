@@ -799,7 +799,7 @@ const RentalDetailPage = () => {
                       onOpenDocument={() => setPvOpen("return")}
                       onOpenChat={handleChat}
                     />
-                    <PhysicalPvUpload rentalId={rental.id} phase="return" t={t}
+                    <PhysicalPvUpload rentalId={rental.id} publicId={rental.public_id} phase="return" t={t}
                       onOpenBlank={() => { setDocsBlank(true); setDocsTab("anexa2"); setDocsOpen(true); }} />
                   </div>
                 )

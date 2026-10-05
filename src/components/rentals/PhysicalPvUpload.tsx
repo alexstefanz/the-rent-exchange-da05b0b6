@@ -128,6 +128,15 @@ export default function PhysicalPvUpload({ rentalId, phase, onOpenBlank, t, clas
           {latest?.status === "rejected" && (
             <p className="mt-3 text-xs text-destructive">{t("PV-ul anterior a fost respins", "Previous report was rejected")}{latest.admin_note ? `: ${latest.admin_note}` : "."}</p>
           )}
+          <label className="mt-3 block text-xs font-medium">{t("Din ce motiv tehnic s-a făcut PV fizic?", "Why was a paper report used?")}</label>
+          <select value={reason} onChange={(e) => setReason(e.target.value)}
+            className="mt-1 w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs">
+            <option value="">{t("Alege motivul…", "Choose reason…")}</option>
+            {PV_REASONS.map((r) => <option key={r.value} value={r.value}>{t(r.ro, r.en)}</option>)}
+          </select>
+          <textarea value={details} onChange={(e) => setDetails(e.target.value)} maxLength={500} rows={2}
+            placeholder={reason === "other" ? t("Descrie motivul (obligatoriu)", "Describe the reason (required)") : t("Detalii (opțional)", "Details (optional)")}
+            className="mt-2 w-full rounded-md border border-input bg-background px-2 py-1.5 text-xs" />
           <input ref={inputRef} type="file" accept="image/*,.pdf" className="hidden"
             onChange={(e) => { setErr(null); setFile(e.target.files?.[0] ?? null); e.target.value = ""; }} />
           <div className="mt-3 flex flex-wrap items-center gap-2">
