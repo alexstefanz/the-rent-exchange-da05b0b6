@@ -472,21 +472,6 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
           </button>
         )}
 
-        <button
-          onClick={() => onNavigate("/inchirieri?status=completed")}
-          className="group flex w-full items-center gap-3 h-12 px-4 rounded-xl bg-card border border-border/60 shadow-sm hover:border-primary/40 transition-colors"
-        >
-          <CheckCheck className="h-5 w-5 text-primary" />
-          <span className="flex-1 text-sm font-medium text-foreground text-left">
-            {t("Închirieri încheiate", "Completed rentals")}
-          </span>
-          {(signals?.completedRentalsAsOwner || 0) > 0 && (
-            <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-primary/15 text-primary text-xs font-semibold">
-              {signals?.completedRentalsAsOwner}
-            </span>
-          )}
-          <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition" />
-        </button>
 
         <button
           onClick={() => onNavigate("/suport")}
