@@ -1178,6 +1178,9 @@ export type Database = {
           comment: string | null
           created_at: string
           id: string
+          moderated_at: string | null
+          moderated_by: string | null
+          moderation_reason: string | null
           product_id: string
           rating: number
           rating_communication: number | null
@@ -1186,11 +1189,15 @@ export type Database = {
           rental_id: string | null
           review_type: string
           reviewer_id: string
+          status: string
         }
         Insert: {
           comment?: string | null
           created_at?: string
           id?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
+          moderation_reason?: string | null
           product_id: string
           rating: number
           rating_communication?: number | null
@@ -1199,11 +1206,15 @@ export type Database = {
           rental_id?: string | null
           review_type?: string
           reviewer_id: string
+          status?: string
         }
         Update: {
           comment?: string | null
           created_at?: string
           id?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
+          moderation_reason?: string | null
           product_id?: string
           rating?: number
           rating_communication?: number | null
@@ -1212,6 +1223,7 @@ export type Database = {
           rental_id?: string | null
           review_type?: string
           reviewer_id?: string
+          status?: string
         }
         Relationships: [
           {
@@ -2546,28 +2558,40 @@ export type Database = {
           comment: string | null
           created_at: string
           id: string
+          moderated_at: string | null
+          moderated_by: string | null
+          moderation_reason: string | null
           rating: number
           rental_id: string | null
           reviewed_user_id: string
           reviewer_id: string
+          status: string
         }
         Insert: {
           comment?: string | null
           created_at?: string
           id?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
+          moderation_reason?: string | null
           rating: number
           rental_id?: string | null
           reviewed_user_id: string
           reviewer_id: string
+          status?: string
         }
         Update: {
           comment?: string | null
           created_at?: string
           id?: string
+          moderated_at?: string | null
+          moderated_by?: string | null
+          moderation_reason?: string | null
           rating?: number
           rental_id?: string | null
           reviewed_user_id?: string
           reviewer_id?: string
+          status?: string
         }
         Relationships: [
           {
@@ -2757,6 +2781,10 @@ export type Database = {
       }
       admin_confirm_product_deletion: {
         Args: { _id: string }
+        Returns: undefined
+      }
+      admin_moderate_review: {
+        Args: { _approve: boolean; _id: string; _note?: string; _table: string }
         Returns: undefined
       }
       admin_reject_product_deletion: {
@@ -3739,6 +3767,7 @@ export type Database = {
         Args: { _action: string; _note?: string; _rental_id: string }
         Returns: Json
       }
+      review_contains_contact: { Args: { _t: string }; Returns: boolean }
       search_products: {
         Args: {
           _category?: string

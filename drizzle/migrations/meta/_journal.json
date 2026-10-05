@@ -71,6 +71,13 @@
       "when": 1791207487916,
       "tag": "0009_rentals_no_self_rental",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791208821744,
+      "tag": "0010_review_moderation_variant_b",
+      "breakpoints": true
     }
   ]
 }
