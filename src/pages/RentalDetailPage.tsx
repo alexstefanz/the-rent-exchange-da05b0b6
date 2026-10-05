@@ -143,6 +143,7 @@ const RentalDetailPage = () => {
     handover_pv_signed: !!(rental.handover_pv_owner_signed_at && rental.handover_pv_renter_signed_at),
     return_pv_renter_signed: !!rental.return_pv_renter_signed_at,
     return_pv_owner_signed: !!rental.return_pv_owner_signed_at,
+    contract_signed: contractAcc.bothAccepted,
   } : null;
   const stepEarly = tlRentalEarly ? getTimelineStep(tlRentalEarly).current : 0;
   const isPaidEarly = !!rental && (rental.payment_status === "authorized" || rental.payment_status === "paid" || rental.payment_status === "captured");
@@ -223,6 +224,7 @@ const RentalDetailPage = () => {
     handover_pv_signed: !!(rental.handover_pv_owner_signed_at && rental.handover_pv_renter_signed_at),
     return_pv_renter_signed: !!rental.return_pv_renter_signed_at,
     return_pv_owner_signed: !!rental.return_pv_owner_signed_at,
+    contract_signed: contractAcc.bothAccepted,
   };
   const { current: step, cancelled } = getTimelineStep(tlRental);
 
@@ -732,6 +734,12 @@ const RentalDetailPage = () => {
             <p className="font-heading font-semibold mt-2">{t("Procese verbale — blocat", "Handover reports — locked")}</p>
             <p className="text-sm text-muted-foreground mt-1">{t("Semnați întâi contractul. Procesele-verbale se deblochează după semnarea contractului de ambele părți.", "Sign the contract first. Reports unlock once both parties sign it.")}</p>
             <Button size="sm" variant="outline" className="mt-3" onClick={() => { setDocsBlank(false); setDocsTab("contract"); setDocsOpen(true); }}><FileSignature className="h-4 w-4 mr-1" />{t("Vezi contractul", "View contract")}</Button>
+          </section>
+        ) : (showHandoverPv || showReturnPv) && !handoverDoneEarly && new Date() < new Date(String(rental.start_date).slice(0,10) + "T00:00:00") ? (
+          <section id="pv-section" className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6 scroll-mt-24 text-center">
+            <CalendarClock className="h-6 w-6 mx-auto text-primary" />
+            <p className="font-heading font-semibold mt-2">{t("Procesul-verbal se deschide în ziua predării", "The handover report opens on handover day")}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t(`Ziua predării: ${new Date(String(rental.start_date).slice(0,10) + "T00:00:00").toLocaleDateString("ro-RO", { weekday: "long", day: "numeric", month: "long" })}. Până atunci, stabiliți ora și locul întâlnirii. Fără PV semnat, predarea nu este validată.`, `Handover day: ${String(rental.start_date).slice(0,10)}. Until then, agree on time and place. Without a signed report, the handover is not validated.`)}</p>
           </section>
         ) : (showHandoverPv || showReturnPv) && (
           <section id="pv-section" className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6 scroll-mt-24">
