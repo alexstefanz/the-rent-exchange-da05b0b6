@@ -248,6 +248,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
             <p><b>Art. 1.</b> Părțile, {rental.owner_name} (Locator) și {rental.renter_name} (Locatar), convin prelungirea locațiunii bunului {rental.product_title} cu <b>{e.approved_days} zile</b>, de la {fmtD(e.original_end_date)} până la <b>{fmtD(e.approved_end_date)}</b>.</p>
             <p><b>Art. 2.</b> Chiria suplimentară este {e.approved_days} × {ron(e.daily_price)} = {ron(e.subtotal_amount)}, plus comisionul platformei de {ron(e.platform_fee)}, total {ron(e.total_amount)}, achitată prin Rentli.ro.</p>
             <p><b>Art. 3.</b> Restituirea se face la noua dată, în aceleași condiții. Toate celelalte clauze ale contractului rămân neschimbate.</p>
+            <p><b>Art. 4.</b> Garanția și protecția bunului se prelungesc de drept până la noua dată de restituire.</p>
           </div>
         ))
       )}

@@ -126,6 +126,35 @@ export default function RentalExtensionCard({ rental, role, active }: { rental: 
         )}
       </div>
 
+      {(() => {
+        const lastPaid = exts.find((e) => e.status === "approved" && e.payment_status === "paid");
+        const step = open ? 1 : current?.status === "pending" ? 2 : current?.status === "approved" ? 3 : lastPaid ? 6 : 0;
+        if (!step) return null;
+        const labels = [t("Solicitare", "Request"), t("Răspuns proprietar", "Owner answer"), t("Plată diferență", "Payment"), t("Actualizare asigurare", "Insurance update"), t("Nou termen", "New term")];
+        return (
+          <>
+            <ol className="grid grid-cols-5 gap-1">
+              {labels.map((l, i) => {
+                const n = i + 1; const done = n < step; const cur = n === step;
+                return (
+                  <li key={l} className="flex flex-col items-center text-center gap-1">
+                    <span className={`h-6 w-6 rounded-full grid place-items-center text-[11px] font-semibold ${done ? "bg-primary text-primary-foreground" : cur ? "border-2 border-primary text-primary" : "bg-muted text-muted-foreground"}`}>{done ? <Check className="h-3.5 w-3.5" /> : n}</span>
+                    <span className={`text-[10px] leading-tight ${cur || done ? "text-foreground" : "text-muted-foreground"}`}>{l}</span>
+                  </li>
+                );
+              })}
+            </ol>
+            {lastPaid && !current && !open && (
+              <div className="rounded-xl border border-border bg-muted/40 p-3 text-sm space-y-1">
+                <p className="font-medium">{t("Poliță de asigurare & Protecție Rentli", "Insurance policy & Rentli protection")} <span className="ml-1 text-[10px] uppercase rounded bg-muted px-1.5 py-0.5 text-muted-foreground">{t("în curând", "coming soon")}</span></p>
+                <p className="text-muted-foreground">{t(`Protecția bunului se extinde pentru noul interval: ${fmt(lastPaid.original_end_date)} → ${fmt(lastPaid.approved_end_date)}.`, `Protection extends for the new period: ${fmt(lastPaid.original_end_date)} → ${fmt(lastPaid.approved_end_date)}.`)}</p>
+                <p className="font-medium text-primary">{t(`Nou termen de returnare: ${fmt(lastPaid.approved_end_date)}`, `New return date: ${fmt(lastPaid.approved_end_date)}`)}</p>
+              </div>
+            )}
+          </>
+        );
+      })()}
+
       {open && (
         <div className="rounded-xl border border-border p-4 space-y-3">
           <p className="text-sm font-medium">{t("Cu câte zile vrei să prelungești?", "How many days do you want to add?")}</p>
