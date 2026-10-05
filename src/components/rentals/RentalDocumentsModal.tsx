@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import ExtensionSignDialog from "./ExtensionSignDialog";
 import { format } from "date-fns";
 import { Printer, FileText, FileSignature } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -35,6 +36,8 @@ const ron = (n?: number | null) => (n == null ? "______" : `${Number(n).toFixed(
 export default function RentalDocumentsModal({ open, onOpenChange, rental, initialTab = "contract", initialBlank = false }: Props) {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [blank, setBlank] = useState(initialBlank);
+  const [extSignId, setExtSignId] = useState<string | null>(null);
+  const qc = useQueryClient();
   useEffect(() => { if (open) { setTab(initialTab); setBlank(initialBlank); } }, [open, initialTab, initialBlank]);
   const docRef = useRef<HTMLDivElement>(null);
 
@@ -254,12 +257,14 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
             <p><b>Art. 2.</b> Chiria suplimentară este {e.approved_days} × {ron(e.daily_price)} = {ron(e.subtotal_amount)}, plus comisionul platformei de {ron(e.platform_fee)}, total {ron(e.total_amount)}, achitată prin Rentli.ro.</p>
             <p><b>Art. 3.</b> Restituirea se face la noua dată, în aceleași condiții. Toate celelalte clauze ale contractului rămân neschimbate.</p>
             <p><b>Art. 4.</b> Garanția și protecția bunului se prelungesc de drept până la noua dată de restituire.</p>
+            <Sig pv={{ phase: "extension", owner_signature_data: e.owner_signature_data, renter_signature_data: e.renter_signature_data, owner_signed_at: e.owner_signed_at, renter_signed_at: e.renter_signed_at }} />
           </div>
         ))
       )}
-      <Sig pv={handover} />
+      {(b || !paidExts.length) && <Sig />}
     </div>
   );
+  const extToSign = myRole ? paidExts.find((e) => !(myRole === "owner" ? e.owner_signed_at : e.renter_signed_at)) : undefined;
 
   const tabs: { k: Tab; l: string }[] = [
     { k: "contract", l: "Contract" },
@@ -282,6 +287,9 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
               {tab === "contract" && canSignContract && (
                 <Button size="sm" onClick={() => setSignOpen(true)}><FileSignature className="h-4 w-4 mr-1" />Semnează contractul</Button>
               )}
+              {tab === "anexa3" && extToSign && (
+                <Button size="sm" onClick={() => setExtSignId(extToSign.id)}><FileSignature className="h-4 w-4 mr-1" />Semnează Anexa 3</Button>
+              )}
               <Button size="sm" variant={tab === "contract" && canSignContract ? "outline" : "default"} onClick={() => print(false)}><Printer className="h-4 w-4 mr-1" />Salvează PDF / Tipărește</Button>
             </div>
           </div>
@@ -300,6 +308,10 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
         </div>
       </DialogContent>
       <ContractSignDialog open={signOpen} onOpenChange={setSignOpen} rentalId={rental.id} publicId={rental.public_id} onSign={acc.sign} onBothSigned={() => { justSignedRef.current = true; onOpenChange(false); }} />
+      {extSignId && (
+        <ExtensionSignDialog open={!!extSignId} onOpenChange={(o) => { if (!o) setExtSignId(null); }} extensionId={extSignId} publicId={rental.public_id}
+          onSigned={() => qc.invalidateQueries({ queryKey: ["rental-extensions", rental.id] })} />
+      )}
     </Dialog>
   );
 }

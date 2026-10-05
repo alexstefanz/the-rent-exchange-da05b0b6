@@ -667,6 +667,7 @@ const RentalDetailPage = () => {
                   rental={rental}
                   role={role}
                   active={!returnInitiated && !returnDoneEarly && rental.status !== "cancelled" && rental.status !== "completed"}
+                  onOpenAnnex={() => { setDocsBlank(false); setDocsTab("anexa3"); setDocsOpen(true); }}
                 />
               )}
               {!handoverDoneEarly && (
