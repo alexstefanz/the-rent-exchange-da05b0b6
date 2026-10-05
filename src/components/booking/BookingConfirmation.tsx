@@ -45,8 +45,8 @@ const BookingConfirmation = ({
 
   const steps = [
     { icon: CalendarDays, title: t("Stabiliți întâlnirea", "Agree on the meeting"), text: t("Alegeți împreună intervalul de 2 ore și locul exact al predării.", "Pick a 2-hour slot and the exact handover place together.") },
-    { icon: FileSignature, title: t("Contractul este gata", "The contract is ready"), text: t("Contractul și modelele anexelor sunt disponibile în pagina închirierii.", "The contract and annex templates are available on the rental page.") },
-    { icon: Camera, title: t("La predare", "At handover"), text: t("Verificați bunul, faceți fotografiile și semnați procesul-verbal.", "Inspect the item, take photos and sign the handover report.") },
+    { icon: FileSignature, title: t("Semnați contractul", "Sign the contract"), text: t("Ambele părți semnează contractul în pagina închirierii, cu cod SMS.", "Both parties sign the contract on the rental page with an SMS code.") },
+    { icon: Camera, title: t("La predare", "At handover"), text: t(`Bunul se preia ${handoverDate}. Procesul-verbal se deschide doar în ziua predării; fără PV semnat de ambele părți, predarea nu este validată.`, `Pick-up is on ${handoverDate}. The handover report opens only on that day; without it signed by both, the handover is not validated.`) },
   ];
 
   return (
