@@ -59,6 +59,7 @@ const RentalDetailPage = () => {
   const [initiatingReturn, setInitiatingReturn] = useState(false);
   const [returnDialogOpen, setReturnDialogOpen] = useState(false);
   const [docsOpen, setDocsOpen] = useState(false);
+  const contractAcc = useContractAcceptance(rentalIdForContract(params));
   const [docsTab, setDocsTab] = useState<"contract" | "anexa1" | "anexa2">("contract");
   const [docsBlank, setDocsBlank] = useState(false);
   const [pvSectionOpen, setPvSectionOpen] = useState(false);
@@ -585,11 +586,12 @@ const RentalDetailPage = () => {
               <div className="flex-1 min-w-0">
                 <h3 className="font-heading font-semibold">{t("Contract de închiriere & Documentele rezervării", "Rental contract & booking documents")}</h3>
                 <ul className="mt-2 space-y-1 text-sm">
-                  <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" />{t("Contract cadru — generat", "Framework contract — generated")}</li>
+                  <li className="flex items-center gap-2">{contractAcc.bothAccepted ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Clock className="h-4 w-4 text-muted-foreground" />}{t("Contract de închiriere", "Rental contract")}</li>
                   <li className="flex items-center gap-2">{rental.handover_pv_owner_signed_at && rental.handover_pv_renter_signed_at ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Clock className="h-4 w-4 text-muted-foreground" />}{t("Anexa 1 · Predare", "Annex 1 · Handover")}</li>
                   <li className="flex items-center gap-2">{rental.return_pv_owner_signed_at && rental.return_pv_renter_signed_at ? <CheckCircle2 className="h-4 w-4 text-primary" /> : <Clock className="h-4 w-4 text-muted-foreground" />}{t("Anexa 2 · Returnare", "Annex 2 · Return")}</li>
                 </ul>
-                <Button className="mt-3" size="sm" onClick={() => { setDocsBlank(false); setDocsTab("contract"); setDocsOpen(true); }}><FileSignature className="h-4 w-4 mr-1" />{t("Vezi documentele", "View documents")}</Button>
+                <ContractAcceptanceBlock rentalId={rental.id} publicId={rental.public_id} isOwner={isOwner} onOpenContract={() => { setDocsBlank(false); setDocsTab("contract"); setDocsOpen(true); }} t={t} />
+                <Button className="mt-3" size="sm" variant="outline" onClick={() => { setDocsBlank(false); setDocsTab("contract"); setDocsOpen(true); }}><FileSignature className="h-4 w-4 mr-1" />{t("Vezi documentele", "View documents")}</Button>
               </div>
             </div>
           </section>
@@ -645,6 +647,8 @@ const RentalDetailPage = () => {
                   rentalId={rental.id}
                   startDate={rental.start_date}
                   signed={handoverDoneEarly}
+                  contractReady={contractAcc.bothAccepted || contractAcc.loading}
+                  onOpenContract={() => { setDocsBlank(false); setDocsTab("contract"); setDocsOpen(true); }}
                   onOpenPv={() => {
                     if (handoverDoneEarly) { setDocsBlank(false); setDocsTab("anexa1"); setDocsOpen(true); }
                     else document.getElementById("pv-section")?.scrollIntoView({ behavior: "smooth" });
