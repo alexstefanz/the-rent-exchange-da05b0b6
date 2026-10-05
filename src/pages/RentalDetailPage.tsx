@@ -1,3 +1,4 @@
+import Confetti from "@/components/common/Confetti";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -368,8 +369,6 @@ const RentalDetailPage = () => {
         {rental.status === "completed" && <Confetti onceKey={`completed-${rental.id}-${user?.id}`} />}
         {rental.status === "completed" && (
           <section className="rounded-2xl border-2 border-primary bg-card p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="sm:basis-full sm:hidden" />
-            <p className="hidden" />
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center"><FileSignature className="h-5 w-5 text-primary" /></div>
               <div>
