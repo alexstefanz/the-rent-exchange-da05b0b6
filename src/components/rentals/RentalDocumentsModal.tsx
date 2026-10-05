@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Printer, FileDown, FileText, FileSignature } from "lucide-react";
+import { Printer, FileText, FileSignature } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useContractAcceptance } from "./useContractAcceptance";
 import ContractSignDialog from "./ContractSignDialog";
