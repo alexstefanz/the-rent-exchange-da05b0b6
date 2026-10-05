@@ -141,6 +141,27 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
       <p>Orice defecțiune, pierdere sau furt se comunică imediat celeilalte părți și Rentli, prin chatul intern sau tichet de suport. Locatarul răspunde pentru deteriorările produse din culpa sa. Niciuna dintre părți nu răspunde pentru neexecutarea cauzată de forță majoră.</p>
       <H2>Art. 10. Dispoziții finale</H2>
       <p>Contractul se completează cu Anexa 1 (PV de predare), Anexa 2 (PV de returnare) și eventualele acte adiționale. Litigiile se soluționează amiabil, prin medierea Rentli, iar în caz contrar de instanțele competente din România. Acceptarea electronică și semnăturile digitale din platformă au valoarea semnăturii olografe.</p>
+      <H2>Art. 11. Jurnal de validare a semnării</H2>
+      <p className="text-xs">Înainte de semnare, fiecare parte și-a confirmat identitatea printr-un cod unic trimis prin SMS pe telefonul asociat contului Rentli.</p>
+      <table className="w-full border-collapse text-[11px] my-2">
+        <thead>
+          <tr>{["Parte", "Nume", "Canal", "Destinație", "Data și ora", "Referință"].map((h) => (
+            <th key={h} className="border border-border p-1 text-left">{h}</th>
+          ))}</tr>
+        </thead>
+        <tbody>
+          {([["Locator", rental.owner_name, acc.ownerRow], ["Locatar", rental.renter_name, acc.renterRow]] as const).map(([p, n, row]) => (
+            <tr key={p}>
+              <td className="border border-border p-1">{p}</td>
+              <td className="border border-border p-1">{v(n)}</td>
+              <td className="border border-border p-1">{!b && row?.validation_channel ? "Cod SMS" : "______"}</td>
+              <td className="border border-border p-1">{!b && row?.validation_destination ? row.validation_destination : "______"}</td>
+              <td className="border border-border p-1">{!b && row?.validated_at ? fmtDT(row.validated_at) : "______"}</td>
+              <td className="border border-border p-1">{!b && row?.validation_ref ? row.validation_ref : "______"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
       <Sig pv={contractPv} />
     </div>
   );
@@ -259,7 +280,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
           {(b || paidExts.length > 0) && anexa3}
         </div>
       </DialogContent>
-      <ContractSignDialog open={signOpen} onOpenChange={setSignOpen} publicId={rental.public_id} onSign={acc.sign} />
+      <ContractSignDialog open={signOpen} onOpenChange={setSignOpen} rentalId={rental.id} publicId={rental.public_id} onSign={acc.sign} />
     </Dialog>
   );
 }
