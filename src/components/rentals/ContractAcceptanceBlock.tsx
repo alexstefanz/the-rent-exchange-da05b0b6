@@ -48,7 +48,7 @@ export default function ContractAcceptanceBlock({ rentalId, publicId, isOwner, o
       ) : (
         <p className="mt-2 text-xs font-semibold text-primary">{t("Contract semnat de ambele părți.", "Contract signed by both parties.")}</p>
       )}
-      <ContractSignDialog open={signOpen} onOpenChange={setSignOpen} publicId={publicId} onSign={sign} onOpenContract={() => { setSignOpen(false); onOpenContract(); }} />
+      <ContractSignDialog open={signOpen} onOpenChange={setSignOpen} rentalId={rentalId} publicId={publicId} onSign={sign} onOpenContract={() => { setSignOpen(false); onOpenContract(); }} />
     </div>
   );
 }
