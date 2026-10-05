@@ -361,6 +361,20 @@ const RentalDetailPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           <div className="lg:col-span-2 flex flex-col gap-6 min-w-0">
+        {rental.status === "completed" && (
+          <section className="rounded-2xl border-2 border-primary bg-card p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center"><FileSignature className="h-5 w-5 text-primary" /></div>
+              <div>
+                <p className="font-semibold text-sm">{t("Dosarul complet al închirierii", "Complete rental file")}</p>
+                <p className="text-xs text-muted-foreground">{t("Contractul și toate anexele semnate, într-un singur PDF.", "Contract and all signed annexes in one PDF.")}</p>
+              </div>
+            </div>
+            <Button className="shrink-0" onClick={() => { setDocsBlank(false); setDocsTab("contract"); setDocsOpen(true); }}>
+              <FileSignature className="h-4 w-4 mr-2" />{t("Descarcă dosarul complet", "Download complete file")}
+            </Button>
+          </section>
+        )}
         {/* Review CTA — visible after rental is completed and only until the user reviewed */}
         {rental.status === "completed" && !alreadyReviewed && (
           <section className="rounded-2xl border border-border bg-card p-4 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -750,13 +764,17 @@ const RentalDetailPage = () => {
                     isCurrentStep={returnIsCurrent}
                   />
                 ) : (
-                  <PvPhotoUploadCard
-                    rental={rental}
-                    phase="return"
-                    role={role}
-                    onOpenDocument={() => setPvOpen("return")}
-                    onOpenChat={handleChat}
-                  />
+                  <div className="flex flex-col gap-3">
+                    <PvPhotoUploadCard
+                      rental={rental}
+                      phase="return"
+                      role={role}
+                      onOpenDocument={() => setPvOpen("return")}
+                      onOpenChat={handleChat}
+                    />
+                    <PhysicalPvUpload rentalId={rental.id} phase="return" t={t}
+                      onOpenBlank={() => { setDocsBlank(true); setDocsTab("anexa2"); setDocsOpen(true); }} />
+                  </div>
                 )
                 }</div>
               )}

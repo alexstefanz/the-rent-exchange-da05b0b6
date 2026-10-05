@@ -121,53 +121,7 @@ export default function HandoverPvCard({ rentalId, startDate, signed, onOpenPv, 
         </Button>
       </div>
 
-      {!signed && (
-        <details className="mt-3 group rounded-lg border border-dashed border-border bg-background px-3 py-2">
-          <summary className="flex items-center gap-2 text-xs font-medium text-muted-foreground cursor-pointer list-none">
-            <Upload className="h-3.5 w-3.5" />{t("Ai semnat pe hârtie? Încarcă scanul sau poza", "Signed on paper? Upload scan or photo")}
-            <ChevronDown className="h-3.5 w-3.5 ml-auto group-open:rotate-180 transition-transform" />
-          </summary>
-          <ol className="mt-2 space-y-1 text-xs">
-            <li>1. <button type="button" className="underline text-primary" onClick={onOpenBlank}>{t("Descarcă setul de documente nesemnat", "Download the unsigned document set")}</button></li>
-            <li>2. {t("Completați și semnați PV-ul pe hârtie, ambele părți", "Fill in and sign the report on paper, both parties")}</li>
-            <li>3. {t("Fotografiază sau scanează documentul și încarcă-l aici", "Photograph or scan it and upload it here")}</li>
-          </ol>
-
-
-          {latest?.status === "approved" ? (
-            <div className="mt-3 border-l-2 border-primary bg-primary/10 p-3 text-xs rounded-r-lg">
-              <p className="font-semibold flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-primary" />{t("PV fizic încărcat și validat", "Physical report uploaded and validated")}</p>
-              <p className="text-muted-foreground mt-0.5">{latest.file_name} · {t("Verificat de echipa Rentli.", "Verified by the Rentli team.")}</p>
-            </div>
-          ) : latest?.status === "pending" ? (
-            <div className="mt-3 border-l-2 border-primary bg-primary/10 p-3 text-xs rounded-r-lg">
-              <p className="font-semibold flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-primary" />{t("Trimis spre verificare", "Sent for review")}</p>
-              <p className="text-muted-foreground mt-0.5">{latest.file_name} · {format(new Date(latest.created_at), "dd.MM.yyyy HH:mm")}</p>
-            </div>
-          ) : (
-            <>
-              {latest?.status === "rejected" && (
-                <p className="mt-3 text-xs text-destructive">{t("PV-ul anterior a fost respins", "Previous report was rejected")}{latest.admin_note ? `: ${latest.admin_note}` : "."}</p>
-              )}
-              <input ref={inputRef} type="file" accept="image/*,.pdf" className="hidden"
-                onChange={(e) => { setErr(null); setFile(e.target.files?.[0] ?? null); e.target.value = ""; }} />
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => inputRef.current?.click()} disabled={busy}>
-                  <Upload className="h-4 w-4 mr-1" />{t("Alege poza sau scanul PV-ului", "Choose photo or scan")}
-                </Button>
-                {file && (
-                  <Button size="sm" onClick={submit} disabled={busy}>
-                    {busy ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
-                    {t("Trimite spre verificare", "Send for review")}
-                  </Button>
-                )}
-              </div>
-              {file && <p className="mt-2 text-xs text-muted-foreground truncate">{file.name}</p>}
-            </>
-          )}
-          {err && <p className="mt-2 text-xs text-destructive">{err}</p>}
-        </details>
-      )}
+      {!signed && <PhysicalPvUpload rentalId={rentalId} phase="handover" onOpenBlank={onOpenBlank} t={t} className="mt-3" />}
     </section>
   );
 }
