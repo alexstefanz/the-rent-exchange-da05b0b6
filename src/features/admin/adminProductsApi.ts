@@ -22,7 +22,22 @@ export interface AdminProduct {
   created_via?: string | null;
 }
 
+const isPendingEdit = async (productId: string): Promise<boolean> => {
+  const { data } = await supabase
+    .from('products')
+    .select('approval_status, pending_edits' as any)
+    .eq('id', productId)
+    .maybeSingle();
+  const d = data as any;
+  return !!d?.pending_edits && d?.approval_status === 'approved';
+};
+
 export const approveProduct = async (productId: string): Promise<void> => {
+  if (await isPendingEdit(productId)) {
+    const { error } = await (supabase.rpc as any)('admin_apply_product_edits', { _id: productId });
+    if (error) throw new Error(error.message);
+    return;
+  }
   const { error } = await supabase
     .from('products')
     .update({ approval_status: 'approved', is_active: true } as never)
@@ -66,6 +81,12 @@ export const approveProduct = async (productId: string): Promise<void> => {
 };
 
 export const rejectProduct = async (productId: string, reason: string): Promise<void> => {
+  // Edit of a live listing: discard the proposed changes, keep the listing live with old data.
+  if (await isPendingEdit(productId)) {
+    const { error } = await (supabase.rpc as any)('admin_reject_product_edits', { _id: productId, _reason: reason });
+    if (error) throw new Error(error.message);
+    return;
+  }
   const { error } = await supabase
     .from('products')
     .update({ approval_status: 'rejected', is_active: false, flag_reason: reason } as never)

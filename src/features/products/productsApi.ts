@@ -349,9 +349,26 @@ export const updateProduct = async (
     payload.flag_reason = null;
     payload.is_active = true;
   }
-  // Any edit to an already-approved listing must be re-reviewed by admins.
+  // Edits to a live listing are stored separately for review; the live
+  // listing keeps its current (approved) data until an admin approves.
   if ((current as any)?.approval_status === "approved") {
-    payload.approval_status = "pending";
+    const { is_active, ...edits } = payload;
+    const onlyVisibility = Object.keys(edits).length === 0;
+    const livePayload: Record<string, unknown> = {};
+    if (is_active !== undefined) livePayload.is_active = is_active;
+    if (!onlyVisibility) {
+      livePayload.pending_edits = edits;
+      livePayload.pending_edits_submitted_at = new Date().toISOString();
+    }
+    const { data: product, error } = await supabase
+      .from("products")
+      .update(livePayload as never)
+      .eq("id", id)
+      .eq("owner_id", ownerId)
+      .select(PRODUCT_SAFE_COLS as any)
+      .single();
+    if (error) handleApiError("Error updating product", error);
+    return product as unknown as Product;
   }
 
   const { data: product, error } = await supabase
