@@ -19,7 +19,7 @@ import {
   type PvDocument,
 } from "@/features/rentals/rentalDetailPageApi";
 import type { RentalFullDetail } from "@/features/rentals/rentalDetailPageApi";
-import { buildPvContent, buildPvRichContent, noDia, COMPANY, MIN_PV_PHOTOS, type PvRun } from "@/lib/pvContent";
+import { buildPvContent, buildPvRichContent, pvEffectiveDate, noDia, COMPANY, MIN_PV_PHOTOS, type PvRun } from "@/lib/pvContent";
 import { generatePvDocx, downloadBlob } from "@/lib/pvDocx";
 import rentliLogoUrl from "@/assets/rentli_logo.png";
 
@@ -66,7 +66,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
     return () => { supabase.removeChannel(ch); };
   }, [open, rental.id, phase]);
 
-  const content = buildPvContent(rental, phase);
+  const content = buildPvContent(rental, phase, pvEffectiveDate(pv));
 
   const uploaderRole: "owner" | "renter" = phase === "handover" ? "owner" : "renter";
   const isUploader = role === uploaderRole;
@@ -123,7 +123,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
     const MARGIN = 50;
     const CONTENT_W = W - MARGIN * 2;
     let y = 40;
-    const rich = buildPvRichContent(rental, phase);
+    const rich = buildPvRichContent(rental, phase, pvEffectiveDate(updatedPv));
 
     const ensureSpace = (needed: number) => {
       if (y + needed > H - 40) { doc.addPage(); y = 50; }

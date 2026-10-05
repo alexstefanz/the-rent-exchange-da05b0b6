@@ -30,8 +30,14 @@ export interface PvContent {
   todayLabel: string;
 }
 
-export function buildPvContent(rental: RentalFullDetail, phase: "handover" | "return"): PvContent {
-  const today = format(new Date(), "dd MMMM yyyy");
+/** Date of the PV = effective signing date (latest signature), else now (live signing). */
+export function pvEffectiveDate(pv?: { owner_signed_at?: string | null; renter_signed_at?: string | null } | null): Date {
+  const ts = [pv?.owner_signed_at, pv?.renter_signed_at].filter(Boolean).map((d) => new Date(d as string).getTime());
+  return ts.length ? new Date(Math.max(...ts)) : new Date();
+}
+
+export function buildPvContent(rental: RentalFullDetail, phase: "handover" | "return", docDate: Date = new Date()): PvContent {
+  const today = format(docDate, "dd.MM.yyyy");
   const ownerName = rental.owner_name || "Proprietar";
   const renterName = rental.renter_name || "Chirias";
   const ownerPhone = rental.owner_phone || "0740 000 000";
@@ -127,8 +133,9 @@ const B = (text: string): PvRun => ({ text, bold: true });
 export function buildPvRichContent(
   rental: RentalFullDetail,
   phase: "handover" | "return",
+  docDate: Date = new Date(),
 ): PvRichContent {
-  const today = format(new Date(), "dd MMMM yyyy");
+  const today = format(docDate, "dd.MM.yyyy");
   const ownerName = rental.owner_name || "Proprietar";
   const renterName = rental.renter_name || "Chirias";
   const ownerPhone = rental.owner_phone || "0740 000 000";
