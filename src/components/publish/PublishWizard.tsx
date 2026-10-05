@@ -463,7 +463,12 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
           title: willRequireReview
             ? t("Anunț retrimis spre aprobare", "Listing resubmitted for approval")
             : t("Anunț actualizat", "Listing updated"),
-          description: willRequireReview
+          description: prevStatus === "approved"
+            ? t(
+                "Anunțul rămâne activ cu datele actuale până la verificarea modificărilor.",
+                "Your listing stays live with the current details until the changes are reviewed.",
+              )
+            : willRequireReview
             ? t(
                 "Îl vei vedea publicat după verificare (de obicei sub 2 ore).",
                 "It will be published after review (usually under 2 hours).",

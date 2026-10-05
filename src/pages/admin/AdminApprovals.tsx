@@ -224,6 +224,11 @@ const AdminApprovals = () => {
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="truncate text-sm font-semibold text-foreground">
+                          {product.approval_status === "edit" && (
+                            <span className="mr-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                              Modificare anunț activ
+                            </span>
+                          )}
                           {product.title}
                         </div>
                         <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
