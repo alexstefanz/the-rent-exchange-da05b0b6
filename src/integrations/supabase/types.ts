@@ -1318,6 +1318,8 @@ export type Database = {
           min_rental_days: number | null
           min_rental_preset: string | null
           owner_id: string
+          pending_edits: Json | null
+          pending_edits_submitted_at: string | null
           pickup_address: string | null
           pickup_available: boolean
           pickup_lat: number | null
@@ -1367,6 +1369,8 @@ export type Database = {
           min_rental_days?: number | null
           min_rental_preset?: string | null
           owner_id: string
+          pending_edits?: Json | null
+          pending_edits_submitted_at?: string | null
           pickup_address?: string | null
           pickup_available?: boolean
           pickup_lat?: number | null
@@ -1416,6 +1420,8 @@ export type Database = {
           min_rental_days?: number | null
           min_rental_preset?: string | null
           owner_id?: string
+          pending_edits?: Json | null
+          pending_edits_submitted_at?: string | null
           pickup_address?: string | null
           pickup_available?: boolean
           pickup_lat?: number | null
@@ -2779,6 +2785,7 @@ export type Database = {
         }
         Returns: string
       }
+      admin_apply_product_edits: { Args: { _id: string }; Returns: undefined }
       admin_confirm_product_deletion: {
         Args: { _id: string }
         Returns: undefined
@@ -2789,6 +2796,10 @@ export type Database = {
       }
       admin_reject_product_deletion: {
         Args: { _id: string }
+        Returns: undefined
+      }
+      admin_reject_product_edits: {
+        Args: { _id: string; _reason: string }
         Returns: undefined
       }
       admin_respond_cancellation: {
@@ -3220,6 +3231,8 @@ export type Database = {
           min_rental_days: number | null
           min_rental_preset: string | null
           owner_id: string
+          pending_edits: Json | null
+          pending_edits_submitted_at: string | null
           pickup_address: string | null
           pickup_available: boolean
           pickup_lat: number | null
