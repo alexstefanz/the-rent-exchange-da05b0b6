@@ -25,6 +25,7 @@ import MeetingDetailsCard from "@/components/rentals/MeetingDetailsCard";
 import RentalDocumentsModal from "@/components/rentals/RentalDocumentsModal";
 import RentalExtensionCard from "@/components/rentals/RentalExtensionCard";
 import HandoverPvCard from "@/components/rentals/HandoverPvCard";
+import PhysicalPvUpload from "@/components/rentals/PhysicalPvUpload";
 import { getOrCreateRentalConversation } from "@/features/messaging/messagingApi";
 
 import { payForConfirmedRental, payRentalWithWallet } from "@/features/rentals/rentalsApi";
