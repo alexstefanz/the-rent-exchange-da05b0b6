@@ -56,6 +56,19 @@ export default function RentalDocumentsModal({ open, onOpenChange, rental, initi
   const { user } = useAuth();
   const acc = useContractAcceptance(rental.id);
   const [signOpen, setSignOpen] = useState(false);
+  const justSignedRef = useRef(false);
+  const wasBothRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (acc.loading) return;
+    if (!open) { wasBothRef.current = null; return; }
+    if (wasBothRef.current === null) { wasBothRef.current = acc.bothAccepted; return; }
+    if (!wasBothRef.current && acc.bothAccepted) {
+      wasBothRef.current = true;
+      if (justSignedRef.current) { justSignedRef.current = false; return; }
+      toast.success("Felicitări! Contractul a fost semnat de ambele părți.", { description: "Procesele-verbale de predare sunt acum deblocate." });
+      onOpenChange(false);
+    }
+  }, [open, acc.loading, acc.bothAccepted, onOpenChange]);
   const isPaid = ["authorized", "paid", "captured"].includes(rental.payment_status as string);
   const myRole = user?.id === rental.owner_id ? "owner" : user?.id === rental.renter_id ? "renter" : null;
   const canSignContract = isPaid && !!myRole && !(myRole === "owner" ? acc.owner : acc.renter);
@@ -280,7 +293,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
           {(b || paidExts.length > 0) && anexa3}
         </div>
       </DialogContent>
-      <ContractSignDialog open={signOpen} onOpenChange={setSignOpen} rentalId={rental.id} publicId={rental.public_id} onSign={acc.sign} />
+      <ContractSignDialog open={signOpen} onOpenChange={setSignOpen} rentalId={rental.id} publicId={rental.public_id} onSign={acc.sign} onBothSigned={() => { justSignedRef.current = true; onOpenChange(false); }} />
     </Dialog>
   );
 }
