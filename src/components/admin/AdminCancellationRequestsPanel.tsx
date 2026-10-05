@@ -16,6 +16,7 @@ import {
   adminApproveCancellation,
   adminRejectCancellation,
   openAdminConversation,
+  describeCancellationReason,
   type PendingCancellationRequest,
   type ResolvedCancellationRequest,
 } from "@/features/admin/cancellationRequestsApi";
@@ -117,7 +118,9 @@ const AdminCancellationRequestsPanel = () => {
                     {r.rental_public_id && <Badge variant="outline">{r.rental_public_id}</Badge>}
                     {archived ? (
                       <>
-                        {archived.cancel_request_status === "approved" ? (
+                        {archived.cancel_request_status === "direct" ? (
+                          <Badge variant="secondary" className="gap-1"><X className="h-3 w-3" /> {describeCancellationReason(archived.cancellation_reason)}</Badge>
+                        ) : archived.cancel_request_status === "approved" ? (
                           <Badge className="gap-1 bg-emerald-600 hover:bg-emerald-600 text-white"><Check className="h-3 w-3" /> Aprobată</Badge>
                         ) : (
                           <Badge variant="destructive" className="gap-1"><X className="h-3 w-3" /> Respinsă</Badge>
