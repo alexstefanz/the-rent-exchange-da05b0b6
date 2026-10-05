@@ -52,6 +52,7 @@ const MutualCancellationCard = ({
 
   async function selfCancelUnpaid() {
     setBusy(true);
+    setFormError(null);
     try {
       await cancelUnpaidRental(rentalId);
       toast.success(
@@ -63,7 +64,15 @@ const MutualCancellationCard = ({
       setConfirmOpen(false);
       await onChanged();
     } catch (e: any) {
-      toast.error(e?.message || t("Eroare la anulare.", "Error cancelling."));
+      const msg = String(e?.message || "");
+      const friendly = msg.includes("PAYMENT_ACTIVE")
+        ? t("Plata a fost deja efectuată — anularea trebuie solicitată către admin.", "Payment already made — cancellation must be requested from an admin.")
+        : msg.includes("HANDOVER_ALREADY_SIGNED")
+        ? t("Predarea a fost deja confirmată, nu se mai poate anula.", "Handover already confirmed, cannot cancel.")
+        : msg.includes("INVALID_STATUS")
+        ? t("Rezervarea nu mai poate fi anulată în starea actuală.", "Reservation can no longer be cancelled in its current state.")
+        : msg || t("Eroare la anulare.", "Error cancelling.");
+      setFormError(friendly);
     } finally { setBusy(false); }
   }
 
@@ -185,6 +194,9 @@ const MutualCancellationCard = ({
                       )}
                 </DialogDescription>
               </DialogHeader>
+              {formError && (
+                <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">{formError}</p>
+              )}
               <DialogFooter>
                 <Button variant="ghost" onClick={() => setConfirmOpen(false)} disabled={busy}>
                   {t("Înapoi", "Back")}
