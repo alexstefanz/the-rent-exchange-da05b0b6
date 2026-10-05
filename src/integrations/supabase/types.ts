@@ -1520,6 +1520,10 @@ export type Database = {
           signature_data: string | null
           user_agent: string | null
           user_id: string
+          validated_at: string | null
+          validation_channel: string | null
+          validation_destination: string | null
+          validation_ref: string | null
         }
         Insert: {
           accepted_at?: string
@@ -1529,6 +1533,10 @@ export type Database = {
           signature_data?: string | null
           user_agent?: string | null
           user_id: string
+          validated_at?: string | null
+          validation_channel?: string | null
+          validation_destination?: string | null
+          validation_ref?: string | null
         }
         Update: {
           accepted_at?: string
@@ -1538,10 +1546,61 @@ export type Database = {
           signature_data?: string | null
           user_agent?: string | null
           user_id?: string
+          validated_at?: string | null
+          validation_channel?: string | null
+          validation_destination?: string | null
+          validation_ref?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "rental_contract_acceptances_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rental_contract_otps: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          phone_masked: string
+          ref: string
+          rental_id: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone_masked: string
+          ref: string
+          rental_id: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone_masked?: string
+          ref?: string
+          rental_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rental_contract_otps_rental_id_fkey"
             columns: ["rental_id"]
             isOneToOne: false
             referencedRelation: "rentals"
@@ -3736,6 +3795,15 @@ export type Database = {
         Returns: undefined
       }
       unaccent: { Args: { "": string }; Returns: string }
+      verify_and_sign_rental_contract: {
+        Args: {
+          p_code: string
+          p_rental_id: string
+          p_signature: string
+          p_user_agent?: string
+        }
+        Returns: Json
+      }
       withdraw_cancellation_request: {
         Args: { _rental_id: string }
         Returns: Json
