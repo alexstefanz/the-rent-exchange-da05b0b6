@@ -138,7 +138,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
     return emptyPublishForm();
   });
 
-  const [feePercent, setFeePercent] = useState(5);
+  const [feePercent, setFeePercent] = useState(15);
   const [freeListingsLeft, setFreeListingsLeft] = useState(0);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
@@ -170,7 +170,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
     getOwnerProductCount(user.id).then((count) => {
       const free = Math.max(0, 3 - count);
       setFreeListingsLeft(free);
-      setFeePercent(count < 3 ? 0 : 5);
+      setFeePercent(count < 3 ? 0 : 15);
     });
   }, [user, mode]);
 
