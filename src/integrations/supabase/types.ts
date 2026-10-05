@@ -1517,6 +1517,7 @@ export type Database = {
           id: string
           rental_id: string
           role: string
+          signature_data: string | null
           user_agent: string | null
           user_id: string
         }
@@ -1525,6 +1526,7 @@ export type Database = {
           id?: string
           rental_id: string
           role: string
+          signature_data?: string | null
           user_agent?: string | null
           user_id: string
         }
@@ -1533,6 +1535,7 @@ export type Database = {
           id?: string
           rental_id?: string
           role?: string
+          signature_data?: string | null
           user_agent?: string | null
           user_id?: string
         }
@@ -2677,6 +2680,14 @@ export type Database = {
     Functions: {
       accept_rental_contract: {
         Args: { p_rental_id: string; p_user_agent?: string }
+        Returns: string
+      }
+      accept_rental_contract_signed: {
+        Args: {
+          p_rental_id: string
+          p_signature: string
+          p_user_agent?: string
+        }
         Returns: string
       }
       admin_confirm_product_deletion: {
