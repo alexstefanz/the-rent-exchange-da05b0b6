@@ -182,7 +182,8 @@ const PrivacyPolicy = () => {
   return (
     <LegalPageLayout
       title="POLITICA DE CONFIDENȚIALITATE"
-      subtitle="Prin prezenta Politică vă informăm despre modul în care colectăm, utilizăm, transferăm și protejăm datele dvs. cu caracter personal. Prelucrarea acestora o realizăm în conformitate cu prevederile Regulamentului (UE) 2016/679 al Parlamentului European și al Consiliului din 27 aprilie 2016 privind protecția persoanelor fizice în ceea ce privește prelucrarea datelor cu caracter personal și privind libera circulație a acestor date, și de abrogare a Directivei nr. 95/46/CE (,,Regulamentul general privind protecția datelor’’, în continuare ,,R.G.P.D.”) și ale legislației naționale relevante în materia protecției datelor cu caracter personal."
+      subtitle=""
+      intro="Prin prezenta Politică vă informăm despre modul în care colectăm, utilizăm, transferăm și protejăm datele dvs. cu caracter personal. Prelucrarea acestora o realizăm în conformitate cu prevederile Regulamentului (UE) 2016/679 al Parlamentului European și al Consiliului din 27 aprilie 2016 privind protecția persoanelor fizice în ceea ce privește prelucrarea datelor cu caracter personal și privind libera circulație a acestor date, și de abrogare a Directivei nr. 95/46/CE (,,Regulamentul general privind protecția datelor’’, în continuare ,,R.G.P.D.”) și ale legislației naționale relevante în materia protecției datelor cu caracter personal."
       lastUpdated="2 septembrie 2026"
       sections={isEn ? sectionsEn : sectionsRo}
       forceRomanianLabels
