@@ -172,12 +172,9 @@ const AccountTab = () => {
     };
     const sectionId = sectionByFocus[focus];
     if (sectionId) {
-      // Wait a tick for layout, then scroll and trigger action.
+      // Wait a tick for layout, then scroll (no auto file picker).
       setTimeout(() => {
         scrollToSection(sectionId);
-        if (focus === "avatar") {
-          fileInputRef.current?.click();
-        }
       }, 150);
     }
     // Clean URL so refresh doesn't re-trigger
