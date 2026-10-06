@@ -1,5 +1,6 @@
 import Confetti from "@/components/common/Confetti";
 import ReceiptLink from "@/components/rentals/ReceiptLink";
+import WalletPaymentSuccessModal from "@/components/rentals/WalletPaymentSuccessModal";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -56,6 +57,7 @@ const RentalDetailPage = () => {
   const [paying, setPaying] = useState(false);
   const [payingTest, setPayingTest] = useState(false);
   const [payingWallet, setPayingWallet] = useState(false);
+  const [walletSuccessOpen, setWalletSuccessOpen] = useState(false);
   const [responding, setResponding] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
@@ -278,8 +280,9 @@ const RentalDetailPage = () => {
     setPayingWallet(true);
     try {
       await payRentalWithWallet(rental.id);
-      toast.success(t("Plată reușită din wallet!", "Paid from wallet!"));
+      setWalletSuccessOpen(true);
       await Promise.all([refetch(), refetchWallet()]);
+      setPayingWallet(false);
     } catch (e: any) {
       console.error("payRentalWithWallet error:", e);
       const msg = String(e?.message || "");
@@ -329,6 +332,21 @@ const RentalDetailPage = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
+      <WalletPaymentSuccessModal
+        open={walletSuccessOpen}
+        onOpenChange={setWalletSuccessOpen}
+        rentalId={rental.id}
+        publicId={rental.public_id}
+        productTitle={rental.product_title}
+        productImage={rental.product_image}
+        period={`${format(new Date(rental.start_date), "d MMM", { locale: roLocale })} – ${format(new Date(rental.end_date), "d MMM yyyy", { locale: roLocale })}`}
+        rentalDays={rental.rental_days}
+        handoverDate={format(new Date(rental.start_date), "EEEE, d MMMM yyyy", { locale: roLocale })}
+        total={payableTotal}
+        onContinue={() => { setWalletSuccessOpen(false); setTimeout(() => document.getElementById("rental-progress")?.scrollIntoView({ behavior: "smooth", block: "start" }), 150); }}
+        onChat={() => { setWalletSuccessOpen(false); handleChat(); }}
+        t={t}
+      />
       <main className="flex-1 container py-8 pt-24 lg:pt-8 max-w-5xl">
         <Button variant="ghost" size="sm" className="mb-4" onClick={() => navigate(isOwner ? "/inchirieri" : "/rezervari")}>
           <ArrowLeft className="h-4 w-4 mr-1" />{t("Inapoi la lista", "Back to list")}
@@ -370,7 +388,7 @@ const RentalDetailPage = () => {
 
         {/* Timeline */}
         <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
-          <RentalTimeline rental={tlRental} />
+          <div id="rental-progress" className="scroll-mt-24"><RentalTimeline rental={tlRental} /></div>
         </section>
 
         {disputeOpen && (
