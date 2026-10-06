@@ -19,9 +19,10 @@ interface LegalPageLayoutProps {
   lastUpdated: string;
   sections: Section[];
   forceRomanianLabels?: boolean;
+  intro?: React.ReactNode;
 }
 
-const LegalPageLayout = ({ title, subtitle, lastUpdated, sections, forceRomanianLabels = false }: LegalPageLayoutProps) => {
+const LegalPageLayout = ({ title, subtitle, lastUpdated, sections, forceRomanianLabels = false, intro }: LegalPageLayoutProps) => {
   const { language } = useLanguage();
   const isEnglish = language === "en" && !forceRomanianLabels;
   const scrollToSection = (id: string) => {
@@ -82,6 +83,9 @@ const LegalPageLayout = ({ title, subtitle, lastUpdated, sections, forceRomanian
 
           {/* Main content */}
           <div>
+            {intro && (
+              <Card className="p-5 mb-3 text-muted-foreground leading-relaxed text-sm">{intro}</Card>
+            )}
             <Accordion type="multiple" defaultValue={sections.map(s => s.id)} className="space-y-3">
               {sections.map((section, i) => (
                 <AccordionItem key={section.id} value={section.id} id={section.id} className="border rounded-lg px-5 bg-card">
