@@ -388,7 +388,7 @@ const RentalDetailPage = () => {
 
         {/* Timeline */}
         <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
-          <RentalTimeline rental={tlRental} />
+          <div id="rental-progress" className="scroll-mt-24"><RentalTimeline rental={tlRental} /></div>
         </section>
 
         {disputeOpen && (
