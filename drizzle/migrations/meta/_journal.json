@@ -85,6 +85,13 @@
       "when": 1791223805084,
       "tag": "0011_extension_signatures",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791555800073,
+      "tag": "0012_rental_product_snapshot_and_delete_guard",
+      "breakpoints": true
     }
   ]
 }
