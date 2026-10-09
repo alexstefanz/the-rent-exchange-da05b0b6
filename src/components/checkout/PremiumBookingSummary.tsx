@@ -3,7 +3,7 @@ import { ro, enUS } from "date-fns/locale";
 import { MapPin, ShieldCheck, FileCheck2, Clock, CalendarDays } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Separator } from "@/components/ui/separator";
-import { calcPlatformFee } from "@/lib/rentalPricing";
+import { calcFullBreakdown } from "@/lib/rentalPricing";
 
 interface Props {
   product: {
@@ -23,9 +23,7 @@ interface Props {
 const PremiumBookingSummary = ({ product, startDate, endDate, rentalDays, totalPrice }: Props) => {
   const { language, t } = useLanguage();
   const locale = language === "ro" ? ro : enUS;
-  const subtotal = totalPrice;
-  const platformFee = calcPlatformFee(subtotal, product.platformFeePercent ?? 0);
-  const total = Math.round((subtotal + platformFee) * 100) / 100;
+  const { subtotal, platformFee, stripeFee, total } = calcFullBreakdown(totalPrice, product.platformFeePercent ?? 0);
   const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
 
   return (
@@ -70,6 +68,21 @@ const PremiumBookingSummary = ({ product, startDate, endDate, rentalDays, totalP
         </div>
 
         <Separator />
+
+        <div className="space-y-1.5 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t("Chirie", "Rent")}</span>
+            <span className="tabular-nums">{fmt(subtotal)} RON</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t(`Comision Rentli (${product.platformFeePercent ?? 0}%)`, `Rentli fee (${product.platformFeePercent ?? 0}%)`)}</span>
+            <span className="tabular-nums">{fmt(platformFee)} RON</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">{t("Procesare securizată card (Stripe) · 1,4% + 1 RON", "Secure card processing (Stripe) · 1.4% + 1 RON")}</span>
+            <span className="tabular-nums">{fmt(stripeFee)} RON</span>
+          </div>
+        </div>
 
         <div className="flex justify-between items-baseline">
           <span className="font-semibold text-foreground">{t("Total estimat", "Estimated total")}</span>
