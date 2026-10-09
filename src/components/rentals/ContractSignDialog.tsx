@@ -116,7 +116,7 @@ export default function ContractSignDialog({ open, onOpenChange, rentalId, publi
               <span>
                 Am citit și accept{" "}
                 {onOpenContract ? <button type="button" className="underline text-primary" onClick={onOpenContract}>contractul de închiriere</button> : "contractul de închiriere"}
-                {" "}și anexele acestuia. Semnătura electronică are valoarea semnăturii olografe.
+                . Semnătura electronică are valoarea semnăturii olografe.
               </span>
             </label>
           </>
