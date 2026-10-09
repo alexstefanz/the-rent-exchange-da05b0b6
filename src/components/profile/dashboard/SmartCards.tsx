@@ -117,7 +117,7 @@ export function SmartCards({ data }: { data: AccountDashboardData }) {
       icon: CreditCard,
       tone: "neutral",
       title: t("Adaugă IBAN-ul tău", "Add your IBAN"),
-      description: t("Necesar pentru a primi câștigurile", "Required to receive earnings"),
+      description: t("Cardul salvat e doar pentru plăți. Pentru a primi banii din chirii, adaugă IBAN-ul.", "Your saved card is only for payments. To receive rental earnings, add your IBAN."),
       cta: t("Adaugă IBAN", "Add IBAN"),
       href: "/castiguri",
     });
