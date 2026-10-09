@@ -1,4 +1,4 @@
-import { calcClientTotal } from "@/lib/rentalPricing";
+import { calcPlatformFee } from "@/lib/rentalPricing";
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeSearchInput } from "@/lib/inputValidation";
 import { handleApiError } from "@/lib/errorHandler";
@@ -77,7 +77,9 @@ export interface ProductFilters {
  */
 export const calculateClientPrice = (ownerPrice: number, feePercent: number): number => {
   const owner = Number(ownerPrice) || 0;
-  return calcClientTotal(owner, Number(feePercent) || 0);
+  // Per-day display price: owner + Rentli commission. Card processing fee
+  // is a per-payment cost shown separately at checkout.
+  return Math.round((owner + calcPlatformFee(owner, Number(feePercent) || 0)) * 100) / 100;
 };
 
 export const getProducts = async (filters?: ProductFilters): Promise<Product[]> => {

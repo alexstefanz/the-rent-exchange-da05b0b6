@@ -18,7 +18,7 @@ import { toast } from "@/components/ui/sonner";
 import { notify } from "@/lib/notify";
 import { PhoneRequiredGate, PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
 import { getOrCreateConversation } from "@/features/messaging/messagingApi";
-import { calcPlatformFee } from "@/lib/rentalPricing";
+import { calcClientTotal } from "@/lib/rentalPricing";
 
 interface CheckoutState {
   product: {
@@ -68,8 +68,7 @@ const Checkout = () => {
   const { product, startDate, endDate, rentalDays, totalPrice } = state;
   // `totalPrice` from ProductDetail is the owner-net subtotal. The client total
   // (charged by Stripe) adds the platform fee with a 1 RON minimum.
-  const platformFee = calcPlatformFee(totalPrice, product.platformFeePercent ?? 0);
-  const clientTotal = Math.round((totalPrice + platformFee) * 100) / 100;
+  const clientTotal = calcClientTotal(totalPrice, product.platformFeePercent ?? 0);
 
   if (user && user.id === product.ownerId) {
     return (

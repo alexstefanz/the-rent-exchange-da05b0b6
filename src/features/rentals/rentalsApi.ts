@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { calcPlatformFee } from "@/lib/rentalPricing";
+import { calcPlatformFee, calcStripeFee } from "@/lib/rentalPricing";
 
 interface CreateRentalParams {
   productId: string;
@@ -74,6 +74,7 @@ export async function createRental(params: CreateRentalParams) {
     ? Math.round(params.subtotal * 100) / 100
     : Math.round(dailyPrice * rentalDays * 100) / 100;
   const platformFee = calcPlatformFee(subtotal, platformFeePercent);
+  const stripeFee = calcStripeFee(subtotal + platformFee);
   const ownerPayout = subtotal;
 
   // Insert rental
@@ -90,6 +91,8 @@ export async function createRental(params: CreateRentalParams) {
       subtotal,
       platform_fee: platformFee,
       platform_fee_percent: platformFeePercent,
+      stripe_fee: stripeFee,
+      insurance_fee: 0,
       owner_payout: ownerPayout,
       payment_method: paymentMethod,
       status: "pending",

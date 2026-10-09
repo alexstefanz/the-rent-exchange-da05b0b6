@@ -83,7 +83,12 @@ serve(async (req) => {
     // NEW MODEL: the client total = subtotal (owner-net) + platform_fee.
     const subtotalRon = Number(rental.subtotal) || 0;
     const platformFeeRon = Number(rental.platform_fee) || 0;
-    const clientTotalRon = Math.round((subtotalRon + platformFeeRon) * 100) / 100;
+    const insuranceFeeRon = Number(rental.insurance_fee) || 0;
+    const baseRon = subtotalRon + platformFeeRon + insuranceFeeRon;
+    // Stripe EEA card processing: 1.4% + 1 RON, charged to the renter.
+    const stripeFeeRon = baseRon > 0 ? Math.round((baseRon * 0.014 + 1) * 100) / 100 : 0;
+    const clientTotalRon = Math.round((baseRon + stripeFeeRon) * 100) / 100;
+    await supabaseAdmin.from("rentals").update({ stripe_fee: stripeFeeRon }).eq("id", rental.id);
     if (clientTotalRon < 2) {
       return new Response(
         JSON.stringify({
