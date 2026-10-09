@@ -92,6 +92,13 @@
       "when": 1791555800073,
       "tag": "0012_rental_product_snapshot_and_delete_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791556729721,
+      "tag": "0013_reviews_full_moderation_and_self_guard",
+      "breakpoints": true
     }
   ]
 }

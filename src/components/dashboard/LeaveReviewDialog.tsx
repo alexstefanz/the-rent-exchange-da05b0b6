@@ -123,8 +123,11 @@ export default function LeaveReviewDialog({
                 .eq("rental_id", rental.id)
             : Promise.resolve({ count: 0 } as any),
         ]);
-        setProductReviewExists((prCount || 0) > 0);
-        setUserReviewExists((urCount || 0) > 0);
+        // Owners never review their own product; self-rentals can't be reviewed.
+        setProductReviewExists(currentUserRole === "owner" || !rental.product_id || (prCount || 0) > 0);
+        setUserReviewExists(
+          !rental.counterparty_id || rental.counterparty_id === user.id || (urCount || 0) > 0
+        );
       } catch (e) {
         console.error("Failed to check existing reviews:", e);
       } finally {
@@ -153,7 +156,7 @@ export default function LeaveReviewDialog({
     let firstError: string | null = null;
 
     try {
-      if (!productReviewExists && rental.product_id) {
+      if (!productReviewExists && rental.product_id && currentUserRole === "renter") {
         try {
           await createProductReview(
             rental.product_id,
@@ -191,16 +194,12 @@ export default function LeaveReviewDialog({
         queryClient.invalidateQueries({ queryKey: ["ownerRentals"] });
         queryClient.invalidateQueries({ queryKey: ["userReviews"] });
         queryClient.invalidateQueries({ queryKey: ["productReviews", rental.product_id] });
-        if (rating <= 3) {
-          toast.success(
-            t(
-              "Recenzia ta a fost trimisă și este în curs de verificare de către echipa Rentli înainte de a fi publicată.",
-              "Your review was submitted and is being checked by the Rentli team before it is published."
-            )
-          );
-        } else {
-          toast.success(t("Mulțumim pentru review!", "Thanks for your review!"));
-        }
+        toast.success(
+          t(
+            "Recenzia ta a fost trimisă și va fi publicată după verificarea echipei Rentli.",
+            "Your review was submitted and will be published after the Rentli team checks it."
+          )
+        );
         onOpenChange(false);
       } else if (firstError) {
         toast.error(firstError);
