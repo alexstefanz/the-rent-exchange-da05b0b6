@@ -49,6 +49,7 @@ import { template as requestExpiredRenter } from './request-expired-renter.tsx'
 import { template as profileUpdated } from './profile-updated.tsx'
 import { template as ibanAdded } from './iban-added.tsx'
 import { template as accountDeactivated } from './account-deactivated.tsx'
+import { template as contractOtp } from './contract-otp.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'welcome': welcomeEmail,
@@ -91,4 +92,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'profile-updated': profileUpdated,
   'iban-added': ibanAdded,
   'account-deactivated': accountDeactivated,
+  'contract-otp': contractOtp,
 }
