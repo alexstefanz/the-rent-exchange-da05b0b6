@@ -5,7 +5,7 @@ import { CheckCircle2, ChevronDown, Clock, Loader2, Mail, Upload } from "lucide-
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
-export const PV_EMAIL = "pv@rentli.ro";
+export const PV_EMAIL = "office@rentli.ro";
 
 export const PV_REASONS: { value: string; ro: string; en: string }[] = [
   { value: "battery", ro: "Telefon descărcat / fără baterie", en: "Dead phone / no battery" },
