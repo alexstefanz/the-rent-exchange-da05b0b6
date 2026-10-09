@@ -13,6 +13,7 @@ const iconForType = (type: string) => {
 
 const EXACT: Record<string, [string, string]> = {
   product_rejected: ["Anunț respins", "Listing rejected"],
+  product_edit_submitted: ["Modificare în verificare", "Edit under review"],
   product_approved: ["Anunț aprobat", "Listing approved"],
   product_published: ["Anunț publicat", "Listing published"],
   pv_return_completed_by_party: ["PV de returnare semnat parțial", "Return report partially signed"],

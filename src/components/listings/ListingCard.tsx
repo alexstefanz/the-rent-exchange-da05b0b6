@@ -86,8 +86,13 @@ const ListingCard = ({ product, status, onHide, onActivate, onDelete, onCancelDe
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           />
         </Link>
-        <div className="absolute left-2 top-2 flex gap-1.5">
+        <div className="absolute left-2 top-2 flex flex-wrap gap-1.5">
           <ListingStatusBadge status={status} />
+          {(product as any).pending_edits && (
+            <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground shadow-sm">
+              {t("Modificare în verificare", "Edit under review")}
+            </span>
+          )}
         </div>
         <div className="absolute right-2 top-2">
           <DropdownMenu>
