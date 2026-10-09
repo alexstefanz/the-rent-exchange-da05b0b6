@@ -16,6 +16,7 @@ function normalizePhoneRO(raw: string | null | undefined): string | null {
   return null;
 }
 const mask = (p: string) => `${p.slice(0, 4)} ${p.slice(4, 5)}** *** ${p.slice(-3)}`;
+const maskEmail = (e: string) => { const [n, d] = e.split("@"); return `${n.slice(0, 2)}***@${d}`; };
 async function sha256(s: string) {
   const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
   return Array.from(new Uint8Array(b)).map((x) => x.toString(16).padStart(2, "0")).join("");
@@ -45,9 +46,12 @@ Deno.serve(async (req) => {
     if (!["paid", "captured", "authorized"].includes(r.payment_status) && !r.paid_at)
       return json({ error: "Contractul poate fi semnat doar după plată" }, 400);
 
+    const channel: "sms" | "email" = body?.channel === "email" ? "email" : "sms";
     const { data: prof } = await supabase.from("profiles").select("phone").eq("id", userId).maybeSingle();
+    const email = u.user.email ?? null;
     const phone = normalizePhoneRO(prof?.phone);
-    if (!phone) return json({ error: "no_phone", message: "Adaugă un număr de telefon valid în profil." }, 400);
+    if (channel === "sms" && !phone) return json({ error: "no_phone", message: "Adaugă un număr de telefon valid în profil." }, 400);
+    if (channel === "email" && !email) return json({ error: "no_email", message: "Contul nu are o adresă de email." }, 400);
 
     const tenMin = new Date(Date.now() - 600_000).toISOString();
     const { data: recent } = await supabase.from("rental_contract_otps").select("created_at")
@@ -64,13 +68,32 @@ Deno.serve(async (req) => {
     const rnd = new Uint32Array(2); crypto.getRandomValues(rnd);
     const code = String(100000 + (rnd[0] % 900000));
     const ref = "VRF-" + rnd[1].toString(16).toUpperCase().padStart(8, "0").slice(0, 6);
-    const masked = mask(phone);
+    const masked = channel === "sms" ? mask(phone!) : maskEmail(email!);
     const { error: insErr } = await supabase.from("rental_contract_otps").insert({
       rental_id: rentalId, user_id: userId, phone_masked: masked, ref,
       code_hash: await sha256(`${userId}:${rentalId}:${code}`),
       expires_at: new Date(Date.now() + 600_000).toISOString(),
     });
     if (insErr) { console.error(insErr); return json({ error: "db_error" }, 500); }
+
+    const invalidate = () => supabase.from("rental_contract_otps").update({ consumed_at: new Date().toISOString() })
+      .eq("user_id", userId).eq("rental_id", rentalId).is("consumed_at", null);
+
+    if (channel === "email") {
+      const { error: mailErr } = await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName: "contract-otp", recipientEmail: email,
+          idempotencyKey: `contract-otp-${rentalId}-${userId}-${ref}`,
+          templateData: { code, publicId: r.public_id, ref },
+        },
+      });
+      if (mailErr) {
+        console.error("[send-contract-otp] email", mailErr);
+        await invalidate();
+        return json({ error: "email_failed", message: "Emailul nu a putut fi trimis. Încearcă din nou." }, 502);
+      }
+      return json({ success: true, channel, email: masked, phone: masked, ref });
+    }
 
     const username = Deno.env.get("SMS_ALERT_USERNAME"), apiKey = Deno.env.get("SMS_ALERT_API_KEY");
     if (!username || !apiKey) return json({ error: "sms_not_configured" }, 500);
@@ -91,11 +114,10 @@ Deno.serve(async (req) => {
       idempotency_key: `contract_otp:${userId}:${rentalId}:${Date.now()}`,
     });
     if (!ok) {
-      await supabase.from("rental_contract_otps").update({ consumed_at: new Date().toISOString() })
-        .eq("user_id", userId).eq("rental_id", rentalId).is("consumed_at", null);
+      await invalidate();
       return json({ error: "sms_failed", message: "SMS-ul nu a putut fi trimis. Încearcă din nou." }, 502);
     }
-    return json({ success: true, phone: masked, ref });
+    return json({ success: true, channel, phone: masked, ref });
   } catch (e) {
     console.error("[send-contract-otp]", e);
     return json({ error: "internal_error" }, 500);
