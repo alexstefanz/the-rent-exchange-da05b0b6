@@ -25,7 +25,7 @@ export default function HandoverPvCard({ rentalId, startDate, signed, contractRe
           <span className="h-9 w-9 rounded-xl bg-muted text-muted-foreground grid place-items-center shrink-0"><Lock className="h-4 w-4" /></span>
           <div className="min-w-0 flex-1">
             <h3 className="font-heading font-semibold text-sm">{t("Proces-verbal de predare", "Handover report")}</h3>
-            <p className="text-xs text-muted-foreground">{t("Semnați întâi contractul. PV-ul se deblochează după ce ambele părți îl acceptă.", "Sign the contract first. The report unlocks once both parties accept it.")}</p>
+            <p className="text-xs text-muted-foreground">{t("Semnați întâi contractul de închiriere. Procesul-verbal de predare se deblochează după semnarea contractului de ambele părți și sosirea zilei predării.", "Sign the rental contract first. The handover report unlocks once both parties sign the contract and handover day arrives.")}</p>
           </div>
           {onOpenContract && (
             <Button size="sm" variant="outline" onClick={onOpenContract} className="w-full sm:w-auto">

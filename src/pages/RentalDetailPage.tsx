@@ -780,17 +780,12 @@ const RentalDetailPage = () => {
             </div>
           </section>
         ) : (showHandoverPv || showReturnPv) && !handoverDoneEarly && !contractAcc.loading && !contractAcc.bothAccepted ? (
-          <section id="pv-section" className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6 scroll-mt-24 text-center">
-            <Lock className="h-6 w-6 mx-auto text-muted-foreground" />
-            <p className="font-heading font-semibold mt-2">{t("Procese verbale — blocat", "Handover reports — locked")}</p>
-            <p className="text-sm text-muted-foreground mt-1">{t("Semnați întâi contractul. Procesele-verbale se deblochează după semnarea contractului de ambele părți.", "Sign the contract first. Reports unlock once both parties sign it.")}</p>
-            <Button size="sm" variant="outline" className="mt-3" onClick={() => { setDocsBlank(false); setDocsTab("contract"); setDocsOpen(true); }}><FileSignature className="h-4 w-4 mr-1" />{t("Vezi contractul", "View contract")}</Button>
-          </section>
-        ) : /* TODO: blocajul PV până în ziua predării e dezactivat temporar pentru teste. Va fi adăugat din nou — înlocuiește `false` cu condiția de mai jos. */ false && (showHandoverPv || showReturnPv) && !handoverDoneEarly && new Date() < new Date(String(rental.start_date).slice(0,10) + "T00:00:00") ? (
+          null
+        ) : (showHandoverPv || showReturnPv) && !handoverDoneEarly && new Date() < new Date(String(rental.start_date).slice(0,10) + "T00:00:00") ? (
           <section id="pv-section" className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6 scroll-mt-24 text-center">
             <CalendarClock className="h-6 w-6 mx-auto text-primary" />
             <p className="font-heading font-semibold mt-2">{t("Procesul-verbal se deschide în ziua predării", "The handover report opens on handover day")}</p>
-            <p className="text-sm text-muted-foreground mt-1">{t(`Ziua predării: ${new Date(String(rental.start_date).slice(0,10) + "T00:00:00").toLocaleDateString("ro-RO", { weekday: "long", day: "numeric", month: "long" })}. Până atunci, stabiliți ora și locul întâlnirii. Fără PV semnat, predarea nu este validată.`, `Handover day: ${String(rental.start_date).slice(0,10)}. Until then, agree on time and place. Without a signed report, the handover is not validated.`)}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t(`Contractul este semnat. Ziua predării: ${new Date(String(rental.start_date).slice(0,10) + "T00:00:00").toLocaleDateString("ro-RO", { weekday: "long", day: "numeric", month: "long" })}. Până atunci, stabiliți ora și locul întâlnirii. Fără PV semnat, predarea nu este validată.`, `Handover day: ${String(rental.start_date).slice(0,10)}. Until then, agree on time and place in the chat. Without a signed report, the handover is not validated.`)}</p>
           </section>
         ) : (showHandoverPv || showReturnPv) && (
           <section id="pv-section" className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6 scroll-mt-24">
