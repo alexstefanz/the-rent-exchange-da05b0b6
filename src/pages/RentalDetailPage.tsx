@@ -926,9 +926,6 @@ const RentalDetailPage = () => {
                     <div className="flex justify-between text-xs"><dt className="text-muted-foreground">{t("din care comision Rentli", "of which Rentli fee")}</dt><dd className="text-muted-foreground">{rental.platform_fee} RON</dd></div>
                   </>
                 )}
-                {rental.product_deposit_value ? (
-                  <div className="flex justify-between"><dt className="text-muted-foreground">{t("Garantie", "Deposit")}</dt><dd>{rental.product_deposit_value} RON</dd></div>
-                ) : null}
                 <div className="border-t border-border pt-2 mt-2 flex justify-between font-semibold">
                   <dt>{isOwner ? t("Castig net", "Net earnings") : t("Total", "Total")}</dt>
                   <dd className="text-primary">

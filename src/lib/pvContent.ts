@@ -57,7 +57,7 @@ export function buildPvContent(rental: RentalFullDetail, phase: "handover" | "re
     `Prin prezentul proces-verbal, Predatorul preda, iar Primitorul primeste spre utilizare temporara, ` +
     `prin intermediul platformei de renting peer-to-peer Rentli, urmatorul bun: ${rental.product_title || "-"}, ` +
     `din categoria ${cat}, pentru o perioada de ${rental.rental_days} zile, cu costul total de ${rental.subtotal} lei ` +
-    `(${rental.daily_price} lei/zi) si o garantie de ${rental.product_deposit_value ?? 0} lei.`;
+    `(${rental.daily_price} lei/zi).`;
 
   const items = rental.product_included_items || [];
   const accessories = items.length > 0
@@ -167,8 +167,7 @@ export function buildPvRichContent(
     T(", pentru o perioada de "), B(`${rental.rental_days} zile`),
     T(", cu costul total de "), B(`${rental.subtotal} lei`),
     T(" ("), B(`${rental.daily_price} lei/zi`),
-    T(") si o garantie de "), B(`${rental.product_deposit_value ?? 0} lei`),
-    T("."),
+    T(")."),
   ];
 
   const items = rental.product_included_items || [];

@@ -78,8 +78,8 @@ export const SUPPORT_FAQ: SupportFaqEntry[] = [
       en: "What if the other party doesn't complete the handover protocol?",
     },
     answer: {
-      ro: "Dacă PV-ul rămâne blocat (cealaltă parte nu semnează predarea sau returnarea), poți **deschide o dispută** din pagina rezervării → **Deschide dispută**. Echipa Rentli intervine, analizează pozele și conversația din chat și decide următorul pas (deblocare PV, capturare/eliberare garanție, rambursare parțială etc.).",
-      en: "If the PV stays stuck (the other party won't sign pickup or return), you can **open a dispute** from the rental page → **Open dispute**. The Rentli team steps in, reviews photos and chat history, and decides the next step (unblock PV, capture/release deposit, partial refund, etc.).",
+      ro: "Dacă PV-ul rămâne blocat (cealaltă parte nu semnează predarea sau returnarea), poți **deschide o dispută** din pagina rezervării → **Deschide dispută**. Echipa Rentli intervine, analizează pozele și conversația din chat și decide următorul pas (deblocare PV, capturare/eliberare plată, rambursare parțială etc.).",
+      en: "If the PV stays stuck (the other party won't sign pickup or return), you can **open a dispute** from the rental page → **Open dispute**. The Rentli team steps in, reviews photos and chat history, and decides the next step (unblock PV, capture/release payment, partial refund, etc.).",
     },
   },
   {
@@ -89,8 +89,8 @@ export const SUPPORT_FAQ: SupportFaqEntry[] = [
       en: "Why can't I send a phone number or email in chat?",
     },
     answer: {
-      ro: "Pentru siguranța ta și acoperirea ofertei Rentli (garanție, dispute, rambursări), comunicarea trebuie să rămână **100% pe platformă**. Datele de contact directe (telefon, email, link-uri) sunt blocate automat în chat și anunțuri. După confirmarea unei rezervări active, contactul direct se deblochează automat în antetul conversației.",
-      en: "For your safety and to keep Rentli's coverage active (deposit, disputes, refunds), all communication must stay **100% on-platform**. Direct contact details (phone, email, links) are auto-blocked in chat and listings. Once you have an active confirmed booking, direct contact unlocks automatically in the conversation header.",
+      ro: "Pentru siguranța ta și acoperirea ofertei Rentli (dispute, rambursări), comunicarea trebuie să rămână **100% pe platformă**. Datele de contact directe (telefon, email, link-uri) sunt blocate automat în chat și anunțuri. După confirmarea unei rezervări active, contactul direct se deblochează automat în antetul conversației.",
+      en: "For your safety and to keep Rentli's coverage active (disputes, refunds), all communication must stay **100% on-platform**. Direct contact details (phone, email, links) are auto-blocked in chat and listings. Once you have an active confirmed booking, direct contact unlocks automatically in the conversation header.",
     },
   },
 ];

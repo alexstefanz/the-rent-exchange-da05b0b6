@@ -146,8 +146,8 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
       <p>Perioada: de la <b>{b ? "____________" : fmtD(rental.start_date)}</b> până la <b>{b ? "____________" : fmtD(rental.end_date)}</b> ({b ? "___" : rental.rental_days} zile). Predarea are loc în intervalul orar <b>{b ? "____:____" : slot(rental.pickup_time)}</b>, la locația: {v(rental.pickup_location || rental.product_location_city)}. Returnarea se face la aceeași locație, în același interval orar, la data de final.</p>
       <H2>Art. 4. Chiria și modalitatea de plată</H2>
       <p>Chiria este de {b ? "______" : ron(daily)}/zi, total {b ? "______" : ron(rental.subtotal)}. Plata se efectuează exclusiv prin platforma Rentli.ro; suma este rezervată (blocată) pe cardul Locatarului și eliberată către Locator după finalizarea închirierii, minus comisionul platformei.</p>
-      <H2>Art. 5. Garanția</H2>
-      <p>Valoarea declarată a bunului / garanție: {b ? "______" : ron(rental.product_deposit_value)}. Eventualele daune constatate la returnare se soluționează prin procedura de dispută Rentli.</p>
+      <H2>Art. 5. Valoarea bunului</H2>
+      <p>Valoarea declarată a bunului: {b ? "______" : ron(rental.product_deposit_value)}. Eventualele daune constatate la returnare se soluționează prin procedura de dispută Rentli.</p>
       <H2>Art. 6. Obligațiile Locatorului</H2>
       <p>Să predea bunul în stare corespunzătoare de folosință, curat și complet, cu toate accesoriile; să garanteze Locatarul contra viciilor ascunse și a tulburărilor de drept; să informeze despre modul corect de utilizare.</p>
       <H2>Art. 7. Obligațiile Locatarului</H2>
@@ -256,7 +256,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
             <p><b>Art. 1.</b> Părțile, {rental.owner_name} (Locator) și {rental.renter_name} (Locatar), convin prelungirea locațiunii bunului {rental.product_title} cu <b>{e.approved_days} zile</b>, de la {fmtD(e.original_end_date)} până la <b>{fmtD(e.approved_end_date)}</b>.</p>
             <p><b>Art. 2.</b> Chiria suplimentară este {e.approved_days} × {ron(e.daily_price)} = {ron(e.subtotal_amount)}, plus comisionul platformei de {ron(e.platform_fee)}, total {ron(e.total_amount)}, achitată prin Rentli.ro.</p>
             <p><b>Art. 3.</b> Restituirea se face la noua dată, în aceleași condiții. Toate celelalte clauze ale contractului rămân neschimbate.</p>
-            <p><b>Art. 4.</b> Garanția și protecția bunului se prelungesc de drept până la noua dată de restituire.</p>
+            <p><b>Art. 4.</b> Protecția bunului se prelungește de drept până la noua dată de restituire.</p>
             <Sig pv={{ phase: "extension", owner_signature_data: e.owner_signature_data, renter_signature_data: e.renter_signature_data, owner_signed_at: e.owner_signed_at, renter_signed_at: e.renter_signed_at }} />
           </div>
         ))

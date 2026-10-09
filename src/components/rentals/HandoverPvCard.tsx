@@ -83,7 +83,7 @@ export default function HandoverPvCard({ rentalId, startDate, signed, contractRe
           <p>
             <strong>{t("Important pentru siguranța ta:", "Important for your safety:")}</strong>{" "}
             {t(
-              "Nu predați și nu preluați bunul fizic până când ambele părți nu au semnat procesul-verbal în platformă. Orice daună produsă înainte de înregistrarea PV-ului nu este acoperită de garanție sau de protecția Rentli.",
+              "Nu predați și nu preluați bunul fizic până când ambele părți nu au semnat procesul-verbal în platformă. Orice daună produsă înainte de înregistrarea PV-ului nu este acoperită de protecția Rentli.",
               "Do not hand over or take the item until both parties have signed the report in the platform. Any damage before the report is recorded is not covered by the guarantee or Rentli protection."
             )}
           </p>

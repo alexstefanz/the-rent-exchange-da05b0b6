@@ -7,7 +7,7 @@ const HowItWorksMini = () => {
     { icon: Search, title: t("Trimite cerere", "Send request"), desc: t("Alege perioada și apasă Rezervă.", "Pick dates & hit Reserve.") },
     { icon: MessageCircle, title: t("Proprietarul confirmă", "Owner confirms"), desc: t("De obicei sub 1h.", "Usually under 1h.") },
     { icon: Package, title: t("Ridici produsul", "Pick up the item"), desc: t("Predare cu poze obligatorii.", "Handover with mandatory photos.") },
-    { icon: RotateCcw, title: t("Returnezi & ești liber", "Return & you're done"), desc: t("Garanția se eliberează automat.", "Deposit auto-released.") },
+    { icon: RotateCcw, title: t("Returnezi & ești liber", "Return & you're done"), desc: t("Procesul se încheie cu PV-ul de returnare.", "The return PV closes the rental.") },
   ];
 
   return (
