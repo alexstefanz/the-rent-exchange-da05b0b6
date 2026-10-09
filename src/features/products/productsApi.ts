@@ -179,7 +179,7 @@ export const getProductLookup = async (slugOrId: string): Promise<ProductLookupR
 export const getMyProducts = async (ownerId: string): Promise<Product[]> => {
   const { data, error } = await supabase
     .from("products")
-    .select(PRODUCT_SAFE_COLS as any)
+    .select((PRODUCT_SAFE_COLS + ",pending_edits,pending_edits_submitted_at") as any)
     .eq("owner_id", ownerId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
@@ -372,6 +372,20 @@ export const updateProduct = async (
       .select(PRODUCT_SAFE_COLS as any)
       .single();
     if (error) handleApiError("Error updating product", error);
+    if (!onlyVisibility) {
+      const title = (product as any)?.title ?? "";
+      try {
+        await (supabase.rpc as any)("create_user_notification", {
+          p_user_id: ownerId,
+          p_type: "product_edit_submitted",
+          p_title_ro: "Modificări trimise spre aprobare",
+          p_title_en: "Changes submitted for review",
+          p_description_ro: `Modificările pentru „${title}” au fost trimise spre aprobare. Anunțul rămâne activ cu datele actuale până la verificare.`,
+          p_description_en: `Your changes to "${title}" were submitted for review. The listing stays live with its current details until approved.`,
+          p_link: "/anunturi",
+        });
+      } catch { /* non-blocking */ }
+    }
     return product as unknown as Product;
   }
 
