@@ -550,7 +550,7 @@ const createUxCopy = () => ({
   },
   usageRules: {
     payment: { ro: "Plată securizată cu cardul (custodie)", en: "Secure card payment (escrow)" },
-    paymentDesc: { ro: "Plata se face exclusiv cu cardul prin Stripe. Suma închirierii și garanția se blochează la rezervare și se capturează doar după ce proprietarul acceptă cererea și confirmă predarea. Fără numerar, fără transfer bancar.", en: "Payment is exclusively by card via Stripe. The rental amount and deposit are held at booking and captured only after the owner accepts the request and confirms handover. No cash, no bank transfer." },
+    paymentDesc: { ro: "Plata se face exclusiv cu cardul prin Stripe. Suma închirierii se blochează la rezervare și se capturează doar după ce proprietarul acceptă cererea și confirmă predarea. Fără numerar, fără transfer bancar.", en: "Payment is exclusively by card via Stripe. The rental amount is held at booking and captured only after the owner accepts the request and confirms handover. No cash, no bank transfer." },
     ownerApproval: { ro: "Acceptare de către proprietar", en: "Owner approval required" },
     ownerApprovalDesc: { ro: "Rezervarea devine activă doar după ce proprietarul o acceptă din contul lui. Dacă nu răspunde sau refuză cererea, suma blocată se eliberează automat înapoi pe card.", en: "The booking becomes active only after the owner accepts it from their account. If they don't respond or decline, the held amount is automatically released back to your card." },
     communication: { ro: "Comunicare doar în chat-ul Rentli", en: "Communication only in Rentli chat" },
@@ -560,7 +560,7 @@ const createUxCopy = () => ({
     cancellation: { ro: "Anulare flexibilă până la predare", en: "Flexible cancellation until handover" },
     cancellationDesc: { ro: "Rambursare 100% atâta timp cât produsul nu a fost predat fizic și confirmat în aplicație. După confirmarea predării nu se mai acordă rambursare.", en: "100% refund as long as the item hasn't been physically handed over and confirmed in the app. No refunds after handover confirmation." },
     return: { ro: "Returnare la termen, în aceeași stare", en: "On-time return, in the same condition" },
-    returnDesc: { ro: "Produsul se returnează la data stabilită, în aceeași stare ca la preluare. Întârzierile, lipsurile sau daunele documentate prin pozele de retur duc la rețineri din garanție.", en: "Return the item on the agreed date, in the same condition as at pickup. Delays, missing parts or damage documented in the return photos lead to deductions from the deposit." },
+    returnDesc: { ro: "Produsul se returnează la data stabilită, în aceeași stare ca la preluare. Întârzierile, lipsurile sau daunele documentate prin pozele de retur se soluționează prin procedura de dispută Rentli.", en: "Return the item on the agreed date, in the same condition as at pickup. Delays, missing parts or damage documented in the return photos are handled through the Rentli dispute process." },
     depositReturn: { ro: "Garanția este blocată pe card prin Stripe și se eliberează automat în 24–48h după ce proprietarul confirmă returnarea fără probleme.", en: "The deposit is held on your card via Stripe and is released automatically within 24–48h after the owner confirms a clean return." },
   },
   productIncludes: {

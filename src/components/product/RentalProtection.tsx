@@ -13,7 +13,7 @@ const RentalProtection = () => {
   return (
     <div className="rounded-2xl border border-border bg-card p-5 md:p-6">
       <h2 className="font-heading text-xl font-semibold text-foreground mb-1">{t("Închirierea ta e protejată", "Your rental is protected")}</h2>
-      <p className="text-sm text-muted-foreground mb-5">{t("4 garanții care îți dau liniște la fiecare rezervare.", "4 guarantees that give you peace of mind on every booking.")}</p>
+      <p className="text-sm text-muted-foreground mb-5">{t("4 beneficii care îți dau liniște la fiecare rezervare.", "4 benefits that give you peace of mind on every booking.")}</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {items.map((it) => (
           <div key={it.title} className="flex gap-3 rounded-xl border border-border p-3.5 transition-all hover:shadow-md hover:-translate-y-0.5">

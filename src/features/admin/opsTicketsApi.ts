@@ -123,7 +123,7 @@ export const CATEGORY_TYPES: Record<string, { value: string; label: string }[]> 
   DISPUTE: [
     { value: 'OWNER_VS_RENTER', label: 'Conflict owner-chiriaș' },
     { value: 'DAMAGE_LIABILITY', label: 'Responsabilitate daune' },
-    { value: 'DEPOSIT_DISPUTE', label: 'Dispută garanție' },
+    { value: 'DEPOSIT_DISPUTE', label: 'Dispută daune' },
   ],
   USER: [
     { value: 'FRAUD_SUSPECTED', label: 'Suspiciune fraudă' },

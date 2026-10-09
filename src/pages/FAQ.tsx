@@ -150,12 +150,6 @@ const faqData: FaqItem[] = [
   },
   {
     category: "Plăți",
-    question: "Cum funcționează garanția/depozitul de securitate?",
-    answer:
-      "Pentru anumite obiecte, poate fi solicitat un depozit de garanție care se blochează la momentul rezervării. Acesta se restituie integral după returnarea obiectului în bună stare.",
-  },
-  {
-    category: "Plăți",
     question: "Când și cum primesc veniturile din închirieri?",
     answer:
       "Veniturile sunt transferate în contul tău bancar după finalizarea cu succes a fiecărei închirieri. Timpul de procesare poate varia în funcție de metoda de plată aleasă.",
@@ -305,7 +299,6 @@ const faqDataEn: FaqItem[] = [
   { category: "Account", question: "I forgot my password. What can I do?", answer: 'On the sign-in page, click "Forgot password". You will receive an email with a reset link. Follow the instructions to set a new password.' },
   // Payments
   { category: "Payments", question: "What fees apply?", answer: "The platform charges a fee on each transaction, which covers operating, support and insurance costs. The exact fee is shown transparently before each booking is confirmed." },
-  { category: "Payments", question: "How does the security deposit work?", answer: "For certain items, a security deposit may be required and is held at the time of booking. It is refunded in full once the item is returned in good condition." },
   { category: "Payments", question: "When and how do I receive my rental income?", answer: "Earnings are transferred to your bank account after each rental is successfully completed. Processing time may vary depending on the chosen payment method." },
   { category: "Payments", question: "What happens if the renter doesn't pay?", answer: "The platform handles payments upfront, so the owner is protected. If a payment issue arises, the support team steps in to resolve the situation." },
   // Safety

@@ -497,7 +497,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
               </DocParagraph>
 
               <DocParagraph>
-                Prin prezentul proces-verbal, Predatorul preda, iar Primitorul primeste spre utilizare temporara, prin intermediul platformei de renting peer-to-peer Rentli, urmatorul bun: <strong>{rental.product_title || "-"}</strong>, din categoria <strong>{rental.product_category || "-"}</strong>, pentru o perioada de <strong>{rental.rental_days} zile</strong>, cu costul total de <strong>{rental.subtotal} lei</strong> ({rental.daily_price} lei/zi) si o garantie de <strong>{rental.product_deposit_value ?? 0} lei</strong>.
+                Prin prezentul proces-verbal, Predatorul preda, iar Primitorul primeste spre utilizare temporara, prin intermediul platformei de renting peer-to-peer Rentli, urmatorul bun: <strong>{rental.product_title || "-"}</strong>, din categoria <strong>{rental.product_category || "-"}</strong>, pentru o perioada de <strong>{rental.rental_days} zile</strong>, cu costul total de <strong>{rental.subtotal} lei</strong> ({rental.daily_price} lei/zi).
               </DocParagraph>
 
               {content.accessories && <DocParagraph>{content.accessories}</DocParagraph>}

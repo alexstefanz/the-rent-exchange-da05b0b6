@@ -68,7 +68,7 @@ const UsageRules = ({ rules, depositAmount }: UsageRulesProps) => {
           );
         })}
 
-        {depositAmount && (
+        {false && depositAmount && (
           <div className="mt-4 rounded-lg bg-amber-50 p-4 border border-amber-200">
             <div className="flex items-center gap-2">
               <Wallet className="h-5 w-5 text-amber-600" />

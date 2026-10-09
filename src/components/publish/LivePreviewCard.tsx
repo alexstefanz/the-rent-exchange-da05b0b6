@@ -79,15 +79,7 @@ const LivePreviewCard = ({ data, feePercent }: Props) => {
               {clientPrice > 0 ? `${clientPrice} RON` : "—"}
               <span className="text-xs font-normal text-muted-foreground"> {t("/ zi", "/ day")}</span>
             </p>
-            {data.deposit_type === "fixed" && data.deposit_value ? (
-              <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                <Shield className="h-3 w-3" /> {t("Garanție", "Deposit")} {data.deposit_value} RON
-              </p>
-            ) : data.deposit_type === "percent" && data.deposit_value ? (
-              <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                <Shield className="h-3 w-3" /> {t("Garanție", "Deposit")} {data.deposit_value}%
-              </p>
-            ) : null}
+            
           </div>
           {(data.min_rental_days > 1 || data.max_rental_days != null) && (
             <p className="text-[11px] text-muted-foreground">
