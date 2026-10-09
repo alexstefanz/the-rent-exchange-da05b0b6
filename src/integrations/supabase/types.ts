@@ -1955,6 +1955,7 @@ export type Database = {
           end_date: string
           handover_confirmed_at: string | null
           id: string
+          insurance_fee: number
           is_test_payment: boolean
           message_to_owner: string | null
           owner_compensation: number | null
@@ -1983,6 +1984,7 @@ export type Database = {
           return_confirmed_at: string | null
           start_date: string
           status: string
+          stripe_fee: number
           subtotal: number
           updated_at: string | null
           wallet_credit_applied: number
@@ -2028,6 +2030,7 @@ export type Database = {
           end_date: string
           handover_confirmed_at?: string | null
           id?: string
+          insurance_fee?: number
           is_test_payment?: boolean
           message_to_owner?: string | null
           owner_compensation?: number | null
@@ -2056,6 +2059,7 @@ export type Database = {
           return_confirmed_at?: string | null
           start_date: string
           status?: string
+          stripe_fee?: number
           subtotal: number
           updated_at?: string | null
           wallet_credit_applied?: number
@@ -2101,6 +2105,7 @@ export type Database = {
           end_date?: string
           handover_confirmed_at?: string | null
           id?: string
+          insurance_fee?: number
           is_test_payment?: boolean
           message_to_owner?: string | null
           owner_compensation?: number | null
@@ -2129,6 +2134,7 @@ export type Database = {
           return_confirmed_at?: string | null
           start_date?: string
           status?: string
+          stripe_fee?: number
           subtotal?: number
           updated_at?: string | null
           wallet_credit_applied?: number
