@@ -91,21 +91,26 @@ export default function PhysicalPvUpload({ rentalId, phase, onOpenBlank, t, clas
   return (
     <details className={`group rounded-lg border border-dashed border-border bg-background px-3 py-2 ${className}`}>
       <summary className="flex items-center gap-2 text-xs font-medium text-muted-foreground cursor-pointer list-none">
-        <Upload className="h-3.5 w-3.5" />{t("Ai semnat pe hârtie? Încarcă scanul sau poza", "Signed on paper? Upload scan or photo")}
+        <Upload className="h-3.5 w-3.5" />{t("Procedură de rezervă — exclusiv pentru probleme tehnice", "Backup procedure — technical issues only")}
         <ChevronDown className="h-3.5 w-3.5 ml-auto group-open:rotate-180 transition-transform" />
       </summary>
       <p className="mt-2 text-xs text-muted-foreground">
-        {t("Procedură de rezervă: PV-ul fizic se folosește doar din motive tehnice (telefon descărcat, fără semnal, platformă indisponibilă etc.).",
-           "Backup procedure: the paper report is used only for technical reasons (dead phone, no signal, platform down, etc.).")}
+        {t("Fluxul standard este cel digital (poze + semnătură electronică în platformă). Folosește PV-ul pe hârtie doar dacă nu se poate semna online (fără semnal, telefon descărcat, platformă indisponibilă).",
+           "The standard flow is digital (photos + e-signature in the platform). Use the paper report only if online signing is impossible (no signal, dead phone, platform down).")}
+      </p>
+      <p className="mt-2 rounded-md bg-primary/10 px-2 py-1.5 text-xs">
+        {t("Recomandare: descarcă din timp setul de documente nesemnat pe telefon sau tipărește-l, ca să îl ai la îndemână în caz de erori tehnice.",
+           "Tip: download the unsigned document set to your phone or print it in advance, so you have it in case of technical errors.")}
       </p>
       <ol className="mt-2 space-y-1 text-xs">
         <li>1. <button type="button" className="underline text-primary" onClick={onOpenBlank}>{t("Descarcă setul de documente nesemnat", "Download the unsigned document set")}</button></li>
-        <li>2. {t(`Completați și semnați ${doc} pe hârtie, ambele părți`, `Fill in and sign ${doc} on paper, both parties`)}</li>
-        <li>3. {t("Fotografiază sau scanează documentul și încarcă-l aici", "Photograph or scan it and upload it here")}</li>
+        <li>2. {t(`Completați și semnați ${doc} pe hârtie în două exemplare, ambele părți`, `Fill in and sign ${doc} on paper in two copies, both parties`)}</li>
+        <li>3. {t("Fiecare parte păstrează un exemplar original", "Each party keeps one original copy")}</li>
+        <li>4. {t("În maximum 24 de ore după remedierea problemei, încarcă aici poza sau scanul", "Within 24 hours after the issue is fixed, upload the photo or scan here")}</li>
       </ol>
       <p className="mt-2 rounded-md bg-primary/10 px-2 py-1.5 text-xs font-medium">
-        {t("Bunul nu se predă până nu este încărcată în platformă poza sau scanul PV-ului semnat. Până atunci, închirierea nu se consideră începută.",
-           "Do not hand over the item until the photo or scan of the signed report is uploaded. Until then, the rental is not considered started.")}
+        {t("La fața locului, bunul se predă doar după ce ambele exemplare fizice ale PV-ului au fost completate și semnate de ambele părți. Închirierea se validează oficial după verificarea documentului de către echipa Rentli.",
+           "On site, the item is handed over only after both paper copies are filled in and signed by both parties. The rental is officially validated after the Rentli team checks the document.")}
       </p>
       <p className="mt-2 rounded-md border border-border px-2 py-1.5 text-xs">
         <strong>{t("Păstrați originalul!", "Keep the original!")}</strong>{" "}
