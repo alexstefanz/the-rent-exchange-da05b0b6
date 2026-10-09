@@ -47,7 +47,7 @@ interface MyRental {
 const fetchMyRentals = async (userId: string): Promise<MyRental[]> => {
   const { data, error } = await supabase
     .from("rentals")
-    .select("id, public_id, product_id, owner_id, start_date, end_date, rental_days, subtotal, status, payment_status, handover_confirmed_at, return_confirmed_at, message_to_owner, created_at, products(title, images)")
+    .select("id, public_id, product_id, owner_id, start_date, end_date, rental_days, subtotal, status, payment_status, handover_confirmed_at, return_confirmed_at, message_to_owner, created_at, product_title_snapshot, product_image_snapshot, products(title, images)")
     .eq("renter_id", userId)
     .order("created_at", { ascending: false });
 
@@ -84,8 +84,8 @@ const fetchMyRentals = async (userId: string): Promise<MyRental[]> => {
     public_id: r.public_id,
     product_id: r.product_id,
     owner_id: r.owner_id,
-    product_title: r.products?.title || "Produs șters",
-    product_image: r.products?.images?.[0] || "/placeholder.svg",
+    product_title: r.products?.title || r.product_title_snapshot || "Produs șters",
+    product_image: r.products?.images?.[0] || r.product_image_snapshot || "/placeholder.svg",
     owner_name: (r.owner_id && ownerMap[r.owner_id]) || "Proprietar",
     start_date: r.start_date,
     end_date: r.end_date,
