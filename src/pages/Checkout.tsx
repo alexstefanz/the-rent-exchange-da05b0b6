@@ -18,7 +18,7 @@ import { toast } from "@/components/ui/sonner";
 import { notify } from "@/lib/notify";
 import { PhoneRequiredGate, PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
 import { getOrCreateConversation } from "@/features/messaging/messagingApi";
-import { calcPlatformFee } from "@/lib/rentalPricing";
+import { calcClientTotal } from "@/lib/rentalPricing";
 
 interface CheckoutState {
   product: {
