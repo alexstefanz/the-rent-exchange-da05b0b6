@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import ExtensionSignDialog from "./ExtensionSignDialog";
 import { format } from "date-fns";
-import { Printer, FileText, FileSignature } from "lucide-react";
+import { Printer, FileText, FileSignature, Lock } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useContractAcceptance } from "./useContractAcceptance";
 import ContractSignDialog from "./ContractSignDialog";
@@ -266,12 +266,26 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
   );
   const extToSign = myRole ? paidExts.find((e) => !(myRole === "owner" ? e.owner_signed_at : e.renter_signed_at)) : undefined;
 
+  const handoverDone = !!(rental.handover_pv_owner_signed_at && rental.handover_pv_renter_signed_at);
+  const unlocked: Record<Tab, boolean> = {
+    contract: true,
+    anexa1: b || acc.bothAccepted,
+    anexa2: b || handoverDone,
+    anexa3: b || paidExts.length > 0,
+  };
+  const lockMsg: Record<Tab, string> = {
+    contract: "",
+    anexa1: "Anexa 1 se deblochează după semnarea contractului de către ambele părți.",
+    anexa2: "Anexa 2 se deblochează după finalizarea predării (Anexa 1 semnată de ambele părți).",
+    anexa3: "Anexa 3 este disponibilă doar după o prelungire aprobată și achitată.",
+  };
   const tabs: { k: Tab; l: string }[] = [
     { k: "contract", l: "Contract" },
     { k: "anexa1", l: "Anexa 1 · Predare" },
     { k: "anexa2", l: "Anexa 2 · Returnare" },
     { k: "anexa3", l: "Anexa 3 · Act adițional" },
   ];
+  const isLocked = !unlocked[tab];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -281,7 +295,9 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
           <DialogDescription>Contract de locațiune bun mobil și anexele aferente.</DialogDescription>
           <div className="flex flex-wrap items-center gap-2 pt-2">
             {tabs.map((x) => (
-              <Button key={x.k} size="sm" variant={tab === x.k ? "default" : "outline"} onClick={() => setTab(x.k)}>{x.l}</Button>
+              <Button key={x.k} size="sm" variant={tab === x.k ? "default" : "outline"} className={!unlocked[x.k] ? "opacity-60" : ""} onClick={() => setTab(x.k)}>
+                {!unlocked[x.k] && <Lock className="h-3.5 w-3.5 mr-1" />}{x.l}
+              </Button>
             ))}
             <div className="ml-auto flex gap-2 flex-wrap">
               {tab === "contract" && canSignContract && (
@@ -290,21 +306,29 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
               {tab === "anexa3" && extToSign && (
                 <Button size="sm" onClick={() => setExtSignId(extToSign.id)}><FileSignature className="h-4 w-4 mr-1" />Semnează Anexa 3</Button>
               )}
-              <Button size="sm" variant={tab === "contract" && canSignContract ? "outline" : "default"} onClick={() => print(false)}><Printer className="h-4 w-4 mr-1" />Salvează PDF / Tipărește</Button>
+              <Button size="sm" disabled={isLocked} variant={tab === "contract" && canSignContract ? "outline" : "default"} onClick={() => print(false)}><Printer className="h-4 w-4 mr-1" />Salvează PDF / Tipărește</Button>
             </div>
           </div>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto bg-muted/40 p-4">
+          {isLocked ? (
+            <div className="mx-auto max-w-md mt-10 rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+              <Lock className="h-8 w-8 mx-auto text-muted-foreground" />
+              <p className="font-semibold mt-3">Document blocat</p>
+              <p className="text-sm text-muted-foreground mt-1">{lockMsg[tab]}</p>
+            </div>
+          ) : (
           <div className="mx-auto max-w-[210mm] bg-card text-card-foreground shadow-md rounded-sm p-8 font-serif text-[13px] leading-relaxed">
             {tab === "contract" ? contract : tab === "anexa1" ? anexa("handover") : tab === "anexa2" ? anexa("return") : anexa3}
           </div>
+          )}
         </div>
-        {/* full set for printing */}
+        {/* full set for printing — only unlocked documents */}
         <div ref={docRef} className="hidden">
           {contract}
-          {anexa("handover")}
-          {anexa("return")}
-          {(b || paidExts.length > 0) && anexa3}
+          {unlocked.anexa1 && anexa("handover")}
+          {unlocked.anexa2 && anexa("return")}
+          {unlocked.anexa3 && anexa3}
         </div>
       </DialogContent>
       <ContractSignDialog open={signOpen} onOpenChange={setSignOpen} rentalId={rental.id} publicId={rental.public_id} onSign={acc.sign} onBothSigned={() => { justSignedRef.current = true; onOpenChange(false); }} />
