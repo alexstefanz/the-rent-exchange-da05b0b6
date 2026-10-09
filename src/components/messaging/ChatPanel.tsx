@@ -96,6 +96,20 @@ export function ChatPanel({
     staleTime: 30_000,
   });
 
+  const { data: productCtx } = useQuery({
+    queryKey: ["chat-product-ctx", productId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("products")
+        .select("id,title,slug,images")
+        .eq("id", productId!)
+        .maybeSingle();
+      return data as { id: string; title: string; slug: string | null; images: string[] | null } | null;
+    },
+    enabled: !!productId && !rentalsId,
+    staleTime: 60_000,
+  });
+
   // Sync messages
   useEffect(() => {
     if (fetchedMessages) setLocalMessages(fetchedMessages);
@@ -360,11 +374,33 @@ export function ChatPanel({
         />
       )}
 
-      {rentalCtx && (
+      {rentalCtx ? (
         <div className="shrink-0">
           <BookingSummaryCard rental={rentalCtx} isOwner={isOwner} fallbackTitle={productTitle} />
         </div>
-      )}
+      ) : productCtx ? (
+        <div className="shrink-0 border-b border-border bg-card px-4 sm:px-6 py-3 flex items-center gap-3">
+          {productCtx.images?.[0] ? (
+            <img src={productCtx.images[0]} alt={productCtx.title} className="h-12 w-12 rounded-lg object-cover shrink-0" loading="lazy" />
+          ) : (
+            <div className="h-12 w-12 rounded-lg bg-muted shrink-0" />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground">{isOwner ? "Întrebare despre anunțul tău" : "Discuție despre"}</p>
+            <p className="text-sm font-semibold truncate">{productCtx.title}</p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <Button asChild size="sm" variant="outline">
+              <Link to={`/produs/${productCtx.slug || productCtx.id}`}>Vezi anunț</Link>
+            </Button>
+            {!isOwner && (
+              <Button asChild size="sm" className="hidden sm:inline-flex">
+                <Link to={`/produs/${productCtx.slug || productCtx.id}`}>Rezervă</Link>
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-4" style={{ touchAction: "pan-y" }}>
         {isLoading ? (
