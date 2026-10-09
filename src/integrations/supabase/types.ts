@@ -1974,6 +1974,8 @@ export type Database = {
           platform_fee: number
           platform_fee_percent: number
           product_id: string | null
+          product_image_snapshot: string | null
+          product_title_snapshot: string | null
           public_id: string
           refund_amount: number | null
           refunded_at: string | null
@@ -2049,6 +2051,8 @@ export type Database = {
           platform_fee: number
           platform_fee_percent?: number
           product_id?: string | null
+          product_image_snapshot?: string | null
+          product_title_snapshot?: string | null
           public_id?: string
           refund_amount?: number | null
           refunded_at?: string | null
@@ -2124,6 +2128,8 @@ export type Database = {
           platform_fee?: number
           platform_fee_percent?: number
           product_id?: string | null
+          product_image_snapshot?: string | null
+          product_title_snapshot?: string | null
           public_id?: string
           refund_amount?: number | null
           refunded_at?: string | null
