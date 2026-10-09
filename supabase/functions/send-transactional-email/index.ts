@@ -360,6 +360,7 @@ Deno.serve(async (req) => {
       purpose: 'transactional',
       label: templateName,
       idempotency_key: idempotencyKey,
+      unsubscribe_token: unsubscribeToken,
       thread_headers: threadHeaders,
       queued_at: new Date().toISOString(),
     },
