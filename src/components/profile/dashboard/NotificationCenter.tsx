@@ -11,25 +11,64 @@ const iconForType = (type: string) => {
   return Bell;
 };
 
+const EXACT: Record<string, [string, string]> = {
+  product_rejected: ["Anunț respins", "Listing rejected"],
+  product_approved: ["Anunț aprobat", "Listing approved"],
+  product_published: ["Anunț publicat", "Listing published"],
+  pv_return_completed_by_party: ["PV de returnare semnat parțial", "Return report partially signed"],
+  pv_pickup_completed_by_party: ["PV de predare semnat parțial", "Handover report partially signed"],
+  return_in_progress: ["Returnare în curs", "Return in progress"],
+  return_reminder: ["Reamintire returnare", "Return reminder"],
+  handover_confirmed: ["Predare confirmată", "Handover confirmed"],
+  pickup_proposed: ["Propunere de oră și locație", "Pickup time proposed"],
+  payment_succeeded: ["Plată reușită", "Payment successful"],
+  request_accepted: ["Cerere acceptată", "Request accepted"],
+  request_created: ["Cerere nouă de închiriere", "New rental request"],
+  request_rejected: ["Cerere refuzată", "Request rejected"],
+  review_received: ["Recenzie nouă", "New review"],
+  new_message: ["Mesaje noi", "New messages"],
+  support: ["Răspuns la tichet", "Ticket reply"],
+  ticket_reminder: ["Reamintire tichet", "Ticket reminder"],
+  refund: ["Rambursare", "Refund"],
+};
+
 const labelFor = (type: string, lang: "ro" | "en") => {
+  const i = lang === "ro" ? 0 : 1;
+  if (EXACT[type]) return EXACT[type][i];
   const map: Record<string, [string, string]> = {
     message: ["Mesaje", "Messages"],
     review: ["Recenzii", "Reviews"],
     payout: ["Plăți", "Payouts"],
-    withdrawal: ["Retrageri", "Withdrawals"],
+    payment: ["Plăți", "Payments"],
+    withdraw: ["Retrageri", "Withdrawals"],
+    extension: ["Prelungiri", "Extensions"],
+    dispute: ["Dispute", "Disputes"],
+    cancel: ["Anulări", "Cancellations"],
+    pv_: ["Procese verbale", "Handover reports"],
     rental: ["Rezervări", "Bookings"],
     booking: ["Rezervări", "Bookings"],
-    system: ["Sistem", "System"],
+    reservation: ["Rezervări", "Bookings"],
+    product: ["Anunțuri", "Listings"],
+    ticket: ["Suport", "Support"],
   };
   for (const k of Object.keys(map)) {
-    if (type.includes(k)) return lang === "ro" ? map[k][0] : map[k][1];
+    if (type.includes(k)) return map[k][i];
   }
-  return type;
+  const pretty = type.replace(/_/g, " ").trim();
+  return pretty ? pretty.charAt(0).toUpperCase() + pretty.slice(1) : lang === "ro" ? "Sistem" : "System";
 };
 
 export function NotificationCenter({ data }: { data: AccountDashboardData }) {
   const { t, language } = useLanguage();
-  const { unread, grouped } = data.notifications;
+  const { unread } = data.notifications;
+  const merged = new Map<string, { type: string; count: number }>();
+  for (const g of data.notifications.grouped) {
+    const label = labelFor(g.type, language);
+    const cur = merged.get(label);
+    if (cur) cur.count += g.count;
+    else merged.set(label, { type: g.type, count: g.count });
+  }
+  const grouped = Array.from(merged.entries()).map(([label, v]) => ({ label, ...v }));
 
   return (
     <section className="rounded-[12px] border bg-card p-5">
