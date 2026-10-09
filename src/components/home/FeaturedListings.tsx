@@ -16,6 +16,7 @@ import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { usePrefetchProduct } from "@/hooks/usePrefetch";
+import OwnerProductActions from "@/components/products/OwnerProductActions";
 
 const FeaturedListings = () => {
   const { data: popular, isLoading, isError, refetch } = useHomepagePopularProducts(8);
@@ -187,6 +188,9 @@ const FeaturedListings = () => {
                   >
                     <Heart className={cn("h-[18px] w-[18px] transition-colors", isFav ? "fill-primary text-primary" : "text-foreground/70")} />
                   </button>
+                  {user?.id === product.owner_id && (
+                    <OwnerProductActions productId={product.id} productTitle={getDisplayTitle(product, language)} variant="card" onDeleted={() => refetch()} />
+                  )}
                   {rating > 0 && (
                     <div className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-foreground shadow-sm">
                       <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
