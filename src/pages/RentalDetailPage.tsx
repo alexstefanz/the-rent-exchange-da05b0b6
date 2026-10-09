@@ -463,6 +463,7 @@ const RentalDetailPage = () => {
           </section>
         )}
           {/* ============ PARTEA 1 ============ */}
+          {!(p1Done && p2Unlocked) && (
           <ProcessCard
             part={1}
             status={p1Done ? t("Finalizat", "Completed") : t("În desfășurare", "In progress")}
@@ -650,6 +651,7 @@ const RentalDetailPage = () => {
         )}
             </div>
           </ProcessCard>
+          )}
 
           <RentalDocumentsModal open={docsOpen} onOpenChange={setDocsOpen} rental={rental} initialTab={docsTab} initialBlank={docsBlank} />
 
