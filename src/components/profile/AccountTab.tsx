@@ -194,7 +194,7 @@ const AccountTab = () => {
       { key: "name", label: t("Nume complet", "Full name"), done: !!profile.full_name, section: "personal" },
       { key: "phone", label: t("Telefon valid", "Valid phone"), done: isValidRomanianPhone(profile.phone || ""), section: "personal" },
       { key: "avatar", label: t("Fotografie profil", "Profile photo"), done: !!profile.avatar_url, section: "personal" },
-      { key: "iban", label: t("IBAN configurat", "IBAN set"), done: !!(profile as any).iban, section: "payout" },
+      { key: "iban", label: t("IBAN pentru încasări", "Payout IBAN"), done: !!(profile as any).iban, section: "payout" },
     ];
     const done = items.filter((i) => i.done).length;
     return { percent: Math.round((done / items.length) * 100), items };
@@ -570,7 +570,7 @@ const AccountTab = () => {
         </Section>
 
         {/* ============ PAYOUT (IBAN) ============ */}
-        <Section id="payout" icon={Wallet} title={t("Cum primești banii", "How you get paid")} description={t("Adaugă IBAN-ul în care vei primi banii din închirieri.", "Add the IBAN where you'll receive rental payouts.")}>
+        <Section id="payout" icon={Wallet} title={t("Cum primești banii", "How you get paid")} description={t("Cardul salvat se folosește doar pentru plăți. Banii din închirieri se virează exclusiv în contul bancar (IBAN) adăugat aici.", "Your saved card is used only for payments. Rental earnings are paid out only to the bank account (IBAN) added here.")}>
           <PayoutIbansSection
             userId={user?.id}
             profile={profile}

@@ -178,7 +178,7 @@ export function useAccountDashboard() {
         { key: "name", labelRo: "Nume complet", labelEn: "Full name", done: !!p.full_name, href: "/contul-meu?focus=name" },
         { key: "phone", labelRo: "Telefon valid", labelEn: "Valid phone", done: !!p.phone, href: "/contul-meu?focus=phone" },
         { key: "avatar", labelRo: "Fotografie profil", labelEn: "Profile photo", done: !!p.avatar_url, href: "/contul-meu?focus=avatar" },
-        { key: "iban", labelRo: "IBAN configurat", labelEn: "IBAN set", done: !!p.iban, href: "/contul-meu?focus=iban" },
+        { key: "iban", labelRo: "IBAN pentru încasări (nu cardul)", labelEn: "Payout IBAN (not your card)", done: !!p.iban, href: "/contul-meu?focus=iban" },
       ];
       const completion = Math.round((items.filter((i) => i.done).length / items.length) * 100);
 
