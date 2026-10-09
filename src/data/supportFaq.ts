@@ -28,17 +28,6 @@ export const SUPPORT_FAQ: SupportFaqEntry[] = [
     },
   },
   {
-    id: "deposit",
-    question: {
-      ro: "Cum funcționează garanția (depozitul)?",
-      en: "How does the security deposit work?",
-    },
-    answer: {
-      ro: "La checkout, Stripe face o **autorizare (hold)** pe card pentru întreaga sumă (chirie + garanție). Banii NU sunt încasați imediat — sunt doar blocați. La confirmarea predării se capturează chiria, iar garanția rămâne blocată până la returnare. Dacă produsul revine în stare bună, blocajul se eliberează automat în câteva zile. În caz de daune, se rețin doar costurile dovedite cu poze și factură (prin dispută).",
-      en: "At checkout, Stripe places an **authorization (hold)** on your card for the full amount (rent + deposit). Money is NOT captured yet — only frozen. On pickup confirmation the rent is captured; the deposit stays held until return. If the item comes back in good condition, the hold releases automatically within a few days. For damages, only documented costs (photos + invoice) are deducted via the dispute flow.",
-    },
-  },
-  {
     id: "handover",
     question: {
       ro: "Cum funcționează predarea și returnarea (PV digital)?",
