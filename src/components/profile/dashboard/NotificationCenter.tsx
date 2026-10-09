@@ -95,7 +95,7 @@ export function NotificationCenter({ data }: { data: AccountDashboardData }) {
           {grouped.map((g) => {
             const Icon = iconForType(g.type);
             return (
-              <li key={g.type}>
+              <li key={g.label}>
                 <Link
                   to="/notificari"
                   className="flex items-center justify-between gap-3 rounded-lg px-2 py-2 -mx-2 hover:bg-muted/50 transition-colors"
@@ -104,7 +104,7 @@ export function NotificationCenter({ data }: { data: AccountDashboardData }) {
                     <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-muted">
                       <Icon className="h-4 w-4 text-foreground" />
                     </span>
-                    <span className="font-medium">{labelFor(g.type, language)}</span>
+                    <span className="font-medium">{g.label}</span>
                   </span>
                   <span className="text-xs font-bold text-foreground">{g.count}</span>
                 </Link>
