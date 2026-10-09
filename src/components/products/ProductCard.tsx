@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getDisplayTitle, getDisplayDescription, getDisplayCategory } from "@/lib/productI18n";
 import { usePrefetchProduct } from "@/hooks/usePrefetch";
+import OwnerProductActions from "@/components/products/OwnerProductActions";
 
 interface ProductCardProps {
   product: Product;
@@ -183,6 +184,9 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
             )}
           />
         </button>
+        {user?.id === product.owner_id && (
+          <OwnerProductActions productId={product.id} productTitle={displayTitle} variant="card" />
+        )}
         {rating && rating.avg > 0 && (
           <div className="absolute right-2 bottom-2 flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-foreground shadow-sm">
             <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />

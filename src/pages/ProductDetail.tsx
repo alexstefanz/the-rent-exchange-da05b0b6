@@ -447,6 +447,10 @@ const ProductDetail = () => {
           </div>
         )}
 
+        {isOwnProduct && isPubliclyVisible && !isPreview && (
+          <OwnerProductActions productId={product.id} productTitle={displayTitle} variant="bar" />
+        )}
+
         <nav className="mb-4 hidden md:flex items-center gap-2 text-sm text-muted-foreground overflow-x-auto">
           <Link to="/categorii" className="hover:text-primary text-xs whitespace-nowrap">{copy.product.allCategories}</Link>
           <ChevronRight className="h-4 w-4 flex-shrink-0" />
