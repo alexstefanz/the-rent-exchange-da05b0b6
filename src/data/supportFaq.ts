@@ -35,7 +35,7 @@ export const SUPPORT_FAQ: SupportFaqEntry[] = [
     },
     answer: {
       ro: "După confirmarea plății, proprietarul propune **locul și ora predării** din dashboard, iar chiriașul confirmă. La întâlnire, ambele părți completează **procesul verbal digital (PV)** direct în aplicație: **poze cu starea produsului** + observații. Același flux se repetă la returnare. Când ambii au semnat PV-ul, statusul trece automat la următoarea etapă (activ → finalizat). Primești notificare in-app, email și SMS la fiecare pas.",
-      en: "After payment is confirmed, the owner proposes the **pickup time & place** from the dashboard, and the renter confirms. At the meeting, both parties fill in the **digital handover protocol (PV)** in the app: **10 mandatory photos** + notes. The same flow repeats at return. Once both have signed the PV, status moves automatically (active → completed). You get in-app, email and SMS notifications at every step.",
+      en: "After payment is confirmed, the owner proposes the **pickup time & place** from the dashboard, and the renter confirms. At the meeting, both parties fill in the **digital handover protocol (PV)** in the app: **photos of the item condition** + notes. The same flow repeats at return. Once both have signed the PV, status moves automatically (active → completed). You get in-app, email and SMS notifications at every step.",
     },
   },
   {
