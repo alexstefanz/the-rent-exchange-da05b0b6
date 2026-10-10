@@ -159,8 +159,9 @@ export default function RentalExtensionCard({ rental, role, active, onOpenAnnex 
                     : t(`Ai semnat. Se așteaptă semnătura ${role === "owner" ? "chiriașului" : "proprietarului"}.`, "You signed. Waiting for the other party.")}
                 </p>
                 <div className="flex flex-wrap gap-2 justify-end">
-                  {onOpenAnnex && <Button size="sm" variant="outline" onClick={onOpenAnnex}><FileText className="h-4 w-4 mr-1" />{t("Vezi Anexa 3", "View Annex 3")}</Button>}
-                  {!mySigned && <Button size="sm" onClick={() => setSignId(lastPaid.id)}><FileSignature className="h-4 w-4 mr-1" />{t("Semnează Anexa 3", "Sign Annex 3")}</Button>}
+                  {!mySigned
+                    ? <Button size="sm" onClick={() => setSignId(lastPaid.id)}><FileSignature className="h-4 w-4 mr-1" />{t("Semnează Anexa 3", "Sign Annex 3")}</Button>
+                    : onOpenAnnex && <Button size="sm" variant="outline" onClick={onOpenAnnex}><FileText className="h-4 w-4 mr-1" />{t("Vezi Anexa 3", "View Annex 3")}</Button>}
                 </div>
                 {otherSigned && !mySigned && <p className="text-xs text-muted-foreground">{t("Cealaltă parte a semnat deja.", "The other party already signed.")}</p>}
               </div>
@@ -169,6 +170,7 @@ export default function RentalExtensionCard({ rental, role, active, onOpenAnnex 
               <div className="rounded-xl border border-border bg-muted/40 p-3 text-sm space-y-1">
                 <p className="text-muted-foreground">{t(`Anexa 3 semnată de ambele părți. Protecția bunului se extinde: ${fmt(lastPaid.original_end_date)} → ${fmt(lastPaid.approved_end_date)}.`, `Annex 3 signed by both parties. Protection extends: ${fmt(lastPaid.original_end_date)} → ${fmt(lastPaid.approved_end_date)}.`)}</p>
                 <p className="font-medium text-primary">{t(`Nou termen de returnare: ${fmt(lastPaid.approved_end_date)}`, `New return date: ${fmt(lastPaid.approved_end_date)}`)}</p>
+                {onOpenAnnex && <div className="flex justify-end pt-1"><Button size="sm" variant="outline" onClick={onOpenAnnex}><FileText className="h-4 w-4 mr-1" />{t("Vezi Anexa 3", "View Annex 3")}</Button></div>}
               </div>
             )}
           </>
