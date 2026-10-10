@@ -381,7 +381,7 @@ const RentalsTab = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setCancelDialogRental(rental)}
+                            onClick={() => openCancel(rental)}
                             className="text-muted-foreground hover:text-destructive text-[11px] sm:text-xs px-2"
                           >
                             <Ban className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
@@ -461,43 +461,53 @@ const RentalsTab = () => {
       {/* Mutual cancel dialog */}
       <Dialog open={!!cancelDialogRental} onOpenChange={(open) => !open && setCancelDialogRental(null)}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Solicită anularea rezervării</DialogTitle>
-            <DialogDescription>
-              Cererea va fi revizuită de un admin. La aprobare, banii (inclusiv comisionul) îți sunt rambursați integral pentru „{cancelDialogRental?.product_title}".
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor="cancel-subject-renter">Subiect</Label>
-              <Input
-                id="cancel-subject-renter"
-                placeholder="Ex: Probleme cu proprietarul"
-                value={cancelSubject}
-                onChange={(e) => setCancelSubject(e.target.value)}
-                maxLength={120}
-                className="mt-1"
-              />
+          {directMode === null ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-            <div>
-              <Label htmlFor="cancel-reason-renter">Motivul anulării</Label>
-              <Textarea
-                id="cancel-reason-renter"
-                placeholder="Descrie pe scurt motivul (min. 5 caractere)"
-                value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value)}
-                rows={3}
-                className="mt-1"
-              />
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setCancelDialogRental(null)}>Renunță</Button>
-            <Button onClick={handleRequestCancel} disabled={submitting}>
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Ban className="h-4 w-4 mr-2" />}
-              Trimite cererea
-            </Button>
-          </DialogFooter>
+          ) : directMode ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Anulezi rezervarea?</DialogTitle>
+                <DialogDescription>
+                  Contractul nu a fost încă semnat, așa că poți anula imediat „{cancelDialogRental?.product_title}". Primești înapoi toți banii plătiți: în Wallet dacă ai plătit din Wallet, sau pe card dacă ai plătit cu cardul. Proprietarul va fi anunțat.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setCancelDialogRental(null)} disabled={submitting}>Înapoi</Button>
+                <Button variant="destructive" onClick={handleDirectCancel} disabled={submitting}>
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Ban className="h-4 w-4 mr-2" />}
+                  Da, anulează și rambursează
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Solicită anularea rezervării</DialogTitle>
+                <DialogDescription>
+                  Contractul a fost semnat, așa că cererea va fi revizuită de un admin. La aprobare, banii (inclusiv comisionul) îți sunt rambursați integral pentru „{cancelDialogRental?.product_title}".
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="cancel-subject-renter">Subiect</Label>
+                  <Input id="cancel-subject-renter" placeholder="Ex: Probleme cu proprietarul" value={cancelSubject} onChange={(e) => setCancelSubject(e.target.value)} maxLength={120} className="mt-1" />
+                </div>
+                <div>
+                  <Label htmlFor="cancel-reason-renter">Motivul anulării</Label>
+                  <Textarea id="cancel-reason-renter" placeholder="Descrie pe scurt motivul (min. 5 caractere)" value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} rows={3} className="mt-1" />
+                </div>
+              </div>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setCancelDialogRental(null)}>Renunță</Button>
+                <Button onClick={handleRequestCancel} disabled={submitting}>
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Ban className="h-4 w-4 mr-2" />}
+                  Trimite cererea
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
