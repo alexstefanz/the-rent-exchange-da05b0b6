@@ -974,12 +974,12 @@ const RentalDetailPage = () => {
                   const paidBy = isOwner ? t(" (plătite de chiriaș)", " (paid by renter)") : "";
                   return (
                     <>
-                      <div className="flex justify-between"><dt className="text-muted-foreground">{rental.daily_price} RON × {rental.rental_days} {t("zile", "days")}</dt><dd>{rental.subtotal} RON</dd></div>
-                      <div className="flex justify-between"><dt className="text-muted-foreground">{t("Taxe operaționale", "Operational fees")}{paidBy}</dt><dd>{fee} RON</dd></div>
-                      <div className="flex justify-between"><dt className="text-muted-foreground">{t("Service fee Stripe", "Stripe service fee")}{paidBy}</dt><dd>{sf} RON</dd></div>
-                      <div className="border-t border-border pt-2 mt-2 flex justify-between font-semibold">
-                        <dt>{isOwner ? t("Câștig net", "Net earnings") : t("Total de plată", "Total")}</dt>
-                        <dd className="text-primary">{isOwner ? rental.owner_payout : tot} RON</dd>
+                      <div className="flex justify-between items-baseline gap-3"><dt className="text-muted-foreground min-w-0">{rental.daily_price} RON × {rental.rental_days} {t("zile", "days")}</dt><dd className="shrink-0 whitespace-nowrap text-right tabular-nums">{rental.subtotal} RON</dd></div>
+                      <div className="flex justify-between items-baseline gap-3"><dt className="text-muted-foreground min-w-0">{t("Taxe operaționale", "Operational fees")}{paidBy && <span className="block text-xs text-muted-foreground/75">{paidBy.trim()}</span>}</dt><dd className="shrink-0 whitespace-nowrap text-right tabular-nums">{fee} RON</dd></div>
+                      <div className="flex justify-between items-baseline gap-3"><dt className="text-muted-foreground min-w-0">{t("Service fee Stripe", "Stripe service fee")}{paidBy && <span className="block text-xs text-muted-foreground/75">{paidBy.trim()}</span>}</dt><dd className="shrink-0 whitespace-nowrap text-right tabular-nums">{sf} RON</dd></div>
+                      <div className="border-t border-border pt-2 mt-2 flex justify-between items-baseline gap-3 font-semibold">
+                        <dt className="min-w-0">{isOwner ? t("Câștig net", "Net earnings") : t("Total de plată", "Total")}</dt>
+                        <dd className="text-primary shrink-0 whitespace-nowrap text-right tabular-nums">{isOwner ? rental.owner_payout : tot} RON</dd>
                       </div>
                     </>
                   );
