@@ -436,6 +436,8 @@ Deno.serve(async (req) => {
               reason: extra?.reason,
               reporterName: extra?.actorName,
               pvPdfUrl: pvAsset?.signed_url,
+              cancelledBy: event_key === "request_cancelled_by_owner" ? "owner" : event_key === "request_cancelled_by_renter" ? "renter" : undefined,
+              isPaid: ["authorized", "paid", "captured"].includes(String(rental.payment_status)),
             };
             try {
               // Thread context: group all emails for this rental into a single
