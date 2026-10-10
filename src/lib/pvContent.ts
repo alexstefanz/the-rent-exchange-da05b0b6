@@ -48,13 +48,13 @@ export function buildPvContent(rental: RentalFullDetail, phase: "handover" | "re
   const title = phase === "handover" ? "PROCES-VERBAL DE PREDARE-PRIMIRE" : "PROCES-VERBAL DE RETURNARE";
 
   const intro =
-    `Incheiat astazi, ${today}, intre domnul/doamna ${ownerName}, in calitate de Predator (proprietar), ` +
-    `telefon ${ownerPhone}, email ${ownerEmail}, si domnul/doamna ${renterName}, in calitate de Primitor (chirias/utilizator), ` +
+    `Incheiat astazi, ${today}, intre domnul/doamna ${ownerName}, in calitate de Proprietar, ` +
+    `telefon ${ownerPhone}, email ${ownerEmail}, si domnul/doamna ${renterName}, in calitate de Chirias, ` +
     `telefon ${renterPhone}, email ${renterEmail}.`;
 
   const cat = rental.product_category || "-";
   const object =
-    `Prin prezentul proces-verbal, Predatorul preda, iar Primitorul primeste spre utilizare temporara, ` +
+    `Prin prezentul proces-verbal, Proprietarul preda, iar Chiriasul primeste spre utilizare temporara, ` +
     `prin intermediul platformei de renting peer-to-peer Rentli, urmatorul bun: ${rental.product_title || "-"}, ` +
     `din categoria ${cat}, pentru o perioada de ${rental.rental_days} zile, cu costul total de ${rental.subtotal} lei ` +
     `(${rental.daily_price} lei/zi).`;
@@ -74,8 +74,8 @@ export function buildPvContent(rental: RentalFullDetail, phase: "handover" | "re
     `${format(new Date(rental.end_date), "dd.MM.yyyy")}, ora ${endTime}.`;
 
   const responsibility = phase === "handover"
-    ? "Primitorul declara ca a verificat bunul si il accepta in starea mentionata, obligandu-se sa il utilizeze conform destinatiei sale, sa il pastreze in bune conditii si sa il returneze la termenul stabilit, in aceeasi stare, cu exceptia uzurii normale. Primitorul isi asuma raspunderea pentru orice deteriorare, pierdere sau furt survenite pe perioada utilizarii si se obliga sa notifice imediat Predatorul in cazul aparitiei unor defecte sau incidente."
-    : "Primitorul restituie bunul catre Predator, iar Predatorul confirma primirea acestuia in starea documentata prin fotografiile anexate. Eventualele daune constatate la momentul returnarii vor fi reglementate prin intermediul platformei Rentli, conform termenilor si conditiilor agreate.";
+    ? "Chiriasul declara ca a verificat bunul si il accepta in starea mentionata, obligandu-se sa il utilizeze conform destinatiei sale, sa il pastreze in bune conditii si sa il returneze la termenul stabilit, in aceeasi stare, cu exceptia uzurii normale. Chiriasul isi asuma raspunderea pentru orice deteriorare, pierdere sau furt survenite pe perioada utilizarii si se obliga sa notifice imediat Proprietarul in cazul aparitiei unor defecte sau incidente."
+    : "Chiriasul restituie bunul catre Proprietar, iar Proprietarul confirma primirea acestuia in starea documentata prin fotografiile anexate. Eventualele daune constatate la momentul returnarii vor fi reglementate prin intermediul platformei Rentli, conform termenilor si conditiilor agreate.";
 
   const finalClause =
     "Eventualele neintelegeri vor fi solutionate conform termenilor si conditiilor platformei Rentli. Prezentul proces-verbal a fost incheiat in doua exemplare, cate unul pentru fiecare parte, avand aceeasi valoare juridica.";
@@ -149,11 +149,11 @@ export function buildPvRichContent(
   const introRuns: PvRun[] = [
     T("Incheiat astazi, "), B(today),
     T(", intre domnul/doamna "), B(ownerName),
-    T(", in calitate de "), B("Predator (proprietar)"),
+    T(", in calitate de "), B("Proprietar"),
     T(", telefon "), B(ownerPhone),
     T(", email "), B(ownerEmail),
     T(", si domnul/doamna "), B(renterName),
-    T(", in calitate de "), B("Primitor (chirias/utilizator)"),
+    T(", in calitate de "), B("Chirias"),
     T(", telefon "), B(renterPhone),
     T(", email "), B(renterEmail),
     T("."),
@@ -161,7 +161,7 @@ export function buildPvRichContent(
 
   const cat = rental.product_category || "-";
   const objectRuns: PvRun[] = [
-    T("Prin prezentul proces-verbal, Predatorul preda, iar Primitorul primeste spre utilizare temporara, prin intermediul platformei de renting peer-to-peer Rentli, urmatorul bun: "),
+    T("Prin prezentul proces-verbal, Proprietarul preda, iar Chiriasul primeste spre utilizare temporara, prin intermediul platformei de renting peer-to-peer Rentli, urmatorul bun: "),
     B(rental.product_title || "-"),
     T(", din categoria "), B(cat),
     T(", pentru o perioada de "), B(`${rental.rental_days} zile`),
@@ -195,8 +195,8 @@ export function buildPvRichContent(
 
   const responsibilityRuns: PvRun[] = [
     T(phase === "handover"
-      ? "Primitorul declara ca a verificat bunul si il accepta in starea mentionata, obligandu-se sa il utilizeze conform destinatiei sale, sa il pastreze in bune conditii si sa il returneze la termenul stabilit, in aceeasi stare, cu exceptia uzurii normale. Primitorul isi asuma raspunderea pentru orice deteriorare, pierdere sau furt survenite pe perioada utilizarii si se obliga sa notifice imediat Predatorul in cazul aparitiei unor defecte sau incidente."
-      : "Primitorul restituie bunul catre Predator, iar Predatorul confirma primirea acestuia in starea documentata prin fotografiile anexate. Eventualele daune constatate la momentul returnarii vor fi reglementate prin intermediul platformei Rentli, conform termenilor si conditiilor agreate."),
+      ? "Chiriasul declara ca a verificat bunul si il accepta in starea mentionata, obligandu-se sa il utilizeze conform destinatiei sale, sa il pastreze in bune conditii si sa il returneze la termenul stabilit, in aceeasi stare, cu exceptia uzurii normale. Chiriasul isi asuma raspunderea pentru orice deteriorare, pierdere sau furt survenite pe perioada utilizarii si se obliga sa notifice imediat Proprietarul in cazul aparitiei unor defecte sau incidente."
+      : "Chiriasul restituie bunul catre Proprietar, iar Proprietarul confirma primirea acestuia in starea documentata prin fotografiile anexate. Eventualele daune constatate la momentul returnarii vor fi reglementate prin intermediul platformei Rentli, conform termenilor si conditiilor agreate."),
   ];
 
   const finalClauseRuns: PvRun[] = [

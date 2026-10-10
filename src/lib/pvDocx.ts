@@ -252,8 +252,8 @@ export async function generatePvDocx(rental: RentalFullDetail, pv: PvDocument, p
     columnWidths: [4680, 4680],
     rows: [new TableRow({
       children: [
-        sigCell("Predator (proprietar)", c.ownerName, ownerSig, pv.owner_signed_at),
-        sigCell("Primitor (chirias)", c.renterName, renterSig, pv.renter_signed_at),
+        sigCell("Proprietar", c.ownerName, ownerSig, pv.owner_signed_at),
+        sigCell("Chirias", c.renterName, renterSig, pv.renter_signed_at),
       ],
     })],
   });

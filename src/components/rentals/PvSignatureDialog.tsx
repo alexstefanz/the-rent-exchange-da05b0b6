@@ -313,8 +313,8 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
     }
     const colW = (W - 100) / 2;
     doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(0);
-    doc.text(noDia("Predator (proprietar)"), MARGIN + (colW - 10) / 2, y, { align: "center" });
-    doc.text(noDia("Primitor (chirias)"), MARGIN + colW + (colW - 10) / 2, y, { align: "center" });
+    doc.text(noDia("Proprietar"), MARGIN + (colW - 10) / 2, y, { align: "center" });
+    doc.text(noDia("Chirias"), MARGIN + colW + (colW - 10) / 2, y, { align: "center" });
     y += labelGap;
     doc.setFont("helvetica", "normal"); doc.setFontSize(10);
     doc.text(noDia(rich.ownerName), MARGIN + (colW - 10) / 2, y, { align: "center" });
@@ -486,11 +486,11 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
               <h2 className="text-center font-bold text-[15px] tracking-wide my-6">{content.title}</h2>
 
               <DocParagraph>
-                Incheiat astazi, <strong>{content.todayLabel}</strong>, intre domnul/doamna <strong>{content.ownerName}</strong>, in calitate de <strong>Predator (proprietar)</strong>, telefon <strong>{rental.owner_phone || "0740 000 000"}</strong>, email <strong>{rental.owner_email || "owner@rentli.ro"}</strong>, si domnul/doamna <strong>{content.renterName}</strong>, in calitate de <strong>Primitor (chirias/utilizator)</strong>, telefon <strong>{rental.renter_phone || "0740 000 000"}</strong>, email <strong>{rental.renter_email || "renter@rentli.ro"}</strong>.
+                Incheiat astazi, <strong>{content.todayLabel}</strong>, intre domnul/doamna <strong>{content.ownerName}</strong>, in calitate de <strong>Proprietar</strong>, telefon <strong>{rental.owner_phone || "0740 000 000"}</strong>, email <strong>{rental.owner_email || "owner@rentli.ro"}</strong>, si domnul/doamna <strong>{content.renterName}</strong>, in calitate de <strong>Chirias</strong>, telefon <strong>{rental.renter_phone || "0740 000 000"}</strong>, email <strong>{rental.renter_email || "renter@rentli.ro"}</strong>.
               </DocParagraph>
 
               <DocParagraph>
-                Prin prezentul proces-verbal, Predatorul preda, iar Primitorul primeste spre utilizare temporara, prin intermediul platformei de renting peer-to-peer Rentli, urmatorul bun: <strong>{rental.product_title || "-"}</strong>, din categoria <strong>{rental.product_category || "-"}</strong>, pentru o perioada de <strong>{rental.rental_days} zile</strong>, cu costul total de <strong>{rental.subtotal} lei</strong> ({rental.daily_price} lei/zi).
+                Prin prezentul proces-verbal, Proprietarul preda, iar Chiriasul primeste spre utilizare temporara, prin intermediul platformei de renting peer-to-peer Rentli, urmatorul bun: <strong>{rental.product_title || "-"}</strong>, din categoria <strong>{rental.product_category || "-"}</strong>, pentru o perioada de <strong>{rental.rental_days} zile</strong>, cu costul total de <strong>{rental.subtotal} lei</strong> ({rental.daily_price} lei/zi).
               </DocParagraph>
 
               {content.accessories && <DocParagraph>{content.accessories}</DocParagraph>}
@@ -515,8 +515,8 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
 
               {/* Signatures */}
               <section className="grid grid-cols-2 gap-8 mt-10 text-center">
-                <SigBox label="Predator (proprietar)" name={content.ownerName} signatureData={pv.owner_signature_data} signedAt={pv.owner_signed_at} />
-                <SigBox label="Primitor (chirias)" name={content.renterName} signatureData={pv.renter_signature_data} signedAt={pv.renter_signed_at} />
+                <SigBox label="Proprietar" name={content.ownerName} signatureData={pv.owner_signature_data} signedAt={pv.owner_signed_at} />
+                <SigBox label="Chirias" name={content.renterName} signatureData={pv.renter_signature_data} signedAt={pv.renter_signed_at} />
               </section>
             </article>
 
@@ -532,7 +532,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-sm font-semibold flex items-center gap-2">
                     <FileSignature className="h-4 w-4 text-primary" />
-                    Semnatura {role === "owner" ? "Predator" : "Primitor"} — semneaza aici
+                    Semnatura {role === "owner" ? "Proprietar" : "Chirias"} — semneaza aici
                   </h4>
                   <Button type="button" variant="ghost" size="sm" onClick={() => sigRef.current?.clear()}>
                     <Eraser className="h-4 w-4 mr-1" />Sterge
