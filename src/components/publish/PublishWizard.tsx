@@ -34,7 +34,14 @@ import {
   calculateClientPrice,
   type Product,
 } from "@/features/products/productsApi";
-import { calcPlatformFee } from "@/lib/rentalPricing";
+import { calcFullBreakdown } from "@/lib/rentalPricing";
+
+const Row = ({ label, value }: { label: string; value: string }) => (
+  <div className="flex items-center justify-between gap-3 text-xs">
+    <span className="text-muted-foreground">{label}</span>
+    <span className="font-medium text-foreground">{value}</span>
+  </div>
+);
 import { categories } from "@/data/categories";
 import { getCategoryIcon } from "@/data/categoryIcons";
 import { judete } from "@/data/romaniaLocations";
@@ -1151,10 +1158,7 @@ const Step5Pricing = ({
   }, [data.category, data.subcategory]);
 
   const owner = data.daily_price_owner ?? 0;
-  // NEW MODEL: client pays owner price + commission (min 1 RON when fee > 0).
-  // Preview at the per-day level uses a 1-day rental.
-  const commission = owner > 0 ? calcPlatformFee(owner, feePercent) : 0;
-  const client = owner > 0 ? Math.round((owner + commission) * 100) / 100 : 0;
+  const bd = calcFullBreakdown(owner, feePercent);
 
   return (
     <div>
@@ -1162,8 +1166,8 @@ const Step5Pricing = ({
         eyebrow={t("Pasul 3 din 4", "Step 3 of 4")}
         title={t("Preț chirie", "Rental price")}
         subtitle={t(
-          "Setează cât vrei să primești pe zi. Comisionul platformei se adaugă automat clientului.",
-          "Set how much you want to receive per day. The platform fee is added automatically for the client.",
+          "Costul total plătit de client include prețul tău de închiriere + taxele operaționale Rentli + taxa de procesare Stripe.",
+          "The total paid by the client includes your rental price + Rentli operational fees + Stripe processing fee.",
         )}
       />
 
