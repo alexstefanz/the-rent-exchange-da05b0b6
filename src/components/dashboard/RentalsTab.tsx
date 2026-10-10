@@ -16,7 +16,7 @@ import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-quer
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import { useRentalRealtime } from "@/hooks/useRentalRealtime";
-import { requestMutualCancellation } from "@/features/rentals/rentalsApi";
+import { requestMutualCancellation, hasContractSignature, cancelPaidBeforeContract, cancelErrorMessage } from "@/features/rentals/rentalsApi";
 import { toast } from "@/components/ui/sonner";
 import StatusBadge from "./StatusBadge";
 import RentalsFilterBar, { type RentalStatusFilter, type RentalSortBy } from "./RentalsFilterBar";
@@ -121,6 +121,7 @@ const RentalsTab = () => {
   const [cancelSubject, setCancelSubject] = useState("");
   const [cancelReason, setCancelReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [directMode, setDirectMode] = useState<boolean | null>(null);
   const [statusFilter, setStatusFilter] = useState<RentalStatusFilter>("all");
   const [sortBy, setSortBy] = useState<RentalSortBy>("newest");
   const [searchParams, setSearchParams] = useSearchParams();
@@ -183,6 +184,31 @@ const RentalsTab = () => {
   const liveList = view === "requests" ? requestsList : activeList;
   const doneList = view === "completed" ? completedList : cancelledList;
 
+  const openCancel = async (rental: MyRental) => {
+    setDirectMode(null);
+    setCancelDialogRental(rental);
+    const signed = await hasContractSignature(rental.id).catch(() => true);
+    setDirectMode(!signed);
+  };
+
+  const handleDirectCancel = async () => {
+    if (!cancelDialogRental) return;
+    setSubmitting(true);
+    try {
+      const res = await cancelPaidBeforeContract(cancelDialogRental.id);
+      toast.success(res.to_wallet
+        ? `Rezervare anulată. ${res.refund} RON au revenit în Wallet.`
+        : `Rezervare anulată. ${res.refund} RON se returnează pe card.`);
+      queryClient.invalidateQueries({ queryKey: ["my-rentals"] });
+      queryClient.invalidateQueries({ queryKey: ["wallet-balance"] });
+      setCancelDialogRental(null);
+    } catch (e: any) {
+      toast.error(cancelErrorMessage(e?.message || ""));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleRequestCancel = async () => {
     if (!cancelDialogRental) return;
     if (!cancelSubject.trim() || cancelSubject.trim().length < 3) {
@@ -202,7 +228,7 @@ const RentalsTab = () => {
       setCancelSubject("");
       setCancelReason("");
     } catch (e: any) {
-      toast.error(e?.message || "Eroare la trimiterea cererii de anulare");
+      toast.error(cancelErrorMessage(e?.message || ""));
       console.error(e);
     } finally {
       setSubmitting(false);
@@ -355,7 +381,7 @@ const RentalsTab = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => setCancelDialogRental(rental)}
+                            onClick={() => openCancel(rental)}
                             className="text-muted-foreground hover:text-destructive text-[11px] sm:text-xs px-2"
                           >
                             <Ban className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
@@ -435,43 +461,53 @@ const RentalsTab = () => {
       {/* Mutual cancel dialog */}
       <Dialog open={!!cancelDialogRental} onOpenChange={(open) => !open && setCancelDialogRental(null)}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Solicită anularea rezervării</DialogTitle>
-            <DialogDescription>
-              Cererea va fi revizuită de un admin. La aprobare, banii (inclusiv comisionul) îți sunt rambursați integral pentru „{cancelDialogRental?.product_title}".
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor="cancel-subject-renter">Subiect</Label>
-              <Input
-                id="cancel-subject-renter"
-                placeholder="Ex: Probleme cu proprietarul"
-                value={cancelSubject}
-                onChange={(e) => setCancelSubject(e.target.value)}
-                maxLength={120}
-                className="mt-1"
-              />
+          {directMode === null ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
             </div>
-            <div>
-              <Label htmlFor="cancel-reason-renter">Motivul anulării</Label>
-              <Textarea
-                id="cancel-reason-renter"
-                placeholder="Descrie pe scurt motivul (min. 5 caractere)"
-                value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value)}
-                rows={3}
-                className="mt-1"
-              />
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setCancelDialogRental(null)}>Renunță</Button>
-            <Button onClick={handleRequestCancel} disabled={submitting}>
-              {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Ban className="h-4 w-4 mr-2" />}
-              Trimite cererea
-            </Button>
-          </DialogFooter>
+          ) : directMode ? (
+            <>
+              <DialogHeader>
+                <DialogTitle>Anulezi rezervarea?</DialogTitle>
+                <DialogDescription>
+                  Contractul nu a fost încă semnat, așa că poți anula imediat „{cancelDialogRental?.product_title}". Primești înapoi toți banii plătiți: în Wallet dacă ai plătit din Wallet, sau pe card dacă ai plătit cu cardul. Proprietarul va fi anunțat.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setCancelDialogRental(null)} disabled={submitting}>Înapoi</Button>
+                <Button variant="destructive" onClick={handleDirectCancel} disabled={submitting}>
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Ban className="h-4 w-4 mr-2" />}
+                  Da, anulează și rambursează
+                </Button>
+              </DialogFooter>
+            </>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Solicită anularea rezervării</DialogTitle>
+                <DialogDescription>
+                  Contractul a fost semnat, așa că cererea va fi revizuită de un admin. La aprobare, banii (inclusiv comisionul) îți sunt rambursați integral pentru „{cancelDialogRental?.product_title}".
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="cancel-subject-renter">Subiect</Label>
+                  <Input id="cancel-subject-renter" placeholder="Ex: Probleme cu proprietarul" value={cancelSubject} onChange={(e) => setCancelSubject(e.target.value)} maxLength={120} className="mt-1" />
+                </div>
+                <div>
+                  <Label htmlFor="cancel-reason-renter">Motivul anulării</Label>
+                  <Textarea id="cancel-reason-renter" placeholder="Descrie pe scurt motivul (min. 5 caractere)" value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} rows={3} className="mt-1" />
+                </div>
+              </div>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setCancelDialogRental(null)}>Renunță</Button>
+                <Button onClick={handleRequestCancel} disabled={submitting}>
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Ban className="h-4 w-4 mr-2" />}
+                  Trimite cererea
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>

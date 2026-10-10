@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useAuth } from "@/contexts/AuthContext";
 import { getOwnerRentals, respondToRental, type OwnerRental } from "@/features/rentals/ownerRentalsApi";
-import { requestMutualCancellation } from "@/features/rentals/rentalsApi";
+import { requestMutualCancellation, cancelErrorMessage } from "@/features/rentals/rentalsApi";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/components/ui/sonner";
 import { format } from "date-fns";
@@ -184,7 +184,7 @@ const RentalsOutTab = () => {
       setCancelSubject("");
       setCancelReason("");
     } catch (e: any) {
-      toast.error(e?.message || "Eroare la trimiterea cererii de anulare");
+      toast.error(cancelErrorMessage(e?.message || ""));
       console.error(e);
     } finally { setRespondingId(null); }
   };

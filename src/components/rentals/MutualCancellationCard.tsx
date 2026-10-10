@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/sonner";
 import { Ban, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { requestMutualCancellation, withdrawCancellationRequest, cancelUnpaidRental } from "@/features/rentals/rentalsApi";
+import { requestMutualCancellation, withdrawCancellationRequest, cancelUnpaidRental, hasContractSignature, cancelPaidBeforeContract, cancelErrorMessage } from "@/features/rentals/rentalsApi";
 
 interface Props {
   rentalId: string;
@@ -46,9 +46,31 @@ const MutualCancellationCard = ({
   const unpaid = !paymentStatus || ["pending", "failed", "canceled", "cancelled"].includes(paymentStatus);
   const canSelfCancelUnpaid = unpaid && rentalStatus !== "cancelled" && rentalStatus !== "completed";
   const isParticipant = !!isRenter || !!isOwner;
+  const [contractSigned, setContractSigned] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (unpaid) return;
+    hasContractSignature(rentalId).then(setContractSigned).catch(() => setContractSigned(true));
+  }, [rentalId, unpaid]);
+  const canDirectPaidCancel = !unpaid && !isPending && contractSigned === false
+    && rentalStatus !== "cancelled" && rentalStatus !== "completed";
 
   // Hide entirely from users who are neither renter, owner, nor admin
   if (!isParticipant && !isAdmin) return null;
+
+  async function directPaidCancel() {
+    setBusy(true);
+    setFormError(null);
+    try {
+      const res = await cancelPaidBeforeContract(rentalId);
+      toast.success(res.to_wallet
+        ? t(`Rezervare anulată. ${res.refund} RON au revenit în Wallet.`, `Cancelled. ${res.refund} RON returned to your Wallet.`)
+        : t(`Rezervare anulată. ${res.refund} RON se returnează pe card.`, `Cancelled. ${res.refund} RON refunded to the card.`));
+      setConfirmOpen(false);
+      await onChanged();
+    } catch (e: any) {
+      setFormError(cancelErrorMessage(e?.message || ""));
+    } finally { setBusy(false); }
+  }
 
   async function selfCancelUnpaid() {
     setBusy(true);
@@ -82,8 +104,8 @@ const MutualCancellationCard = ({
       setFormError(t("Subiectul e prea scurt (minim 3 caractere).", "Subject too short (min 3 characters)."));
       return;
     }
-    if (reason.trim().length < 10) {
-      setFormError(t("Te rugăm să descrii motivul în minim 10 caractere.", "Please provide a reason (min 10 characters)."));
+    if (reason.trim().length < 5) {
+      setFormError(t("Te rugăm să descrii motivul în minim 5 caractere.", "Please provide a reason (min 5 characters)."));
       return;
     }
     if (!accepted) {
@@ -150,7 +172,7 @@ const MutualCancellationCard = ({
   }
 
   // No pending request — before payment, either party can cancel instantly
-  if (canSelfCancelUnpaid) {
+  if (canSelfCancelUnpaid || canDirectPaidCancel) {
     return (
       <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
         <div className="flex items-start gap-3">
@@ -162,10 +184,15 @@ const MutualCancellationCard = ({
               {t("Anulează rezervarea", "Cancel reservation")}
             </h3>
             <p className="text-xs text-muted-foreground mt-1">
-              {t(
-                "Plata nu a fost efectuată — poți anula instant, fără aprobarea unui admin. Cealaltă parte va fi notificată.",
-                "Payment hasn't been processed — you can cancel instantly, without admin approval. The other party will be notified.",
-              )}
+              {canDirectPaidCancel
+                ? t(
+                    "Contractul nu a fost încă semnat — poți anula instant. Chiriașul primește înapoi toți banii (în Wallet sau pe card).",
+                    "The contract isn't signed yet — you can cancel instantly. The renter gets a full refund (Wallet or card).",
+                  )
+                : t(
+                    "Plata nu a fost efectuată — poți anula instant, fără aprobarea unui admin. Cealaltă parte va fi notificată.",
+                    "Payment hasn't been processed — you can cancel instantly, without admin approval. The other party will be notified.",
+                  )}
             </p>
           </div>
           <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -201,7 +228,7 @@ const MutualCancellationCard = ({
                 <Button variant="ghost" onClick={() => setConfirmOpen(false)} disabled={busy}>
                   {t("Înapoi", "Back")}
                 </Button>
-                <Button variant="destructive" onClick={selfCancelUnpaid} disabled={busy}>
+                <Button variant="destructive" onClick={canDirectPaidCancel ? directPaidCancel : selfCancelUnpaid} disabled={busy}>
                   {busy ? t("Se anulează…", "Cancelling…") : t("Da, anulează", "Yes, cancel")}
                 </Button>
               </DialogFooter>
@@ -263,7 +290,7 @@ const MutualCancellationCard = ({
                   id="cancel-reason"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder={t("Descrie pe scurt motivul (min. 10 caractere)…", "Briefly describe the reason (min. 10 chars)…")}
+                  placeholder={t("Descrie pe scurt motivul (min. 5 caractere)…", "Briefly describe the reason (min. 5 chars)…")}
                   rows={4}
                   className="mt-1"
                 />

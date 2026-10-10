@@ -177,6 +177,39 @@ export async function requestMutualCancellation(rentalId: string, subject: strin
   return data;
 }
 
+/** True if at least one party has signed the main contract. */
+export async function hasContractSignature(rentalId: string): Promise<boolean> {
+  const { count } = await supabase
+    .from("rental_contract_acceptances")
+    .select("id", { count: "exact", head: true })
+    .eq("rental_id", rentalId);
+  return (count ?? 0) > 0;
+}
+
+/** Direct cancel of a PAID rental before any contract signature — automatic refund. */
+export async function cancelPaidBeforeContract(rentalId: string) {
+  const { data, error } = await supabase.functions.invoke("cancel-paid-before-contract", {
+    body: { rental_id: rentalId },
+  });
+  if (error) {
+    let code = "";
+    try { code = (await (error as any).context?.json())?.error || ""; } catch { /* ignore */ }
+    throw new Error(code || error.message);
+  }
+  if (data?.error) throw new Error(data.error);
+  return data as { ok: boolean; refund: number; to_wallet: boolean };
+}
+
+export function cancelErrorMessage(code: string): string {
+  if (code.includes("contract_signed")) return "Contractul a fost deja semnat — trimite o cerere de anulare către admin.";
+  if (code.includes("handover_signed")) return "Predarea a avut loc, rezervarea nu mai poate fi anulată.";
+  if (code.includes("reason_too_short")) return "Motivul trebuie să aibă minim 5 caractere.";
+  if (code.includes("subject_too_short")) return "Subiectul trebuie să aibă minim 3 caractere.";
+  if (code.includes("request_already_pending")) return "Există deja o cerere de anulare în revizuire.";
+  if (code.includes("stripe_failure")) return "Rambursarea pe card a eșuat. Încearcă din nou sau contactează suportul.";
+  return code || "Eroare la anulare.";
+}
+
 /** Pay an accepted rental fully from the renter's wallet balance. */
 export async function payRentalWithWallet(rentalId: string) {
   const { data, error } = await supabase.rpc("pay_rental_with_wallet" as any, {
