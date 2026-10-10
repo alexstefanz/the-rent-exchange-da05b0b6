@@ -45,9 +45,12 @@ export default function ContractAcceptanceBlock({ rentalId, publicId, isOwner, o
         <Row label={t("Chiriaș", "Renter")} at={renter} />
       </ul>
       {!mine ? (
-        <Button size="sm" className="mt-3" onClick={() => setSignOpen(true)}>
-          <FileSignature className="h-4 w-4 mr-1" />{t("Semnează contractul", "Sign the contract")}
-        </Button>
+        <>
+          <Button size="sm" className="mt-3" onClick={onOpenContract}>
+            <FileSignature className="h-4 w-4 mr-1" />{t("Citește și semnează contractul", "Read & sign the contract")}
+          </Button>
+          <p className="mt-1.5 text-xs text-muted-foreground">{t("Semnarea devine disponibilă după ce parcurgi contractul până la final.", "Signing becomes available after you scroll through the full contract.")}</p>
+        </>
       ) : !other ? (
         <p className="mt-2 text-xs text-muted-foreground">
           {t(`Ai semnat contractul. Se așteaptă ${isOwner ? "chiriașul" : "proprietarul"}.`, `You signed. Waiting for the ${isOwner ? "renter" : "owner"}.`)}
@@ -55,7 +58,7 @@ export default function ContractAcceptanceBlock({ rentalId, publicId, isOwner, o
       ) : (
         <p className="mt-2 text-xs font-semibold text-primary">{t("Contract semnat de ambele părți.", "Contract signed by both parties.")}</p>
       )}
-      <ContractSignDialog open={signOpen} onOpenChange={setSignOpen} rentalId={rentalId} publicId={publicId} onSign={sign} onOpenContract={() => { setSignOpen(false); onOpenContract(); }} />
+
       <Dialog open={congrats} onOpenChange={setCongrats}>
         <DialogContent className="max-w-sm text-center">
           <DialogHeader className="items-center">
