@@ -17,12 +17,13 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import CategoryMapView from "@/components/category/map/CategoryMapView";
 import MapEmptyState from "@/components/category/map/MapEmptyState";
+import { CONDITION_LABELS, type ProductCondition } from "@/lib/publishTypes";
 import { useSearchSuggestions } from "@/hooks/queries/useSearchSuggestions";
 
 
 const Search = () => {
   const copy = useUxCopy();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
   const categoryFilter = searchParams.get("categorie") || "";
@@ -51,6 +52,13 @@ const Search = () => {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [priceTouched, setPriceTouched] = useState(false);
   const [sortBy, setSortBy] = useState("relevance");
+  const [selectedCondition, setSelectedCondition] = useState(searchParams.get("stare") || "all");
+  const handleConditionChange = (value: string) => {
+    setSelectedCondition(value);
+    const np = new URLSearchParams(searchParams);
+    if (value !== "all") np.set("stare", value); else np.delete("stare");
+    setSearchParams(np, { replace: true });
+  };
 
   const productFilters = useMemo((): ProductFilters => {
     const filters: ProductFilters = {};
@@ -94,13 +102,14 @@ const Search = () => {
     if (judetCitiesSet && selectedCity === "all") {
       result = result.filter((p) => p.location_city && judetCitiesSet.has(p.location_city));
     }
+    if (selectedCondition !== "all") result = result.filter((p) => p.condition === selectedCondition);
     result = result.filter((p) => { const cp = calculateClientPrice(p.daily_price_owner, p.platform_fee_percent); return cp >= priceRange[0] && cp <= priceRange[1]; });
     if (sortBy === "price_asc") result.sort((a, b) => a.daily_price_owner - b.daily_price_owner);
     else if (sortBy === "price_desc") result.sort((a, b) => b.daily_price_owner - a.daily_price_owner);
     return result;
-  }, [products, judetCitiesSet, selectedCity, priceRange, sortBy]);
+  }, [products, judetCitiesSet, selectedCity, priceRange, sortBy, selectedCondition]);
 
-  const hasActiveFilters = (selectedCategory && selectedCategory !== "all") || (selectedJudet && selectedJudet !== "all") || (selectedCity && selectedCity !== "all") || (priceTouched && (priceRange[0] !== priceBounds[0] || priceRange[1] !== priceBounds[1])) || sortBy !== "relevance";
+  const hasActiveFilters = (selectedCategory && selectedCategory !== "all") || (selectedJudet && selectedJudet !== "all") || (selectedCity && selectedCity !== "all") || (priceTouched && (priceRange[0] !== priceBounds[0] || priceRange[1] !== priceBounds[1])) || sortBy !== "relevance" || selectedCondition !== "all";
   const handleCityChange = (value: string) => {
     setSelectedCity(value);
     const np = new URLSearchParams(searchParams);
@@ -119,8 +128,9 @@ const Search = () => {
     setSearchParams(np, { replace: true });
   };
   const handleClearFilters = () => {
-    setSelectedCategory("all"); setSelectedJudet("all"); setSelectedCity("all"); setPriceRange(priceBounds); setPriceTouched(false); setSortBy("relevance");
+    setSelectedCategory("all"); setSelectedJudet("all"); setSelectedCity("all"); setPriceRange(priceBounds); setPriceTouched(false); setSortBy("relevance"); setSelectedCondition("all");
     const np = new URLSearchParams(searchParams);
+    np.delete("stare");
     np.delete("judet");
     np.delete("localitate");
     setSearchParams(np, { replace: true });
@@ -195,7 +205,18 @@ const Search = () => {
           </div>
           {/* Mobile-only: map/grid/list on the left */}
           <div className="flex lg:hidden">{viewToggle}</div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={selectedCondition} onValueChange={handleConditionChange}>
+              <SelectTrigger className="h-9 w-auto min-w-[150px] text-sm" aria-label={t("Starea produsului", "Product condition")}>
+                <SelectValue placeholder={t("Toate stările", "Any condition")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("Toate stările", "Any condition")}</SelectItem>
+                {(Object.keys(CONDITION_LABELS) as ProductCondition[]).map((c) => (
+                  <SelectItem key={c} value={c}>{CONDITION_LABELS[c][language]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <InlineSearchFilters selectedCategory={selectedCategory} onCategoryChange={setSelectedCategory} selectedCity={selectedCity} onCityChange={handleCityChange} selectedJudet={selectedJudet} onJudetChange={handleJudetChange} priceRange={priceRange} onPriceRangeChange={handlePriceRangeChange} priceMin={priceBounds[0]} priceMax={priceBounds[1]} sortBy={sortBy} onSortByChange={setSortBy} onClearFilters={handleClearFilters} hasActiveFilters={hasActiveFilters} hideLocation />
             <div className="hidden lg:flex">{viewToggle}</div>
             <div className="lg:hidden">
