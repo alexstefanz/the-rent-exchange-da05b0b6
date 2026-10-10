@@ -79,8 +79,19 @@ export default function HandoverPvCard({ rentalId, startDate, signed, contractRe
           {t("Ascunde detaliile", "Hide details")}<ChevronDown className="h-3.5 w-3.5 rotate-180" />
         </button>
       )}
+      {!signed && locked && (
+        <div className="text-center py-3">
+          <span className="mx-auto h-12 w-12 rounded-2xl bg-primary/10 text-primary grid place-items-center"><Lock className="h-5 w-5" /></span>
+          <p className="mt-3 text-xs font-bold uppercase tracking-wider text-primary">{t("Proces-verbal de predare", "Handover report")}</p>
+          <p className="text-sm text-muted-foreground mt-1">{t("Se deblochează pe", "Unlocks on")}</p>
+          <p className="font-heading text-2xl sm:text-3xl font-bold text-foreground mt-1 capitalize">
+            {new Date(String(startDate).slice(0, 10) + "T00:00:00").toLocaleDateString(t("ro-RO", "en-GB"), { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+          </p>
+          <p className="text-xs text-muted-foreground mt-2">{t("Până atunci, stabiliți ora și locul întâlnirii. În ziua predării veți fotografia bunul și veți semna PV-ul aici.", "Until then, agree on time and place. On handover day you'll photograph the item and sign the report here.")}</p>
+        </div>
+      )}
       {!signed && (
-        <div role="alert" className="mb-3 flex gap-2 rounded-lg border border-primary/40 bg-primary/10 p-3 text-xs">
+        <div role="alert" className="mt-3 flex gap-2 rounded-lg border border-primary/40 bg-primary/10 p-3 text-xs">
           <ShieldAlert className="h-4 w-4 text-primary shrink-0 mt-0.5" />
           <p>
             <strong>{t("Important pentru siguranța ta:", "Important for your safety:")}</strong>{" "}
@@ -91,7 +102,8 @@ export default function HandoverPvCard({ rentalId, startDate, signed, contractRe
           </p>
         </div>
       )}
-      <div className="flex items-center gap-3 flex-wrap">
+      {(signed || !locked) && (
+      <div className="flex items-center gap-3 flex-wrap mt-3">
         <span className="h-9 w-9 rounded-xl bg-primary/10 text-primary grid place-items-center shrink-0"><Icon className="h-4 w-4" /></span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
@@ -100,7 +112,7 @@ export default function HandoverPvCard({ rentalId, startDate, signed, contractRe
           </div>
           <p className="text-xs text-muted-foreground">
             {signed ? t("Semnat de ambele părți — predarea e confirmată.", "Signed by both parties — handover confirmed.")
-              : t("Obligatoriu · Fotografiați bunul, apoi semnați PV-ul.", "Required · Photograph the item, then sign.")}
+              : t("Disponibil acum · Fotografiați bunul mai jos, apoi semnați PV-ul.", "Available now · Photograph the item below, then sign.")}
           </p>
         </div>
         {signed && (
@@ -109,8 +121,7 @@ export default function HandoverPvCard({ rentalId, startDate, signed, contractRe
           </Button>
         )}
       </div>
-
-      {!signed && <PhysicalPvUpload rentalId={rentalId} phase="handover" onOpenBlank={onOpenBlank} t={t} className="mt-3" />}
+      )}
     </section>
   );
 }
