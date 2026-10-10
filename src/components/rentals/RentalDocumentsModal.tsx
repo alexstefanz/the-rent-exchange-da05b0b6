@@ -324,21 +324,23 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
               </Button>
             ))}
             <div className="ml-auto flex gap-2 flex-wrap">
-              {tab === "anexa3" && extToSign && (
-                <Button size="sm" onClick={() => setExtSignId(extToSign.id)}><FileSignature className="h-4 w-4 mr-1" />Semnează Anexa 3</Button>
-              )}
-              <Button size="sm" disabled={isLocked} variant={tab === "contract" && canSignContract ? "outline" : "default"} onClick={() => print(false)}><Printer className="h-4 w-4 mr-1" />Salvează PDF / Tipărește</Button>
+              <Button size="sm" disabled={isLocked} variant={(tab === "contract" && canSignContract) || (tab === "anexa3" && extToSign) ? "outline" : "default"} onClick={() => print(false)}><Printer className="h-4 w-4 mr-1" />Salvează PDF / Tipărește</Button>
             </div>
           </div>
           {tab === "contract" && canSignContract && (
             <p className="text-xs text-muted-foreground pt-1">Citește contractul până la final — butonul de semnare se activează în partea de jos.</p>
+          )}
+          {tab === "anexa3" && extToSign && (
+            <p className="text-xs text-muted-foreground pt-1">Citește Anexa 3 până la final — butonul de semnare se activează în partea de jos.</p>
           )}
         </DialogHeader>
         <div
           className="flex-1 overflow-y-auto bg-muted/40 p-4"
           onScroll={(e) => {
             const el = e.currentTarget;
-            if (tab === "contract" && el.scrollTop + el.clientHeight >= el.scrollHeight - 40) setReadToEnd(true);
+            const atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 40;
+            if (tab === "contract" && atEnd) setReadToEnd(true);
+            if (tab === "anexa3" && atEnd) setReadAnnex3(true);
           }}
         >
           {isLocked ? (
@@ -359,6 +361,16 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
               </p>
               <Button disabled={!readToEnd} onClick={() => setSignOpen(true)}>
                 <FileSignature className="h-4 w-4 mr-1" />Am citit — semnează contractul
+              </Button>
+            </div>
+          )}
+          {tab === "anexa3" && extToSign && !isLocked && (
+            <div className="mx-auto max-w-[210mm] mt-4 rounded-xl border border-border bg-card p-4 flex flex-col sm:flex-row items-center gap-3 justify-between">
+              <p className="text-sm text-muted-foreground">
+                {readAnnex3 ? "Ai parcurs Anexa 3. Poți trece la semnare." : "Derulează până la finalul Anexei 3 pentru a putea semna."}
+              </p>
+              <Button disabled={!readAnnex3} onClick={() => setExtSignId(extToSign.id)}>
+                <FileSignature className="h-4 w-4 mr-1" />Am citit — semnează Anexa 3
               </Button>
             </div>
           )}
