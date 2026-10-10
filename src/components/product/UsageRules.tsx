@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { AlertCircle, CreditCard, Camera, MessageSquare, PackageCheck, Wallet, ShieldCheck, ThumbsUp } from "lucide-react";
+import { AlertCircle, CreditCard, Camera, MessageSquare, PackageCheck, ShieldCheck, ThumbsUp } from "lucide-react";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -11,10 +11,9 @@ interface UsageRule {
 
 interface UsageRulesProps {
   rules?: UsageRule[];
-  depositAmount?: number;
 }
 
-const UsageRules = ({ rules, depositAmount }: UsageRulesProps) => {
+const UsageRules = ({ rules }: UsageRulesProps) => {
   const copy = useUxCopy();
   const { language } = useLanguage();
 
