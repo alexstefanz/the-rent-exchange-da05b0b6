@@ -368,6 +368,11 @@ const RentalDetailPage = () => {
                 <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
                   {role === "owner" ? t("Tu esti proprietar", "You are owner") : t("Tu esti chirias", "You are renter")}
                 </span>
+                {(rental.status === "cancelled" || rental.status === "rejected") && (
+                  <span className="inline-flex items-center rounded-full border border-destructive/30 bg-destructive/10 px-2.5 py-0.5 text-xs font-semibold text-destructive">
+                    {rental.status === "rejected" ? t("Refuzată", "Rejected") : t("Anulată", "Cancelled")}
+                  </span>
+                )}
               </div>
               <h1 className="font-bold tracking-tight mt-1 text-lg sm:text-2xl">
                 {t("Inchiriere", "Rental")} — {rental.product_title}
@@ -414,6 +419,43 @@ const RentalDetailPage = () => {
             </div>
           </section>
         )}
+
+        {(rental.status === "cancelled" || rental.status === "rejected") && (() => {
+          const reason = (rental as any).cancellation_reason as string | null | undefined;
+          const wasPaid = ["authorized", "paid", "captured"].includes(String(rental.payment_status));
+          const byOwner = reason === "owner_self_unpaid" || rental.status === "rejected";
+          const byRenter = reason === "renter_self_unpaid";
+          const who = byOwner
+            ? (isOwner ? t("Ai anulat această rezervare", "You cancelled this reservation") : t("Rezervarea a fost anulată de proprietar", "The reservation was cancelled by the owner"))
+            : byRenter
+            ? (isOwner ? t("Rezervarea a fost anulată de chiriaș", "The reservation was cancelled by the renter") : t("Ai anulat această rezervare", "You cancelled this reservation"))
+            : t("Rezervarea a fost anulată", "The reservation was cancelled");
+          return (
+            <section className="rounded-2xl border border-destructive/40 bg-destructive/10 p-5 mb-6">
+              <div className="flex items-start gap-3">
+                <X className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <p className="font-bold text-destructive">
+                    {rental.status === "rejected" ? t("Cerere refuzată", "Request rejected") : t("Rezervare anulată", "Reservation cancelled")}
+                  </p>
+                  <p className="text-sm text-foreground/80 mt-1">
+                    {who}{!wasPaid ? t(" înainte de efectuarea plății.", " before payment.") : "."}
+                    {rental.cancelled_at && ` ${t("Data", "Date")}: ${format(new Date(rental.cancelled_at), "d MMM yyyy, HH:mm", { locale: roLocale })}.`}
+                  </p>
+                  {!isOwner && (
+                    <p className="text-sm text-foreground/80 mt-1">
+                      {wasPaid
+                        ? t("Suma reținută este eliberată automat în metoda ta de plată.", "The held amount is released automatically to your payment method.")
+                        : t("Nu ai fost taxat. Nicio sumă nu a fost retrasă.", "You were not charged.")}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </section>
+          );
+        })()}
+
+
 
 
 
