@@ -59,7 +59,6 @@ const createUxCopy = () => ({
     noReviews: { ro: "Încă nu există recenzii", en: "No reviews yet" },
     beFirstReview: { ro: "Fii primul care lasă o recenzie!", en: "Be the first to leave a review!" },
     cancellationPolicy: { ro: "Politică de anulare", en: "Cancellation policy" },
-    deposit: { ro: "Garanție", en: "Deposit" },
     availability: { ro: "Disponibilitate", en: "Availability" },
     description: { ro: "Descriere", en: "Description" },
     noDescription: { ro: "Fără descriere.", en: "No description." },
@@ -559,7 +558,6 @@ const createUxCopy = () => ({
     handoverDesc: { ro: "Ambele părți fotografiază starea produsului la preluare și la returnare, direct în aplicație. Pozele atașate procesului-verbal sunt singura dovadă acceptată în caz de dispută sau daune.", en: "Both parties photograph the item's condition at pickup and return, directly in the app. Photos attached to the handover report are the only proof accepted in case of dispute or damage." },
     return: { ro: "Returnare la termen, în aceeași stare", en: "On-time return, in the same condition" },
     returnDesc: { ro: "Produsul se returnează la data stabilită, în aceeași stare ca la preluare. Întârzierile, lipsurile sau daunele documentate prin pozele de retur se soluționează prin procedura de dispută Rentli.", en: "Return the item on the agreed date, in the same condition as at pickup. Delays, missing parts or damage documented in the return photos are handled through the Rentli dispute process." },
-    depositReturn: { ro: "Garanția este blocată pe card prin Stripe și se eliberează automat în 24–48h după ce proprietarul confirmă returnarea fără probleme.", en: "The deposit is held on your card via Stripe and is released automatically within 24–48h after the owner confirms a clean return." },
   },
   productIncludes: {
     item1: { ro: "Produs în stare perfectă de funcționare", en: "Product in perfect working condition" },

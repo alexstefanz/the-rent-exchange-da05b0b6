@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { AlertCircle, CreditCard, Camera, MessageSquare, PackageCheck, Wallet, ShieldCheck, ThumbsUp } from "lucide-react";
+import { AlertCircle, CreditCard, Camera, MessageSquare, PackageCheck, ShieldCheck, ThumbsUp } from "lucide-react";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -11,10 +11,9 @@ interface UsageRule {
 
 interface UsageRulesProps {
   rules?: UsageRule[];
-  depositAmount?: number;
 }
 
-const UsageRules = ({ rules, depositAmount }: UsageRulesProps) => {
+const UsageRules = ({ rules }: UsageRulesProps) => {
   const copy = useUxCopy();
   const { language } = useLanguage();
 
@@ -66,20 +65,6 @@ const UsageRules = ({ rules, depositAmount }: UsageRulesProps) => {
             </div>
           );
         })}
-
-        {false && depositAmount && (
-          <div className="mt-4 rounded-lg bg-amber-50 p-4 border border-amber-200">
-            <div className="flex items-center gap-2">
-              <Wallet className="h-5 w-5 text-amber-600" />
-              <span className="font-medium text-amber-800">
-                {copy.product.deposit}: {depositAmount} RON
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-amber-700">
-              {copy.usageRules.depositReturn}
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
