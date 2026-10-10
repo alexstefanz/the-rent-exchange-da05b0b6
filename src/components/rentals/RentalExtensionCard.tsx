@@ -160,7 +160,7 @@ export default function RentalExtensionCard({ rental, role, active, onOpenAnnex 
                 </p>
                 <div className="flex flex-wrap gap-2 justify-end">
                   {!mySigned
-                    ? <Button size="sm" onClick={() => setSignId(lastPaid.id)}><FileSignature className="h-4 w-4 mr-1" />{t("Semnează Anexa 3", "Sign Annex 3")}</Button>
+                    ? <Button size="sm" onClick={() => (onOpenAnnex ? onOpenAnnex() : setSignId(lastPaid.id))}><FileSignature className="h-4 w-4 mr-1" />{t("Citește și semnează Anexa 3", "Read and sign Annex 3")}</Button>
                     : onOpenAnnex && <Button size="sm" variant="outline" onClick={onOpenAnnex}><FileText className="h-4 w-4 mr-1" />{t("Vezi Anexa 3", "View Annex 3")}</Button>}
                 </div>
                 {otherSigned && !mySigned && <p className="text-xs text-muted-foreground">{t("Cealaltă parte a semnat deja.", "The other party already signed.")}</p>}
