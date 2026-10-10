@@ -388,10 +388,12 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
           {unlocked.anexa3 && anexa3}
         </div>
       </DialogContent>
-      <ContractSignDialog open={signOpen} onOpenChange={setSignOpen} rentalId={rental.id} publicId={rental.public_id} onSign={acc.sign} onBothSigned={() => { justSignedRef.current = true; onOpenChange(false); }} />
+      <ContractSignDialog open={signOpen} onOpenChange={setSignOpen} rentalId={rental.id} publicId={rental.public_id}
+        onSign={async (sig, code) => { const r = await acc.sign(sig, code); justSignedRef.current = true; onOpenChange(false); return r; }}
+        onBothSigned={() => { justSignedRef.current = true; onOpenChange(false); }} />
       {extSignId && (
         <ExtensionSignDialog open={!!extSignId} onOpenChange={(o) => { if (!o) setExtSignId(null); }} extensionId={extSignId} publicId={rental.public_id}
-          onSigned={() => qc.invalidateQueries({ queryKey: ["rental-extensions", rental.id] })} />
+          onSigned={() => { qc.invalidateQueries({ queryKey: ["rental-extensions", rental.id] }); onOpenChange(false); }} />
       )}
     </Dialog>
   );
