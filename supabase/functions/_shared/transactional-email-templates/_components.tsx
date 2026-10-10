@@ -231,18 +231,22 @@ export const ReasonBox: React.FC<{ label?: string; children: React.ReactNode; to
 }
 
 // ─── Message preview (chat quote) ────────────────────────────────────────
-export const MessagePreview: React.FC<{ children: React.ReactNode; sender?: string }> = ({ children, sender }) => (
-  <Section style={messageBox}>
-    {sender && <Text style={{ fontSize: 12, fontWeight: 700, color: PRIMARY, margin: '0 0 4px', textTransform: 'uppercase' as const, letterSpacing: '0.4px' }}>{sender}</Text>}
+export const MessagePreview: React.FC<{ children: React.ReactNode; sender?: string }> = ({ children, sender }) => {
+  const pal = usePal()
+  return (
+  <Section style={{ ...messageBox, borderLeft: `3px solid ${pal.p}` }}>
+    {sender && <Text style={{ fontSize: 12, fontWeight: 700, color: pal.p, margin: '0 0 4px', textTransform: 'uppercase' as const, letterSpacing: '0.4px' }}>{sender}</Text>}
     <Text style={{ fontSize: 15, color: INK, margin: 0, lineHeight: '1.55', fontStyle: 'italic' as const }}>"{children}"</Text>
   </Section>
-)
+  )
+}
 
 // ─── Avatar (initial circle) ─────────────────────────────────────────────
 export const Avatar: React.FC<{ name?: string }> = ({ name }) => {
   const initial = (name || '?').trim().charAt(0).toUpperCase()
+  const pal = usePal()
   return (
-    <div style={{ width: 44, height: 44, borderRadius: '50%', background: `linear-gradient(135deg, ${PRIMARY} 0%, ${PRIMARY_HOVER} 100%)`, color: '#fff', textAlign: 'center', lineHeight: '44px', fontWeight: 700, fontSize: 18, display: 'inline-block' }}>
+    <div style={{ width: 44, height: 44, borderRadius: '50%', background: `linear-gradient(135deg, ${pal.p} 0%, ${pal.h} 100%)`, color: '#fff', textAlign: 'center', lineHeight: '44px', fontWeight: 700, fontSize: 18, display: 'inline-block' }}>
       {initial}
     </div>
   )
