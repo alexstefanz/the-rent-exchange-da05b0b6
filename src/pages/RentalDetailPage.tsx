@@ -233,6 +233,7 @@ const RentalDetailPage = () => {
     contract_signed: contractAcc.bothAccepted,
   };
   const { current: step, cancelled } = getTimelineStep(tlRental);
+  const isClosedEarly = (rental.status === "cancelled" || rental.status === "rejected") && !rental.handover_confirmed_at;
   const disputeOpen = rental.dispute_status === "open";
   const disputePhase: "handover" | "return" = rental.handover_confirmed_at ? "return" : "handover";
   const disputePhaseLabel = ((rental as any).dispute_phase ?? disputePhase) === "return" ? t("faza de returnare", "return phase") : t("faza de predare", "handover phase");
@@ -505,7 +506,7 @@ const RentalDetailPage = () => {
           </section>
         )}
           {/* ============ PARTEA 1 ============ */}
-          {!(p1Done && p2Unlocked) && (
+          {!(p1Done && p2Unlocked) && !isClosedEarly && (
           <ProcessCard
             part={1}
             status={p1Done ? t("Finalizat", "Completed") : t("În desfășurare", "In progress")}
@@ -708,7 +709,7 @@ const RentalDetailPage = () => {
           <RentalDocumentsModal open={docsOpen} onOpenChange={setDocsOpen} rental={rental} initialTab={docsTab} initialBlank={docsBlank} />
 
           {/* ============ PARTEA 2 ============ */}
-          <div className={p2Unlocked && !p2Done ? "-order-1" : ""}>
+          <div className={`${p2Unlocked && !p2Done ? "-order-1" : ""} ${isClosedEarly ? "hidden" : ""}`}>
           <ProcessCard
             part={2}
             status={!p2Unlocked ? t("Urmează", "Next") : p2Done ? t("Finalizat", "Completed") : t("În desfășurare", "In progress")}
