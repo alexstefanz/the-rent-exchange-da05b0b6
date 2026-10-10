@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { AlertCircle, CreditCard, CalendarX, Camera, MessageSquare, PackageCheck, Wallet, ShieldCheck, ThumbsUp } from "lucide-react";
+import { AlertCircle, CreditCard, Camera, MessageSquare, PackageCheck, Wallet, ShieldCheck, ThumbsUp } from "lucide-react";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -40,7 +40,6 @@ const UsageRules = ({ rules, depositAmount }: UsageRulesProps) => {
     { icon: ShieldCheck, title: copy.usageRules.ownerApproval, description: copy.usageRules.ownerApprovalDesc },
     { icon: MessageSquare, title: copy.usageRules.communication, description: copy.usageRules.communicationDesc },
     { icon: Camera, title: copy.usageRules.handover, description: copy.usageRules.handoverDesc },
-    { icon: CalendarX, title: copy.usageRules.cancellation, description: copy.usageRules.cancellationDesc },
     { icon: PackageCheck, title: copy.usageRules.return, description: copy.usageRules.returnDesc },
   ];
 
