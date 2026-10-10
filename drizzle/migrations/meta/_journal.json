@@ -127,6 +127,13 @@
       "when": 1791619638227,
       "tag": "0017_products_replica_identity_full",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791620197358,
+      "tag": "0018_products_replica_identity_default",
+      "breakpoints": true
     }
   ]
 }
