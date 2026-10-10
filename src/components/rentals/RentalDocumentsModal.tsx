@@ -11,10 +11,11 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { RentalFullDetail } from "@/features/rentals/rentalDetailPageApi";
+import { getPvFileSignedUrl } from "@/features/rentals/rentalDetailPageApi";
 import { useRentalExtensions, lateInfo } from "@/components/rentals/RentalExtensionCard";
 
 type Tab = "contract" | "anexa1" | "anexa2" | "anexa3";
-type Pv = { phase: string; owner_signature_data: string | null; renter_signature_data: string | null; owner_signed_at: string | null; renter_signed_at: string | null };
+type Pv = { phase: string; owner_signature_data: string | null; renter_signature_data: string | null; owner_signed_at: string | null; renter_signed_at: string | null; photo_urls?: string[] };
 
 interface Props {
   open: boolean;
@@ -47,9 +48,13 @@ export default function RentalDocumentsModal({ open, onOpenChange, rental, initi
     queryFn: async () => {
       const { data } = await supabase
         .from("rental_pv_documents")
-        .select("phase, owner_signature_data, renter_signature_data, owner_signed_at, renter_signed_at")
+        .select("phase, owner_signature_data, renter_signature_data, owner_signed_at, renter_signed_at, photos_meta")
         .eq("rental_id", rental.id);
-      return (data || []) as Pv[];
+      return Promise.all(((data || []) as any[]).map(async (row) => {
+        const paths: string[] = (row.photos_meta || []).map((m: any) => m?.path).filter(Boolean);
+        const photo_urls = (await Promise.all(paths.map((pp) => getPvFileSignedUrl(pp).catch(() => null)))).filter(Boolean) as string[];
+        return { ...row, photo_urls } as Pv;
+      }));
     },
   });
 
@@ -100,7 +105,7 @@ h1{font-size:16px;text-align:center;margin:0 0 4px} h2{font-size:13px;margin:14p
 .c{text-align:center} .muted{color:#555;font-size:11px}
 table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #999;padding:4px 6px;text-align:left;vertical-align:top}
 .sig{display:flex;gap:24px;margin-top:24px} .sig>div{flex:1;border-top:1px solid #333;padding-top:4px;min-height:70px}
-.sig img{max-height:60px} .noprint{display:none}
+.sig img{max-height:60px} .photos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0} .photos figure{margin:0;page-break-inside:avoid} .photos img{width:100%;height:60mm;object-fit:contain;border:1px solid #ccc} .photos figcaption{font-size:10px;color:#555} .noprint{display:none}
 </style></head><body>${html}</body></html>`);
       w.document.close();
       w.focus();
@@ -225,6 +230,19 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
         <p>☐ Funcțional, fără defecte &nbsp; ☐ Uzură normală &nbsp; ☐ Defecte constatate (descriere):</p>
         <p>_____________________________________________________________________________</p>
         <p className="text-xs text-muted-foreground">Fotografiile încărcate în platformă fac parte integrantă din prezentul proces-verbal.</p>
+        {!b && !!pv?.photo_urls?.length && (
+          <>
+            <H2>Fotografii la {isRet ? "returnare" : "predare"}</H2>
+            <div className="photos grid grid-cols-2 gap-3 my-2">
+              {pv.photo_urls.map((u, i) => (
+                <figure key={u} className="m-0">
+                  <img src={u} alt={`Poza ${i + 1}`} className="w-full h-48 object-contain border border-border rounded bg-muted" />
+                  <figcaption className="text-[10px] text-muted-foreground">Poza {i + 1}</figcaption>
+                </figure>
+              ))}
+            </div>
+          </>
+        )}
         {isRet && (
           <>
             <H2>Întârziere și penalități (art. 8)</H2>
