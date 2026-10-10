@@ -174,30 +174,25 @@ export default function PvPhotoUploadCard({ rental, phase, role, onOpenDocument,
             <p className="mt-3 text-xs text-muted-foreground">
               Fotografiaza doar bunul. Nu include fete de persoane, numere de inmatriculare sau documente fara acordul scris al persoanelor vizate (GDPR art. 6 si Codul Civil art. 73).
             </p>
+
+            <Button
+              onClick={onOpenDocument}
+              disabled={!enough || uploading}
+              className="mt-4 w-full h-12 text-base"
+            >
+              <FileText className="h-5 w-5 mr-2" />
+              Genereaza Proces Verbal
+            </Button>
           </>
         )}
       </section>
 
-      {/* Status / generate card */}
-      <section className="rounded-2xl border-2 border-dashed border-border bg-muted/30 p-5">
-        {phase !== "handover" && (
-          <>
-            <h4 className="font-semibold text-foreground mb-1">{statusBoxTitle}</h4>
-            <p className="text-sm text-muted-foreground mb-4">{statusBoxText}</p>
-          </>
-        )}
-        {enough ? (
-          <Button onClick={onOpenDocument} className="w-full h-12 text-base bg-foreground text-background hover:bg-foreground/90">
-            <FileText className="h-5 w-5 mr-2" />
-            Genereaza proces verbal
-          </Button>
-        ) : (
-          <Button disabled className="w-full h-12 text-base bg-muted-foreground/30 text-muted-foreground" variant="secondary">
-            <FileText className="h-5 w-5 mr-2" />
-            Adauga pozele ({photoCount}/{MIN_PV_PHOTOS})
-          </Button>
-        )}
-      </section>
+      {phase !== "handover" && (
+        <section className="rounded-2xl border-2 border-dashed border-border bg-muted/30 p-5">
+          <h4 className="font-semibold text-foreground mb-1">{statusBoxTitle}</h4>
+          <p className="text-sm text-muted-foreground">{statusBoxText}</p>
+        </section>
+      )}
     </div>
   );
 }
