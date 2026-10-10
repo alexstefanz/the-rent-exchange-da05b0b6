@@ -488,14 +488,9 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       } else {
         await createProduct(payload, user.id);
         if (draftId) await deleteDraft(draftId);
-        toast({
-          title: t("Anunț trimis spre aprobare", "Listing submitted for approval"),
-          description: t(
-            "Vei primi o notificare când e aprobat (uzual sub 2 ore).",
-            "You'll get a notification once it's approved (usually under 2 hours).",
-          ),
-        });
-        navigate("/owner");
+        await queryClient.invalidateQueries({ queryKey: ["my-products", user.id] });
+        await queryClient.invalidateQueries({ queryKey: ["owner-listings-stats", user.id] });
+        setPublishedTitle(payload.title || "");
       }
     } catch (err: any) {
       console.error(err);

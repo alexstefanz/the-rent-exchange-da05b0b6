@@ -1,0 +1,1 @@
+GRANT SELECT (pending_edits, pending_edits_submitted_at) ON public.products TO authenticated;
