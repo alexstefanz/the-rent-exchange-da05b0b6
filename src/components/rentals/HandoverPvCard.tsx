@@ -103,10 +103,11 @@ export default function HandoverPvCard({ rentalId, startDate, signed, contractRe
               : t("Obligatoriu · Fotografiați bunul, apoi semnați PV-ul.", "Required · Photograph the item, then sign.")}
           </p>
         </div>
-        <Button size="sm" onClick={onOpenPv} className="w-full sm:w-auto">
-          {signed ? <FileSignature className="h-4 w-4 mr-1" /> : <Camera className="h-4 w-4 mr-1" />}
-          {signed ? t("Vezi anexa", "View annex") : t("Fotografii & PV", "Photos & report")}
-        </Button>
+        {signed && (
+          <Button size="sm" onClick={onOpenPv} className="w-full sm:w-auto">
+            <FileSignature className="h-4 w-4 mr-1" />{t("Vezi anexa", "View annex")}
+          </Button>
+        )}
       </div>
 
       {!signed && <PhysicalPvUpload rentalId={rentalId} phase="handover" onOpenBlank={onOpenBlank} t={t} className="mt-3" />}
