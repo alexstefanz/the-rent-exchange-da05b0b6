@@ -161,7 +161,8 @@ export default function RentalExtensionCard({ rental, role, active, onOpenAnnex 
                       : otherSigned
                         ? t("Proprietarul a semnat Anexa 3. Semnează și tu pentru a definitiva noul termen.", "The owner signed Annex 3. Sign to finalize the new term.")
                         : t(`Prelungirea (+${lastPaid.approved_days} zile) a fost plătită. Se așteaptă mai întâi semnătura proprietarului pe Anexa 3.`, "The extension was paid. Waiting for the owner to sign Annex 3 first.")}
-...
+                </p>
+                <div className="flex flex-wrap gap-2">
                   {!mySigned && (role === "owner" || otherSigned)
                     ? <Button size="sm" onClick={() => (onOpenAnnex ? onOpenAnnex() : setSignId(lastPaid.id))}><FileSignature className="h-4 w-4 mr-1" />{t("Citește și semnează Anexa 3", "Read and sign Annex 3")}</Button>
                     : onOpenAnnex && <Button size="sm" variant="outline" onClick={onOpenAnnex}><FileText className="h-4 w-4 mr-1" />{t("Vezi Anexa 3", "View Annex 3")}</Button>}
