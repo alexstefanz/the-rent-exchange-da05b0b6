@@ -9,7 +9,7 @@ export const InviteEmail = ({ confirmationUrl }: Props) => (
     <H1>Ai fost invitat pe Rentli ✨</H1>
     <Lead>
       Cineva te-a invitat să te alături comunității Rentli — marketplace-ul de
-      închirieri între oameni cu plată în escrow. Apasă pentru a-ți activa contul.
+      închirieri între oameni cu plată blocată în siguranță până la predare. Apasă pentru a-ți activa contul.
     </Lead>
     <CTAButton href={confirmationUrl}>Acceptă invitația</CTAButton>
     <Para>Dacă nu așteptai această invitație, poți ignora acest email.</Para>
