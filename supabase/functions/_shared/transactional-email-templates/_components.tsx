@@ -13,6 +13,15 @@ export const SUPPORT_EMAIL = 'support@rentli.ro'
 
 const PRIMARY = '#F59E0B'
 const PRIMARY_HOVER = '#F98715'
+
+// ─── Role theme: owner = orange, renter = navy ────────────────────────────
+export type EmailRole = 'owner' | 'renter'
+const PALETTES = {
+  owner:  { p: '#F59E0B', h: '#F98715', shadow: 'rgba(245,158,11,0.25)' },
+  renter: { p: '#1E3A8A', h: '#2B4C9B', shadow: 'rgba(30,58,138,0.25)' },
+}
+export const EmailThemeContext = React.createContext<EmailRole>('owner')
+const usePal = () => PALETTES[React.useContext(EmailThemeContext)] ?? PALETTES.owner
 const INK = '#1A1410'
 const MUTED = '#6B6360'
 const SUBTLE = '#9C9491'
@@ -79,11 +88,14 @@ export const BaseLayout: React.FC<{ preview: string; children: React.ReactNode }
 )
 
 // ─── Header (gradient hero) ───────────────────────────────────────────────
-export const Header: React.FC = () => (
-  <Section style={header}>
+export const Header: React.FC = () => {
+  const pal = usePal()
+  return (
+  <Section style={{ ...header, background: `linear-gradient(135deg, ${pal.p} 0%, ${pal.h} 100%)` }}>
     <Img src={LOGO_URL} alt="Rentli" width="108" height="36" style={logoStyle} />
   </Section>
-)
+  )
+}
 
 // ─── Typography primitives ────────────────────────────────────────────────
 export const H1: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -105,13 +117,16 @@ export const CTAButton: React.FC<{
   href: string
   children: React.ReactNode
   variant?: 'primary' | 'ghost' | 'danger'
-}> = ({ href, children, variant = 'primary' }) => (
+}> = ({ href, children, variant = 'primary' }) => {
+  const pal = usePal()
+  return (
   <Section style={{ margin: '6px 0 4px' }}>
-    <Button href={href} style={ctaStyle(variant)} className="rl-cta">
+    <Button href={href} style={ctaStyle(variant, pal)} className="rl-cta">
       {children}
     </Button>
   </Section>
-)
+  )
+}
 
 // ─── Status badge ─────────────────────────────────────────────────────────
 export const StatusBadge: React.FC<{ kind: StatusKind; label?: string }> = ({ kind, label }) => {
@@ -239,16 +254,16 @@ const Footer: React.FC = () => (
     <Hr style={{ borderColor: BORDER, margin: '0 0 20px' }} />
     <Text style={footerHelp}>
       Ai nevoie de ajutor?{' '}
-      <Link href={`${APP_URL}/suport`} style={footerLink}>Centru suport</Link>
+      <Link href={`${APP_URL}/suport`} style={{ ...footerLink, color: usePal().p }}>Centru suport</Link>
       {' • '}
-      <Link href={`mailto:${SUPPORT_EMAIL}`} style={footerLink}>{SUPPORT_EMAIL}</Link>
+      <Link href={`mailto:${SUPPORT_EMAIL}`} style={{ ...footerLink, color: usePal().p }}>{SUPPORT_EMAIL}</Link>
     </Text>
     <Text style={footerLinks}>
-      <Link href={`${APP_URL}/termeni`} style={footerLink}>Termeni</Link>
+      <Link href={`${APP_URL}/termeni`} style={{ ...footerLink, color: usePal().p }}>Termeni</Link>
       {' • '}
-      <Link href={`${APP_URL}/confidentialitate`} style={footerLink}>Confidențialitate</Link>
+      <Link href={`${APP_URL}/confidentialitate`} style={{ ...footerLink, color: usePal().p }}>Confidențialitate</Link>
       {' • '}
-      <Link href={`${APP_URL}/cum-functioneaza`} style={footerLink}>Cum funcționează</Link>
+      <Link href={`${APP_URL}/cum-functioneaza`} style={{ ...footerLink, color: usePal().p }}>Cum funcționează</Link>
     </Text>
     <Text style={footerCopy}>
       © {new Date().getFullYear()} {SITE_NAME}. Închiriere securizată între oameni, cu plată blocată în siguranță până la predare.
@@ -283,7 +298,7 @@ const paraStyle: React.CSSProperties = { fontSize: 15, color: MUTED, lineHeight:
 const muted: React.CSSProperties = { fontSize: 13, color: SUBTLE, lineHeight: 1.5, margin: '0 0 12px' }
 const hr: React.CSSProperties = { borderColor: BORDER, borderTop: `1px solid ${BORDER}`, margin: '20px 0' }
 
-const ctaStyle = (variant: 'primary' | 'ghost' | 'danger'): React.CSSProperties => {
+const ctaStyle = (variant: 'primary' | 'ghost' | 'danger', pal = PALETTES.owner): React.CSSProperties => {
   const base: React.CSSProperties = {
     display: 'inline-block',
     padding: '14px 28px',
@@ -293,9 +308,9 @@ const ctaStyle = (variant: 'primary' | 'ghost' | 'danger'): React.CSSProperties 
     textDecoration: 'none',
     letterSpacing: '0.1px',
   }
-  if (variant === 'ghost') return { ...base, backgroundColor: '#FFFFFF', color: PRIMARY, border: `1.5px solid ${PRIMARY}` }
+  if (variant === 'ghost') return { ...base, backgroundColor: '#FFFFFF', color: pal.p, border: `1.5px solid ${pal.p}` }
   if (variant === 'danger') return { ...base, backgroundColor: '#DC2626', color: '#FFFFFF' }
-  return { ...base, backgroundColor: PRIMARY, color: '#FFFFFF', boxShadow: '0 4px 12px rgba(245,158,11,0.25)' }
+  return { ...base, backgroundColor: pal.p, color: '#FFFFFF', boxShadow: `0 4px 12px ${pal.shadow}` }
 }
 
 const productCard: React.CSSProperties = {
