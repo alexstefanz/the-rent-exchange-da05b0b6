@@ -26,9 +26,16 @@ export function useRentalExtensions(rentalId: string) {
       const { data } = await supabase.from("rental_extensions").select("*").eq("rental_id", rentalId).order("created_at", { ascending: false });
       return (data || []) as RentalExtension[];
     },
+    // Fallback while an Annex 3 is awaiting a signature: poll every 5s so it unlocks even if realtime drops.
+    refetchInterval: (query) => {
+      const list = (query.state.data || []) as RentalExtension[];
+      return list.some((e) => e.status === "approved" && e.payment_status === "paid" && (!e.owner_signed_at || !e.renter_signed_at)) ? 5000 : false;
+    },
+    refetchOnWindowFocus: true,
   });
   useEffect(() => {
-    const ch = supabase.channel(`rental-ext-${rentalId}`)
+    // Unique topic per hook instance: card + documents modal both use this hook; a shared topic made one unsubscribe kill the other.
+    const ch = supabase.channel(`rental-ext-${rentalId}-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "rental_extensions", filter: `rental_id=eq.${rentalId}` }, () => {
         qc.invalidateQueries({ queryKey: ["rental-extensions", rentalId] });
       }).subscribe();
