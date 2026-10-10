@@ -180,15 +180,12 @@ export default function PvPhotoUploadCard({ rental, phase, role, onOpenDocument,
 
       {/* Status / generate card */}
       <section className="rounded-2xl border-2 border-dashed border-border bg-muted/30 p-5">
-        <h4 className="font-semibold text-foreground mb-1">{statusBoxTitle}</h4>
-        <p className="text-sm text-muted-foreground mb-4">
-          {statusBoxText.split(String(MIN_PV_PHOTOS)).map((part, i, arr) => (
-            <span key={i}>
-              {part}
-              {i < arr.length - 1 && <strong>{MIN_PV_PHOTOS} fotografii</strong>}
-            </span>
-          ))}
-        </p>
+        {phase !== "handover" && (
+          <>
+            <h4 className="font-semibold text-foreground mb-1">{statusBoxTitle}</h4>
+            <p className="text-sm text-muted-foreground mb-4">{statusBoxText}</p>
+          </>
+        )}
         {enough ? (
           <Button onClick={onOpenDocument} className="w-full h-12 text-base bg-foreground text-background hover:bg-foreground/90">
             <FileText className="h-5 w-5 mr-2" />
