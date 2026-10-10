@@ -1214,31 +1214,28 @@ const Step5Pricing = ({
           )}
 
           {owner > 0 && (
-            <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl bg-primary/5 p-4 text-sm">
-              <div>
-                <p className="text-xs text-muted-foreground">{t("Tu primești", "You receive")}</p>
-                <p className="text-lg font-bold text-foreground">{owner} RON</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{t("Clientul plătește", "Client pays")}</p>
-                <p className="text-lg font-bold text-primary">{client} RON</p>
-                <p className="text-[11px] text-muted-foreground">
-                  {feePercent === 0
-                    ? t("Taxe operaționale 0% — gratuit 🎉", "0% operational fees — free 🎉")
-                    : `+ ${commission} RON ${t("taxe operaționale", "operational fees")} (${feePercent}%)`}
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  {t("+ service fee Stripe (1,4% + 1 RON / plată) — plătite de chiriaș", "+ Stripe service fee (1.4% + 1 RON / payment) — paid by renter")}
-                </p>
-                <p className="text-[11px] text-muted-foreground">
-                  {t("+ asigurare (în curând)", "+ insurance (coming soon)")}
-                </p>
+            <div className="mt-4 rounded-xl bg-primary/5 p-4 text-sm">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("Cost total client / zi", "Total client cost / day")}
+              </p>
+              <div className="space-y-1.5">
+                <Row label={t("Preț chirie (tu primești)", "Rental price (you receive)")} value={`${bd.subtotal.toFixed(2)} RON`} />
+                <Row
+                  label={`${t("Taxe operaționale Rentli", "Rentli operational fees")} (${feePercent}%)`}
+                  value={feePercent === 0 ? t("0 RON — gratuit", "0 RON — free") : `${bd.platformFee.toFixed(2)} RON`}
+                />
+                <Row label={t("Service fee Stripe (1,4% + 1 RON)", "Stripe service fee (1.4% + 1 RON)")} value={`${bd.stripeFee.toFixed(2)} RON`} />
+                <Row label={t("Asigurare (în curând)", "Insurance (coming soon)")} value="0.00 RON" />
+                <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
+                  <span className="font-semibold text-foreground">{t("Total plătit de client", "Total paid by client")}</span>
+                  <span className="text-lg font-bold text-primary">{bd.total.toFixed(2)} RON</span>
+                </div>
               </div>
               {freeListingsLeft > 0 && feePercent === 0 && (
-                <div className="col-span-2 rounded-lg bg-emerald-500/10 px-3 py-2 text-xs font-medium text-emerald-700">
+                <div className="mt-3 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-foreground">
                   🎉 {t(
-                    `Mai ai ${freeListingsLeft} ${freeListingsLeft === 1 ? "anunț" : "anunțuri"} cu 0% comision`,
-                    `You have ${freeListingsLeft} more ${freeListingsLeft === 1 ? "listing" : "listings"} with 0% fee`,
+                    `Mai ai ${freeListingsLeft} ${freeListingsLeft === 1 ? "anunț" : "anunțuri"} fără taxe operaționale`,
+                    `You have ${freeListingsLeft} more ${freeListingsLeft === 1 ? "listing" : "listings"} without operational fees`,
                   )}
                 </div>
               )}
