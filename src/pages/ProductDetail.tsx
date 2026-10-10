@@ -1,3 +1,4 @@
+import { CONDITION_LABELS, type ProductCondition } from "@/lib/publishTypes";
 import { useState, useEffect, useMemo, useRef, lazy, Suspense } from "react";
 import OwnerProductActions from "@/components/products/OwnerProductActions";
 import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -466,6 +467,11 @@ const ProductDetail = () => {
             <h1 className="font-heading text-2xl lg:text-3xl font-semibold text-foreground">{displayTitle}</h1>
             <div className="flex flex-col lg:flex-row lg:items-center gap-1 lg:gap-3 mt-1 lg:mt-2 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4 text-primary" />{location}</span>
+              {product.condition && product.condition in CONDITION_LABELS && (
+                <span className="inline-flex w-fit items-center rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-foreground">
+                  {t("Stare", "Condition")}: {CONDITION_LABELS[product.condition as ProductCondition][language]}
+                </span>
+              )}
               <div className="lg:contents mt-2 lg:mt-0">
                 <SocialProofStrip
                   timesRented={extendedStats?.times_rented}

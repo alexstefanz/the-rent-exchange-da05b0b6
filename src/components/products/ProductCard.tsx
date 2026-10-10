@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getDisplayTitle, getDisplayDescription, getDisplayCategory } from "@/lib/productI18n";
 import { usePrefetchProduct } from "@/hooks/usePrefetch";
+import { CONDITION_LABELS, type ProductCondition } from "@/lib/publishTypes";
 import OwnerProductActions from "@/components/products/OwnerProductActions";
 
 interface ProductCardProps {
@@ -40,6 +41,15 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
     product.daily_price_owner,
     product.platform_fee_percent
   );
+
+  const conditionLabel = product.condition && product.condition in CONDITION_LABELS
+    ? CONDITION_LABELS[product.condition as ProductCondition][language]
+    : null;
+  const conditionPill = conditionLabel ? (
+    <span className="inline-flex w-fit items-center rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] md:text-[11px] font-medium text-muted-foreground whitespace-nowrap">
+      {conditionLabel}
+    </span>
+  ) : null;
 
   const imageUrl = getOptimizedImageUrl(product.images?.[0] || "/placeholder.svg", "card");
   const location = [product.location_city, product.pickup_address].filter(Boolean).join(", ") || t("România", "Romania");
@@ -121,6 +131,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
                 {displayCategory}
               </span>
             )}
+            {conditionPill && <div className="mb-1.5">{conditionPill}</div>}
             <h3 className="font-heading text-lg font-semibold text-foreground">
               {displayTitle}
             </h3>
@@ -205,6 +216,7 @@ const ProductCard = ({ product, viewMode = "gallery" }: ProductCardProps) => {
           <MapPin className="h-3 w-3 shrink-0" />
           <span className="truncate">{location}</span>
         </div>
+        {conditionPill && <div className="mt-1">{conditionPill}</div>}
         <div className="mt-1.5">
           <span className="font-heading text-base font-bold text-foreground">
             {clientPrice} RON
