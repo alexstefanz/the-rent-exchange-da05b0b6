@@ -31,7 +31,9 @@ export const useMyProducts = (ownerId: string | undefined) => {
     queryKey: ["my-products", ownerId],
     queryFn: () => getMyProducts(ownerId!),
     enabled: !!ownerId,
-    staleTime: 2 * 60 * 1000, // 2 minutes for owner's products
+    staleTime: 15 * 1000, // short: status changes (admin approval) must show quickly
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
   });
 };
 

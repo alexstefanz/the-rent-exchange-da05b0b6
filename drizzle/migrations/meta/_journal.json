@@ -120,6 +120,13 @@
       "when": 1791617693231,
       "tag": "0016_grant_pending_edits_select",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791619638227,
+      "tag": "0017_products_replica_identity_full",
+      "breakpoints": true
     }
   ]
 }
