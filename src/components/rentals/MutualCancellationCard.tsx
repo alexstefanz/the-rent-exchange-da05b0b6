@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/sonner";
 import { Ban, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { requestMutualCancellation, withdrawCancellationRequest, cancelUnpaidRental } from "@/features/rentals/rentalsApi";
+import { requestMutualCancellation, withdrawCancellationRequest, cancelUnpaidRental, hasContractSignature, cancelPaidBeforeContract, cancelErrorMessage } from "@/features/rentals/rentalsApi";
 
 interface Props {
   rentalId: string;
@@ -46,9 +46,31 @@ const MutualCancellationCard = ({
   const unpaid = !paymentStatus || ["pending", "failed", "canceled", "cancelled"].includes(paymentStatus);
   const canSelfCancelUnpaid = unpaid && rentalStatus !== "cancelled" && rentalStatus !== "completed";
   const isParticipant = !!isRenter || !!isOwner;
+  const [contractSigned, setContractSigned] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (unpaid) return;
+    hasContractSignature(rentalId).then(setContractSigned).catch(() => setContractSigned(true));
+  }, [rentalId, unpaid]);
+  const canDirectPaidCancel = !unpaid && !isPending && contractSigned === false
+    && rentalStatus !== "cancelled" && rentalStatus !== "completed";
 
   // Hide entirely from users who are neither renter, owner, nor admin
   if (!isParticipant && !isAdmin) return null;
+
+  async function directPaidCancel() {
+    setBusy(true);
+    setFormError(null);
+    try {
+      const res = await cancelPaidBeforeContract(rentalId);
+      toast.success(res.to_wallet
+        ? t(`Rezervare anulată. ${res.refund} RON au revenit în Wallet.`, `Cancelled. ${res.refund} RON returned to your Wallet.`)
+        : t(`Rezervare anulată. ${res.refund} RON se returnează pe card.`, `Cancelled. ${res.refund} RON refunded to the card.`));
+      setConfirmOpen(false);
+      await onChanged();
+    } catch (e: any) {
+      setFormError(cancelErrorMessage(e?.message || ""));
+    } finally { setBusy(false); }
+  }
 
   async function selfCancelUnpaid() {
     setBusy(true);
