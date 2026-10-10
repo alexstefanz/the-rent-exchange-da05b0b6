@@ -288,7 +288,8 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
       {(b || !paidExts.length) && <Sig />}
     </div>
   );
-  const extToSign = myRole ? paidExts.find((e) => !(myRole === "owner" ? e.owner_signed_at : e.renter_signed_at)) : undefined;
+  const extToSign = myRole ? paidExts.find((e) => myRole === "owner" ? !e.owner_signed_at : (!!e.owner_signed_at && !e.renter_signed_at)) : undefined;
+  const extWaitingOwner = myRole === "renter" && paidExts.some((e) => !e.owner_signed_at);
 
   const handoverDone = !!(rental.handover_pv_owner_signed_at && rental.handover_pv_renter_signed_at);
   const unlocked: Record<Tab, boolean> = {
@@ -332,6 +333,9 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
           )}
           {tab === "anexa3" && extToSign && (
             <p className="text-xs text-muted-foreground pt-1">Citește Anexa 3 — butonul de semnare este în partea de jos.</p>
+          )}
+          {tab === "anexa3" && !extToSign && extWaitingOwner && (
+            <p className="text-xs text-muted-foreground pt-1">În așteptarea semnăturii proprietarului — vei putea semna după el.</p>
           )}
         </DialogHeader>
         <div

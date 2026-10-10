@@ -154,12 +154,15 @@ export default function RentalExtensionCard({ rental, role, active, onOpenAnnex 
               <div className="rounded-xl border-2 border-primary bg-primary/5 p-4 text-sm space-y-2">
                 <p className="font-semibold">{t("Anexa 3 — Act adițional de prelungire", "Annex 3 — Extension addendum")}</p>
                 <p className="text-muted-foreground">
-                  {!mySigned
-                    ? t(`Prelungirea (+${lastPaid.approved_days} zile, până la ${fmt(lastPaid.approved_end_date)}) a fost plătită. Semnează Anexa 3 pentru a o confirma.`, `The extension was paid. Sign Annex 3 to confirm it.`)
-                    : t(`Ai semnat. Se așteaptă semnătura ${role === "owner" ? "chiriașului" : "proprietarului"}.`, "You signed. Waiting for the other party.")}
-                </p>
-                <div className="flex flex-wrap gap-2 justify-end">
-                  {!mySigned
+                  {mySigned
+                    ? t(`Ai semnat Anexa 3. Se așteaptă semnătura ${role === "owner" ? "chiriașului" : "proprietarului"}.`, "You signed. Waiting for the other party.")
+                    : role === "owner"
+                      ? t(`Prelungirea (+${lastPaid.approved_days} zile, până la ${fmt(lastPaid.approved_end_date)}) a fost plătită. Semnează Anexa 3 pentru a o trimite spre semnare chiriașului.`, `The extension was paid. Sign Annex 3 to send it to the renter.`)
+                      : otherSigned
+                        ? t("Proprietarul a semnat Anexa 3. Semnează și tu pentru a definitiva noul termen.", "The owner signed Annex 3. Sign to finalize the new term.")
+                        : t(`Prelungirea (+${lastPaid.approved_days} zile) a fost plătită. Se așteaptă mai întâi semnătura proprietarului pe Anexa 3.`, "The extension was paid. Waiting for the owner to sign Annex 3 first.")}
+...
+                  {!mySigned && (role === "owner" || otherSigned)
                     ? <Button size="sm" onClick={() => (onOpenAnnex ? onOpenAnnex() : setSignId(lastPaid.id))}><FileSignature className="h-4 w-4 mr-1" />{t("Citește și semnează Anexa 3", "Read and sign Annex 3")}</Button>
                     : onOpenAnnex && <Button size="sm" variant="outline" onClick={onOpenAnnex}><FileText className="h-4 w-4 mr-1" />{t("Vezi Anexa 3", "View Annex 3")}</Button>}
                 </div>
