@@ -191,7 +191,7 @@ Deno.serve(async (req) => {
       10
     );
     drawWrapped(
-      `Pret: ${rental.daily_price ?? product?.daily_price_owner ?? 0} RON/zi  |  Subtotal: ${rental.subtotal ?? 0} RON  |  Garantie: ${product?.deposit_value ?? 0} RON.`,
+      `Pret: ${rental.daily_price ?? product?.daily_price_owner ?? 0} RON/zi  |  Subtotal: ${rental.subtotal ?? 0} RON.`,
       10
     );
     const items = (product?.included_items as string[] | null) || [];

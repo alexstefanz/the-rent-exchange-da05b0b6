@@ -66,20 +66,6 @@ const UsageRules = ({ rules, depositAmount }: UsageRulesProps) => {
             </div>
           );
         })}
-
-        {false && depositAmount && (
-          <div className="mt-4 rounded-lg bg-amber-50 p-4 border border-amber-200">
-            <div className="flex items-center gap-2">
-              <Wallet className="h-5 w-5 text-amber-600" />
-              <span className="font-medium text-amber-800">
-                {copy.product.deposit}: {depositAmount} RON
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-amber-700">
-              {copy.usageRules.depositReturn}
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
