@@ -400,46 +400,38 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       if (!refreshed) throw new Error("Documentul nu a putut fi reincarcat dupa semnare.");
       setPv(refreshed);
       setSignNotice("Semnatura ta a fost inregistrata.");
-      let pdfFailed = false;
-
-      if (refreshed.owner_signature_data && refreshed.renter_signature_data) {
-        try {
-          const blob = await generatePdf(refreshed);
-          const path = await uploadPvPdf(blob, rental.id, phase);
-          // Only the pdf_path is written here — resending the signature fields
-          // would be rejected as an attempt to modify a captured signature.
-          await updatePvPdfPath(rental.id, phase, path);
-          const afterPdf = await getPvDocument(rental.id, phase);
-          if (afterPdf) setPv(afterPdf);
-        } catch (pdfErr: any) {
-          console.error("PV PDF gen failed:", pdfErr);
-          pdfFailed = true;
-          setSignNotice(null);
-          setSignError(
-            `Semnatura a fost salvata, dar documentul PDF nu a putut fi finalizat: ${pdfErr?.message || "eroare necunoscuta"}`,
-          );
-        }
-      }
-
-      try {
-        const event_key = phase === "handover" ? "pv_pickup_completed_by_party" : "pv_return_completed_by_party";
-        await supabase.functions.invoke("notify-rental-event", {
-          body: {
-            rental_id: rental.id,
-            event_key,
-            actor_id: user?.id,
-            extra: { actorName: role === "owner" ? rental.owner_name : rental.renter_name, phase },
-          },
-        });
-        // Note: handover_confirmed / rental_completed are fired by the dedicated
-        // RPC flows (confirm_handover_received / confirm_rental_return) to avoid
-        // duplicate emails when the renter performs the explicit confirmation.
-      } catch { /* non-blocking */ }
-
-      onSigned?.();
       const bothDone = !!(refreshed.owner_signed_at && refreshed.renter_signed_at);
+
+      // Close immediately and refresh the page; heavy work continues in background.
+      onSigned?.();
       notifyDocumentSigned({ document: phase === "handover" ? "Anexa 1 — Proces-verbal de predare" : "Anexa 2 — Proces-verbal de returnare", publicId: rental.public_id, bothSigned: bothDone });
       onOpenChange(false);
+
+      void (async () => {
+        if (refreshed.owner_signature_data && refreshed.renter_signature_data && !refreshed.pdf_path) {
+          try {
+            const blob = await generatePdf(refreshed);
+            const path = await uploadPvPdf(blob, rental.id, phase);
+            await updatePvPdfPath(rental.id, phase, path);
+          } catch (pdfErr: any) {
+            // Server (generate-pv-pdf) may have already sealed the PDF — that's success.
+            const msg = String(pdfErr?.message || "");
+            if (!msg.includes("already set")) console.warn("PV PDF gen (client) failed:", pdfErr);
+          }
+        }
+        try {
+          const event_key = phase === "handover" ? "pv_pickup_completed_by_party" : "pv_return_completed_by_party";
+          await supabase.functions.invoke("notify-rental-event", {
+            body: {
+              rental_id: rental.id,
+              event_key,
+              actor_id: user?.id,
+              extra: { actorName: role === "owner" ? rental.owner_name : rental.renter_name, phase },
+            },
+          });
+        } catch { /* non-blocking */ }
+        onSigned?.();
+      })();
     } catch (e: any) {
       console.error("PV sign failed:", e);
       const m = String(e?.message || "");
