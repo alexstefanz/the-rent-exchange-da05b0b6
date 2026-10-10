@@ -438,7 +438,9 @@ Deno.serve(async (req) => {
               reporterName: extra?.actorName,
               pvPdfUrl: pvAsset?.signed_url,
               cancelledBy: event_key === "request_cancelled_by_owner" ? "owner" : event_key === "request_cancelled_by_renter" ? "renter" : undefined,
-              isPaid: ["authorized", "paid", "captured"].includes(String(rental.payment_status)),
+              // A real payment existed (also after it was voided/refunded on cancellation)
+              isPaid: ["authorized", "paid", "captured", "voided", "refunded"].includes(String(rental.payment_status))
+                || Number((rental as any).wallet_credit_applied || 0) > 0,
             };
             try {
               // Thread context: group all emails for this rental into a single
