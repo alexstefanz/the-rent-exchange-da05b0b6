@@ -1218,11 +1218,11 @@ const Step5Pricing = ({
                 <p className="text-lg font-bold text-primary">{client} RON</p>
                 <p className="text-[11px] text-muted-foreground">
                   {feePercent === 0
-                    ? t("Comision Rentli 0% — gratuit 🎉", "0% Rentli fee — free 🎉")
-                    : `+ ${commission} RON ${t("comision Rentli", "Rentli fee")} (${feePercent}%)`}
+                    ? t("Taxe operaționale 0% — gratuit 🎉", "0% operational fees — free 🎉")
+                    : `+ ${commission} RON ${t("taxe operaționale", "operational fees")} (${feePercent}%)`}
                 </p>
                 <p className="text-[11px] text-muted-foreground">
-                  {t("+ procesare card Stripe (1,4% + 1 RON / plată)", "+ Stripe card processing (1.4% + 1 RON / payment)")}
+                  {t("+ service fee Stripe (1,4% + 1 RON / plată) — plătite de chiriaș", "+ Stripe service fee (1.4% + 1 RON / payment) — paid by renter")}
                 </p>
                 <p className="text-[11px] text-muted-foreground">
                   {t("+ asigurare (în curând)", "+ insurance (coming soon)")}
