@@ -1,3 +1,4 @@
+import { notifyDocumentSigned } from "./DocumentSignedSuccessDialog";
 import { useEffect, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { Eraser, FileSignature, Loader2, MessageSquare, ShieldCheck } from "lucide-react";
@@ -60,11 +61,12 @@ export default function ContractSignDialog({ open, onOpenChange, rentalId, publi
     try {
       const res = await onSign(sigRef.current.getTrimmedCanvas().toDataURL("image/png"), code);
       onOpenChange(false);
+      notifyDocumentSigned({ document: "Contract de închiriere", publicId, bothSigned: !!(res && res.bothAccepted) });
       if (res && res.bothAccepted) {
         window.dispatchEvent(new CustomEvent("rentli:contract-signed"));
         onBothSigned?.();
       } else {
-        toast.success("Semnătura ta a fost înregistrată.", { description: "Se așteaptă semnătura celeilalte părți." });
+
       }
     } catch (e: any) {
       const msg = e?.message || "Nu s-a putut semna contractul.";

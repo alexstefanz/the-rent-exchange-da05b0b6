@@ -1,3 +1,4 @@
+import { notifyDocumentSigned } from "./DocumentSignedSuccessDialog";
 import { useEffect, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { Eraser, FileSignature, Loader2 } from "lucide-react";
@@ -34,6 +35,7 @@ export default function ExtensionSignDialog({ open, onOpenChange, extensionId, p
     if (error) { setErr(error.message); return; }
     onOpenChange(false);
     onSigned?.();
+    notifyDocumentSigned({ document: "Anexa 3 — Act adițional de prelungire", publicId });
   };
 
   return (

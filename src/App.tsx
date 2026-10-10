@@ -1,3 +1,4 @@
+import DocumentSignedSuccessHost from "@/components/rentals/DocumentSignedSuccessDialog";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -139,6 +140,7 @@ const App = () => (
               <FullNameConfirmDialog />
             </Suspense>
             <GlobalRealtime />
+            <DocumentSignedSuccessHost />
             <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div>}>
               <Routes>
                 <Route path="/" element={<Index />} />
