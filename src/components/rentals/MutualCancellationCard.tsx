@@ -172,7 +172,7 @@ const MutualCancellationCard = ({
   }
 
   // No pending request — before payment, either party can cancel instantly
-  if (canSelfCancelUnpaid) {
+  if (canSelfCancelUnpaid || canDirectPaidCancel) {
     return (
       <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
         <div className="flex items-start gap-3">
@@ -184,10 +184,15 @@ const MutualCancellationCard = ({
               {t("Anulează rezervarea", "Cancel reservation")}
             </h3>
             <p className="text-xs text-muted-foreground mt-1">
-              {t(
-                "Plata nu a fost efectuată — poți anula instant, fără aprobarea unui admin. Cealaltă parte va fi notificată.",
-                "Payment hasn't been processed — you can cancel instantly, without admin approval. The other party will be notified.",
-              )}
+              {canDirectPaidCancel
+                ? t(
+                    "Contractul nu a fost încă semnat — poți anula instant. Chiriașul primește înapoi toți banii (în Wallet sau pe card).",
+                    "The contract isn't signed yet — you can cancel instantly. The renter gets a full refund (Wallet or card).",
+                  )
+                : t(
+                    "Plata nu a fost efectuată — poți anula instant, fără aprobarea unui admin. Cealaltă parte va fi notificată.",
+                    "Payment hasn't been processed — you can cancel instantly, without admin approval. The other party will be notified.",
+                  )}
             </p>
           </div>
           <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -223,7 +228,7 @@ const MutualCancellationCard = ({
                 <Button variant="ghost" onClick={() => setConfirmOpen(false)} disabled={busy}>
                   {t("Înapoi", "Back")}
                 </Button>
-                <Button variant="destructive" onClick={selfCancelUnpaid} disabled={busy}>
+                <Button variant="destructive" onClick={canDirectPaidCancel ? directPaidCancel : selfCancelUnpaid} disabled={busy}>
                   {busy ? t("Se anulează…", "Cancelling…") : t("Da, anulează", "Yes, cancel")}
                 </Button>
               </DialogFooter>
