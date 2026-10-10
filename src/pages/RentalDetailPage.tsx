@@ -789,22 +789,6 @@ const RentalDetailPage = () => {
                   t={t}
                 />
               )}
-              {rental.status !== "cancelled" && rental.status !== "rejected" && !handoverDoneEarly && contractAcc.bothAccepted && (
-                <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-                  <div className="flex items-start gap-3 flex-wrap">
-                    <span className="h-9 w-9 rounded-xl bg-muted text-muted-foreground grid place-items-center shrink-0"><ShieldAlert className="h-4 w-4" /></span>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-heading font-semibold text-sm">{t("Procedură de rezervă — erori tehnice", "Backup procedure — technical errors")}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">{t("Recomandat: descărcați din timp setul de documente nesemnate (pe telefon sau tipărit), ca să îl aveți la îndemână dacă platforma nu funcționează la întâlnire.", "Recommended: download the unsigned document set in advance (phone or printed), in case the platform doesn't work at the meeting.")}</p>
-                    </div>
-                  </div>
-                  <Button className="mt-3 w-full sm:w-auto" onClick={() => { setDocsBlank(true); setDocsTab("anexa1"); setDocsOpen(true); }}>
-                    <Download className="h-4 w-4 mr-2" />{t("Descarcă setul de documente nesemnate", "Download unsigned document set")}
-                  </Button>
-                  <PhysicalPvUpload rentalId={rental.id} publicId={rental.public_id} phase="handover" t={t} className="mt-3"
-                    onOpenBlank={() => { setDocsBlank(true); setDocsTab("anexa1"); setDocsOpen(true); }} />
-                </section>
-              )}
         {/* Step 5 — Renter must initiate the return phase */}
         {handoverDoneEarly && !returnInitiated && !returnDoneEarly && rental.status !== "cancelled" && rental.status !== "completed" && (
           <section className="rounded-2xl border-2 border-primary bg-primary/5 p-5 mb-6 shadow-sm">
@@ -949,6 +933,22 @@ const RentalDetailPage = () => {
             )}
           </section>
         )}
+              {rental.status !== "cancelled" && rental.status !== "rejected" && !handoverDoneEarly && contractAcc.bothAccepted && (
+                <section className="rounded-2xl border border-border bg-card p-4 shadow-sm mb-6">
+                  <div className="flex items-start gap-3 flex-wrap">
+                    <span className="h-9 w-9 rounded-xl bg-muted text-muted-foreground grid place-items-center shrink-0"><ShieldAlert className="h-4 w-4" /></span>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-heading font-semibold text-sm">{t("Procedură de rezervă — erori tehnice", "Backup procedure — technical errors")}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">{t("Recomandat: descărcați din timp setul de documente nesemnate (pe telefon sau tipărit), ca să îl aveți la îndemână dacă platforma nu funcționează la întâlnire.", "Recommended: download the unsigned document set in advance (phone or printed), in case the platform doesn't work at the meeting.")}</p>
+                    </div>
+                  </div>
+                  <Button className="mt-3 w-full sm:w-auto" onClick={() => { setDocsBlank(true); setDocsTab("anexa1"); setDocsOpen(true); }}>
+                    <Download className="h-4 w-4 mr-2" />{t("Descarcă setul de documente nesemnate", "Download unsigned document set")}
+                  </Button>
+                  <PhysicalPvUpload rentalId={rental.id} publicId={rental.public_id} phase="handover" t={t} className="mt-3"
+                    onOpenBlank={() => { setDocsBlank(true); setDocsTab("anexa1"); setDocsOpen(true); }} />
+                </section>
+              )}
               {returnDoneEarly && (
                 <div className="border-l-2 border-primary bg-primary/10 p-4 rounded-r-xl text-sm">
                   <p className="font-semibold">{t("Închiriere finalizată", "Rental completed")}</p>
