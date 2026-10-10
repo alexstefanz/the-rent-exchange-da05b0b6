@@ -2,6 +2,7 @@ import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { TEMPLATES } from '../_shared/transactional-email-templates/registry.ts'
+import { EmailThemeContext } from '../_shared/transactional-email-templates/_components.tsx'
 
 // Provider: Lovable email queue (process-email-queue worker). The root domain
 // rentli.ro cannot be verified by third-party providers because notify.rentli.ro
@@ -301,11 +302,19 @@ Deno.serve(async (req) => {
   }
 
   // 4. Render React Email template to HTML and plain text
-  const html = await renderAsync(
+  // Role theme: renter emails navy, owner emails orange
+  const emailRole =
+    templateData?.recipientRole === 'renter' || templateData?.recipientRole === 'owner'
+      ? templateData.recipientRole
+      : /-renter$/.test(templateName) ? 'renter' : 'owner'
+  const themed = () => React.createElement(
+    EmailThemeContext.Provider,
+    { value: emailRole },
     React.createElement(template.component, templateData)
   )
+  const html = await renderAsync(themed())
   const plainText = await renderAsync(
-    React.createElement(template.component, templateData),
+    themed(),
     { plainText: true }
   )
 

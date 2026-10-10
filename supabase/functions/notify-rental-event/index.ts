@@ -416,6 +416,7 @@ Deno.serve(async (req) => {
           if (tplName) {
             const otherUser = role === "owner" ? renter : owner;
             const templateData: Record<string, any> = {
+              recipientRole: role,
               productTitle: product?.title,
               productImage: Array.isArray(product?.images) ? product.images[0] : undefined,
               startDate: rental.start_date,
