@@ -985,8 +985,8 @@ const RentalDetailPage = () => {
               {rental.is_test_payment && (
                 <Badge variant="secondary" className="mt-3 text-xs">{t("Plata de test", "Test payment")}</Badge>
               )}
-              {!isOwner && <ReceiptLink rentalId={rental.id} t={t} />}
-              {!isOwner && (
+              {!isOwner && ["authorized", "paid", "captured"].includes(String(rental.payment_status)) && <ReceiptLink rentalId={rental.id} t={t} />}
+              {!isOwner && ["authorized", "paid", "captured"].includes(String(rental.payment_status)) && (
                 <p className="mt-3 text-[11px] leading-snug text-muted-foreground">
                   {t(
                     "Pentru închirierile între persoane fizice, documentele justificative oficiale sunt Contractul de locațiune semnat (cu anexele) și chitanța electronică de plată.",
