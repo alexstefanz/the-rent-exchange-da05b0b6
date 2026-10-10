@@ -66,6 +66,8 @@ export default function RentalDocumentsModal({ open, onOpenChange, rental, initi
   const acc = useContractAcceptance(rental.id);
   const [signOpen, setSignOpen] = useState(false);
   const [readToEnd, setReadToEnd] = useState(false);
+  const [readAnnex3, setReadAnnex3] = useState(false);
+  useEffect(() => { if (!open) setReadAnnex3(false); }, [open]);
   useEffect(() => { if (open) setReadToEnd(false); }, [open]);
   const justSignedRef = useRef(false);
   const wasBothRef = useRef<boolean | null>(null);
