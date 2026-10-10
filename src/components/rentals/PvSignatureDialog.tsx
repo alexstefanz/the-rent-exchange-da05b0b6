@@ -1,3 +1,4 @@
+import { notifyDocumentSigned } from "./DocumentSignedSuccessDialog";
 import { useEffect, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { jsPDF } from "jspdf";
@@ -437,7 +438,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
 
       onSigned?.();
       const bothDone = !!(refreshed.owner_signed_at && refreshed.renter_signed_at);
-      toast.success(bothDone ? "Procesul-verbal a fost semnat de ambele parti." : "Semnatura ta a fost inregistrata.");
+      notifyDocumentSigned({ document: phase === "handover" ? "Anexa 1 — Proces-verbal de predare" : "Anexa 2 — Proces-verbal de returnare", publicId: rental.public_id, bothSigned: bothDone });
       onOpenChange(false);
     } catch (e: any) {
       console.error("PV sign failed:", e);
