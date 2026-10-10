@@ -36,12 +36,15 @@ export default function RentalRequestPopup({ item, mode, stackCount, onAccept, o
 
   const t = (ro: string, en: string) => (language === "ro" ? ro : en);
 
-  const isRejected = mode === "renter" && item.outcome === "rejected";
+  const isCancelledByOwner = mode === "renter" && item.outcome === "cancelled_by_owner";
+  const isRejected = mode === "renter" && (item.outcome === "rejected" || isCancelledByOwner);
   const badgeLabel = mode === "owner"
     ? t("CERERE NOUĂ", "NEW REQUEST")
-    : isRejected
-      ? t("CERERE REFUZATĂ", "REQUEST DECLINED")
-      : t("CERERE APROBATĂ", "REQUEST APPROVED");
+    : isCancelledByOwner
+      ? t("REZERVAREA A FOST ANULATĂ DE PROPRIETAR", "BOOKING CANCELLED BY OWNER")
+      : isRejected
+        ? t("CERERE REFUZATĂ", "REQUEST DECLINED")
+        : t("CERERE APROBATĂ", "REQUEST APPROVED");
 
   const since = (() => {
     const stamp = mode === "owner" ? item.created_at : (item.confirmed_at || item.created_at);
@@ -145,10 +148,15 @@ export default function RentalRequestPopup({ item, mode, stackCount, onAccept, o
         {isRejected && (
           <div className="mt-3 rounded-xl bg-muted/60 p-3">
             <p className="text-xs text-foreground/80">
-              {t(
-                "Din păcate, proprietarul nu a putut accepta cererea ta pentru acest produs. Îți recomandăm să cauți produse similare disponibile.",
-                "Unfortunately, the owner could not accept your request for this item. We recommend looking for similar items available.",
-              )}
+              {isCancelledByOwner
+                ? t(
+                    "Proprietarul a anulat această rezervare înainte de plată. Nu ai fost taxat — nicio sumă nu a fost retrasă de pe metoda ta de plată.",
+                    "The owner cancelled this booking before payment. You were not charged.",
+                  )
+                : t(
+                    "Din păcate, proprietarul nu a putut accepta cererea ta pentru acest produs. Îți recomandăm să cauți produse similare disponibile.",
+                    "Unfortunately, the owner could not accept your request for this item. We recommend looking for similar items available.",
+                  )}
             </p>
           </div>
         )}
