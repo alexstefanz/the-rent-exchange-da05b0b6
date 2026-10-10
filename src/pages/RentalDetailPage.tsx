@@ -1,4 +1,5 @@
 import Confetti from "@/components/common/Confetti";
+import CancelledRentalModal from "@/components/rentals/CancelledRentalModal";
 import ReceiptLink from "@/components/rentals/ReceiptLink";
 import WalletPaymentSuccessModal from "@/components/rentals/WalletPaymentSuccessModal";
 import { usePageSeo } from "@/hooks/usePageSeo";
