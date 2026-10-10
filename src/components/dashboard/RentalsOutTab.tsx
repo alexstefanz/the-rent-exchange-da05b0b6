@@ -414,6 +414,10 @@ const RentalsOutTab = () => {
               const statusKey = (allowed.includes(rental.status) ? rental.status : "pending") as any;
               return (
                 <div key={rental.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <Link to={to} className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-muted border border-border">
+                    <img src={rental.product_image || "/placeholder.svg"} alt={rental.product_title} loading="lazy" className="h-full w-full object-cover" />
+                  </Link>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 min-w-0">
                       <p className="font-medium text-foreground truncate">{rental.product_title}</p>
@@ -427,6 +431,7 @@ const RentalsOutTab = () => {
                     <p className="text-xs text-muted-foreground">
                       {format(new Date(rental.start_date), "d MMM yyyy", { locale: ro })} – {format(new Date(rental.end_date), "d MMM yyyy", { locale: ro })} · {rental.rental_days} zile
                     </p>
+                  </div>
                   </div>
                   <div className="flex items-center justify-between sm:justify-end gap-3 flex-shrink-0">
                     <div className="text-right">
