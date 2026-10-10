@@ -141,6 +141,13 @@
       "when": 1791622781405,
       "tag": "0019_cancel_request_reason_min5",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791630397094,
+      "tag": "0020_extension_owner_signs_first",
+      "breakpoints": true
     }
   ]
 }
