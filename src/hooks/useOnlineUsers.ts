@@ -97,6 +97,10 @@ export function useOnlineUsers(_selfId?: string | null) {
   return map;
 }
 
-export function getStatus(map: Map<string, PresenceStatus>, id?: string | null): PresenceStatus {
-  return (id && map.get(id)) || "offline";
+export function getStatus(map: Map<string, PresenceStatus> | Set<string> | null | undefined, id?: string | null): PresenceStatus {
+  if (!id || !map) return "offline";
+  if (map instanceof Map) return map.get(id) || "offline";
+  // Legacy shape (Set of online ids) kept by hot-reload state
+  if (map instanceof Set) return map.has(id) ? "online" : "offline";
+  return "offline";
 }
