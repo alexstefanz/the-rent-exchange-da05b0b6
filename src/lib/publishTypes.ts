@@ -1,3 +1,4 @@
+import { containsProfanityWords } from "@/lib/profanityFilter";
 import { z } from "zod";
 import { containsContactInfo } from "@/lib/inputValidation";
 
@@ -76,6 +77,9 @@ export const emptyPublishForm = (): PublishFormData => ({
   is_active: true,
 });
 
+const PROFANITY_ERROR =
+  "Textul conține un limbaj neadecvat. Te rugăm să păstrezi un ton profesional.";
+
 const CONTACT_ERROR =
   "Nu poți include date de contact (telefon, email sau link-uri). Comunicarea se face doar prin Rentli.";
 
@@ -88,11 +92,13 @@ export const stepValidators = {
       .string()
       .min(5, "Titlul trebuie să aibă minim 5 caractere")
       .max(100, "Titlul nu poate depăși 100 caractere")
-      .refine((v) => !containsContactInfo(v), { message: CONTACT_ERROR }),
+      .refine((v) => !containsContactInfo(v), { message: CONTACT_ERROR })
+      .refine((v) => !containsProfanityWords(v).hit, { message: PROFANITY_ERROR }),
     description: z
       .string()
       .max(2000, "Descrierea nu poate depăși 2000 caractere")
       .refine((v) => !v || !containsContactInfo(v), { message: CONTACT_ERROR })
+      .refine((v) => !v || !containsProfanityWords(v).hit, { message: PROFANITY_ERROR })
       .optional()
       .or(z.literal("")),
     condition: z.enum(["new", "very_good", "good", "used"], {
