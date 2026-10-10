@@ -289,7 +289,7 @@ EVENTS.request_expired = {
   smsTemplate: { owner: "request_expired_owner", renter: "request_expired_renter" },
   inAppTitle: { ro: "Cerere expirată automat", en: "Request auto-expired" },
   inAppDesc: (c) => c.recipientRole === "renter"
-    ? { ro: `Cererea pentru "${c.product?.title}" a expirat (fără răspuns în 48h). Hold-ul a fost eliberat integral.`, en: `Request for "${c.product?.title}" expired (no response in 48h). Hold fully released.` }
+    ? { ro: `Cererea pentru "${c.product?.title}" a expirat (fără răspuns în 24h). Nu ai fost taxat.`, en: `Request for "${c.product?.title}" expired (no response in 24h). You were not charged.` }
     : { ro: `Cererea pentru "${c.product?.title}" a expirat fără răspuns și a fost anulată automat.`, en: `Request for "${c.product?.title}" expired without response and was auto-cancelled.` },
   link: (c) => `/rezervari/${c.rental.public_id ?? ""}`,
   smsPurpose: "view_rental",

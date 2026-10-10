@@ -426,7 +426,10 @@ const RentalDetailPage = () => {
           const wasPaid = ["authorized", "paid", "captured"].includes(String(rental.payment_status));
           const byOwner = reason === "owner_self_unpaid" || rental.status === "rejected";
           const byRenter = reason === "renter_self_unpaid";
-          const who = byOwner
+          const expired = !!reason && reason.startsWith("Cerere expirată automat");
+          const who = expired
+            ? t("Această cerere a expirat automat deoarece proprietarul nu a confirmat-o în termenul de 24 de ore", "This request expired automatically because the owner did not respond within 24 hours")
+            : byOwner
             ? (isOwner ? t("Ai anulat această rezervare", "You cancelled this reservation") : t("Rezervarea a fost anulată de proprietar", "The reservation was cancelled by the owner"))
             : byRenter
             ? (isOwner ? t("Rezervarea a fost anulată de chiriaș", "The reservation was cancelled by the renter") : t("Ai anulat această rezervare", "You cancelled this reservation"))
@@ -440,7 +443,7 @@ const RentalDetailPage = () => {
                     {rental.status === "rejected" ? t("Cerere refuzată", "Request rejected") : t("Rezervare anulată", "Reservation cancelled")}
                   </p>
                   <p className="text-sm text-foreground/80 mt-1">
-                    {who}{!wasPaid ? t(" înainte de efectuarea plății.", " before payment.") : "."}
+                    {who}{expired ? t(". Nicio sumă nu a fost debitată.", ". Nothing was charged.") : !wasPaid ? t(" înainte de efectuarea plății.", " before payment.") : "."}
                     {rental.cancelled_at && ` ${t("Data", "Date")}: ${format(new Date(rental.cancelled_at), "d MMM yyyy, HH:mm", { locale: roLocale })}.`}
                   </p>
                   {!isOwner && (

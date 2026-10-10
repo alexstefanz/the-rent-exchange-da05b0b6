@@ -19,8 +19,8 @@ const RequestExpiredRenterEmail = (p: Props) => {
       <H1>Cerere expirată fără răspuns</H1>
       <Lead>
         Cererea ta pentru „{p.productTitle ?? 'produsul ales'}" a fost <strong>anulată automat</strong>{' '}
-        pentru că proprietarul <strong>{p.ownerName ?? ''}</strong> nu a răspuns în 48 de ore.
-        Hold-ul de pe cardul tău a fost <strong>eliberat integral</strong> — nu am încasat nimic.
+        pentru că proprietarul <strong>{p.ownerName ?? ''}</strong> nu a răspuns în 24 de ore.
+        <strong>Nu ai fost taxat</strong> — nicio sumă nu a fost retrasă.
       </Lead>
       <ProductCard
         image={p.productImage}
@@ -40,7 +40,7 @@ const RequestExpiredRenterEmail = (p: Props) => {
 
 export const template = {
   component: RequestExpiredRenterEmail,
-  subject: 'Cererea ta a expirat — hold-ul a fost eliberat',
+  subject: 'Cererea ta a expirat — nu ai fost taxat',
   displayName: 'Cerere expirată (Renter)',
   previewData: {
     ownerName: 'Maria Ionescu',

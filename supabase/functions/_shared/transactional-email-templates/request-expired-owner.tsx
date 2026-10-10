@@ -20,7 +20,7 @@ const RequestExpiredOwnerEmail = (p: Props) => {
       <Lead>
         Cererea de la <strong>{p.renterName ?? 'un utilizator'}</strong> pentru
         „{p.productTitle ?? 'produsul tău'}" a fost <strong>anulată automat</strong> deoarece nu
-        a primit răspuns în 48 de ore. Hold-ul Stripe a fost eliberat integral pentru chiriaș.
+        a primit răspuns în 24 de ore.
       </Lead>
       <ProductCard
         image={p.productImage}
@@ -39,7 +39,7 @@ const RequestExpiredOwnerEmail = (p: Props) => {
 
 export const template = {
   component: RequestExpiredOwnerEmail,
-  subject: 'Cerere expirată automat (48h fără răspuns)',
+  subject: 'Cerere expirată automat (24h fără răspuns)',
   displayName: 'Cerere expirată (Owner)',
   previewData: {
     renterName: 'Ion Popescu',
