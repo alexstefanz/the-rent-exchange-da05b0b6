@@ -9,6 +9,7 @@ import { ro, enUS } from "date-fns/locale";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useOnlineUsers } from "@/hooks/useOnlineUsers";
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -28,6 +29,7 @@ export function ConversationList({
   const { language, t } = useLanguage();
   const dateLocale = language === "ro" ? ro : enUS;
   const [query, setQuery] = useState("");
+  const onlineUsers = useOnlineUsers(userId || null);
   const [tab, setTab] = useState<"all" | "active" | "archived">("all");
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const isArchived = (c: Conversation) => !!c.rental && new Date(c.rental.end_date) < today;
@@ -63,6 +65,8 @@ export function ConversationList({
 
   const renderItem = (conv: Conversation) => {
     const isUnread = (conv.unread_count || 0) > 0;
+    const peerId = conv.buyer_id === userId ? conv.owner_id : conv.buyer_id;
+    const peerOnline = !!peerId && onlineUsers.has(peerId);
     return (
     <button
       key={conv.id}
@@ -72,15 +76,23 @@ export function ConversationList({
         selectedId === conv.id ? "bg-primary/10 border-primary" : "border-transparent"
       )}
     >
-      <Avatar className="h-11 w-11 shrink-0">
-        <AvatarImage src={conv.other_user?.avatar_url || undefined} />
-        <AvatarFallback>{conv.other_user?.full_name?.charAt(0) || "U"}</AvatarFallback>
-      </Avatar>
+      <div className="relative shrink-0">
+        <Avatar className="h-11 w-11">
+          <AvatarImage src={conv.other_user?.avatar_url || undefined} />
+          <AvatarFallback>{conv.other_user?.full_name?.charAt(0) || "U"}</AvatarFallback>
+        </Avatar>
+        <span className={cn("absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background", peerOnline ? "bg-emerald-500" : "bg-muted-foreground/40")} />
+      </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <span className={`text-sm truncate ${isUnread ? "font-bold text-foreground" : "font-semibold"}`}>
-            {conv.other_user?.full_name || t("Utilizator", "User")}
+          <span className="flex items-center gap-1.5 min-w-0">
+            <span className={`text-sm truncate ${isUnread ? "font-bold text-foreground" : "font-semibold"}`}>
+              {conv.other_user?.full_name || t("Utilizator", "User")}
+            </span>
+            <span className={cn("text-[11px] shrink-0", peerOnline ? "text-emerald-600" : "text-muted-foreground")}>
+              {peerOnline ? "Online" : "Offline"}
+            </span>
           </span>
           {conv.last_message && (
             <span className={`text-xs whitespace-nowrap shrink-0 ${isUnread ? "text-primary font-semibold" : "text-muted-foreground"}`}>
