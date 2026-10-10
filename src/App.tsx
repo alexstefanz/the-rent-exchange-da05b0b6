@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import ScrollToTop from "./components/ScrollToTop";
 import RouteTracker from "./components/RouteTracker";
 import { useGlobalRealtime } from "@/hooks/useGlobalRealtime";
+import { useGlobalPresence } from "@/hooks/useOnlineUsers";
 import { SaveToastHost } from "@/lib/saveToast";
 
 const SupportChatWidget = lazyWithRetry(() => import("./components/support/SupportChatWidget"));
@@ -36,6 +37,7 @@ const ConditionalWidgets = () => {
 const GlobalRealtime = () => {
   const { user } = useAuth();
   useGlobalRealtime(user?.id);
+  useGlobalPresence(user?.id);
   return null;
 };
 

@@ -9,7 +9,7 @@ import { ro, enUS } from "date-fns/locale";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useOnlineUsers } from "@/hooks/useOnlineUsers";
+import { useOnlineUsers, getStatus } from "@/hooks/useOnlineUsers";
 
 interface ConversationListProps {
   conversations: Conversation[];
@@ -66,7 +66,10 @@ export function ConversationList({
   const renderItem = (conv: Conversation) => {
     const isUnread = (conv.unread_count || 0) > 0;
     const peerId = conv.buyer_id === userId ? conv.owner_id : conv.buyer_id;
-    const peerOnline = !!peerId && onlineUsers.has(peerId);
+    const st = getStatus(onlineUsers, peerId);
+    const dot = st === "online" ? "bg-emerald-500" : st === "idle" ? "bg-amber-400" : "bg-muted-foreground/40";
+    const txt = st === "online" ? "text-emerald-600" : st === "idle" ? "text-amber-600" : "text-muted-foreground";
+    const label = st === "online" ? "Online" : st === "idle" ? t("Inactiv", "Away") : "Offline";
     return (
     <button
       key={conv.id}
@@ -81,7 +84,7 @@ export function ConversationList({
           <AvatarImage src={conv.other_user?.avatar_url || undefined} />
           <AvatarFallback>{conv.other_user?.full_name?.charAt(0) || "U"}</AvatarFallback>
         </Avatar>
-        <span className={cn("absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background", peerOnline ? "bg-emerald-500" : "bg-muted-foreground/40")} />
+        <span className={cn("absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background", dot)} />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -90,8 +93,8 @@ export function ConversationList({
             <span className={`text-sm truncate ${isUnread ? "font-bold text-foreground" : "font-semibold"}`}>
               {conv.other_user?.full_name || t("Utilizator", "User")}
             </span>
-            <span className={cn("text-[11px] shrink-0", peerOnline ? "text-emerald-600" : "text-muted-foreground")}>
-              {peerOnline ? "Online" : "Offline"}
+            <span className={cn("text-[11px] shrink-0", txt)}>
+              {label}
             </span>
           </span>
           {conv.last_message && (
