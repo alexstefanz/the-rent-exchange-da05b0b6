@@ -43,6 +43,7 @@ const Row = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 import { categories } from "@/data/categories";
+import { expandSearchTerms } from "@/lib/searchSynonyms";
 import { getCategoryIcon } from "@/data/categoryIcons";
 import { judete } from "@/data/romaniaLocations";
 import {
@@ -685,14 +686,36 @@ const Step1Category = ({
 }) => {
   const { t } = useLanguage();
   const [search, setSearch] = useState("");
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return categories;
-    return categories.filter(
-      (c) =>
-        c.name.toLowerCase().includes(q) ||
-        c.subcategories.some((s) => s.name.toLowerCase().includes(q)),
-    );
+  const normTxt = (s: string) =>
+    s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().trim();
+  const { filtered, subMatches } = useMemo(() => {
+    const q = normTxt(search);
+    if (!q) return { filtered: categories, subMatches: [] as { cat: typeof categories[number]; sub: typeof categories[number]["subcategories"][number] }[] };
+    const terms = Array.from(new Set([q, ...expandSearchTerms(search).map(normTxt)]))
+      .filter(Boolean)
+      .flatMap((term) => {
+        // loose stem: also match without trailing vowel (bicicletă -> biciclet)
+        const stem = term.length > 4 ? term.replace(/[aeiu]$/, "") : term;
+        return [term, stem];
+      });
+    const hit = (txt: string) => {
+      const n = normTxt(txt);
+      return terms.some((term) => n.includes(term));
+    };
+    const subs: { cat: typeof categories[number]; sub: typeof categories[number]["subcategories"][number] }[] = [];
+    const cats = categories.filter((c) => {
+      const catHit = hit(c.name) || hit(c.nameEn);
+      let any = false;
+      for (const s of c.subcategories) {
+        if (s.id.endsWith("-99")) continue;
+        if (hit(s.name) || hit(s.nameEn) || hit(s.description) || hit(s.descriptionEn)) {
+          subs.push({ cat: c, sub: s });
+          any = true;
+        }
+      }
+      return catHit || any;
+    });
+    return { filtered: cats, subMatches: subs.slice(0, 8) };
   }, [search]);
   const selectedCat = categories.find((c) => c.name === data.category);
 
@@ -713,13 +736,52 @@ const Step1Category = ({
           placeholder={t("Caută categorie (ex: bicicletă, cameră foto, drujbă...)", "Search category (e.g. bike, camera, chainsaw...)")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-12 pl-10"
+          className="h-12 pl-10 pr-10"
         />
+        {search && (
+          <button
+            type="button"
+            aria-label={t("Șterge căutarea", "Clear search")}
+            onClick={() => setSearch("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
+
+      {search.trim() && subMatches.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {subMatches.map(({ cat, sub }) => (
+            <button
+              key={sub.id}
+              type="button"
+              onClick={() => {
+                update("category", cat.name);
+                update("subcategory", sub.name);
+                setSearch("");
+              }}
+              className="rounded-full border border-primary/30 bg-primary/5 px-4 py-2 text-sm text-foreground transition-colors hover:border-primary hover:bg-primary/10"
+            >
+              <span className="font-medium">{sub.name}</span>
+              <span className="text-muted-foreground"> · {cat.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {search.trim() && filtered.length === 0 && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          {t(
+            `Nu am găsit o categorie pentru „${search.trim()}” — alege din listă sau folosește „Diverse”.`,
+            `No category found for "${search.trim()}" — pick from the list or use "Miscellaneous".`,
+          )}
+        </p>
+      )}
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_360px]">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {filtered.map((cat) => {
+          {(filtered.length ? filtered : categories).map((cat) => {
             const active = data.category === cat.name;
             const Icon = getCategoryIcon(cat.id);
             return (
