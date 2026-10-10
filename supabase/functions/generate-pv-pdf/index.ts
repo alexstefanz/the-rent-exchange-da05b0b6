@@ -170,11 +170,11 @@ Deno.serve(async (req) => {
     drawWrapped("PARTILE CONTRACTANTE", 11, { bold: true });
     y -= 4;
     drawWrapped(
-      `Predator (proprietar): ${owner?.full_name ?? "-"}, telefon ${owner?.phone ?? "-"}, email ${owner?.email ?? "-"}.`,
+      `Proprietar: ${owner?.full_name ?? "-"}, telefon ${owner?.phone ?? "-"}, email ${owner?.email ?? "-"}.`,
       10
     );
     drawWrapped(
-      `Primitor (chirias): ${renter?.full_name ?? "-"}, telefon ${renter?.phone ?? "-"}, email ${renter?.email ?? "-"}.`,
+      `Chirias: ${renter?.full_name ?? "-"}, telefon ${renter?.phone ?? "-"}, email ${renter?.email ?? "-"}.`,
       10
     );
     y -= 8;
@@ -208,8 +208,8 @@ Deno.serve(async (req) => {
     y -= 4;
     drawWrapped(
       phase === "handover"
-        ? "Primitorul declara ca a verificat bunul si il accepta in starea documentata prin fotografiile anexate in platforma Rentli, obligandu-se sa il utilizeze conform destinatiei sale, sa il pastreze in bune conditii si sa il returneze la termenul stabilit, in aceeasi stare, cu exceptia uzurii normale."
-        : "Primitorul restituie bunul catre Predator, iar Predatorul confirma primirea acestuia in starea documentata prin fotografiile anexate in platforma Rentli. Eventualele daune constatate la momentul returnarii vor fi reglementate prin intermediul platformei Rentli, conform termenilor si conditiilor agreate.",
+        ? "Chiriasul declara ca a verificat bunul si il accepta in starea documentata prin fotografiile anexate in platforma Rentli, obligandu-se sa il utilizeze conform destinatiei sale, sa il pastreze in bune conditii si sa il returneze la termenul stabilit, in aceeasi stare, cu exceptia uzurii normale."
+        : "Chiriasul restituie bunul catre Proprietar, iar Proprietarul confirma primirea acestuia in starea documentata prin fotografiile anexate in platforma Rentli. Eventualele daune constatate la momentul returnarii vor fi reglementate prin intermediul platformei Rentli, conform termenilor si conditiilor agreate.",
       10
     );
     y -= 6;
@@ -243,7 +243,7 @@ Deno.serve(async (req) => {
 
     // Owner box
     page.drawRectangle({ x: MARGIN_X, y: sigY, width: sigBoxW, height: sigBoxH, borderColor: muted, borderWidth: 0.5 });
-    page.drawText("Predator (proprietar)", { x: MARGIN_X + 6, y: sigY + sigBoxH - 12, size: 9, font: fontBold, color: ink });
+    page.drawText("Proprietar", { x: MARGIN_X + 6, y: sigY + sigBoxH - 12, size: 9, font: fontBold, color: ink });
     page.drawText(noDia(owner?.full_name ?? "-"), { x: MARGIN_X + 6, y: sigY + 6, size: 8, font, color: muted });
     page.drawText(`Semnat: ${fmtDateTime(pv.owner_signed_at)}`, { x: MARGIN_X + sigBoxW - 160, y: sigY + 6, size: 8, font, color: muted });
     await embedSig(pv.owner_signature_data, MARGIN_X, sigY);
@@ -251,7 +251,7 @@ Deno.serve(async (req) => {
     // Renter box
     const rX = MARGIN_X + sigBoxW + 20;
     page.drawRectangle({ x: rX, y: sigY, width: sigBoxW, height: sigBoxH, borderColor: muted, borderWidth: 0.5 });
-    page.drawText("Primitor (chirias)", { x: rX + 6, y: sigY + sigBoxH - 12, size: 9, font: fontBold, color: ink });
+    page.drawText("Chirias", { x: rX + 6, y: sigY + sigBoxH - 12, size: 9, font: fontBold, color: ink });
     page.drawText(noDia(renter?.full_name ?? "-"), { x: rX + 6, y: sigY + 6, size: 8, font, color: muted });
     page.drawText(`Semnat: ${fmtDateTime(pv.renter_signed_at)}`, { x: rX + sigBoxW - 160, y: sigY + 6, size: 8, font, color: muted });
     await embedSig(pv.renter_signature_data, rX, sigY);
