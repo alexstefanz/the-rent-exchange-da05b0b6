@@ -92,26 +92,44 @@ const AdminApprovals = () => {
   const approveMutation = useMutation({
     mutationFn: approveProduct,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-pending-products"] });
       toast({ title: "Anunț aprobat cu succes" });
     },
-    onError: (err: Error) => {
+    onMutate: async (vars: any) => {
+      const id = typeof vars === "string" ? vars : vars.id;
+      await queryClient.cancelQueries({ queryKey: ["admin-pending-products"] });
+      const prev = queryClient.getQueriesData({ queryKey: ["admin-pending-products"] });
+      queryClient.setQueriesData({ queryKey: ["admin-pending-products"] }, (old: any) =>
+        Array.isArray(old) ? old.filter((p: any) => p.id !== id) : old);
+      return { prev };
+    },
+    onError: (err: Error, _v: any, ctx: any) => {
+      ctx?.prev?.forEach(([k, d]: any) => queryClient.setQueryData(k, d));
       toast({ title: "Eroare", description: err.message, variant: "destructive" });
     },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-pending-products"] }),
   });
 
   const rejectMutation = useMutation({
     mutationFn: ({ id, reason }: { id: string; reason: string }) => rejectProduct(id, reason),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["admin-pending-products"] });
       setRejectDialogOpen(false);
       setRejectReason("");
       setSelectedProductId(null);
       toast({ title: "Anunț respins" });
     },
-    onError: (err: Error) => {
+    onMutate: async (vars: any) => {
+      const id = typeof vars === "string" ? vars : vars.id;
+      await queryClient.cancelQueries({ queryKey: ["admin-pending-products"] });
+      const prev = queryClient.getQueriesData({ queryKey: ["admin-pending-products"] });
+      queryClient.setQueriesData({ queryKey: ["admin-pending-products"] }, (old: any) =>
+        Array.isArray(old) ? old.filter((p: any) => p.id !== id) : old);
+      return { prev };
+    },
+    onError: (err: Error, _v: any, ctx: any) => {
+      ctx?.prev?.forEach(([k, d]: any) => queryClient.setQueryData(k, d));
       toast({ title: "Eroare", description: err.message, variant: "destructive" });
     },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["admin-pending-products"] }),
   });
 
   const handleRejectClick = (productId: string) => {

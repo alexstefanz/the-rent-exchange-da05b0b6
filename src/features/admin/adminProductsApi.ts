@@ -44,9 +44,8 @@ export const approveProduct = async (productId: string): Promise<void> => {
     .eq('id', productId);
   if (error) throw new Error(error.message);
 
-  // Notify owner: in-app notification is created by DB trigger
-  // (notify_user_product_approved). Send transactional email here.
-  try {
+  // Email sent in background — admin UI does not wait for it.
+  void (async () => { try {
     const { data: prod } = await supabase
       .from('products')
       .select('title, slug, owner_id, images')
@@ -77,7 +76,7 @@ export const approveProduct = async (productId: string): Promise<void> => {
     }
   } catch (e) {
     console.error('[adminProductsApi] Failed to send product-published notifications:', e);
-  }
+  } })();
 };
 
 export const rejectProduct = async (productId: string, reason: string): Promise<void> => {
@@ -93,8 +92,8 @@ export const rejectProduct = async (productId: string, reason: string): Promise<
     .eq('id', productId);
   if (error) throw new Error(error.message);
 
-  // Send notification email to owner (non-blocking)
-  try {
+  // Send notification email to owner (background, non-blocking)
+  void (async () => { try {
     const { data: prod } = await supabase
       .from('products')
       .select('title, owner_id')
@@ -124,7 +123,7 @@ export const rejectProduct = async (productId: string, reason: string): Promise<
     }
   } catch (e) {
     console.error('[adminProductsApi] Failed to send product-rejected email:', e);
-  }
+  } })();
 };
 
 export const fetchAdminProducts = async (
