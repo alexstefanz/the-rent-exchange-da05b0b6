@@ -153,6 +153,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [draftId, setDraftId] = useState<string | null>(null);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [publishedTitle, setPublishedTitle] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pendingDraft, setPendingDraft] = useState<{
     id: string;
@@ -606,6 +607,29 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
             : undefined
         }
       />
+
+      <AlertDialog open={publishedTitle !== null}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-2xl">⏳</div>
+            <AlertDialogTitle className="text-center">
+              {t("Anunțul tău se verifică", "Your listing is being reviewed")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              {publishedTitle ? <><strong>„{publishedTitle}”</strong><br /></> : null}
+              {t(
+                "Echipa Rentli verifică anunțul și urmează să fie publicat, de regulă în mai puțin de 2 ore. Până atunci îl găsești în anunțurile tale cu statusul „În verificare”. Te anunțăm când devine activ.",
+                "The Rentli team is reviewing your listing; it will be published soon, usually within 2 hours. Meanwhile it appears in your listings as “In review”. We'll notify you when it goes live.",
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => { setPublishedTitle(null); navigate("/owner"); }}>
+              {t("Vezi anunțurile mele", "View my listings")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!pendingDraft}>
         <AlertDialogContent>
