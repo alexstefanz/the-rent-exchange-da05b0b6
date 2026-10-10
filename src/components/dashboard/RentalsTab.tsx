@@ -16,7 +16,7 @@ import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-quer
 import { format } from "date-fns";
 import { ro as roLocale } from "date-fns/locale";
 import { useRentalRealtime } from "@/hooks/useRentalRealtime";
-import { requestMutualCancellation } from "@/features/rentals/rentalsApi";
+import { requestMutualCancellation, hasContractSignature, cancelPaidBeforeContract, cancelErrorMessage } from "@/features/rentals/rentalsApi";
 import { toast } from "@/components/ui/sonner";
 import StatusBadge from "./StatusBadge";
 import RentalsFilterBar, { type RentalStatusFilter, type RentalSortBy } from "./RentalsFilterBar";
@@ -121,6 +121,7 @@ const RentalsTab = () => {
   const [cancelSubject, setCancelSubject] = useState("");
   const [cancelReason, setCancelReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [directMode, setDirectMode] = useState<boolean | null>(null);
   const [statusFilter, setStatusFilter] = useState<RentalStatusFilter>("all");
   const [sortBy, setSortBy] = useState<RentalSortBy>("newest");
   const [searchParams, setSearchParams] = useSearchParams();
@@ -183,6 +184,31 @@ const RentalsTab = () => {
   const liveList = view === "requests" ? requestsList : activeList;
   const doneList = view === "completed" ? completedList : cancelledList;
 
+  const openCancel = async (rental: MyRental) => {
+    setDirectMode(null);
+    setCancelDialogRental(rental);
+    const signed = await hasContractSignature(rental.id).catch(() => true);
+    setDirectMode(!signed);
+  };
+
+  const handleDirectCancel = async () => {
+    if (!cancelDialogRental) return;
+    setSubmitting(true);
+    try {
+      const res = await cancelPaidBeforeContract(cancelDialogRental.id);
+      toast.success(res.to_wallet
+        ? `Rezervare anulată. ${res.refund} RON au revenit în Wallet.`
+        : `Rezervare anulată. ${res.refund} RON se returnează pe card.`);
+      queryClient.invalidateQueries({ queryKey: ["my-rentals"] });
+      queryClient.invalidateQueries({ queryKey: ["wallet-balance"] });
+      setCancelDialogRental(null);
+    } catch (e: any) {
+      toast.error(cancelErrorMessage(e?.message || ""));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleRequestCancel = async () => {
     if (!cancelDialogRental) return;
     if (!cancelSubject.trim() || cancelSubject.trim().length < 3) {
@@ -202,7 +228,7 @@ const RentalsTab = () => {
       setCancelSubject("");
       setCancelReason("");
     } catch (e: any) {
-      toast.error(e?.message || "Eroare la trimiterea cererii de anulare");
+      toast.error(cancelErrorMessage(e?.message || ""));
       console.error(e);
     } finally {
       setSubmitting(false);
