@@ -205,13 +205,13 @@ const Checkout = () => {
 
                   <p className="text-xs text-muted-foreground mt-4">
                     {copy.checkout.termsNotice}{" "}
-                    <button type="button" className="text-primary hover:underline" onClick={() => setShowTermsDialog(true)}>
+                    <a href="/termeni-si-conditii" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:opacity-80">
                       {copy.checkout.termsLink}
-                    </button>{" "}
+                    </a>{" "}
                     {copy.checkout.and}{" "}
-                    <button type="button" className="text-primary hover:underline" onClick={() => setShowPrivacyDialog(true)}>
+                    <a href="/politica-confidentialitate" target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:opacity-80">
                       {copy.checkout.privacyLink}
-                    </button>.
+                    </a>.
                   </p>
 
                   <Button
