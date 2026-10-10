@@ -331,16 +331,21 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
             <p className="text-xs text-muted-foreground pt-1">Citește contractul până la final — butonul de semnare se activează în partea de jos.</p>
           )}
           {tab === "anexa3" && extToSign && (
-            <p className="text-xs text-muted-foreground pt-1">Citește Anexa 3 până la final — butonul de semnare se activează în partea de jos.</p>
+            <p className="text-xs text-muted-foreground pt-1">Citește Anexa 3 — butonul de semnare este în partea de jos.</p>
           )}
         </DialogHeader>
         <div
           className="flex-1 overflow-y-auto bg-muted/40 p-4"
+          ref={(el) => {
+            if (!el) return;
+            requestAnimationFrame(() => {
+              if (el.scrollHeight <= el.clientHeight + 40 && tab === "contract" && !readToEnd) setReadToEnd(true);
+            });
+          }}
           onScroll={(e) => {
             const el = e.currentTarget;
             const atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 40;
             if (tab === "contract" && atEnd) setReadToEnd(true);
-            if (tab === "anexa3" && atEnd) setReadAnnex3(true);
           }}
         >
           {isLocked ? (
@@ -367,9 +372,9 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
           {tab === "anexa3" && extToSign && !isLocked && (
             <div className="mx-auto max-w-[210mm] mt-4 rounded-xl border border-border bg-card p-4 flex flex-col sm:flex-row items-center gap-3 justify-between">
               <p className="text-sm text-muted-foreground">
-                {readAnnex3 ? "Ai parcurs Anexa 3. Poți trece la semnare." : "Derulează până la finalul Anexei 3 pentru a putea semna."}
+                Verifică Anexa 3 de mai sus, apoi semnează.
               </p>
-              <Button disabled={!readAnnex3} onClick={() => setExtSignId(extToSign.id)}>
+              <Button onClick={() => setExtSignId(extToSign.id)}>
                 <FileSignature className="h-4 w-4 mr-1" />Am citit — semnează Anexa 3
               </Button>
             </div>
