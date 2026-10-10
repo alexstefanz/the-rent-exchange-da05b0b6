@@ -492,7 +492,9 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
       console.error(err);
       const raw = String(err?.message || "");
       setPublishError(
-        raw.includes("PHONE_NOT_VERIFIED")
+        raw.includes("PROFANITY_BLOCKED")
+          ? t("Anunțul conține un limbaj neadecvat (titlu, descriere, ce e inclus sau reguli). Te rugăm să-l reformulezi.", "The listing contains inappropriate language. Please rephrase it.")
+          : raw.includes("PHONE_NOT_VERIFIED")
           ? t("Trebuie să îți verifici numărul de telefon înainte de a publica.", "Verify your phone number before publishing.")
           : `${t("Anunțul nu a putut fi publicat", "The listing could not be published")}: ${raw || t("încearcă din nou.", "please try again.")}`,
       );

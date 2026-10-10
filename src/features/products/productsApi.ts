@@ -325,6 +325,9 @@ export const createProduct = async (
     if (String(error.message || "").includes("PHONE_NOT_VERIFIED")) {
       throw new Error("PHONE_NOT_VERIFIED");
     }
+    if (String(error.message || "").includes("PROFANITY_BLOCKED")) {
+      throw new Error("PROFANITY_BLOCKED");
+    }
     if (error.code === "23514") {
       throw new Error("Unele date nu sunt valide (ex. titlu 5–100 caractere, descriere max. 2000 caractere).");
     }
@@ -371,6 +374,7 @@ export const updateProduct = async (
       .eq("owner_id", ownerId)
       .select(PRODUCT_SAFE_COLS as any)
       .single();
+    if (error && String(error.message || "").includes("PROFANITY_BLOCKED")) throw new Error("PROFANITY_BLOCKED");
     if (error) handleApiError("Error updating product", error);
     if (!onlyVisibility) {
       const title = (product as any)?.title ?? "";
