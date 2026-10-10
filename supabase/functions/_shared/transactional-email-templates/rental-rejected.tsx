@@ -12,6 +12,7 @@ interface Props {
   endDate?: string
   totalPrice?: number
   currency?: string
+  isPaid?: boolean
 }
 
 const RentalRejectedEmail = (p: Props) => {
@@ -21,8 +22,12 @@ const RentalRejectedEmail = (p: Props) => {
       <H1>Cerere refuzată</H1>
       <Lead>
         Din păcate, <strong>{p.ownerName ?? 'proprietarul'}</strong> nu a putut accepta cererea ta.
-        Suma a fost returnată automat în metoda ta de plată.
       </Lead>
+      <Para>
+        {p.isPaid
+          ? 'Suma plătită a fost returnată automat în metoda ta de plată. Poate apărea în extras în 3-7 zile lucrătoare, în funcție de banca ta.'
+          : 'Nu ai fost taxat. Nicio sumă nu a fost retrasă de pe metoda ta de plată.'}
+      </Para>
       <ProductCard
         image={p.productImage}
         title={p.productTitle}
