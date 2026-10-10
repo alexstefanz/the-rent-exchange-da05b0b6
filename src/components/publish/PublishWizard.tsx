@@ -61,6 +61,7 @@ import { upsertDraft, deleteDraft, getActiveDraft } from "@/features/publish/dra
 import { getSimilarPricing, type SimilarPricing } from "@/features/publish/pricingBenchmarkApi";
 import ImageUpload from "@/components/products/ImageUpload";
 import LivePreviewCard from "./LivePreviewCard";
+import LocationPinPicker from "./LocationPinPicker";
 import QualityScoreCard from "./QualityScoreCard";
 import PublishStepper, { type StepDef } from "./PublishStepper";
 import PublishTopBar from "./PublishTopBar";
@@ -1113,6 +1114,15 @@ const Step4Location = ({
           </p>
         </div>
 
+        <LocationPinPicker
+          lat={data.pickup_lat}
+          lng={data.pickup_lng}
+          query={[data.pickup_address, data.location_city, data.location_county].filter(Boolean).join(", ")}
+          onChange={(la, ln) => {
+            update("pickup_lat", la);
+            update("pickup_lng", ln);
+          }}
+        />
       </div>
     </div>
   );
