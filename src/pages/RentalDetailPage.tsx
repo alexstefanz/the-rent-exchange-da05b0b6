@@ -1,4 +1,5 @@
 import Confetti from "@/components/common/Confetti";
+import CancelledRentalModal from "@/components/rentals/CancelledRentalModal";
 import ReceiptLink from "@/components/rentals/ReceiptLink";
 import WalletPaymentSuccessModal from "@/components/rentals/WalletPaymentSuccessModal";
 import { usePageSeo } from "@/hooks/usePageSeo";
@@ -348,6 +349,7 @@ const RentalDetailPage = () => {
         onChat={() => { setWalletSuccessOpen(false); handleChat(); }}
         t={t}
       />
+      <CancelledRentalModal rental={rental} isOwner={isOwner} t={t} />
       <main className="flex-1 container py-8 pt-24 lg:pt-8 max-w-5xl">
         <Button variant="ghost" size="sm" className="mb-4" onClick={() => navigate(isOwner ? "/inchirieri" : "/rezervari")}>
           <ArrowLeft className="h-4 w-4 mr-1" />{t("Inapoi la lista", "Back to list")}
