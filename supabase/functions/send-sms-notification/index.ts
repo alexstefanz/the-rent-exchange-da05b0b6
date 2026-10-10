@@ -122,7 +122,7 @@ function renderTemplate(key: TemplateKey, v: TemplateVars, rentalId?: string | n
     case "request_reminder_2h_renter":
       return `Rentli: asteptam raspunsul lui ${owner} pt "${title}". Mai are 2h. ${link}`;
     case "request_expired_owner":
-      return `Rentli: cererea pt "${title}" a expirat (48h fara raspuns) si a fost anulata automat. ${link}`;
+      return `Rentli: cererea pt "${title}" a expirat (24h fara raspuns) si a fost anulata automat. ${link}`;
     case "request_expired_renter":
       return `Rentli: cererea pt "${title}" a expirat fara raspuns. Hold-ul a fost eliberat. ${link}`;
   }
