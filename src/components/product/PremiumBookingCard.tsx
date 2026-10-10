@@ -155,11 +155,11 @@ const PremiumBookingCard = ({
           </div>
           {breakdown.platformFee > 0 && (
             <p className="mt-1 text-[11px] text-muted-foreground">
-              {t(`Include ${formatPriceShort(breakdown.platformFee)} RON comision Rentli`, `Includes ${formatPriceShort(breakdown.platformFee)} RON Rentli fee`)}
+              {t(`Include ${formatPriceShort(breakdown.platformFee)} RON taxe operaționale`, `Includes ${formatPriceShort(breakdown.platformFee)} RON operational fees`)}
             </p>
           )}
           <div className="flex justify-between mt-1">
-            <span className="text-muted-foreground">{t("Procesare card (Stripe)", "Card processing (Stripe)")}</span>
+            <span className="text-muted-foreground">{t("Service fee Stripe", "Stripe service fee")}</span>
             <span className="font-medium">{formatPriceShort(breakdown.stripeFee)} RON</span>
           </div>
           <div className="flex justify-between mt-2.5 font-semibold text-base"><span>{t("Total", "Total")}</span><span className="text-primary">{formatPriceShort(totalPrice)} RON</span></div>

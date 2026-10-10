@@ -963,26 +963,24 @@ const RentalDetailPage = () => {
             <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
               <h3 className="font-heading font-semibold mb-3">{t("Sumar financiar", "Financial summary")}</h3>
               <dl className="space-y-2 text-sm">
-                {isOwner ? (
-                  <>
-                    <div className="flex justify-between"><dt className="text-muted-foreground">{rental.daily_price} RON × {rental.rental_days} {t("zile", "days")}</dt><dd>{rental.subtotal} RON</dd></div>
-                    <div className="flex justify-between"><dt className="text-muted-foreground">{t("Comision Rentli (plătit de chiriaș)", "Rentli fee (paid by renter)")}</dt><dd>{rental.platform_fee} RON</dd></div>
-                  </>
-                ) : (
-                  <>
-                    <div className="flex justify-between"><dt className="text-muted-foreground">{Math.round(((Number(rental.subtotal || 0) + Number(rental.platform_fee || 0)) / Math.max(1, Number(rental.rental_days || 1))) * 100) / 100} RON × {rental.rental_days} {t("zile", "days")}</dt><dd>{Math.round((Number(rental.subtotal || 0) + Number(rental.platform_fee || 0)) * 100) / 100} RON</dd></div>
-                    <div className="flex justify-between text-xs"><dt className="text-muted-foreground">{t("din care comision Rentli", "of which Rentli fee")}</dt><dd className="text-muted-foreground">{rental.platform_fee} RON</dd></div>
-                  </>
-                )}
-                <div className="border-t border-border pt-2 mt-2 flex justify-between font-semibold">
-                  <dt>{isOwner ? t("Castig net", "Net earnings") : t("Total", "Total")}</dt>
-                  <dd className="text-primary">
-                    {isOwner
-                      ? rental.owner_payout
-                      : Math.round((Number(rental.subtotal || 0) + Number(rental.platform_fee || 0)) * 100) / 100}
-                    {" "}RON
-                  </dd>
-                </div>
+                {(() => {
+                  const sub = Number(rental.subtotal || 0);
+                  const fee = Number(rental.platform_fee || 0);
+                  const sf = Number((rental as any).stripe_fee || 0);
+                  const tot = Math.round((sub + fee + sf) * 100) / 100;
+                  const paidBy = isOwner ? t(" (plătite de chiriaș)", " (paid by renter)") : "";
+                  return (
+                    <>
+                      <div className="flex justify-between"><dt className="text-muted-foreground">{rental.daily_price} RON × {rental.rental_days} {t("zile", "days")}</dt><dd>{rental.subtotal} RON</dd></div>
+                      <div className="flex justify-between"><dt className="text-muted-foreground">{t("Taxe operaționale", "Operational fees")}{paidBy}</dt><dd>{fee} RON</dd></div>
+                      <div className="flex justify-between"><dt className="text-muted-foreground">{t("Service fee Stripe", "Stripe service fee")}{paidBy}</dt><dd>{sf} RON</dd></div>
+                      <div className="border-t border-border pt-2 mt-2 flex justify-between font-semibold">
+                        <dt>{isOwner ? t("Câștig net", "Net earnings") : t("Total de plată", "Total")}</dt>
+                        <dd className="text-primary">{isOwner ? rental.owner_payout : tot} RON</dd>
+                      </div>
+                    </>
+                  );
+                })()}
               </dl>
               {rental.is_test_payment && (
                 <Badge variant="secondary" className="mt-3 text-xs">{t("Plata de test", "Test payment")}</Badge>
