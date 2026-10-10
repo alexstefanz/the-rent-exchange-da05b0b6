@@ -47,6 +47,9 @@ export default function HandoverPvCard({ rentalId, startDate, signed, contractRe
       : { l: t("Disponibil acum", "Available now"), c: "bg-primary/15 text-primary" };
   const Icon = signed ? FileCheck : locked ? Lock : FileSignature;
 
+  // When the report is available, the photo + signing flow below takes its place.
+  if (!signed && !locked) return null;
+
   if (signed && collapsed) {
     return (
       <section className="rounded-2xl border border-border bg-card shadow-sm">
