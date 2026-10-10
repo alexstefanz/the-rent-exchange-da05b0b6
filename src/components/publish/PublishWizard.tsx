@@ -64,6 +64,7 @@ import ImageUpload from "@/components/products/ImageUpload";
 import LivePreviewCard from "./LivePreviewCard";
 import LocationPinPicker from "./LocationPinPicker";
 import QualityScoreCard from "./QualityScoreCard";
+import { AiAutofillButton, AiPriceEstimateCard } from "./AiAssist";
 import PublishStepper, { type StepDef } from "./PublishStepper";
 import PublishTopBar from "./PublishTopBar";
 import PublishFooter from "./PublishFooter";
@@ -569,7 +570,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
                     </p>
                   </div>
                 )}
-                <Step6Review data={data} feePercent={feePercent} onJump={jump} mode={mode} />
+                <Step6Review data={data} update={update} feePercent={feePercent} onJump={jump} mode={mode} />
               </>
             )}
           </div>
@@ -582,6 +583,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
                 </p>
                 <LivePreviewCard data={data} feePercent={feePercent} />
                 <QualityScoreCard data={data} />
+        {mode === "create" && <AiPriceEstimateCard data={data} update={update} />}
               </div>
             </aside>
           )}
@@ -916,6 +918,7 @@ const Step2Details = ({
             <ImageUpload userId={userId} images={data.images} onChange={(imgs) => update("images", imgs)} maxImages={10} />
           </div>
           {errors.images && <p className="text-sm text-destructive">{errors.images}</p>}
+          <AiAutofillButton data={data} update={update} />
           <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-4">
             <div className="flex items-start gap-3">
               <ImageIcon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
@@ -1289,6 +1292,8 @@ const Step5Pricing = ({
             <p className="mt-1 text-sm text-destructive">{errors.daily_price_owner}</p>
           )}
 
+          <div className="mt-4"><AiPriceEstimateCard data={data} update={update} /></div>
+
           {/* Pricing benchmark */}
           {pricing && pricing.sample_size >= 3 && (
             <div className="mt-4 rounded-xl bg-muted/40 p-4 text-xs">
@@ -1357,11 +1362,13 @@ const Bench = ({ label, value, highlight }: { label: string; value: number | nul
 
 const Step6Review = ({
   data,
+  update,
   feePercent,
   onJump,
   mode,
 }: {
   data: PublishFormData;
+  update: <K extends keyof PublishFormData>(k: K, v: PublishFormData[K]) => void;
   feePercent: number;
   onJump: (s: number) => void;
   mode: "create" | "edit";
