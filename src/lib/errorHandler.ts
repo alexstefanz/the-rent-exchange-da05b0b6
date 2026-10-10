@@ -74,7 +74,7 @@ const FRIENDLY_MAP: Array<{ test: RegExp; title: string; message: string }> = [
     test: /has no field "?deposit_amount"?/i,
     title: "Nu am putut salva sumele",
     message:
-      "A apărut o problemă temporară la salvarea garanției. Te rugăm să încerci din nou peste câteva secunde.",
+      "A apărut o problemă temporară la salvarea datelor. Te rugăm să încerci din nou peste câteva secunde.",
   },
   {
     test: /duplicate key value|already exists/i,
