@@ -23,8 +23,8 @@ export default function WalletPaymentSuccessModal({
   open, onOpenChange, rentalId, publicId, productTitle, productImage, period, rentalDays, handoverDate, total, onContinue, onChat, t,
 }: Props) {
   const steps = [
-    { icon: CalendarDays, title: t("Stabiliți întâlnirea", "Agree on the meeting"), text: t("Alegeți intervalul de 2 ore și locul predării.", "Pick the 2-hour slot and handover place.") },
     { icon: FileSignature, title: t("Semnați contractul", "Sign the contract"), text: t("Ambele părți semnează digital, cu cod SMS.", "Both parties sign digitally with an SMS code.") },
+    { icon: CalendarDays, title: t("Stabiliți întâlnirea", "Agree on the meeting"), text: t("Alegeți intervalul de 2 ore și locul predării.", "Pick the 2-hour slot and handover place.") },
     { icon: Camera, title: t("La predare", "At handover"), text: t(`Pe ${handoverDate} verificați bunul și semnați procesul-verbal.`, `On ${handoverDate} check the item and sign the handover report.`) },
   ];
 

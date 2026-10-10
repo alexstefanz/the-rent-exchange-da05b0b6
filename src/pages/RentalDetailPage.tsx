@@ -620,18 +620,6 @@ const RentalDetailPage = () => {
                 <p className="text-sm text-muted-foreground mt-1">{t("Așteptăm răspunsul proprietarului. După acceptare vei putea plăti, iar contractul și anexele se generează pentru ambele părți.", "Waiting for the owner. After acceptance you can pay; the contract and annexes are generated for both parties.")}</p>
               </div>
             )}
-        {isPaidEarly && rental.status !== "cancelled" && rental.status !== "rejected" && rental.status !== "completed" && !handoverDoneEarly && (
-          <div className="mb-6">
-            <MeetingDetailsCard
-              rentalId={rental.id}
-              role={role}
-              startDate={rental.start_date}
-              defaultPlace={rental.pickup_location || rental.product_location_city}
-              onOpenChat={handleChat}
-              t={t}
-            />
-          </div>
-        )}
         {isPaidEarly && rental.status !== "cancelled" && rental.status !== "rejected" && (
           <section className="rounded-2xl border border-border bg-card p-5 shadow-sm mb-6">
             <div className="flex items-start gap-3">
@@ -648,6 +636,28 @@ const RentalDetailPage = () => {
               </div>
             </div>
           </section>
+        )}
+        {isPaidEarly && rental.status !== "cancelled" && rental.status !== "rejected" && rental.status !== "completed" && !handoverDoneEarly && (
+          <div className="mb-6">
+            {contractAcc.bothAccepted || contractAcc.loading ? (
+              <MeetingDetailsCard
+                rentalId={rental.id}
+                role={role}
+                startDate={rental.start_date}
+                defaultPlace={rental.pickup_location || rental.product_location_city}
+                onOpenChat={handleChat}
+                t={t}
+              />
+            ) : (
+              <section className="rounded-2xl border border-border bg-muted/40 p-5 flex items-start gap-3">
+                <Lock className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold">{t("Stabilirea întâlnirii", "Meeting details")}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{t("Semnați întâi contractul de închiriere. Imediat după semnare veți putea alege intervalul orar de 2 ore și locul exact al predării.", "Sign the rental contract first. Right after signing you can choose the 2-hour slot and the exact handover place.")}</p>
+                </div>
+              </section>
+            )}
+          </div>
         )}
             </div>
           </ProcessCard>
