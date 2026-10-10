@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import ExtensionSignDialog from "./ExtensionSignDialog";
 import { format } from "date-fns";
-import { Printer, FileText, FileSignature, Lock } from "lucide-react";
+import { Printer, FileText, FileSignature, Lock, Download, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useContractAcceptance } from "./useContractAcceptance";
 import ContractSignDialog from "./ContractSignDialog";
@@ -92,29 +92,68 @@ export default function RentalDocumentsModal({ open, onOpenChange, rental, initi
   const paidExts = exts.filter((e) => e.status === "approved" && e.payment_status === "paid").reverse();
   const late = lateInfo(rental.end_date, daily, rental.return_confirmed_at ? new Date(rental.return_confirmed_at) : new Date());
 
-  const print = (allBlank: boolean) => {
-    setBlank(allBlank);
-    setTimeout(() => {
-      const html = docRef.current?.innerHTML || "";
-      const w = window.open("", "_blank");
-      if (!w) return;
-      w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${rental.public_id} — Documente</title>
-<style>
-body{font-family:'Times New Roman',serif;color:#111;margin:0}
+  const DOC_CSS = `body{font-family:'Times New Roman',serif;color:#111;margin:0;background:#fff}
 .page{width:190mm;margin:0 auto;padding:12mm 0;page-break-after:always;font-size:12px;line-height:1.55}
 .page:last-child{page-break-after:auto}
 h1{font-size:16px;text-align:center;margin:0 0 4px} h2{font-size:13px;margin:14px 0 4px}
 .c{text-align:center} .muted{color:#555;font-size:11px}
 table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #999;padding:4px 6px;text-align:left;vertical-align:top}
 .sig{display:flex;gap:24px;margin-top:24px} .sig>div{flex:1;border-top:1px solid #333;padding-top:4px;min-height:70px}
-.sig img{max-height:60px} .photos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0} .photos figure{margin:0;page-break-inside:avoid} .photos img{width:100%;height:60mm;object-fit:contain;border:1px solid #ccc} .photos figcaption{font-size:10px;color:#555} .noprint{display:none}
-</style></head><body>${html}</body></html>`);
+.sig img{max-height:60px} .photos{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0} .photos figure{margin:0;page-break-inside:avoid} .photos img{width:100%;height:60mm;object-fit:contain;border:1px solid #ccc} .photos figcaption{font-size:10px;color:#555} .noprint{display:none}`;
+
+  const waitImgs = (doc: Document) => Promise.all(Array.from(doc.images).map((im) => im.complete ? null : new Promise((r) => { im.onload = im.onerror = r; setTimeout(r, 8000); })));
+
+  const print = (allBlank: boolean) => {
+    setBlank(allBlank);
+    setTimeout(() => {
+      const html = docRef.current?.innerHTML || "";
+      const w = window.open("", "_blank");
+      if (!w) return;
+      w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${rental.public_id} — Documente</title><style>${DOC_CSS}</style></head><body>${html}</body></html>`);
       w.document.close();
       w.focus();
-      const imgs = Array.from(w.document.images);
-      Promise.all(imgs.map((im) => im.complete ? null : new Promise((r) => { im.onload = im.onerror = r; setTimeout(r, 8000); })))
-        .then(() => setTimeout(() => { w.print(); setBlank(false); }, 200));
+      waitImgs(w.document).then(() => setTimeout(() => { w.print(); setBlank(false); }, 200));
     }, 50);
+  };
+
+  const [saving, setSaving] = useState(false);
+  const savePdf = async () => {
+    setSaving(true);
+    const iframe = document.createElement("iframe");
+    iframe.style.cssText = "position:fixed;left:-10000px;top:0;width:820px;height:1200px;border:0";
+    document.body.appendChild(iframe);
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([import("html2canvas"), import("jspdf")]);
+      const d = iframe.contentDocument!;
+      d.open();
+      d.write(`<!doctype html><html><head><meta charset="utf-8"><style>${DOC_CSS}</style></head><body>${docRef.current?.innerHTML || ""}</body></html>`);
+      d.close();
+      await waitImgs(d);
+      const pdf = new jsPDF({ unit: "mm", format: "a4" });
+      const pages = Array.from(d.querySelectorAll<HTMLElement>(".page"));
+      const targets = pages.length ? pages : [d.body];
+      for (let i = 0; i < targets.length; i++) {
+        const canvas = await html2canvas(targets[i], { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+        const pw = 210, ph = 297, margin = 10;
+        const iw = pw - margin * 2;
+        const ih = (canvas.height * iw) / canvas.width;
+        const sliceH = ph - margin * 2;
+        let offset = 0;
+        let first = true;
+        while (offset < ih) {
+          if (i > 0 || !first) pdf.addPage();
+          pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", margin, margin - offset, iw, ih);
+          offset += sliceH;
+          first = false;
+        }
+      }
+      pdf.save(`Documente-${rental.public_id}.pdf`);
+    } catch (e) {
+      toast.error("PDF-ul nu a putut fi generat. Folosește butonul Tipărește → Salvează ca PDF.");
+    } finally {
+      iframe.remove();
+      setSaving(false);
+    }
   };
 
   const Sig = ({ pv }: { pv?: Pv }) => (
@@ -325,7 +364,8 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
               </Button>
             ))}
             <div className="ml-auto flex gap-2 flex-wrap">
-              <Button size="sm" disabled={isLocked} variant={(tab === "contract" && canSignContract) || (tab === "anexa3" && extToSign) ? "outline" : "default"} onClick={() => print(false)}><Printer className="h-4 w-4 mr-1" />Salvează PDF / Tipărește</Button>
+              <Button size="sm" disabled={isLocked} variant="outline" onClick={() => print(false)}><Printer className="h-4 w-4 mr-1" />Tipărește</Button>
+              <Button size="sm" disabled={isLocked || saving} variant={(tab === "contract" && canSignContract) || (tab === "anexa3" && extToSign) ? "outline" : "default"} onClick={savePdf}>{saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}Salvează PDF</Button>
             </div>
           </div>
           {tab === "contract" && canSignContract && (
