@@ -3866,6 +3866,7 @@ export type Database = {
         Returns: boolean
       }
       soft_delete_my_product: { Args: { _id: string }; Returns: undefined }
+      text_has_profanity: { Args: { input: string }; Returns: boolean }
       track_product_view: {
         Args: { p_product_id: string; p_visitor_hash: string }
         Returns: undefined
