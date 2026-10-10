@@ -483,6 +483,18 @@ const RentalDetailPage = () => {
             </Button>
           </section>
         )}
+        {rental.status === "completed" && (
+          <section className="rounded-2xl border border-border bg-card p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/10 grid place-items-center"><Receipt className="h-5 w-5 text-primary" /></div>
+              <div>
+                <p className="font-semibold text-sm">{t("Chitanța electronică de plată", "Electronic payment receipt")}</p>
+                <p className="text-xs text-muted-foreground">{t("Dovada plății securizate — document justificativ alături de contract.", "Proof of the secured payment — supporting document alongside the contract.")}</p>
+              </div>
+            </div>
+            <div className="shrink-0 sm:w-56"><ReceiptLink rentalId={rental.id} t={t} /></div>
+          </section>
+        )}
         {/* Review CTA — visible after rental is completed and only until the user reviewed */}
         {rental.status === "completed" && !alreadyReviewed && (
           <section className="rounded-2xl border border-border bg-card p-4 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -988,8 +1000,8 @@ const RentalDetailPage = () => {
               {rental.is_test_payment && (
                 <Badge variant="secondary" className="mt-3 text-xs">{t("Plata de test", "Test payment")}</Badge>
               )}
-              {!isOwner && ["authorized", "paid", "captured"].includes(String(rental.payment_status)) && <ReceiptLink rentalId={rental.id} t={t} />}
-              {!isOwner && ["authorized", "paid", "captured"].includes(String(rental.payment_status)) && (
+              {["authorized", "paid", "captured"].includes(String(rental.payment_status)) && <ReceiptLink rentalId={rental.id} t={t} />}
+              {["authorized", "paid", "captured"].includes(String(rental.payment_status)) && (
                 <p className="mt-3 text-[11px] leading-snug text-muted-foreground">
                   {t(
                     "Pentru închirierile între persoane fizice, documentele justificative oficiale sunt Contractul de locațiune semnat (cu anexele) și chitanța electronică de plată.",
