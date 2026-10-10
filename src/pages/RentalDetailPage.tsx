@@ -443,7 +443,7 @@ const RentalDetailPage = () => {
                     {rental.status === "rejected" ? t("Cerere refuzată", "Request rejected") : t("Rezervare anulată", "Reservation cancelled")}
                   </p>
                   <p className="text-sm text-foreground/80 mt-1">
-                    {who}{!wasPaid ? t(" înainte de efectuarea plății.", " before payment.") : "."}
+                    {who}{expired ? t(". Nicio sumă nu a fost debitată.", ". Nothing was charged.") : !wasPaid ? t(" înainte de efectuarea plății.", " before payment.") : "."}
                     {rental.cancelled_at && ` ${t("Data", "Date")}: ${format(new Date(rental.cancelled_at), "d MMM yyyy, HH:mm", { locale: roLocale })}.`}
                   </p>
                   {!isOwner && (
