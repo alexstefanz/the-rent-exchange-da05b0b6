@@ -4,7 +4,6 @@ import { CheckCircle2, Clock, FileSignature, PartyPopper } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useContractAcceptance } from "./useContractAcceptance";
-import ContractSignDialog from "./ContractSignDialog";
 
 interface Props {
   rentalId: string;
@@ -15,8 +14,8 @@ interface Props {
 }
 
 export default function ContractAcceptanceBlock({ rentalId, publicId, isOwner, onOpenContract, t }: Props) {
-  const { owner, renter, sign } = useContractAcceptance(rentalId);
-  const [signOpen, setSignOpen] = useState(false);
+  const { owner, renter } = useContractAcceptance(rentalId);
+
   const [congrats, setCongrats] = useState(false);
   useEffect(() => {
     const h = () => setCongrats(true);
