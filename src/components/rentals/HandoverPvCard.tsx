@@ -19,6 +19,8 @@ interface Props {
 export default function HandoverPvCard({ rentalId, startDate, signed, contractReady = true, onOpenContract, onOpenPv, onOpenBlank, t }: Props) {
   const [collapsed, setCollapsed] = useState(true);
   if (!signed && !contractReady) {
+    return null;
+    // eslint-disable-next-line no-unreachable
     return (
       <section className="rounded-2xl border border-border bg-card p-4 shadow-sm">
         <div className="flex items-center gap-3 flex-wrap">
