@@ -82,8 +82,8 @@ const MutualCancellationCard = ({
       setFormError(t("Subiectul e prea scurt (minim 3 caractere).", "Subject too short (min 3 characters)."));
       return;
     }
-    if (reason.trim().length < 10) {
-      setFormError(t("Te rugăm să descrii motivul în minim 10 caractere.", "Please provide a reason (min 10 characters)."));
+    if (reason.trim().length < 5) {
+      setFormError(t("Te rugăm să descrii motivul în minim 5 caractere.", "Please provide a reason (min 5 characters)."));
       return;
     }
     if (!accepted) {
@@ -263,7 +263,7 @@ const MutualCancellationCard = ({
                   id="cancel-reason"
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder={t("Descrie pe scurt motivul (min. 10 caractere)…", "Briefly describe the reason (min. 10 chars)…")}
+                  placeholder={t("Descrie pe scurt motivul (min. 5 caractere)…", "Briefly describe the reason (min. 5 chars)…")}
                   rows={4}
                   className="mt-1"
                 />
