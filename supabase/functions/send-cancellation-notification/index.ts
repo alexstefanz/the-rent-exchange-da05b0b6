@@ -212,6 +212,8 @@ Deno.serve(async (req) => {
         productTitle: productTitleRaw,
         startDate: startDateStr,
         endDate: endDateStr,
+        cancelledBy: "renter",
+        isPaid: ["authorized", "paid", "captured"].includes(String((rental as any).payment_status)),
       }),
     ]);
 
