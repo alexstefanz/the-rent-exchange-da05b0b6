@@ -251,7 +251,7 @@ const Footer: React.FC = () => (
       <Link href={`${APP_URL}/cum-functioneaza`} style={footerLink}>Cum funcționează</Link>
     </Text>
     <Text style={footerCopy}>
-      © {new Date().getFullYear()} {SITE_NAME}. Închiriere securizată între oameni, cu plată în escrow.
+      © {new Date().getFullYear()} {SITE_NAME}. Închiriere securizată între oameni, cu plată blocată în siguranță până la predare.
     </Text>
   </Section>
 )

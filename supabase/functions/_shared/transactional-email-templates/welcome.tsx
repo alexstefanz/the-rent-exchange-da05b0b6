@@ -14,7 +14,7 @@ const WelcomeEmail = ({ name }: Props) => (
     <H1>{name ? `Bine ai venit, ${name} 👋` : 'Bine ai venit pe Rentli 👋'}</H1>
     <Lead>
       Suntem bucuroși că te-ai alăturat comunității. Pe Rentli poți închiria sau pune
-      la închiriere orice obiect, simplu, sigur și cu plată în escrow.
+      la închiriere orice obiect, simplu, sigur și cu plată blocată în siguranță până la predare.
     </Lead>
     <table cellPadding={0} cellSpacing={8} role="presentation" style={{ width: '100%', margin: '12px 0 24px' }}>
       <tbody>
