@@ -109,7 +109,9 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
 </style></head><body>${html}</body></html>`);
       w.document.close();
       w.focus();
-      setTimeout(() => { w.print(); setBlank(false); }, 300);
+      const imgs = Array.from(w.document.images);
+      Promise.all(imgs.map((im) => im.complete ? null : new Promise((r) => { im.onload = im.onerror = r; setTimeout(r, 8000); })))
+        .then(() => setTimeout(() => { w.print(); setBlank(false); }, 200));
     }, 50);
   };
 
