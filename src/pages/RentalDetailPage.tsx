@@ -425,9 +425,16 @@ const RentalDetailPage = () => {
 
         {(rental.status === "cancelled" || rental.status === "rejected") && (() => {
           const reason = (rental as any).cancellation_reason as string | null | undefined;
-          const wasPaid = ["authorized", "paid", "captured"].includes(String(rental.payment_status));
-          const byOwner = reason === "owner_self_unpaid" || rental.status === "rejected";
-          const byRenter = reason === "renter_self_unpaid";
+          const wasPaid =
+            ["authorized", "paid", "captured", "refunded", "refund_pending", "voided"].includes(String(rental.payment_status)) ||
+            Number((rental as any).wallet_credit_applied || 0) > 0;
+          const cancelledBy = (rental as any).cancelled_by as string | null | undefined;
+          const byOwner =
+            reason === "owner_self_unpaid" || reason === "owner_paid_before_contract" ||
+            rental.status === "rejected" || (!!cancelledBy && cancelledBy === rental.owner_id);
+          const byRenter =
+            reason === "renter_self_unpaid" || reason === "renter_paid_before_contract" ||
+            (!!cancelledBy && cancelledBy === rental.renter_id);
           const expired = !!reason && reason.startsWith("Cerere expirată automat");
           const who = expired
             ? t("Această cerere a expirat automat deoarece proprietarul nu a confirmat-o în termenul de 24 de ore", "This request expired automatically because the owner did not respond within 24 hours")
@@ -451,7 +458,7 @@ const RentalDetailPage = () => {
                   {!isOwner && (
                     <p className="text-sm text-foreground/80 mt-1">
                       {wasPaid
-                        ? t("Suma reținută este eliberată automat în metoda ta de plată.", "The held amount is released automatically to your payment method.")
+                        ? t("Suma plătită îți este returnată integral în metoda de plată sau în contul Rentli.", "The paid amount is fully refunded to your payment method or Rentli wallet.")
                         : t("Nu ai fost taxat. Nicio sumă nu a fost retrasă.", "You were not charged.")}
                     </p>
                   )}
