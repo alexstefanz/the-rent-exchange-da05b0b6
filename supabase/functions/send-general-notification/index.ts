@@ -145,21 +145,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      const stars = "⭐".repeat(Math.min(rating || 0, 5));
-      const reviewerDisplay = escapeHtml(reviewer_name || "Un utilizator");
-      const recipientName = escapeHtml(fullName || "");
-      const greetingName = recipientName ? `Salut ${recipientName},` : "Salut,";
-
-      const rows: { label: string; value: string }[] = [
-        { label: "👤 De la", value: reviewerDisplay },
-        { label: "⭐ Rating", value: `${stars} (${rating}/5)` },
-      ];
-      if (product_title) {
-        rows.push({ label: "📦 Produs", value: escapeHtml(product_title) });
-      }
-      if (comment) {
-        rows.push({ label: "💬 Comentariu", value: escapeHtml(comment) });
-      }
+      const reviewerDisplay = reviewer_name || "Un utilizator";
 
       const titleRo = product_title
         ? `Ai primit un review pentru "${product_title}"`
@@ -168,16 +154,12 @@ Deno.serve(async (req) => {
         ? `You received a review for "${product_title}"`
         : "You received a new review";
 
-      const html = buildEmailTemplate({
-        title: `${titleRo} ⭐`,
-        greeting: `${greetingName}<br>Cineva ți-a lăsat o recenzie pe platforma Rentli.`,
-        rows,
-        ctaText: "Vezi recenzia",
-        ctaLink: "/profile",
-        footerText: "Recenziile ajută comunitatea să funcționeze mai bine.",
-      });
-
-      await sendEmail(email, `${titleRo} - ${stars}`, html);
+      await sendTemplatedEmail(
+        "review-received",
+        email,
+        { reviewerName: reviewer_name, rating, comment },
+        `review-${recipient_user_id}-${Date.now()}`,
+      );
 
       // Also insert a notification
       await supabaseAdmin.from("notifications").insert({
