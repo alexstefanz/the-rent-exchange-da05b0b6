@@ -199,24 +199,14 @@ Deno.serve(async (req) => {
         });
       }
 
-      const title = escapeHtml(product_title);
-      const name = escapeHtml(fullName || "");
-      const greetingName = name ? `Felicitări ${name}! 🎊` : "Felicitări! 🎊";
       const productLink = product_slug ? `/product/${product_slug}` : "/owner";
 
-      const html = buildEmailTemplate({
-        title: "Produsul tau a fost publicat! \u{1F680}",
-        greeting: `${greetingName}<br>Produsul tau <strong>${title}</strong> este acum vizibil pe platforma Rentli si poate fi inchiriat de alti utilizatori.`,
-        rows: [
-          { label: "\u{1F4E6} Produs", value: title },
-          { label: "\u{1F4CA} Status", value: "Activ \u2705" },
-        ],
-        ctaText: "Vezi anuntul",
-        ctaLink: productLink,
-        footerText: "Poti gestiona produsele tale oricand din sectiunea Produsele mele.",
-      });
-
-      await sendEmail(email, `Produsul tău „${product_title}" a fost publicat!`, html);
+      await sendTemplatedEmail(
+        "product-published",
+        email,
+        { productTitle: product_title, productId: product_slug },
+        `product-published-${user_id}-${Date.now()}`,
+      );
 
       // Also insert a notification
       await supabaseAdmin.from("notifications").insert({
