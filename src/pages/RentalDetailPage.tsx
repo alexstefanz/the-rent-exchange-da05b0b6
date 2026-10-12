@@ -458,7 +458,7 @@ const RentalDetailPage = () => {
                   {!isOwner && (
                     <p className="text-sm text-foreground/80 mt-1">
                       {wasPaid
-                        ? t("Suma reținută este eliberată automat în metoda ta de plată.", "The held amount is released automatically to your payment method.")
+                        ? t("Suma plătită îți este returnată integral în metoda de plată sau în contul Rentli.", "The paid amount is fully refunded to your payment method or Rentli wallet.")
                         : t("Nu ai fost taxat. Nicio sumă nu a fost retrasă.", "You were not charged.")}
                     </p>
                   )}
