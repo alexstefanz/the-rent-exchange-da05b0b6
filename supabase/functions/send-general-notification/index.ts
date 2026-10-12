@@ -20,87 +20,25 @@ function checkRateLimit(key: string, maxRequests = 5, windowSec = 60): boolean {
   return true;
 }
 
-const PLATFORM_URL = "https://rentli.ro";
+// All sends go through send-transactional-email, which enqueues on the
+// internal email queue delivered via the verified notify.rentli.ro domain.
+// The root rentli.ro domain is not a verified sender, so direct sends fail.
+async function sendTemplatedEmail(
+  templateName: string,
+  recipientEmail: string,
+  templateData: Record<string, unknown>,
+  idempotencyKey: string,
+) {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-function escapeHtml(text: string): string {
-  const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-  return text.replace(/[&<>"']/g, (m) => map[m]);
-}
-
-function buildEmailTemplate(opts: {
-  title: string;
-  greeting: string;
-  rows: { label: string; value: string }[];
-  ctaText: string;
-  ctaLink: string;
-  footerText: string;
-}) {
-  const rowsHtml = opts.rows
-    .map(
-      (r) =>
-        `<tr><td style="padding:6px 0;color:#6B6155;font-size:14px;">${r.label}</td><td style="padding:6px 0;color:#2D2517;font-size:14px;font-weight:600;text-align:right;">${r.value}</td></tr>`
-    )
-    .join("");
-
-  return `<!DOCTYPE html>
-<html lang="ro">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background-color:#FAF9F7;font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAF9F7;padding:32px 16px;">
-<tr><td align="center">
-<table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
-  <!-- Header -->
-  <tr><td style="background-color:#F59E0B;border-radius:12px 12px 0 0;padding:24px 32px;text-align:center;">
-    <span style="color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-0.5px;">Rentli</span>
-  </td></tr>
-  <!-- Card -->
-  <tr><td style="background-color:#ffffff;padding:32px;border-radius:0 0 12px 12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);">
-    <h2 style="margin:0 0 8px;color:#2D2517;font-size:20px;">${opts.title}</h2>
-    <p style="margin:0 0 24px;color:#6B6155;font-size:15px;line-height:1.5;">${opts.greeting}</p>
-    ${rowsHtml ? `<table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #E8E4DF;border-bottom:1px solid #E8E4DF;margin-bottom:24px;padding:8px 0;">
-      ${rowsHtml}
-    </table>` : ''}
-    <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
-      <a href="${PLATFORM_URL}${opts.ctaLink}" style="display:inline-block;background-color:#F59E0B;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:8px;font-size:15px;font-weight:600;">${opts.ctaText}</a>
-    </td></tr></table>
-  </td></tr>
-  <!-- Footer -->
-  <tr><td style="padding:24px 32px;text-align:center;">
-    <p style="margin:0;color:#9B9489;font-size:12px;">${opts.footerText}</p>
-    <p style="margin:8px 0 0;"><a href="${PLATFORM_URL}" style="color:#F59E0B;font-size:12px;text-decoration:none;">rentli.ro</a></p>
-  </td></tr>
-</table>
-</td></tr></table>
-</body></html>`;
-}
-
-async function sendEmail(to: string, subject: string, html: string) {
-  const resendApiKey = Deno.env.get("RESEND_API_KEY");
-  const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-  if (!resendApiKey || !lovableApiKey) {
-    throw new Error("Email service not configured: missing LOVABLE_API_KEY or RESEND_API_KEY");
-  }
-
-  const res = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${lovableApiKey}`,
-      "X-Connection-Api-Key": resendApiKey,
-    },
-    body: JSON.stringify({
-      from: "Rentli <noreply@rentli.ro>",
-      to: [to],
-      subject,
-      html,
-    }),
+  const { data, error } = await supabaseAdmin.functions.invoke("send-transactional-email", {
+    body: { templateName, recipientEmail, idempotencyKey, templateData },
   });
-
-  const result = await res.text();
-  if (!res.ok) {
-    throw new Error(`Email gateway error ${res.status}: ${result}`);
-  }
-  console.log(`Email queued to ${to}:`, result);
+  if (error) throw new Error(`send-transactional-email failed: ${error.message}`);
+  if (data?.error) throw new Error(`send-transactional-email error: ${data.error}`);
+  console.log(`Email queued to ${recipientEmail} (template=${templateName})`);
 }
 
 Deno.serve(async (req) => {
@@ -123,10 +61,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-    if (!resendApiKey || !lovableApiKey) {
-      console.error("RESEND_API_KEY or LOVABLE_API_KEY not configured");
+    if (!Deno.env.get("SUPABASE_URL") || !Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) {
+      console.error("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not configured");
       return new Response(JSON.stringify({ error: "Email service not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -175,23 +111,12 @@ Deno.serve(async (req) => {
         });
       }
 
-      const name = escapeHtml(full_name || "");
-      const greeting = name ? `Salut ${name}! 👋` : "Salut! 👋";
-
-      const html = buildEmailTemplate({
-        title: "Bine ai venit pe Rentli! 🎉",
-        greeting: `${greeting}<br><br>Contul tău a fost creat cu succes. Pe Rentli poți închiria sau lista produse în câteva minute. Explorează categoriile și începe acum!`,
-        rows: [
-          { label: "🔍 Caută produse", value: "Găsește ce ai nevoie" },
-          { label: "📦 Listează produse", value: "Câștigă din ce ai" },
-          { label: "💬 Chat integrat", value: "Comunică ușor" },
-        ],
-        ctaText: "Explorează platforma",
-        ctaLink: "/",
-        footerText: "Mulțumim că te-ai alăturat comunității Rentli!",
-      });
-
-      await sendEmail(email, "Bine ai venit pe Rentli! 🎉", html);
+      await sendTemplatedEmail(
+        "welcome",
+        email,
+        { name: full_name || undefined },
+        `welcome-${email}-${Date.now()}`,
+      );
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -220,21 +145,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      const stars = "⭐".repeat(Math.min(rating || 0, 5));
-      const reviewerDisplay = escapeHtml(reviewer_name || "Un utilizator");
-      const recipientName = escapeHtml(fullName || "");
-      const greetingName = recipientName ? `Salut ${recipientName},` : "Salut,";
-
-      const rows: { label: string; value: string }[] = [
-        { label: "👤 De la", value: reviewerDisplay },
-        { label: "⭐ Rating", value: `${stars} (${rating}/5)` },
-      ];
-      if (product_title) {
-        rows.push({ label: "📦 Produs", value: escapeHtml(product_title) });
-      }
-      if (comment) {
-        rows.push({ label: "💬 Comentariu", value: escapeHtml(comment) });
-      }
+      const reviewerDisplay = reviewer_name || "Un utilizator";
 
       const titleRo = product_title
         ? `Ai primit un review pentru "${product_title}"`
@@ -243,16 +154,12 @@ Deno.serve(async (req) => {
         ? `You received a review for "${product_title}"`
         : "You received a new review";
 
-      const html = buildEmailTemplate({
-        title: `${titleRo} ⭐`,
-        greeting: `${greetingName}<br>Cineva ți-a lăsat o recenzie pe platforma Rentli.`,
-        rows,
-        ctaText: "Vezi recenzia",
-        ctaLink: "/profile",
-        footerText: "Recenziile ajută comunitatea să funcționeze mai bine.",
-      });
-
-      await sendEmail(email, `${titleRo} - ${stars}`, html);
+      await sendTemplatedEmail(
+        "review-received",
+        email,
+        { reviewerName: reviewer_name, rating, comment },
+        `review-${recipient_user_id}-${Date.now()}`,
+      );
 
       // Also insert a notification
       await supabaseAdmin.from("notifications").insert({
@@ -292,24 +199,14 @@ Deno.serve(async (req) => {
         });
       }
 
-      const title = escapeHtml(product_title);
-      const name = escapeHtml(fullName || "");
-      const greetingName = name ? `Felicitări ${name}! 🎊` : "Felicitări! 🎊";
       const productLink = product_slug ? `/product/${product_slug}` : "/owner";
 
-      const html = buildEmailTemplate({
-        title: "Produsul tau a fost publicat! \u{1F680}",
-        greeting: `${greetingName}<br>Produsul tau <strong>${title}</strong> este acum vizibil pe platforma Rentli si poate fi inchiriat de alti utilizatori.`,
-        rows: [
-          { label: "\u{1F4E6} Produs", value: title },
-          { label: "\u{1F4CA} Status", value: "Activ \u2705" },
-        ],
-        ctaText: "Vezi anuntul",
-        ctaLink: productLink,
-        footerText: "Poti gestiona produsele tale oricand din sectiunea Produsele mele.",
-      });
-
-      await sendEmail(email, `Produsul tău „${product_title}" a fost publicat!`, html);
+      await sendTemplatedEmail(
+        "product-published",
+        email,
+        { productTitle: product_title, productId: product_slug },
+        `product-published-${user_id}-${Date.now()}`,
+      );
 
       // Also insert a notification
       await supabaseAdmin.from("notifications").insert({
