@@ -111,23 +111,12 @@ Deno.serve(async (req) => {
         });
       }
 
-      const name = escapeHtml(full_name || "");
-      const greeting = name ? `Salut ${name}! 👋` : "Salut! 👋";
-
-      const html = buildEmailTemplate({
-        title: "Bine ai venit pe Rentli! 🎉",
-        greeting: `${greeting}<br><br>Contul tău a fost creat cu succes. Pe Rentli poți închiria sau lista produse în câteva minute. Explorează categoriile și începe acum!`,
-        rows: [
-          { label: "🔍 Caută produse", value: "Găsește ce ai nevoie" },
-          { label: "📦 Listează produse", value: "Câștigă din ce ai" },
-          { label: "💬 Chat integrat", value: "Comunică ușor" },
-        ],
-        ctaText: "Explorează platforma",
-        ctaLink: "/",
-        footerText: "Mulțumim că te-ai alăturat comunității Rentli!",
-      });
-
-      await sendEmail(email, "Bine ai venit pe Rentli! 🎉", html);
+      await sendTemplatedEmail(
+        "welcome",
+        email,
+        { name: full_name || undefined },
+        `welcome-${email}-${Date.now()}`,
+      );
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
