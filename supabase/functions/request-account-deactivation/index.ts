@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
       },
     });
     if (emailError) {
-      console.error("send-transactional-email error:", emailError);
+      console.error("app email send error:", emailError);
       return new Response(JSON.stringify({ error: "Could not send email" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

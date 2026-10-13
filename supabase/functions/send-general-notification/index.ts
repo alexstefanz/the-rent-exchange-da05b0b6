@@ -21,7 +21,7 @@ function checkRateLimit(key: string, maxRequests = 5, windowSec = 60): boolean {
   return true;
 }
 
-// All sends go through send-transactional-email, which enqueues on the
+// All sends go through app email send, which enqueues on the
 // internal email queue delivered via the verified notify.rentli.ro domain.
 // The root rentli.ro domain is not a verified sender, so direct sends fail.
 async function sendTemplatedEmail(
@@ -37,8 +37,7 @@ async function sendTemplatedEmail(
   const { data, error } = await invokeAppEmail({
     body: { templateName, recipientEmail, idempotencyKey, templateData },
   });
-  if (error) throw new Error(`send-transactional-email failed: ${error.message}`);
-  if (data?.error) throw new Error(`send-transactional-email error: ${data.error}`);
+  if (error) throw new Error(`app email send failed: ${error.message}`);
   console.log(`Email queued to ${recipientEmail} (template=${templateName})`);
 }
 

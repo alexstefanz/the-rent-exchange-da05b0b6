@@ -77,8 +77,8 @@ Deno.serve(async (req) => {
     });
 
     if (error) {
-      console.error('Error invoking send-transactional-email:', error);
-      throw new Error(error.message || 'Failed to invoke send-transactional-email');
+      console.error('Error invoking app email send:', error);
+      throw new Error(error.message || 'Failed to invoke app email send');
     }
 
     if (data?.error) {
