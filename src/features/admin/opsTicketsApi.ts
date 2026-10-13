@@ -234,6 +234,198 @@ export const fetchOpsTicket = async (id: string): Promise<OpsTicket> => {
 
   // Fetch requester profile if available
   if (ticket.requester_user_id) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name, email')
+      .eq('id', ticket.requester_user_id)
+      .single();
+    if (profile) {
+      ticket.requester_name = profile.full_name;
+      ticket.requester_email = profile.email;
+    }
+  }
+
+  return ticket;
+};
+
+export const createOpsTicket = async (input: CreateOpsTicketInput): Promise<OpsTicket> => {
+  const { data: userData } = await supabase.auth.getUser();
+  const userId = userData.user?.id;
+
+  const insertData: Record<string, unknown> = {
+    ...input,
+    created_by: userId,
+    priority: input.priority || 'MEDIUM',
+  };
+
+  // Auto-populate context from reservation if provided
+  if (input.reservation_id) {
+    const { data: rental } = await supabase
+      .from('rentals')
+      .select('product_id, renter_id, owner_id')
+      .eq('id', input.reservation_id)
+      .single();
+    if (rental) {
+      insertData.product_id = insertData.product_id || rental.product_id;
+      insertData.rental_user_id = insertData.rental_user_id || rental.renter_id;
+      insertData.owner_user_id = insertData.owner_user_id || rental.owner_id;
+    }
+  }
+
+  const { data, error } = await opsTickets().insert(insertData).select().single();
+  if (error) throw new Error(error.message);
+
+  // Audit log
+  await opsAuditLog().insert({
+    ticket_id: (data as any).id,
+    action: 'TICKET_CREATED',
+    new_value: input.title,
+    actor_id: userId,
+  });
+
+  // Notify requester via email (non-blocking)
+  const ticketAny = data as any;
+  if (ticketAny.requester_user_id) {
+    sendTicketEmail(
+      ticketAny.requester_user_id,
+      'ticket-created',
+      `ticket-created-${ticketAny.id}`,
+      { ticketId: ticketAny.public_id, ticketTitle: ticketAny.title }
+    );
+  }
+
+  return data as unknown as OpsTicket;
+};
+
+export const updateOpsTicketField = async (
+  ticketId: string,
+  field: string,
+  oldValue: string | null,
+  newValue: string,
+  auditAction: string
+): Promise<void> => {
+  const { data: userData } = await supabase.auth.getUser();
+  const updates: Record<string, unknown> = { [field]: newValue };
+  if (field === 'status' && newValue === 'CLOSED') {
+    updates.closed_at = new Date().toISOString();
+  }
+
+  const { error } = await opsTickets().update(updates).eq('id', ticketId);
+  if (error) throw new Error(error.message);
+
+  await opsAuditLog().insert({
+    ticket_id: ticketId,
+    action: auditAction,
+    old_value: oldValue,
+    new_value: newValue,
+    actor_id: userData.user?.id,
+  });
+
+  // If admin closed/resolved the ticket, send email
+  if (field === 'status' && (newValue === 'CLOSED' || newValue === 'RESOLVED')) {
+    try {
+      const { data: t } = await opsTickets().select('requester_user_id, public_id').eq('id', ticketId).single();
+      const tAny = t as any;
+      if (tAny?.requester_user_id) {
+        sendTicketEmail(tAny.requester_user_id, 'ticket-resolved', `ticket-resolved-${ticketId}-${newValue}`, { ticketId: tAny.public_id });
+      }
+    } catch (e) { console.error('[opsTicketsApi] resolved email failed:', e); }
+  }
+};
+
+// ============================================
+// Messages
+// ============================================
+
+export const fetchTicketMessages = async (ticketId: string): Promise<OpsTicketMessage[]> => {
+  const { data, error } = await opsMessages()
+    .select('*')
+    .eq('ticket_id', ticketId)
+    .order('created_at', { ascending: true });
+  if (error) throw new Error(error.message);
+  const messages = (data || []) as unknown as OpsTicketMessage[];
+
+  // Enrich with author names from profiles
+  const authorIds = Array.from(
+    new Set(messages.map(m => m.author_id).filter((id): id is string => !!id))
+  );
+  if (authorIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', authorIds);
+    const nameMap = new Map((profiles || []).map(p => [p.id, p.full_name]));
+    messages.forEach(m => {
+      m.author_name = m.author_id ? nameMap.get(m.author_id) ?? null : null;
+    });
+  }
+  return messages;
+};
+
+export const createTicketMessage = async (
+  ticketId: string,
+  messageText: string,
+  isInternal: boolean = false,
+  authorType: string = 'ADMIN'
+): Promise<OpsTicketMessage> => {
+  const { data: userData } = await supabase.auth.getUser();
+  const { data, error } = await opsMessages()
+    .insert({
+      ticket_id: ticketId,
+      author_type: authorType,
+      author_id: userData.user?.id,
+      message_text: messageText,
+      is_internal: isInternal,
+    })
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+
+  // Audit
+  await opsAuditLog().insert({
+    ticket_id: ticketId,
+    action: isInternal ? 'INTERNAL_NOTE_ADDED' : 'MESSAGE_ADDED',
+    new_value: messageText.substring(0, 100),
+    actor_id: userData.user?.id,
+  });
+
+  // If admin replied publicly, email the requester — max one email per ticket
+  // every 30 minutes (later replies in that window are in-app only).
+  if (!isInternal && authorType === 'ADMIN') {
+    try {
+      const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      const { count: recent } = await opsMessages()
+        .select('id', { count: 'exact', head: true })
+        .eq('ticket_id', ticketId)
+        .eq('author_type', 'ADMIN')
+        .eq('is_internal', false)
+        .neq('id', (data as any).id)
+        .gte('created_at', since);
+      const { data: t } = await opsTickets().select('requester_user_id, public_id').eq('id', ticketId).single();
+      const tAny = t as any;
+      if ((recent ?? 0) === 0 && tAny?.requester_user_id) {
+        sendTicketEmail(
+          tAny.requester_user_id,
+          'ticket-replied',
+          `ticket-replied-${(data as any).id}`,
+          { ticketId: tAny.public_id, messagePreview: messageText.substring(0, 200) }
+        );
+      }
+    } catch (e) { console.error('[opsTicketsApi] replied email failed:', e); }
+  }
+
+
+  return data as unknown as OpsTicketMessage;
+};
+
+// Helper: send ticket-related email to user (non-blocking)
+async function sendTicketEmail(
+  userId: string,
+  templateName: string,
+  idempotencyKey: string,
+  extraData: Record<string, unknown> = {}
+): Promise<void> {
+  try {
     await supabase.functions.invoke('send-admin-user-email', {
       body: { templateName, userId, idempotencyKey, templateData: extraData },
     });
