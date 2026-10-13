@@ -59,15 +59,15 @@ export const approveProduct = async (productId: string): Promise<void> => {
         .eq('id', prod.owner_id)
         .single();
       if (profile?.email) {
-        await supabase.functions.invoke('send-transactional-email', {
+        await supabase.functions.invoke('send-admin-user-email', {
           body: {
             templateName: 'product-published',
-            recipientEmail: profile.email,
+            userId: prod.owner_id,
             idempotencyKey: `product-published-${productId}`,
             templateData: {
               name: profile.full_name || undefined,
               productTitle: prod.title,
-              productImage: Array.isArray((prod as any).images) ? (prod as any).images[0] : undefined,
+              productImage: Array.isArray((prod as any).images) ? (prod as any).images[0] ?? null : null,
               productId: prod.slug || productId,
             },
           },
@@ -106,10 +106,10 @@ export const rejectProduct = async (productId: string, reason: string): Promise<
         .eq('id', prod.owner_id)
         .single();
       if (profile?.email) {
-        await supabase.functions.invoke('send-transactional-email', {
+        await supabase.functions.invoke('send-admin-user-email', {
           body: {
             templateName: 'product-rejected',
-            recipientEmail: profile.email,
+            userId: prod.owner_id,
             idempotencyKey: `product-rejected-${productId}-${Date.now()}`,
             templateData: {
               name: profile.full_name || undefined,
