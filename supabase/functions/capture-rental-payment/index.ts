@@ -1,3 +1,4 @@
+import { invokeAppEmail } from '../_shared/transactional-email-templates/send-app-email.ts'
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
@@ -234,7 +235,7 @@ async function captureRental(
     }
 
     if (ownerProfile?.email) {
-      await supabaseAdmin.functions.invoke("send-transactional-email", {
+      await invokeAppEmail({
         body: {
           template: "payout-received",
           to: ownerProfile.email,

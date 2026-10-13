@@ -1,3 +1,4 @@
+import { invokeAppEmail } from '../_shared/transactional-email-templates/send-app-email.ts'
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { requireCaller, unauthorizedResponse } from "../_shared/authGuard.ts";
 
@@ -448,7 +449,7 @@ Deno.serve(async (req) => {
               const rentalCode = rental.public_id || `id-${rental.id.slice(0, 8)}`;
               const threadKey = `rental:${rentalCode}`;
               const subjectSuffix = product?.title || rentalCode;
-              const { error: emErr } = await supabase.functions.invoke("send-transactional-email", {
+              const { error: emErr } = await invokeAppEmail({
                 body: {
                   templateName: tplName,
                   recipientEmail: userObj.email,

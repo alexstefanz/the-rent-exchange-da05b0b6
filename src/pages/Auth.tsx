@@ -371,14 +371,7 @@ const Auth = () => {
     try {
       const { data: { user: verifiedUser } } = await supabase.auth.getUser();
       if (verifiedUser?.email) {
-        await supabase.functions.invoke("send-transactional-email", {
-          body: {
-            templateName: "welcome",
-            recipientEmail: verifiedUser.email,
-            idempotencyKey: `welcome-${verifiedUser.id}`,
-            templateData: { name: verifiedUser?.user_metadata?.full_name || "" },
-          },
-        });
+        await supabase.functions.invoke("send-account-email", { body: { event: "welcome" } });
       }
     } catch (e) {
       console.error("welcome email failed:", e);
@@ -406,14 +399,7 @@ const Auth = () => {
       // Send welcome email (fire and forget)
       try {
         const { data: { user: verifiedUser } } = await supabase.auth.getUser();
-        await supabase.functions.invoke("send-transactional-email", {
-          body: {
-            templateName: "welcome",
-            recipientEmail: otpEmail,
-            idempotencyKey: `welcome-${verifiedUser?.id ?? otpEmail}`,
-            templateData: { name: verifiedUser?.user_metadata?.full_name || "" },
-          },
-        });
+        await supabase.functions.invoke("send-account-email", { body: { event: "welcome" } });
       } catch (e) {
         console.error("Failed to send welcome email:", e);
       }

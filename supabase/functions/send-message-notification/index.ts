@@ -1,3 +1,4 @@
+import { invokeAppEmail } from '../_shared/transactional-email-templates/send-app-email.ts'
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireCaller, unauthorizedResponse } from "../_shared/authGuard.ts";
 
@@ -191,7 +192,7 @@ Deno.serve(async (req) => {
           const preview = message_content.length > 140
             ? message_content.substring(0, 140) + "…"
             : message_content;
-          await supabase.functions.invoke("send-transactional-email", {
+          await invokeAppEmail({
             body: {
               templateName: "new-message",
               recipientEmail,

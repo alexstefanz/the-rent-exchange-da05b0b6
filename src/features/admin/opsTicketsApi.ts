@@ -426,19 +426,8 @@ async function sendTicketEmail(
   extraData: Record<string, unknown> = {}
 ): Promise<void> {
   try {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('email, full_name')
-      .eq('id', userId)
-      .single();
-    if (!profile?.email) return;
-    await supabase.functions.invoke('send-transactional-email', {
-      body: {
-        templateName,
-        recipientEmail: profile.email,
-        idempotencyKey,
-        templateData: { name: profile.full_name || undefined, ...extraData },
-      },
+    await supabase.functions.invoke('send-admin-user-email', {
+      body: { templateName, userId, idempotencyKey, templateData: extraData },
     });
   } catch (e) {
     console.error(`[opsTicketsApi] Failed to send ${templateName} email:`, e);

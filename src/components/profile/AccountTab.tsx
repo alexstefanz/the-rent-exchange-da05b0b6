@@ -286,13 +286,8 @@ const AccountTab = () => {
         changes.push({ label: "Telefon", value: normalizedPhone || "—" });
       }
       if (changes.length > 0 && (updated?.email || user.email)) {
-        supabase.functions.invoke("send-transactional-email", {
-          body: {
-            templateName: "profile-updated",
-            recipientEmail: updated?.email || user.email,
-            idempotencyKey: `profile-updated-${user.id}-${Date.now()}`,
-            templateData: { changes },
-          },
+        supabase.functions.invoke("send-account-email", {
+        body: { event: "profile-updated", ...{ changes } },
         }).catch((e) => console.error("profile-updated email failed:", e));
       }
       setProfile(updated);
@@ -331,13 +326,8 @@ const AccountTab = () => {
     await queryClient.invalidateQueries({ queryKey: ["currentUserProfile", user.id] });
     // Fire-and-forget security email for phone change
     if (user.email) {
-      supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName: "profile-updated",
-          recipientEmail: user.email,
-          idempotencyKey: `profile-updated-${user.id}-phone-${Date.now()}`,
-          templateData: { changes: [{ label: "Telefon", value: verifiedPhone }] },
-        },
+      supabase.functions.invoke("send-account-email", {
+        body: { event: "profile-updated", ...{ changes: [{ label: "Telefon", value: verifiedPhone }] } },
       }).catch((e) => console.error("profile-updated email failed:", e));
     }
     showSaveToast(t("Telefon actualizat", "Phone updated"));

@@ -87,13 +87,8 @@ export const WithdrawalMethodCard = ({ method }: { method: PayoutMethod | null }
           ? `${clean.slice(0, 4)} **** **** **** **** ${clean.slice(-4)}`
           : clean;
         if (user.email) {
-          supabase.functions.invoke("send-transactional-email", {
-            body: {
-              templateName: "iban-added",
-              recipientEmail: user.email,
-              idempotencyKey: `iban-added-${user.id}-${clean}`,
-              templateData: { maskedIban, holderName: fullName },
-            },
+          supabase.functions.invoke("send-account-email", {
+            body: { event: "iban-added", maskedIban, holderName: fullName },
           }).catch((e) => console.error("iban-added email failed:", e));
         }
       } catch (e) { console.error(e); }

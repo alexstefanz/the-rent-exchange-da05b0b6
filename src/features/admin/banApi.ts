@@ -19,10 +19,10 @@ export const banUser = async (userId: string, reason: string, bannedBy: string):
       .eq('id', userId)
       .single();
     if (profile?.email) {
-      await supabase.functions.invoke('send-transactional-email', {
+      await supabase.functions.invoke('send-admin-user-email', {
         body: {
           templateName: 'account-banned',
-          recipientEmail: profile.email,
+          userId,
           idempotencyKey: `account-banned-${userId}-${Date.now()}`,
           templateData: { name: profile.full_name || undefined, reason },
         },
