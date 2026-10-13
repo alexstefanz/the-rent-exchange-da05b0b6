@@ -87,3 +87,19 @@ export async function sendAppEmail(req: AppEmailRequest): Promise<AppEmailResult
   await log({ message_id: null, template_name: req.templateName, recipient_email: recipient, status: 'sent' })
   return { success: true, sent: true }
 }
+
+// Drop-in for former `functions.invoke(<send function>, { body })` call sites.
+export async function invokeAppEmail(opts: { body: AppEmailRequest & { template_name?: string; recipient_email?: string; idempotency_key?: string } }) {
+  const b = opts.body
+  try {
+    const data = await sendAppEmail({
+      ...b,
+      templateName: b.templateName || b.template_name || '',
+      recipientEmail: b.recipientEmail || b.recipient_email || '',
+      idempotencyKey: b.idempotencyKey || b.idempotency_key,
+    })
+    return { data, error: null as null | { message: string } }
+  } catch (e) {
+    return { data: null, error: { message: e instanceof Error ? e.message : String(e) } }
+  }
+}

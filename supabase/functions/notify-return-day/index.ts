@@ -1,3 +1,4 @@
+import { invokeAppEmail } from '../_shared/transactional-email-templates/send-app-email.ts'
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
@@ -90,7 +91,7 @@ Deno.serve(async (req) => {
             .eq("id", r.renter_id)
             .maybeSingle();
           if (renterProfile?.email) {
-            await supabase.functions.invoke("send-transactional-email", {
+            await invokeAppEmail({
               body: {
                 templateName: "return-reminder",
                 recipientEmail: renterProfile.email,

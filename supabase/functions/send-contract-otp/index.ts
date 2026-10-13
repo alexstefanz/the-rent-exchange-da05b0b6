@@ -1,3 +1,4 @@
+import { invokeAppEmail } from '../_shared/transactional-email-templates/send-app-email.ts'
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -80,7 +81,7 @@ Deno.serve(async (req) => {
       .eq("user_id", userId).eq("rental_id", rentalId).is("consumed_at", null);
 
     if (channel === "email") {
-      const { error: mailErr } = await supabase.functions.invoke("send-transactional-email", {
+      const { error: mailErr } = await invokeAppEmail({
         body: {
           templateName: "contract-otp", recipientEmail: email,
           idempotencyKey: `contract-otp-${rentalId}-${userId}-${ref}`,

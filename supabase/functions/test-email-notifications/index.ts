@@ -1,3 +1,4 @@
+import { invokeAppEmail } from '../_shared/transactional-email-templates/send-app-email.ts'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -66,7 +67,7 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    const { data, error } = await supabase.functions.invoke('send-transactional-email', {
+    const { data, error } = await invokeAppEmail({
       body: {
         templateName: testConfig.templateName,
         recipientEmail: finalRecipient,

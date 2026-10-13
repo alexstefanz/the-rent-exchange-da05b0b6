@@ -1,3 +1,4 @@
+import { invokeAppEmail } from '../_shared/transactional-email-templates/send-app-email.ts'
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireCaller, unauthorizedResponse } from "../_shared/authGuard.ts";
 
@@ -33,7 +34,7 @@ async function sendTemplatedEmail(
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
-  const { data, error } = await supabaseAdmin.functions.invoke("send-transactional-email", {
+  const { data, error } = await invokeAppEmail({
     body: { templateName, recipientEmail, idempotencyKey, templateData },
   });
   if (error) throw new Error(`send-transactional-email failed: ${error.message}`);

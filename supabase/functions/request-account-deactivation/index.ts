@@ -1,3 +1,4 @@
+import { invokeAppEmail } from '../_shared/transactional-email-templates/send-app-email.ts'
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const corsHeaders = {
@@ -62,7 +63,7 @@ Deno.serve(async (req) => {
     const confirmLink = `${siteUrl}/dezactivare-cont?token=${token}`;
 
     // Send via standard transactional email pipeline (queued + branded template)
-    const { error: emailError } = await adminClient.functions.invoke("send-transactional-email", {
+    const { error: emailError } = await invokeAppEmail({
       body: {
         templateName: "account-deactivation",
         recipientEmail: user.email,
