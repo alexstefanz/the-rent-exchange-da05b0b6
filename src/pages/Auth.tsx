@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Mail, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Loader2, Mail, Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react";
 import logoImage from "@/assets/rentli_logo.webp";
 import { useUxCopy } from "@/hooks/useUxCopy";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -49,6 +49,9 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
+  const [resetSentTo, setResetSentTo] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resendIn, setResendIn] = useState(0);
   const [isResetting, setIsResetting] = useState(false);
   const [showOtpVerification, setShowOtpVerification] = useState(false);
   const [otpEmail, setOtpEmail] = useState("");
@@ -120,31 +123,30 @@ const Auth = () => {
   type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
   const handleResetPassword = async () => {
-    if (!resetEmail) return;
+    const email = resetEmail.trim().toLowerCase();
+    if (!email || resendIn > 0) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setResetError("Introdu o adresă de email validă.");
+      return;
+    }
     setIsResetting(true);
+    setResetError(null);
 
-    // 1. Pre-check via diagnostic edge function: tell the user clearly
-    //    when no account exists for this email (Supabase silently no-ops in
-    //    that case, which makes it look like the email service is broken).
     try {
       const { data: diag } = await supabase.functions.invoke(
         "password-reset-diagnostics",
-        { body: { email: resetEmail.trim().toLowerCase() } }
+        { body: { email } }
       );
       if (diag && diag.exists === false) {
         setIsResetting(false);
-        toast({
-          title: copy.auth.accountNotFound,
-          description: copy.auth.accountNotFoundDesc,
-          variant: "destructive",
-        });
+        setResetError(`${copy.auth.accountNotFound}. ${copy.auth.accountNotFoundDesc}`);
         return;
       }
     } catch (_diagErr) {
-      // Fail open — if diagnostics is unreachable we still try the real reset.
+      // Fail open
     }
 
-    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth?reset=true`,
     });
     setIsResetting(false);
@@ -152,25 +154,22 @@ const Auth = () => {
     if (error) {
       const msg = (error.message || "").toLowerCase();
       if (msg.includes("security purposes") || msg.includes("rate") || (error as any).status === 429) {
-        toast({
-          title: copy.auth.rateLimitTitle,
-          description: copy.auth.rateLimitDesc,
-          variant: "destructive",
-        });
+        setResetError(`${copy.auth.rateLimitTitle}. ${copy.auth.rateLimitDesc}`);
       } else {
-        toast({
-          title: copy.auth.errorGeneric,
-          description: error.message,
-          variant: "destructive",
-        });
+        setResetError(`${copy.auth.errorGeneric}: ${error.message}`);
       }
       return;
     }
 
-    toast({ title: copy.auth.emailSent, description: copy.auth.checkInbox });
-    setShowResetDialog(false);
-    setResetEmail("");
+    setResetSentTo(email);
+    setResendIn(60);
   };
+
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -815,21 +814,50 @@ const Auth = () => {
         ← Înapoi la pagina principală
       </a>
 
-      <Dialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+      <Dialog open={showResetDialog} onOpenChange={(o) => { setShowResetDialog(o); if (!o) { setResetSentTo(null); setResetError(null); } }}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{copy.auth.resetPassword}</DialogTitle>
-            <DialogDescription>{copy.auth.resetDescription}</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="reset-email">{copy.auth.email}</Label>
-              <Input id="reset-email" type="email" placeholder="email@exemplu.ro" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleResetPassword(); } }} />
+          {resetSentTo ? (
+            <div className="space-y-4 text-center">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
+                <CheckCircle2 className="h-8 w-8 text-primary" />
+              </div>
+              <DialogHeader>
+                <DialogTitle className="text-center">Email trimis</DialogTitle>
+                <DialogDescription className="text-center">
+                  Am trimis linkul de resetare către <strong className="text-foreground">{resetSentTo}</strong>.
+                </DialogDescription>
+              </DialogHeader>
+              <p className="text-sm text-muted-foreground">
+                Verifică Inbox, dar și folderele Spam / Promoții. Emailul vine de la <strong>noreply@rentli.ro</strong> și poate dura câteva minute. Linkul expiră în 1 oră.
+              </p>
+              <div className="flex flex-col gap-2">
+                <Button variant="outline" disabled={resendIn > 0 || isResetting} onClick={handleResetPassword}>
+                  {isResetting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {resendIn > 0 ? `Retrimite în ${resendIn}s` : "Retrimite emailul"}
+                </Button>
+                <Button onClick={() => { setShowResetDialog(false); setResetSentTo(null); setResetEmail(""); }}>Închide</Button>
+              </div>
             </div>
-            <Button onClick={handleResetPassword} className="w-full" disabled={isResetting || !resetEmail}>
-              {isResetting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{copy.auth.sending}</> : copy.auth.sendResetLink}
-            </Button>
-          </div>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>{copy.auth.resetPassword}</DialogTitle>
+                <DialogDescription>{copy.auth.resetDescription}</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="reset-email">{copy.auth.email}</Label>
+                  <Input id="reset-email" type="email" placeholder="email@exemplu.ro" value={resetEmail} onChange={(e) => { setResetEmail(e.target.value); setResetError(null); }} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleResetPassword(); } }} />
+                </div>
+                {resetError && (
+                  <p role="alert" className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">{resetError}</p>
+                )}
+                <Button onClick={handleResetPassword} className="w-full" disabled={isResetting || !resetEmail}>
+                  {isResetting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{copy.auth.sending}</> : copy.auth.sendResetLink}
+                </Button>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
