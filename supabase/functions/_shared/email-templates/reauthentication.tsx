@@ -1,24 +1,60 @@
 /// <reference types="npm:@types/react@18.3.1" />
+
 import * as React from 'npm:react@18.3.1'
-import { BaseLayout, H1, Lead, Para, Text } from '../transactional-email-templates/_components.tsx'
 
-interface Props { token: string }
+import {
+  Body,
+  Container,
+  Head,
+  Heading,
+  Html,
+  Preview,
+  Text,
+} from 'npm:@react-email/components@0.0.22'
 
-const otpBox: React.CSSProperties = {
-  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-  fontSize: 34, fontWeight: 800, color: '#1A1410',
-  backgroundColor: '#FBF8F4', border: '1px solid #EFE9E2', borderRadius: 14,
-  padding: '20px 16px', textAlign: 'center' as const, letterSpacing: 8, margin: '4px 0 22px',
+interface ReauthenticationEmailProps {
+  token: string
 }
 
-export const ReauthenticationEmail = ({ token }: Props) => (
-  <BaseLayout preview={`Codul tău de verificare Rentli: ${token}`}>
-    <H1>Cod de verificare</H1>
-    <Lead>Folosește codul de mai jos pentru a-ți confirma identitatea pe Rentli:</Lead>
-    <Text style={{ fontSize: 14, color: '#6B6360', margin: '0 0 8px', textTransform: 'uppercase' as const, letterSpacing: '0.6px', fontWeight: 700 }}>Codul tău</Text>
-    <div style={otpBox}>{token}</div>
-    <Para>Codul expiră în câteva minute. Dacă nu ai cerut tu acest cod, poți ignora acest email.</Para>
-  </BaseLayout>
+export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => (
+  <Html lang="en" dir="ltr">
+    <Head />
+    <Preview>Your verification code</Preview>
+    <Body style={main}>
+      <Container style={container}>
+        <Heading style={h1}>Confirm reauthentication</Heading>
+        <Text style={text}>Use the code below to confirm your identity:</Text>
+        <Text style={codeStyle}>{token}</Text>
+        <Text style={footer}>
+          This code will expire shortly. If you didn't request this, you can
+          safely ignore this email.
+        </Text>
+      </Container>
+    </Body>
+  </Html>
 )
 
 export default ReauthenticationEmail
+
+const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
+const container = { padding: '20px 25px' }
+const h1 = {
+  fontSize: '22px',
+  fontWeight: 'bold' as const,
+  color: '#000000',
+  margin: '0 0 20px',
+}
+const text = {
+  fontSize: '14px',
+  color: '#55575d',
+  lineHeight: '1.5',
+  margin: '0 0 25px',
+}
+const codeStyle = {
+  fontFamily: 'Courier, monospace',
+  fontSize: '22px',
+  fontWeight: 'bold' as const,
+  color: '#000000',
+  margin: '0 0 30px',
+}
+const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }

@@ -1,48 +1,97 @@
 /// <reference types="npm:@types/react@18.3.1" />
-import * as React from 'npm:react@18.3.1'
-import { BaseLayout, H1, Lead, Para, CTAButton, Section, Text, Link } from '../transactional-email-templates/_components.tsx'
 
-interface Props {
+import * as React from 'npm:react@18.3.1'
+
+import {
+  Body,
+  Button,
+  Container,
+  Head,
+  Heading,
+  Html,
+  Link,
+  Preview,
+  Text,
+} from 'npm:@react-email/components@0.0.22'
+
+interface SignupEmailProps {
   siteName: string
   siteUrl: string
   recipient: string
   confirmationUrl: string
-  token?: string
 }
 
-const otpBox: React.CSSProperties = {
-  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
-  fontSize: 34,
-  fontWeight: 800,
-  color: '#1A1410',
-  backgroundColor: '#FBF8F4',
-  border: '1px solid #EFE9E2',
-  borderRadius: 14,
-  padding: '20px 16px',
-  textAlign: 'center' as const,
-  letterSpacing: 8,
-  margin: '4px 0 22px',
-}
-
-export const SignupEmail = ({ recipient, confirmationUrl, token }: Props) => (
-  <BaseLayout preview={token ? `Codul tău Rentli: ${token}` : 'Confirmă adresa de email pentru Rentli'}>
-    <H1>Bine ai venit pe Rentli! 🎉</H1>
-    <Lead>
-      Mulțumim că ți-ai creat un cont. Confirmă adresa <strong>{recipient}</strong> pentru a începe.
-    </Lead>
-    {token ? (
-      <>
-        <Text style={{ fontSize: 14, color: '#6B6360', margin: '0 0 8px', textTransform: 'uppercase' as const, letterSpacing: '0.6px', fontWeight: 700 }}>Codul tău</Text>
-        <div style={otpBox}>{token}</div>
-        <Para>Codul expiră în câteva minute. Dacă nu ai cerut tu acest cod, ignoră acest email.</Para>
-      </>
-    ) : (
-      <>
-        <CTAButton href={confirmationUrl}>Confirmă adresa</CTAButton>
-        <Para>Dacă nu ai creat un cont, poți ignora acest email.</Para>
-      </>
-    )}
-  </BaseLayout>
+export const SignupEmail = ({
+  siteName,
+  siteUrl,
+  recipient,
+  confirmationUrl,
+}: SignupEmailProps) => (
+  <Html lang="en" dir="ltr">
+    <Head>
+      <style>{darkModeCss}</style>
+    </Head>
+    <Preview>Confirm your email for {siteName}</Preview>
+    <Body style={main}>
+      <Container style={container}>
+        <Heading style={h1}>Confirm your email</Heading>
+        <Text style={text}>
+          Thanks for signing up for{' '}
+          <Link href={siteUrl} style={link}>
+            <strong>{siteName}</strong>
+          </Link>
+          !
+        </Text>
+        <Text style={text}>
+          Please confirm your email address (
+          <Link href={`mailto:${recipient}`} style={link}>
+            {recipient}
+          </Link>
+          ) by clicking the button below:
+        </Text>
+        <Button className="dm-btn" style={button} href={confirmationUrl}>
+          Verify Email
+        </Button>
+        <Text style={footer}>
+          If you didn't create an account, you can safely ignore this email.
+        </Text>
+      </Container>
+    </Body>
+  </Html>
 )
 
 export default SignupEmail
+
+const main = { backgroundColor: '#ffffff', fontFamily: 'Arial, sans-serif' }
+const container = { padding: '20px 25px' }
+const h1 = {
+  fontSize: '22px',
+  fontWeight: 'bold' as const,
+  color: '#000000',
+  margin: '0 0 20px',
+}
+const text = {
+  fontSize: '14px',
+  color: '#55575d',
+  lineHeight: '1.5',
+  margin: '0 0 25px',
+}
+const link = { color: 'inherit', textDecoration: 'underline' }
+const button = {
+  backgroundColor: '#000000',
+  color: '#ffffff',
+  fontSize: '14px',
+  border: '1px solid #000000',
+  borderRadius: '8px',
+  padding: '12px 20px',
+  textDecoration: 'none',
+}
+const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
+// Rendered as a text child, which React may HTML-escape: keep this CSS free of >, &, and quotes.
+const darkModeCss = `
+  @media (prefers-color-scheme: dark) {
+    .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+  }
+  [data-ogsc] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+  [data-ogsb] .dm-btn { background-color: #ffffff !important; color: #000000 !important; }
+`
