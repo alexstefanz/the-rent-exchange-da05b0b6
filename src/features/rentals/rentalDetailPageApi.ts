@@ -51,6 +51,7 @@ export interface RentalFullDetail {
   cancel_request_created_at?: string | null;
   cancel_request_responded_at?: string | null;
   cancel_request_response_note?: string | null;
+  admin_handover_unlocked_at?: string | null;
 }
 
 export async function getRentalFullDetail(publicId: string): Promise<RentalFullDetail | null> {
@@ -62,7 +63,7 @@ export async function getRentalFullDetail(publicId: string): Promise<RentalFullD
   try {
     const { data: c } = await supabase
       .from("rentals")
-      .select("stripe_fee, cancellation_reason, cancelled_by, wallet_credit_applied, cancel_request_status, cancel_request_initiator, cancel_request_subject, cancel_request_reason, cancel_request_created_at, cancel_request_responded_at, cancel_request_response_note")
+      .select("stripe_fee, cancellation_reason, cancelled_by, wallet_credit_applied, cancel_request_status, cancel_request_initiator, cancel_request_subject, cancel_request_reason, cancel_request_created_at, cancel_request_responded_at, cancel_request_response_note, admin_handover_unlocked_at")
       .eq("id", (row as any).id)
       .maybeSingle();
     return { ...(row as RentalFullDetail), ...(c || {}) } as RentalFullDetail;

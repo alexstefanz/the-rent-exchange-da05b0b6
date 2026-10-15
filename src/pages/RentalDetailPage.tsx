@@ -784,8 +784,13 @@ const RentalDetailPage = () => {
               {rental.status !== "cancelled" && rental.status !== "rejected" && (
                 <HandoverPvCard
                   rentalId={rental.id}
-                  startDate={rental.start_date}
+                  startDate={rental.admin_handover_unlocked_at ? new Date().toISOString().slice(0, 10) : rental.start_date}
                   signed={handoverDoneEarly}
+                  onAdminUnlock={isAdmin ? async () => {
+                    const { error } = await supabase.rpc("admin_unlock_rental_handover" as any, { _rental_id: rental.id, _unlock: true });
+                    if (error) { alert(error.message); return; }
+                    window.location.reload();
+                  } : undefined}
                   contractReady={contractAcc.bothAccepted || contractAcc.loading}
                   onOpenContract={() => { setDocsBlank(false); setDocsTab("contract"); setDocsOpen(true); }}
                   onOpenPv={() => {
@@ -858,7 +863,7 @@ const RentalDetailPage = () => {
           </section>
         ) : (showHandoverPv || showReturnPv) && !handoverDoneEarly && !contractAcc.loading && !contractAcc.bothAccepted ? (
           null
-        ) : (showHandoverPv || showReturnPv) && !handoverDoneEarly && new Date() < new Date(String(rental.start_date).slice(0,10) + "T00:00:00") ? (
+        ) : (showHandoverPv || showReturnPv) && !handoverDoneEarly && !rental.admin_handover_unlocked_at && new Date() < new Date(String(rental.start_date).slice(0,10) + "T00:00:00") ? (
           null
 
         ) : (showHandoverPv || showReturnPv) && (

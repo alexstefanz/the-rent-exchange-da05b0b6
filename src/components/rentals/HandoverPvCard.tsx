@@ -13,10 +13,11 @@ interface Props {
   onOpenPv: () => void;
   onOpenBlank: () => void;
   t: (ro: string, en: string) => string;
+  onAdminUnlock?: () => void;
 }
 
 
-export default function HandoverPvCard({ rentalId, startDate, signed, contractReady = true, onOpenContract, onOpenPv, onOpenBlank, t }: Props) {
+export default function HandoverPvCard({ rentalId, startDate, signed, contractReady = true, onOpenContract, onOpenPv, onOpenBlank, t, onAdminUnlock }: Props) {
   const [collapsed, setCollapsed] = useState(true);
   if (!signed && !contractReady) {
     return null;
