@@ -148,6 +148,13 @@
       "when": 1791630397094,
       "tag": "0020_extension_owner_signs_first",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792080910873,
+      "tag": "0021_admin_unlock_handover",
+      "breakpoints": true
     }
   ]
 }

@@ -1915,6 +1915,8 @@ export type Database = {
       }
       rentals: {
         Row: {
+          admin_handover_unlocked_at: string | null
+          admin_handover_unlocked_by: string | null
           authorized_at: string | null
           cancel_request_admin_id: string | null
           cancel_request_admin_note: string | null
@@ -1992,6 +1994,8 @@ export type Database = {
           wallet_credit_applied: number
         }
         Insert: {
+          admin_handover_unlocked_at?: string | null
+          admin_handover_unlocked_by?: string | null
           authorized_at?: string | null
           cancel_request_admin_id?: string | null
           cancel_request_admin_note?: string | null
@@ -2069,6 +2073,8 @@ export type Database = {
           wallet_credit_applied?: number
         }
         Update: {
+          admin_handover_unlocked_at?: string | null
+          admin_handover_unlocked_by?: string | null
           authorized_at?: string | null
           cancel_request_admin_id?: string | null
           cancel_request_admin_note?: string | null
@@ -2829,6 +2835,10 @@ export type Database = {
       admin_respond_cancellation: {
         Args: { _action: string; _note?: string; _rental_id: string }
         Returns: Json
+      }
+      admin_unlock_rental_handover: {
+        Args: { _rental_id: string; _unlock?: boolean }
+        Returns: undefined
       }
       auto_confirm_overdue_handovers: {
         Args: never
