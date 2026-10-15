@@ -168,6 +168,18 @@ const RentalExpandedPanel = ({
           </Badge>
         </div>
           </div>
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-primary/50 bg-primary/5 p-3">
+            <span className="text-xs font-semibold uppercase text-muted-foreground">Predare / PV:</span>
+            <Button size="sm" variant="outline" onClick={async () => {
+              if (!confirm(`Deblochezi predarea pentru ${rental.public_id} acum, ignorând data de start?`)) return;
+              const { error } = await supabase.rpc("admin_unlock_rental_handover" as any, { _rental_id: rental.id, _unlock: true });
+              if (error) toast.error(error.message); else toast.success("Predarea a fost deblocată");
+            }}>🔓 Deblochează predarea acum</Button>
+            <Button size="sm" variant="ghost" onClick={async () => {
+              const { error } = await supabase.rpc("admin_unlock_rental_handover" as any, { _rental_id: rental.id, _unlock: false });
+              if (error) toast.error(error.message); else toast.success("Deblocarea a fost anulată");
+            }}>Anulează deblocarea</Button>
+          </div>
           <Separator />
           <div className="flex flex-wrap gap-2">
         {isUpdating ? (

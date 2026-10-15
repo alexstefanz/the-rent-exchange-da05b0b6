@@ -92,6 +92,11 @@ export default function HandoverPvCard({ rentalId, startDate, signed, contractRe
             {new Date(String(startDate).slice(0, 10) + "T00:00:00").toLocaleDateString(t("ro-RO", "en-GB"), { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
           </p>
           <p className="text-xs text-muted-foreground mt-2">{t("Până atunci, stabiliți ora și locul întâlnirii. În ziua predării veți fotografia bunul și veți semna PV-ul aici.", "Until then, agree on time and place. On handover day you'll photograph the item and sign the report here.")}</p>
+          {onAdminUnlock && (
+            <Button size="sm" variant="outline" className="mt-3" onClick={() => { if (confirm(t("Deblochezi predarea acum, ignorând data de start?", "Unlock handover now?"))) onAdminUnlock(); }}>
+              <Lock className="h-4 w-4 mr-1" />{t("Deblochează ca admin", "Unlock as admin")}
+            </Button>
+          )}
         </div>
       )}
       {!signed && (
