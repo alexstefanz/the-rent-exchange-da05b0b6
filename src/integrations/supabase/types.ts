@@ -2896,16 +2896,7 @@ export type Database = {
         }
         Returns: undefined
       }
-      delete_email: {
-        Args: { message_id: number; queue_name: string }
-        Returns: boolean
-      }
       delete_payout_iban: { Args: { p_id: string }; Returns: undefined }
-      email_queue_dispatch: { Args: never; Returns: undefined }
-      enqueue_email: {
-        Args: { payload: Json; queue_name: string }
-        Returns: number
-      }
       generate_slug: { Args: { title: string }; Returns: string }
       get_admin_conversations_list: {
         Args: { search_text?: string }
@@ -3739,15 +3730,6 @@ export type Database = {
         Args: { p_ticket_id: string }
         Returns: undefined
       }
-      move_to_dlq: {
-        Args: {
-          dlq_name: string
-          message_id: number
-          payload: Json
-          source_queue: string
-        }
-        Returns: number
-      }
       normalize_for_profanity: { Args: { input: string }; Returns: string }
       normalize_full_name: { Args: { input_name: string }; Returns: string }
       notify_rental_event_async: {
@@ -3785,14 +3767,6 @@ export type Database = {
         Returns: Json
       }
       purge_expired_deleted_products: { Args: never; Returns: number }
-      read_email_batch: {
-        Args: { batch_size: number; queue_name: string; vt: number }
-        Returns: {
-          message: Json
-          msg_id: number
-          read_ct: number
-        }[]
-      }
       renter_cancel_unpaid_rental: {
         Args: { _rental_id: string }
         Returns: Json
