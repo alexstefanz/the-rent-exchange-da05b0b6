@@ -8,6 +8,22 @@ import { Card } from "@/components/ui/card";
 
 type Status = "unverified" | "pending" | "processing" | "verified" | "requires_input" | "canceled";
 
+// Stripe Identity last_error codes → Romanian explanations
+const ERROR_RO: Record<string, string> = {
+  consent_declined: "Nu ai acceptat termenii de verificare. Reia procesul și confirmă acordul pentru a continua.",
+  under_supported_age: "Verificarea nu poate fi finalizată: trebuie să ai vârsta minimă acceptată.",
+  country_not_supported: "Țara care a emis documentul nu este acceptată. Folosește un alt act de identitate.",
+  device_not_supported: "Dispozitivul nu are o cameră compatibilă. Încearcă de pe telefon.",
+  abandoned: "Verificarea a fost întreruptă înainte de final. Te rugăm să o reiei.",
+  document_expired: "Documentul a expirat. Folosește un act de identitate valabil.",
+  document_type_not_supported: "Tipul de document nu este acceptat. Folosește buletinul, pașaportul sau permisul de conducere.",
+  document_unverified_other: "Documentul nu a putut fi validat. Fotografiază-l complet, clar și fără reflexii.",
+  selfie_document_missing_photo: "Documentul nu conține o fotografie a feței. Folosește un act cu poză.",
+  selfie_face_mismatch: "Selfie-ul nu corespunde cu fotografia din document. Reia verificarea, cu fața bine luminată.",
+  selfie_manipulated: "Selfie-ul nu a putut fi validat. Fă o fotografie nouă, în timp real, fără filtre.",
+  selfie_unverified_other: "Selfie-ul nu a putut fi validat. Încearcă din nou, într-un loc bine luminat.",
+};
+
 export default function IdentityVerification() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -17,6 +33,7 @@ export default function IdentityVerification() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(5);
+  const [lastError, setLastError] = useState<string | null>(null);
 
   const goBack = () => {
     const target = sessionStorage.getItem("identity_return_to") || "/contul-meu";
@@ -35,8 +52,9 @@ export default function IdentityVerification() {
 
   const load = async () => {
     if (!user) return;
-    const { data } = await supabase.from("profiles").select("identity_status").eq("id", user.id).single();
+    const { data } = await supabase.from("profiles").select("identity_status, identity_last_error").eq("id", user.id).single();
     setStatus(((data as any)?.identity_status ?? "unverified") as Status);
+    setLastError((data as any)?.identity_last_error ?? null);
   };
 
   useEffect(() => {
@@ -91,12 +109,20 @@ export default function IdentityVerification() {
         ) : (
           <>
             {status === "requires_input" ? <AlertTriangle className="mx-auto h-14 w-14 text-destructive" /> : <IdCard className="mx-auto h-14 w-14 text-primary" />}
-            <h1 className="text-2xl font-bold">{status === "requires_input" ? "Verificarea necesită atenție" : "Verifică-ți identitatea"}</h1>
+            <h1 className="text-2xl font-bold">{status === "requires_input" ? "Verificarea necesită atenție" : status === "canceled" ? "Verificare anulată" : "Verifică-ți identitatea"}</h1>
             <p className="text-muted-foreground">
               {status === "requires_input"
-                ? "Documentul sau selfie-ul nu a putut fi validat. Încearcă din nou, cu lumină bună și documentul complet în cadru."
-                : "Ai nevoie de buletin, pașaport sau permis și de camera telefonului. Verificarea e procesată securizat de Stripe; Rentli nu stochează imaginile actelor."}
+                ? (ERROR_RO[lastError ?? ""] ?? "Documentul sau selfie-ul nu a putut fi validat. Încearcă din nou, cu lumină bună și documentul complet în cadru.")
+                : status === "canceled"
+                ? "Verificarea a fost întreruptă. O poți relua oricând."
+                : "Verificarea e procesată securizat de Stripe; Rentli nu stochează imaginile actelor."}
             </p>
+            <ol className="space-y-2 rounded-xl bg-muted/50 p-4 text-left text-sm">
+              <li><strong>1.</strong> Pregătește buletinul, pașaportul sau permisul de conducere (valabil, nu copie).</li>
+              <li><strong>2.</strong> Stai într-un loc bine luminat; documentul trebuie să fie complet în cadru, fără reflexii.</li>
+              <li><strong>3.</strong> Fă un selfie cu fața descoperită (fără ochelari de soare sau șapcă).</li>
+              <li><strong>4.</strong> Dacă pagina Stripe apare în engleză, alege „Română” din selectorul de limbă din partea de jos a ecranului.</li>
+            </ol>
             <Button size="lg" onClick={start} disabled={busy || status === null}>
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Începe verificarea
             </Button>
