@@ -27,7 +27,8 @@ const ConditionalWidgets = () => {
     pathname.startsWith("/auth") ||
     pathname.startsWith("/reset-password") ||
     pathname.startsWith("/onboarding") ||
-    pathname.startsWith("/checkout/mobile-return")
+    pathname.startsWith("/checkout/mobile-return") ||
+    pathname.startsWith("/kyc/app-return")
   ) return null;
   return (
     <>
@@ -82,6 +83,7 @@ const ActivityLogPage = lazyWithRetry(() => import("./pages/ActivityLogPage"));
 const CheckoutSuccess = lazyWithRetry(() => import("./pages/CheckoutSuccess"));
 const CheckoutCancelled = lazyWithRetry(() => import("./pages/CheckoutCancelled"));
 const MobileCheckoutReturn = lazyWithRetry(() => import("./pages/MobileCheckoutReturn"));
+const KycAppReturn = lazyWithRetry(() => import("./pages/KycAppReturn"));
 
 // Legal pages
 const TermsAndConditions = lazyWithRetry(() => import("./pages/legal/TermsAndConditions"));
@@ -190,6 +192,7 @@ const App = () => (
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/dezactivare-cont" element={<DeactivateAccount />} />
                 <Route path="/unsubscribe" element={<Unsubscribe />} />
+                <Route path="/kyc/app-return" element={<KycAppReturn />} />
                 
                 {/* Admin routes */}
                 <Route path="/admin" element={<AdminDashboard />} />
