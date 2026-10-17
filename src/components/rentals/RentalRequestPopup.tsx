@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { X, MessageCircle, CalendarDays, Sparkles, XCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { X, MessageCircle, CalendarDays, Sparkles, XCircle, Star } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { formatDistanceToNow, format } from "date-fns";
 import { ro, enUS } from "date-fns/locale";
 import type { RentalPopupItem } from "@/features/rentals/popupApi";
+import { getUserStatistics, type UserStatistics } from "@/features/profile/statisticsApi";
 
 export type PopupMode = "owner" | "renter";
 
@@ -33,6 +34,16 @@ export default function RentalRequestPopup({ item, mode, stackCount, onAccept, o
   const { language } = useLanguage();
   const locale = language === "ro" ? ro : enUS;
   const [busy, setBusy] = useState<null | "accept" | "reject" | "product" | "similar">(null);
+  const [stats, setStats] = useState<UserStatistics | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    setStats(null);
+    if (item.counterparty_id) {
+      getUserStatistics(item.counterparty_id).then((s) => { if (alive) setStats(s); });
+    }
+    return () => { alive = false; };
+  }, [item.counterparty_id]);
 
   const t = (ro: string, en: string) => (language === "ro" ? ro : en);
 
@@ -105,16 +116,47 @@ export default function RentalRequestPopup({ item, mode, stackCount, onAccept, o
 
         {/* Counterparty */}
         <div className="mt-3 flex items-start gap-3">
-          <Avatar className="h-12 w-12 ring-2 ring-primary/20">
-            <AvatarImage src={item.counterparty_avatar || undefined} alt={item.counterparty_name || ""} />
-            <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
-              {initials(item.counterparty_name)}
-            </AvatarFallback>
-          </Avatar>
+          <a
+            href={item.counterparty_id ? `/utilizator/${item.counterparty_id}` : undefined}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t("Vezi profilul", "View profile")}
+          >
+            <Avatar className="h-12 w-12 ring-2 ring-primary/20">
+              <AvatarImage src={item.counterparty_avatar || undefined} alt={item.counterparty_name || ""} />
+              <AvatarFallback className="bg-primary text-primary-foreground font-semibold">
+                {initials(item.counterparty_name)}
+              </AvatarFallback>
+            </Avatar>
+          </a>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-foreground">
-              {item.counterparty_name || t("Utilizator", "User")}
-            </p>
+            <div className="flex min-w-0 items-center gap-2">
+              {item.counterparty_id ? (
+                <a
+                  href={`/utilizator/${item.counterparty_id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="truncate text-sm font-semibold text-foreground underline-offset-2 hover:text-primary hover:underline"
+                >
+                  {item.counterparty_name || t("Utilizator", "User")}
+                </a>
+              ) : (
+                <p className="truncate text-sm font-semibold text-foreground">
+                  {item.counterparty_name || t("Utilizator", "User")}
+                </p>
+              )}
+              {stats && (
+                stats.reviews_count > 0 ? (
+                  <span className="inline-flex flex-shrink-0 items-center gap-0.5 text-xs font-semibold text-foreground">
+                    <Star className="h-3.5 w-3.5 fill-primary text-primary" />
+                    {stats.average_rating.toFixed(1)}
+                    <span className="font-normal text-muted-foreground">({stats.reviews_count})</span>
+                  </span>
+                ) : (
+                  <span className="flex-shrink-0 text-xs text-muted-foreground">{t("Fără recenzii", "No reviews")}</span>
+                )
+              )}
+            </div>
             {since && (
               <p className="mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <CalendarDays className="h-3 w-3" />
