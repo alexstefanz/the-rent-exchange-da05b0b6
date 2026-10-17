@@ -176,6 +176,13 @@
       "when": 1792222275691,
       "tag": "0024_lock_identity_columns_on_profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792226485071,
+      "tag": "0025_homepage_verified_users_stripe_identity",
+      "breakpoints": true
     }
   ]
 }
