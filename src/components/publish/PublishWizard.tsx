@@ -1,4 +1,5 @@
 import { PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
+import { useIdentityVerified } from "@/components/trust/IdentityVerifiedBadge";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
@@ -102,6 +103,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   const STEPS = useMemo(() => buildSteps(t), [t, language]);
   const queryClient = useQueryClient();
   const phoneGate = usePhoneRequired();
+  const { data: identityVerified, isSuccess: identityLoaded } = useIdentityVerified(user?.id);
   const [publishError, setPublishError] = useState<string | null>(null);
 
   const [step, setStep] = useState(1);
@@ -523,6 +525,18 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
         <p className="mt-2 text-muted-foreground">Pentru a publica un anunț ai nevoie de un număr de telefon verificat prin SMS.</p>
         <Button className="mt-6" onClick={() => phoneGate.setDialogOpen(true)}>Verifică acum</Button>
         <PhoneRequiredDialog open={phoneGate.dialogOpen} onOpenChange={phoneGate.setDialogOpen} />
+      </div>
+    );
+  }
+
+  if (mode === "create" && identityLoaded && !identityVerified && !phoneGate.isAdmin) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-16 text-center">
+        <h1 className="text-2xl font-bold">Verifică-ți identitatea</h1>
+        <p className="mt-2 text-muted-foreground">
+          Pentru siguranța comunității, poți publica anunțuri doar după ce îți verifici identitatea cu actul și un selfie.
+        </p>
+        <Button className="mt-6" onClick={() => navigate("/verificare")}>Începe verificarea</Button>
       </div>
     );
   }

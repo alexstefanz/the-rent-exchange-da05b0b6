@@ -145,7 +145,9 @@ const Checkout = () => {
     } catch (e: any) {
       console.error("Send request error:", e);
       const msg = String(e?.message || "");
-      if (/phone|telefon/i.test(msg)) {
+      if (/IDENTITY_NOT_VERIFIED/.test(msg)) {
+        setIdentityDialogOpen(true);
+      } else if (/phone|telefon/i.test(msg)) {
         phoneGate.setDialogOpen(true);
       } else {
         setSubmitError(msg || t("Eroare la trimiterea cererii. Încearcă din nou.", "Error sending the request. Please try again."));
