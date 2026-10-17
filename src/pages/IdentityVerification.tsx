@@ -86,6 +86,7 @@ export default function IdentityVerification() {
             <h1 className="text-2xl font-bold">Verificare în curs</h1>
             <p className="text-muted-foreground">Durează de obicei câteva minute. Pagina se actualizează automat.</p>
             {status === "pending" && <Button variant="outline" onClick={start} disabled={busy}>Reia verificarea</Button>}
+            <Button variant="ghost" className="w-full" onClick={goBack}>Înapoi la Rentli</Button>
           </>
         ) : (
           <>
