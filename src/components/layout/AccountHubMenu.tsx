@@ -324,7 +324,7 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
             >
               <AlertTriangle className="h-4 w-4 shrink-0" />
               <span className="flex-1">
-                {profile.identity_status === "processing"
+                {(profile as any).identity_status === "processing"
                   ? t("Verificarea identității e în procesare", "Identity verification processing")
                   : t("Verifică-ți identitatea pentru a închiria și publica", "Verify your identity to rent and list")}
               </span>
