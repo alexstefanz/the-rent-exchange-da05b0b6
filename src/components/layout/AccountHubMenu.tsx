@@ -311,6 +311,28 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
           />
         )}
 
+        {!isLoading && profile && (
+          trust?.verified ? (
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+              <ShieldCheck className="h-4 w-4" />
+              {t("Identitate verificată cu Stripe", "Identity verified with Stripe")}
+            </div>
+          ) : (
+            <button
+              onClick={() => onNavigate("/verificare")}
+              className="flex w-full items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-left text-xs font-semibold text-amber-800 transition hover:border-amber-400"
+            >
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span className="flex-1">
+                {(profile as any).identity_status === "processing"
+                  ? t("Verificarea identității e în procesare", "Identity verification processing")
+                  : t("Verifică-ți identitatea pentru a închiria și publica", "Verify your identity to rent and list")}
+              </span>
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          )
+        )}
+
         <div className="flex items-center gap-2">
           <button
             onClick={() => onNavigate("/owner/new-product")}

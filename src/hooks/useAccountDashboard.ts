@@ -175,6 +175,7 @@ export function useAccountDashboard() {
       // health
       const p: any = profile || {};
       const items = [
+        { key: "identity", labelRo: "Identitate verificată (Stripe)", labelEn: "Identity verified (Stripe)", done: p.identity_status === "verified", href: "/verificare" },
         { key: "name", labelRo: "Nume complet", labelEn: "Full name", done: !!p.full_name, href: "/contul-meu?focus=name" },
         { key: "phone", labelRo: "Telefon valid", labelEn: "Valid phone", done: !!p.phone, href: "/contul-meu?focus=phone" },
         { key: "avatar", labelRo: "Fotografie profil", labelEn: "Profile photo", done: !!p.avatar_url, href: "/contul-meu?focus=avatar" },
