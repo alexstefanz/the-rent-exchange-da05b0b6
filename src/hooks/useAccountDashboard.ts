@@ -74,7 +74,7 @@ export function useAccountDashboard() {
         supabase
           .from("profiles")
           .select(
-            "id, full_name, email, avatar_url, phone, iban, account_holder_name, created_at, account_type"
+            "id, full_name, email, avatar_url, phone, iban, account_holder_name, created_at, account_type, identity_status"
           )
           .eq("id", uid)
           .maybeSingle(),
