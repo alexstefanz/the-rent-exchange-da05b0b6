@@ -73,14 +73,9 @@ const FullNameConfirmDialog = () => {
     }
     setSaving(true);
     setError(null);
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({
-        full_name: trimmed,
-        full_name_verified_at: new Date().toISOString(),
-        full_name_locked: true,
-      } as any)
-      .eq("id", user.id);
+    const { error: updateError } = await supabase.rpc("confirm_my_full_name" as any, {
+      _full_name: trimmed,
+    });
     setSaving(false);
     if (updateError) {
       setError(

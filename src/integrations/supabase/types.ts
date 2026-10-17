@@ -2884,6 +2884,7 @@ export type Database = {
         Args: { _rental_id: string }
         Returns: undefined
       }
+      confirm_my_full_name: { Args: { _full_name: string }; Returns: undefined }
       confirm_pickup: { Args: { _rental_id: string }; Returns: Json }
       confirm_rental_handover: { Args: { _rental_id: string }; Returns: string }
       confirm_rental_return: { Args: { _rental_id: string }; Returns: string }
