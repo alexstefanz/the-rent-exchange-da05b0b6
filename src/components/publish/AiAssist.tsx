@@ -107,8 +107,9 @@ export const AiPriceEstimateCard = ({ data, update, auto = false }: { data: Publ
         </div>
       ) : (
         <div className="mt-3">
-          <p className="text-xs text-muted-foreground">Primește o estimare a valorii și un preț pe zi recomandat pentru piața din România, pe baza titlului, stării și descrierii.</p>
-          <Button type="button" size="sm" className="mt-3" onClick={run} disabled={!data.title}>Estimează prețul</Button>
+          <p className="text-xs text-muted-foreground">{auto ? "Estimarea valorii și a prețului pe zi apare automat după ce completezi titlul." : null}</p>
+          <p className={auto ? "hidden" : "text-xs text-muted-foreground"}>Primește o estimare a valorii și un preț pe zi recomandat pentru piața din România, pe baza titlului, stării și descrierii.</p>
+          {!auto && <Button type="button" size="sm" className="mt-3" onClick={run} disabled={!data.title}>Estimează prețul</Button>}
         </div>
       )}
       {err && <p className="mt-2 text-xs text-destructive">{err}</p>}
