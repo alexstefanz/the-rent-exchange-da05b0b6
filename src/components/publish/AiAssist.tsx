@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,10 +60,11 @@ export const AiAutofillButton = ({ data, update }: { data: PublishFormData; upda
 
 interface Estimate { value_min: number; value_max: number; daily_suggested: number; daily_min: number; daily_max: number; note: string }
 
-export const AiPriceEstimateCard = ({ data, update }: { data: PublishFormData; update: Update }) => {
+export const AiPriceEstimateCard = ({ data, update, auto = false }: { data: PublishFormData; update: Update; auto?: boolean }) => {
   const [loading, setLoading] = useState(false);
   const [est, setEst] = useState<Estimate | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const lastKey = useRef<string>("");
 
   const run = async () => {
     setLoading(true); setErr(null);
@@ -74,6 +75,15 @@ export const AiPriceEstimateCard = ({ data, update }: { data: PublishFormData; u
       }));
     } catch (e) { setErr((e as Error).message); } finally { setLoading(false); }
   };
+
+  // Auto mode: estimate once title is meaningful; re-run only when the key inputs change (debounced).
+  const key = `${data.title.trim()}|${data.category}|${data.subcategory}|${data.condition}`;
+  useEffect(() => {
+    if (!auto || data.title.trim().length < 5 || key === lastKey.current) return;
+    const id = setTimeout(() => { lastKey.current = key; run(); }, 1500);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auto, key]);
 
   return (
     <div className="rounded-2xl border border-primary/30 bg-primary/5 p-5">
@@ -97,8 +107,9 @@ export const AiPriceEstimateCard = ({ data, update }: { data: PublishFormData; u
         </div>
       ) : (
         <div className="mt-3">
-          <p className="text-xs text-muted-foreground">Primește o estimare a valorii și un preț pe zi recomandat pentru piața din România, pe baza titlului, stării și descrierii.</p>
-          <Button type="button" size="sm" className="mt-3" onClick={run} disabled={!data.title}>Estimează prețul</Button>
+          <p className="text-xs text-muted-foreground">{auto ? "Estimarea valorii și a prețului pe zi apare automat după ce completezi titlul." : null}</p>
+          <p className={auto ? "hidden" : "text-xs text-muted-foreground"}>Primește o estimare a valorii și un preț pe zi recomandat pentru piața din România, pe baza titlului, stării și descrierii.</p>
+          {!auto && <Button type="button" size="sm" className="mt-3" onClick={run} disabled={!data.title}>Estimează prețul</Button>}
         </div>
       )}
       {err && <p className="mt-2 text-xs text-destructive">{err}</p>}

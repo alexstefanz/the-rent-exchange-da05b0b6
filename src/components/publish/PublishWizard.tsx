@@ -582,8 +582,8 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
                   {t("Previzualizare live", "Live preview")}
                 </p>
                 <LivePreviewCard data={data} feePercent={feePercent} />
+                <AiPriceEstimateCard data={data} update={update} auto />
                 <QualityScoreCard data={data} />
-        {mode === "create" && <AiPriceEstimateCard data={data} update={update} />}
               </div>
             </aside>
           )}
