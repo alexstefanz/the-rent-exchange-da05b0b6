@@ -196,6 +196,10 @@ const AdminUserDetail = () => {
                   <Ban className="h-3 w-3" /> BANAT
                 </Badge>
               )}
+              <Badge variant={(userDetail as any).identity_status === 'verified' ? 'default' : 'outline'}>
+                Identitate: {({ verified: 'Verificată', processing: 'În procesare', requires_input: 'Necesită reluare', canceled: 'Anulată' } as Record<string, string>)[(userDetail as any).identity_status] || 'Neverificată'}
+                {(userDetail as any).identity_verified_at ? ` · ${format(new Date((userDetail as any).identity_verified_at), 'd MMM yyyy', { locale: ro })}` : ''}
+              </Badge>
               {userDetail.is_deactivated && (
                 <Badge variant="secondary" className="gap-1">
                   <AlertTriangle className="h-3 w-3" /> DEZACTIVAT

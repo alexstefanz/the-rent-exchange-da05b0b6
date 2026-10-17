@@ -145,6 +145,7 @@ export default function RentalRequestPopup({ item, mode, stackCount, onAccept, o
                   {item.counterparty_name || t("Utilizator", "User")}
                 </p>
               )}
+              <IdentityVerifiedBadge userId={item.counterparty_id} compact />
               {stats && (
                 stats.reviews_count > 0 ? (
                   <span className="inline-flex flex-shrink-0 items-center gap-0.5 text-xs font-semibold text-foreground">
