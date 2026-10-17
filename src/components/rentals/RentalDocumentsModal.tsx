@@ -169,7 +169,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
         <div className="text-xs font-semibold">Locatar (Chiriaș)</div>
         <div className="text-xs">{v(rental.renter_name)}</div>
         {!sb && pv?.renter_signature_data && <img src={pv.renter_signature_data} alt="" className="max-h-[60px]" />}
-        {!b && pv?.renter_signed_at && <div className="muted text-[10px] text-muted-foreground">Semnat {fmtDT(pv.renter_signed_at)}</div>}
+        {!sb && pv?.renter_signed_at && <div className="muted text-[10px] text-muted-foreground">Semnat {fmtDT(pv.renter_signed_at)}</div>}
       </div>
     </div>
   );
@@ -225,7 +225,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
               <td className="border border-border p-1">{!sb && row?.validation_channel ? "Cod SMS" : "______"}</td>
               <td className="border border-border p-1">{!sb && row?.validation_destination ? row.validation_destination : "______"}</td>
               <td className="border border-border p-1">{!sb && row?.validated_at ? fmtDT(row.validated_at) : "______"}</td>
-              <td className="border border-border p-1">{!b && row?.validation_ref ? row.validation_ref : "______"}</td>
+              <td className="border border-border p-1">{!sb && row?.validation_ref ? row.validation_ref : "______"}</td>
             </tr>
           ))}
         </tbody>
@@ -274,7 +274,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
         <p>☐ Funcțional, fără defecte &nbsp; ☐ Uzură normală &nbsp; ☐ Defecte constatate (descriere):</p>
         <p>_____________________________________________________________________________</p>
         <p className="text-xs text-muted-foreground">Fotografiile încărcate în platformă fac parte integrantă din prezentul proces-verbal.</p>
-        {!b && !!pv?.photo_urls?.length && (
+        {!sb && !!pv?.photo_urls?.length && (
           <>
             <H2>Fotografii la {isRet ? "returnare" : "predare"}</H2>
             <div className="photos grid grid-cols-2 gap-3 my-2">
