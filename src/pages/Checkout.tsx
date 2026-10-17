@@ -219,6 +219,11 @@ const Checkout = () => {
                     </a>.
                   </p>
 
+                  {submitError && (
+                    <div role="alert" className="mt-4 rounded-xl border border-destructive/50 bg-destructive/5 p-3 text-sm text-destructive">
+                      {submitError}
+                    </div>
+                  )}
                   <Button
                     onClick={handleSendRequest}
                     className="w-full h-12 mt-4 text-base font-semibold shadow-lg shadow-primary/20"
