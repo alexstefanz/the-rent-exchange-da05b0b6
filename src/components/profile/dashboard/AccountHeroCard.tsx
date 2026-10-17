@@ -89,11 +89,21 @@ export function AccountHeroCard({ data }: Props) {
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight truncate">
                 {profile?.full_name || t("Salut!", "Hello!")}
               </h1>
-              {trust.verified && (
+              {trust.verified ? (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-semibold border border-emerald-200">
                   <ShieldCheck className="h-3 w-3" />
-                  {t("Verificat", "Verified")}
+                  {t("Identitate verificată", "Identity verified")}
                 </span>
+              ) : (
+                <Link
+                  to="/verificare"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 text-[11px] font-semibold border border-amber-300 hover:border-amber-400"
+                >
+                  <ShieldCheck className="h-3 w-3" />
+                  {(profile as any)?.identity_status === "processing"
+                    ? t("Verificare în procesare", "Verification processing")
+                    : t("Neverificat — verifică acum", "Unverified — verify now")}
+                </Link>
               )}
             </div>
             <p className="text-sm text-muted-foreground mt-1 truncate">{profile?.email}</p>
