@@ -3290,6 +3290,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_identity_verified: { Args: { _user_id: string }; Returns: boolean }
       get_my_product_serial: { Args: { _id: string }; Returns: string }
       get_my_products_sensitive: {
         Args: never
