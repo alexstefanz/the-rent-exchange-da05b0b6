@@ -17,6 +17,8 @@ import { createRentalRequest } from "@/features/rentals/rentalsApi";
 import { toast } from "@/components/ui/sonner";
 import { notify } from "@/lib/notify";
 import { PhoneRequiredGate, PhoneRequiredDialog, usePhoneRequired } from "@/components/profile/PhoneRequiredGate";
+import { useIdentityVerified } from "@/components/trust/IdentityVerifiedBadge";
+import { IdentityRequiredDialog } from "@/components/trust/IdentityRequiredDialog";
 import { getOrCreateConversation } from "@/features/messaging/messagingApi";
 import { calcClientTotal } from "@/lib/rentalPricing";
 
@@ -49,6 +51,8 @@ const Checkout = () => {
 
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const phoneGate = usePhoneRequired();
+  const { data: identityVerified, isSuccess: identityLoaded } = useIdentityVerified(user?.id);
+  const [identityDialogOpen, setIdentityDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
@@ -120,6 +124,7 @@ const Checkout = () => {
     if (!user) { setShowLoginDialog(true); return; }
     if (isSubmitting) return;
     if (!phoneGate.requirePhone()) return;
+    if (identityLoaded && !identityVerified) { setIdentityDialogOpen(true); return; }
     setIsSubmitting(true);
     try {
       const rental = await createRentalRequest({
@@ -170,6 +175,7 @@ const Checkout = () => {
       <main className="max-w-5xl mx-auto px-4 py-6 md:py-8">
         <PhoneRequiredGate className="mb-5" />
         <PhoneRequiredDialog open={phoneGate.dialogOpen} onOpenChange={phoneGate.setDialogOpen} />
+        <IdentityRequiredDialog open={identityDialogOpen} onOpenChange={setIdentityDialogOpen} action="rent" />
 
         <div className="grid lg:grid-cols-[1fr_380px] gap-6 lg:gap-8 items-start">
           {/* Left column — content */}
