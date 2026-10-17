@@ -15,6 +15,7 @@ import { useGlobalPresence } from "@/hooks/useOnlineUsers";
 import { SaveToastHost } from "@/lib/saveToast";
 
 const SupportChatWidget = lazyWithRetry(() => import("./components/support/SupportChatWidget"));
+const IdentityVerification = lazyWithRetry(() => import("./pages/IdentityVerification"));
 
 const PhoneVerificationRequiredModal = lazyWithRetry(() => import("./components/profile/PhoneVerificationRequiredModal"));
 const FullNameConfirmDialog = lazyWithRetry(() => import("./components/profile/FullNameConfirmDialog"));
@@ -155,6 +156,7 @@ const App = () => (
                 <Route path="/cauta" element={<Search />} />
                 <Route path="/adauga-anunt" element={<Navigate to="/owner/new-product" replace />} />
                 <Route path="/utilizator/:id" element={<UserProfile />} />
+                <Route path="/verificare" element={<IdentityVerification />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/contul-meu" element={<AccountDetailsPage />} />
