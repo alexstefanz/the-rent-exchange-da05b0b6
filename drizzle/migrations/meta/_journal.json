@@ -169,6 +169,13 @@
       "when": 1792220455233,
       "tag": "0023_require_identity_verified",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792222275691,
+      "tag": "0024_lock_identity_columns_on_profiles",
+      "breakpoints": true
     }
   ]
 }
