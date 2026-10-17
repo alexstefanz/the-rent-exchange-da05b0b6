@@ -23,6 +23,8 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const origin = typeof body?.return_origin === "string" && /^https:\/\/([a-z0-9-]+\.)*(rentli\.ro|lovable\.app)$/.test(body.return_origin)
       ? body.return_origin : "https://rentli.ro";
+    const rawReturnUrl = typeof body?.return_url === "string" ? body.return_url : "";
+    const returnUrl = /^(rentli:\/\/|exps?:\/\/|https:\/\/(www\.)?rentli\.ro(\/|\?|#|$))/.test(rawReturnUrl) ? rawReturnUrl : undefined;
 
     const stripe = new Stripe(Deno.env.get("STRIPE_LIVE_API_KEY")!, { apiVersion: "2024-12-18.acacia" });
     const session = await stripe.identity.verificationSessions.create({
@@ -30,7 +32,7 @@ Deno.serve(async (req) => {
       options: { document: { require_matching_selfie: true, require_live_capture: true, allowed_types: ["id_card", "passport", "driving_license"] } },
       metadata: { user_id: userId },
       client_reference_id: userId,
-      return_url: `${origin}/verificare?done=1`,
+      return_url: returnUrl ?? `${origin}/verificare?done=1`,
     });
 
     await admin.from("profiles").update({ identity_status: "pending", identity_session_id: session.id, identity_last_error: null }).eq("id", userId);
