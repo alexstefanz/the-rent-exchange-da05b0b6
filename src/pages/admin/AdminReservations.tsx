@@ -23,6 +23,7 @@ import SourceBadge from "@/components/admin/SourceBadge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminContractAuditTab from "@/components/admin/AdminContractAuditTab";
 import AdminPhysicalPvTab from "@/components/admin/AdminPhysicalPvTab";
+import AdminOpenDisputesPanel from "@/components/admin/AdminOpenDisputesPanel";
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -304,6 +305,7 @@ const AdminReservations = () => {
   return (
     <AdminLayout>
       <div className="space-y-4">
+        <AdminOpenDisputesPanel />
         <div className="flex items-center gap-2">
           <CalendarCheck className="h-5 w-5" />
           <h1 className="text-xl font-bold tracking-tight">Gestionare Rezervări</h1>
