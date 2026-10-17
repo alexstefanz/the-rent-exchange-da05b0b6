@@ -1,3 +1,4 @@
+import { IdentityVerifiedBadge } from "@/components/trust/IdentityVerifiedBadge";
 import { useEffect, useState } from "react";
 import { X, MessageCircle, CalendarDays, Sparkles, XCircle, Star } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
