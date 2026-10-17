@@ -69,8 +69,20 @@ export default function CancelledRentalModal({ rental, isOwner, t }: Props) {
             <XCircle className="h-8 w-8 text-destructive" />
           </div>
           <DialogTitle className="text-center text-destructive">{title}</DialogTitle>
-          <DialogDescription className="text-center">
-            {rental.product_title} · {rental.public_id}
+          <DialogDescription asChild>
+            <div className="mt-2 flex items-center gap-3 rounded-xl bg-muted/50 p-3 text-left">
+              {rental.product_image && (
+                <img
+                  src={rental.product_image}
+                  alt={rental.product_title || ""}
+                  className="h-16 w-16 shrink-0 rounded-lg border border-border object-cover"
+                />
+              )}
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-foreground">{rental.product_title}</p>
+                <p className="text-xs font-mono text-muted-foreground">{rental.public_id}</p>
+              </div>
+            </div>
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2 rounded-xl bg-muted/60 p-4 text-sm text-foreground/80">
