@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ShieldCheck, Loader2, AlertTriangle, IdCard } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,9 +10,28 @@ type Status = "unverified" | "pending" | "processing" | "verified" | "requires_i
 
 export default function IdentityVerification() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const returning = params.get("done") === "1";
   const [status, setStatus] = useState<Status | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(5);
+
+  const goBack = () => {
+    const target = sessionStorage.getItem("identity_return_to") || "/contul-meu";
+    sessionStorage.removeItem("identity_return_to");
+    navigate(target, { replace: true });
+  };
+
+  useEffect(() => {
+    if (!returning || status !== "verified") return;
+    if (countdown <= 0) { goBack(); return; }
+    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [returning, status, countdown]);
+
 
   const load = async () => {
     if (!user) return;
@@ -58,6 +77,8 @@ export default function IdentityVerification() {
             <ShieldCheck className="mx-auto h-14 w-14 text-primary" />
             <h1 className="text-2xl font-bold">Identitate verificată</h1>
             <p className="text-muted-foreground">Profilul tău afișează acum insigna de identitate verificată.</p>
+            {returning && <p className="text-sm text-muted-foreground">Te întoarcem automat în {countdown} secunde…</p>}
+            <Button size="lg" className="w-full" onClick={goBack}>Înapoi la Rentli</Button>
           </>
         ) : status === "pending" || status === "processing" ? (
           <>
@@ -79,6 +100,7 @@ export default function IdentityVerification() {
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}Începe verificarea
             </Button>
             {err && <p className="text-sm text-destructive">{err}</p>}
+            <Button variant="ghost" className="w-full" onClick={goBack}>Înapoi la Rentli</Button>
           </>
         )}
       </Card>

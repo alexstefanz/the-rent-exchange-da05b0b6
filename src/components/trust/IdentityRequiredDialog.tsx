@@ -25,7 +25,7 @@ export function IdentityRequiredDialog({
         </DialogHeader>
         <DialogFooter className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <Button variant="outline" className="w-full" onClick={() => onOpenChange(false)}>Mai târziu</Button>
-          <Button className="w-full" onClick={() => navigate("/verificare")}>Începe verificarea</Button>
+          <Button className="w-full" onClick={() => { sessionStorage.setItem("identity_return_to", window.location.pathname + window.location.search); navigate("/verificare"); }}>Începe verificarea</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
