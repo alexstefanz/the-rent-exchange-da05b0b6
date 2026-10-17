@@ -1466,6 +1466,10 @@ export type Database = {
           full_name_verified_at: string | null
           iban: string | null
           id: string
+          identity_last_error: string | null
+          identity_session_id: string | null
+          identity_status: string
+          identity_verified_at: string | null
           is_banned: boolean
           is_deactivated: boolean
           phone: string | null
@@ -1493,6 +1497,10 @@ export type Database = {
           full_name_verified_at?: string | null
           iban?: string | null
           id: string
+          identity_last_error?: string | null
+          identity_session_id?: string | null
+          identity_status?: string
+          identity_verified_at?: string | null
           is_banned?: boolean
           is_deactivated?: boolean
           phone?: string | null
@@ -1520,6 +1528,10 @@ export type Database = {
           full_name_verified_at?: string | null
           iban?: string | null
           id?: string
+          identity_last_error?: string | null
+          identity_session_id?: string | null
+          identity_status?: string
+          identity_verified_at?: string | null
           is_banned?: boolean
           is_deactivated?: boolean
           phone?: string | null
