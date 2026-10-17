@@ -1003,7 +1003,21 @@ const RentalDetailPage = () => {
                 </div>
               </div>
               {step >= 3 ? (
-                counterparty.phone && <p className="flex items-center gap-2 text-sm text-muted-foreground mt-3"><Phone className="h-3.5 w-3.5" />{counterparty.phone}</p>
+                counterparty.phone && (
+                  <a
+                    href={`tel:${String(counterparty.phone).replace(/\s+/g, "")}`}
+                    className="mt-4 flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/10 px-3 py-2.5 transition-colors hover:bg-primary/15"
+                    aria-label={t(`Sună la ${counterparty.phone}`, `Call ${counterparty.phone}`)}
+                  >
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
+                      <Phone className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t("Apasă pentru a suna", "Tap to call")}</span>
+                      <span className="block text-base font-bold text-foreground tabular-nums">{counterparty.phone}</span>
+                    </span>
+                  </a>
+                )
               ) : (
                 <p className="text-xs text-muted-foreground mt-3">{t("Datele de contact se afișează după confirmarea plății.", "Contact info appears after payment is confirmed.")}</p>
               )}
