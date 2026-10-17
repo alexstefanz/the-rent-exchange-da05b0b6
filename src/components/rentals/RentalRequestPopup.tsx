@@ -1,3 +1,4 @@
+import { IdentityVerifiedBadge } from "@/components/trust/IdentityVerifiedBadge";
 import { useEffect, useState } from "react";
 import { X, MessageCircle, CalendarDays, Sparkles, XCircle, Star } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -145,6 +146,7 @@ export default function RentalRequestPopup({ item, mode, stackCount, onAccept, o
                   {item.counterparty_name || t("Utilizator", "User")}
                 </p>
               )}
+              <IdentityVerifiedBadge userId={item.counterparty_id} compact />
               {stats && (
                 stats.reviews_count > 0 ? (
                   <span className="inline-flex flex-shrink-0 items-center gap-0.5 text-xs font-semibold text-foreground">

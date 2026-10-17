@@ -1,3 +1,4 @@
+import { IdentityVerifiedBadge } from "@/components/trust/IdentityVerifiedBadge";
 import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
@@ -290,9 +291,12 @@ const UserProfile = () => {
                   className="w-20 h-20 rounded-full object-cover border-2 border-border"
                 />
                 <div>
-                  <h1 className="text-2xl font-heading font-bold text-foreground">
-                    {profile.full_name || "Utilizator"}
-                  </h1>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-2xl font-heading font-bold text-foreground">
+                      {profile.full_name || "Utilizator"}
+                    </h1>
+                    <IdentityVerifiedBadge userId={id} />
+                  </div>
                   {/* Rating display */}
                   <div className="flex items-center gap-2 mt-1">
                     {statistics && statistics.reviews_count > 0 ? (
