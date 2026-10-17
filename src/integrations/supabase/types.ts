@@ -2844,6 +2844,10 @@ export type Database = {
         Args: { _id: string; _reason: string }
         Returns: undefined
       }
+      admin_resolve_rental_dispute: {
+        Args: { _note: string; _rental_id: string }
+        Returns: undefined
+      }
       admin_respond_cancellation: {
         Args: { _action: string; _note?: string; _rental_id: string }
         Returns: Json
