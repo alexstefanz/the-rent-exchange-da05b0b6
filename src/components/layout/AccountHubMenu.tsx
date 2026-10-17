@@ -35,6 +35,7 @@ import { useIsBanned } from "@/hooks/useIsBanned";
 import { BannedBadge } from "@/components/common/BannedBadge";
 import { BannedBanner } from "@/components/common/BannedBanner";
 import { cn } from "@/lib/utils";
+import { RoleMenuCards } from "./RoleMenuCards";
 
 /* ---------- helpers ---------- */
 
@@ -341,13 +342,6 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
             <PlusCircle className="h-4 w-4" />
             {t("Adaugă anunț", "Add a listing")}
           </button>
-          <button
-            onClick={() => onNavigate("/anunturi")}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-border/60 bg-card px-4 py-2.5 text-sm font-semibold text-foreground shadow-[0_8px_20px_-10px_rgba(15,23,42,0.35)] transition-all hover:shadow-[0_10px_24px_-8px_rgba(15,23,42,0.4)] hover:-translate-y-0.5 active:translate-y-0"
-          >
-            <Package className="h-4 w-4 text-primary" />
-            <span className="whitespace-nowrap">{t("Anunțurile mele", "My listings")}</span>
-          </button>
         </div>
 
         {isAdmin && (
@@ -364,52 +358,7 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
 
 
       <div className="px-3 pb-2 space-y-2">
-        <button
-          onClick={() => onNavigate("/inchirieri?status=ongoing")}
-          className="group flex w-full items-center gap-3 rounded-xl border border-primary/25 bg-primary/5 px-3 py-3 text-left shadow-sm transition hover:border-primary/45 hover:shadow"
-        >
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shrink-0">
-            <CalendarCheck className="h-5 w-5 text-primary" />
-          </span>
-          <span className="flex-1 min-w-0">
-            <span className="block text-sm font-semibold text-foreground">
-              {t("Proprietar", "Owner")}
-            </span>
-            <span className="block text-[11px] text-muted-foreground">
-              {t("Vezi cererile și închirierile active ca proprietar.", "View active requests and rentals as owner.")}
-            </span>
-          </span>
-          {(signals?.activeRentalsAsOwner || 0) > 0 && (
-            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground shrink-0">
-              {signals?.activeRentalsAsOwner}
-            </span>
-          )}
-          <ChevronRight className="h-4 w-4 text-muted-foreground/60 group-hover:text-primary transition" />
-        </button>
-
-
-        <button
-          onClick={() => onNavigate("/rezervari")}
-          className="group flex w-full items-center gap-3 rounded-xl border border-renter/25 bg-renter/5 px-3 py-3 text-left shadow-sm transition hover:border-renter/45 hover:shadow"
-        >
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-renter/10 shrink-0">
-            <Package className="h-5 w-5 text-renter" />
-          </span>
-          <span className="flex-1 min-w-0">
-            <span className="block text-sm font-semibold text-foreground">
-              {t("Chiriaș", "Renter")}
-            </span>
-            <span className="block text-[11px] text-muted-foreground">
-              {t("Găsește produse și rezervă rapid ce ai nevoie.", "Find products and quickly book what you need.")}
-            </span>
-          </span>
-          {(signals?.activeRentalsAsRenter || 0) > 0 && (
-            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-renter px-1.5 text-xs font-bold text-renter-foreground shrink-0">
-              {signals?.activeRentalsAsRenter}
-            </span>
-          )}
-          <ChevronRight className="h-4 w-4 text-renter/60 transition group-hover:text-renter" />
-        </button>
+        <RoleMenuCards onNavigate={onNavigate} />
 
         <div
           role="link"
