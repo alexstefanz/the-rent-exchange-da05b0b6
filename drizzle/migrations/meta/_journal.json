@@ -162,6 +162,13 @@
       "when": 1792219696272,
       "tag": "0022_identity_verified_public_rpc",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792220455233,
+      "tag": "0023_require_identity_verified",
+      "breakpoints": true
     }
   ]
 }
