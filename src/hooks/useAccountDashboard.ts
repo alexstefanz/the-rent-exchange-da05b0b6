@@ -204,7 +204,7 @@ export function useAccountDashboard() {
           reviewsCount: reviewsArr.length,
           completedRentals,
           memberSince,
-          verified: !!p.phone,
+          verified: p.identity_status === "verified",
         },
         signals: {
           activeRentalsAsOwner: ownerActive.length,
