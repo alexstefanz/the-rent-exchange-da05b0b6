@@ -63,14 +63,14 @@ export default function CancelledRentalModal({ rental, isOwner, t }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) close(); }}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="max-w-md overflow-x-hidden">
+        <DialogHeader className="min-w-0">
           <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
             <XCircle className="h-8 w-8 text-destructive" />
           </div>
-          <DialogTitle className="text-center text-destructive">{title}</DialogTitle>
+          <DialogTitle className="text-center text-destructive break-words leading-snug">{title}</DialogTitle>
           <DialogDescription asChild>
-            <div className="mt-2 flex items-center gap-3 rounded-xl bg-muted/50 p-3 text-left">
+            <div className="mt-2 flex w-full min-w-0 items-center gap-3 rounded-xl bg-muted/50 p-3 text-left">
               {rental.product_image && (
                 <img
                   src={rental.product_image}
@@ -78,23 +78,23 @@ export default function CancelledRentalModal({ rental, isOwner, t }: Props) {
                   className="h-16 w-16 shrink-0 rounded-lg border border-border object-cover"
                 />
               )}
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-foreground">{rental.product_title}</p>
                 <p className="text-xs font-mono text-muted-foreground">{rental.public_id}</p>
               </div>
             </div>
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-2 rounded-xl bg-muted/60 p-4 text-sm text-foreground/80">
+        <div className="min-w-0 space-y-2 break-words rounded-xl bg-muted/60 p-4 text-sm text-foreground/80">
           <p>{who}</p>
           {rental.rejection_reason && <p className="italic">„{rental.rejection_reason}”</p>}
           <p>{money}</p>
         </div>
-        <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="outline" onClick={() => { close(); navigate(isOwner ? "/inchirieri" : "/rezervari"); }}>
+        <DialogFooter className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:space-x-0">
+          <Button variant="outline" className="w-full" onClick={() => { close(); navigate(isOwner ? "/inchirieri" : "/rezervari"); }}>
             {isOwner ? t("Închirierile mele", "My rentals") : t("Rezervările mele", "My bookings")}
           </Button>
-          <Button onClick={close}>{t("Am înțeles", "Got it")}</Button>
+          <Button className="w-full" onClick={close}>{t("Am înțeles", "Got it")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
