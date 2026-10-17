@@ -53,6 +53,7 @@ const Checkout = () => {
   const [showTermsDialog, setShowTermsDialog] = useState(false);
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
   const [openingChat, setOpeningChat] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   if (!state) {
     return (
@@ -115,6 +116,7 @@ const Checkout = () => {
   };
 
   const handleSendRequest = async () => {
+    setSubmitError(null);
     if (!user) { setShowLoginDialog(true); return; }
     if (isSubmitting) return;
     if (!phoneGate.requirePhone()) return;
@@ -137,9 +139,12 @@ const Checkout = () => {
       navigate(target, { replace: true });
     } catch (e: any) {
       console.error("Send request error:", e);
-      toast.error(e?.message || (language === "ro"
-        ? "Eroare la trimiterea cererii. Încearcă din nou."
-        : "Error sending the request. Please try again."));
+      const msg = String(e?.message || "");
+      if (/phone|telefon/i.test(msg)) {
+        phoneGate.setDialogOpen(true);
+      } else {
+        setSubmitError(msg || t("Eroare la trimiterea cererii. Încearcă din nou.", "Error sending the request. Please try again."));
+      }
       setIsSubmitting(false);
     }
   };
@@ -214,11 +219,16 @@ const Checkout = () => {
                     </a>.
                   </p>
 
+                  {submitError && (
+                    <div role="alert" className="mt-4 rounded-xl border border-destructive/50 bg-destructive/5 p-3 text-sm text-destructive">
+                      {submitError}
+                    </div>
+                  )}
                   <Button
                     onClick={handleSendRequest}
                     className="w-full h-12 mt-4 text-base font-semibold shadow-lg shadow-primary/20"
                     size="lg"
-                    disabled={isSubmitting || !phoneGate.hasValidPhone}
+                    disabled={isSubmitting}
                   >
                     <Send className="mr-2 h-5 w-5" />
                     {isSubmitting
@@ -248,7 +258,7 @@ const Checkout = () => {
         ctaLabel={t("Trimite cererea", "Send request")}
         onClick={handleSendRequest}
         loading={isSubmitting}
-        disabled={!phoneGate.hasValidPhone}
+        disabled={false}
       />
 
       <LoginDialog open={showLoginDialog} onOpenChange={setShowLoginDialog} onLoginSuccess={handleLoginSuccess} />
