@@ -93,6 +93,7 @@ const PremiumBookingCard = ({
             range: startDate && endDate ? { from: startDate, to: endDate } : undefined,
             today: new Date(),
             past: (d: Date) => isBefore(d, new Date(new Date().setHours(0, 0, 0, 0))),
+            booked: (d: Date) => isDateBooked(d, bookedDates),
           }}
           modifiersStyles={{
             start: { backgroundColor: "#FA8729", color: "white", borderRadius: "10px" },
@@ -102,6 +103,7 @@ const PremiumBookingCard = ({
           }}
           modifiersClassNames={{
             past: "day-past",
+            booked: "!bg-destructive !text-destructive-foreground !opacity-100 !rounded-[10px] cursor-not-allowed",
           }}
           classNames={{
             months: "flex flex-col gap-4 w-full booking-cal-months",
@@ -129,8 +131,8 @@ const PremiumBookingCard = ({
             {t("Astăzi", "Today")}
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-[4px] bg-muted border border-border line-through" />
-            <span className="line-through opacity-70">{t("Rezervat", "Booked")}</span>
+            <span className="h-3 w-3 rounded-[4px] bg-destructive" />
+            {t("Rezervat", "Booked")}
           </span>
         </div>
       </div>

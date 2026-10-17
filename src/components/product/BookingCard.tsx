@@ -142,7 +142,8 @@ const BookingCard = ({
           disabled={(date) => isBefore(date, new Date()) || isDateBooked(date, bookedDates)}
           locale={dateLocale}
           formatters={{ formatDay: (date) => date.getDate().toString() }}
-          modifiers={{ start: startDate, end: endDate, range: startDate && endDate ? { from: startDate, to: endDate } : undefined }}
+          modifiers={{ start: startDate, end: endDate, range: startDate && endDate ? { from: startDate, to: endDate } : undefined, booked: (d: Date) => isDateBooked(d, bookedDates) }}
+          modifiersClassNames={{ booked: "!bg-destructive !text-destructive-foreground !opacity-100 rounded-lg cursor-not-allowed" }}
           className="rounded-md border w-full pointer-events-auto [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-caption]:text-sm [&_.rdp-head_cell]:text-xs [&_.rdp-cell]:p-0 [&_.rdp-day]:h-8 [&_.rdp-day]:w-8 [&_.rdp-day]:text-xs [&_.rdp-day[aria-selected]]:rounded-lg"
         />
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-muted-foreground">
@@ -151,8 +152,8 @@ const BookingCard = ({
             {language === "ro" ? "Selectat" : "Selected"}
           </span>
           <span className="inline-flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded-[4px] bg-muted border border-border" />
-            <span className="line-through opacity-70">{language === "ro" ? "Rezervat" : "Booked"}</span>
+            <span className="h-3 w-3 rounded-[4px] bg-destructive" />
+            <span>{language === "ro" ? "Rezervat" : "Booked"}</span>
           </span>
         </div>
       </div>
