@@ -58,7 +58,8 @@ export default function RentalDocumentsModal({ open, onOpenChange, rental, initi
     },
   });
 
-  const b = blank;
+  const sb = blank; // blank set: only signatures & on-site fields stay empty
+  const b = false; // known data is always prefilled
   const v = (val: string | null | undefined) => (b || !val ? "______________________" : val);
   const handover = pvs?.find((p) => p.phase === "handover");
   const ret = pvs?.find((p) => p.phase === "return");
@@ -161,14 +162,14 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
       <div className="flex-1 border-t border-foreground/60 pt-1 min-h-[70px]">
         <div className="text-xs font-semibold">Locator (Proprietar)</div>
         <div className="text-xs">{v(rental.owner_name)}</div>
-        {!b && pv?.owner_signature_data && <img src={pv.owner_signature_data} alt="" className="max-h-[60px]" />}
-        {!b && pv?.owner_signed_at && <div className="muted text-[10px] text-muted-foreground">Semnat {fmtDT(pv.owner_signed_at)}</div>}
+        {!sb && pv?.owner_signature_data && <img src={pv.owner_signature_data} alt="" className="max-h-[60px]" />}
+        {!sb && pv?.owner_signed_at && <div className="muted text-[10px] text-muted-foreground">Semnat {fmtDT(pv.owner_signed_at)}</div>}
       </div>
       <div className="flex-1 border-t border-foreground/60 pt-1 min-h-[70px]">
         <div className="text-xs font-semibold">Locatar (Chiriaș)</div>
         <div className="text-xs">{v(rental.renter_name)}</div>
-        {!b && pv?.renter_signature_data && <img src={pv.renter_signature_data} alt="" className="max-h-[60px]" />}
-        {!b && pv?.renter_signed_at && <div className="muted text-[10px] text-muted-foreground">Semnat {fmtDT(pv.renter_signed_at)}</div>}
+        {!sb && pv?.renter_signature_data && <img src={pv.renter_signature_data} alt="" className="max-h-[60px]" />}
+        {!sb && pv?.renter_signed_at && <div className="muted text-[10px] text-muted-foreground">Semnat {fmtDT(pv.renter_signed_at)}</div>}
       </div>
     </div>
   );
@@ -221,10 +222,10 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
             <tr key={p}>
               <td className="border border-border p-1">{p}</td>
               <td className="border border-border p-1">{v(n)}</td>
-              <td className="border border-border p-1">{!b && row?.validation_channel ? "Cod SMS" : "______"}</td>
-              <td className="border border-border p-1">{!b && row?.validation_destination ? row.validation_destination : "______"}</td>
-              <td className="border border-border p-1">{!b && row?.validated_at ? fmtDT(row.validated_at) : "______"}</td>
-              <td className="border border-border p-1">{!b && row?.validation_ref ? row.validation_ref : "______"}</td>
+              <td className="border border-border p-1">{!sb && row?.validation_channel ? "Cod SMS" : "______"}</td>
+              <td className="border border-border p-1">{!sb && row?.validation_destination ? row.validation_destination : "______"}</td>
+              <td className="border border-border p-1">{!sb && row?.validated_at ? fmtDT(row.validated_at) : "______"}</td>
+              <td className="border border-border p-1">{!sb && row?.validation_ref ? row.validation_ref : "______"}</td>
             </tr>
           ))}
         </tbody>
@@ -273,7 +274,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
         <p>☐ Funcțional, fără defecte &nbsp; ☐ Uzură normală &nbsp; ☐ Defecte constatate (descriere):</p>
         <p>_____________________________________________________________________________</p>
         <p className="text-xs text-muted-foreground">Fotografiile încărcate în platformă fac parte integrantă din prezentul proces-verbal.</p>
-        {!b && !!pv?.photo_urls?.length && (
+        {!sb && !!pv?.photo_urls?.length && (
           <>
             <H2>Fotografii la {isRet ? "returnare" : "predare"}</H2>
             <div className="photos grid grid-cols-2 gap-3 my-2">
@@ -289,7 +290,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
         {isRet && (
           <>
             <H2>Întârziere și penalități (art. 8)</H2>
-            {b ? (
+            {sb ? (
               <p>Zile de întârziere: ______ × ______ = ______ RON</p>
             ) : (
               <p>Zile de întârziere: <b>{late.days}</b> × {ron(late.perDay)} = <b>{ron(late.total)}</b>{late.days === 0 ? " (restituire la termen)" : ""}</p>
@@ -304,13 +305,13 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
   const anexa3 = (
     <div className="page">
       <Head title="ANEXA 3 — ACT ADIȚIONAL DE PRELUNGIRE" sub={`la Contractul de locațiune nr. ${rental.public_id}`} />
-      {b || !paidExts.length ? (
+      {sb || !paidExts.length ? (
         <>
           <H2>Art. 1. Prelungirea duratei</H2>
           <p>Părțile convin prelungirea locațiunii cu ______ zile, de la ____________ până la ____________.</p>
           <H2>Art. 2. Chiria suplimentară</H2>
           <p>Chiria suplimentară: ______ zile × ______ RON = ______ RON, plus comisionul platformei, achitată prin Rentli.ro.</p>
-          {!b && <p className="text-xs text-muted-foreground">Nu există încă o prelungire aprobată și plătită.</p>}
+          {!sb && <p className="text-xs text-muted-foreground">Nu există încă o prelungire aprobată și plătită.</p>}
         </>
       ) : (
         paidExts.map((e, i) => (
@@ -324,7 +325,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
           </div>
         ))
       )}
-      {(b || !paidExts.length) && <Sig />}
+      {(sb || !paidExts.length) && <Sig />}
     </div>
   );
   const extToSign = myRole ? paidExts.find((e) => myRole === "owner" ? !e.owner_signed_at : (!!e.owner_signed_at && !e.renter_signed_at)) : undefined;
@@ -333,9 +334,9 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
   const handoverDone = !!(rental.handover_pv_owner_signed_at && rental.handover_pv_renter_signed_at);
   const unlocked: Record<Tab, boolean> = {
     contract: true,
-    anexa1: b || acc.bothAccepted,
-    anexa2: b || handoverDone,
-    anexa3: b || paidExts.length > 0,
+    anexa1: sb || acc.bothAccepted,
+    anexa2: sb || handoverDone,
+    anexa3: sb || paidExts.length > 0,
   };
   const lockMsg: Record<Tab, string> = {
     contract: "",
