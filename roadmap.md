@@ -4,5 +4,5 @@
 - [x] Verifică desktop, mobil și compilarea
 - [x] Repară feedback-ul și blocarea formularului de înregistrare
 - [x] Testează înregistrarea în incognito până la etapa de verificare SMS
-- [ ] Corectează și testează revenirea Stripe Identity prin HTTPS pentru aplicația mobilă.
-- [ ] Elimină blocajul IP al cheii Stripe Identity — necesită modificarea restricției în contul Stripe de către proprietar.
+- [x] Corectează și testează revenirea Stripe Identity prin HTTPS pentru aplicația mobilă.
+- [ ] Confirmă accesul cheii Stripe din serviciul găzduit — testul fără modificări din sandbox reușește, dar restricțiile IP necesită verificare în contul Stripe de către proprietar.
