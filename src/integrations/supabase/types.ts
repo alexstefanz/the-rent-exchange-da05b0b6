@@ -3204,6 +3204,8 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          identity_status: string
+          identity_verified_at: string
           is_banned: boolean
           last_warning_at: string
           phone: string
