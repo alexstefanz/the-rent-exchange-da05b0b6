@@ -2844,6 +2844,10 @@ export type Database = {
         Args: { _id: string; _reason: string }
         Returns: undefined
       }
+      admin_reset_identity_verification: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
       admin_resolve_rental_dispute: {
         Args: { _note: string; _rental_id: string }
         Returns: undefined
