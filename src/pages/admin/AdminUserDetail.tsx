@@ -92,6 +92,8 @@ const AdminUserDetail = () => {
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [kycLoading, setKycLoading] = useState(false);
+  const [kycMsg, setKycMsg] = useState<string | null>(null);
 
   const { data: userDetail, isLoading } = useAdminUserDetail(id);
 
@@ -370,6 +372,26 @@ const AdminUserDetail = () => {
                     <Ban className="h-4 w-4" /> Banează
                   </Button>
                 )}
+                <Separator />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2"
+                  disabled={kycLoading || ((userDetail as any).identity_status ?? 'unverified') === 'unverified'}
+                  onClick={async () => {
+                    if (!id || !window.confirm("Dezactivezi verificarea KYC (Stripe Identity) pentru acest utilizator? Va trebui să reia verificarea.")) return;
+                    setKycLoading(true);
+                    setKycMsg(null);
+                    const { error } = await (supabase.rpc as any)('admin_reset_identity_verification', { _user_id: id });
+                    setKycLoading(false);
+                    setKycMsg(error ? `Eroare: ${error.message}` : "Verificarea KYC a fost dezactivată.");
+                    if (!error) invalidate();
+                  }}
+                >
+                  {kycLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+                  Dezactivează verificarea KYC
+                </Button>
+                {kycMsg && <p className="text-xs text-muted-foreground">{kycMsg}</p>}
                 <Separator />
                 <Button
                   onClick={() => { setDeleteConfirm(""); setDeleteDialog(true); }}
