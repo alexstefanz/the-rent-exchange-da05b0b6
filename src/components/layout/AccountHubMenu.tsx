@@ -97,7 +97,7 @@ function HeaderCard({
       onClick={() => onNav("/profile")}
       className="group block w-full rounded-2xl bg-gradient-to-br from-primary/10 via-background to-background p-4 text-left transition-all hover:from-primary/15"
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 pr-24">
         <div className="relative">
           <Avatar className="h-14 w-14 ring-2 ring-primary/30">
             <AvatarImage src={avatarUrl || undefined} alt={name} />
@@ -247,9 +247,9 @@ interface AccountHubMenuProps {
 
 /* ---------- shared body (desktop dropdown + mobile drawer) ---------- */
 
-export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => void }) {
+export function AccountHubBody({ onNavigate, onLogout }: { onNavigate: (path: string) => void; onLogout?: () => void }) {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language, setLanguage } = useLanguage();
   const { data, isLoading } = useAccountDashboard();
   const { data: walletBalance } = useWalletBalance();
   const { data: isAdmin } = useIsAdmin(user?.id);
@@ -299,6 +299,7 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
             </div>
           </div>
         ) : (
+          <div className="relative">
           <HeaderCard
             name={displayName}
             email={displayEmail}
@@ -310,6 +311,36 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
             completion={health?.completion || 0}
             onNav={onNavigate}
           />
+          <div className="absolute right-2 top-2 flex items-center gap-1">
+            <div className="inline-flex items-center rounded-lg border border-border/60 bg-background/80 p-0.5">
+              {(["ro", "en"] as const).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() => setLanguage(l)}
+                  aria-pressed={language === l}
+                  className={cn(
+                    "px-1.5 py-0.5 text-[10px] font-semibold rounded-md uppercase transition-colors",
+                    language === l ? "bg-primary/10 text-primary ring-1 ring-primary/30" : "text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+            {onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                aria-label={t("Ieși din cont", "Log out")}
+                title={t("Ieși din cont", "Log out")}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-destructive transition-colors hover:bg-destructive/10"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          </div>
         )}
 
         {!isLoading && profile && (
@@ -422,7 +453,7 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { t, language, setLanguage } = useLanguage();
+  const { t } = useLanguage();
   const { data } = useAccountDashboard();
   const { data: isAdmin } = useIsAdmin(user?.id);
   const { data: adminSummary } = useAdminNotificationSummary();
@@ -478,50 +509,7 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
 
   const BodyContent = (
     <div className="flex-1">
-      <AccountHubBody onNavigate={handleNav} />
-    </div>
-  );
-
-  const FooterZone = (
-    <div className="shrink-0 px-3 py-2 border-t border-border/60 flex items-center justify-between gap-2 bg-background">
-        <div className="inline-flex items-center rounded-lg border border-border/60 bg-muted/40 p-0.5">
-          <button
-            type="button"
-            onClick={() => setLanguage("ro")}
-            className={cn(
-              "px-2.5 py-1 text-xs font-semibold rounded-md transition-colors",
-              language === "ro"
-                ? "bg-primary/10 text-primary ring-1 ring-primary/30"
-                : "text-muted-foreground hover:bg-muted",
-            )}
-            aria-pressed={language === "ro"}
-          >
-            RO
-          </button>
-          <button
-            type="button"
-            onClick={() => setLanguage("en")}
-            className={cn(
-              "px-2.5 py-1 text-xs font-semibold rounded-md transition-colors",
-              language === "en"
-                ? "bg-primary/10 text-primary ring-1 ring-primary/30"
-                : "text-muted-foreground hover:bg-muted",
-            )}
-            aria-pressed={language === "en"}
-          >
-            EN
-          </button>
-        </div>
-        <button
-          onClick={() => {
-            setOpen(false);
-            onLogout();
-          }}
-          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
-        >
-          <LogOut className="h-3.5 w-3.5" />
-          {t("Ieși din cont", "Log out")}
-        </button>
+      <AccountHubBody onNavigate={handleNav} onLogout={() => { setOpen(false); onLogout(); }} />
     </div>
   );
 
@@ -536,7 +524,6 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
           className="w-[360px] p-0 bg-background border border-border/70 shadow-2xl rounded-2xl flex flex-col overflow-visible"
         >
           {BodyContent}
-          {FooterZone}
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -569,7 +556,6 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
       >
         <div className="mx-auto mt-2 mb-1 h-1 w-9 shrink-0 rounded-full bg-muted-foreground/30" />
         {BodyContent}
-        {FooterZone}
       </SheetContent>
     </Sheet>
   );
