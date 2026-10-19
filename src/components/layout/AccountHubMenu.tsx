@@ -113,7 +113,7 @@ function HeaderCard({
           <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
             {verified ? (
               <span className="inline-flex items-center gap-1 text-emerald-600 font-medium">
-                <ShieldCheck className="h-3 w-3" /> {t("Verificat", "Verified")}
+                <ShieldCheck className="h-3 w-3" /> {t("Verificat cu Stripe Identity", "Verified with Stripe Identity")}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-amber-600 font-medium">
@@ -313,12 +313,7 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
         )}
 
         {!isLoading && profile && (
-          trust?.verified ? (
-            <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
-              <ShieldCheck className="h-4 w-4" />
-              {t("Identitate verificată cu Stripe", "Identity verified with Stripe")}
-            </div>
-          ) : (
+          trust?.verified ? null : (
             <button
               onClick={() => onNavigate("/verificare")}
               className="flex w-full items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-left text-xs font-semibold text-amber-800 transition hover:border-amber-400"
@@ -358,8 +353,6 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
 
 
       <div className="px-3 pb-2 space-y-2">
-        <RoleMenuCards onNavigate={onNavigate} />
-
         <div
           role="link"
           tabIndex={0}
@@ -370,12 +363,12 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
               onNavigate("/castiguri");
             }
           }}
-          className="group rounded-2xl bg-zinc-900 text-white p-4 shadow-md cursor-pointer transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="group flex items-center justify-between gap-2 rounded-xl bg-zinc-900 text-white px-3 py-2 shadow-sm cursor-pointer transition hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 min-w-0">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-white/60">
-                {t("Balanță disponibilă", "Available balance")}
+                {t("Balanță", "Balance")}
               </span>
               <button
                 type="button"
@@ -383,49 +376,25 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
                   e.stopPropagation();
                   setHideBalance((v) => !v);
                 }}
-                aria-label={
-                  hideBalance
-                    ? t("Afișează balanța", "Show balance")
-                    : t("Ascunde balanța", "Hide balance")
-                }
-                className="inline-flex h-6 w-6 items-center justify-center rounded-full text-white/60 hover:text-white hover:bg-white/10 transition"
+                aria-label={hideBalance ? t("Afișează balanța", "Show balance") : t("Ascunde balanța", "Hide balance")}
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full text-white/60 hover:text-white hover:bg-white/10 transition"
               >
-                {hideBalance ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                {hideBalance ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
               </button>
             </div>
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary text-primary-foreground px-3 py-1.5 text-xs font-semibold transition-colors group-hover:bg-primary/90">
-              {t("Retrage", "Withdraw")}
-              <ArrowUpRight className="h-3 w-3" />
-            </span>
-          </div>
-          <div className="mt-2 text-2xl font-bold tabular-nums">
-            {hideBalance
-              ? "••••"
-              : availableBalance
-                  .toFixed(2)
-                  .replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
-            <span className="ml-1 text-sm font-medium text-white/70">RON</span>
-          </div>
-          {(signals?.monthlyEarnings || 0) > 0 && (
-            <div className="mt-1 text-[11px] text-emerald-400">
-              +{hideBalance ? "•••" : (signals?.monthlyEarnings || 0).toFixed(0)} RON {t("luna aceasta", "this month")}
+            <div className="text-base font-bold tabular-nums leading-tight">
+              {hideBalance ? "••••" : availableBalance.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ".")}
+              <span className="ml-1 text-xs font-medium text-white/70">RON</span>
             </div>
-          )}
-          <div className="mt-3 pt-3 border-t border-white/10 text-[11px]">
-            {profile?.iban ? (
-              <span className="text-white/70 tracking-wider">
-                IBAN {hideBalance ? "••••••••" : `•••${profile.iban.slice(-4)}`}
-              </span>
-            ) : (
-              <button
-                onClick={() => onNavigate("/castiguri")}
-                className="text-amber-300 hover:text-amber-200 font-medium"
-              >
-                {t("IBAN neadăugat — adaugă acum", "IBAN not added — add now")}
-              </button>
-            )}
           </div>
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary text-primary-foreground px-2.5 py-1 text-[11px] font-semibold group-hover:bg-primary/90">
+            {t("Retrage", "Withdraw")}
+            <ArrowUpRight className="h-3 w-3" />
+          </span>
         </div>
+
+        <RoleMenuCards onNavigate={onNavigate} />
+
 
         {!isLoading && health && incompleteHealth.length > 0 && (
           <button
