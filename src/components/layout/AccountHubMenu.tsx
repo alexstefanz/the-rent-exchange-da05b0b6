@@ -110,7 +110,7 @@ function HeaderCard({
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm truncate text-foreground">{name}</p>
           <p className="text-xs text-muted-foreground truncate">{email}</p>
-          <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+          <div className="mt-1 flex items-center gap-2 whitespace-nowrap text-[11px] text-muted-foreground">
             {verified ? (
               <span className="inline-flex items-center gap-1 text-emerald-600 font-medium">
                 <ShieldCheck className="h-3 w-3" /> {t("Verificat cu Stripe Identity", "Verified with Stripe Identity")}
@@ -131,10 +131,10 @@ function HeaderCard({
         </div>
       </div>
       <div className="mt-3">
-        <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1">
-          <span>{t("Profil", "Profile")} {completion}%</span>
-          <span className="opacity-60 group-hover:opacity-100 transition-opacity">
-            {t("Vezi cont", "View account")} →
+        <div className="flex items-center justify-between gap-2 whitespace-nowrap text-[11px] text-muted-foreground mb-1">
+          <span className="shrink-0">{t("Profil", "Profile")} {completion}%</span>
+          <span className="truncate opacity-70 group-hover:opacity-100 transition-opacity">
+            {t("Finalizează profilul contului", "Complete your account profile")} →
           </span>
         </div>
         <Progress value={completion} className="h-1.5" />
@@ -396,20 +396,6 @@ export function AccountHubBody({ onNavigate }: { onNavigate: (path: string) => v
         <RoleMenuCards onNavigate={onNavigate} />
 
 
-        {!isLoading && health && incompleteHealth.length > 0 && (
-          <button
-            onClick={() => onNavigate(incompleteHealth[0].href)}
-            className="group flex w-full items-center gap-3 rounded-xl bg-card border border-border/60 px-3 py-2.5 text-left shadow-sm transition hover:border-primary/40"
-          >
-            <span className="flex-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("Finalizează contul", "Finish setup")}
-            </span>
-            <span className="text-xs font-semibold text-primary">
-              {(health.items || []).filter((i) => i.done).length}/{health.items?.length || 0}
-            </span>
-            <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition" />
-          </button>
-        )}
 
 
         <button
