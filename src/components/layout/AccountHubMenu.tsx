@@ -110,7 +110,7 @@ function HeaderCard({
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm truncate text-foreground">{name}</p>
           <p className="text-xs text-muted-foreground truncate">{email}</p>
-          <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+          <div className="mt-1 flex items-center gap-2 whitespace-nowrap text-[11px] text-muted-foreground">
             {verified ? (
               <span className="inline-flex items-center gap-1 text-emerald-600 font-medium">
                 <ShieldCheck className="h-3 w-3" /> {t("Verificat cu Stripe Identity", "Verified with Stripe Identity")}
