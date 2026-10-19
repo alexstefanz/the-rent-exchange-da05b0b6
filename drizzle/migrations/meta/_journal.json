@@ -197,6 +197,13 @@
       "when": 1792388319530,
       "tag": "0027_admin_reset_identity_verification",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1792388992109,
+      "tag": "0028_admin_users_identity",
+      "breakpoints": true
     }
   ]
 }
