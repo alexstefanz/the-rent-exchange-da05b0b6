@@ -453,7 +453,7 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { t, language, setLanguage } = useLanguage();
+  const { t } = useLanguage();
   const { data } = useAccountDashboard();
   const { data: isAdmin } = useIsAdmin(user?.id);
   const { data: adminSummary } = useAdminNotificationSummary();
@@ -510,49 +510,6 @@ export function AccountHubMenu({ onLogout }: AccountHubMenuProps) {
   const BodyContent = (
     <div className="flex-1">
       <AccountHubBody onNavigate={handleNav} onLogout={() => { setOpen(false); onLogout(); }} />
-    </div>
-  );
-
-  const FooterZone = (
-    <div className="shrink-0 px-3 py-2 border-t border-border/60 flex items-center justify-between gap-2 bg-background">
-        <div className="inline-flex items-center rounded-lg border border-border/60 bg-muted/40 p-0.5">
-          <button
-            type="button"
-            onClick={() => setLanguage("ro")}
-            className={cn(
-              "px-2.5 py-1 text-xs font-semibold rounded-md transition-colors",
-              language === "ro"
-                ? "bg-primary/10 text-primary ring-1 ring-primary/30"
-                : "text-muted-foreground hover:bg-muted",
-            )}
-            aria-pressed={language === "ro"}
-          >
-            RO
-          </button>
-          <button
-            type="button"
-            onClick={() => setLanguage("en")}
-            className={cn(
-              "px-2.5 py-1 text-xs font-semibold rounded-md transition-colors",
-              language === "en"
-                ? "bg-primary/10 text-primary ring-1 ring-primary/30"
-                : "text-muted-foreground hover:bg-muted",
-            )}
-            aria-pressed={language === "en"}
-          >
-            EN
-          </button>
-        </div>
-        <button
-          onClick={() => {
-            setOpen(false);
-            onLogout();
-          }}
-          className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10"
-        >
-          <LogOut className="h-3.5 w-3.5" />
-          {t("Ieși din cont", "Log out")}
-        </button>
     </div>
   );
 
