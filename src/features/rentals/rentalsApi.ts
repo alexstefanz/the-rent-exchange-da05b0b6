@@ -179,11 +179,13 @@ export async function requestMutualCancellation(rentalId: string, subject: strin
 
 /** True if at least one party has signed the main contract. */
 export async function hasContractSignature(rentalId: string): Promise<boolean> {
-  const { count } = await supabase
+  const { data, error } = await supabase
     .from("rental_contract_acceptances")
-    .select("id", { count: "exact", head: true })
-    .eq("rental_id", rentalId);
-  return (count ?? 0) > 0;
+    .select("id")
+    .eq("rental_id", rentalId)
+    .limit(1);
+  if (error) throw error; // callers treat errors as "signed" (safe default)
+  return (data?.length ?? 0) > 0;
 }
 
 /** Direct cancel of a PAID rental before any contract signature — automatic refund. */

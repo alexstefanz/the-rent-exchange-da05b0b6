@@ -985,6 +985,7 @@ const RentalDetailPage = () => {
                 isAdmin={!!isAdmin}
                 paymentStatus={rental.payment_status}
                 rentalStatus={rental.status}
+                contractSignedKnown={contractAcc.loading ? null : !!(contractAcc.owner || contractAcc.renter)}
                 onChanged={async () => { await refetch(); }}
               />
             )}

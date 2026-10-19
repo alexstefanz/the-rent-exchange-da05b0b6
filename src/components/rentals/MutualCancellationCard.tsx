@@ -24,13 +24,15 @@ interface Props {
   isAdmin?: boolean;
   paymentStatus?: string | null;
   rentalStatus?: string | null;
+  /** Contract signature state already known by the parent page (null = loading). */
+  contractSignedKnown?: boolean | null;
   onChanged: () => void | Promise<void>;
 }
 
 const MutualCancellationCard = ({
   rentalId, cancelRequestStatus, cancelRequestInitiator,
   cancelRequestSubject, cancelRequestReason,
-  currentUserId, isRenter, isOwner, isAdmin, paymentStatus, rentalStatus, onChanged,
+  currentUserId, isRenter, isOwner, isAdmin, paymentStatus, rentalStatus, contractSignedKnown, onChanged,
 }: Props) => {
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
@@ -46,11 +48,17 @@ const MutualCancellationCard = ({
   const unpaid = !paymentStatus || ["pending", "failed", "canceled", "cancelled"].includes(paymentStatus);
   const canSelfCancelUnpaid = unpaid && rentalStatus !== "cancelled" && rentalStatus !== "completed";
   const isParticipant = !!isRenter || !!isOwner;
-  const [contractSigned, setContractSigned] = useState<boolean | null>(null);
+  const [fetchedSigned, setFetchedSigned] = useState<boolean | null>(null);
   useEffect(() => {
     if (unpaid) return;
-    hasContractSignature(rentalId).then(setContractSigned).catch(() => setContractSigned(true));
+    hasContractSignature(rentalId).then(setFetchedSigned).catch(() => setFetchedSigned(true));
   }, [rentalId, unpaid]);
+  // Signed if either source says so; unknown until both resolved (never assume unsigned).
+  const contractSigned: boolean | null =
+    contractSignedKnown === true || fetchedSigned === true ? true
+    : contractSignedKnown === false && fetchedSigned === false ? false
+    : contractSignedKnown === undefined ? fetchedSigned
+    : null;
   const canDirectPaidCancel = !unpaid && !isPending && contractSigned === false
     && rentalStatus !== "cancelled" && rentalStatus !== "completed";
 
