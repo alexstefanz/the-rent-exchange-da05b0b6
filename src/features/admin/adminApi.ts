@@ -50,6 +50,8 @@ export interface AdminUser {
   banned_at: string | null;
   warnings_count: number;
   last_warning_at: string | null;
+  identity_status?: string | null;
+  identity_verified_at?: string | null;
 }
 
 export interface FinancialSummary {

@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Users, Search, Shield, ShieldCheck, Ban, ChevronDown, ChevronUp, Package, CalendarCheck, ExternalLink, Wallet, ShoppingBag, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +23,36 @@ const roleLabels: Record<string, { label: string; icon: React.ReactNode }> = {
   admin: { label: "Admin", icon: <Shield className="h-3 w-3" /> },
   moderator: { label: "Moderator", icon: <ShieldCheck className="h-3 w-3" /> },
   user: { label: "Utilizator", icon: null },
+};
+
+const KycBadge = ({ status }: { status?: string | null }) => {
+  if (status === 'verified') return <Badge variant="outline" className="gap-1 text-green-700 border-green-600/40"><ShieldCheck className="h-3 w-3" /> KYC</Badge>;
+  if (status === 'pending') return <Badge variant="outline" className="gap-1 text-orange-700 border-orange-500/40">KYC în așteptare</Badge>;
+  return <Badge variant="outline" className="text-muted-foreground">Neverificat</Badge>;
+};
+
+const KycResetButton = ({ user }: { user: any }) => {
+  const qc = useQueryClient();
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const status = user.identity_status ?? 'unverified';
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button size="sm" variant="outline" disabled={loading || status === 'unverified'} onClick={async (e) => {
+        e.stopPropagation();
+        if (!window.confirm("Dezactivezi verificarea KYC (Stripe Identity) pentru acest utilizator? Va trebui să reia verificarea.")) return;
+        setLoading(true); setMsg(null);
+        const { error } = await (supabase.rpc as any)('admin_reset_identity_verification', { _user_id: user.id });
+        setLoading(false);
+        setMsg(error ? `Eroare: ${error.message}` : "Verificarea KYC a fost dezactivată.");
+        if (!error) qc.invalidateQueries({ queryKey: ['adminUsers'] });
+      }}>
+        {loading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <ShieldCheck className="h-4 w-4 mr-1" />}
+        Dezactivează KYC
+      </Button>
+      {msg && <span className="text-xs text-muted-foreground">{msg}</span>}
+    </div>
+  );
 };
 
 const UserExpandedPanel = ({ user, onViewProfile }: { user: any; onViewProfile: () => void }) => (
@@ -72,10 +105,18 @@ const UserExpandedPanel = ({ user, onViewProfile }: { user: any; onViewProfile: 
         <span className="font-medium">{user.created_at ? format(new Date(user.created_at), 'd MMM yyyy', { locale: ro }) : '-'}</span>
       </div>
     </div>
+    <div className="flex flex-wrap items-center gap-2 text-sm">
+      <span className="text-muted-foreground">Status KYC:</span>
+      <KycBadge status={user.identity_status} />
+      {user.identity_verified_at && <span className="text-xs text-muted-foreground">din {format(new Date(user.identity_verified_at), 'd MMM yyyy HH:mm', { locale: ro })}</span>}
+    </div>
     <Separator />
-    <Button size="sm" variant="outline" onClick={onViewProfile}>
-      <ExternalLink className="h-4 w-4 mr-1" /> Vezi profil complet
-    </Button>
+    <div className="flex flex-wrap gap-2">
+      <Button size="sm" variant="outline" onClick={onViewProfile}>
+        <ExternalLink className="h-4 w-4 mr-1" /> Vezi profil complet
+      </Button>
+      <KycResetButton user={user} />
+    </div>
   </div>
 );
 
@@ -222,6 +263,7 @@ const AdminUsers = () => {
                                 {!isUserBanned(u) && !hasWarnings(u) && (
                                   <Badge variant="outline" className="text-green-700">Activ</Badge>
                                 )}
+                                <KycBadge status={(u as any).identity_status} />
                               </div>
                             </TableCell>
                             <TableCell className="text-muted-foreground whitespace-nowrap">
