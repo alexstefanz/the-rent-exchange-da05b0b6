@@ -533,8 +533,20 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://rentli.ro/produs/bicicleta-b-twin-rockrider-100-gri-albastru</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://rentli.ro/produs/ciocan-rotopercutor-sds-plus-780-w-2-4j-valiza-makita-makita-hr2470</loc>
     <lastmod>2026-10-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://rentli.ro/produs/bicicleta-orbea-mountain-bike-alba-cu-roti-kenda</loc>
+    <lastmod>2026-10-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
