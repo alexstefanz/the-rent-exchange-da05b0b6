@@ -563,6 +563,21 @@ const Auth = () => {
             <CardDescription>{copy.auth.setNewPasswordSubtitle}</CardDescription>
           </CardHeader>
           <CardContent>
+            {(resetLinkInvalid || (!authLoading && !user)) && (
+              <div className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                <p className="font-medium text-destructive">Linkul de resetare a expirat sau a fost deja folosit.</p>
+                <p className="mt-1 text-muted-foreground">Solicită un link nou și deschide-l în același browser.</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => { setResetLinkInvalid(false); clearPasswordRecovery(); setSearchParams({}); navigate("/auth", { replace: true }); }}
+                >
+                  Solicită un link nou
+                </Button>
+              </div>
+            )}
             <form onSubmit={resetForm.handleSubmit(handleSetNewPassword)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="new-password">{copy.auth.newPassword}</Label>
