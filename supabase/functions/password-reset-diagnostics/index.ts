@@ -78,7 +78,8 @@ Deno.serve(async (req) => {
   }
 
   return new Response(
-    JSON.stringify({ exists: null }),
+    // Product decision: tell the user when no account exists for this email.
+    JSON.stringify({ exists: !!profile?.id }),
     { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   )
 })
