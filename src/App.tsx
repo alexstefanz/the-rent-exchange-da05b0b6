@@ -1,6 +1,8 @@
 import DocumentSignedSuccessHost from "@/components/rentals/DocumentSignedSuccessDialog";
 import { lazyWithRetry } from "@/lib/lazyWithRetry";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -132,6 +134,8 @@ const App = () => (
     <LanguageProvider>
       <AuthProvider>
         <TooltipProvider>
+          <Toaster />
+          <Sonner />
           <BrowserRouter>
             <ScrollToTop />
             <RouteTracker />

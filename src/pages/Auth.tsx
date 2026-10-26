@@ -47,6 +47,7 @@ const Auth = () => {
   const { toast } = useToast();
   const { user, loading: authLoading, signIn, signUp, isPasswordRecovery, clearPasswordRecovery } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showResetPw, setShowResetPw] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetSentTo, setResetSentTo] = useState<string | null>(null);
@@ -548,13 +549,18 @@ const Auth = () => {
             <form onSubmit={resetForm.handleSubmit(handleSetNewPassword)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="new-password">{copy.auth.newPassword}</Label>
-                <Input id="new-password" type="password" placeholder="••••••••" {...resetForm.register("newPassword")} />
+                <div className="relative">
+                  <Input id="new-password" type={showResetPw ? "text" : "password"} placeholder="••••••••" className="pr-10" {...resetForm.register("newPassword")} />
+                  <button type="button" aria-label="Arată/ascunde parola" onClick={() => setShowResetPw((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                    {showResetPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 <p className="text-xs text-muted-foreground">{copy.auth.passwordRequirements}</p>
                 {resetForm.formState.errors.newPassword && <p className="text-sm text-destructive">{resetForm.formState.errors.newPassword.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirm-new-password">{copy.auth.confirmNewPassword}</Label>
-                <Input id="confirm-new-password" type="password" placeholder="••••••••" {...resetForm.register("confirmNewPassword")} />
+                <Input id="confirm-new-password" type={showResetPw ? "text" : "password"} placeholder="••••••••" {...resetForm.register("confirmNewPassword")} />
                 {resetForm.formState.errors.confirmNewPassword && <p className="text-sm text-destructive">{resetForm.formState.errors.confirmNewPassword.message}</p>}
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
