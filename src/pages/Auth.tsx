@@ -14,6 +14,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { notify } from "@/lib/notify";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Mail, Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react";
 import logoImage from "@/assets/rentli_logo.webp";
@@ -46,6 +47,7 @@ const Auth = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { toast } = useToast();
   const { user, loading: authLoading, signIn, signUp, isPasswordRecovery, clearPasswordRecovery } = useAuth();
+  const [resetLinkInvalid, setResetLinkInvalid] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [showResetPw, setShowResetPw] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
@@ -439,11 +441,26 @@ const Auth = () => {
     
     if (error) {
       setIsLoading(false);
-      toast({
-        title: copy.auth.resetError,
-        description: isWeakPasswordError(error.message) ? copy.auth.passwordTooWeak : error.message,
-        variant: "destructive",
-      });
+      console.error("updateUser failed:", error.name, error.status, (error as any).code, error.message);
+      const msg = (error.message || "").toLowerCase();
+      const code = String((error as any).code || "");
+      let friendly: string;
+      if (code === "same_password" || msg.includes("different from the old")) {
+        friendly = "Noua parolă trebuie să fie diferită de parola veche.";
+      } else if (
+        error.name === "AuthSessionMissingError" || msg.includes("session") ||
+        msg.includes("jwt") || msg.includes("expired") || msg.includes("invalid") || error.status === 401 || error.status === 403
+      ) {
+        friendly = "Linkul de resetare a expirat sau a fost deja folosit. Solicită un link nou.";
+        setResetLinkInvalid(true);
+      } else if (isWeakPasswordError(error.message) || code === "weak_password") {
+        friendly = copy.auth.passwordTooWeak;
+      } else if (error.status === 429 || msg.includes("rate")) {
+        friendly = "Prea multe încercări. Așteaptă câteva minute și încearcă din nou.";
+      } else {
+        friendly = `Nu am putut schimba parola (${error.message || "eroare necunoscută"}).`;
+      }
+      notify.error(friendly, copy.auth.resetError);
       return;
     }
 
@@ -546,6 +563,21 @@ const Auth = () => {
             <CardDescription>{copy.auth.setNewPasswordSubtitle}</CardDescription>
           </CardHeader>
           <CardContent>
+            {(resetLinkInvalid || (!authLoading && !user)) && (
+              <div className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                <p className="font-medium text-destructive">Linkul de resetare a expirat sau a fost deja folosit.</p>
+                <p className="mt-1 text-muted-foreground">Solicită un link nou și deschide-l în același browser.</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => { setResetLinkInvalid(false); clearPasswordRecovery(); setSearchParams({}); navigate("/auth", { replace: true }); }}
+                >
+                  Solicită un link nou
+                </Button>
+              </div>
+            )}
             <form onSubmit={resetForm.handleSubmit(handleSetNewPassword)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="new-password">{copy.auth.newPassword}</Label>
