@@ -68,6 +68,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   }, [open, rental.id, phase]);
 
   const content = buildPvContent(rental, phase, pvEffectiveDate(pv));
+  const richView = buildPvRichContent(rental, phase, pvEffectiveDate(pv));
 
   const uploaderRole: "owner" | "renter" = phase === "handover" ? "owner" : "renter";
   const isUploader = role === uploaderRole;
@@ -216,18 +217,20 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
     doc.setDrawColor(229, 231, 235); doc.line(MARGIN, y, W - MARGIN, y); y += 24;
 
     doc.setFontSize(14); doc.setFont("helvetica", "bold");
-    doc.text(noDia(rich.title), W / 2, y, { align: "center" }); y += 24;
-
-    writeRichParagraph(rich.introRuns); y += 8;
-    writeRichParagraph(rich.objectRuns); y += 8;
-    if (rich.accessoriesRuns) { writeRichParagraph(rich.accessoriesRuns); y += 8; }
-    writeRichParagraph(rich.periodRuns); y += 8;
-    writeRichParagraph(rich.responsibilityRuns); y += 12;
-    // Final clause: italic, muted
-    writeParagraph(rich.finalClauseRuns.map((r) => r.text).join(""), {
-      align: "justify", size: 9, italic: true, color: [107, 114, 128], lh: 12,
-    });
-    y += 14;
+    doc.text(noDia(rich.title), W / 2, y, { align: "center" }); y += 16;
+    doc.setFontSize(8.5); doc.setFont("helvetica", "normal"); doc.setTextColor(107, 114, 128);
+    doc.text(noDia(rich.subtitle), W / 2, y, { align: "center" }); y += 18;
+    doc.setTextColor(0);
+    writeRichParagraph(rich.headerRuns, { size: 9 }); y += 8;
+    for (const s of rich.sections) {
+      ensureSpace(30);
+      y += 4;
+      writeParagraph(s.heading, { size: 10.5, bold: true, color: [217, 119, 6] });
+      y += 3;
+      for (const p of s.paragraphs) { writeRichParagraph(p, { size: 9.5, lh: 13 }); y += 2; }
+      y += 6;
+    }
+    y += 8;
 
     // Photos
     ensureSpace(20);
@@ -483,21 +486,17 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
               </header>
               <hr className="border-border my-4" />
 
-              <h2 className="text-center font-bold text-[15px] tracking-wide my-6">{content.title}</h2>
-
-              <DocParagraph>
-                Incheiat astazi, <strong>{content.todayLabel}</strong>, intre domnul/doamna <strong>{content.ownerName}</strong>, in calitate de <strong>Proprietar</strong>, telefon <strong>{rental.owner_phone || "0740 000 000"}</strong>, email <strong>{rental.owner_email || "owner@rentli.ro"}</strong>, si domnul/doamna <strong>{content.renterName}</strong>, in calitate de <strong>Chirias</strong>, telefon <strong>{rental.renter_phone || "0740 000 000"}</strong>, email <strong>{rental.renter_email || "renter@rentli.ro"}</strong>.
-              </DocParagraph>
-
-              <DocParagraph>
-                Prin prezentul proces-verbal, Proprietarul preda, iar Chiriasul primeste spre utilizare temporara, prin intermediul platformei de renting peer-to-peer Rentli, urmatorul bun: <strong>{rental.product_title || "-"}</strong>, din categoria <strong>{rental.product_category || "-"}</strong>, pentru o perioada de <strong>{rental.rental_days} zile</strong>, cu costul total de <strong>{rental.subtotal} lei</strong> ({rental.daily_price} lei/zi).
-              </DocParagraph>
-
-              {content.accessories && <DocParagraph>{content.accessories}</DocParagraph>}
-
-              <DocParagraph>{content.period}</DocParagraph>
-              <DocParagraph>{content.responsibility}</DocParagraph>
-              <p className="text-xs text-muted-foreground italic mt-6">{content.finalClause}</p>
+              <h2 className="text-center font-bold text-[15px] tracking-wide mt-6">{richView.title}</h2>
+              <p className="text-center text-xs text-muted-foreground mb-6">{richView.subtitle}</p>
+              <p className="text-xs mb-4"><Runs runs={richView.headerRuns} /></p>
+              {richView.sections.map((s) => (
+                <section key={s.heading} className="mb-4">
+                  <h3 className="font-bold text-sm text-primary mb-1">{s.heading}</h3>
+                  {s.paragraphs.map((p, i) => (
+                    <p key={i} className="mb-1"><Runs runs={p} /></p>
+                  ))}
+                </section>
+              ))}
 
               {/* Photos */}
               {photos.length > 0 && (
