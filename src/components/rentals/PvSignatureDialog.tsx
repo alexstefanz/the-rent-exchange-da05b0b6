@@ -756,3 +756,6 @@ function SigBox({ label, name, signatureData, signedAt }: { label: string; name:
     </div>
   );
 }
+function Runs({ runs }: { runs: PvRun[] }) {
+  return <>{runs.map((r, i) => (r.bold ? <strong key={i}>{r.text}</strong> : <span key={i}>{r.text}</span>))}</>;
+}

@@ -129,15 +129,17 @@ export async function generatePvDocx(rental: RentalFullDetail, pv: PvDocument, p
     spacing: { before: 200, after: 320 },
     children: [new TextRun({ text: noDia(c.title), bold: true, size: 30, font: "Arial" })],
   }));
+  children.push(centerLine(c.subtitle, false, 18));
+  children.push(pRich(c.headerRuns, { size: 18, after: 200 }));
 
-  // Body paragraphs (with inline bold matching the UI)
-  children.push(pRich(c.introRuns));
-  children.push(pRich(c.objectRuns));
-  if (c.accessoriesRuns) children.push(pRich(c.accessoriesRuns));
-  children.push(pRich(c.periodRuns));
-  children.push(pRich(c.responsibilityRuns));
-  // Final clause: italic + muted (matches UI styling)
-  children.push(pRich(c.finalClauseRuns, { italics: true, color: "6B7280", size: 20, after: 240 }));
+  // Sections 1–7 of the official template
+  for (const s of c.sections) {
+    children.push(new Paragraph({
+      spacing: { before: 160, after: 80 },
+      children: [new TextRun({ text: noDia(s.heading), bold: true, size: 22, color: "D97706", font: "Arial" })],
+    }));
+    for (const p of s.paragraphs) children.push(pRich(p, { size: 20, after: 60, align: AlignmentType.LEFT }));
+  }
 
   // Photos — 2-column grid with caption below each
   const validPhotos = photoBuffers
