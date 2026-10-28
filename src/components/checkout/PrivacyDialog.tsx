@@ -35,9 +35,9 @@ const PrivacyDialog = ({ open, onOpenChange }: PrivacyDialogProps) => {
 
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4 min-h-0" style={{ maxHeight: "55vh" }}>
           <div className="space-y-6">
-            {sections.map((section) => (
+            {sections.map((section, i) => (
               <div key={section.id}>
-                <h3 className="font-semibold text-foreground mb-2">{section.title}</h3>
+                <h3 className="font-semibold text-foreground mb-2">{i + 1}. {section.title}</h3>
                 <div className="text-sm text-muted-foreground">{section.content}</div>
               </div>
             ))}
