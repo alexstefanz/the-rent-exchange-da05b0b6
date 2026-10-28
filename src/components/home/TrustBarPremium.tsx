@@ -33,8 +33,8 @@ const TrustBarPremium = () => {
   const items = [
     {
       icon: ShieldCheck,
-      value: verified > 1000 ? `${Math.floor(verified / 100) * 100}+` : `${verified}`,
-      label: t("utilizatori verificați", "verified users"),
+      value: t("Bunuri asigurate", "Insured items"),
+      label: t("Protecție & PV inclus", "Protection & handover report included"),
       tone: "text-emerald-600",
     },
     {
