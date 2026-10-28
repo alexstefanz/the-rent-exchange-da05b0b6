@@ -204,6 +204,13 @@
       "when": 1792388992109,
       "tag": "0028_admin_users_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793168669387,
+      "tag": "0029_public_profile_any_user",
+      "breakpoints": true
     }
   ]
 }

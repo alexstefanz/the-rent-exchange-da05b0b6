@@ -262,7 +262,7 @@ const UserProfile = () => {
               Profil negăsit
             </h1>
             <p className="text-muted-foreground mb-4">
-              Utilizatorul nu a fost găsit sau nu are anunțuri active.
+              Utilizatorul nu a fost găsit sau contul a fost dezactivat.
             </p>
             <Button asChild>
               <Link to="/">Înapoi la pagina principală</Link>
@@ -627,7 +627,11 @@ const UserProfile = () => {
                 )
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-muted-foreground">Nu s-au găsit produse.</p>
+                  <p className="text-muted-foreground">
+                    {products.length === 0
+                      ? (language === "en" ? "This user has no published listings at the moment." : "Acest utilizator nu are anunțuri publicate momentan.")
+                      : (language === "en" ? "No products found." : "Nu s-au găsit produse.")}
+                  </p>
                 </div>
               )}
           </div>
