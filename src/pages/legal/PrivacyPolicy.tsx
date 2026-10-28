@@ -6,7 +6,7 @@ import { usePageSeo } from "@/hooks/usePageSeo";
 export const sectionsRo = [
   {
     id: "operator",
-    title: "1. CINE SUNTEM NOI?",
+    title: "CINE SUNTEM NOI?",
     content: (
       <div className="space-y-3">
         <p><strong>RENTLI 1 S.R.L.</strong>, în continuare Societatea sau Noi,</p>
@@ -24,7 +24,7 @@ export const sectionsRo = [
   },
   {
     id: "cum-prelucram",
-    title: "2. CUM PRELUCRĂM DATELE DVS. CU CARACTER PERSONAL?",
+    title: "CUM PRELUCRĂM DATELE DVS. CU CARACTER PERSONAL?",
     content: (
       <div className="space-y-3">
         <p>Societatea, în calitatea sa de Operator, prelucrează datele cu caracter personal ale candidaților care aplică pentru posturile disponibile, angajaților, clienților persoane fizice, reprezentanților clienților persoane juridice, partenerilor contractuali și ai colaboratorilor, și datele altor persoane fizice care interacționează cu Societatea și/sau sunt antrenate în relații contractuale cu acesta.</p>
@@ -42,7 +42,7 @@ export const sectionsRo = [
   },
   {
     id: "tipuri-date",
-    title: "3. CARE SUNT TIPURILE DE DATE CU CARACTER PERSONAL PRELUCRATE ȘI ÎN CE SCOP SUNT PRELUCRATE ACESTEA?",
+    title: "CARE SUNT TIPURILE DE DATE CU CARACTER PERSONAL PRELUCRATE ȘI ÎN CE SCOP SUNT PRELUCRATE ACESTEA?",
     content: (
       <div className="space-y-3">
         <p>În contextul <strong>recrutării de personal</strong>, prelucrăm următoarele tipuri de date cu caracter personal: nume, prenume, adresă, data nașterii, cetățenie, genul, nr. de tel., adresa de e-mail, date privind experiența profesională și/sau socială, educația și formarea profesională, competențe și alte date cu caracter personal care reies din informațiile cuprinse în CV-ul și din scrisoarea de intenție depuse, și după caz, în urma discuțiilor din cadrul interviului de angajare.</p>
@@ -62,7 +62,7 @@ export const sectionsRo = [
   },
   {
     id: "dreptul-la-imagine",
-    title: "4. PRELUCRAREA FOTOGRAFIILOR ȘI DREPTUL LA PROPRIA IMAGINE",
+    title: "PRELUCRAREA FOTOGRAFIILOR ȘI DREPTUL LA PROPRIA IMAGINE",
     content: (
       <div className="space-y-3">
         <p>Imaginea unei persoane fizice identificabile constituie dată cu caracter personal. Prelucrarea acesteia de către Societate se realizează cu respectarea <strong>art. 6 alin. (1) lit. a) și art. 7 din R.G.P.D.</strong>, precum și a <strong>art. 73–74 din Codul civil</strong> privind dreptul la propria imagine.</p>
@@ -76,7 +76,7 @@ export const sectionsRo = [
   },
   {
     id: "temeiuri-legale",
-    title: "5. CARE SUNT TEMEIURILE LEGALE PE CARE SE BAZEAZĂ PRELUCRAREA DATELOR CU CARACTER PERSONAL?",
+    title: "CARE SUNT TEMEIURILE LEGALE PE CARE SE BAZEAZĂ PRELUCRAREA DATELOR CU CARACTER PERSONAL?",
     content: (
       <div className="space-y-3">
         <p>Datele dvs. cu caracter personal sunt prelucrate în vederea:</p>
@@ -98,7 +98,7 @@ export const sectionsRo = [
   },
   {
     id: "durata",
-    title: "6. PE CE DURATĂ PRELUCRĂM DATELE DVS. CU CARACTER PERSONAL?",
+    title: "PE CE DURATĂ PRELUCRĂM DATELE DVS. CU CARACTER PERSONAL?",
     content: (
       <div className="space-y-3">
         <p>Datele cu caracter personal sunt stocate în vederea prelucrării lor pe durata necesară atingerii scopurilor de prelucrare menționate în prezenta Politică sau pe durata impusă de lege (ex. în materie de arhivare, de contabilitate etc.).</p>
@@ -117,7 +117,7 @@ export const sectionsRo = [
   },
   {
     id: "destinatari",
-    title: "7. CUI TRANSMITEM DATELE CU CARACTER PERSONAL?",
+    title: "CUI TRANSMITEM DATELE CU CARACTER PERSONAL?",
     content: (
       <div className="space-y-3">
         <p>Nu vom comunica sau transfera vreunui terț, niciuna dintre datele cu caracter personal colectate de la dvs. sau despre dvs. cu <strong>excepția</strong>:</p>
@@ -137,7 +137,7 @@ export const sectionsRo = [
   },
   {
     id: "protectie",
-    title: "8. CE MĂSURI DE PROTECȚIE ȘI GARANȚII LUĂM?",
+    title: "CE MĂSURI DE PROTECȚIE ȘI GARANȚII LUĂM?",
     content: (
       <div className="space-y-3">
         <p>Societatea implementează <u>măsuri tehnice și organizatorice adecvate în vederea asigurării unui</u> nivel înalt de securitate și protecție a datelor cu caracter personal. Utilizăm metode și tehnologii de securitate, împreună cu politici și proceduri interne de lucru, inclusiv de control și audit, pentru a proteja datele cu caracter personal colectate conform prevederilor legale în vigoare relevante în materia protecției datelor cu caracter personal.</p>
@@ -146,7 +146,7 @@ export const sectionsRo = [
   },
   {
     id: "drepturi",
-    title: "9. CARE SUNT DREPTURILE DVS. ÎN CALITATE DE PERSOANĂ VIZATĂ?",
+    title: "CARE SUNT DREPTURILE DVS. ÎN CALITATE DE PERSOANĂ VIZATĂ?",
     content: (
       <div className="space-y-3">
         <p>Orice persoană vizată își poate exercita următoarele drepturi, așa cum sunt prevăzute de către Regulamentul general privind protecția datelor:</p>
