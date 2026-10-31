@@ -31,7 +31,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import {
   createProduct,
   updateProduct,
-  getOwnerProductCount,
   calculateClientPrice,
   type Product,
 } from "@/features/products/productsApi";
@@ -1319,7 +1318,7 @@ const Step5Pricing = ({
                 <Row label={t("Preț chirie (tu primești)", "Rental price (you receive)")} value={`${bd.subtotal.toFixed(2)} RON`} />
                 <Row
                   label={`${t("Taxe operaționale Rentli", "Rentli operational fees")} (${feePercent}%)`}
-                  value={feePercent === 0 ? t("0 RON — gratuit", "0 RON — free") : `${bd.platformFee.toFixed(2)} RON`}
+                  value={`${bd.platformFee.toFixed(2)} RON`}
                 />
                 <Row label={t("Service fee Stripe (1,4% + 1 RON)", "Stripe service fee (1.4% + 1 RON)")} value={`${bd.stripeFee.toFixed(2)} RON`} />
                 <Row label={t("Asigurare (în curând)", "Insurance (coming soon)")} value="0.00 RON" />
