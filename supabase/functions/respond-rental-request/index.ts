@@ -92,6 +92,17 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "accept") {
+      const { data: prof } = await supabaseAdmin
+        .from("profiles").select("identity_status").eq("id", user.id).maybeSingle();
+      if (prof?.identity_status !== "verified") {
+        return new Response(JSON.stringify({
+          error: "KYC_REQUIRED: Verifică-ți identitatea pentru a accepta prima închiriere.",
+          code: "KYC_REQUIRED",
+        }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
     const newStatus = action === "accept" ? "confirmed" : "cancelled";
     const updateData: Record<string, unknown> = { status: newStatus };
     if (action === "accept") {
