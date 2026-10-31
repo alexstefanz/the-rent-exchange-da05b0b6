@@ -517,17 +517,8 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
     );
   }
 
-  if (mode === "create" && identityLoaded && !identityVerified && !phoneGate.isAdmin) {
-    return (
-      <div className="mx-auto max-w-xl px-4 py-16 text-center">
-        <h1 className="text-2xl font-bold">Verifică-ți identitatea</h1>
-        <p className="mt-2 text-muted-foreground">
-          Pentru siguranța comunității, poți publica anunțuri doar după ce îți verifici identitatea cu actul și un selfie.
-        </p>
-        <Button className="mt-6" onClick={() => navigate("/verificare")}>Începe verificarea</Button>
-      </div>
-    );
-  }
+  // KYC is no longer required to publish; it is required when accepting the first rental.
+  void identityVerified; void identityLoaded;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

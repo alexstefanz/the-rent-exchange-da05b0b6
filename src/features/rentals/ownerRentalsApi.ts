@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface OwnerRental {
   id: string;
@@ -60,12 +61,19 @@ export async function respondToRental(rentalId: string, action: "accept" | "reje
     body: { rental_id: rentalId, action, reason },
   });
   if (error) {
-    try {
-      const body = await (error as any).context?.json?.();
-      if (body?.error) throw new Error(body.error);
-    } catch (_parseErr) {
-      // fall back to original error below
+    let body: any = null;
+    try { body = await (error as any).context?.json?.(); } catch { /* ignore */ }
+    if (body?.code === "KYC_REQUIRED") {
+      toast.error("Verifică-ți identitatea pentru a accepta prima închiriere", {
+        description: "Cererea rămâne în așteptare. După verificare o poți accepta imediat.",
+        duration: 12000,
+        action: { label: "Verifică acum", onClick: () => { window.location.href = "/verificare"; } },
+      });
+      const err: any = new Error("KYC_REQUIRED");
+      err.kyc = true;
+      throw err;
     }
+    if (body?.error) throw new Error(body.error);
     throw error;
   }
   return data;
