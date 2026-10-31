@@ -380,6 +380,21 @@ const AccountTab = () => {
     return () => { cancelled = true; };
   }, [user]);
 
+  // Open rental processes block account deletion (server enforces the same rule)
+  const [openRentalsCount, setOpenRentalsCount] = useState(0);
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    supabase
+      .from("rentals")
+      .select("id")
+      .or(`renter_id.eq.${user.id},owner_id.eq.${user.id}`)
+      .or("status.not.in.(completed,cancelled,rejected,expired),dispute_status.eq.open")
+      .limit(100)
+      .then(({ data }) => { if (!cancelled) setOpenRentalsCount(data?.length ?? 0); });
+    return () => { cancelled = true; };
+  }, [user]);
+
 
   const handleEmailPrefToggle = async (
     key: "email_transactional" | "email_chat",
