@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import type { RentalFullDetail } from "@/features/rentals/rentalDetailPageApi";
 import { getPvFileSignedUrl } from "@/features/rentals/rentalDetailPageApi";
 import { useRentalExtensions, lateInfo } from "@/components/rentals/RentalExtensionCard";
+import { getPvFinancials } from "@/lib/pvContent";
 
 type Tab = "contract" | "anexa1" | "anexa2" | "anexa3";
 type Pv = { phase: string; owner_signature_data: string | null; renter_signature_data: string | null; owner_signed_at: string | null; renter_signed_at: string | null; photo_urls?: string[] };
@@ -237,6 +238,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
   const anexa = (phase: "handover" | "return") => {
     const pv = phase === "handover" ? handover : ret;
     const isRet = phase === "return";
+    const financials = getPvFinancials(rental);
     return (
       <div className="page">
         <Head
@@ -259,6 +261,21 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
               [isRet ? "Primește (Locator)" : "Primește (Locatar)", v(isRet ? rental.owner_name : rental.renter_name)],
             ].map(([k, val]) => (
               <tr key={k}><td className="border border-border p-1.5 font-semibold w-1/3">{k}</td><td className="border border-border p-1.5">{val}</td></tr>
+            ))}
+          </tbody>
+        </table>
+        <H2>Datele închirierii — sumar financiar</H2>
+        <table className="w-full border-collapse text-xs my-2">
+          <tbody>
+            {[
+              ["Preț închiriere/zi", ron(rental.daily_price)],
+              ["Subtotal închiriere", ron(financials.subtotal)],
+              ["Comision platformă (plătit de chiriaș)", ron(financials.platformFee)],
+              ["Taxa Stripe (plătită de chiriaș)", ron(financials.stripeFee)],
+              ...(financials.insuranceFee > 0 ? [["Taxa asigurare (plătită de chiriaș)", ron(financials.insuranceFee)]] : []),
+              ["Total pentru chiriaș (taxe incluse)", ron(financials.total)],
+            ].map(([label, value]) => (
+              <tr key={label}><td className="border border-border p-1.5 font-semibold">{label}</td><td className="border border-border p-1.5 whitespace-nowrap">{value}</td></tr>
             ))}
           </tbody>
         </table>
