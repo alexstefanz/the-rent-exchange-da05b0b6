@@ -151,7 +151,6 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   });
 
   const feePercent = 15;
-  const freeListingsLeft = 0;
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [draftId, setDraftId] = useState<string | null>(null);
@@ -558,7 +557,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
             {step === 3 && (
               <div className="space-y-10">
                 <Step4Location data={data} update={update} errors={errors} />
-                <Step5Pricing data={data} update={update} feePercent={feePercent} freeListingsLeft={freeListingsLeft} errors={errors} />
+                <Step5Pricing data={data} update={update} feePercent={feePercent} errors={errors} />
               </div>
             )}
             {step === 4 && (
@@ -1237,13 +1236,11 @@ const Step5Pricing = ({
   data,
   update,
   feePercent,
-  freeListingsLeft,
   errors,
 }: {
   data: PublishFormData;
   update: <K extends keyof PublishFormData>(k: K, v: PublishFormData[K]) => void;
   feePercent: number;
-  freeListingsLeft: number;
   errors: Record<string, string>;
 }) => {
   const { t } = useLanguage();
@@ -1331,14 +1328,6 @@ const Step5Pricing = ({
                   <span className="text-lg font-bold text-primary">{bd.total.toFixed(2)} RON</span>
                 </div>
               </div>
-              {freeListingsLeft > 0 && feePercent === 0 && (
-                <div className="mt-3 rounded-lg bg-primary/10 px-3 py-2 text-xs font-medium text-foreground">
-                  🎉 {t(
-                    `Mai ai ${freeListingsLeft} ${freeListingsLeft === 1 ? "anunț" : "anunțuri"} fără taxe operaționale`,
-                    `You have ${freeListingsLeft} more ${freeListingsLeft === 1 ? "listing" : "listings"} without operational fees`,
-                  )}
-                </div>
-              )}
             </div>
           )}
         </div>
