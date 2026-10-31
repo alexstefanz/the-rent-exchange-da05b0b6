@@ -160,6 +160,7 @@ export default function RentalPopupManager() {
         window.open(url, "_blank", "noopener,noreferrer");
       }
     } catch (e: any) {
+      if (e?.kyc) return;
       const raw = String(e?.message || "");
       if (raw.includes("not pending") || raw.includes("non-2xx") || raw.includes("not found")) {
         toast.error("Cererea nu mai este disponibilă (a fost anulată sau procesată).");

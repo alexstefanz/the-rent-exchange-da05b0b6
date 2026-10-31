@@ -308,7 +308,7 @@ const RentalDetailPage = () => {
       await refetch();
     } catch (e: any) {
       console.error("accept rental error:", e);
-      toast.error(e?.message || t("Eroare la acceptarea cererii.", "Error accepting the request."));
+      if (!e?.kyc) toast.error(e?.message || t("Eroare la acceptarea cererii.", "Error accepting the request."));
     } finally {
       setResponding(false);
     }
