@@ -186,6 +186,7 @@ export function buildPvRichContent(
   const renterName = rental.renter_name || "Chirias";
   const fmt = (d: string) => format(new Date(d), "dd.MM.yyyy");
   const items = rental.product_included_items || [];
+  const financials = getPvFinancials(rental);
 
   const title = phase === "handover"
     ? "PROCES-VERBAL DE PREDARE-PRIMIRE"
@@ -215,13 +216,13 @@ export function buildPvRichContent(
         [T("Perioada: de la "), B(`${fmt(rental.start_date)} ora ${rental.pickup_time || "10:00"}`), T(" pana la "), B(`${fmt(rental.end_date)} ora 18:00`), T(" ("), B(`${rental.rental_days} zile`), T(")")],
         KV("Nr. contract", rental.public_id),
         KV("Pret inchiriere/zi", pvMoney(rental.daily_price)),
-        KV("Subtotal inchiriere", pvMoney(getPvFinancials(rental).subtotal)),
-        KV("Comision platforma (platit de chirias)", pvMoney(getPvFinancials(rental).platformFee)),
-        KV("Taxa Stripe (platita de chirias)", pvMoney(getPvFinancials(rental).stripeFee)),
-        ...(getPvFinancials(rental).insuranceFee > 0
-          ? [KV("Taxa asigurare (platita de chirias)", pvMoney(getPvFinancials(rental).insuranceFee))]
+        KV("Subtotal inchiriere", pvMoney(financials.subtotal)),
+        KV("Comision platforma (platit de chirias)", pvMoney(financials.platformFee)),
+        KV("Taxa Stripe (platita de chirias)", pvMoney(financials.stripeFee)),
+        ...(financials.insuranceFee > 0
+          ? [KV("Taxa asigurare (platita de chirias)", pvMoney(financials.insuranceFee))]
           : []),
-        KV("Total pentru chirias (taxe incluse)", pvMoney(getPvFinancials(rental).total)),
+        KV("Total pentru chirias (taxe incluse)", pvMoney(financials.total)),
       ],
     },
     {
