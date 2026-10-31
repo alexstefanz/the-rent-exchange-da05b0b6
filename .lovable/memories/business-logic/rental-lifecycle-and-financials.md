@@ -1,6 +1,6 @@
 ---
 name: Rental Lifecycle and Financials
-description: Escrow model, rental statuses, platform fee 15% (first 3 rentals free), daily payout calculation
+description: Escrow model, rental statuses, platform fee 15% (from first transaction, no free listings), daily payout calculation
 type: feature
 ---
 - Platform fee is **15%** of the owner-net rental value, paid by the owner.

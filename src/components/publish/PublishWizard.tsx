@@ -150,8 +150,8 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
     return emptyPublishForm();
   });
 
-  const [feePercent, setFeePercent] = useState(15);
-  const [freeListingsLeft, setFreeListingsLeft] = useState(0);
+  const feePercent = 15;
+  const freeListingsLeft = 0;
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [draftId, setDraftId] = useState<string | null>(null);
@@ -176,16 +176,6 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialProduct?.id, mode]);
 
-  // load fee
-  useEffect(() => {
-    if (!user) return;
-    if (mode === "edit") return;
-    getOwnerProductCount(user.id).then((count) => {
-      const free = Math.max(0, 3 - count);
-      setFreeListingsLeft(free);
-      setFeePercent(count < 3 ? 0 : 15);
-    });
-  }, [user, mode]);
 
   // load draft (create mode only)
   useEffect(() => {
