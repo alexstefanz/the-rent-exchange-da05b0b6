@@ -1,4 +1,5 @@
 import { invokeAppEmail } from '../_shared/transactional-email-templates/send-app-email.ts'
+import { getAccountDeletionBlocker } from '../_shared/account-deletion-guard.ts'
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const corsHeaders = {
@@ -36,12 +37,19 @@ Deno.serve(async (req) => {
       });
     }
 
+    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Refuse up front while any rental process is still open (no email sent)
+    const blocker = await getAccountDeletionBlocker(adminClient, user.id);
+    if (blocker) {
+      return new Response(JSON.stringify({ blocked: true, error: blocker }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Generate token
     const token = crypto.randomUUID() + "-" + crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
-    // Save token using service role
-    const adminClient = createClient(supabaseUrl, supabaseServiceKey);
     const { error: updateError } = await adminClient
       .from("profiles")
       .update({

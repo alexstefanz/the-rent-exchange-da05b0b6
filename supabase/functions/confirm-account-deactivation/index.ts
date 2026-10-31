@@ -1,4 +1,5 @@
 import { invokeAppEmail } from '../_shared/transactional-email-templates/send-app-email.ts'
+import { getAccountDeletionBlocker } from '../_shared/account-deletion-guard.ts'
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const corsHeaders = {
@@ -48,27 +49,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Block deletion while rentals are still open
-    const { count: activeCount } = await adminClient
-      .from("rentals")
-      .select("id", { count: "exact", head: true })
-      .or(`renter_id.eq.${profile.id},owner_id.eq.${profile.id}`)
-      .not("status", "in", "(completed,cancelled,rejected,expired)");
-    if ((activeCount ?? 0) > 0) {
-      return new Response(JSON.stringify({ error: "Ai închirieri în desfășurare. Finalizează-le înainte de ștergerea contului." }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Block deletion while the wallet still holds money
-    const { data: ledger } = await adminClient
-      .from("wallet_ledger")
-      .select("amount")
-      .eq("user_id", profile.id);
-    const balance = (ledger ?? []).reduce((s, r: { amount: number }) => s + Number(r.amount || 0), 0);
-    if (balance > 0.009) {
-      return new Response(JSON.stringify({ error: "Ai sold disponibil. Retrage banii înainte de ștergerea contului." }), {
+    // Block deletion while rentals, disputes or wallet balance are still open
+    const blocker = await getAccountDeletionBlocker(adminClient, profile.id);
+    if (blocker) {
+      return new Response(JSON.stringify({ error: blocker }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
