@@ -407,7 +407,7 @@ const AccountTab = () => {
     try {
       const { data, error } = await supabase.functions.invoke("request-account-deactivation");
       if (error || data?.error) throw new Error(data?.error || error?.message);
-      toast({ title: t("Email trimis", "Email sent"), description: t("Verifică-ți emailul pentru a confirma dezactivarea contului.", "Check your email to confirm deactivation.") });
+      toast({ title: t("Email trimis", "Email sent"), description: t("Verifică-ți emailul pentru a confirma ștergerea contului.", "Check your email to confirm account deletion.") });
     } catch (e) {
       console.error(e);
       toast({ title: t("Eroare", "Error"), description: t("Nu s-a putut trimite cererea", "Could not send request"), variant: "destructive" });
@@ -639,7 +639,7 @@ const AccountTab = () => {
                     <Trash2 className="h-5 w-5 text-destructive" />
                   </div>
                   <div>
-                    <p className="font-semibold">{t("Dezactivează contul", "Deactivate account")}</p>
+                    <p className="font-semibold">{t("Ștergere cont", "Delete account")}</p>
                   </div>
                 </div>
                 <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
@@ -650,46 +650,45 @@ const AccountTab = () => {
                 <div className="space-y-4">
                   <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm space-y-2">
                     <p className="font-semibold text-destructive">
-                      {t("Atenție — această acțiune are consecințe importante", "Warning — this action has important consequences")}
+                      {t("Atenție — această acțiune este definitivă", "Warning — this action is permanent")}
                     </p>
                     <p className="text-foreground/80">
                       {t(
-                        "Dezactivarea contului tău va avea următoarele efecte:",
-                        "Deactivating your account will have the following effects:"
+                        "Ștergerea contului tău va avea următoarele efecte:",
+                        "Deleting your account will have the following effects:"
                       )}
                     </p>
                     <ul className="list-disc pl-5 space-y-1 text-foreground/80">
-                      <li>{t("Profilul tău și toate anunțurile vor fi ascunse imediat de pe platformă.", "Your profile and all listings will be immediately hidden from the platform.")}</li>
-                      <li>{t("Nu vei mai putea primi rezervări, mesaje sau notificări.", "You will no longer receive bookings, messages or notifications.")}</li>
-                      <li>{t("Rezervările active trebuie finalizate înainte de dezactivare.", "Active rentals must be completed before deactivation.")}</li>
-                      <li>{t("Soldul disponibil trebuie retras în prealabil — după dezactivare nu mai poți face retrageri.", "Any available balance must be withdrawn beforehand — after deactivation withdrawals are no longer possible.")}</li>
-                      <li>{t("Vei fi delogat automat și nu te vei mai putea autentifica.", "You will be logged out automatically and will no longer be able to sign in.")}</li>
-                      <li>{t("Poți reactiva contul contactând echipa de suport în 30 de zile; după această perioadă datele pot fi șterse definitiv.", "You can reactivate your account by contacting support within 30 days; after this period data may be permanently deleted.")}</li>
+                      <li>{t("Profilul, anunțurile, mesajele și datele tale personale vor fi șterse definitiv.", "Your profile, listings, messages and personal data will be permanently deleted.")}</li>
+                      <li>{t("Contul nu mai poate fi recuperat sau reactivat.", "The account cannot be recovered or reactivated.")}</li>
+                      <li>{t("Rezervările active trebuie finalizate înainte de ștergere.", "Active rentals must be completed before deletion.")}</li>
+                      <li>{t("Soldul disponibil trebuie retras în prealabil — după ștergere nu mai poți face retrageri.", "Any available balance must be withdrawn beforehand — after deletion withdrawals are no longer possible.")}</li>
+                      <li>{t("Istoricul închirierilor finalizate se păstrează anonimizat, conform obligațiilor legale și contabile.", "Completed rental history is kept anonymized, as required by legal and accounting obligations.")}</li>
                     </ul>
                     <p className="text-foreground/70">
                       {t(
-                        "Vei primi un email de confirmare — contul nu se dezactivează până nu apeși link-ul din email (valabil 24 de ore).",
-                        "You will receive a confirmation email — the account is not deactivated until you click the link in the email (valid for 24 hours)."
+                        "Vei primi un email de confirmare — contul nu se șterge până nu apeși link-ul din email (valabil 24 de ore).",
+                        "You will receive a confirmation email — the account is not deleted until you click the link in the email (valid for 24 hours)."
                       )}
                     </p>
                   </div>
                   <div className="flex justify-end">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm">{t("Dezactivează contul", "Deactivate account")}</Button>
+                      <Button variant="destructive" size="sm">{t("Șterge contul", "Delete account")}</Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>{t("Ești sigur?", "Are you sure?")}</AlertDialogTitle>
                         <AlertDialogDescription>
-                          {t("Vei primi un email de confirmare. Contul va fi dezactivat doar după ce confirmi prin link-ul din email.", "You will receive a confirmation email. Your account will only be deactivated after you confirm via the email link.")}
+                          {t("Vei primi un email de confirmare. Contul va fi șters definitiv doar după ce confirmi prin link-ul din email.", "You will receive a confirmation email. Your account will be permanently deleted only after you confirm via the email link.")}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>{t("Anulează", "Cancel")}</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDeactivateAccount} disabled={isDeactivating}>
                           {isDeactivating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                          {t("Dezactivează", "Deactivate")}
+                          {t("Trimite email de confirmare", "Send confirmation email")}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

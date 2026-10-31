@@ -48,43 +48,63 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Deactivate account
-    const { error: updateError } = await adminClient
-      .from("profiles")
-      .update({
-        is_deactivated: true,
-        deactivation_token: null,
-        deactivation_token_expires_at: null,
-      })
-      .eq("id", profile.id);
+    // Block deletion while rentals are still open
+    const { count: activeCount } = await adminClient
+      .from("rentals")
+      .select("id", { count: "exact", head: true })
+      .or(`renter_id.eq.${profile.id},owner_id.eq.${profile.id}`)
+      .not("status", "in", "(completed,cancelled,rejected,expired)");
+    if ((activeCount ?? 0) > 0) {
+      return new Response(JSON.stringify({ error: "Ai închirieri în desfășurare. Finalizează-le înainte de ștergerea contului." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    if (updateError) {
-      console.error("Error deactivating:", updateError);
-      return new Response(JSON.stringify({ error: "Eroare internă" }), {
+    // Block deletion while the wallet still holds money
+    const { data: ledger } = await adminClient
+      .from("wallet_ledger")
+      .select("amount")
+      .eq("user_id", profile.id);
+    const balance = (ledger ?? []).reduce((s, r: { amount: number }) => s + Number(r.amount || 0), 0);
+    if (balance > 0.009) {
+      return new Response(JSON.stringify({ error: "Ai sold disponibil. Retrage banii înainte de ștergerea contului." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    let recipientEmail = profile.email as string | null;
+    if (!recipientEmail) {
+      const { data: auth } = await adminClient.auth.admin.getUserById(profile.id);
+      recipientEmail = auth?.user?.email ?? null;
+    }
+
+    // Permanently delete: hide listings, then remove the auth user (cascades profile & personal data;
+    // rental records are kept with anonymized party for legal/accounting history)
+    await adminClient.from("products").update({ is_active: false, deleted_at: new Date().toISOString() }).eq("owner_id", profile.id);
+    const { error: deleteError } = await adminClient.auth.admin.deleteUser(profile.id);
+    if (deleteError) {
+      console.error("Error deleting user:", deleteError);
+      return new Response(JSON.stringify({ error: "Eroare internă la ștergerea contului" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Send confirmation email (fire-and-forget; do not fail the deactivation)
     try {
-      let recipientEmail = profile.email as string | null;
-      if (!recipientEmail) {
-        const { data: auth } = await adminClient.auth.admin.getUserById(profile.id);
-        recipientEmail = auth?.user?.email ?? null;
-      }
       if (recipientEmail) {
         await invokeAppEmail({
           body: {
             templateName: "account-deactivated",
             recipientEmail,
-            idempotencyKey: `account-deactivated-${profile.id}`,
+            idempotencyKey: `account-deleted-${profile.id}`,
             templateData: {},
           },
         });
       }
     } catch (e) {
-      console.error("account-deactivated email failed:", e);
+      console.error("account-deleted email failed:", e);
     }
 
     return new Response(JSON.stringify({ success: true }), {

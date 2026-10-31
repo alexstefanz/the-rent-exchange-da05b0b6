@@ -8,7 +8,7 @@ import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const DeactivateAccount = () => {
-  usePageSeo({ title: "Dezactivare cont — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
+  usePageSeo({ title: "Ștergere cont — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ const DeactivateAccount = () => {
 
         if (error || data?.error) {
           setStatus("error");
-          setErrorMsg(data?.error || error?.message || t("Eroare la dezactivarea contului.", "Error deactivating the account."));
+          setErrorMsg(data?.error || error?.message || t("Eroare la ștergerea contului.", "Error deleting the account."));
           return;
         }
 
@@ -53,7 +53,7 @@ const DeactivateAccount = () => {
         <CardHeader className="text-center">
           <CardTitle>
             {status === "loading" && t("Se procesează...", "Processing...")}
-            {status === "success" && t("Cont dezactivat", "Account deactivated")}
+            {status === "success" && t("Cont șters", "Account deleted")}
             {status === "error" && t("Eroare", "Error")}
           </CardTitle>
         </CardHeader>
@@ -65,7 +65,7 @@ const DeactivateAccount = () => {
             <>
               <CheckCircle2 className="h-12 w-12 text-green-500" />
               <p className="text-center text-muted-foreground">
-                {t("Contul tău a fost dezactivat cu succes. Ne pare rău că pleci!", "Your account has been deactivated. We're sorry to see you go!")}
+                {t("Contul tău a fost șters definitiv. Ne pare rău că pleci!", "Your account has been permanently deleted. We are sorry to see you go!")}
               </p>
               <Button onClick={() => navigate("/")} variant="outline">
                 {t("Înapoi la pagina principală", "Back to homepage")}
