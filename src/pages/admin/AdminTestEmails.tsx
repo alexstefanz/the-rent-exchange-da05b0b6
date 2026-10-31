@@ -32,7 +32,7 @@ const emailTests: EmailTest[] = [
   { type: "password_changed", label: "Parolă schimbată", description: "Notificare schimbare parolă", templateName: "password-changed" },
   { type: "rental_accepted", label: "Cerere acceptată", description: "Notificare chiriaș - cerere acceptată", templateName: "rental-accepted" },
   { type: "rental_rejected", label: "Cerere refuzată", description: "Notificare chiriaș - cerere refuzată", templateName: "rental-rejected" },
-  { type: "deactivation", label: "Dezactivare cont", description: "Email confirmare dezactivare cont", templateName: "account-deactivation" },
+  { type: "deactivation", label: "Ștergere cont", description: "Email confirmare ștergere cont", templateName: "account-deactivation" },
 ];
 
 type TestStatus = "idle" | "loading" | "success" | "error";
