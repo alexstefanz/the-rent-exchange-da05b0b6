@@ -54,8 +54,22 @@ function signatureFor(n: ToastableNotification) {
     .trim();
 }
 
+/** Rental-lifecycle notifications stay in the bell/notification center only — no pop-up toast. */
+const RENTAL_TYPE_RE =
+  /rental|reservation|booking|request|pickup|handover|return|pv_|inspection|dispute|cancel|payment_succeeded|review_reminder|extension|contract/;
+function isRentalNotification(type: string) {
+  return RENTAL_TYPE_RE.test((type || "").toLowerCase());
+}
+
 function showOnce(n: ToastableNotification, shown: Set<string>) {
   if (n.id && shown.has(n.id)) return;
+  if (isRentalNotification(n.type)) {
+    if (n.id) {
+      shown.add(n.id);
+      persistShown(shown);
+    }
+    return;
+  }
   const key = signatureFor(n) || n.type || "_";
   const now = Date.now();
   const last = lastShownByType.get(key) ?? 0;
