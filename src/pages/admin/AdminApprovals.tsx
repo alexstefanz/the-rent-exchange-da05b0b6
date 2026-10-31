@@ -73,7 +73,9 @@ const AdminApprovals = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
   const activeTab =
-    tabParam === "cancellations" ? "cancellations" : tabParam === "deletions" ? "deletions" : "products";
+    tabParam === "cancellations" || tabParam === "deletions" || tabParam === "reviews"
+      ? tabParam
+      : "products";
   const { data: notifSummary } = useAdminNotificationSummary();
   const pendingProductsCount = Number(notifSummary?.pending_products || 0);
   const pendingCancellationsCount = Number(notifSummary?.pending_cancellations || 0);
