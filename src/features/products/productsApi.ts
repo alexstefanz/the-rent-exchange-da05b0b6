@@ -277,9 +277,8 @@ export const createProduct = async (
   data: PublishProductInput,
   ownerId: string,
 ): Promise<Product> => {
-  // Count existing products to determine fee
-  const existingCount = await getOwnerProductCount(ownerId);
-  const platformFeePercent = existingCount < 3 ? 0 : 15;
+  // Standard platform fee applies from the very first listing.
+  const platformFeePercent = 15;
 
   const insertData: Record<string, unknown> = {
     owner_id: ownerId,
