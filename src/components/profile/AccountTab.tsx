@@ -380,6 +380,21 @@ const AccountTab = () => {
     return () => { cancelled = true; };
   }, [user]);
 
+  // Open rental processes block account deletion (server enforces the same rule)
+  const [openRentalsCount, setOpenRentalsCount] = useState(0);
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    supabase
+      .from("rentals")
+      .select("id")
+      .or(`renter_id.eq.${user.id},owner_id.eq.${user.id}`)
+      .or("status.not.in.(completed,cancelled,rejected,expired),dispute_status.eq.open")
+      .limit(100)
+      .then(({ data }) => { if (!cancelled) setOpenRentalsCount(data?.length ?? 0); });
+    return () => { cancelled = true; };
+  }, [user]);
+
 
   const handleEmailPrefToggle = async (
     key: "email_transactional" | "email_chat",
@@ -406,6 +421,10 @@ const AccountTab = () => {
     setIsDeactivating(true);
     try {
       const { data, error } = await supabase.functions.invoke("request-account-deactivation");
+      if (data?.blocked) {
+        toast({ title: t("Contul nu poate fi șters încă", "Account cannot be deleted yet"), description: data.error, variant: "destructive" });
+        return;
+      }
       if (error || data?.error) throw new Error(data?.error || error?.message);
       toast({ title: t("Email trimis", "Email sent"), description: t("Verifică-ți emailul pentru a confirma ștergerea contului.", "Check your email to confirm account deletion.") });
     } catch (e) {
@@ -672,10 +691,21 @@ const AccountTab = () => {
                       )}
                     </p>
                   </div>
+                  {openRentalsCount > 0 && (
+                    <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <span>
+                        {t(
+                          `Ai ${openRentalsCount} închirieri în desfășurare sau dispute deschise. Contul poate fi șters doar după ce toate procesele sunt încheiate.`,
+                          `You have ${openRentalsCount} ongoing rentals or open disputes. The account can be deleted only after all processes are finished.`
+                        )}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-end">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm">{t("Șterge contul", "Delete account")}</Button>
+                      <Button variant="destructive" size="sm" disabled={openRentalsCount > 0}>{t("Șterge contul", "Delete account")}</Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
