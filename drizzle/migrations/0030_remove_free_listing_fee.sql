@@ -1,0 +1,1 @@
+UPDATE public.products SET platform_fee_percent = 15 WHERE platform_fee_percent = 0;
