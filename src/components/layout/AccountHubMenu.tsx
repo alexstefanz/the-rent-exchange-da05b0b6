@@ -288,7 +288,7 @@ export function AccountHubBody({ onNavigate, onLogout }: { onNavigate: (path: st
     <>
       <div className="shrink-0 p-3 pb-2 space-y-2">
         {isBanned && <BannedBanner />}
-        {isLoading || !profile ? (
+        {isLoading && !user ? (
           <div className="rounded-2xl bg-muted/40 p-4 animate-pulse">
             <div className="flex items-center gap-3">
               <div className="h-14 w-14 rounded-full bg-muted" />
@@ -303,7 +303,7 @@ export function AccountHubBody({ onNavigate, onLogout }: { onNavigate: (path: st
           <HeaderCard
             name={displayName}
             email={displayEmail}
-            avatarUrl={profile.avatar_url}
+            avatarUrl={profile?.avatar_url ?? null}
             verified={!!trust?.verified}
             rating={trust?.rating || 0}
             reviewsCount={trust?.reviewsCount || 0}

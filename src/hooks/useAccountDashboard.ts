@@ -241,6 +241,19 @@ export function useAccountDashboard() {
     refetchOnWindowFocus: true,
   });
 
+  // Refetch after password reset / token refresh so a stale empty profile isn't cached
+  useEffect(() => {
+    if (!userId) return;
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY" || event === "USER_UPDATED" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        setTimeout(() => {
+          qc.invalidateQueries({ queryKey: ["accountDashboard", userId] });
+        }, 0);
+      }
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [userId, qc]);
+
   // realtime
   useEffect(() => {
     if (!userId) return;
