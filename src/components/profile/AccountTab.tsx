@@ -406,6 +406,10 @@ const AccountTab = () => {
     setIsDeactivating(true);
     try {
       const { data, error } = await supabase.functions.invoke("request-account-deactivation");
+      if (data?.blocked) {
+        toast({ title: t("Contul nu poate fi șters încă", "Account cannot be deleted yet"), description: data.error, variant: "destructive" });
+        return;
+      }
       if (error || data?.error) throw new Error(data?.error || error?.message);
       toast({ title: t("Email trimis", "Email sent"), description: t("Verifică-ți emailul pentru a confirma ștergerea contului.", "Check your email to confirm account deletion.") });
     } catch (e) {
@@ -672,10 +676,21 @@ const AccountTab = () => {
                       )}
                     </p>
                   </div>
+                  {openRentalsCount > 0 && (
+                    <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <span>
+                        {t(
+                          `Ai ${openRentalsCount} închirieri în desfășurare sau dispute deschise. Contul poate fi șters doar după ce toate procesele sunt încheiate.`,
+                          `You have ${openRentalsCount} ongoing rentals or open disputes. The account can be deleted only after all processes are finished.`
+                        )}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-end">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm">{t("Șterge contul", "Delete account")}</Button>
+                      <Button variant="destructive" size="sm" disabled={openRentalsCount > 0}>{t("Șterge contul", "Delete account")}</Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
