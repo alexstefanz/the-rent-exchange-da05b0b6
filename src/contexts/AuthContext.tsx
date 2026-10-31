@@ -32,11 +32,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const checkDeactivated = async () => {
       try {
-        const { data } = await supabase
+        // Verify the auth user still exists server-side (deleted accounts keep a stale local token)
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        const userGone =
+          !authData?.user ||
+          (authError && /not.?found|does not exist|user_not_found|invalid.*jwt|sub claim/i.test(authError.message ?? ""));
+        if (userGone && authError) {
+          await supabase.auth.signOut({ scope: "local" });
+          window.location.replace("/");
+          return;
+        }
+
+        const { data, error } = await supabase
           .from("profiles")
           .select("is_deactivated")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
+        if (!error && !data) {
+          // Profile removed → account was deleted
+          await supabase.auth.signOut({ scope: "local" });
+          window.location.replace("/");
+          return;
+        }
         if (data?.is_deactivated) {
           await supabase.auth.signOut();
           alert("Acest cont a fost dezactivat.");
