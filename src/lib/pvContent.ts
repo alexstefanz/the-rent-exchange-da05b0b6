@@ -36,6 +36,20 @@ export function pvEffectiveDate(pv?: { owner_signed_at?: string | null; renter_s
   return ts.length ? new Date(Math.max(...ts)) : new Date();
 }
 
+/** Use the reservation's recorded charges, never today's fee rates. */
+export function getPvFinancials(rental: Pick<RentalFullDetail, "subtotal" | "platform_fee" | "stripe_fee" | "insurance_fee">) {
+  const subtotal = Number(rental.subtotal ?? 0);
+  const platformFee = Number(rental.platform_fee ?? 0);
+  const stripeFee = Number(rental.stripe_fee ?? 0);
+  const insuranceFee = Number(rental.insurance_fee ?? 0);
+  return {
+    subtotal, platformFee, stripeFee, insuranceFee,
+    total: Math.round((subtotal + platformFee + stripeFee + insuranceFee) * 100) / 100,
+  };
+}
+
+const pvMoney = (amount: number) => `${amount.toFixed(2)} RON`;
+
 export function buildPvContent(rental: RentalFullDetail, phase: "handover" | "return", docDate: Date = new Date()): PvContent {
   const today = format(docDate, "dd.MM.yyyy");
   const ownerName = rental.owner_name || "Proprietar";
@@ -53,11 +67,15 @@ export function buildPvContent(rental: RentalFullDetail, phase: "handover" | "re
     `telefon ${renterPhone}, email ${renterEmail}.`;
 
   const cat = rental.product_category || "-";
+  const financials = getPvFinancials(rental);
   const object =
     `Prin prezentul proces-verbal, Proprietarul preda, iar Chiriasul primeste spre utilizare temporara, ` +
     `prin intermediul platformei de renting peer-to-peer Rentli, urmatorul bun: ${rental.product_title || "-"}, ` +
-    `din categoria ${cat}, pentru o perioada de ${rental.rental_days} zile, cu costul total de ${rental.subtotal} lei ` +
-    `(${rental.daily_price} lei/zi).`;
+    `din categoria ${cat}, pentru o perioada de ${rental.rental_days} zile, cu chiria de ${pvMoney(financials.subtotal)} ` +
+    `(${pvMoney(rental.daily_price)}/zi), comisionul platformei de ${pvMoney(financials.platformFee)}, ` +
+    `taxa Stripe de ${pvMoney(financials.stripeFee)}` +
+    (financials.insuranceFee > 0 ? `, taxa de asigurare de ${pvMoney(financials.insuranceFee)}` : "") +
+    ` si costul total pentru chirias de ${pvMoney(financials.total)}.`;
 
   const items = rental.product_included_items || [];
   const accessories = items.length > 0
@@ -196,7 +214,14 @@ export function buildPvRichContent(
         KV("Categorie", rental.product_category),
         [T("Perioada: de la "), B(`${fmt(rental.start_date)} ora ${rental.pickup_time || "10:00"}`), T(" pana la "), B(`${fmt(rental.end_date)} ora 18:00`), T(" ("), B(`${rental.rental_days} zile`), T(")")],
         KV("Nr. contract", rental.public_id),
-        [...KV("Pret inchiriere/zi", `${rental.daily_price} lei`), T("; "), ...KV("Total", `${rental.subtotal} lei`)],
+        KV("Pret inchiriere/zi", pvMoney(rental.daily_price)),
+        KV("Subtotal inchiriere", pvMoney(getPvFinancials(rental).subtotal)),
+        KV("Comision platforma (platit de chirias)", pvMoney(getPvFinancials(rental).platformFee)),
+        KV("Taxa Stripe (platita de chirias)", pvMoney(getPvFinancials(rental).stripeFee)),
+        ...(getPvFinancials(rental).insuranceFee > 0
+          ? [KV("Taxa asigurare (platita de chirias)", pvMoney(getPvFinancials(rental).insuranceFee))]
+          : []),
+        KV("Total pentru chirias (taxe incluse)", pvMoney(getPvFinancials(rental).total)),
       ],
     },
     {
