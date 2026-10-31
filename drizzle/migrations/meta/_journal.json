@@ -218,6 +218,13 @@
       "when": 1793433644890,
       "tag": "0030_remove_free_listing_fee",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1793433854814,
+      "tag": "0031_kb_remove_free_listings_text",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,1 @@
+UPDATE public.kb_articles SET content_ro = replace(content_ro, '15% per închiriere (gratis primele 3).', '15% per închiriere (minim 1 RON), aplicat de la prima tranzacție.'), content_en = replace(content_en, '15% per rental (first 3 free).', '15% per rental (min 1 RON), applied from the first transaction.') WHERE slug = 'cum-primesc-banii-castig';
