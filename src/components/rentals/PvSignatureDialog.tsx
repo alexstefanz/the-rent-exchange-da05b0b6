@@ -487,22 +487,40 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
               <hr className="border-border my-4" />
 
               <h2 className="text-center font-bold text-[15px] tracking-wide mt-6">{richView.title}</h2>
-              <p className="text-center text-xs text-muted-foreground mb-6">{richView.subtitle}</p>
-              <p className="text-xs mb-4"><Runs runs={richView.headerRuns} /></p>
+              <p className="text-center text-xs font-semibold mb-4">{richView.subtitle}</p>
+              <PvTableView table={richView.headerTable} />
               {richView.sections.map((s) => (
-                <section key={s.heading} className="mb-4">
-                  <h3 className="font-bold text-sm text-primary mb-1">{s.heading}</h3>
+                <section key={s.heading} className="mt-5">
+                  <h3 className="font-bold text-sm mb-1">{s.heading}</h3>
+                  {s.note && <p className="text-xs italic text-muted-foreground mb-1">{s.note}</p>}
+                  {s.table && <PvTableView table={s.table} />}
                   {s.paragraphs.map((p, i) => (
-                    <p key={i} className="mb-1"><Runs runs={p} /></p>
+                    <p key={i} className="mb-1 text-[12.5px]"><Runs runs={p} /></p>
                   ))}
+                  {s.signaturesAfter && (
+                    <div className="mt-5">
+                      <h3 className="font-bold text-sm mb-2">{richView.signatures.heading}</h3>
+                      <div className="grid grid-cols-2 gap-8 text-center">
+                        {[richView.signatures.left, richView.signatures.right].map((side) => (
+                          <SigBox
+                            key={side.party}
+                            label={`${side.action} — ${side.role}`}
+                            name={side.name}
+                            signatureData={side.party === "owner" ? pv.owner_signature_data : pv.renter_signature_data}
+                            signedAt={side.party === "owner" ? pv.owner_signed_at : pv.renter_signed_at}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </section>
               ))}
 
-              {/* Photos */}
+              {/* Photos (annex) */}
               {photos.length > 0 && (
                 <section className="mt-8">
                   <p className="font-semibold text-xs uppercase tracking-wider text-muted-foreground mb-3">
-                    {phase === "handover" ? "Fotografii la predare" : "Fotografii la returnare"}
+                    {phase === "handover" ? "Anexa – fotografii la predare" : "Anexa – fotografii la restituire"}
                   </p>
                   <div className="grid grid-cols-2 gap-4">
                     {photosMeta.map((m, i) => (
@@ -511,12 +529,6 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
                   </div>
                 </section>
               )}
-
-              {/* Signatures */}
-              <section className="grid grid-cols-2 gap-8 mt-10 text-center">
-                <SigBox label="Proprietar" name={content.ownerName} signatureData={pv.owner_signature_data} signedAt={pv.owner_signed_at} />
-                <SigBox label="Chirias" name={content.renterName} signatureData={pv.renter_signature_data} signedAt={pv.renter_signed_at} />
-              </section>
             </article>
 
             {disputeOpen && (
