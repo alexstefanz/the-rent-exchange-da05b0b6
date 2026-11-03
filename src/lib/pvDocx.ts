@@ -16,7 +16,7 @@ import {
 import { format } from "date-fns";
 import type { RentalFullDetail, PvDocument } from "@/features/rentals/rentalDetailPageApi";
 import { getPvFileSignedUrl } from "@/features/rentals/rentalDetailPageApi";
-import { buildPvRichContent, noDia, COMPANY, type PvRun } from "./pvContent";
+import { buildPvRichContent, noDia, COMPANY, type PvRun, type PvTable } from "./pvContent";
 import rentliLogoUrl from "@/assets/rentli_logo.png";
 
 async function fetchAsArrayBuffer(url: string): Promise<ArrayBuffer> {
@@ -66,6 +66,32 @@ function centerLine(text: string, bold = false, size = 20) {
   });
 }
 
+function docxTable(table: PvTable): Table {
+  const border = { style: BorderStyle.SINGLE, size: 4, color: "666666" };
+  const borders = { top: border, bottom: border, left: border, right: border };
+  const widths = table.widths ?? table.rows[0].map(() => 1);
+  const sum = widths.reduce((a, b) => a + b, 0);
+  const colW = widths.map((w) => Math.round((w / sum) * 9360));
+  return new Table({
+    width: { size: 9360, type: WidthType.DXA },
+    columnWidths: colW,
+    rows: table.rows.map((row, ri) => new TableRow({
+      children: row.map((cell, ci) => {
+        const bold = table.kind === "grid" ? ri === 0 : ci % 2 === 0;
+        return new TableCell({
+          borders,
+          width: { size: colW[ci], type: WidthType.DXA },
+          shading: bold ? { fill: "F5F5F4" } : undefined,
+          margins: { top: 60, bottom: 60, left: 80, right: 80 },
+          children: (cell || "").split("\n").map((line) => new Paragraph({
+            children: [new TextRun({ text: noDia(line), bold, size: 18, font: "Arial" })],
+          })),
+        });
+      }),
+    })),
+  });
+}
+
 export async function generatePvDocx(rental: RentalFullDetail, pv: PvDocument, phase: "handover" | "return"): Promise<Blob> {
   const c = buildPvRichContent(rental, phase);
 
@@ -85,6 +111,8 @@ export async function generatePvDocx(rental: RentalFullDetail, pv: PvDocument, p
   }
 
   const children: (Paragraph | Table)[] = [];
+  const cellBorder = { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" };
+  const cellBorders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
 
   // Header
   if (logoBuffer) {
@@ -129,16 +157,36 @@ export async function generatePvDocx(rental: RentalFullDetail, pv: PvDocument, p
     spacing: { before: 200, after: 320 },
     children: [new TextRun({ text: noDia(c.title), bold: true, size: 30, font: "Arial" })],
   }));
-  children.push(centerLine(c.subtitle, false, 18));
-  children.push(pRich(c.headerRuns, { size: 18, after: 200 }));
+  children.push(centerLine(c.subtitle, true, 18));
+  children.push(docxTable(c.headerTable));
 
-  // Sections 1–7 of the official template
+  const sigBlock = () => {
+    const s = c.signatures;
+    const sigOf = (party: "owner" | "renter") => (party === "owner" ? ownerSig : renterSig);
+    const atOf = (party: "owner" | "renter") => (party === "owner" ? pv.owner_signed_at : pv.renter_signed_at);
+    children.push(new Paragraph({
+      spacing: { before: 200, after: 80 },
+      children: [new TextRun({ text: noDia(s.heading), bold: true, size: 22, font: "Arial" })],
+    }));
+    children.push(new Table({
+      width: { size: 9360, type: WidthType.DXA },
+      columnWidths: [4680, 4680],
+      rows: [new TableRow({
+        children: [s.left, s.right].map((side) => sigCell(`${side.action} — ${side.role}`, `Nume: ${side.name}`, sigOf(side.party), atOf(side.party))),
+      })],
+    }));
+  };
+
+  // Sections of the official template (tables + signature block in place)
   for (const s of c.sections) {
     children.push(new Paragraph({
-      spacing: { before: 160, after: 80 },
-      children: [new TextRun({ text: noDia(s.heading), bold: true, size: 22, color: "D97706", font: "Arial" })],
+      spacing: { before: 200, after: 80 },
+      children: [new TextRun({ text: noDia(s.heading), bold: true, size: 22, font: "Arial" })],
     }));
+    if (s.note) children.push(pRich([{ text: s.note }], { size: 18, italics: true, after: 60, align: AlignmentType.LEFT }));
+    if (s.table) children.push(docxTable(s.table));
     for (const p of s.paragraphs) children.push(pRich(p, { size: 20, after: 60, align: AlignmentType.LEFT }));
+    if (s.signaturesAfter) sigBlock();
   }
 
   // Photos — 2-column grid with caption below each
@@ -149,7 +197,7 @@ export async function generatePvDocx(rental: RentalFullDetail, pv: PvDocument, p
     children.push(new Paragraph({
       spacing: { before: 200, after: 120 },
       children: [new TextRun({
-        text: noDia(phase === "handover" ? "Fotografii la predare" : "Fotografii la returnare"),
+        text: noDia(phase === "handover" ? "Anexa – fotografii la predare" : "Anexa – fotografii la restituire"),
         bold: true, size: 18, color: "6B7280", font: "Arial",
       })],
     }));
@@ -195,9 +243,6 @@ export async function generatePvDocx(rental: RentalFullDetail, pv: PvDocument, p
     }));
   }
 
-  // Signatures — 2-column table
-  const cellBorder = { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" };
-  const cellBorders = { top: cellBorder, bottom: cellBorder, left: cellBorder, right: cellBorder };
 
   function sigCell(roleLabel: string, name: string, sig: ArrayBuffer | null, signedAt: string | null) {
     const inner: Paragraph[] = [];
@@ -247,19 +292,6 @@ export async function generatePvDocx(rental: RentalFullDetail, pv: PvDocument, p
     });
   }
 
-  children.push(new Paragraph({ children: [new TextRun({ text: "" })], spacing: { before: 240 } }));
-
-  const table = new Table({
-    width: { size: 9360, type: WidthType.DXA },
-    columnWidths: [4680, 4680],
-    rows: [new TableRow({
-      children: [
-        sigCell("Proprietar", c.ownerName, ownerSig, pv.owner_signed_at),
-        sigCell("Chirias", c.renterName, renterSig, pv.renter_signed_at),
-      ],
-    })],
-  });
-
   // Footer note
   const footer = new Paragraph({
     alignment: AlignmentType.LEFT,
@@ -281,7 +313,7 @@ export async function generatePvDocx(rental: RentalFullDetail, pv: PvDocument, p
           margin: { top: 1080, right: 1080, bottom: 1080, left: 1080 },
         },
       },
-      children: [...children, table, footer],
+      children: [...children, footer],
     }],
   });
 
