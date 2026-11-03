@@ -32,15 +32,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const checkDeactivated = async () => {
       try {
-        // Verify the auth user still exists server-side (deleted accounts keep a stale local token)
+        // Verify the auth user still exists server-side (deleted accounts keep a stale local token).
+        // Only sign out on an explicit "user not found" style error — transient network/fetch
+        // failures must never log a valid user out.
         const { data: authData, error: authError } = await supabase.auth.getUser();
-        const userGone =
-          !authData?.user ||
-          (authError && /not.?found|does not exist|user_not_found|invalid.*jwt|sub claim/i.test(authError.message ?? ""));
-        if (userGone && authError) {
-          await supabase.auth.signOut({ scope: "local" });
-          window.location.replace("/");
-          return;
+        if (!authData?.user) {
+          const userGone =
+            authError &&
+            /not.?found|does not exist|user_not_found|invalid.*jwt|sub claim/i.test(authError.message ?? "");
+          if (userGone) {
+            await supabase.auth.signOut({ scope: "local" });
+            window.location.replace("/");
+            return;
+          }
+          // Any other failure (network hiccup, timeout, refresh issue): keep the session.
         }
 
         const { data, error } = await supabase
