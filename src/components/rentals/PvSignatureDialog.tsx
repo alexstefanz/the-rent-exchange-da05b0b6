@@ -20,7 +20,7 @@ import {
   type PvDocument,
 } from "@/features/rentals/rentalDetailPageApi";
 import type { RentalFullDetail } from "@/features/rentals/rentalDetailPageApi";
-import { buildPvContent, buildPvRichContent, pvEffectiveDate, noDia, COMPANY, MIN_PV_PHOTOS, type PvRun } from "@/lib/pvContent";
+import { buildPvContent, buildPvRichContent, pvEffectiveDate, noDia, COMPANY, MIN_PV_PHOTOS, type PvRun, type PvTable } from "@/lib/pvContent";
 import { generatePvDocx, downloadBlob } from "@/lib/pvDocx";
 import rentliLogoUrl from "@/assets/rentli_logo.png";
 
@@ -218,24 +218,95 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
 
     doc.setFontSize(14); doc.setFont("helvetica", "bold");
     doc.text(noDia(rich.title), W / 2, y, { align: "center" }); y += 16;
-    doc.setFontSize(8.5); doc.setFont("helvetica", "normal"); doc.setTextColor(107, 114, 128);
-    doc.text(noDia(rich.subtitle), W / 2, y, { align: "center" }); y += 18;
+    doc.setFontSize(8.5); doc.setFont("helvetica", "bold");
+    doc.text(noDia(rich.subtitle), W / 2, y, { align: "center" }); y += 14;
     doc.setTextColor(0);
-    writeRichParagraph(rich.headerRuns, { size: 9 }); y += 8;
-    for (const s of rich.sections) {
-      ensureSpace(30);
-      y += 4;
-      writeParagraph(s.heading, { size: 10.5, bold: true, color: [217, 119, 6] });
-      y += 3;
-      for (const p of s.paragraphs) { writeRichParagraph(p, { size: 9.5, lh: 13 }); y += 2; }
+
+    // Template table renderer (bordered cells, wrapped text).
+    const writeTable = (table: PvTable) => {
+      const widths = table.widths ?? table.rows[0].map(() => 1);
+      const sum = widths.reduce((a, b) => a + b, 0);
+      const colW = widths.map((w) => (w / sum) * CONTENT_W);
+      const size = 8.5, lh = 10.5, pad = 4;
+      doc.setDrawColor(120);
+      table.rows.forEach((row, ri) => {
+        const cells = row.map((cell, ci) => {
+          const bold = table.kind === "grid" ? ri === 0 : ci % 2 === 0;
+          doc.setFont("helvetica", bold ? "bold" : "normal"); doc.setFontSize(size);
+          const lines = noDia(cell || "").split("\n").flatMap((l) => doc.splitTextToSize(l, colW[ci] - pad * 2) as string[]);
+          return { lines, bold };
+        });
+        const rowH = Math.max(...cells.map((c) => Math.max(1, c.lines.length))) * lh + pad * 2 - 2;
+        ensureSpace(rowH);
+        let x = MARGIN;
+        cells.forEach((c, ci) => {
+          if (c.bold) { doc.setFillColor(245, 245, 244); doc.rect(x, y, colW[ci], rowH, "FD"); }
+          else doc.rect(x, y, colW[ci], rowH);
+          doc.setFont("helvetica", c.bold ? "bold" : "normal"); doc.setFontSize(size); doc.setTextColor(0);
+          c.lines.forEach((ln, li) => doc.text(ln, x + pad, y + pad + 7 + li * lh));
+          x += colW[ci];
+        });
+        y += rowH;
+      });
       y += 6;
+    };
+
+    const drawSignatures = () => {
+      const sig = rich.signatures;
+      const colW = CONTENT_W / 2;
+      const sigImgH = 50;
+      ensureSpace(14 + 12 + 12 + sigImgH + 26);
+      writeParagraph(sig.heading, { size: 10.5, bold: true });
+      y += 4;
+      const sides = [sig.left, sig.right];
+      doc.setFontSize(9); doc.setFont("helvetica", "bold");
+      sides.forEach((s, i) => doc.text(noDia(`${s.action} — ${s.role}`), MARGIN + i * colW + colW / 2, y, { align: "center" }));
+      y += 12;
+      doc.setFont("helvetica", "normal");
+      sides.forEach((s, i) => doc.text(noDia(`Nume: ${s.name}`), MARGIN + i * colW + colW / 2, y, { align: "center" }));
+      y += 8;
+      const sigY = y;
+      sides.forEach((s, i) => {
+        const data = s.party === "owner" ? updatedPv.owner_signature_data : updatedPv.renter_signature_data;
+        const x = MARGIN + i * colW;
+        if (data) { try { doc.addImage(data, "PNG", x + 20, sigY, colW - 40, sigImgH); } catch { /* noop */ } }
+        else {
+          doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(153, 153, 153);
+          doc.text("— nesemnat —", x + colW / 2, sigY + sigImgH / 2 + 4, { align: "center" });
+          doc.setTextColor(0); doc.setFont("helvetica", "normal");
+        }
+      });
+      y += sigImgH + 4;
+      doc.setDrawColor(120);
+      sides.forEach((_, i) => doc.line(MARGIN + i * colW + 10, y, MARGIN + (i + 1) * colW - 10, y));
+      y += 11;
+      doc.setFontSize(8); doc.setTextColor(119, 119, 119);
+      sides.forEach((s, i) => {
+        const at = s.party === "owner" ? updatedPv.owner_signed_at : updatedPv.renter_signed_at;
+        doc.text(at ? `Semnatura: semnat ${format(new Date(at), "dd.MM.yyyy HH:mm")}` : "Semnatura:", MARGIN + i * colW + colW / 2, y, { align: "center" });
+      });
+      doc.setTextColor(0);
+      y += 14;
+    };
+
+    writeTable(rich.headerTable);
+    for (const s of rich.sections) {
+      ensureSpace(40);
+      y += 4;
+      writeParagraph(s.heading, { size: 10.5, bold: true });
+      y += 3;
+      if (s.note) { writeParagraph(s.note, { size: 8.5, italic: true, color: [107, 114, 128] }); y += 2; }
+      if (s.table) writeTable(s.table);
+      for (const p of s.paragraphs) { writeRichParagraph(p, { size: 9.5, lh: 13 }); y += 2; }
+      if (s.signaturesAfter) { y += 6; drawSignatures(); }
+      y += 4;
     }
     y += 8;
 
-    // Photos
+    // Photos (annex)
     ensureSpace(20);
     doc.setFontSize(9); doc.setFont("helvetica", "bold"); doc.setTextColor(107, 114, 128);
-    doc.text(noDia((phase === "handover" ? "Fotografii la predare" : "Fotografii la returnare").toUpperCase()), MARGIN, y);
+    doc.text(noDia((phase === "handover" ? "Anexa – fotografii la predare" : "Anexa – fotografii la restituire").toUpperCase()), MARGIN, y);
     y += 14;
     doc.setTextColor(0);
     doc.setFont("helvetica", "normal");
@@ -298,55 +369,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
       }
     }
 
-    // Signatures — try to fit on the same page; compact layout if space is tight
-    const remaining = (H - 30) - y;
-    let sigImgH = 60;
-    let labelGap = 14;
-    let nameGap = 10;
-    let lineGap = 12;
-    let stampGap = 20;
-    const fullBlock = 14 + 10 + 60 + 12 + 20; // ~116
-    const compactBlock = 12 + 9 + 48 + 10 + 16; // ~95
-    if (remaining < fullBlock) {
-      if (remaining >= compactBlock) {
-        sigImgH = 48; labelGap = 12; nameGap = 9; lineGap = 10; stampGap = 16;
-      } else {
-        doc.addPage(); y = 50;
-      }
-    }
-    const colW = (W - 100) / 2;
-    doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.setTextColor(0);
-    doc.text(noDia("Proprietar"), MARGIN + (colW - 10) / 2, y, { align: "center" });
-    doc.text(noDia("Chirias"), MARGIN + colW + (colW - 10) / 2, y, { align: "center" });
-    y += labelGap;
-    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-    doc.text(noDia(rich.ownerName), MARGIN + (colW - 10) / 2, y, { align: "center" });
-    doc.text(noDia(rich.renterName), MARGIN + colW + (colW - 10) / 2, y, { align: "center" });
-    y += nameGap;
-    const sigY = y;
-    const drawSigBox = (dataUrl: string | null, x: number) => {
-      if (dataUrl) {
-        try { doc.addImage(dataUrl, "PNG", x + 10, sigY, colW - 30, sigImgH); }
-        catch { /* noop */ }
-      } else {
-        doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(153, 153, 153);
-        doc.text("— nesemnat —", x + (colW - 10) / 2, sigY + sigImgH / 2 + 4, { align: "center" });
-        doc.setTextColor(0); doc.setFont("helvetica", "normal");
-      }
-    };
-    drawSigBox(updatedPv.owner_signature_data, MARGIN);
-    drawSigBox(updatedPv.renter_signature_data, MARGIN + colW);
-    y += sigImgH + 4;
-    doc.setDrawColor(120);
-    doc.line(MARGIN, y, MARGIN + colW - 10, y);
-    doc.line(MARGIN + colW, y, MARGIN + colW * 2 - 10, y);
-    y += lineGap;
-    doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(119, 119, 119);
-    const ownerStamp = updatedPv.owner_signed_at ? `Semnat ${format(new Date(updatedPv.owner_signed_at), "dd.MM.yyyy HH:mm")}` : "Semnatura";
-    const renterStamp = updatedPv.renter_signed_at ? `Semnat ${format(new Date(updatedPv.renter_signed_at), "dd.MM.yyyy HH:mm")}` : "Semnatura";
-    doc.text(ownerStamp, MARGIN + (colW - 10) / 2, y, { align: "center" });
-    doc.text(renterStamp, MARGIN + colW + (colW - 10) / 2, y, { align: "center" });
-    y += stampGap;
+    ensureSpace(14);
     doc.setFontSize(7); doc.setTextColor(140);
     doc.text(noDia(`Cod inchiriere: ${rental.public_id || "-"} | Generat: ${format(new Date(), "dd.MM.yyyy HH:mm")}`), MARGIN, y);
     doc.setTextColor(0);
@@ -487,22 +510,40 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
               <hr className="border-border my-4" />
 
               <h2 className="text-center font-bold text-[15px] tracking-wide mt-6">{richView.title}</h2>
-              <p className="text-center text-xs text-muted-foreground mb-6">{richView.subtitle}</p>
-              <p className="text-xs mb-4"><Runs runs={richView.headerRuns} /></p>
+              <p className="text-center text-xs font-semibold mb-4">{richView.subtitle}</p>
+              <PvTableView table={richView.headerTable} />
               {richView.sections.map((s) => (
-                <section key={s.heading} className="mb-4">
-                  <h3 className="font-bold text-sm text-primary mb-1">{s.heading}</h3>
+                <section key={s.heading} className="mt-5">
+                  <h3 className="font-bold text-sm mb-1">{s.heading}</h3>
+                  {s.note && <p className="text-xs italic text-muted-foreground mb-1">{s.note}</p>}
+                  {s.table && <PvTableView table={s.table} />}
                   {s.paragraphs.map((p, i) => (
-                    <p key={i} className="mb-1"><Runs runs={p} /></p>
+                    <p key={i} className="mb-1 text-[12.5px]"><Runs runs={p} /></p>
                   ))}
+                  {s.signaturesAfter && (
+                    <div className="mt-5">
+                      <h3 className="font-bold text-sm mb-2">{richView.signatures.heading}</h3>
+                      <div className="grid grid-cols-2 gap-8 text-center">
+                        {[richView.signatures.left, richView.signatures.right].map((side) => (
+                          <SigBox
+                            key={side.party}
+                            label={`${side.action} — ${side.role}`}
+                            name={side.name}
+                            signatureData={side.party === "owner" ? pv.owner_signature_data : pv.renter_signature_data}
+                            signedAt={side.party === "owner" ? pv.owner_signed_at : pv.renter_signed_at}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </section>
               ))}
 
-              {/* Photos */}
+              {/* Photos (annex) */}
               {photos.length > 0 && (
                 <section className="mt-8">
                   <p className="font-semibold text-xs uppercase tracking-wider text-muted-foreground mb-3">
-                    {phase === "handover" ? "Fotografii la predare" : "Fotografii la returnare"}
+                    {phase === "handover" ? "Anexa – fotografii la predare" : "Anexa – fotografii la restituire"}
                   </p>
                   <div className="grid grid-cols-2 gap-4">
                     {photosMeta.map((m, i) => (
@@ -511,12 +552,6 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
                   </div>
                 </section>
               )}
-
-              {/* Signatures */}
-              <section className="grid grid-cols-2 gap-8 mt-10 text-center">
-                <SigBox label="Proprietar" name={content.ownerName} signatureData={pv.owner_signature_data} signedAt={pv.owner_signed_at} />
-                <SigBox label="Chirias" name={content.renterName} signatureData={pv.renter_signature_data} signedAt={pv.renter_signed_at} />
-              </section>
             </article>
 
             {disputeOpen && (
@@ -758,4 +793,29 @@ function SigBox({ label, name, signatureData, signedAt }: { label: string; name:
 }
 function Runs({ runs }: { runs: PvRun[] }) {
   return <>{runs.map((r, i) => (r.bold ? <strong key={i}>{r.text}</strong> : <span key={i}>{r.text}</span>))}</>;
+}
+
+/** Renders a template table exactly as in the official PV document. */
+function PvTableView({ table }: { table: PvTable }) {
+  const total = (table.widths ?? table.rows[0].map(() => 1)).reduce((a, b) => a + b, 0);
+  const widths = table.widths ?? table.rows[0].map(() => 1);
+  return (
+    <table className="w-full border-collapse text-[12px] my-1 table-fixed">
+      <colgroup>{widths.map((w, i) => <col key={i} style={{ width: `${(w / total) * 100}%` }} />)}</colgroup>
+      <tbody>
+        {table.rows.map((row, ri) => (
+          <tr key={ri}>
+            {row.map((cell, ci) => {
+              const bold = table.kind === "grid" ? ri === 0 : ci % 2 === 0;
+              return (
+                <td key={ci} className={`border border-foreground/40 px-2 py-1 align-top whitespace-pre-line break-words ${bold ? "font-semibold bg-muted/40" : ""}`}>
+                  {cell}
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
 }

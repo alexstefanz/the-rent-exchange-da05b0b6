@@ -132,10 +132,35 @@ export interface PvRun {
   bold?: boolean;
 }
 
-/** One numbered section of the PV; each paragraph is a list of runs. */
+/**
+ * A table of the official template.
+ * - "kv":   4-column label/value grid (labels in columns 0 and 2 are bold).
+ * - "grid": first row is a bold header row.
+ * Cells are plain strings; checkboxes are written as "[X]" / "[ ]".
+ */
+export interface PvTable {
+  kind: "kv" | "grid";
+  rows: string[][];
+  /** Relative column widths (sum arbitrary). */
+  widths?: number[];
+}
+
+/** One section of the PV, in the exact order of the official template. */
 export interface PvSection {
   heading: string;
+  /** Italic hint shown under the heading. */
+  note?: string;
+  table?: PvTable;
   paragraphs: PvRun[][];
+  /** Render the live signature block (signatures of this PV) right after this section. */
+  signaturesAfter?: boolean;
+}
+
+/** Live signature block (template "SEMNATURI Predare" / "SEMNATURI Restituire"). */
+export interface PvSignatureBlock {
+  heading: string;
+  left: { action: string; role: string; party: "owner" | "renter"; name: string };
+  right: { action: string; role: string; party: "owner" | "renter"; name: string };
 }
 
 export interface PvRichContent {
@@ -143,16 +168,21 @@ export interface PvRichContent {
   subtitle: string;
   ownerName: string;
   renterName: string;
+  headerTable: PvTable;
+  /** Kept for back-compat with plain renderers. */
   headerRuns: PvRun[];
   sections: PvSection[];
+  signatures: PvSignatureBlock;
   todayLabel: string;
 }
 
 const T = (text: string): PvRun => ({ text });
 const B = (text: string): PvRun => ({ text, bold: true });
 const KV = (k: string, v: string | number | null | undefined): PvRun[] => [T(`${k}: `), B(v === null || v === undefined || v === "" ? "-" : String(v))];
+const val = (v: string | number | null | undefined) => (v === null || v === undefined || v === "" ? "-" : String(v));
+const box = (checked: boolean) => (checked ? "[X]" : "[ ]");
 
-const CHECKLIST = [
+export const PV_CHECKLIST = [
   "Aspect exterior / carcasa / material",
   "Functionalitate generala",
   "Elemente mobile / mecanisme",
@@ -161,19 +191,33 @@ const CHECKLIST = [
   "Curatenie / igiena / mirosuri",
 ];
 
-const DECLARATIONS = [
+export const PV_DECLARATIONS = [
   "Locatorul declara ca este proprietarul bunului sau ca are dreptul de a-l inchiria.",
   "Locatarul confirma ca a verificat bunul si accesoriile la preluare si ca le primeste in starea descrisa in prezentul proces-verbal.",
   "Locatarul se obliga sa utilizeze bunul conform destinatiei sale, instructiunilor de utilizare si conditiilor convenite intre parti.",
   "La restituire, bunul si accesoriile vor fi verificate prin raportare la starea si inventarul consemnate la predare, tinandu-se cont de uzura normala.",
   "Orice deteriorare, pierdere sau lipsa constatata la restituire se va consemna in prezentul proces-verbal si se va solutiona conform contractului / termenilor platformei.",
-  "Procesul-verbal este completat cu fotografii ale defectelor atat in cazul predarii, cat si in cazul restituirii bunului. Lipsa acestor fotografii duce la nulitatea procesului-verbal si implicit la lipsa acoperirii prin asigurare.",
+  "Procesul verbal este completat cu fotografii ale defectelor atat in cazul predarii, cat si in cazul restituirii bunului. Lipsa acestor fotografii duce la nulitatea procesului verbal si implicit la lipsa acoperirii prin asigurare.",
 ];
 
+const TEMPLATE_CATEGORIES: Array<[string, RegExp]> = [
+  ["casnic", /casa|casnic|gradin|bucatar|electrocasnic|home/i],
+  ["sport", /sport|bicicl|fitness|ski|trotinet/i],
+  ["camping", /camp|cort|outdoor|drumet/i],
+  ["hobby", /hobby|foto|muzic|joc|gaming|instrument/i],
+];
+
+export function templateCategoryLine(category: string | null | undefined): string {
+  const match = TEMPLATE_CATEGORIES.find(([, re]) => re.test(category || ""))?.[0] ?? "altul";
+  const opts = ["casnic", "sport", "camping", "hobby", "altul"].map((o) => `${box(o === match)} ${o}`).join("  ");
+  return match === "altul" && category ? `${opts} (${category})` : opts;
+}
+
 /**
- * Builds the PV according to the official Rentli template (sections 1–7).
- * The same document is used at handover and at return: at handover section 6
- * is marked as pending; at return it is filled in.
+ * Builds the PV exactly after the official template "Proces_verbal_UNICA"
+ * (header table, sections 1–7, signature blocks for handover and return).
+ * The same document serves both phases: the live signatures are placed in
+ * "SEMNATURI Predare" (handover) or "SEMNATURI Restituire" (return).
  */
 export function buildPvRichContent(
   rental: RentalFullDetail,
@@ -187,81 +231,159 @@ export function buildPvRichContent(
   const fmt = (d: string) => format(new Date(d), "dd.MM.yyyy");
   const items = rental.product_included_items || [];
   const financials = getPvFinancials(rental);
+  const isReturn = phase === "return";
+  const pvNo = `${rental.public_id}-${isReturn ? "R" : "P"}`;
+  const place = val(rental.pickup_location || rental.product_location_city);
+  const idDoc = "verificat prin Stripe Identity";
 
-  const title = phase === "handover"
-    ? "PROCES-VERBAL DE PREDARE-PRIMIRE"
-    : "PROCES-VERBAL DE PREDARE-PRIMIRE (RESTITUIRE)";
+  const title = isReturn
+    ? "PROCES-VERBAL DE PREDARE-PRIMIRE (RESTITUIRE)"
+    : "PROCES-VERBAL DE PREDARE-PRIMIRE";
   const subtitle = "BUN / OBIECT INCHIRIAT – PLATFORMA DE INCHIRIERE INTRE PERSOANE";
 
+  const headerTable: PvTable = {
+    kind: "kv",
+    rows: [
+      ["Nr. proces-verbal", pvNo, "Data", today],
+      ["Locul predarii", place, "Ora", time],
+    ],
+  };
   const headerRuns: PvRun[] = [
-    ...KV("Nr. proces-verbal", `${rental.public_id}-${phase === "handover" ? "P" : "R"}`), T("   "),
-    ...KV("Data", today), T("   "),
-    ...KV("Ora", time), T("   "),
-    ...KV("Locul predarii", rental.pickup_location || rental.product_location_city),
+    ...KV("Nr. proces-verbal", pvNo), T("   "), ...KV("Data", today), T("   "),
+    ...KV("Ora", time), T("   "), ...KV("Locul predarii", place),
   ];
+
+  const inventoryRows = items.length
+    ? items.map((it, i) => [String(i + 1), it, "1", `${box(true)} bun  ${box(false)} uzat`, "conform fotografiilor"])
+    : [["1", "Nu au fost declarate accesorii", "-", "-", "-"]];
+
+  const disputed = rental.dispute_status === "open";
+  const returnRows: string[][] = isReturn
+    ? [
+        ["Data / ora restituirii", `${today} ora ${time}`, "", ""],
+        [
+          "Stare la restituire",
+          `${box(!disputed)} conform predarii\n${box(disputed)} cu defecte: ${disputed ? "vezi disputa si fotografiile" : "……."}`,
+          "Accesorii",
+          `${box(!disputed)} complete\n${box(disputed)} lipsuri`,
+        ],
+      ]
+    : [
+        ["Data / ora restituirii", "____/____/______  ora ______", "", ""],
+        ["Stare la restituire", `${box(false)} conform predarii\n${box(false)} cu defecte: …….`, "Accesorii", `${box(false)} complete\n${box(false)} lipsuri`],
+      ];
+
+  const sigTable = (left: [string, string, string], right: [string, string, string], sign: string): PvTable => ({
+    kind: "kv",
+    rows: [
+      [left[0], left[1], right[0], right[1]],
+      ["Nume:", left[2], "Nume:", right[2]],
+      ["Semnatura:", sign, "Semnatura:", sign],
+    ],
+  });
 
   const sections: PvSection[] = [
     {
       heading: "1. PARTILE",
-      paragraphs: [
-        [B("PROPRIETAR / LOCATOR — "), ...KV("Nume si prenume", ownerName), T("; "), ...KV("Telefon", rental.owner_phone), T("; "), ...KV("E-mail", rental.owner_email), T("; C.I. / document: conform verificarii de identitate Rentli (Stripe Identity).")],
-        [B("CHIRIAS / LOCATAR — "), ...KV("Nume si prenume", renterName), T("; "), ...KV("Telefon", rental.renter_phone), T("; "), ...KV("E-mail", rental.renter_email), T("; C.I. / document: conform verificarii de identitate Rentli (Stripe Identity).")],
-      ],
+      table: {
+        kind: "kv",
+        rows: [
+          ["PROPRIETAR / LOCATOR", `Nume si prenume: ${ownerName}`, "CHIRIAS / LOCATAR", `Nume si prenume: ${renterName}`],
+          ["C.I. / document", idDoc, "C.I. / document", idDoc],
+          ["Telefon", val(rental.owner_phone), "Telefon", val(rental.renter_phone)],
+          ["E-mail", val(rental.owner_email), "E-mail", val(rental.renter_email)],
+        ],
+      },
+      paragraphs: [],
     },
     {
       heading: "2. DATELE INCHIRIERII",
-      paragraphs: [
-        KV("Bunul inchiriat", rental.product_title),
-        KV("Categorie", rental.product_category),
-        [T("Perioada: de la "), B(`${fmt(rental.start_date)} ora ${rental.pickup_time || "10:00"}`), T(" pana la "), B(`${fmt(rental.end_date)} ora 18:00`), T(" ("), B(`${rental.rental_days} zile`), T(")")],
-        KV("Nr. contract", rental.public_id),
-        KV("Pret inchiriere/zi", pvMoney(rental.daily_price)),
-        KV("Subtotal inchiriere", pvMoney(financials.subtotal)),
-        KV("Comision platforma (platit de chirias)", pvMoney(financials.platformFee)),
-        KV("Taxa Stripe (platita de chirias)", pvMoney(financials.stripeFee)),
-        ...(financials.insuranceFee > 0
-          ? [KV("Taxa asigurare (platita de chirias)", pvMoney(financials.insuranceFee))]
-          : []),
-        KV("Total pentru chirias (taxe incluse)", pvMoney(financials.total)),
-      ],
+      table: {
+        kind: "kv",
+        rows: [
+          ["Bunul inchiriat", val(rental.product_title), "Categorie", templateCategoryLine(rental.product_category)],
+          ["Perioada", `De la ${fmt(rental.start_date)} ora ${rental.pickup_time || "10:00"}`, "Pana la", `${fmt(rental.end_date)} ora 18:00`],
+          ["Nr. contract", val(rental.public_id), "Pret inchiriere/zi", `${Number(rental.daily_price ?? 0).toFixed(2)} lei`],
+          ["Subtotal inchiriere", pvMoney(financials.subtotal), "Comision platforma", pvMoney(financials.platformFee)],
+          ["Taxa Stripe", pvMoney(financials.stripeFee), "Taxa asigurare", financials.insuranceFee > 0 ? pvMoney(financials.insuranceFee) : "-"],
+          ["Total chirias (taxe incluse)", pvMoney(financials.total), "Nr. zile", String(rental.rental_days)],
+        ],
+      },
+      paragraphs: [],
     },
     {
       heading: "3. IDENTIFICAREA BUNULUI",
-      paragraphs: [
-        KV("Denumire / model", rental.product_title),
-        KV("Suma asigurata", rental.product_deposit_value ? `${rental.product_deposit_value} lei` : "-"),
-        KV("Accesorii incluse", items.length ? items.join(", ") : "-"),
-      ],
+      table: {
+        kind: "kv",
+        rows: [
+          ["Denumire / model", val(rental.product_title), "Marca", "-"],
+          ["An fabricatie", "-", "", ""],
+          ["Nr. serie / identificare", "-", "Suma asigurata", rental.product_deposit_value ? `${rental.product_deposit_value} lei` : "-"],
+          ["Accesorii incluse", items.length ? items.join(", ") : "-", "Ambalaj / husa", `${box(false)} Da   ${box(false)} Nu`],
+        ],
+      },
+      paragraphs: [],
     },
     {
       heading: "4. STAREA BUNULUI LA PREDARE",
-      paragraphs: [
-        [T("Starea constatata la predare este documentata prin fotografiile anexate (Anexa 1). Defectele / urmele existente sunt vizibile in fotografii.")],
-        ...CHECKLIST.map((c) => [T(`• ${c}: `), B("conform fotografiilor anexate")]),
-      ],
+      note: "Se bifeaza situatia constatata la predare. Defectele / urmele existente se descriu concret la „Observatii”.",
+      table: {
+        kind: "grid",
+        widths: [4, 1, 1.4, 4],
+        rows: [
+          ["Element verificat", "Bun", "Cu urme / uzura", "Observatii / defecte existente"],
+          ...PV_CHECKLIST.map((c) => [c, box(false), box(false), "conform fotografiilor anexate"]),
+        ],
+      },
+      paragraphs: [],
     },
     {
       heading: "5. INVENTAR SI ACCESORII PREDATE",
-      paragraphs: items.length
-        ? items.map((it, i) => [T(`${i + 1}. `), B(it), T(" — cant. 1 — stare: conform fotografiilor")])
-        : [[T("Nu au fost declarate accesorii.")]],
+      table: {
+        kind: "grid",
+        widths: [0.6, 4, 0.8, 2, 3],
+        rows: [["Nr.", "Obiect / accesoriu", "Cant.", "Stare", "Observatii"], ...inventoryRows],
+      },
+      paragraphs: [],
+      signaturesAfter: !isReturn,
     },
+    ...(isReturn
+      ? [{
+          heading: "SEMNATURI Predare",
+          table: sigTable(["PREDAT DE", "PROPRIETAR / LOCATOR", ownerName], ["PRIMIT DE", "CHIRIAS / LOCATAR", renterName], `semnat la predare (PV ${rental.public_id}-P)`),
+          paragraphs: [],
+        } as PvSection]
+      : []),
     {
       heading: "6. CONSTATAREA LA RESTITUIRE",
-      paragraphs: phase === "handover"
-        ? [[T("Se completeaza la restituirea bunului, prin procesul-verbal de restituire semnat de ambele parti.")]]
-        : [
-            KV("Data / ora restituirii", `${today} ora ${time}`),
-            [T("Stare la restituire: "), B("conform fotografiilor de restituire anexate (Anexa 2)"), T(", raportat la starea de la predare.")],
-            [T("Accesorii: "), B(items.length ? items.join(", ") : "-"), T(" — verificate la restituire.")],
-            [T("Eventualele defecte sau lipsuri se semnaleaza prin deschiderea unei dispute in platforma Rentli.")],
-          ],
+      table: { kind: "kv", rows: returnRows },
+      paragraphs: [],
+      signaturesAfter: isReturn,
     },
+    ...(!isReturn
+      ? [{
+          heading: "SEMNATURI Restituire",
+          table: sigTable(["PREDAT DE", "CHIRIAS / LOCATAR", renterName], ["PRIMIT DE", "PROPRIETAR / LOCATOR", ownerName], "se semneaza la restituire"),
+          paragraphs: [],
+        } as PvSection]
+      : []),
     {
       heading: "7. DECLARATII",
-      paragraphs: DECLARATIONS.map((d, i) => [T(`${i + 1}. ${d}`)]),
+      paragraphs: PV_DECLARATIONS.map((d, i) => [T(`${i + 1}. ${d}`)]),
     },
   ];
 
-  return { title, subtitle, ownerName, renterName, headerRuns, sections, todayLabel: today };
+  const signatures: PvSignatureBlock = isReturn
+    ? {
+        heading: "SEMNATURI Restituire",
+        left: { action: "PREDAT DE", role: "CHIRIAS / LOCATAR", party: "renter", name: renterName },
+        right: { action: "PRIMIT DE", role: "PROPRIETAR / LOCATOR", party: "owner", name: ownerName },
+      }
+    : {
+        heading: "SEMNATURI Predare",
+        left: { action: "PREDAT DE", role: "PROPRIETAR / LOCATOR", party: "owner", name: ownerName },
+        right: { action: "PRIMIT DE", role: "CHIRIAS / LOCATAR", party: "renter", name: renterName },
+      };
+
+  return { title, subtitle, ownerName, renterName, headerTable, headerRuns, sections, signatures, todayLabel: today };
 }
