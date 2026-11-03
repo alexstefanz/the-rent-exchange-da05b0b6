@@ -182,48 +182,62 @@ Deno.serve(async (req) => {
 
     const section = (h: string) => { y -= 4; drawWrapped(h, 11, { bold: true, color: accent }); y -= 2; };
 
+    const items = (product?.included_items as string[] | null) || [];
+    const kv = (pairs: Array<[string, string]>) => drawWrapped(pairs.map(([k, v]) => `${k}: ${v || "-"}`).join("   |   "), 9.5);
+
     section("1. PARTILE");
-    drawWrapped(`PROPRIETAR / LOCATOR - ${owner?.full_name ?? "-"}; Telefon: ${owner?.phone ?? "-"}; E-mail: ${owner?.email ?? "-"}; identitate verificata prin Rentli (Stripe Identity).`, 10);
-    drawWrapped(`CHIRIAS / LOCATAR - ${renter?.full_name ?? "-"}; Telefon: ${renter?.phone ?? "-"}; E-mail: ${renter?.email ?? "-"}; identitate verificata prin Rentli (Stripe Identity).`, 10);
+    kv([["PROPRIETAR / LOCATOR - Nume si prenume", owner?.full_name ?? "-"], ["C.I. / document", "verificat prin Stripe Identity"]]);
+    kv([["Telefon", owner?.phone ?? "-"], ["E-mail", owner?.email ?? "-"]]);
+    kv([["CHIRIAS / LOCATAR - Nume si prenume", renter?.full_name ?? "-"], ["C.I. / document", "verificat prin Stripe Identity"]]);
+    kv([["Telefon", renter?.phone ?? "-"], ["E-mail", renter?.email ?? "-"]]);
 
     section("2. DATELE INCHIRIERII");
-    drawWrapped(`Bunul inchiriat: ${product?.title ?? "-"}${product?.category ? ` (categoria ${product.category})` : ""}`, 10);
-    drawWrapped(`Perioada: ${fmtDate(rental.start_date)} ora ${rental.pickup_time ?? "10:00"} - ${fmtDate(rental.end_date)} ora 18:00 (${rental.rental_days} zile)`, 10);
-    drawWrapped(`Nr. contract: ${rental.public_id ?? "-"}`, 10);
-    drawWrapped(`Pret inchiriere/zi: ${money(rental.daily_price ?? product?.daily_price_owner)}`, 10);
-    drawWrapped(`Subtotal inchiriere: ${money(subtotal)}`, 10);
-    drawWrapped(`Comision platforma (platit de chirias): ${money(platformFee)}`, 10);
-    drawWrapped(`Taxa Stripe (platita de chirias): ${money(stripeFee)}`, 10);
-    if (insuranceFee > 0) drawWrapped(`Taxa asigurare (platita de chirias): ${money(insuranceFee)}`, 10);
-    drawWrapped(`Total pentru chirias (taxe incluse): ${money(total)}`, 10, { bold: true });
+    kv([["Bunul inchiriat", product?.title ?? "-"], ["Categorie", product?.category ?? "-"]]);
+    kv([["Perioada", `De la ${fmtDate(rental.start_date)} ora ${rental.pickup_time ?? "10:00"}`], ["Pana la", `${fmtDate(rental.end_date)} ora 18:00`]]);
+    kv([["Nr. contract", rental.public_id ?? "-"], ["Pret inchiriere/zi", money(rental.daily_price ?? product?.daily_price_owner)]]);
+    kv([["Subtotal inchiriere", money(subtotal)], ["Comision platforma", money(platformFee)]]);
+    kv([["Taxa Stripe", money(stripeFee)], ["Taxa asigurare", insuranceFee > 0 ? money(insuranceFee) : "-"]]);
+    drawWrapped(`Total chirias (taxe incluse): ${money(total)}`, 9.5, { bold: true });
 
     section("3. IDENTIFICAREA BUNULUI");
-    drawWrapped(`Denumire / model: ${product?.title ?? "-"}`, 10);
-    drawWrapped(`Suma asigurata: ${product?.deposit_value ? `${product.deposit_value} lei` : "-"}`, 10);
-    const items = (product?.included_items as string[] | null) || [];
-    drawWrapped(`Accesorii incluse: ${items.length ? items.join(", ") : "-"}`, 10);
+    kv([["Denumire / model", product?.title ?? "-"], ["Marca", "-"]]);
+    kv([["An fabricatie", "-"], ["Nr. serie / identificare", "-"], ["Suma asigurata", product?.deposit_value ? `${product.deposit_value} lei` : "-"]]);
+    kv([["Accesorii incluse", items.length ? items.join(", ") : "-"], ["Ambalaj / husa", "[ ] Da [ ] Nu"]]);
 
-    section(isRet ? "4. STAREA BUNULUI LA RESTITUIRE" : "4. STAREA BUNULUI LA PREDARE");
-    drawWrapped(
-      isRet
-        ? "Chiriasul restituie bunul catre Proprietar, iar Proprietarul confirma primirea acestuia in starea documentata prin fotografiile anexate. Eventualele daune constatate se reglementeaza prin platforma Rentli."
-        : "Chiriasul declara ca a verificat bunul si il accepta in starea documentata prin fotografiile anexate, obligandu-se sa il utilizeze conform destinatiei si sa il returneze la termen, in aceeasi stare, cu exceptia uzurii normale.",
-      10
-    );
-    drawWrapped(`Fotografii anexate in platforma: ${(pv.photos_meta || pv.photos || []).length} buc.`, 10, { color: muted });
+    section("4. STAREA BUNULUI LA PREDARE");
+    drawWrapped("Se bifeaza situatia constatata la predare. Defectele / urmele existente se descriu concret la Observatii.", 8.5, { color: muted });
+    for (const el of ["Aspect exterior / carcasa / material", "Functionalitate generala", "Elemente mobile / mecanisme", "Cabluri / alimentare / baterie (daca exista)", "Roti / frane / componente (daca este cazul)", "Curatenie / igiena / mirosuri"]) {
+      drawWrapped(`${el}: [ ] Bun  [ ] Cu urme / uzura  - Observatii: conform fotografiilor anexate`, 9);
+    }
 
-    section("5. DECLARATII");
-    for (const d of [
+    section("5. INVENTAR SI ACCESORII PREDATE");
+    if (items.length) items.forEach((it, i) => drawWrapped(`${i + 1}. ${it} - Cant. 1 - Stare: [X] bun [ ] uzat - Observatii: conform fotografiilor`, 9));
+    else drawWrapped("Nu au fost declarate accesorii.", 9);
+
+    section("6. CONSTATAREA LA RESTITUIRE");
+    if (isRet) {
+      const disputed = rental.dispute_status === "open";
+      kv([["Data / ora restituirii", fmtDateTime(docDate)]]);
+      kv([["Stare la restituire", disputed ? "[ ] conform predarii [X] cu defecte" : "[X] conform predarii [ ] cu defecte"], ["Accesorii", disputed ? "[ ] complete [X] lipsuri" : "[X] complete [ ] lipsuri"]]);
+    } else {
+      kv([["Data / ora restituirii", "____/____/______ ora ______"]]);
+      kv([["Stare la restituire", "[ ] conform predarii [ ] cu defecte"], ["Accesorii", "[ ] complete [ ] lipsuri"]]);
+    }
+
+    section("7. DECLARATII");
+    [
       "Locatorul declara ca este proprietarul bunului sau ca are dreptul de a-l inchiria.",
-      "Locatarul confirma ca a verificat bunul si accesoriile si le primeste in starea descrisa.",
-      "La restituire, bunul se verifica prin raportare la starea consemnata la predare, tinand cont de uzura normala.",
-      "Lipsa fotografiilor duce la nulitatea procesului-verbal si la lipsa acoperirii prin asigurare.",
-    ]) drawWrapped(`- ${d}`, 9.5);
+      "Locatarul confirma ca a verificat bunul si accesoriile la preluare si ca le primeste in starea descrisa in prezentul proces-verbal.",
+      "Locatarul se obliga sa utilizeze bunul conform destinatiei sale, instructiunilor de utilizare si conditiilor convenite intre parti.",
+      "La restituire, bunul si accesoriile vor fi verificate prin raportare la starea si inventarul consemnate la predare, tinandu-se cont de uzura normala.",
+      "Orice deteriorare, pierdere sau lipsa constatata la restituire se va consemna in prezentul proces-verbal si se va solutiona conform contractului / termenilor platformei.",
+      "Procesul verbal este completat cu fotografii ale defectelor atat in cazul predarii, cat si in cazul restituirii bunului. Lipsa acestor fotografii duce la nulitatea procesului verbal si implicit la lipsa acoperirii prin asigurare.",
+    ].forEach((d, i) => drawWrapped(`${i + 1}. ${d}`, 9));
     y -= 10;
 
     // ── Signatures ────────────────────────────────────────────────────────
     newPageIfNeeded(180);
-    drawWrapped("SEMNATURI", 11, { bold: true });
+    drawWrapped(isRet ? "SEMNATURI Restituire" : "SEMNATURI Predare", 11, { bold: true });
     y -= 6;
 
     const sigBoxW = (PAGE_W - MARGIN_X * 2 - 20) / 2;
@@ -248,7 +262,7 @@ Deno.serve(async (req) => {
 
     // Owner box
     page.drawRectangle({ x: MARGIN_X, y: sigY, width: sigBoxW, height: sigBoxH, borderColor: muted, borderWidth: 0.5 });
-    page.drawText("Proprietar", { x: MARGIN_X + 6, y: sigY + sigBoxH - 12, size: 9, font: fontBold, color: ink });
+    page.drawText(isRet ? "PRIMIT DE - PROPRIETAR / LOCATOR" : "PREDAT DE - PROPRIETAR / LOCATOR", { x: MARGIN_X + 6, y: sigY + sigBoxH - 12, size: 9, font: fontBold, color: ink });
     page.drawText(noDia(owner?.full_name ?? "-"), { x: MARGIN_X + 6, y: sigY + 6, size: 8, font, color: muted });
     page.drawText(`Semnat: ${fmtDateTime(pv.owner_signed_at)}`, { x: MARGIN_X + 6, y: sigY + 16, size: 8, font, color: muted });
     await embedSig(pv.owner_signature_data, MARGIN_X, sigY);
@@ -256,7 +270,7 @@ Deno.serve(async (req) => {
     // Renter box
     const rX = MARGIN_X + sigBoxW + 20;
     page.drawRectangle({ x: rX, y: sigY, width: sigBoxW, height: sigBoxH, borderColor: muted, borderWidth: 0.5 });
-    page.drawText("Chirias", { x: rX + 6, y: sigY + sigBoxH - 12, size: 9, font: fontBold, color: ink });
+    page.drawText(isRet ? "PREDAT DE - CHIRIAS / LOCATAR" : "PRIMIT DE - CHIRIAS / LOCATAR", { x: rX + 6, y: sigY + sigBoxH - 12, size: 9, font: fontBold, color: ink });
     page.drawText(noDia(renter?.full_name ?? "-"), { x: rX + 6, y: sigY + 6, size: 8, font, color: muted });
     page.drawText(`Semnat: ${fmtDateTime(pv.renter_signed_at)}`, { x: rX + 6, y: sigY + 16, size: 8, font, color: muted });
     await embedSig(pv.renter_signature_data, rX, sigY);
