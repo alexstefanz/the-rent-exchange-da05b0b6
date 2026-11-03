@@ -392,7 +392,7 @@ export function AccountHubBody({ onNavigate, onLogout }: { onNavigate: (path: st
         )}
         {isInsurer && (
           <button
-            onClick={() => onNavigate("/portal-asigurari")}
+            onClick={() => onNavigate("/admin/asigurari")}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-0.5"
           >
             <ShieldCheck className="h-4 w-4" />
