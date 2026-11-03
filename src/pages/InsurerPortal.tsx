@@ -128,7 +128,7 @@ const InsurerPortal = () => {
       </main>
 
       <RentalDetailDialog id={selected} onClose={() => setSelected(null)} />
-    </div>
+    </AdminLayout>
   );
 };
 
