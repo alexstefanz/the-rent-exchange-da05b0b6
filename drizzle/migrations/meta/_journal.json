@@ -239,6 +239,13 @@
       "when": 1793695205261,
       "tag": "0033_insurer_portal_rpcs",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1793697307725,
+      "tag": "0034_insurer_detail_images",
+      "breakpoints": true
     }
   ]
 }

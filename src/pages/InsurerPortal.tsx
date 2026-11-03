@@ -143,8 +143,19 @@ const RentalDetailDialog = ({ id, onClose }: { id: string | null; onClose: () =>
       const v = data as any;
       const photoRefs: { phase: string; role: string; ref: string }[] = [];
       for (const i of v?.inspections ?? []) for (const p of i.photos ?? []) photoRefs.push({ phase: i.phase, role: i.role, ref: p });
-      const photos = await Promise.all(photoRefs.map(async (p) => ({ ...p, url: await getInspectionSignedUrl(p.ref) })));
-      return { ...v, photos };
+      for (const pv of v?.pvs ?? []) for (const ph of pv.photos ?? []) photoRefs.push({ phase: pv.phase, role: "pv", ref: ph });
+      const seen = new Set<string>();
+      const uniq = photoRefs.filter((p) => (seen.has(p.ref) ? false : (seen.add(p.ref), true)));
+      const photos = await Promise.all(uniq.map(async (p) => {
+        let url = await getInspectionSignedUrl(p.ref).catch(() => null);
+        if (!url && !/^https?:/.test(p.ref)) {
+          const { data } = await supabase.storage.from("rental-pvs").createSignedUrl(p.ref, 3600);
+          url = data?.signedUrl ?? null;
+        }
+        return { ...p, url: url ?? (/^https?:/.test(p.ref) ? p.ref : null) };
+      }));
+      const productImages: string[] = (v?.product?.images ?? []).filter(Boolean);
+      return { ...v, photos, productImages };
     },
   });
 
@@ -192,6 +203,17 @@ const RentalDetailDialog = ({ id, onClose }: { id: string | null; onClose: () =>
             <div className="grid sm:grid-cols-2 gap-4"><Party title="Proprietar" p={v.owner} /><Party title="Chiriaș" p={v.renter} /></div>
 
             <div>
+              <h3 className="font-semibold mb-2">Fotografii produs</h3>
+              {!v.productImages.length ? <p className="text-muted-foreground">Nicio fotografie.</p> : (
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  {v.productImages.map((u: string, i: number) => (
+                    <a key={i} href={u} target="_blank" rel="noopener noreferrer"><img src={u} alt={`Produs ${i + 1}`} loading="lazy" className="aspect-square object-cover rounded-md" /></a>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
               <h3 className="font-semibold mb-2">Procese verbale</h3>
               <div className="flex flex-wrap gap-2">
                 {(v.pvs ?? []).filter((p: any) => p.pdf_path).map((p: any) => (
@@ -205,13 +227,13 @@ const RentalDetailDialog = ({ id, onClose }: { id: string | null; onClose: () =>
             </div>
 
             <div>
-              <h3 className="font-semibold mb-2">Fotografii inspecție</h3>
+              <h3 className="font-semibold mb-2">Fotografii inspecție și PV</h3>
               {!v.photos.length ? <p className="text-muted-foreground">Nicio fotografie.</p> : (
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {v.photos.map((p: any, i: number) => p.url && (
                     <a key={i} href={p.url} target="_blank" rel="noopener noreferrer" className="block">
                       <img src={p.url} alt={`${p.phase} ${p.role}`} className="aspect-square object-cover rounded-md" />
-                      <p className="text-xs text-muted-foreground mt-1">{p.phase === "checkout" ? "Predare" : "Retur"} · {p.role === "owner" ? "proprietar" : "chiriaș"}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{["checkout", "handover"].includes(p.phase) ? "Predare" : "Retur"} · {p.role === "pv" ? "PV" : p.role === "owner" ? "proprietar" : "chiriaș"}</p>
                     </a>
                   ))}
                 </div>
