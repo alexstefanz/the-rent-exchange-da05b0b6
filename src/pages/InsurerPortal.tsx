@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Download, FileText, Loader2, Search, ShieldCheck, ShieldX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import AdminLayout from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,50 +28,7 @@ const STATUS_FILTERS = [
   { v: "cancelled", l: "Anulate" }, { v: "dispute", l: "Cu dispută" }, { v: "insured", l: "Cu taxă asigurare" },
 ];
 
-const InsurerLogin = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy(true); setErr(null);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    if (error) setErr("Email sau parolă incorecte.");
-    setBusy(false);
-  };
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="text-center">
-          <ShieldCheck className="h-10 w-10 text-primary mx-auto mb-2" />
-          <CardTitle>Portal Asigurator Rentli</CardTitle>
-          <p className="text-sm text-muted-foreground">Autentificare parteneri de asigurări</p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={submit} className="space-y-3">
-            <Input type="email" required placeholder="Email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <Input type="password" required placeholder="Parolă" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
-            {err && <p className="text-sm text-destructive">{err}</p>}
-            <Button type="submit" className="w-full" disabled={busy}>{busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Autentificare</Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-
 const InsurerPortal = () => {
-  const { user, loading } = useAuth();
-  const access = useQuery({
-    queryKey: ["insurer-access", user?.id],
-    enabled: !!user,
-    queryFn: async () => {
-      const { data } = await supabase.rpc("is_insurer_or_admin", { _uid: user!.id });
-      return !!data;
-    },
-  });
-
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [from, setFrom] = useState("");
@@ -80,7 +37,6 @@ const InsurerPortal = () => {
 
   const rentals = useQuery({
     queryKey: ["insurer-rentals", search, status, from, to],
-    enabled: access.data === true,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_insurer_rentals", {
         _search: search || null, _status: status === "all" ? null : status,
@@ -90,20 +46,6 @@ const InsurerPortal = () => {
       return (data ?? []) as Row[];
     },
   });
-
-  if (loading || (user && access.isLoading)) {
-    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  }
-  if (!user) return <InsurerLogin />;
-  if (!access.data) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-center px-4">
-        <div><ShieldX className="h-14 w-14 text-destructive mx-auto mb-3" />
-          <h1 className="text-xl font-bold">Acces restricționat</h1>
-          <p className="text-muted-foreground">Această zonă este rezervată partenerului de asigurări Rentli.</p></div>
-      </div>
-    );
-  }
 
   const rows = rentals.data ?? [];
   const totals = rows.reduce((a, r) => ({ value: a.value + Number(r.subtotal), ins: a.ins + Number(r.insurance_fee) }), { value: 0, ins: 0 });
@@ -121,9 +63,9 @@ const InsurerPortal = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-3">
+    <AdminLayout>
+      <header className="mb-6">
+        <div className="flex items-center gap-3">
           <ShieldCheck className="h-6 w-6 text-primary" />
           <div>
             <h1 className="text-lg font-bold">Portal Asigurator Rentli</h1>
@@ -132,7 +74,7 @@ const InsurerPortal = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 space-y-6">
+      <main className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-3">
           <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Închirieri în raport</p><p className="text-2xl font-bold">{rows.length}</p></CardContent></Card>
           <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Valoare chirii</p><p className="text-2xl font-bold">{ron(totals.value)}</p></CardContent></Card>
@@ -186,7 +128,7 @@ const InsurerPortal = () => {
       </main>
 
       <RentalDetailDialog id={selected} onClose={() => setSelected(null)} />
-    </div>
+    </AdminLayout>
   );
 };
 

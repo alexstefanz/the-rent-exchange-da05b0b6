@@ -200,7 +200,8 @@ const App = () => (
                 <Route path="/kyc/app-return" element={<KycAppReturn />} />
                 
                 {/* Admin routes */}
-                <Route path="/portal-asigurari" element={<InsurerPortal />} />
+                <Route path="/admin/asigurari" element={<InsurerPortal />} />
+                <Route path="/portal-asigurari" element={<Navigate to="/admin/asigurari" replace />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/notifications" element={<AdminNotifications />} />
                 <Route path="/admin/reservations" element={<AdminReservations />} />

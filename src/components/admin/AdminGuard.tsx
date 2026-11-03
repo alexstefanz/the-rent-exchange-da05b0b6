@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
+import { useIsInsurer, INSURER_HOME } from "@/hooks/queries/useIsInsurer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/queries/useAdminStats";
 import { Loader2, ShieldX } from "lucide-react";
@@ -11,9 +12,11 @@ interface AdminGuardProps {
 const AdminGuard = ({ children }: AdminGuardProps) => {
   const { user, loading: authLoading } = useAuth();
   const { data: isAdmin, isLoading: adminLoading } = useIsAdmin(user?.id);
+  const { data: isInsurer, isLoading: insurerLoading } = useIsInsurer(user?.id);
+  const location = useLocation();
 
   // Still loading auth or admin check
-  if (authLoading || adminLoading) {
+  if (authLoading || (user && (adminLoading || insurerLoading))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -26,7 +29,13 @@ const AdminGuard = ({ children }: AdminGuardProps) => {
 
   // Not logged in
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to={`/auth?redirect=${encodeURIComponent(location.pathname)}`} replace />;
+  }
+
+  // Insurer: read-only access, limited to the insurer section
+  if (!isAdmin && isInsurer) {
+    if (!location.pathname.startsWith(INSURER_HOME)) return <Navigate to={INSURER_HOME} replace />;
+    return <>{children}</>;
   }
 
   // Not admin

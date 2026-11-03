@@ -1,3 +1,6 @@
+import { useAuth } from "@/contexts/AuthContext";
+import { useIsAdmin } from "@/hooks/queries/useAdminStats";
+import { useIsInsurer, INSURER_HOME } from "@/hooks/queries/useIsInsurer";
 import { useLocation, Link } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -33,6 +36,13 @@ interface MobileAdminMenuProps {
 
 const MobileAdminMenu = ({ onClose }: MobileAdminMenuProps) => {
   const location = useLocation();
+  const { user } = useAuth();
+  const { data: isAdmin } = useIsAdmin(user?.id);
+  const { data: isInsurer } = useIsInsurer(user?.id);
+  const insurerOnly = !isAdmin && !!isInsurer;
+  const visibleItems = insurerOnly
+    ? [{ title: "Dosare închirieri", url: INSURER_HOME, icon: ShieldCheck }]
+    : menuItems;
 
   const isActive = (path: string) => {
     if (path === "/admin") return location.pathname === "/admin";
@@ -42,14 +52,14 @@ const MobileAdminMenu = ({ onClose }: MobileAdminMenuProps) => {
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b">
-        <span className="font-bold text-lg text-primary">Admin ERP</span>
+        <span className="font-bold text-lg text-primary">{insurerOnly ? "Asigurator" : "Admin ERP"}</span>
       </div>
 
       <nav className="flex-1 overflow-y-auto py-2">
         <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Meniu Principal
         </p>
-        {menuItems.map((item) => {
+        {visibleItems.map((item) => {
           const active = isActive(item.url);
           return (
             <Link

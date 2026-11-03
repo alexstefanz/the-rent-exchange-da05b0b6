@@ -1,3 +1,6 @@
+import { useAuth } from "@/contexts/AuthContext";
+import { useIsAdmin } from "@/hooks/queries/useAdminStats";
+import { useIsInsurer, INSURER_HOME } from "@/hooks/queries/useIsInsurer";
 import { useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
@@ -75,6 +78,13 @@ const AdminSidebar = () => {
   const location = useLocation();
   const currentPath = location.pathname;
   const { data: summary } = useAdminNotificationSummary();
+  const { user } = useAuth();
+  const { data: isAdmin } = useIsAdmin(user?.id);
+  const { data: isInsurer } = useIsInsurer(user?.id);
+  const insurerOnly = !isAdmin && !!isInsurer;
+  const visibleItems = insurerOnly
+    ? [{ title: "Dosare închirieri", url: INSURER_HOME, icon: ShieldCheck } as (typeof menuItems)[number]]
+    : menuItems;
 
   const isActive = (path: string) => {
     if (path === "/admin") {
@@ -90,7 +100,7 @@ const AdminSidebar = () => {
     >
       <div className="flex items-center justify-between p-4 border-b">
         {!collapsed && (
-          <span className="font-bold text-lg text-primary">Admin ERP</span>
+          <span className="font-bold text-lg text-primary">{insurerOnly ? "Asigurator" : "Admin ERP"}</span>
         )}
         <SidebarTrigger className={collapsed ? "mx-auto" : ""} />
       </div>
@@ -101,7 +111,7 @@ const AdminSidebar = () => {
 
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => {
+              {visibleItems.map((item) => {
                 const count = item.badgeKey
                   ? item.badgeKey === "pending_approvals_total"
                     ? Number(summary?.pending_products || 0) + Number(summary?.pending_cancellations || 0)
