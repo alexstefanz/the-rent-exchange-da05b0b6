@@ -117,6 +117,7 @@ const AdminActivityLog = lazyWithRetry(() => import("./pages/admin/AdminActivity
 const AdminNotificationAudit = lazyWithRetry(() => import("./pages/admin/AdminNotificationAudit"));
 const AdminWithdrawals = lazyWithRetry(() => import("./pages/admin/AdminWithdrawals"));
 const AdminReports = lazyWithRetry(() => import("./pages/admin/AdminReports"));
+const InsurerPortal = lazyWithRetry(() => import("./pages/InsurerPortal"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -199,6 +200,7 @@ const App = () => (
                 <Route path="/kyc/app-return" element={<KycAppReturn />} />
                 
                 {/* Admin routes */}
+                <Route path="/portal-asigurari" element={<InsurerPortal />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/notifications" element={<AdminNotifications />} />
                 <Route path="/admin/reservations" element={<AdminReservations />} />

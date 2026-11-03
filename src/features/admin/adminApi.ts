@@ -191,7 +191,7 @@ export const updateRentalStatus = async (
 
 export const updateUserRole = async (
   userId: string,
-  role: 'admin' | 'moderator' | 'user'
+  role: 'admin' | 'moderator' | 'user' | 'insurer'
 ): Promise<void> => {
   const { data: existing } = await supabase
     .from('user_roles')
