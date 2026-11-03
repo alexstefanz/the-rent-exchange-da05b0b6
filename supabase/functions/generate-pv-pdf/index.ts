@@ -159,62 +159,67 @@ Deno.serve(async (req) => {
     page.drawText("Marketplace pentru inchirieri in Romania", { x: MARGIN_X + 70, y: PAGE_H - 23, size: 9, font, color: rgb(1, 1, 1) });
 
     y = PAGE_H - 70;
-    const title = phase === "handover" ? "PROCES-VERBAL DE PREDARE-PRIMIRE" : "PROCES-VERBAL DE RETURNARE";
-    page.drawText(title, { x: MARGIN_X, y, size: 16, font: fontBold, color: ink });
-    y -= 22;
-    page.drawText(`Rezervare: ${rental.public_id ?? rental.id.slice(0, 8)}  |  Generat: ${fmtDateTime(new Date().toISOString())}`,
-      { x: MARGIN_X, y, size: 9, font, color: muted });
-    y -= 24;
+    const isRet = phase === "return";
+    const title = isRet ? "PROCES-VERBAL DE PREDARE-PRIMIRE (RESTITUIRE)" : "PROCES-VERBAL DE PREDARE-PRIMIRE";
+    page.drawText(title, { x: MARGIN_X, y, size: 15, font: fontBold, color: ink });
+    y -= 18;
+    page.drawText("BUN / OBIECT INCHIRIAT - PLATFORMA DE INCHIRIERE INTRE PERSOANE", { x: MARGIN_X, y, size: 8.5, font, color: muted });
+    y -= 16;
+    const signedTs = [pv.owner_signed_at, pv.renter_signed_at].filter(Boolean).map((d: string) => new Date(d).getTime());
+    const docDate = signedTs.length ? new Date(Math.max(...signedTs)).toISOString() : new Date().toISOString();
+    drawWrapped(
+      `Nr. proces-verbal: ${rental.public_id ?? rental.id.slice(0, 8)}-${isRet ? "R" : "P"}   Data: ${fmtDateTime(docDate)}   Locul predarii: ${rental.pickup_location ?? "-"}`,
+      9, { color: muted }
+    );
+    y -= 10;
 
-    // ── Parties ───────────────────────────────────────────────────────────
-    drawWrapped("PARTILE CONTRACTANTE", 11, { bold: true });
-    y -= 4;
-    drawWrapped(
-      `Proprietar: ${owner?.full_name ?? "-"}, telefon ${owner?.phone ?? "-"}, email ${owner?.email ?? "-"}.`,
-      10
-    );
-    drawWrapped(
-      `Chirias: ${renter?.full_name ?? "-"}, telefon ${renter?.phone ?? "-"}, email ${renter?.email ?? "-"}.`,
-      10
-    );
-    y -= 8;
+    const money = (n: unknown) => `${Number(n ?? 0).toFixed(2)} RON`;
+    const subtotal = Number(rental.subtotal ?? 0);
+    const platformFee = Number(rental.platform_fee ?? 0);
+    const stripeFee = Number(rental.stripe_fee ?? 0);
+    const insuranceFee = Number(rental.insurance_fee ?? 0);
+    const total = Math.round((subtotal + platformFee + stripeFee + insuranceFee) * 100) / 100;
 
-    // ── Object ────────────────────────────────────────────────────────────
-    drawWrapped("OBIECTUL INCHIRIERII", 11, { bold: true });
-    y -= 4;
-    drawWrapped(
-      `Produs: ${product?.title ?? "-"}${product?.category ? ` (categoria ${product.category})` : ""}.`,
-      10
-    );
-    drawWrapped(
-      `Perioada: ${fmtDate(rental.start_date)} - ${fmtDate(rental.end_date)} (${rental.rental_days} zile).`,
-      10
-    );
-    drawWrapped(
-      `Pret: ${rental.daily_price ?? product?.daily_price_owner ?? 0} RON/zi  |  Subtotal: ${rental.subtotal ?? 0} RON.`,
-      10
-    );
+    const section = (h: string) => { y -= 4; drawWrapped(h, 11, { bold: true, color: accent }); y -= 2; };
+
+    section("1. PARTILE");
+    drawWrapped(`PROPRIETAR / LOCATOR - ${owner?.full_name ?? "-"}; Telefon: ${owner?.phone ?? "-"}; E-mail: ${owner?.email ?? "-"}; identitate verificata prin Rentli (Stripe Identity).`, 10);
+    drawWrapped(`CHIRIAS / LOCATAR - ${renter?.full_name ?? "-"}; Telefon: ${renter?.phone ?? "-"}; E-mail: ${renter?.email ?? "-"}; identitate verificata prin Rentli (Stripe Identity).`, 10);
+
+    section("2. DATELE INCHIRIERII");
+    drawWrapped(`Bunul inchiriat: ${product?.title ?? "-"}${product?.category ? ` (categoria ${product.category})` : ""}`, 10);
+    drawWrapped(`Perioada: ${fmtDate(rental.start_date)} ora ${rental.pickup_time ?? "10:00"} - ${fmtDate(rental.end_date)} ora 18:00 (${rental.rental_days} zile)`, 10);
+    drawWrapped(`Nr. contract: ${rental.public_id ?? "-"}`, 10);
+    drawWrapped(`Pret inchiriere/zi: ${money(rental.daily_price ?? product?.daily_price_owner)}`, 10);
+    drawWrapped(`Subtotal inchiriere: ${money(subtotal)}`, 10);
+    drawWrapped(`Comision platforma (platit de chirias): ${money(platformFee)}`, 10);
+    drawWrapped(`Taxa Stripe (platita de chirias): ${money(stripeFee)}`, 10);
+    if (insuranceFee > 0) drawWrapped(`Taxa asigurare (platita de chirias): ${money(insuranceFee)}`, 10);
+    drawWrapped(`Total pentru chirias (taxe incluse): ${money(total)}`, 10, { bold: true });
+
+    section("3. IDENTIFICAREA BUNULUI");
+    drawWrapped(`Denumire / model: ${product?.title ?? "-"}`, 10);
+    drawWrapped(`Suma asigurata: ${product?.deposit_value ? `${product.deposit_value} lei` : "-"}`, 10);
     const items = (product?.included_items as string[] | null) || [];
-    if (items.length) {
-      drawWrapped(`Accesorii incluse: ${items.join(", ")}.`, 10);
-    }
-    y -= 8;
+    drawWrapped(`Accesorii incluse: ${items.length ? items.join(", ") : "-"}`, 10);
 
-    // ── Clauses ───────────────────────────────────────────────────────────
+    section(isRet ? "4. STAREA BUNULUI LA RESTITUIRE" : "4. STAREA BUNULUI LA PREDARE");
     drawWrapped(
-      phase === "handover" ? "DECLARATIE LA PREDARE" : "DECLARATIE LA RETURNARE",
-      11, { bold: true }
-    );
-    y -= 4;
-    drawWrapped(
-      phase === "handover"
-        ? "Chiriasul declara ca a verificat bunul si il accepta in starea documentata prin fotografiile anexate in platforma Rentli, obligandu-se sa il utilizeze conform destinatiei sale, sa il pastreze in bune conditii si sa il returneze la termenul stabilit, in aceeasi stare, cu exceptia uzurii normale."
-        : "Chiriasul restituie bunul catre Proprietar, iar Proprietarul confirma primirea acestuia in starea documentata prin fotografiile anexate in platforma Rentli. Eventualele daune constatate la momentul returnarii vor fi reglementate prin intermediul platformei Rentli, conform termenilor si conditiilor agreate.",
+      isRet
+        ? "Chiriasul restituie bunul catre Proprietar, iar Proprietarul confirma primirea acestuia in starea documentata prin fotografiile anexate. Eventualele daune constatate se reglementeaza prin platforma Rentli."
+        : "Chiriasul declara ca a verificat bunul si il accepta in starea documentata prin fotografiile anexate, obligandu-se sa il utilizeze conform destinatiei si sa il returneze la termen, in aceeasi stare, cu exceptia uzurii normale.",
       10
     );
-    y -= 6;
-    drawWrapped(`Fotografii anexate in platforma: ${(pv.photos || []).length} buc.`, 10, { color: muted });
-    y -= 14;
+    drawWrapped(`Fotografii anexate in platforma: ${(pv.photos_meta || pv.photos || []).length} buc.`, 10, { color: muted });
+
+    section("5. DECLARATII");
+    for (const d of [
+      "Locatorul declara ca este proprietarul bunului sau ca are dreptul de a-l inchiria.",
+      "Locatarul confirma ca a verificat bunul si accesoriile si le primeste in starea descrisa.",
+      "La restituire, bunul se verifica prin raportare la starea consemnata la predare, tinand cont de uzura normala.",
+      "Lipsa fotografiilor duce la nulitatea procesului-verbal si la lipsa acoperirii prin asigurare.",
+    ]) drawWrapped(`- ${d}`, 9.5);
+    y -= 10;
 
     // ── Signatures ────────────────────────────────────────────────────────
     newPageIfNeeded(180);
@@ -245,7 +250,7 @@ Deno.serve(async (req) => {
     page.drawRectangle({ x: MARGIN_X, y: sigY, width: sigBoxW, height: sigBoxH, borderColor: muted, borderWidth: 0.5 });
     page.drawText("Proprietar", { x: MARGIN_X + 6, y: sigY + sigBoxH - 12, size: 9, font: fontBold, color: ink });
     page.drawText(noDia(owner?.full_name ?? "-"), { x: MARGIN_X + 6, y: sigY + 6, size: 8, font, color: muted });
-    page.drawText(`Semnat: ${fmtDateTime(pv.owner_signed_at)}`, { x: MARGIN_X + sigBoxW - 160, y: sigY + 6, size: 8, font, color: muted });
+    page.drawText(`Semnat: ${fmtDateTime(pv.owner_signed_at)}`, { x: MARGIN_X + 6, y: sigY + 16, size: 8, font, color: muted });
     await embedSig(pv.owner_signature_data, MARGIN_X, sigY);
 
     // Renter box
@@ -253,7 +258,7 @@ Deno.serve(async (req) => {
     page.drawRectangle({ x: rX, y: sigY, width: sigBoxW, height: sigBoxH, borderColor: muted, borderWidth: 0.5 });
     page.drawText("Chirias", { x: rX + 6, y: sigY + sigBoxH - 12, size: 9, font: fontBold, color: ink });
     page.drawText(noDia(renter?.full_name ?? "-"), { x: rX + 6, y: sigY + 6, size: 8, font, color: muted });
-    page.drawText(`Semnat: ${fmtDateTime(pv.renter_signed_at)}`, { x: rX + sigBoxW - 160, y: sigY + 6, size: 8, font, color: muted });
+    page.drawText(`Semnat: ${fmtDateTime(pv.renter_signed_at)}`, { x: rX + 6, y: sigY + 16, size: 8, font, color: muted });
     await embedSig(pv.renter_signature_data, rX, sigY);
 
     y = sigY - 16;

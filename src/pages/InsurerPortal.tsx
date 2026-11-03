@@ -217,7 +217,7 @@ const RentalDetailDialog = ({ id, onClose }: { id: string | null; onClose: () =>
               <h3 className="font-semibold mb-2">Procese verbale</h3>
               <div className="flex flex-wrap gap-2">
                 {(v.pvs ?? []).filter((p: any) => p.pdf_path).map((p: any) => (
-                  <Button key={p.pdf_path} size="sm" variant="outline" onClick={() => openPv(p.pdf_path)}><FileText className="h-4 w-4 mr-1" />PV {p.phase === "checkout" ? "predare" : "retur"}</Button>
+                  <Button key={p.pdf_path} size="sm" variant="outline" onClick={() => openPv(p.pdf_path)}><FileText className="h-4 w-4 mr-1" />PV {["checkout", "handover"].includes(p.phase) ? "predare" : "retur"}</Button>
                 ))}
                 {(v.physical_pvs ?? []).map((p: any) => (
                   <Button key={p.file_path} size="sm" variant="outline" onClick={() => openPv(p.file_path)}><FileText className="h-4 w-4 mr-1" />PV fizic {p.phase} ({p.status})</Button>
