@@ -34,6 +34,7 @@ const roleLabels: Record<string, { label: string; icon: React.ReactNode }> = {
   admin: { label: "Admin", icon: <Shield className="h-4 w-4" /> },
   moderator: { label: "Moderator", icon: <ShieldCheck className="h-4 w-4" /> },
   user: { label: "Utilizator", icon: <User className="h-4 w-4" /> },
+  insurer: { label: "Asigurator", icon: <Building2 className="h-4 w-4" /> },
 };
 
 const useAdminUserDetail = (userId: string | undefined) => {
@@ -102,7 +103,7 @@ const AdminUserDetail = () => {
     queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
   };
 
-  const handleRoleChange = async (role: 'admin' | 'moderator' | 'user') => {
+  const handleRoleChange = async (role: 'admin' | 'moderator' | 'user' | 'insurer') => {
     if (!id) return;
     setUpdatingRole(true);
     try {
@@ -345,7 +346,7 @@ const AdminUserDetail = () => {
                 <div>
                   <p className="text-xs text-muted-foreground mb-2">Schimbă rolul:</p>
                   <div className="flex flex-wrap gap-2">
-                    {(['user', 'moderator', 'admin'] as const).map((role) => (
+                    {(['user', 'moderator', 'insurer', 'admin'] as const).map((role) => (
                       <Button
                         key={role}
                         variant={userDetail.user_role === role ? 'default' : 'outline'}

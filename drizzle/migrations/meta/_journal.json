@@ -225,6 +225,20 @@
       "when": 1793433854814,
       "tag": "0031_kb_remove_free_listings_text",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1793695176471,
+      "tag": "0032_add_insurer_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1793695205261,
+      "tag": "0033_insurer_portal_rpcs",
+      "breakpoints": true
     }
   ]
 }

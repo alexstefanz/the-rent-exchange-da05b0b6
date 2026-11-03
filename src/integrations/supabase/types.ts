@@ -3302,6 +3302,35 @@ export type Database = {
         }
       }
       get_identity_verified: { Args: { _user_id: string }; Returns: boolean }
+      get_insurer_rental_detail: { Args: { _rental_id: string }; Returns: Json }
+      get_insurer_rentals: {
+        Args: {
+          _from?: string
+          _limit?: number
+          _search?: string
+          _status?: string
+          _to?: string
+        }
+        Returns: {
+          created_at: string
+          deposit_value: number
+          dispute_status: string
+          end_date: string
+          id: string
+          insurance_fee: number
+          owner_name: string
+          payment_status: string
+          platform_fee: number
+          product_title: string
+          public_id: string
+          rental_days: number
+          renter_name: string
+          start_date: string
+          status: string
+          stripe_fee: number
+          subtotal: number
+        }[]
+      }
       get_my_product_serial: { Args: { _id: string }; Returns: string }
       get_my_products_sensitive: {
         Args: never
@@ -3657,6 +3686,7 @@ export type Database = {
         Args: { _body?: Json; _fn_name: string }
         Returns: undefined
       }
+      is_insurer_or_admin: { Args: { _uid: string }; Returns: boolean }
       is_user_banned: { Args: { _user_id: string }; Returns: boolean }
       is_user_favorite: { Args: { target_user_id: string }; Returns: boolean }
       kb_record_view: { Args: { p_slug: string }; Returns: undefined }
@@ -3895,7 +3925,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "insurer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -4023,7 +4053,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "insurer"],
     },
   },
 } as const
