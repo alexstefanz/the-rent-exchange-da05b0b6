@@ -35,6 +35,8 @@ import { useIsBanned } from "@/hooks/useIsBanned";
 import { BannedBadge } from "@/components/common/BannedBadge";
 import { BannedBanner } from "@/components/common/BannedBanner";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { RoleMenuCards } from "./RoleMenuCards";
 
 /* ---------- helpers ---------- */
