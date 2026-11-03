@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { Download, FileText, Loader2, Search, ShieldCheck, ShieldX } from "lucide-react";
@@ -28,6 +27,39 @@ const STATUS_FILTERS = [
   { v: "all", l: "Toate" }, { v: "active", l: "Active" }, { v: "completed", l: "Finalizate" },
   { v: "cancelled", l: "Anulate" }, { v: "dispute", l: "Cu dispută" }, { v: "insured", l: "Cu taxă asigurare" },
 ];
+
+const InsurerLogin = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true); setErr(null);
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    if (error) setErr("Email sau parolă incorecte.");
+    setBusy(false);
+  };
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="text-center">
+          <ShieldCheck className="h-10 w-10 text-primary mx-auto mb-2" />
+          <CardTitle>Portal Asigurator Rentli</CardTitle>
+          <p className="text-sm text-muted-foreground">Autentificare parteneri de asigurări</p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={submit} className="space-y-3">
+            <Input type="email" required placeholder="Email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input type="password" required placeholder="Parolă" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            {err && <p className="text-sm text-destructive">{err}</p>}
+            <Button type="submit" className="w-full" disabled={busy}>{busy && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Autentificare</Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
 const InsurerPortal = () => {
   const { user, loading } = useAuth();
@@ -62,7 +94,7 @@ const InsurerPortal = () => {
   if (loading || (user && access.isLoading)) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
-  if (!user) return <Navigate to="/auth?redirect=/portal-asigurari" replace />;
+  if (!user) return <InsurerLogin />;
   if (!access.data) {
     return (
       <div className="min-h-screen flex items-center justify-center text-center px-4">
