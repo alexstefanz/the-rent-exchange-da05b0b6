@@ -17,3 +17,28 @@ describe("PV reservation charges", () => {
     assert.equal(getPvFinancials({ subtotal: 100, platform_fee: 15, stripe_fee: 2.61, insurance_fee: 0 }).insuranceFee, 0);
   });
 });
+import { buildPvRichContent } from "./pvContent";
+
+const rental: any = {
+  public_id: "RNT-000001", owner_name: "Ion", renter_name: "Ana", start_date: "2026-11-01", end_date: "2026-11-03",
+  rental_days: 2, daily_price: 10, subtotal: 20, platform_fee: 3, stripe_fee: 1.28, insurance_fee: 0,
+  product_title: "Cort", product_category: "Camping", product_included_items: ["Husa"], dispute_status: null,
+};
+
+describe("PV follows the official template", () => {
+  test("handover: sections in template order, live signatures after section 5", () => {
+    const c = buildPvRichContent(rental, "handover");
+    assert.deepEqual(c.sections.map((s) => s.heading), [
+      "1. PARTILE", "2. DATELE INCHIRIERII", "3. IDENTIFICAREA BUNULUI", "4. STAREA BUNULUI LA PREDARE",
+      "5. INVENTAR SI ACCESORII PREDATE", "6. CONSTATAREA LA RESTITUIRE", "SEMNATURI Restituire", "7. DECLARATII",
+    ]);
+    assert.equal(c.sections.find((s) => s.signaturesAfter)?.heading, "5. INVENTAR SI ACCESORII PREDATE");
+    assert.equal(c.signatures.left.party, "owner");
+  });
+  test("return: live signatures after section 6, renter hands over", () => {
+    const c = buildPvRichContent(rental, "return");
+    assert.equal(c.sections.find((s) => s.signaturesAfter)?.heading, "6. CONSTATAREA LA RESTITUIRE");
+    assert.equal(c.signatures.left.party, "renter");
+    assert.equal(c.title, "PROCES-VERBAL DE PREDARE-PRIMIRE (RESTITUIRE)");
+  });
+});
