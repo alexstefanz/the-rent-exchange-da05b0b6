@@ -250,7 +250,7 @@ Deno.serve(async (req) => {
     page.drawRectangle({ x: MARGIN_X, y: sigY, width: sigBoxW, height: sigBoxH, borderColor: muted, borderWidth: 0.5 });
     page.drawText("Proprietar", { x: MARGIN_X + 6, y: sigY + sigBoxH - 12, size: 9, font: fontBold, color: ink });
     page.drawText(noDia(owner?.full_name ?? "-"), { x: MARGIN_X + 6, y: sigY + 6, size: 8, font, color: muted });
-    page.drawText(`Semnat: ${fmtDateTime(pv.owner_signed_at)}`, { x: MARGIN_X + sigBoxW - 160, y: sigY + 6, size: 8, font, color: muted });
+    page.drawText(`Semnat: ${fmtDateTime(pv.owner_signed_at)}`, { x: MARGIN_X + 6, y: sigY + 16, size: 8, font, color: muted });
     await embedSig(pv.owner_signature_data, MARGIN_X, sigY);
 
     // Renter box
@@ -258,7 +258,7 @@ Deno.serve(async (req) => {
     page.drawRectangle({ x: rX, y: sigY, width: sigBoxW, height: sigBoxH, borderColor: muted, borderWidth: 0.5 });
     page.drawText("Chirias", { x: rX + 6, y: sigY + sigBoxH - 12, size: 9, font: fontBold, color: ink });
     page.drawText(noDia(renter?.full_name ?? "-"), { x: rX + 6, y: sigY + 6, size: 8, font, color: muted });
-    page.drawText(`Semnat: ${fmtDateTime(pv.renter_signed_at)}`, { x: rX + sigBoxW - 160, y: sigY + 6, size: 8, font, color: muted });
+    page.drawText(`Semnat: ${fmtDateTime(pv.renter_signed_at)}`, { x: rX + 6, y: sigY + 16, size: 8, font, color: muted });
     await embedSig(pv.renter_signature_data, rX, sigY);
 
     y = sigY - 16;
