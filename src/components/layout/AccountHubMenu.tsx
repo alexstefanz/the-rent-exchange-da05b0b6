@@ -253,6 +253,14 @@ export function AccountHubBody({ onNavigate, onLogout }: { onNavigate: (path: st
   const { data, isLoading } = useAccountDashboard();
   const { data: walletBalance } = useWalletBalance();
   const { data: isAdmin } = useIsAdmin(user?.id);
+  const { data: isInsurer } = useQuery({
+    queryKey: ["is-insurer", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase.rpc("has_role", { _user_id: user!.id, _role: "insurer" as never });
+      return !!data;
+    },
+  });
   const { data: drawerStats } = useDrawerStats(user?.id);
   const openTickets = drawerStats?.openTickets ?? 0;
   const { isBanned } = useIsBanned();
@@ -378,6 +386,15 @@ export function AccountHubBody({ onNavigate, onLogout }: { onNavigate: (path: st
           >
             <ShieldCheck className="h-4 w-4" />
             <span className="whitespace-nowrap">{t("Panou Admin", "Admin Panel")}</span>
+          </button>
+        )}
+        {isInsurer && (
+          <button
+            onClick={() => onNavigate("/portal-asigurari")}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:-translate-y-0.5"
+          >
+            <ShieldCheck className="h-4 w-4" />
+            <span className="whitespace-nowrap">{t("Portal Asigurator", "Insurer Portal")}</span>
           </button>
         )}
       </div>
