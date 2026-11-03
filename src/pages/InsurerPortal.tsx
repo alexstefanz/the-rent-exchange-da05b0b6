@@ -62,7 +62,7 @@ const InsurerPortal = () => {
   if (loading || (user && access.isLoading)) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!user) return <Navigate to="/auth?redirect=/portal-asigurari" replace />;
   if (!access.data) {
     return (
       <div className="min-h-screen flex items-center justify-center text-center px-4">

@@ -193,8 +193,12 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    if (user && !isResetMode && !phoneOtpOpen && !gatingLogin) navigate("/", { replace: true });
-  }, [user, navigate, isResetMode, phoneOtpOpen, gatingLogin]);
+    if (user && !isResetMode && !phoneOtpOpen && !gatingLogin) {
+      const r = searchParams.get("redirect");
+      const safe = r && r.startsWith("/") && !r.startsWith("//") ? r : "/";
+      navigate(safe, { replace: true });
+    }
+  }, [user, navigate, isResetMode, phoneOtpOpen, gatingLogin, searchParams]);
 
   const handleLogin = async (data: LoginFormData) => {
     setLoginError(null);
