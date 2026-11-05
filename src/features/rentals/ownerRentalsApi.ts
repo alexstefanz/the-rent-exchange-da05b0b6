@@ -64,11 +64,7 @@ export async function respondToRental(rentalId: string, action: "accept" | "reje
     let body: any = null;
     try { body = await (error as any).context?.json?.(); } catch { /* ignore */ }
     if (body?.code === "KYC_REQUIRED") {
-      toast.error("Verifică-ți identitatea pentru a accepta prima închiriere", {
-        description: "Cererea rămâne în așteptare. După verificare o poți accepta imediat.",
-        duration: 12000,
-        action: { label: "Verifică acum", onClick: () => { window.location.href = "/verificare"; } },
-      });
+      window.dispatchEvent(new CustomEvent("rentli:kyc-required"));
       const err: any = new Error("KYC_REQUIRED");
       err.kyc = true;
       throw err;
