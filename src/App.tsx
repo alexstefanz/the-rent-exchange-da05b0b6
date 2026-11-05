@@ -22,6 +22,7 @@ const IdentityVerification = lazyWithRetry(() => import("./pages/IdentityVerific
 const PhoneVerificationRequiredModal = lazyWithRetry(() => import("./components/profile/PhoneVerificationRequiredModal"));
 const FullNameConfirmDialog = lazyWithRetry(() => import("./components/profile/FullNameConfirmDialog"));
 const RentalPopupManager = lazyWithRetry(() => import("./components/rentals/RentalPopupManager"));
+import { KycRequiredListener } from "./components/trust/IdentityRequiredDialog";
 
 const ConditionalWidgets = () => {
   const { pathname } = useLocation();
@@ -144,6 +145,7 @@ const App = () => (
               <ConditionalWidgets />
               
               <RentalPopupManager />
+              <KycRequiredListener />
               <PhoneVerificationRequiredModal />
               <FullNameConfirmDialog />
             </Suspense>
