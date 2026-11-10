@@ -1,4 +1,5 @@
 import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
+import { requireServiceCaller, unauthorizedResponse } from "../_shared/authGuard.ts";
 // Cron-invoked: notifies both parties ~12h before agreed pickup time.
 // Idempotent via rentals.pickup_reminder_sent_at.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
@@ -11,6 +12,8 @@ const corsHeaders = {
 };
 
 Deno.serve(withCors(async (req) => {
+  // Cron/internal only: service-role key required.
+  if (!(await requireServiceCaller(req))) return unauthorizedResponse({ "Content-Type": "application/json" });
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

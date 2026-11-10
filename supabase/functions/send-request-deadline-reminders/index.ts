@@ -1,4 +1,5 @@
 import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
+import { requireServiceCaller, unauthorizedResponse } from "../_shared/authGuard.ts";
 // Cron-invoked (every 15 min): for rentals stuck in `pending`:
 //   - at 22h since created_at → send `request_reminder_2h` (in_app + email + SMS) to owner + renter
 //   - at 24h since created_at → auto-cancel + release Stripe hold + send `request_expired`
@@ -13,6 +14,8 @@ const corsHeaders = {
 };
 
 Deno.serve(withCors(async (req) => {
+  // Cron/internal only: service-role key required.
+  if (!(await requireServiceCaller(req))) return unauthorizedResponse({ "Content-Type": "application/json" });
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const url = new URL(req.url);

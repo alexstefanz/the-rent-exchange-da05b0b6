@@ -1,4 +1,5 @@
 import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
+import { requireServiceCaller, unauthorizedResponse } from "../_shared/authGuard.ts";
 // Cron-invoked hourly: notifies both parties ~2h before rental deadline (22:00 Europe/Bucharest on end_date).
 // Idempotent via notification_audit_log (event_key = return_reminder_2h).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
@@ -27,6 +28,8 @@ function bucharestNowParts(): { hour: number; date: string } {
 }
 
 Deno.serve(withCors(async (req) => {
+  // Cron/internal only: service-role key required.
+  if (!(await requireServiceCaller(req))) return unauthorizedResponse({ "Content-Type": "application/json" });
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {

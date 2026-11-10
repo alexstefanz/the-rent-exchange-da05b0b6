@@ -1,4 +1,5 @@
 import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
+import { requireServiceCaller, unauthorizedResponse } from "../_shared/authGuard.ts";
 import { invokeAppEmail } from '../_shared/transactional-email-templates/send-app-email.ts'
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
@@ -9,6 +10,8 @@ const corsHeaders = {
 };
 
 Deno.serve(withCors(async (req) => {
+  // Cron/internal only: service-role key required.
+  if (!(await requireServiceCaller(req))) return unauthorizedResponse({ "Content-Type": "application/json" });
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {

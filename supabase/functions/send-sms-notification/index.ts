@@ -1,4 +1,5 @@
 import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
+import { normalizePhoneRO } from "../_shared/phone.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireCaller, unauthorizedResponse } from "../_shared/authGuard.ts";
 
@@ -140,25 +141,6 @@ function stripDiacritics(s: string): string {
     .replace(/[țţ]/gi, "t");
 }
 
-/**
- * Normalize Romanian phone numbers to +40XXXXXXXXX (E.164 minus spaces).
- * Returns null if invalid.
- */
-function normalizePhoneRO(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  let p = raw.trim().replace(/[\s()-]/g, "");
-  if (!p) return null;
-
-  // Already +40XXXXXXXXX
-  if (/^\+40[0-9]{9}$/.test(p)) return p;
-  // 0040XXXXXXXXX -> +40...
-  if (/^0040[0-9]{9}$/.test(p)) return "+" + p.slice(2);
-  // 40XXXXXXXXX -> +40...
-  if (/^40[0-9]{9}$/.test(p)) return "+" + p;
-  // 0XXXXXXXXX (national) -> +40XXXXXXXXX
-  if (/^0[0-9]{9}$/.test(p)) return "+40" + p.slice(1);
-  return null;
-}
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {

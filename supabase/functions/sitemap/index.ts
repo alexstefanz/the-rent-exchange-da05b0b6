@@ -125,4 +125,4 @@ Deno.serve(withCors(async (req) => {
     console.error("[sitemap] error", e);
     return new Response("sitemap unavailable", { status: 500 });
   }
-}, "POST, OPTIONS"));
+}, "GET, POST, OPTIONS"));

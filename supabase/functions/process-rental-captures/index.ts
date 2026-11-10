@@ -1,4 +1,5 @@
 import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
+import { requireServiceCaller, unauthorizedResponse } from "../_shared/authGuard.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
@@ -13,6 +14,8 @@ const corsHeaders = {
  * all authorized rentals whose end_date has passed.
  */
 serve(withCors(async (req) => {
+  // Cron/internal only: service-role key required.
+  if (!(await requireServiceCaller(req))) return unauthorizedResponse({ "Content-Type": "application/json" });
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }

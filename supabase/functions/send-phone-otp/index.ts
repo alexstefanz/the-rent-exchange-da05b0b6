@@ -1,4 +1,5 @@
 import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
+import { normalizePhoneRO } from "../_shared/phone.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -9,16 +10,6 @@ const corsHeaders = {
 
 const SMS_API_URL = "https://smsalert.mobi/api/v2/message/send";
 
-function normalizePhoneRO(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  let p = raw.trim().replace(/[\s()-]/g, "");
-  if (!p) return null;
-  if (/^\+40[0-9]{9}$/.test(p)) return p;
-  if (/^0040[0-9]{9}$/.test(p)) return "+" + p.slice(2);
-  if (/^40[0-9]{9}$/.test(p)) return "+" + p;
-  if (/^0[0-9]{9}$/.test(p)) return "+40" + p.slice(1);
-  return null;
-}
 
 async function sha256(input: string): Promise<string> {
   const buf = new TextEncoder().encode(input);
