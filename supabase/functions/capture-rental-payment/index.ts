@@ -138,7 +138,7 @@ async function captureRental(
   if (!rental) {
     const { data, error } = await supabaseAdmin
       .from("rentals")
-      .select("id, payment_intent_id, end_date, owner_id, owner_payout, subtotal, platform_fee, product_id, is_test_payment")
+      .select("id, payment_intent_id, end_date, owner_id, owner_payout, subtotal, platform_fee, product_id, is_test_payment, payment_status")
       .eq("id", rentalId)
       .single();
     if (error || !data) return { rental_id: rentalId, error: "Rental not found" };
