@@ -203,7 +203,7 @@ serve(withCors(async (req) => {
     });
   } catch (error) {
     console.error("create-test-checkout-session error:", error);
-    return new Response(JSON.stringify({ error: (error as Error).message }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

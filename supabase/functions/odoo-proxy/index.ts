@@ -160,7 +160,7 @@ serve(withCors(async (req) => {
         );
       } catch (err) {
         return new Response(
-          JSON.stringify({ success: false, connected: false, error: err.message }),
+          JSON.stringify({ success: false, connected: false, error: "Internal server error" }),
           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -256,7 +256,7 @@ serve(withCors(async (req) => {
   } catch (error) {
     console.error("[odoo-proxy] Unexpected error:", error.message);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

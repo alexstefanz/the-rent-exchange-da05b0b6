@@ -144,7 +144,7 @@ Deno.serve(withCors(async (req) => {
   } catch (e) {
     console.error("send-request-deadline-reminders error", e);
     return new Response(
-      JSON.stringify({ ok: false, error: (e as Error).message, ...summary }),
+      JSON.stringify({ ok: false, error: "Internal server error", ...summary }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }

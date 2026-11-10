@@ -150,7 +150,7 @@ serve(withCors(async (req) => {
       .update(updates)
       .eq("id", rentalId);
     if (uErr) {
-      return new Response(JSON.stringify({ error: "update_failed", detail: uErr.message }), {
+      return new Response(JSON.stringify({ error: "update_failed" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -164,7 +164,7 @@ serve(withCors(async (req) => {
     });
   } catch (e) {
     console.error("request-early-return error", e);
-    return new Response(JSON.stringify({ error: "internal_error", detail: (e as Error).message }), {
+    return new Response(JSON.stringify({ error: "internal_error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

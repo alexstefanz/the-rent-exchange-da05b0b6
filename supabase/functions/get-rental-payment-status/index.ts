@@ -268,7 +268,7 @@ serve(withCors(async (req) => {
     });
   } catch (e: any) {
     console.error("get-rental-payment-status error", e);
-    return new Response(JSON.stringify({ error: e?.message ?? "Internal error" }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

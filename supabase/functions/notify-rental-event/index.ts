@@ -555,7 +555,7 @@ Deno.serve(withCors(async (req) => {
     });
   } catch (e) {
     console.error("[notify-rental-event] error:", e);
-    return new Response(JSON.stringify({ error: String((e as Error).message) }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

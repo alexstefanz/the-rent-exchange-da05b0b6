@@ -129,7 +129,7 @@ Deno.serve(withCors(async (req) => {
     if (updateErr) {
       console.error("[respond-rental-request] rental update failed:", updateErr);
       return new Response(
-        JSON.stringify({ error: updateErr.message || "Rental update failed" }),
+        JSON.stringify({ error: "Rental update failed" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }

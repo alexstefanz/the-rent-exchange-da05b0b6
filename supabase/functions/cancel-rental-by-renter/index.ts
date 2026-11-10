@@ -315,7 +315,7 @@ serve(withCors(async (req) => {
     );
   } catch (e) {
     console.error("cancel-rental-by-renter error", e);
-    return new Response(JSON.stringify({ error: "internal_error", detail: (e as Error).message }), {
+    return new Response(JSON.stringify({ error: "internal_error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

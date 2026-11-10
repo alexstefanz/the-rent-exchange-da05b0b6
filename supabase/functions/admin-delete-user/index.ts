@@ -110,7 +110,7 @@ Deno.serve(withCors(async (req) => {
     // Finally delete auth user
     const { error: delErr } = await admin.auth.admin.deleteUser(targetUserId)
     if (delErr) {
-      return new Response(JSON.stringify({ error: delErr.message, cleanup }), {
+      return new Response(JSON.stringify({ error: "Delete failed", cleanup }), {
         status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -119,7 +119,7 @@ Deno.serve(withCors(async (req) => {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (e) {
-    return new Response(JSON.stringify({ error: (e as Error).message }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }

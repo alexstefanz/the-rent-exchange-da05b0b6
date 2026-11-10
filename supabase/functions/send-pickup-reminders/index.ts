@@ -70,7 +70,7 @@ Deno.serve(withCors(async (req) => {
   } catch (e) {
     console.error("send-pickup-reminders error", e);
     return new Response(
-      JSON.stringify({ ok: false, error: (e as Error).message }),
+      JSON.stringify({ ok: false, error: "Internal server error" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

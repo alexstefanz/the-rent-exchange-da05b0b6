@@ -94,7 +94,7 @@ serve(withCors(async (req) => {
         }
       } catch (e) {
         console.error("[mutual-cancel-rental] stripe error", e);
-        return new Response(JSON.stringify({ error: "stripe_failure", message: (e as Error).message }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ error: "stripe_failure", message: "Payment provider error" }), { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
     }
 
@@ -129,6 +129,6 @@ serve(withCors(async (req) => {
     });
   } catch (e) {
     console.error("mutual-cancel-rental error", e);
-    return new Response(JSON.stringify({ error: (e as Error).message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 }, "POST, OPTIONS"));

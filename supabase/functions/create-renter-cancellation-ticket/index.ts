@@ -134,7 +134,7 @@ Deno.serve(withCors(async (req) => {
       .select("id, public_id")
       .single();
     if (tErr || !ticket) {
-      return new Response(JSON.stringify({ error: "ticket_create_failed", detail: tErr?.message }), {
+      return new Response(JSON.stringify({ error: "ticket_create_failed" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
