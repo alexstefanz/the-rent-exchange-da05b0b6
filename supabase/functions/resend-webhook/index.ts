@@ -1,8 +1,10 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { Webhook } from 'npm:svix@1.42.0'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  "Access-Control-Allow-Origin": PRIMARY_ORIGIN,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
   'Access-Control-Allow-Headers': '*',
 }
 
@@ -18,7 +20,7 @@ function redact(email: string): string {
   return `${u?.[0] ?? '?'}***@${d ?? '?'}`
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
@@ -135,4 +137,4 @@ Deno.serve(async (req) => {
   }
 
   return json({ success: true })
-})
+}, "POST, OPTIONS"))

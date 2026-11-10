@@ -1,3 +1,4 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 // Serves crawler-ready HTML (correct <title>, description, og:* and JSON-LD)
 // for /produs/*, /categorie/* and /subcategorie/*.
 // Human visitors keep getting the normal SPA — the web server only routes
@@ -267,7 +268,7 @@ async function productMeta(slug: string): Promise<Meta | null> {
   };
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   try {
     const reqUrl = new URL(req.url);
     // Nginx forwards the original path either as ?path=... or as the request path.
@@ -317,4 +318,4 @@ Deno.serve(async (req) => {
       return new Response("unavailable", { status: 500 });
     }
   }
-});
+}, "GET, POST, OPTIONS"));

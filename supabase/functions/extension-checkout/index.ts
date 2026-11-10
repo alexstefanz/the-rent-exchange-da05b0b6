@@ -1,9 +1,11 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": PRIMARY_ORIGIN,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
@@ -12,7 +14,7 @@ const json = (b: unknown, status = 200) =>
 
 // action "create": start Stripe Checkout for an approved extension.
 // action "verify": confirm the session was paid and apply the extension.
-serve(async (req) => {
+serve(withCors(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const authHeader = req.headers.get("Authorization");
@@ -74,4 +76,4 @@ serve(async (req) => {
     console.error("extension-checkout error:", e);
     return json({ error: (e as Error).message }, 500);
   }
-});
+}, "POST, OPTIONS"));

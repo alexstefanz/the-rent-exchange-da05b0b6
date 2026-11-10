@@ -1,9 +1,11 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { requireCaller, unauthorizedResponse } from "../_shared/authGuard.ts";
+import { requireServiceCaller, unauthorizedResponse } from "../_shared/authGuard.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": PRIMARY_ORIGIN,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -14,10 +16,10 @@ const SLA_WARN_HOURS = 24;
 
 const OPEN_STATUSES = ["NEW", "IN_PROGRESS", "WAITING_INTERNAL"];
 
-serve(async (req) => {
+serve(withCors(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  const __caller = await requireCaller(req);
+  const __caller = await requireServiceCaller(req);
   if (!__caller) return unauthorizedResponse(corsHeaders);
 
 
@@ -163,8 +165,8 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("ops-tickets-cron error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown" }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}, "POST, OPTIONS"));

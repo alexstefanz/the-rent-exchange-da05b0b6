@@ -1,10 +1,11 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import Stripe from "npm:stripe@17.7.0";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_LIVE_API_KEY")!, { apiVersion: "2024-12-18.acacia" });
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
   const sig = req.headers.get("stripe-signature");
   if (!sig) return new Response("Missing signature", { status: 400 });
@@ -32,10 +33,18 @@ Deno.serve(async (req) => {
   if (!patch) return new Response("ignored", { status: 200 });
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-  // Never downgrade a verified profile from a stale event
+  // Build the update carefully:
+  // 1. Always attach the current session id
+  // 2. Never downgrade a verified profile
+  // 3. Only update when the session matches (or no session is set yet), so a
+  //    late event from an older session cannot overwrite a newer one.
   let q = admin.from("profiles").update({ ...patch, identity_session_id: s.id }).eq("id", userId);
   if (event.type !== "identity.verification_session.verified") q = q.neq("identity_status", "verified");
-  const { error } = await q;
-  if (error) { console.error(error); return new Response("db error", { status: 500 }); }
+  q = q.or(`identity_session_id.eq.${s.id},identity_session_id.is.null`);
+  const { data, error } = await q.select("id");
+  if (error) { console.error("DB error updating profile:", error); return new Response("db error", { status: 500 }); }
+  if (!data || data.length === 0) {
+    console.warn(`No profile updated for user ${userId} (event: ${event.type}, session: ${s.id})`);
+  }
   return new Response("ok", { status: 200 });
-});
+}, "POST, OPTIONS"));

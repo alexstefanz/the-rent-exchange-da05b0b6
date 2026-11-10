@@ -62,6 +62,15 @@ export async function requireCaller(req: Request): Promise<Caller | null> {
 }
 
 
+/**
+ * For cron / internal jobs: accept ONLY the service-role key. Regular user
+ * JWTs are rejected so logged-in users cannot trigger background jobs.
+ */
+export async function requireServiceCaller(req: Request): Promise<Caller | null> {
+  const caller = await requireCaller(req);
+  return caller && caller.kind === "service" ? caller : null;
+}
+
 /** Returns true if the given user has the given role in `user_roles`. */
 export async function callerHasRole(userId: string, role: string): Promise<boolean> {
   const url = Deno.env.get("SUPABASE_URL")!;

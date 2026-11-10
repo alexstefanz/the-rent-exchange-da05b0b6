@@ -1,3 +1,5 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
+import { requireServiceCaller, unauthorizedResponse } from "../_shared/authGuard.ts";
 // Cron-invoked (every 15 min): for rentals stuck in `pending`:
 //   - at 22h since created_at → send `request_reminder_2h` (in_app + email + SMS) to owner + renter
 //   - at 24h since created_at → auto-cancel + release Stripe hold + send `request_expired`
@@ -6,11 +8,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import Stripe from "https://esm.sh/stripe@17.5.0?target=deno";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": PRIMARY_ORIGIN,
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
+  // Cron/internal only: service-role key required.
+  if (!(await requireServiceCaller(req))) return unauthorizedResponse({ "Content-Type": "application/json" });
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const url = new URL(req.url);
@@ -139,8 +144,8 @@ Deno.serve(async (req) => {
   } catch (e) {
     console.error("send-request-deadline-reminders error", e);
     return new Response(
-      JSON.stringify({ ok: false, error: (e as Error).message, ...summary }),
+      JSON.stringify({ ok: false, error: "Internal server error", ...summary }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
-});
+}, "GET, POST, OPTIONS"));

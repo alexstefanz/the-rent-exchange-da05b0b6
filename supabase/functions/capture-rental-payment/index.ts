@@ -1,15 +1,17 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { invokeAppEmail } from '../_shared/transactional-email-templates/send-app-email.ts'
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": PRIMARY_ORIGIN,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-serve(async (req) => {
+serve(withCors(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -30,8 +32,12 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     let isAuthorized = false;
 
+    // Privileged = service-role (DB trigger / cron) or admin. Only privileged
+    // callers may capture before the scheduled end date (e.g. admin resolution).
+    let isPrivileged = false;
     if (token && token === serviceKey) {
       isAuthorized = true;
+      isPrivileged = true;
     } else if (token && token !== anonKey) {
       const supabase = createClient(Deno.env.get("SUPABASE_URL")!, anonKey);
       const { data: authData } = await supabase.auth.getUser(token);
@@ -44,6 +50,7 @@ serve(async (req) => {
           .eq("role", "admin")
           .maybeSingle();
         isAuthorized = !!roleData;
+        isPrivileged = !!roleData;
       }
     }
 
@@ -75,7 +82,7 @@ serve(async (req) => {
 
     // If a specific rental_id is provided, capture just that one
     if (rental_id) {
-      const result = await captureRental(supabaseAdmin, rental_id);
+      const result = await captureRental(supabaseAdmin, rental_id, undefined, isPrivileged);
       return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: result.error ? 400 : 200,
@@ -87,7 +94,7 @@ serve(async (req) => {
     
     const { data: rentals, error: fetchError } = await supabaseAdmin
       .from("rentals")
-      .select("id, payment_intent_id, end_date, owner_id, owner_payout, subtotal, platform_fee, product_id, is_test_payment")
+      .select("id, payment_intent_id, end_date, owner_id, owner_payout, subtotal, platform_fee, product_id, is_test_payment, payment_status")
       .eq("payment_status", "authorized")
       .lte("end_date", today)
       .not("payment_intent_id", "is", null);
@@ -109,7 +116,7 @@ serve(async (req) => {
         results.push(result);
       } catch (e) {
         console.error(`Error capturing rental ${rental.id}:`, e);
-        results.push({ rental_id: rental.id, error: e.message });
+        results.push({ rental_id: rental.id, error: "Capture failed" });
       }
     }
 
@@ -119,24 +126,25 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error("capture-rental-payment error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
   }
-});
+}, "POST, OPTIONS"));
 
 async function captureRental(
   supabaseAdmin: ReturnType<typeof createClient>,
   rentalId: string,
   preloadedRental?: Record<string, unknown>,
+  allowBeforeEndDate = false,
 ) {
   // Fetch rental if not preloaded
   let rental = preloadedRental;
   if (!rental) {
     const { data, error } = await supabaseAdmin
       .from("rentals")
-      .select("id, payment_intent_id, end_date, owner_id, owner_payout, subtotal, platform_fee, product_id, is_test_payment")
+      .select("id, payment_intent_id, end_date, owner_id, owner_payout, subtotal, platform_fee, product_id, is_test_payment, payment_status")
       .eq("id", rentalId)
       .single();
     if (error || !data) return { rental_id: rentalId, error: "Rental not found" };
@@ -145,6 +153,15 @@ async function captureRental(
 
   if (!rental.payment_intent_id) {
     return { rental_id: rentalId, error: "No payment_intent_id" };
+  }
+
+  // Escrow guard: capture only authorized holds whose rental period has ended.
+  if (rental.payment_status !== "authorized") {
+    return { rental_id: rentalId, error: "Rental not in authorized state" };
+  }
+  const today = new Date().toISOString().split("T")[0];
+  if (!allowBeforeEndDate && rental.end_date && (rental.end_date as string) > today) {
+    return { rental_id: rentalId, error: "Rental end date has not been reached" };
   }
 
   const isTest = !!rental.is_test_payment;

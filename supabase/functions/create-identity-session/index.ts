@@ -1,3 +1,4 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import Stripe from "npm:stripe@17.7.0";
@@ -6,7 +7,7 @@ import { identityReturnUrl } from "./return-url.ts";
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const auth = req.headers.get("Authorization");
@@ -39,4 +40,4 @@ Deno.serve(async (req) => {
     console.error("create-identity-session", e);
     return json({ error: "Nu am putut porni verificarea." }, 500);
   }
-});
+}, "POST, OPTIONS"));

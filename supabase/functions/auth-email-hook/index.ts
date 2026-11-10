@@ -1,3 +1,4 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import * as React from 'npm:react@18.3.1'
 import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { createAuthEmailHandler } from 'npm:@lovable.dev/email-js@0.3.1'
@@ -9,7 +10,8 @@ import { EmailChangeEmail } from '../_shared/email-templates/email-change.tsx'
 import { ReauthenticationEmail } from '../_shared/email-templates/reauthentication.tsx'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  "Access-Control-Allow-Origin": PRIMARY_ORIGIN,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type, x-lovable-signature, x-lovable-timestamp, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 }
@@ -73,7 +75,7 @@ const SAMPLE_DATA: Record<string, object> = {
 // Preview endpoint handler - returns rendered HTML without sending email
 async function handlePreview(req: Request): Promise<Response> {
   const previewCorsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    "Access-Control-Allow-Origin": PRIMARY_ORIGIN,
     'Access-Control-Allow-Headers': 'authorization, content-type',
   }
 
@@ -183,7 +185,7 @@ const handler = createAuthEmailHandler({
   },
 })
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   const url = new URL(req.url)
 
   // Handle CORS preflight for main endpoint
@@ -197,4 +199,4 @@ Deno.serve(async (req) => {
   }
 
   return handler(req)
-})
+}, "POST, OPTIONS"))

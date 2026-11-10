@@ -1,7 +1,9 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { requireCaller, unauthorizedResponse } from '../_shared/authGuard.ts'
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  "Access-Control-Allow-Origin": PRIMARY_ORIGIN,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 const MODEL = 'google/gemini-3-flash-preview'
@@ -36,7 +38,7 @@ async function callAI(messages: unknown[], tool: { name: string; parameters: unk
   try { return { result: JSON.parse(args) } } catch { return { error: 'Răspuns AI invalid.', status: 422 } }
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   const caller = await requireCaller(req)
   if (!caller) return unauthorizedResponse(corsHeaders)
@@ -108,4 +110,4 @@ Deno.serve(async (req) => {
   }
 
   return json({ error: 'Acțiune necunoscută' }, 400)
-})
+}, "POST, OPTIONS"))
