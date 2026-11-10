@@ -1,5 +1,6 @@
 import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { normalizePhoneRO } from "../_shared/phone.ts";
+import { buildLink } from "../_shared/config.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { requireCaller, unauthorizedResponse } from "../_shared/authGuard.ts";
 
@@ -11,7 +12,6 @@ const corsHeaders = {
 };
 
 const SMS_API_URL = "https://smsalert.mobi/api/v2/message/send";
-const PLATFORM_URL = "rentli.ro";
 
 // Templates addressed to the OWNER. All others default to the renter view.
 const OWNER_TEMPLATES = new Set<string>([
@@ -32,8 +32,7 @@ const OWNER_TEMPLATES = new Set<string>([
  */
 function defaultLinkFor(key: string, rentalId?: string | null): string {
   const isOwner = OWNER_TEMPLATES.has(key);
-  const base = isOwner ? `${PLATFORM_URL}/inchirieri` : `${PLATFORM_URL}/rezervari`;
-  return rentalId ? `${base}?rental_id=${rentalId}` : base;
+  return buildLink(isOwner ? "ownerRentals" : "renterRentals", { rental_id: rentalId }, true);
 }
 
 type TemplateKey =
