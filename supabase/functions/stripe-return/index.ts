@@ -1,8 +1,9 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const APP_URL = "https://www.rentli.ro";
 
-serve((req) => {
+serve(withCors((req) => {
   const url = new URL(req.url);
   const sessionId = url.searchParams.get("session_id") || "";
   const status = url.searchParams.get("status") || "success";
@@ -18,4 +19,4 @@ serve((req) => {
       "Cache-Control": "no-store, max-age=0",
     },
   });
-});
+}, "GET, POST, OPTIONS"));

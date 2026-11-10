@@ -1,3 +1,4 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { z } from 'npm:zod@3.23.8'
 import { sendAppEmail } from '../_shared/transactional-email-templates/send-app-email.ts'
@@ -5,7 +6,8 @@ import { sendAppEmail } from '../_shared/transactional-email-templates/send-app-
 // Account notices to the signed-in user only. Recipient = the caller's own
 // verified account email; template is chosen from a fixed list.
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  "Access-Control-Allow-Origin": PRIMARY_ORIGIN,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 const json = (d: unknown, status = 200) =>
@@ -24,7 +26,7 @@ const Body = z.discriminatedUnion('event', [
   }),
 ])
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   const auth = req.headers.get('Authorization')
   if (!auth?.startsWith('Bearer ')) return json({ error: 'Unauthorized' }, 401)
@@ -67,4 +69,4 @@ Deno.serve(async (req) => {
     console.error('send-account-email failed', (e as Error).message)
     return json({ error: 'send_failed' }, 500)
   }
-})
+}, "POST, OPTIONS"))

@@ -1,9 +1,11 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { invokeAppEmail } from '../_shared/transactional-email-templates/send-app-email.ts'
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import { requireCaller, unauthorizedResponse } from "../_shared/authGuard.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": PRIMARY_ORIGIN,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
@@ -303,7 +305,7 @@ function genToken(): string {
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   const __caller = await requireCaller(req);
@@ -557,4 +559,4 @@ Deno.serve(async (req) => {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-});
+}, "POST, OPTIONS"));

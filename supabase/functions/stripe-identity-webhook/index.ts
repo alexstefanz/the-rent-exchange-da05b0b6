@@ -1,10 +1,11 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import Stripe from "npm:stripe@17.7.0";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_LIVE_API_KEY")!, { apiVersion: "2024-12-18.acacia" });
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method !== "POST") return new Response("Method not allowed", { status: 405 });
   const sig = req.headers.get("stripe-signature");
   if (!sig) return new Response("Missing signature", { status: 400 });
@@ -38,4 +39,4 @@ Deno.serve(async (req) => {
   const { error } = await q;
   if (error) { console.error(error); return new Response("db error", { status: 500 }); }
   return new Response("ok", { status: 200 });
-});
+}, "POST, OPTIONS"));

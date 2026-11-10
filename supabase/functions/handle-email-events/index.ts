@@ -1,3 +1,4 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { createEmailWebhookHandler } from 'npm:@lovable.dev/email-js@0.3.1'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -48,4 +49,4 @@ const handler = createEmailWebhookHandler({
   },
 })
 
-Deno.serve((req) => handler(req))
+Deno.serve(withCors((req) => handler(req), "POST, OPTIONS"))

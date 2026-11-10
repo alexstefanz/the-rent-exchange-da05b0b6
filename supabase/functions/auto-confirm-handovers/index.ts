@@ -1,11 +1,13 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": PRIMARY_ORIGIN,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -64,4 +66,4 @@ Deno.serve(async (req) => {
   return new Response(JSON.stringify({ updated: rentalIds.length, rentalIds }), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
-});
+}, "POST, OPTIONS"));

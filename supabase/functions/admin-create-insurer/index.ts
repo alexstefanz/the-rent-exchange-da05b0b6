@@ -1,7 +1,9 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
 const cors = {
-  'Access-Control-Allow-Origin': '*',
+  "Access-Control-Allow-Origin": PRIMARY_ORIGIN,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
@@ -9,7 +11,7 @@ const json = (b: unknown, status = 200) =>
   new Response(JSON.stringify(b), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 
 // Admin-only: creates a confirmed account with the read-only "insurer" role.
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   try {
     const url = Deno.env.get('SUPABASE_URL')!
@@ -39,4 +41,4 @@ Deno.serve(async (req) => {
   } catch (e) {
     return json({ error: (e as Error).message }, 500)
   }
-})
+}, "POST, OPTIONS"))

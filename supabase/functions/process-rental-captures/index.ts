@@ -1,7 +1,9 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": PRIMARY_ORIGIN,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
@@ -10,7 +12,7 @@ const corsHeaders = {
  * Cron wrapper that calls capture-rental-payment to process
  * all authorized rentals whose end_date has passed.
  */
-serve(async (req) => {
+serve(withCors(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -49,4 +51,4 @@ serve(async (req) => {
       status: 500,
     });
   }
-});
+}, "POST, OPTIONS"));

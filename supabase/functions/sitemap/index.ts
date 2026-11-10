@@ -1,3 +1,4 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const BASE_URL = "https://rentli.ro";
@@ -54,9 +55,9 @@ function renderUrl(e: { path: string; changefreq?: string; priority?: string; la
     .join("\n");
 }
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: { "Access-Control-Allow-Origin": "*" } });
+    return new Response("ok", { headers: { "Access-Control-Allow-Origin": PRIMARY_ORIGIN } });
   }
 
   try {
@@ -117,11 +118,11 @@ Deno.serve(async (req) => {
       headers: {
         "Content-Type": "application/xml; charset=utf-8",
         "Cache-Control": "public, max-age=3600",
-        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Origin": PRIMARY_ORIGIN,
       },
     });
   } catch (e) {
     console.error("[sitemap] error", e);
     return new Response("sitemap unavailable", { status: 500 });
   }
-});
+}, "POST, OPTIONS"));

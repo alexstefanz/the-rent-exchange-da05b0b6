@@ -1,8 +1,10 @@
+import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { invokeAppEmail } from '../_shared/transactional-email-templates/send-app-email.ts'
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": PRIMARY_ORIGIN,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 const SMS_API_URL = "https://smsalert.mobi/api/v2/message/send";
@@ -26,7 +28,7 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
     const authHeader = req.headers.get("Authorization");
@@ -123,4 +125,4 @@ Deno.serve(async (req) => {
     console.error("[send-contract-otp]", e);
     return json({ error: "internal_error" }, 500);
   }
-});
+}, "POST, OPTIONS"));
