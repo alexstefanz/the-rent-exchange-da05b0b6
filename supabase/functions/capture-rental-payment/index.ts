@@ -32,8 +32,12 @@ serve(withCors(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     let isAuthorized = false;
 
+    // Privileged = service-role (DB trigger / cron) or admin. Only privileged
+    // callers may capture before the scheduled end date (e.g. admin resolution).
+    let isPrivileged = false;
     if (token && token === serviceKey) {
       isAuthorized = true;
+      isPrivileged = true;
     } else if (token && token !== anonKey) {
       const supabase = createClient(Deno.env.get("SUPABASE_URL")!, anonKey);
       const { data: authData } = await supabase.auth.getUser(token);
@@ -46,6 +50,7 @@ serve(withCors(async (req) => {
           .eq("role", "admin")
           .maybeSingle();
         isAuthorized = !!roleData;
+        isPrivileged = !!roleData;
       }
     }
 
@@ -77,7 +82,7 @@ serve(withCors(async (req) => {
 
     // If a specific rental_id is provided, capture just that one
     if (rental_id) {
-      const result = await captureRental(supabaseAdmin, rental_id);
+      const result = await captureRental(supabaseAdmin, rental_id, undefined, isPrivileged);
       return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: result.error ? 400 : 200,
@@ -111,7 +116,7 @@ serve(withCors(async (req) => {
         results.push(result);
       } catch (e) {
         console.error(`Error capturing rental ${rental.id}:`, e);
-        results.push({ rental_id: rental.id, error: e.message });
+        results.push({ rental_id: rental.id, error: "Capture failed" });
       }
     }
 
@@ -121,7 +126,7 @@ serve(withCors(async (req) => {
     );
   } catch (error) {
     console.error("capture-rental-payment error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
@@ -132,6 +137,7 @@ async function captureRental(
   supabaseAdmin: ReturnType<typeof createClient>,
   rentalId: string,
   preloadedRental?: Record<string, unknown>,
+  allowBeforeEndDate = false,
 ) {
   // Fetch rental if not preloaded
   let rental = preloadedRental;
@@ -154,7 +160,7 @@ async function captureRental(
     return { rental_id: rentalId, error: "Rental not in authorized state" };
   }
   const today = new Date().toISOString().split("T")[0];
-  if (rental.end_date && (rental.end_date as string) > today) {
+  if (!allowBeforeEndDate && rental.end_date && (rental.end_date as string) > today) {
     return { rental_id: rentalId, error: "Rental end date has not been reached" };
   }
 

@@ -294,7 +294,7 @@ serve(withCors(async (req) => {
     );
   } catch (error) {
     console.error("verify-stripe-payment error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });
