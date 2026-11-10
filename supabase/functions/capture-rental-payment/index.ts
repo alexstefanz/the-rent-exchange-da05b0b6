@@ -89,7 +89,7 @@ serve(withCors(async (req) => {
     
     const { data: rentals, error: fetchError } = await supabaseAdmin
       .from("rentals")
-      .select("id, payment_intent_id, end_date, owner_id, owner_payout, subtotal, platform_fee, product_id, is_test_payment")
+      .select("id, payment_intent_id, end_date, owner_id, owner_payout, subtotal, platform_fee, product_id, is_test_payment, payment_status")
       .eq("payment_status", "authorized")
       .lte("end_date", today)
       .not("payment_intent_id", "is", null);
@@ -147,6 +147,15 @@ async function captureRental(
 
   if (!rental.payment_intent_id) {
     return { rental_id: rentalId, error: "No payment_intent_id" };
+  }
+
+  // Escrow guard: capture only authorized holds whose rental period has ended.
+  if (rental.payment_status !== "authorized") {
+    return { rental_id: rentalId, error: "Rental not in authorized state" };
+  }
+  const today = new Date().toISOString().split("T")[0];
+  if (rental.end_date && (rental.end_date as string) > today) {
+    return { rental_id: rentalId, error: "Rental end date has not been reached" };
   }
 
   const isTest = !!rental.is_test_payment;

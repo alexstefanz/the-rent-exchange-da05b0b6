@@ -23,7 +23,7 @@ function checkRateLimit(key: string, maxRequests = 10, windowSec = 60): boolean 
   return true;
 }
 
-const PLATFORM_URL = "https://rentli.ro";
+import { SITE_URL as PLATFORM_URL } from "../_shared/config.ts";
 
 Deno.serve(withCors(async (req) => {
   if (req.method === "OPTIONS") {

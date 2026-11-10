@@ -33,10 +33,18 @@ Deno.serve(withCors(async (req) => {
   if (!patch) return new Response("ignored", { status: 200 });
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-  // Never downgrade a verified profile from a stale event
+  // Build the update carefully:
+  // 1. Always attach the current session id
+  // 2. Never downgrade a verified profile
+  // 3. Only update when the session matches (or no session is set yet), so a
+  //    late event from an older session cannot overwrite a newer one.
   let q = admin.from("profiles").update({ ...patch, identity_session_id: s.id }).eq("id", userId);
   if (event.type !== "identity.verification_session.verified") q = q.neq("identity_status", "verified");
-  const { error } = await q;
-  if (error) { console.error(error); return new Response("db error", { status: 500 }); }
+  q = q.or(`identity_session_id.eq.${s.id},identity_session_id.is.null`);
+  const { data, error } = await q.select("id");
+  if (error) { console.error("DB error updating profile:", error); return new Response("db error", { status: 500 }); }
+  if (!data || data.length === 0) {
+    console.warn(`No profile updated for user ${userId} (event: ${event.type}, session: ${s.id})`);
+  }
   return new Response("ok", { status: 200 });
 }, "POST, OPTIONS"));

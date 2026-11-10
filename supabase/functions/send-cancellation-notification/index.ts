@@ -24,7 +24,7 @@ function checkRateLimit(key: string, maxRequests = 5, windowSec = 60): boolean {
   return true;
 }
 
-const PLATFORM_URL = "https://rentli.ro";
+import { SITE_URL as PLATFORM_URL } from "../_shared/config.ts";
 
 function escapeHtml(text: string): string {
   const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
