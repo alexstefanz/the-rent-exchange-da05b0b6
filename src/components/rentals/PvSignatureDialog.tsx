@@ -476,7 +476,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
     // Same document as the PDF/DOCX downloads (single source of truth).
     const win = window.open("", "_blank");
     try {
-      const blob = await generatePdf(pv);
+      const blob = await generatePdf(pv, language);
       const url = URL.createObjectURL(blob);
       if (win) win.location.href = url; else window.open(url, "_blank");
     } catch (e: any) {
@@ -783,12 +783,12 @@ function SigBox({ label, name, signatureData, signedAt }: { label: string; name:
         {signatureData ? (
           <img src={signatureData} alt="Semnatura" className="max-h-16 object-contain" />
         ) : (
-          <span className="text-xs italic text-muted-foreground">— nesemnat —</span>
+          <span className="text-xs italic text-muted-foreground">{T("— nesemnat —", "— not signed —")}</span>
         )}
       </div>
       <hr className="border-foreground/60 mt-1" />
       <p className="text-xs text-muted-foreground mt-1">
-        {signedAt ? `Semnat ${format(new Date(signedAt), "dd.MM.yyyy HH:mm")}` : "Semnatura"}
+        {signedAt ? `${T("Semnat", "Signed")} ${format(new Date(signedAt), "dd.MM.yyyy HH:mm")}` : T("Semnătura", "Signature")}
       </p>
     </div>
   );
