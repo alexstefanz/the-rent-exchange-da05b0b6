@@ -1,3 +1,4 @@
+import { useLanguage } from "@/contexts/LanguageContext";
 import { ArrowUpDown, Filter } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -31,16 +32,17 @@ const RentalsFilterBar = ({
   counts,
   amountLabel = "Sumă",
 }: Props) => {
+  const { t } = useLanguage();
   const ongoing = counts.pending + counts.active + counts.in_progress + counts.overdue;
   const items: { key: RentalStatusFilter; label: string; count: number }[] = [
-    { key: "all", label: "Toate", count: counts.all },
-    { key: "ongoing", label: "În desfășurare", count: ongoing },
-    { key: "active", label: "Confirmate", count: counts.active },
-    { key: "in_progress", label: "În derulare", count: counts.in_progress },
-    { key: "overdue", label: "Întârziate", count: counts.overdue },
-    { key: "pending", label: "În așteptare", count: counts.pending },
-    { key: "completed", label: "Finalizate", count: counts.completed },
-    { key: "cancelled", label: "Anulate", count: counts.cancelled },
+    { key: "all", label: t("Toate", "All"), count: counts.all },
+    { key: "ongoing", label: t("În desfășurare", "Ongoing"), count: ongoing },
+    { key: "active", label: t("Confirmate", "Confirmed"), count: counts.active },
+    { key: "in_progress", label: t("În derulare", "In progress"), count: counts.in_progress },
+    { key: "overdue", label: t("Întârziate", "Overdue"), count: counts.overdue },
+    { key: "pending", label: t("În așteptare", "Pending"), count: counts.pending },
+    { key: "completed", label: t("Finalizate", "Completed"), count: counts.completed },
+    { key: "cancelled", label: t("Anulate", "Cancelled"), count: counts.cancelled },
   ];
 
 
@@ -64,13 +66,13 @@ const RentalsFilterBar = ({
       <Select value={sortBy} onValueChange={(v) => onSortChange(v as RentalSortBy)}>
         <SelectTrigger className="w-full sm:w-[200px] h-9">
           <ArrowUpDown className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-          <SelectValue placeholder="Sortare" />
+          <SelectValue placeholder={t("Sortare", "Sort")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="newest">Cele mai noi</SelectItem>
-          <SelectItem value="oldest">Cele mai vechi</SelectItem>
-          <SelectItem value="amount_desc">{amountLabel}: mare → mic</SelectItem>
-          <SelectItem value="amount_asc">{amountLabel}: mic → mare</SelectItem>
+          <SelectItem value="newest">{t("Cele mai noi", "Newest")}</SelectItem>
+          <SelectItem value="oldest">{t("Cele mai vechi", "Oldest")}</SelectItem>
+          <SelectItem value="amount_desc">{amountLabel}: {t("mare → mic", "high → low")}</SelectItem>
+          <SelectItem value="amount_asc">{amountLabel}: {t("mic → mare", "low → high")}</SelectItem>
         </SelectContent>
       </Select>
     </div>

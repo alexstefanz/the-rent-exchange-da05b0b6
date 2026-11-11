@@ -1,3 +1,4 @@
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import RentalTabsBar, { parseTab, emptyTabText, type RentalTabView } from "./RentalTabsBar";
@@ -103,7 +104,8 @@ const fetchMyRentals = async (userId: string): Promise<MyRental[]> => {
 };
 
 const RentalsTab = () => {
-  const copy = useUxCopy();
+  const copy = useUxCopy(); const { t, language } = useLanguage();
+
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -197,8 +199,8 @@ const RentalsTab = () => {
     try {
       const res = await cancelPaidBeforeContract(cancelDialogRental.id);
       toast.success(res.to_wallet
-        ? `Rezervare anulată. ${res.refund} RON au revenit în Wallet.`
-        : `Rezervare anulată. ${res.refund} RON se returnează pe card.`);
+        ? t(`Rezervare anulată. ${res.refund} RON au revenit în Wallet.`, `Booking cancelled. ${res.refund} RON returned to your Wallet.`)
+        : t(`Rezervare anulată. ${res.refund} RON se returnează pe card.`, `Booking cancelled. ${res.refund} RON will be refunded to your card.`));
       queryClient.invalidateQueries({ queryKey: ["my-rentals"] });
       queryClient.invalidateQueries({ queryKey: ["wallet-balance"] });
       setCancelDialogRental(null);
@@ -212,17 +214,17 @@ const RentalsTab = () => {
   const handleRequestCancel = async () => {
     if (!cancelDialogRental) return;
     if (!cancelSubject.trim() || cancelSubject.trim().length < 3) {
-      toast.error("Subiectul e prea scurt (minim 3 caractere)");
+      toast.error(t("Subiectul e prea scurt (minim 3 caractere)","Subject is too short (min 3 characters)"));
       return;
     }
     if (!cancelReason.trim() || cancelReason.trim().length < 5) {
-      toast.error("Te rugăm să adaugi un motiv (minim 5 caractere)");
+      toast.error(t("Te rugăm să adaugi un motiv (minim 5 caractere)","Please add a reason (min 5 characters)"));
       return;
     }
     setSubmitting(true);
     try {
       await requestMutualCancellation(cancelDialogRental.id, cancelSubject.trim(), cancelReason.trim());
-      toast.success("Cererea de anulare a fost trimisă către admin pentru revizuire");
+      toast.success(t("Cererea de anulare a fost trimisă către admin pentru revizuire","Cancellation request sent to admin for review"));
       queryClient.invalidateQueries({ queryKey: ["my-rentals"] });
       setCancelDialogRental(null);
       setCancelSubject("");
@@ -269,7 +271,7 @@ const RentalsTab = () => {
         counts={{ requests: requestsList.length, active: activeList.length, completed: completedList.length, cancelled: cancelledList.length }}
         sortBy={sortBy}
         onSortChange={setSortBy}
-        amountLabel="Preț"
+        amountLabel={t("Preț","Price")}
         accent="blue"
       />
 
@@ -278,7 +280,7 @@ const RentalsTab = () => {
       {isLiveView && liveList.length === 0 && (
         <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center">
           <p className="text-sm text-muted-foreground">
-            {emptyTabText(view, "renter")}
+            {emptyTabText(view, "renter", language)}
           </p>
         </div>
       )}
@@ -287,7 +289,7 @@ const RentalsTab = () => {
       {isLiveView && liveList.length > 0 && (
         <section>
           <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2 text-base">
-            Rezervările mele
+            {t("Rezervările mele","My bookings")}
             <Badge className="bg-primary text-primary-foreground">{liveList.length}</Badge>
           </h3>
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
@@ -318,9 +320,9 @@ const RentalsTab = () => {
                     )}
                     <div className="absolute top-2 right-2 sm:top-3 sm:right-3">
                       {isPending ? (
-                        <Badge className="bg-primary text-primary-foreground animate-pulse shadow-md text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">În așteptare</Badge>
+                        <Badge className="bg-primary text-primary-foreground animate-pulse shadow-md text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">{t("În așteptare","Pending")}</Badge>
                       ) : (
-                        <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-md text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">Confirmată</Badge>
+                        <Badge className="bg-emerald-100 text-emerald-800 border border-emerald-200 shadow-md text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5">{t("Confirmată","Confirmed")}</Badge>
                       )}
                     </div>
                   </Link>
@@ -330,7 +332,7 @@ const RentalsTab = () => {
                       <Inbox className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary mt-0.5 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <p className="text-[9px] sm:text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">
-                          {isPending ? "Cerere către" : "Rezervare la"}
+                          {isPending ? t("Cerere către","Request to") : "Rezervare la"}
                         </p>
                         <p className="text-sm sm:text-base font-semibold text-foreground truncate">
                           {rental.owner_name}
@@ -345,11 +347,11 @@ const RentalsTab = () => {
                     <div className="mt-3 sm:mt-4 flex items-center gap-3 rounded-xl border border-border bg-card/80 p-3">
                       <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Perioadă</p>
+                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">{t("Perioadă","Period")}</p>
                         <p className="text-sm font-semibold text-foreground leading-tight truncate">
-                          {format(new Date(rental.start_date), "d MMM", { locale: roLocale })} – {format(new Date(rental.end_date), "d MMM", { locale: roLocale })}
+                          {format(new Date(rental.start_date), "d MMM", { locale: language === "ro" ? roLocale : undefined })} – {format(new Date(rental.end_date), "d MMM", { locale: language === "ro" ? roLocale : undefined })}
                         </p>
-                        <p className="text-[11px] text-muted-foreground">{rental.rental_days} {rental.rental_days === 1 ? "zi" : "zile"}</p>
+                        <p className="text-[11px] text-muted-foreground">{rental.rental_days} {rental.rental_days === 1 ? t("zi","day") : "zile"}</p>
                       </div>
                       <div className="border-l border-border pl-3 text-right">
                         <p className="text-[10px] uppercase tracking-wide text-primary/70 font-semibold">Total</p>
@@ -361,7 +363,7 @@ const RentalsTab = () => {
                       <div className="mt-2 sm:mt-3 rounded-xl rounded-tl-sm bg-background border border-border px-2 sm:px-3 py-1.5 sm:py-2">
                         <div className="flex items-center gap-1 text-[9px] sm:text-[10px] text-muted-foreground mb-0.5">
                           <MessageSquare className="h-3 w-3" />
-                          <span>Mesajul tău</span>
+                          <span>{t("Mesajul tău","Your message")}</span>
                         </div>
                         <p className="text-[11px] sm:text-xs text-foreground whitespace-pre-wrap break-words line-clamp-2 sm:line-clamp-3">
                           {rental.message_to_owner}
@@ -385,8 +387,8 @@ const RentalsTab = () => {
                             className="text-muted-foreground hover:text-destructive text-[11px] sm:text-xs px-2"
                           >
                             <Ban className="h-3 w-3 sm:h-3.5 sm:w-3.5 mr-1" />
-                            <span className="sm:hidden">Anulează</span>
-                            <span className="hidden sm:inline">Solicită anularea cererii</span>
+                            <span className="sm:hidden">{t("Anulează","Cancel")}</span>
+                            <span className="hidden sm:inline">{t("Solicită anularea cererii","Request cancellation")}</span>
                           </Button>
                         </div>
                       )}
@@ -401,7 +403,7 @@ const RentalsTab = () => {
 
       {isDoneView && doneList.length === 0 && (
         <div className="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center">
-          <p className="text-sm text-muted-foreground">{emptyTabText(view, "renter")}</p>
+          <p className="text-sm text-muted-foreground">{emptyTabText(view, "renter", language)}</p>
         </div>
       )}
 
@@ -410,7 +412,7 @@ const RentalsTab = () => {
         <section>
           <h3 className="font-heading font-bold text-foreground mb-4 flex items-center gap-2 text-base">
             <Package className="h-5 w-5 text-primary" />
-            Istoric închirieri
+            {t("Istoric închirieri","Rental history")}
             <Badge variant="secondary">{doneList.length}</Badge>
           </h3>
           <div className="divide-y divide-border border rounded-xl bg-card px-4">
@@ -435,7 +437,7 @@ const RentalsTab = () => {
                       Proprietar: <span className="text-foreground">{rental.owner_name}</span>
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {format(new Date(rental.start_date), "d MMM yyyy", { locale: roLocale })} – {format(new Date(rental.end_date), "d MMM yyyy", { locale: roLocale })} · {rental.rental_days} zile
+                      {format(new Date(rental.start_date), "d MMM yyyy", { locale: language === "ro" ? roLocale : undefined })} – {format(new Date(rental.end_date), "d MMM yyyy", { locale: language === "ro" ? roLocale : undefined })} · {rental.rental_days} zile
                     </p>
                   </div>
                   </div>
@@ -468,39 +470,39 @@ const RentalsTab = () => {
           ) : directMode ? (
             <>
               <DialogHeader>
-                <DialogTitle>Anulezi rezervarea?</DialogTitle>
+                <DialogTitle>{t("Anulezi rezervarea?","Cancel the booking?")}</DialogTitle>
                 <DialogDescription>
-                  Contractul nu a fost încă semnat, așa că poți anula imediat „{cancelDialogRental?.product_title}". Primești înapoi toți banii plătiți: în Wallet dacă ai plătit din Wallet, sau pe card dacă ai plătit cu cardul. Proprietarul va fi anunțat.
+                  {t(`Contractul nu a fost încă semnat, așa că poți anula imediat „${cancelDialogRental?.product_title}". Primești înapoi toți banii plătiți: în Wallet dacă ai plătit din Wallet, sau pe card dacă ai plătit cu cardul. Proprietarul va fi anunțat.`, `The contract hasn't been signed yet, so you can cancel "${cancelDialogRental?.product_title}" right away. You get all your money back: to your Wallet if you paid from Wallet, or to your card if you paid by card. The owner will be notified.`)}
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter className="gap-2">
-                <Button variant="outline" onClick={() => setCancelDialogRental(null)} disabled={submitting}>Înapoi</Button>
+                <Button variant="outline" onClick={() => setCancelDialogRental(null)} disabled={submitting}>{t("Înapoi","Back")}</Button>
                 <Button variant="destructive" onClick={handleDirectCancel} disabled={submitting}>
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Ban className="h-4 w-4 mr-2" />}
-                  Da, anulează și rambursează
+                  {t("Da, anulează și rambursează", "Yes, cancel and refund")}
                 </Button>
               </DialogFooter>
             </>
           ) : (
             <>
               <DialogHeader>
-                <DialogTitle>Solicită anularea rezervării</DialogTitle>
+                <DialogTitle>{t("Solicită anularea rezervării","Request booking cancellation")}</DialogTitle>
                 <DialogDescription>
-                  Contractul a fost semnat, așa că cererea va fi revizuită de un admin. La aprobare, banii (inclusiv comisionul) îți sunt rambursați integral pentru „{cancelDialogRental?.product_title}".
+                  {t(`Contractul a fost semnat, așa că cererea va fi revizuită de un admin. La aprobare, banii (inclusiv comisionul) îți sunt rambursați integral pentru „${cancelDialogRental?.product_title}".`, `The contract has been signed, so the request will be reviewed by an admin. If approved, you get a full refund (including the fee) for "${cancelDialogRental?.product_title}".`)}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-3">
                 <div>
-                  <Label htmlFor="cancel-subject-renter">Subiect</Label>
+                  <Label htmlFor="cancel-subject-renter">{t("Subiect","Subject")}</Label>
                   <Input id="cancel-subject-renter" placeholder="Ex: Probleme cu proprietarul" value={cancelSubject} onChange={(e) => setCancelSubject(e.target.value)} maxLength={120} className="mt-1" />
                 </div>
                 <div>
-                  <Label htmlFor="cancel-reason-renter">Motivul anulării</Label>
-                  <Textarea id="cancel-reason-renter" placeholder="Descrie pe scurt motivul (min. 5 caractere)" value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} rows={3} className="mt-1" />
+                  <Label htmlFor="cancel-reason-renter">{t("Motivul anulării","Cancellation reason")}</Label>
+                  <Textarea id="cancel-reason-renter" placeholder={t("Descrie pe scurt motivul (min. 5 caractere)","Briefly describe the reason (min. 5 characters)")} value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} rows={3} className="mt-1" />
                 </div>
               </div>
               <DialogFooter className="gap-2">
-                <Button variant="outline" onClick={() => setCancelDialogRental(null)}>Renunță</Button>
+                <Button variant="outline" onClick={() => setCancelDialogRental(null)}>{t("Renunță","Dismiss")}</Button>
                 <Button onClick={handleRequestCancel} disabled={submitting}>
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Ban className="h-4 w-4 mr-2" />}
                   Trimite cererea
