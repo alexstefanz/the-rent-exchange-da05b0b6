@@ -14,6 +14,7 @@ import type { RentalFullDetail } from "@/features/rentals/rentalDetailPageApi";
 import { getPvFileSignedUrl } from "@/features/rentals/rentalDetailPageApi";
 import { useRentalExtensions, lateInfo } from "@/components/rentals/RentalExtensionCard";
 import { getPvFinancials } from "@/lib/pvContent";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type Tab = "contract" | "anexa1" | "anexa2" | "anexa3";
 type Pv = { phase: string; owner_signature_data: string | null; renter_signature_data: string | null; owner_signed_at: string | null; renter_signed_at: string | null; photo_urls?: string[] };
@@ -36,6 +37,7 @@ const slot = (t?: string | null) => {
 const ron = (n?: number | null) => (n == null ? "______" : `${Number(n).toFixed(2)} RON`);
 
 export default function RentalDocumentsModal({ open, onOpenChange, rental, initialTab = "contract", initialBlank = false }: Props) {
+  const { t: T } = useLanguage();
   const [tab, setTab] = useState<Tab>(initialTab);
   const [blank, setBlank] = useState(initialBlank);
   const [extSignId, setExtSignId] = useState<string | null>(null);
@@ -111,7 +113,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
       const html = docRef.current?.innerHTML || "";
       const w = window.open("", "_blank");
       if (!w) return;
-      w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${rental.public_id} — Documente</title><style>${DOC_CSS}</style></head><body>${html}</body></html>`);
+      w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${rental.public_id} — ${T("Documente", "Documents")}</title><style>${DOC_CSS}</style></head><body>${html}</body></html>`);
       w.document.close();
       w.focus();
       waitImgs(w.document).then(() => setTimeout(() => { w.print(); setBlank(false); }, 200));
@@ -149,9 +151,9 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
           first = false;
         }
       }
-      pdf.save(`Documente-${rental.public_id}.pdf`);
+      pdf.save(`${T("Documente", "Documents")}-${rental.public_id}.pdf`);
     } catch (e) {
-      toast.error("PDF-ul nu a putut fi generat. Folosește butonul Tipărește → Salvează ca PDF.");
+      toast.error(T("PDF-ul nu a putut fi generat. Folosește butonul Tipărește → Salvează ca PDF.", "The PDF could not be generated. Use Print → Save as PDF."));
     } finally {
       iframe.remove();
       setSaving(false);
@@ -161,23 +163,23 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
   const Sig = ({ pv }: { pv?: Pv }) => (
     <div className="sig flex gap-6 mt-6">
       <div className="flex-1 border-t border-foreground/60 pt-1 min-h-[70px]">
-        <div className="text-xs font-semibold">Locator (Proprietar)</div>
+        <div className="text-xs font-semibold">{T("Locator (Proprietar)", "Lessor (Owner)")}</div>
         <div className="text-xs">{v(rental.owner_name)}</div>
         {!sb && pv?.owner_signature_data && <img src={pv.owner_signature_data} alt="" className="max-h-[60px]" />}
-        {!sb && pv?.owner_signed_at && <div className="muted text-[10px] text-muted-foreground">Semnat {fmtDT(pv.owner_signed_at)}</div>}
+        {!sb && pv?.owner_signed_at && <div className="muted text-[10px] text-muted-foreground">{T("Semnat", "Signed")} {fmtDT(pv.owner_signed_at)}</div>}
       </div>
       <div className="flex-1 border-t border-foreground/60 pt-1 min-h-[70px]">
-        <div className="text-xs font-semibold">Locatar (Chiriaș)</div>
+        <div className="text-xs font-semibold">{T("Locatar (Chiriaș)", "Lessee (Renter)")}</div>
         <div className="text-xs">{v(rental.renter_name)}</div>
         {!sb && pv?.renter_signature_data && <img src={pv.renter_signature_data} alt="" className="max-h-[60px]" />}
-        {!sb && pv?.renter_signed_at && <div className="muted text-[10px] text-muted-foreground">Semnat {fmtDT(pv.renter_signed_at)}</div>}
+        {!sb && pv?.renter_signed_at && <div className="muted text-[10px] text-muted-foreground">{T("Semnat", "Signed")} {fmtDT(pv.renter_signed_at)}</div>}
       </div>
     </div>
   );
 
   const Head = ({ title, sub }: { title: string; sub: string }) => (
     <>
-      <div className="flex justify-between text-[11px] text-muted-foreground muted"><span>Rentli.ro</span><span>Nr. {rental.public_id}</span></div>
+      <div className="flex justify-between text-[11px] text-muted-foreground muted"><span>Rentli.ro</span><span>{T("Nr.", "No.")} {rental.public_id}</span></div>
       <h1 className="text-base font-bold text-center mt-2">{title}</h1>
       <p className="c text-center text-xs text-muted-foreground mb-3">{sub}</p>
     </>
@@ -187,43 +189,43 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
 
   const contract = (
     <div className="page">
-      <Head title="CONTRACT DE LOCAȚIUNE A UNUI BUN MOBIL" sub={`încheiat prin platforma Rentli.ro la data de ${b ? "____________" : fmtD(rental.created_at)}`} />
-      <H2>Art. 1. Părțile contractante</H2>
-      <p><b>Locator (Proprietar):</b> {v(rental.owner_name)}, telefon {v(rental.owner_phone)}, e-mail {v(rental.owner_email)};</p>
-      <p><b>Locatar (Chiriaș):</b> {v(rental.renter_name)}, telefon {v(rental.renter_phone)}, e-mail {v(rental.renter_email)}.</p>
-      <p>Părțile au convenit încheierea prezentului contract în temeiul art. 1777–1823 din Codul Civil.</p>
-      <H2>Art. 2. Obiectul contractului</H2>
-      <p>Locatorul transmite Locatarului folosința temporară a bunului mobil: <b>{v(rental.product_title)}</b>{rental.product_category && !b ? ` (categoria ${rental.product_category})` : ""}, împreună cu accesoriile: {b || !items.length ? "______________________" : items.join(", ")}. Starea bunului la predare se consemnează în Anexa 1.</p>
-      <H2>Art. 3. Durata locațiunii</H2>
-      <p>Perioada: de la <b>{b ? "____________" : fmtD(rental.start_date)}</b> până la <b>{b ? "____________" : fmtD(rental.end_date)}</b> ({b ? "___" : rental.rental_days} zile). Predarea are loc în intervalul orar <b>{b ? "____:____" : slot(rental.pickup_time)}</b>, la locația: {v(rental.pickup_location || rental.product_location_city)}. Returnarea se face la aceeași locație, în același interval orar, la data de final.</p>
-      <H2>Art. 4. Chiria și modalitatea de plată</H2>
-      <p>Chiria este de {b ? "______" : ron(daily)}/zi, total {b ? "______" : ron(rental.subtotal)}. Plata se efectuează exclusiv prin platforma Rentli.ro; suma este rezervată (blocată) pe cardul Locatarului și eliberată către Locator după finalizarea închirierii, minus comisionul platformei.</p>
-      <H2>Art. 5. Valoarea bunului</H2>
-      <p>Valoarea declarată a bunului: {b ? "______" : ron(rental.product_deposit_value)}. Eventualele daune constatate la returnare se soluționează prin procedura de dispută Rentli.</p>
-      <H2>Art. 6. Obligațiile Locatorului</H2>
-      <p>Să predea bunul în stare corespunzătoare de folosință, curat și complet, cu toate accesoriile; să garanteze Locatarul contra viciilor ascunse și a tulburărilor de drept; să informeze despre modul corect de utilizare.</p>
-      <H2>Art. 7. Obligațiile Locatarului</H2>
-      <p>Să folosească bunul cu prudență și diligență, conform destinației; să nu-l subînchirieze sau cedeze terților; să suporte cheltuielile curente de folosință; să restituie bunul la termen, în starea în care l-a primit, exceptând uzura normală.</p>
-      <H2>Art. 8. Întârzierea la restituire</H2>
-      <p>Pentru fiecare zi de întârziere neaprobată, Locatarul datorează o penalitate egală cu dublul chiriei zilnice, respectiv {b ? "______" : ron(daily * 2)}/zi, consemnată în Anexa 2. Prelungirea se poate face doar cu acordul Locatorului, prin act adițional.</p>
-      <H2>Art. 9. Incidente, daune și forța majoră</H2>
-      <p>Orice defecțiune, pierdere sau furt se comunică imediat celeilalte părți și Rentli, prin chatul intern sau tichet de suport. Locatarul răspunde pentru deteriorările produse din culpa sa. Niciuna dintre părți nu răspunde pentru neexecutarea cauzată de forță majoră.</p>
-      <H2>Art. 10. Dispoziții finale</H2>
-      <p>Contractul se completează cu Anexa 1 (PV de predare), Anexa 2 (PV de returnare) și eventualele acte adiționale. Litigiile se soluționează amiabil, prin medierea Rentli, iar în caz contrar de instanțele competente din România. Acceptarea electronică și semnăturile digitale din platformă au valoarea semnăturii olografe.</p>
-      <H2>Art. 11. Jurnal de validare a semnării</H2>
-      <p className="text-xs">Înainte de semnare, fiecare parte și-a confirmat identitatea printr-un cod unic trimis prin SMS pe telefonul asociat contului Rentli.</p>
+      <Head title={T("CONTRACT DE LOCAȚIUNE A UNUI BUN MOBIL", "LEASE AGREEMENT FOR A MOVABLE ITEM")} sub={T(`încheiat prin platforma Rentli.ro la data de ${fmtD(rental.created_at)}`, `concluded via the Rentli.ro platform on ${fmtD(rental.created_at)}`)} />
+      <H2>{T("Art. 1. Părțile contractante", "Art. 1. Contracting parties")}</H2>
+      <p><b>{T("Locator (Proprietar):", "Lessor (Owner):")}</b> {v(rental.owner_name)}, {T("telefon", "phone")} {v(rental.owner_phone)}, e-mail {v(rental.owner_email)};</p>
+      <p><b>{T("Locatar (Chiriaș):", "Lessee (Renter):")}</b> {v(rental.renter_name)}, {T("telefon", "phone")} {v(rental.renter_phone)}, e-mail {v(rental.renter_email)}.</p>
+      <p>{T("Părțile au convenit încheierea prezentului contract în temeiul art. 1777–1823 din Codul Civil.", "The parties have agreed to conclude this agreement under art. 1777–1823 of the Romanian Civil Code.")}</p>
+      <H2>{T("Art. 2. Obiectul contractului", "Art. 2. Subject of the agreement")}</H2>
+      <p>{T("Locatorul transmite Locatarului folosința temporară a bunului mobil:", "The Lessor grants the Lessee temporary use of the movable item:")} <b>{v(rental.product_title)}</b>{rental.product_category ? T(` (categoria ${rental.product_category})`, ` (category ${rental.product_category})`) : ""}, {T("împreună cu accesoriile:", "together with the accessories:")} {!items.length ? "______________________" : items.join(", ")}. {T("Starea bunului la predare se consemnează în Anexa 1.", "The condition of the item at handover is recorded in Annex 1.")}</p>
+      <H2>{T("Art. 3. Durata locațiunii", "Art. 3. Lease term")}</H2>
+      <p>{T("Perioada: de la", "Period: from")} <b>{fmtD(rental.start_date)}</b> {T("până la", "until")} <b>{fmtD(rental.end_date)}</b> ({rental.rental_days} {T("zile", "days")}). {T("Predarea are loc în intervalul orar", "Handover takes place within the time slot")} <b>{slot(rental.pickup_time)}</b>, {T("la locația:", "at the location:")} {v(rental.pickup_location || rental.product_location_city)}. {T("Returnarea se face la aceeași locație, în același interval orar, la data de final.", "The item is returned at the same location, within the same time slot, on the end date.")}</p>
+      <H2>{T("Art. 4. Chiria și modalitatea de plată", "Art. 4. Rent and payment terms")}</H2>
+      <p>{T(`Chiria este de ${ron(daily)}/zi, total ${ron(rental.subtotal)}. Plata se efectuează exclusiv prin platforma Rentli.ro; suma este rezervată (blocată) pe cardul Locatarului și eliberată către Locator după finalizarea închirierii, minus comisionul platformei.`, `The rent is ${ron(daily)}/day, total ${ron(rental.subtotal)}. Payment is made exclusively through the Rentli.ro platform; the amount is reserved (held) on the Lessee's card and released to the Lessor after the rental is completed, minus the platform fee.`)}</p>
+      <H2>{T("Art. 5. Valoarea bunului", "Art. 5. Value of the item")}</H2>
+      <p>{T(`Valoarea declarată a bunului: ${ron(rental.product_deposit_value)}. Eventualele daune constatate la returnare se soluționează prin procedura de dispută Rentli.`, `Declared value of the item: ${ron(rental.product_deposit_value)}. Any damage found at return is settled through the Rentli dispute procedure.`)}</p>
+      <H2>{T("Art. 6. Obligațiile Locatorului", "Art. 6. Lessor's obligations")}</H2>
+      <p>{T("Să predea bunul în stare corespunzătoare de folosință, curat și complet, cu toate accesoriile; să garanteze Locatarul contra viciilor ascunse și a tulburărilor de drept; să informeze despre modul corect de utilizare.", "To hand over the item in proper working condition, clean and complete, with all accessories; to guarantee the Lessee against hidden defects and legal disturbances; to explain the correct way of use.")}</p>
+      <H2>{T("Art. 7. Obligațiile Locatarului", "Art. 7. Lessee's obligations")}</H2>
+      <p>{T("Să folosească bunul cu prudență și diligență, conform destinației; să nu-l subînchirieze sau cedeze terților; să suporte cheltuielile curente de folosință; să restituie bunul la termen, în starea în care l-a primit, exceptând uzura normală.", "To use the item prudently and diligently, according to its purpose; not to sublet or assign it to third parties; to bear the current costs of use; to return the item on time, in the condition received, except for normal wear.")}</p>
+      <H2>{T("Art. 8. Întârzierea la restituire", "Art. 8. Late return")}</H2>
+      <p>{T(`Pentru fiecare zi de întârziere neaprobată, Locatarul datorează o penalitate egală cu dublul chiriei zilnice, respectiv ${ron(daily * 2)}/zi, consemnată în Anexa 2. Prelungirea se poate face doar cu acordul Locatorului, prin act adițional.`, `For each unapproved day of delay, the Lessee owes a penalty equal to twice the daily rent, i.e. ${ron(daily * 2)}/day, recorded in Annex 2. An extension is possible only with the Lessor's consent, by addendum.`)}</p>
+      <H2>{T("Art. 9. Incidente, daune și forța majoră", "Art. 9. Incidents, damage and force majeure")}</H2>
+      <p>{T("Orice defecțiune, pierdere sau furt se comunică imediat celeilalte părți și Rentli, prin chatul intern sau tichet de suport. Locatarul răspunde pentru deteriorările produse din culpa sa. Niciuna dintre părți nu răspunde pentru neexecutarea cauzată de forță majoră.", "Any malfunction, loss or theft must be reported immediately to the other party and to Rentli, via the internal chat or a support ticket. The Lessee is liable for damage caused by their fault. Neither party is liable for non-performance caused by force majeure.")}</p>
+      <H2>{T("Art. 10. Dispoziții finale", "Art. 10. Final provisions")}</H2>
+      <p>{T("Contractul se completează cu Anexa 1 (PV de predare), Anexa 2 (PV de returnare) și eventualele acte adiționale. Litigiile se soluționează amiabil, prin medierea Rentli, iar în caz contrar de instanțele competente din România. Acceptarea electronică și semnăturile digitale din platformă au valoarea semnăturii olografe.", "This agreement is supplemented by Annex 1 (handover report), Annex 2 (return report) and any addenda. Disputes are settled amicably through Rentli mediation, otherwise by the competent courts of Romania. Electronic acceptance and digital signatures in the platform have the value of a handwritten signature.")}</p>
+      <H2>{T("Art. 11. Jurnal de validare a semnării", "Art. 11. Signature validation log")}</H2>
+      <p className="text-xs">{T("Înainte de semnare, fiecare parte și-a confirmat identitatea printr-un cod unic trimis prin SMS pe telefonul asociat contului Rentli.", "Before signing, each party confirmed their identity with a unique code sent by SMS to the phone linked to their Rentli account.")}</p>
       <table className="w-full border-collapse text-[11px] my-2">
         <thead>
-          <tr>{["Parte", "Nume", "Canal", "Destinație", "Data și ora", "Referință"].map((h) => (
+          <tr>{[T("Parte", "Party"), T("Nume", "Name"), T("Canal", "Channel"), T("Destinație", "Destination"), T("Data și ora", "Date & time"), T("Referință", "Reference")].map((h) => (
             <th key={h} className="border border-border p-1 text-left">{h}</th>
           ))}</tr>
         </thead>
         <tbody>
-          {([["Locator", rental.owner_name, acc.ownerRow], ["Locatar", rental.renter_name, acc.renterRow]] as const).map(([p, n, row]) => (
+          {([[T("Locator", "Lessor"), rental.owner_name, acc.ownerRow], [T("Locatar", "Lessee"), rental.renter_name, acc.renterRow]] as const).map(([p, n, row]) => (
             <tr key={p}>
               <td className="border border-border p-1">{p}</td>
               <td className="border border-border p-1">{v(n)}</td>
-              <td className="border border-border p-1">{!sb && row?.validation_channel ? "Cod SMS" : "______"}</td>
+              <td className="border border-border p-1">{!sb && row?.validation_channel ? T("Cod SMS", "SMS code") : "______"}</td>
               <td className="border border-border p-1">{!sb && row?.validation_destination ? row.validation_destination : "______"}</td>
               <td className="border border-border p-1">{!sb && row?.validated_at ? fmtDT(row.validated_at) : "______"}</td>
               <td className="border border-border p-1">{!sb && row?.validation_ref ? row.validation_ref : "______"}</td>
@@ -242,63 +244,63 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
     return (
       <div className="page">
         <Head
-          title={isRet ? "ANEXA 2 — PROCES-VERBAL DE RESTITUIRE" : "ANEXA 1 — PROCES-VERBAL DE PREDARE-PRIMIRE"}
-          sub={`la Contractul de locațiune nr. ${rental.public_id}`}
+          title={isRet ? T("ANEXA 2 — PROCES-VERBAL DE RESTITUIRE", "ANNEX 2 — RETURN REPORT") : T("ANEXA 1 — PROCES-VERBAL DE PREDARE-PRIMIRE", "ANNEX 1 — HANDOVER REPORT")}
+          sub={T(`la Contractul de locațiune nr. ${rental.public_id}`, `to Lease Agreement no. ${rental.public_id}`)}
         />
         <table className="w-full border-collapse text-xs my-2">
           <tbody>
             {[
-              ["Bun", v(rental.product_title)],
-              ["Data", b ? "____________" : (() => {
+              [T("Bun", "Item"), v(rental.product_title)],
+              [T("Data", "Date"), b ? "____________" : (() => {
                 const signed = [pv?.owner_signed_at, pv?.renter_signed_at].filter(Boolean) as string[];
                 const confirmed = isRet ? rental.return_confirmed_at : rental.handover_confirmed_at;
                 const eff = signed.length ? signed.sort().at(-1)! : confirmed;
-                return eff ? `${fmtDT(eff)} (data semnării)` : `${fmtD(isRet ? rental.end_date : rental.start_date)} (programată — se confirmă la semnare)`;
+                return eff ? `${fmtDT(eff)} ${T("(data semnării)", "(signing date)")}` : `${fmtD(isRet ? rental.end_date : rental.start_date)} ${T("(programată — se confirmă la semnare)", "(scheduled — confirmed at signing)")}`;
               })()],
-              ["Interval orar", b ? "____:____" : slot(rental.pickup_time)],
-              ["Locație", v(rental.pickup_location || rental.product_location_city)],
-              [isRet ? "Predă (Locatar)" : "Predă (Locator)", v(isRet ? rental.renter_name : rental.owner_name)],
-              [isRet ? "Primește (Locator)" : "Primește (Locatar)", v(isRet ? rental.owner_name : rental.renter_name)],
+              [T("Interval orar", "Time slot"), b ? "____:____" : slot(rental.pickup_time)],
+              [T("Locație", "Location"), v(rental.pickup_location || rental.product_location_city)],
+              [isRet ? T("Predă (Locatar)", "Hands over (Lessee)") : T("Predă (Locator)", "Hands over (Lessor)"), v(isRet ? rental.renter_name : rental.owner_name)],
+              [isRet ? T("Primește (Locator)", "Receives (Lessor)") : T("Primește (Locatar)", "Receives (Lessee)"), v(isRet ? rental.owner_name : rental.renter_name)],
             ].map(([k, val]) => (
               <tr key={k}><td className="border border-border p-1.5 font-semibold w-1/3">{k}</td><td className="border border-border p-1.5">{val}</td></tr>
             ))}
           </tbody>
         </table>
-        <H2>Datele închirierii — sumar financiar</H2>
+        <H2>{T("Datele închirierii — sumar financiar", "Rental details — financial summary")}</H2>
         <table className="w-full border-collapse text-xs my-2">
           <tbody>
             {[
-              ["Preț închiriere/zi", ron(rental.daily_price)],
-              ["Subtotal închiriere", ron(financials.subtotal)],
-              ["Comision platformă (plătit de chiriaș)", ron(financials.platformFee)],
-              ["Taxa Stripe (plătită de chiriaș)", ron(financials.stripeFee)],
-              ...(financials.insuranceFee > 0 ? [["Taxa asigurare (plătită de chiriaș)", ron(financials.insuranceFee)]] : []),
-              ["Total pentru chiriaș (taxe incluse)", ron(financials.total)],
+              [T("Preț închiriere/zi", "Rental price/day"), ron(rental.daily_price)],
+              [T("Subtotal închiriere", "Rental subtotal"), ron(financials.subtotal)],
+              [T("Comision platformă (plătit de chiriaș)", "Platform fee (paid by renter)"), ron(financials.platformFee)],
+              [T("Taxa Stripe (plătită de chiriaș)", "Stripe fee (paid by renter)"), ron(financials.stripeFee)],
+              ...(financials.insuranceFee > 0 ? [[T("Taxa asigurare (plătită de chiriaș)", "Insurance fee (paid by renter)"), ron(financials.insuranceFee)]] : []),
+              [T("Total pentru chiriaș (taxe incluse)", "Total for renter (fees included)"), ron(financials.total)],
             ].map(([label, value]) => (
               <tr key={label}><td className="border border-border p-1.5 font-semibold">{label}</td><td className="border border-border p-1.5 whitespace-nowrap">{value}</td></tr>
             ))}
           </tbody>
         </table>
-        <H2>Accesorii {isRet ? "restituite" : "predate"}</H2>
+        <H2>{isRet ? T("Accesorii restituite", "Returned accessories") : T("Accesorii predate", "Handed-over accessories")}</H2>
         <table className="w-full border-collapse text-xs">
           <tbody>
             {(b || !items.length ? ["", "", ""] : items).map((it, i) => (
-              <tr key={i}><td className="border border-border p-1.5">{it || "\u00a0"}</td><td className="border border-border p-1.5 w-24">☐ Da ☐ Nu</td></tr>
+              <tr key={i}><td className="border border-border p-1.5">{it || "\u00a0"}</td><td className="border border-border p-1.5 w-24">{T("☐ Da ☐ Nu", "☐ Yes ☐ No")}</td></tr>
             ))}
           </tbody>
         </table>
-        <H2>Starea bunului</H2>
-        <p>☐ Funcțional, fără defecte &nbsp; ☐ Uzură normală &nbsp; ☐ Defecte constatate (descriere):</p>
+        <H2>{T("Starea bunului", "Condition of the item")}</H2>
+        <p>{T("☐ Funcțional, fără defecte \u00a0 ☐ Uzură normală \u00a0 ☐ Defecte constatate (descriere):", "☐ Working, no defects \u00a0 ☐ Normal wear \u00a0 ☐ Defects found (description):")}</p>
         <p>_____________________________________________________________________________</p>
-        <p className="text-xs text-muted-foreground">Fotografiile încărcate în platformă fac parte integrantă din prezentul proces-verbal.</p>
+        <p className="text-xs text-muted-foreground">{T("Fotografiile încărcate în platformă fac parte integrantă din prezentul proces-verbal.", "Photos uploaded to the platform are an integral part of this report.")}</p>
         {!sb && !!pv?.photo_urls?.length && (
           <>
-            <H2>Fotografii la {isRet ? "returnare" : "predare"}</H2>
+            <H2>{isRet ? T("Fotografii la returnare", "Return photos") : T("Fotografii la predare", "Handover photos")}</H2>
             <div className="photos grid grid-cols-2 gap-3 my-2">
               {pv.photo_urls.map((u, i) => (
                 <figure key={u} className="m-0">
-                  <img src={u} alt={`Poza ${i + 1}`} className="w-full h-48 object-contain border border-border rounded bg-muted" />
-                  <figcaption className="text-[10px] text-muted-foreground">Poza {i + 1}</figcaption>
+                  <img src={u} alt={`${T("Poza", "Photo")} ${i + 1}`} className="w-full h-48 object-contain border border-border rounded bg-muted" />
+                  <figcaption className="text-[10px] text-muted-foreground">{T("Poza", "Photo")} {i + 1}</figcaption>
                 </figure>
               ))}
             </div>
@@ -306,11 +308,11 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
         )}
         {isRet && (
           <>
-            <H2>Întârziere și penalități (art. 8)</H2>
+            <H2>{T("Întârziere și penalități (art. 8)", "Delay and penalties (art. 8)")}</H2>
             {sb ? (
-              <p>Zile de întârziere: ______ × ______ = ______ RON</p>
+              <p>{T("Zile de întârziere", "Days of delay")}: ______ × ______ = ______ RON</p>
             ) : (
-              <p>Zile de întârziere: <b>{late.days}</b> × {ron(late.perDay)} = <b>{ron(late.total)}</b>{late.days === 0 ? " (restituire la termen)" : ""}</p>
+              <p>{T("Zile de întârziere", "Days of delay")}: <b>{late.days}</b> × {ron(late.perDay)} = <b>{ron(late.total)}</b>{late.days === 0 ? T(" (restituire la termen)", " (returned on time)") : ""}</p>
             )}
           </>
         )}
@@ -321,23 +323,23 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
 
   const anexa3 = (
     <div className="page">
-      <Head title="ANEXA 3 — ACT ADIȚIONAL DE PRELUNGIRE" sub={`la Contractul de locațiune nr. ${rental.public_id}`} />
+      <Head title="ANEXA 3 — ACT ADIȚIONAL DE PRELUNGIRE" sub={T(`la Contractul de locațiune nr. ${rental.public_id}`, `to Lease Agreement no. ${rental.public_id}`)} />
       {sb || !paidExts.length ? (
         <>
-          <H2>Art. 1. Prelungirea duratei</H2>
-          <p>Părțile convin prelungirea locațiunii cu ______ zile, de la ____________ până la ____________.</p>
-          <H2>Art. 2. Chiria suplimentară</H2>
-          <p>Chiria suplimentară: ______ zile × ______ RON = ______ RON, plus comisionul platformei, achitată prin Rentli.ro.</p>
-          {!sb && <p className="text-xs text-muted-foreground">Nu există încă o prelungire aprobată și plătită.</p>}
+          <H2>{T("Art. 1. Prelungirea duratei", "Art. 1. Extension of the term")}</H2>
+          <p>{T("Părțile convin prelungirea locațiunii cu ______ zile, de la ____________ până la ____________.", "The parties agree to extend the lease by ______ days, from ____________ to ____________.")}</p>
+          <H2>{T("Art. 2. Chiria suplimentară", "Art. 2. Additional rent")}</H2>
+          <p>{T("Chiria suplimentară: ______ zile × ______ RON = ______ RON, plus comisionul platformei, achitată prin Rentli.ro.", "Additional rent: ______ days × ______ RON = ______ RON, plus the platform fee, paid via Rentli.ro.")}</p>
+          {!sb && <p className="text-xs text-muted-foreground">{T("Nu există încă o prelungire aprobată și plătită.", "There is no approved and paid extension yet.")}</p>}
         </>
       ) : (
         paidExts.map((e, i) => (
           <div key={e.id}>
-            <H2>Act adițional nr. {i + 1} — din {fmtD(e.paid_at)}</H2>
-            <p><b>Art. 1.</b> Părțile, {rental.owner_name} (Locator) și {rental.renter_name} (Locatar), convin prelungirea locațiunii bunului {rental.product_title} cu <b>{e.approved_days} zile</b>, de la {fmtD(e.original_end_date)} până la <b>{fmtD(e.approved_end_date)}</b>.</p>
-            <p><b>Art. 2.</b> Chiria suplimentară este {e.approved_days} × {ron(e.daily_price)} = {ron(e.subtotal_amount)}, plus comisionul platformei de {ron(e.platform_fee)}, total {ron(e.total_amount)}, achitată prin Rentli.ro.</p>
-            <p><b>Art. 3.</b> Restituirea se face la noua dată, în aceleași condiții. Toate celelalte clauze ale contractului rămân neschimbate.</p>
-            <p><b>Art. 4.</b> Protecția bunului se prelungește de drept până la noua dată de restituire.</p>
+            <H2>{T(`Act adițional nr. ${i + 1} — din ${fmtD(e.paid_at)}`, `Addendum no. ${i + 1} — dated ${fmtD(e.paid_at)}`)}</H2>
+            <p><b>Art. 1.</b> {T(`Părțile, ${rental.owner_name} (Locator) și ${rental.renter_name} (Locatar), convin prelungirea locațiunii bunului ${rental.product_title} cu ${e.approved_days} zile, de la ${fmtD(e.original_end_date)} până la ${fmtD(e.approved_end_date)}.`, `The parties, ${rental.owner_name} (Lessor) and ${rental.renter_name} (Lessee), agree to extend the lease of ${rental.product_title} by ${e.approved_days} days, from ${fmtD(e.original_end_date)} to ${fmtD(e.approved_end_date)}.`)}</p>
+            <p><b>Art. 2.</b> {T(`Chiria suplimentară este ${e.approved_days} × ${ron(e.daily_price)} = ${ron(e.subtotal_amount)}, plus comisionul platformei de ${ron(e.platform_fee)}, total ${ron(e.total_amount)}, achitată prin Rentli.ro.`, `The additional rent is ${e.approved_days} × ${ron(e.daily_price)} = ${ron(e.subtotal_amount)}, plus a platform fee of ${ron(e.platform_fee)}, total ${ron(e.total_amount)}, paid via Rentli.ro.`)}</p>
+            <p><b>Art. 3.</b> {T("Restituirea se face la noua dată, în aceleași condiții. Toate celelalte clauze ale contractului rămân neschimbate.", "The item is returned on the new date, under the same conditions. All other clauses of the agreement remain unchanged.")}</p>
+            <p><b>Art. 4.</b> {T("Protecția bunului se prelungește de drept până la noua dată de restituire.", "Item protection is automatically extended until the new return date.")}</p>
             <Sig pv={{ phase: "extension", owner_signature_data: e.owner_signature_data, renter_signature_data: e.renter_signature_data, owner_signed_at: e.owner_signed_at, renter_signed_at: e.renter_signed_at }} />
           </div>
         ))
@@ -357,15 +359,15 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
   };
   const lockMsg: Record<Tab, string> = {
     contract: "",
-    anexa1: "Anexa 1 se deblochează după semnarea contractului de către ambele părți.",
-    anexa2: "Anexa 2 se deblochează după finalizarea predării (Anexa 1 semnată de ambele părți).",
-    anexa3: "Anexa 3 este disponibilă doar după o prelungire aprobată și achitată.",
+    anexa1: T("Anexa 1 se deblochează după semnarea contractului de către ambele părți.", "Annex 1 unlocks after both parties sign the contract."),
+    anexa2: T("Anexa 2 se deblochează după finalizarea predării (Anexa 1 semnată de ambele părți).", "Annex 2 unlocks after handover is completed (Annex 1 signed by both parties)."),
+    anexa3: T("Anexa 3 este disponibilă doar după o prelungire aprobată și achitată.", "Annex 3 is available only after an approved and paid extension."),
   };
   const tabs: { k: Tab; l: string }[] = [
-    { k: "contract", l: "Contract" },
-    { k: "anexa1", l: "Anexa 1 · Predare" },
-    { k: "anexa2", l: "Anexa 2 · Returnare" },
-    { k: "anexa3", l: "Anexa 3 · Act adițional" },
+    { k: "contract", l: T("Contract", "Agreement") },
+    { k: "anexa1", l: T("Anexa 1 · Predare", "Annex 1 · Handover") },
+    { k: "anexa2", l: T("Anexa 2 · Returnare", "Annex 2 · Return") },
+    { k: "anexa3", l: T("Anexa 3 · Act adițional", "Annex 3 · Addendum") },
   ];
   const isLocked = !unlocked[tab];
 
@@ -373,8 +375,8 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[92vh] overflow-hidden flex flex-col p-0">
         <DialogHeader className="px-5 pt-5 pb-3 border-b border-border">
-          <DialogTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-primary" /> Documentele rezervării {rental.public_id}</DialogTitle>
-          <DialogDescription>Contract de locațiune bun mobil și anexele aferente.</DialogDescription>
+          <DialogTitle className="flex items-center gap-2"><FileText className="h-5 w-5 text-primary" /> {T("Documentele rezervării", "Booking documents")} {rental.public_id}</DialogTitle>
+          <DialogDescription>{T("Contract de locațiune bun mobil și anexele aferente.", "Movable item lease agreement and its annexes.")}</DialogDescription>
           <div className="flex flex-wrap items-center gap-2 pt-2">
             {tabs.map((x) => (
               <Button key={x.k} size="sm" variant={tab === x.k ? "default" : "outline"} className={!unlocked[x.k] ? "opacity-60" : ""} onClick={() => setTab(x.k)}>
@@ -382,18 +384,18 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
               </Button>
             ))}
             <div className="ml-auto flex gap-2 flex-wrap">
-              <Button size="sm" disabled={isLocked} variant="outline" onClick={() => print(false)}><Printer className="h-4 w-4 mr-1" />Tipărește</Button>
-              <Button size="sm" disabled={isLocked || saving} variant={(tab === "contract" && canSignContract) || (tab === "anexa3" && extToSign) ? "outline" : "default"} onClick={savePdf}>{saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}Salvează PDF</Button>
+              <Button size="sm" disabled={isLocked} variant="outline" onClick={() => print(false)}><Printer className="h-4 w-4 mr-1" />{T("Tipărește", "Print")}</Button>
+              <Button size="sm" disabled={isLocked || saving} variant={(tab === "contract" && canSignContract) || (tab === "anexa3" && extToSign) ? "outline" : "default"} onClick={savePdf}>{saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}{T("Salvează PDF", "Save PDF")}</Button>
             </div>
           </div>
           {tab === "contract" && canSignContract && (
-            <p className="text-xs text-muted-foreground pt-1">Citește contractul până la final — butonul de semnare se activează în partea de jos.</p>
+            <p className="text-xs text-muted-foreground pt-1">{T("Citește contractul până la final — butonul de semnare se activează în partea de jos.", "Read the contract to the end — the sign button activates at the bottom.")}</p>
           )}
           {tab === "anexa3" && extToSign && (
-            <p className="text-xs text-muted-foreground pt-1">Citește Anexa 3 — butonul de semnare este în partea de jos.</p>
+            <p className="text-xs text-muted-foreground pt-1">{T("Citește Anexa 3 — butonul de semnare este în partea de jos.", "Read Annex 3 — the sign button is at the bottom.")}</p>
           )}
           {tab === "anexa3" && !extToSign && extWaitingOwner && (
-            <p className="text-xs text-muted-foreground pt-1">În așteptarea semnăturii proprietarului — vei putea semna după el.</p>
+            <p className="text-xs text-muted-foreground pt-1">{T("În așteptarea semnăturii proprietarului — vei putea semna după el.", "Waiting for the owner's signature — you can sign after them.")}</p>
           )}
         </DialogHeader>
         <div
@@ -413,7 +415,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
           {isLocked ? (
             <div className="mx-auto max-w-md mt-10 rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
               <Lock className="h-8 w-8 mx-auto text-muted-foreground" />
-              <p className="font-semibold mt-3">Document blocat</p>
+              <p className="font-semibold mt-3">{T("Document blocat", "Document locked")}</p>
               <p className="text-sm text-muted-foreground mt-1">{lockMsg[tab]}</p>
             </div>
           ) : (
@@ -424,20 +426,20 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
           {tab === "contract" && canSignContract && (
             <div className="mx-auto max-w-[210mm] mt-4 rounded-xl border border-border bg-card p-4 flex flex-col sm:flex-row items-center gap-3 justify-between">
               <p className="text-sm text-muted-foreground">
-                {readToEnd ? "Ai parcurs contractul. Poți trece la semnare." : "Derulează până la finalul contractului pentru a putea semna."}
+                {readToEnd ? T("Ai parcurs contractul. Poți trece la semnare.", "You have reviewed the contract. You can now sign.") : T("Derulează până la finalul contractului pentru a putea semna.", "Scroll to the end of the contract to be able to sign.")}
               </p>
               <Button disabled={!readToEnd} onClick={() => setSignOpen(true)}>
-                <FileSignature className="h-4 w-4 mr-1" />Am citit — semnează contractul
+                <FileSignature className="h-4 w-4 mr-1" />{T("Am citit — semnează contractul", "I have read it — sign the contract")}
               </Button>
             </div>
           )}
           {tab === "anexa3" && extToSign && !isLocked && (
             <div className="mx-auto max-w-[210mm] mt-4 rounded-xl border border-border bg-card p-4 flex flex-col sm:flex-row items-center gap-3 justify-between">
               <p className="text-sm text-muted-foreground">
-                Verifică Anexa 3 de mai sus, apoi semnează.
+                {T("Verifică Anexa 3 de mai sus, apoi semnează.", "Review Annex 3 above, then sign.")}
               </p>
               <Button onClick={() => setExtSignId(extToSign.id)}>
-                <FileSignature className="h-4 w-4 mr-1" />Am citit — semnează Anexa 3
+                <FileSignature className="h-4 w-4 mr-1" />{T("Am citit — semnează Anexa 3", "I have read it — sign Annex 3")}
               </Button>
             </div>
           )}
