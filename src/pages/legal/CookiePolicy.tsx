@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import LegalPageLayout from "./LegalPageLayout";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { buildCookieSectionsEn } from "./cookiePolicyEn";
 
 const externalLinkClass = "text-primary underline hover:no-underline break-all";
 
@@ -8,10 +10,12 @@ const CookieTable = ({
   heading,
   introduction,
   rows,
+  labels = ['Nume cookie', 'Domeniu / Furnizor', 'Tip', 'Când expiră', 'Descriere'],
 }: {
   heading: string;
   introduction: string;
   rows: Array<[string, string, string, string, string]>;
+  labels?: string[];
 }) => (
   <div className="overflow-x-auto border border-border rounded-lg">
     <table className="w-full min-w-[820px] border-collapse text-sm">
@@ -22,7 +26,7 @@ const CookieTable = ({
           </th>
         </tr>
         <tr className="bg-muted/60">
-          {['Nume cookie', 'Domeniu / Furnizor', 'Tip', 'Când expiră', 'Descriere'].map((label) => (
+          {labels.map((label) => (
             <th key={label} className="border-b border-r border-border p-3 text-left last:border-r-0">{label}</th>
           ))}
         </tr>
@@ -172,19 +176,22 @@ const sections = [
   },
 ];
 
+const sectionsEn = buildCookieSectionsEn(CookieTable);
+
 const CookiePolicy = () => {
+  const { language } = useLanguage();
+  const isEn = language === "en";
   usePageSeo({
-    title: "Politica de cookies — Rentli",
-    description: "Politica Rentli privind utilizarea cookie-urilor și tehnologiilor similare.",
+    title: isEn ? "Cookie Policy — Rentli" : "Politica de cookies — Rentli",
+    description: isEn ? "Rentli policy on the use of cookies and similar technologies." : "Politica Rentli privind utilizarea cookie-urilor și tehnologiilor similare.",
   });
 
   return (
     <LegalPageLayout
-      title="POLITICA DE COOKIES"
+      title={isEn ? "COOKIE POLICY" : "POLITICA DE COOKIES"}
       subtitle=""
-      lastUpdated="2 septembrie 2026"
-      sections={sections}
-      forceRomanianLabels
+      lastUpdated={isEn ? "2 September 2026" : "2 septembrie 2026"}
+      sections={isEn ? sectionsEn : sections}
     />
   );
 };
