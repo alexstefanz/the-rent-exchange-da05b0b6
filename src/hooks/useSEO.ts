@@ -32,7 +32,7 @@ const setMeta = (selector: string, attr: string, value: string) => {
   el.setAttribute(attr, value);
 };
 
-const DEFAULT_OG_IMAGE = "https://rentli.ro/og-image.webp";
+const DEFAULT_OG_IMAGE = "https://rentli.ro/og-image.jpg?v=2";
 
 export const useSEO = ({ title, description, image, imageAlt, url, type = "website", canonical, jsonLd, noindex }: SEOConfig) => {
   useEffect(() => {
