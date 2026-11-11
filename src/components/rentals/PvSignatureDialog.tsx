@@ -775,6 +775,7 @@ function DocPhoto({ path, label, onClick }: { path: string; label: string; onCli
 }
 
 function SigBox({ label, name, signatureData, signedAt }: { label: string; name: string; signatureData: string | null; signedAt: string | null }) {
+  const { t: T } = useLanguage();
   return (
     <div>
       <p className="font-bold text-sm">{label}</p>
