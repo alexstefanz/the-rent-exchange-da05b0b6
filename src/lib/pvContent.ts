@@ -235,7 +235,7 @@ export function templateCategoryLine(category: string | null | undefined): strin
  * Builds the PV exactly after the official template "Proces_verbal_UNICA"
  * (header table, sections 1–7, signature blocks for handover and return).
  * The same document serves both phases: the live signatures are placed in
- * L("SEMNATURI Predare", "SIGNATURES Handover") (handover) or L("SEMNATURI Restituire", "SIGNATURES Return") (return).
+ * "SEMNATURI Predare" (handover) or "SEMNATURI Restituire" (return).
  */
 export function buildPvRichContent(
   rental: RentalFullDetail,
