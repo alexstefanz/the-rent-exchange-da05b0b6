@@ -199,8 +199,8 @@ const RentalsTab = () => {
     try {
       const res = await cancelPaidBeforeContract(cancelDialogRental.id);
       toast.success(res.to_wallet
-        ? `Rezervare anulată. ${res.refund} RON au revenit în Wallet.`
-        : `Rezervare anulată. ${res.refund} RON se returnează pe card.`);
+        ? t(`Rezervare anulată. ${res.refund} RON au revenit în Wallet.`, `Booking cancelled. ${res.refund} RON returned to your Wallet.`)
+        : t(`Rezervare anulată. ${res.refund} RON se returnează pe card.`, `Booking cancelled. ${res.refund} RON will be refunded to your card.`));
       queryClient.invalidateQueries({ queryKey: ["my-rentals"] });
       queryClient.invalidateQueries({ queryKey: ["wallet-balance"] });
       setCancelDialogRental(null);
@@ -472,14 +472,14 @@ const RentalsTab = () => {
               <DialogHeader>
                 <DialogTitle>{t("Anulezi rezervarea?","Cancel the booking?")}</DialogTitle>
                 <DialogDescription>
-                  Contractul nu a fost încă semnat, așa că poți anula imediat „{cancelDialogRental?.product_title}". Primești înapoi toți banii plătiți: în Wallet dacă ai plătit din Wallet, sau pe card dacă ai plătit cu cardul. Proprietarul va fi anunțat.
+                  {t(`Contractul nu a fost încă semnat, așa că poți anula imediat „${cancelDialogRental?.product_title}". Primești înapoi toți banii plătiți: în Wallet dacă ai plătit din Wallet, sau pe card dacă ai plătit cu cardul. Proprietarul va fi anunțat.`, `The contract hasn't been signed yet, so you can cancel "${cancelDialogRental?.product_title}" right away. You get all your money back: to your Wallet if you paid from Wallet, or to your card if you paid by card. The owner will be notified.`)}
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter className="gap-2">
                 <Button variant="outline" onClick={() => setCancelDialogRental(null)} disabled={submitting}>{t("Înapoi","Back")}</Button>
                 <Button variant="destructive" onClick={handleDirectCancel} disabled={submitting}>
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Ban className="h-4 w-4 mr-2" />}
-                  Da, anulează și rambursează
+                  {t("Da, anulează și rambursează", "Yes, cancel and refund")}
                 </Button>
               </DialogFooter>
             </>
@@ -488,7 +488,7 @@ const RentalsTab = () => {
               <DialogHeader>
                 <DialogTitle>{t("Solicită anularea rezervării","Request booking cancellation")}</DialogTitle>
                 <DialogDescription>
-                  Contractul a fost semnat, așa că cererea va fi revizuită de un admin. La aprobare, banii (inclusiv comisionul) îți sunt rambursați integral pentru „{cancelDialogRental?.product_title}".
+                  {t(`Contractul a fost semnat, așa că cererea va fi revizuită de un admin. La aprobare, banii (inclusiv comisionul) îți sunt rambursați integral pentru „${cancelDialogRental?.product_title}".`, `The contract has been signed, so the request will be reviewed by an admin. If approved, you get a full refund (including the fee) for "${cancelDialogRental?.product_title}".`)}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-3">

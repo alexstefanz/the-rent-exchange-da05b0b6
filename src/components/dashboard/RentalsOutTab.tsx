@@ -346,7 +346,7 @@ const RentalsOutTab = () => {
                               className="w-full h-9 text-xs sm:text-sm bg-gradient-to-r from-primary to-primary/90 shadow-md"
                             >
                               {respondingId === rental.id ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Check className="h-3.5 w-3.5 mr-1" />}
-                              Acceptă
+                              {t("Acceptă", "Accept")}
                             </Button>
                           )}
                           <Button
@@ -428,7 +428,7 @@ const RentalsOutTab = () => {
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground truncate">
-                      Chiriaș: <span className="text-foreground">{rental.renter_name || "—"}</span>
+                      {t("Chiriaș", "Renter")}: <span className="text-foreground">{rental.renter_name || "—"}</span>
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {format(new Date(rental.start_date), "d MMM yyyy", { locale: language === "ro" ? ro : undefined })} – {format(new Date(rental.end_date), "d MMM yyyy", { locale: language === "ro" ? ro : undefined })} · {rental.rental_days} zile
@@ -458,14 +458,14 @@ const RentalsOutTab = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("Refuză cererea de închiriere","Reject rental request")}</DialogTitle>
-            <DialogDescription>Ești sigur că vrei să refuzi cererea pentru „{rejectDialogRental?.product_title}"?</DialogDescription>
+            <DialogDescription>{t(`Ești sigur că vrei să refuzi cererea pentru „${rejectDialogRental?.product_title}"?`, `Are you sure you want to reject the request for "${rejectDialogRental?.product_title}"?`)}</DialogDescription>
           </DialogHeader>
           <Textarea placeholder={t("Motiv (opțional)","Reason (optional)")} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} rows={3} />
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setRejectDialogRental(null)}>{t("Anulează","Cancel")}</Button>
             <Button variant="destructive" onClick={handleReject} disabled={respondingId === rejectDialogRental?.id}>
               {respondingId === rejectDialogRental?.id ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <X className="h-4 w-4 mr-2" />}
-              Refuză cererea
+              {t("Refuză cererea", "Reject request")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -477,7 +477,7 @@ const RentalsOutTab = () => {
           <DialogHeader>
             <DialogTitle>{t("Solicită anularea cererii","Request cancellation")}</DialogTitle>
             <DialogDescription>
-              Cererea va fi revizuită de un admin. La aprobare, banii (inclusiv comisionul) sunt rambursați integral chiriașului pentru „{cancelDialogRental?.product_title}".
+              {t(`Cererea va fi revizuită de un admin. La aprobare, banii (inclusiv comisionul) sunt rambursați integral chiriașului pentru „${cancelDialogRental?.product_title}".`, `The request will be reviewed by an admin. If approved, the renter gets a full refund (including the fee) for "${cancelDialogRental?.product_title}".`)}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
