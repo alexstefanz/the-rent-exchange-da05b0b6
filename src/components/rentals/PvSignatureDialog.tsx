@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { jsPDF } from "jspdf";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, Eraser, FileSignature, Download, FileText, ExternalLink, Send } from "lucide-react";
 import { X, ZoomIn, Lock } from "lucide-react";
@@ -37,6 +38,7 @@ interface Props {
 }
 
 export default function PvSignatureDialog({ open, onOpenChange, rental, phase, role, onSigned }: Props) {
+  const { t: T, language } = useLanguage();
   const { user } = useAuth();
   const sigRef = useRef<SignatureCanvas | null>(null);
   const [pv, setPv] = useState<PvDocument | null>(null);
@@ -68,7 +70,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   }, [open, rental.id, phase]);
 
   const content = buildPvContent(rental, phase, pvEffectiveDate(pv));
-  const richView = buildPvRichContent(rental, phase, pvEffectiveDate(pv));
+  const richView = buildPvRichContent(rental, phase, pvEffectiveDate(pv), language);
 
   const uploaderRole: "owner" | "renter" = phase === "handover" ? "owner" : "renter";
   const isUploader = role === uploaderRole;
@@ -81,7 +83,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
   const isMyTurn = !mySigned && (isUploader || otherSigned);
   const disputeOpen = rental.dispute_status === "open";
   const canSign = isMyTurn && !disputeOpen && photos.length >= MIN_PV_PHOTOS;
-  const ctaLabel = isUploader ? "Semneaza si trimite clientului" : "Semneaza acordul";
+  const ctaLabel = isUploader ? T("Semnează și trimite clientului", "Sign and send to the renter") : T("Semnează acordul", "Sign the agreement");
 
   // Keep the signature canvas pixel buffer in sync with its rendered size.
   // Without this, on mobile / high-DPI screens the drawn strokes are offset
@@ -118,14 +120,14 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
 
 
   // ===================== PDF (jsPDF) =====================
-  async function generatePdf(updatedPv: PvDocument): Promise<Blob> {
+  async function generatePdf(updatedPv: PvDocument, lang: "ro" | "en" = "ro"): Promise<Blob> {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const W = doc.internal.pageSize.getWidth();
     const H = doc.internal.pageSize.getHeight();
     const MARGIN = 50;
     const CONTENT_W = W - MARGIN * 2;
     let y = 40;
-    const rich = buildPvRichContent(rental, phase, pvEffectiveDate(updatedPv));
+    const rich = buildPvRichContent(rental, phase, pvEffectiveDate(updatedPv), lang);
 
     const ensureSpace = (needed: number) => {
       if (y + needed > H - 40) { doc.addPage(); y = 50; }
@@ -382,7 +384,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
     if (!pv) return;
     setDownloadingPdf(true);
     try {
-      const blob = await generatePdf(pv);
+      const blob = await generatePdf(pv, language);
       downloadBlob(blob, `${content.title.toLowerCase().replace(/[^a-z0-9]+/gi, "-")}-${rental.public_id || rental.id}.pdf`);
     } catch (e: any) {
       notifyError(e, { fallbackTitle: "Eroare la generare PDF" });
@@ -474,7 +476,7 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
     // Same document as the PDF/DOCX downloads (single source of truth).
     const win = window.open("", "_blank");
     try {
-      const blob = await generatePdf(pv);
+      const blob = await generatePdf(pv, language);
       const url = URL.createObjectURL(blob);
       if (win) win.location.href = url; else window.open(url, "_blank");
     } catch (e: any) {
@@ -488,9 +490,9 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto bg-background">
         <DialogHeader>
-          <DialogTitle>Proces-verbal de {phase === "handover" ? "predare-primire" : "returnare"}</DialogTitle>
+          <DialogTitle>{phase === "handover" ? T("Proces-verbal de predare-primire", "Handover report") : T("Proces-verbal de returnare", "Return report")}</DialogTitle>
           <DialogDescription>
-            Citeste documentul, apoi semneaza cu mouse-ul in spatiul de jos.
+            {T("Citește documentul, apoi semnează în spațiul de jos.", "Read the document, then sign in the space below.")}
           </DialogDescription>
         </DialogHeader>
 
@@ -543,11 +545,11 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
               {photos.length > 0 && (
                 <section className="mt-8">
                   <p className="font-semibold text-xs uppercase tracking-wider text-muted-foreground mb-3">
-                    {phase === "handover" ? "Anexa – fotografii la predare" : "Anexa – fotografii la restituire"}
+                    {phase === "handover" ? T("Anexa – fotografii la predare", "Annex – handover photos") : T("Anexa – fotografii la restituire", "Annex – return photos")}
                   </p>
                   <div className="grid grid-cols-2 gap-4">
                     {photosMeta.map((m, i) => (
-                      <DocPhoto key={m.path} path={m.path} label={`Poza ${i + 1}`} onClick={() => setLightboxIndex(i)} />
+                      <DocPhoto key={m.path} path={m.path} label={`${T("Poza", "Photo")} ${i + 1}`} onClick={() => setLightboxIndex(i)} />
                     ))}
                   </div>
                 </section>
@@ -566,14 +568,14 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-sm font-semibold flex items-center gap-2">
                     <FileSignature className="h-4 w-4 text-primary" />
-                    Semnatura {role === "owner" ? "Proprietar" : "Chirias"} — semneaza aici
+                    {role === "owner" ? T("Semnătura Proprietar — semnează aici", "Owner signature — sign here") : T("Semnătura Chiriaș — semnează aici", "Renter signature — sign here")}
                   </h4>
                   <Button type="button" variant="ghost" size="sm" onClick={() => sigRef.current?.clear()}>
-                    <Eraser className="h-4 w-4 mr-1" />Sterge
+                    <Eraser className="h-4 w-4 mr-1" />{T("Șterge", "Clear")}
                   </Button>
                 </div>
                 <p className="mb-2 rounded-lg border-l-2 border-primary bg-primary/10 px-3 py-2 text-xs">
-                  Prin semnarea prezentului PV, confirmați că ați inspectat bunul și ați verificat starea fizică a acestuia chiar în momentul {phase === "return" ? "returnării" : "predării"}.
+                  {phase === "return" ? T("Prin semnarea prezentului PV, confirmați că ați inspectat bunul și ați verificat starea fizică a acestuia chiar în momentul returnării.", "By signing this report, you confirm that you inspected the item and checked its physical condition at the moment of return.") : T("Prin semnarea prezentului PV, confirmați că ați inspectat bunul și ați verificat starea fizică a acestuia chiar în momentul predării.", "By signing this report, you confirm that you inspected the item and checked its physical condition at the moment of handover.")}
                 </p>
                 <div
                   className="rounded-lg border border-dashed border-border bg-white overflow-hidden touch-none"
@@ -593,11 +595,11 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
                   />
                 </div>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Poti semna cu degetul pe telefon sau cu mouse-ul pe calculator.
+                  {T("Poți semna cu degetul pe telefon sau cu mouse-ul pe calculator.", "You can sign with your finger on a phone or with the mouse on a computer.")}
                 </p>
                 {photos.length < MIN_PV_PHOTOS && (
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Sunt necesare {MIN_PV_PHOTOS} fotografii inainte de semnare.
+                    {T(`Sunt necesare ${MIN_PV_PHOTOS} fotografii înainte de semnare.`, `${MIN_PV_PHOTOS} photos are required before signing.`)}
                   </p>
                 )}
                 {signError && (
@@ -623,21 +625,21 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
             {!isMyTurn && !mySigned && (
               <p className="mt-4 text-xs text-muted-foreground bg-muted/40 rounded-lg p-3">
                 {isUploader
-                  ? "Asteapta cealalta parte sa-si dea acordul."
-                  : `Asteapta ${uploaderRole === "owner" ? "proprietarul" : "chiriasul"} sa semneze primul.`}
+                  ? T("Așteaptă cealaltă parte să-și dea acordul.", "Waiting for the other party to agree.")
+                  : uploaderRole === "owner" ? T("Așteaptă proprietarul să semneze primul.", "Waiting for the owner to sign first.") : T("Așteaptă chiriașul să semneze primul.", "Waiting for the renter to sign first.")}
               </p>
             )}
 
             {mySigned && !otherSigned && (
               <p className="mt-4 text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-                Ai semnat acest proces verbal. Asteptam semnatura celuilalt participant.
+                {T("Ai semnat acest proces-verbal. Așteptăm semnătura celuilalt participant.", "You signed this report. Waiting for the other party's signature.")}
               </p>
             )}
 
             {ownerSigned && renterSigned && (
               <p className="mt-4 flex items-center gap-2 rounded-lg border-l-2 border-primary bg-primary/10 px-3 py-2 text-xs font-medium text-foreground">
                 <Lock className="h-4 w-4 text-primary shrink-0" />
-                Document finalizat si sigilat · Format securizat needitabil (PDF). Semnaturile si fotografiile nu mai pot fi modificate.
+                {T("Document finalizat și sigilat · Format securizat needitabil (PDF). Semnăturile și fotografiile nu mai pot fi modificate.", "Document finalized and sealed · Secure non-editable format (PDF). Signatures and photos can no longer be changed.")}
               </p>
             )}
 
@@ -652,8 +654,8 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
                     <FileText className="h-5 w-5" />
                   </span>
                   <span className="text-left">
-                    <span className="block font-semibold text-sm">Vezi PV semnat (PDF)</span>
-                    <span className="block text-xs opacity-90">Document semnat de ambele parti, cu fotografii</span>
+                    <span className="block font-semibold text-sm">{T("Vezi PV semnat (PDF)", "View signed report (PDF)")}</span>
+                    <span className="block text-xs opacity-90">{T("Document semnat de ambele părți, cu fotografii", "Document signed by both parties, with photos")}</span>
                   </span>
                 </span>
                 <ExternalLink className="h-4 w-4 opacity-90" />
@@ -666,11 +668,11 @@ export default function PvSignatureDialog({ open, onOpenChange, rental, phase, r
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleDownloadPdf} disabled={!pv || downloadingPdf}>
               {downloadingPdf ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-              Descarca PDF
+              {T("Descarcă PDF", "Download PDF")}
             </Button>
           </div>
           <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => onOpenChange(false)}>Inchide</Button>
+            <Button variant="ghost" onClick={() => onOpenChange(false)}>{T("Închide", "Close")}</Button>
             {isMyTurn && !mySigned && (
               <Button onClick={handleSign} disabled={!canSign || signing} className="bg-foreground text-background hover:bg-foreground/90">
                 {signing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
@@ -773,6 +775,7 @@ function DocPhoto({ path, label, onClick }: { path: string; label: string; onCli
 }
 
 function SigBox({ label, name, signatureData, signedAt }: { label: string; name: string; signatureData: string | null; signedAt: string | null }) {
+  const { t: T } = useLanguage();
   return (
     <div>
       <p className="font-bold text-sm">{label}</p>
@@ -781,12 +784,12 @@ function SigBox({ label, name, signatureData, signedAt }: { label: string; name:
         {signatureData ? (
           <img src={signatureData} alt="Semnatura" className="max-h-16 object-contain" />
         ) : (
-          <span className="text-xs italic text-muted-foreground">— nesemnat —</span>
+          <span className="text-xs italic text-muted-foreground">{T("— nesemnat —", "— not signed —")}</span>
         )}
       </div>
       <hr className="border-foreground/60 mt-1" />
       <p className="text-xs text-muted-foreground mt-1">
-        {signedAt ? `Semnat ${format(new Date(signedAt), "dd.MM.yyyy HH:mm")}` : "Semnatura"}
+        {signedAt ? `${T("Semnat", "Signed")} ${format(new Date(signedAt), "dd.MM.yyyy HH:mm")}` : T("Semnătura", "Signature")}
       </p>
     </div>
   );

@@ -42,3 +42,16 @@ describe("PV follows the official template", () => {
     assert.equal(c.title, "PROCES-VERBAL DE PREDARE-PRIMIRE (RESTITUIRE)");
   });
 });
+
+describe("PV language", () => {
+  const rental: any = { public_id: "RNT-1", owner_name: "A", renter_name: "B", start_date: "2026-01-01", end_date: "2026-01-03", rental_days: 2, daily_price: 10, subtotal: 20, platform_fee: 3, stripe_fee: 1.3, product_title: "X" };
+  test("Romanian stays the default", () => {
+    assert.equal(buildPvRichContent(rental, "handover").sections[0].heading, "1. PARTILE");
+  });
+  test("English version translates headings and declarations", () => {
+    const en = buildPvRichContent(rental, "handover", new Date(), "en");
+    assert.equal(en.sections[0].heading, "1. PARTIES");
+    assert.equal(en.signatures.heading, "SIGNATURES Handover");
+    assert.equal(en.sections.at(-1)!.heading, "7. DECLARATIONS");
+  });
+});
