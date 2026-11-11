@@ -323,7 +323,7 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
 
   const anexa3 = (
     <div className="page">
-      <Head title="ANEXA 3 — ACT ADIȚIONAL DE PRELUNGIRE" sub={T(`la Contractul de locațiune nr. ${rental.public_id}`, `to Lease Agreement no. ${rental.public_id}`)} />
+      <Head title={T("ANEXA 3 — ACT ADIȚIONAL DE PRELUNGIRE", "ANNEX 3 — EXTENSION ADDENDUM")} sub={T(`la Contractul de locațiune nr. ${rental.public_id}`, `to Lease Agreement no. ${rental.public_id}`)} />
       {sb || !paidExts.length ? (
         <>
           <H2>{T("Art. 1. Prelungirea duratei", "Art. 1. Extension of the term")}</H2>
