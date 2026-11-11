@@ -261,7 +261,7 @@ const ProductDetail = () => {
   const origin = CANONICAL_ORIGIN;
   const seoImage = seoFirstImage
     ? (seoFirstImage.startsWith("http") ? seoFirstImage : `${origin}${seoFirstImage}`)
-    : "https://rentli.ro/og-image.webp";
+    : "https://rentli.ro/og-image.jpg?v=2";
   const canonicalUrl = product
     ? `${CANONICAL_ORIGIN}${getProductUrl(product)}`
     : `${CANONICAL_ORIGIN}${typeof window !== "undefined" ? window.location.pathname : ""}`;
