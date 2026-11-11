@@ -7,7 +7,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import taxonomy from "./taxonomy.json" with { type: "json" };
 
 const SITE = "https://rentli.ro";
-const DEFAULT_IMAGE = `${SITE}/og-image.jpg?v=2`;
+const DEFAULT_IMAGE = `${SITE}/og-image.jpg?v=3`;
 const TITLE_MAX = 60;
 const DESC_MAX = 155;
 
