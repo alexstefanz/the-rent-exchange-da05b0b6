@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { Eraser, FileSignature, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,6 +24,7 @@ export default function ExtensionSignDialog({ open, onOpenChange, extensionId, p
   const [hasInk, setHasInk] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const { t: T } = useLanguage();
 
   useEffect(() => { if (!open) { setAgree(false); setHasInk(false); setErr(null); } }, [open]);
 
@@ -35,18 +37,18 @@ export default function ExtensionSignDialog({ open, onOpenChange, extensionId, p
     if (error) { setErr(error.message); return; }
     onOpenChange(false);
     onSigned?.();
-    notifyDocumentSigned({ document: "Anexa 3 — Act adițional de prelungire", publicId });
+    notifyDocumentSigned({ document: T("Anexa 3 — Act adițional de prelungire", "Annex 3 — Extension addendum"), publicId });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><FileSignature className="h-5 w-5 text-primary" />Semnează Anexa 3 {publicId}</DialogTitle>
-          <DialogDescription>Act adițional de prelungire a contractului de locațiune.</DialogDescription>
+          <DialogTitle className="flex items-center gap-2"><FileSignature className="h-5 w-5 text-primary" />{T("Semnează Anexa 3", "Sign Annex 3")} {publicId}</DialogTitle>
+          <DialogDescription>{T("Act adițional de prelungire a contractului de locațiune.", "Addendum extending the lease agreement.")}</DialogDescription>
         </DialogHeader>
         {onOpenAnnex && (
-          <Button variant="link" className="px-0 h-auto self-start" onClick={onOpenAnnex}>Citește Anexa 3 înainte de semnare</Button>
+          <Button variant="link" className="px-0 h-auto self-start" onClick={onOpenAnnex}>{T("Citește Anexa 3 înainte de semnare", "Read Annex 3 before signing")}</Button>
         )}
         <div className="rounded-xl border border-border bg-background">
           <SignatureCanvas
@@ -57,17 +59,17 @@ export default function ExtensionSignDialog({ open, onOpenChange, extensionId, p
           />
         </div>
         <Button variant="ghost" size="sm" className="self-start" onClick={() => { sigRef.current?.clear(); setHasInk(false); }}>
-          <Eraser className="h-4 w-4 mr-1" />Șterge semnătura
+          <Eraser className="h-4 w-4 mr-1" />{T("Șterge semnătura", "Clear signature")}
         </Button>
         <label className="flex items-start gap-2 text-sm">
           <Checkbox checked={agree} onCheckedChange={(v) => setAgree(!!v)} className="mt-0.5" />
-          <span>Am citit și accept Actul adițional de prelungire (Anexa 3). Semnătura digitală are valoarea semnăturii olografe.</span>
+          <span>{T("Am citit și accept Actul adițional de prelungire (Anexa 3). Semnătura digitală are valoarea semnăturii olografe.", "I have read and accept the Extension addendum (Annex 3). The digital signature has the value of a handwritten signature.")}</span>
         </label>
         {err && <p className="text-sm text-destructive">{err}</p>}
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Renunță</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>{T("Renunță", "Cancel")}</Button>
           <Button disabled={!agree || !hasInk || busy} onClick={submit}>
-            {busy && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}Semnează Anexa 3
+            {busy && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}{T("Semnează Anexa 3", "Sign Annex 3")}
           </Button>
         </DialogFooter>
       </DialogContent>
