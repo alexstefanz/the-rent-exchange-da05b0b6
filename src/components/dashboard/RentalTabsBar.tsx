@@ -1,18 +1,20 @@
+import { useLanguage } from "@/contexts/LanguageContext";
 import type { RentalSortBy } from "./RentalsFilterBar";
 
 export type RentalTabView = "requests" | "active" | "completed" | "cancelled";
 
-const TABS: { key: RentalTabView; label: string }[] = [
-  { key: "requests", label: "Cereri" },
-  { key: "active", label: "Active" },
-  { key: "completed", label: "Finalizate" },
-  { key: "cancelled", label: "Anulate" },
+const TABS: { key: RentalTabView; label: string; en: string }[] = [
+  { key: "requests", label: "Cereri", en: "Requests" },
+  { key: "active", label: "Active", en: "Active" },
+  { key: "completed", label: "Finalizate", en: "Completed" },
+  { key: "cancelled", label: "Anulate", en: "Cancelled" },
 ];
 
 export const parseTab = (v: string | null): RentalTabView =>
   TABS.some((t) => t.key === v) ? (v as RentalTabView) : "requests";
 
-export const emptyTabText = (view: RentalTabView, role: "renter" | "owner") => {
+export const emptyTabText = (view: RentalTabView, role: "renter" | "owner", lang: "ro" | "en" = "ro") => {
+  if (lang === "en") return ({ requests: role === "owner" ? "No new requests from renters." : "You have no pending requests.", active: "No rentals in progress.", completed: "No completed rentals yet.", cancelled: "No cancelled or rejected rentals." })[view];
   const map = {
     requests: role === "owner" ? "Nu ai cereri noi de la chiriași." : "Nu ai cereri în așteptare.",
     active: "Nu ai închirieri în derulare.",
@@ -35,6 +37,8 @@ interface Props {
 const RentalTabsBar = ({ view, onChange, counts, sortBy, onSortChange, amountLabel, accent = "primary" }: Props) => {
   const activeCls = accent === "blue" ? "bg-sky-600 text-white shadow-sm" : "bg-primary text-primary-foreground shadow-sm";
   const pulseCls = accent === "blue" ? "animate-pulse bg-sky-600 text-white" : "animate-pulse bg-primary text-primary-foreground";
+  const { language } = useLanguage();
+  const tt = (ro: string, en: string) => (language === "ro" ? ro : en);
   return (
   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
     <div className="grid w-full grid-cols-4 rounded-xl border border-border bg-muted/40 p-1 sm:inline-grid sm:w-auto">
@@ -50,7 +54,7 @@ const RentalTabsBar = ({ view, onChange, counts, sortBy, onSortChange, amountLab
               active ? activeCls : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {t.label}
+            {language === "ro" ? t.label : t.en}
             <span className={`ml-1.5 rounded-full px-1.5 text-xs ${active ? "bg-background/25" : pulse ? pulseCls : "bg-background"}`}>
               {counts[t.key]}
             </span>
@@ -62,12 +66,12 @@ const RentalTabsBar = ({ view, onChange, counts, sortBy, onSortChange, amountLab
       value={sortBy}
       onChange={(e) => onSortChange(e.target.value as RentalSortBy)}
       className="h-10 rounded-xl border border-border bg-background px-3 text-sm text-foreground"
-      aria-label="Sortare"
+      aria-label={tt("Sortare", "Sort")}
     >
-      <option value="newest">Cele mai noi</option>
-      <option value="oldest">Cele mai vechi</option>
-      <option value="amount_desc">{amountLabel}: descrescător</option>
-      <option value="amount_asc">{amountLabel}: crescător</option>
+      <option value="newest">{tt("Cele mai noi", "Newest")}</option>
+      <option value="oldest">{tt("Cele mai vechi", "Oldest")}</option>
+      <option value="amount_desc">{amountLabel}: {tt("descrescător", "high to low")}</option>
+      <option value="amount_asc">{amountLabel}: {tt("crescător", "low to high")}</option>
     </select>
   </div>
   );
