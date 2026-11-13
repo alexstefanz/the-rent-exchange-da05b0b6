@@ -58,6 +58,11 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        biz: {
+          panel: "hsl(var(--biz-panel))",
+          "panel-foreground": "hsl(var(--biz-panel-foreground))",
+          "panel-muted": "hsl(var(--biz-panel-muted))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
