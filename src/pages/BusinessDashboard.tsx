@@ -13,7 +13,7 @@ import EarningsTab from "@/components/profile/EarningsTab";
 import AccountTab from "@/components/profile/AccountTab";
 import Messages from "@/pages/Messages";
 import RentalDetailPage from "@/pages/RentalDetailPage";
-import OwnerRentalsPage from "@/pages/OwnerRentalsPage";
+import RentalsOutTab from "@/components/dashboard/RentalsOutTab";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -187,7 +187,11 @@ export default function BusinessDashboard() {
           </Sheet>
           <span className="font-bold text-primary">Rentli Business</span>
         </div>
-        <div className="p-4 md:p-8 space-y-6 w-full">
+        <div className="p-4 md:p-8 space-y-6 w-full" onClickCapture={(e) => {
+          const a = (e.target as HTMLElement).closest("a");
+          const m = a?.getAttribute("href")?.match(/^\/(?:rezervari|inchirieri)\/([^/?#]+)/);
+          if (m) { e.preventDefault(); e.stopPropagation(); openRental(decodeURIComponent(m[1])); }
+        }}>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">{section === "overview" ? `${t("Salut", "Hello")}, ${profile?.company_name || ""}` : current.label}</h1>
@@ -307,7 +311,7 @@ export default function BusinessDashboard() {
               </CardContent></Card>
           </TabsContent>
 
-          <TabsContent value="requests" className="mt-0">{section === "requests" && <OwnerRentalsPage embedded onOpenRental={openRental} />}</TabsContent>
+          <TabsContent value="requests" className="mt-0">{section === "requests" && <RentalsOutTab />}</TabsContent>
           <TabsContent value="renter" className="mt-0">{section === "renter" && <RentalsTab />}</TabsContent>
           <TabsContent value="messages" className="mt-0">{section === "messages" && <Messages embedded />}</TabsContent>
           <TabsContent value="wallet" className="mt-0">{section === "wallet" && <EarningsTab />}</TabsContent>
