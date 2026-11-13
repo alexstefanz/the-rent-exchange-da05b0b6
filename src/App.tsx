@@ -82,6 +82,8 @@ const RentalsPage = lazyWithRetry(() => import("./pages/RentalsPage"));
 const OwnerRentalsPage = lazyWithRetry(() => import("./pages/OwnerRentalsPage"));
 const RentalDetailPage = lazyWithRetry(() => import("./pages/RentalDetailPage"));
 const ListingsPage = lazyWithRetry(() => import("./pages/ListingsPage"));
+const BusinessDashboard = lazyWithRetry(() => import("./pages/BusinessDashboard"));
+const BusinessOnboarding = lazyWithRetry(() => import("./pages/BusinessOnboarding"));
 const ActivityLogPage = lazyWithRetry(() => import("./pages/ActivityLogPage"));
 const CheckoutSuccess = lazyWithRetry(() => import("./pages/CheckoutSuccess"));
 const CheckoutCancelled = lazyWithRetry(() => import("./pages/CheckoutCancelled"));
@@ -184,6 +186,8 @@ const App = () => (
                 <Route path="/rezervari/:publicId" element={<RentalDetailPage />} />
                 <Route path="/inchirieri/:publicId" element={<RentalDetailPage />} />
                 <Route path="/anunturi" element={<ListingsPage />} />
+                <Route path="/business" element={<BusinessDashboard />} />
+                <Route path="/onboarding/business" element={<BusinessOnboarding />} />
                 <Route path="/activitate" element={<ActivityLogPage />} />
                 <Route path="/rezervari-old" element={<Navigate to="/rezervari" replace />} />
                 <Route path="/suport" element={<UserTickets />} />

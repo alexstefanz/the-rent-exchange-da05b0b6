@@ -13,7 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
 
-const ACTIVE = ["confirmed", "active", "in_progress", "handed_over"];
+const ACTIVE = ["confirmed", "active", "in_progress", "handed_over", "return_pending"];
 const DONE = ["completed", "finalized"];
 const ron = (n: number) => `${n.toLocaleString("ro-RO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} RON`;
 
@@ -72,7 +72,7 @@ export default function BusinessDashboard() {
 
   if (!loading && !user) return <Navigate to="/auth?redirect=/business" replace />;
   if (loading || isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  if (data?.profile?.account_type !== "business") return <Navigate to="/business-onboarding" replace />;
+  if (data?.profile?.account_type !== "business") return <Navigate to="/onboarding/business" replace />;
 
   const { profile, products, rentals } = data!;
   const max = Math.max(1, ...stats.months.map((m) => m.v));
@@ -112,7 +112,7 @@ export default function BusinessDashboard() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => navigate("/inchirieri")}>{t("Închirieri", "Rentals")}</Button>
-            <Button onClick={() => navigate("/publica")}>{t("Adaugă echipament", "Add equipment")}</Button>
+            <Button onClick={() => navigate("/owner/new-product")}>{t("Adaugă echipament", "Add equipment")}</Button>
           </div>
         </div>
 
