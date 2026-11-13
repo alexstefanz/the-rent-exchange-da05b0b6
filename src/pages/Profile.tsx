@@ -1,6 +1,8 @@
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Navbar from "@/components/layout/Navbar";
@@ -20,6 +22,14 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const { data, isLoading } = useAccountDashboard();
+  const { data: accountType, isLoading: typeLoading } = useQuery({
+    queryKey: ["account-type", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("account_type").eq("id", user!.id).maybeSingle();
+      return data?.account_type ?? null;
+    },
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -27,7 +37,9 @@ const ProfilePage = () => {
     }
   }, [user, authLoading, navigate]);
 
-  if (authLoading) {
+  if (accountType === "business") return <Navigate to="/business" replace />;
+
+  if (authLoading || (user && typeLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />

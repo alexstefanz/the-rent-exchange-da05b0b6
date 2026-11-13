@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, addDays, parseISO, startOfMonth, subMonths, isWithinInterval } from "date-fns";
-import { Building2, Package, CalendarDays, FileText, Download, Loader2, TrendingUp, Wallet, Percent, Activity, LayoutDashboard, Menu, Plus, ArrowLeft, LogOut } from "lucide-react";
+import { Building2, Package, CalendarDays, FileText, Download, Loader2, TrendingUp, Wallet, Percent, Activity, LayoutDashboard, Menu, Plus, ArrowLeft, LogOut, ShoppingBag, MessageSquare, Settings, Wallet as WalletIcon } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,9 @@ export default function BusinessDashboard() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [docFilter, setDocFilter] = useState<"all" | "done">("all");
-  const [section, setSection] = useState("overview");
+  const [params, setParams] = useSearchParams();
+  const [section, setSectionState] = useState(params.get("section") || "overview");
+  const setSection = (id: string) => { setSectionState(id); setParams(id === "overview" ? {} : { section: id }, { replace: true }); };
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
@@ -138,6 +140,19 @@ export default function BusinessDashboard() {
           </button>
         ))}
       </nav>
+      <div className="space-y-1 border-t p-3">
+        <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t("Cont firmă", "Company account")}</p>
+        {[
+          { to: "/rezervari", icon: ShoppingBag, label: t("Închirierile mele (chiriaș)", "My rentals (renter)") },
+          { to: "/mesaje", icon: MessageSquare, label: t("Mesaje", "Messages") },
+          { to: "/castiguri", icon: WalletIcon, label: t("Încasări & sold", "Earnings & balance") },
+          { to: "/contul-meu", icon: Settings, label: t("Setări cont", "Account settings") },
+        ].map((l) => (
+          <button key={l.to} onClick={() => navigate(l.to)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+            <l.icon className="h-4 w-4" />{l.label}
+          </button>
+        ))}
+      </div>
       <div className="space-y-2 border-t p-3">
         <Button className="w-full" onClick={() => navigate("/owner/new-product")}><Plus className="h-4 w-4 mr-1" />{t("Adaugă echipament", "Add equipment")}</Button>
         <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/")}><ArrowLeft className="h-4 w-4 mr-2" />{t("Înapoi la Rentli", "Back to Rentli")}</Button>
