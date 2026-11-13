@@ -41,6 +41,7 @@ export interface EarningsData {
   pendingEarnings: number;
   totalRentals: number;
   availableBalance: number;
+  withdrawableBalance: number;
   totalWithdrawn: number;
   pendingWithdrawals: number;
 }
@@ -96,6 +97,7 @@ interface WalletRpcRow {
   total_withdrawn?: number | string | null;
   pending_withdrawals?: number | string | null;
   available?: number | string | null;
+  withdrawable?: number | string | null;
 }
 
 const empty: EarningsData = {
@@ -104,6 +106,7 @@ const empty: EarningsData = {
   pendingEarnings: 0,
   totalRentals: 0,
   availableBalance: 0,
+  withdrawableBalance: 0,
   totalWithdrawn: 0,
   pendingWithdrawals: 0,
 };
@@ -239,6 +242,7 @@ export const useEarnings = () => {
         pendingEarnings: Math.round(walletPendingEarnings * 100) / 100,
         totalRentals: list.length,
         availableBalance: Math.max(0, Math.round(walletAvailable * 100) / 100),
+        withdrawableBalance: Math.max(0, Math.round(Number(walletRow?.withdrawable ?? walletAvailable) * 100) / 100),
         totalWithdrawn: Math.round(walletTotalWithdrawn * 100) / 100,
         pendingWithdrawals: Math.round(walletPendingWithdrawals * 100) / 100,
       });
