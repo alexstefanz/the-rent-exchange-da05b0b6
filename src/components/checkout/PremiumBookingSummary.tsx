@@ -72,12 +72,13 @@ const PremiumBookingSummary = ({ product, startDate, endDate, rentalDays, totalP
         <div className="space-y-1.5 text-sm">
           <div className="flex justify-between">
             <span className="text-muted-foreground">{t("Chirie", "Rent")}</span>
-            <span className="tabular-nums">{fmt(subtotal)} RON</span>
+            <span className="tabular-nums">{fmt(subtotal + platformFee)} RON</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">{t("Taxe operaționale", "Operational fees")}</span>
-            <span className="tabular-nums">{fmt(platformFee)} RON</span>
-          </div>
+          {platformFee > 0 && (
+            <p className="text-[11px] text-muted-foreground -mt-1">
+              {t(`Include ${fmt(platformFee)} RON taxe operaționale`, `Includes ${fmt(platformFee)} RON operational fees`)}
+            </p>
+          )}
           <div className="flex justify-between">
             <span className="text-muted-foreground">{t("Service fee Stripe", "Stripe service fee")}</span>
             <span className="tabular-nums">{fmt(stripeFee)} RON</span>
