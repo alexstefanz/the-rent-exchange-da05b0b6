@@ -46,9 +46,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { supabase } from "@/integrations/supabase/client";
 import OpenDisputeDialog from "@/components/dashboard/OpenDisputeDialog";
 
-const RentalDetailPage = () => {
+const RentalDetailPage = ({ embedded = false, publicIdOverride, onBack }: { embedded?: boolean; publicIdOverride?: string; onBack?: () => void } = {}) => {
   usePageSeo({ title: "Detalii rezervare — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
-  const { publicId } = useParams<{ publicId: string }>();
+  const params = useParams<{ publicId: string }>();
+  const publicId = publicIdOverride ?? params.publicId;
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const { language } = useLanguage();
@@ -205,8 +206,8 @@ const RentalDetailPage = () => {
   if (error || !rental) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
-        <main className="flex-1 container py-8 pt-24 lg:pt-8">
+        {!embedded && <Navbar />}
+        <main className={embedded ? "flex-1 py-4" : "flex-1 container py-8 pt-24 lg:pt-8"}>
           <div className="max-w-md mx-auto text-center py-16">
             <ShieldX className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
             <h1 className="text-xl font-semibold">{t("Inchiriere negasita", "Rental not found")}</h1>
@@ -214,7 +215,7 @@ const RentalDetailPage = () => {
             <Button asChild className="mt-4"><Link to="/profile">{t("Inapoi la cont", "Back to account")}</Link></Button>
           </div>
         </main>
-        <Footer />
+        {!embedded && <Footer />}
       </div>
     );
   }
@@ -333,7 +334,7 @@ const RentalDetailPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
+      {!embedded && <Navbar />}
       <WalletPaymentSuccessModal
         open={walletSuccessOpen}
         onOpenChange={setWalletSuccessOpen}
@@ -350,8 +351,8 @@ const RentalDetailPage = () => {
         t={t}
       />
       <CancelledRentalModal rental={rental} isOwner={isOwner} t={t} />
-      <main className="flex-1 container py-8 pt-24 lg:pt-8 max-w-5xl">
-        <Button variant="ghost" size="sm" className="mb-4" onClick={() => navigate(isOwner ? "/inchirieri" : "/rezervari")}>
+      <main className={embedded ? "flex-1 max-w-6xl" : "flex-1 container py-8 pt-24 lg:pt-8 max-w-5xl"}>
+        <Button variant="ghost" size="sm" className="mb-4" onClick={() => (onBack ? onBack() : navigate(isOwner ? "/inchirieri" : "/rezervari"))}>
           <ArrowLeft className="h-4 w-4 mr-1" />{t("Inapoi la lista", "Back to list")}
         </Button>
 
@@ -1103,7 +1104,7 @@ const RentalDetailPage = () => {
           </aside>
         </div>
       </main>
-      <Footer />
+      {!embedded && <Footer />}
 
       {pvOpen && (
         <PvSignatureDialog
