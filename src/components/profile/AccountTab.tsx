@@ -185,6 +185,8 @@ const AccountTab = () => {
 
   /* ---- derived values ---- */
   const phoneFieldValue = form.watch("phone");
+  const isBusiness = profile?.account_type === "business";
+  const identityVerified = (profile as any)?.identity_status === "verified";
   const hasValidPhone = isValidRomanianPhone(phoneFieldValue || profile?.phone || "");
   const smsEnabled = profile?.sms_notifications_enabled !== false;
 
@@ -471,7 +473,7 @@ const AccountTab = () => {
         </div>
 
         {/* ============ PERSONAL INFORMATION ============ */}
-        <Section id="personal" icon={User} title={t("Informații personale", "Personal information")} description={t("Datele tale de bază. Sunt folosite pentru a comunica cu ceilalți utilizatori.", "Your basic info, used to communicate with other users.")}>
+        <Section id="personal" icon={isBusiness ? ShieldCheck : User} title={isBusiness ? t("Reprezentant legal / Administrator firmă", "Legal representative / Company administrator") : t("Informații personale", "Personal information")} description={isBusiness ? t("Datele administratorului desemnat conform actului constitutiv. Această persoană efectuează verificarea KYC și semnează contractele și procesele-verbale în numele companiei.", "Details of the administrator appointed under the articles of association. This person completes identity verification and signs contracts and handover reports on behalf of the company.") : t("Datele tale de bază. Sunt folosite pentru a comunica cu ceilalți utilizatori.", "Your basic info, used to communicate with other users.")}>
           {/* Compact avatar + identity row (full hero lives on /profile) */}
           <div className="flex items-center gap-4 mb-6 pb-6 border-b border-border">
             <div className="relative">
@@ -499,7 +501,12 @@ const AccountTab = () => {
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="font-semibold truncate">{profile?.full_name || t("Utilizator nou", "New user")}</p>
+                {isBusiness && <Badge variant="secondary">{t("Administrator", "Administrator")}</Badge>}
+                {isBusiness && (identityVerified
+                  ? <Badge className="gap-1 bg-primary/15 text-primary hover:bg-primary/15"><BadgeCheck className="h-3 w-3" />{t("Identitate verificată (KYC)", "Identity verified (KYC)")}</Badge>
+                  : <Button size="sm" variant="outline" className="h-6 text-xs" onClick={() => navigate("/verificare")}>{t("Verifică identitatea", "Verify identity")}</Button>)}
               </div>
+              {isBusiness && profile?.company_name && <p className="text-xs text-muted-foreground truncate">{t("Reprezintă", "Represents")}: {profile.company_name}{profile.cui ? ` · CUI ${profile.cui}` : ""}</p>}
               <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
             </div>
           </div>
