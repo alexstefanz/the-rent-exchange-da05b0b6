@@ -243,6 +243,19 @@ export const getOwnerProductCount = async (ownerId: string): Promise<number> => 
   return count || 0;
 };
 
+import { INSTANT_EDIT_FIELDS, partitionEdits } from "./instantEdits";
+export { INSTANT_EDIT_FIELDS, partitionEdits };
+
+const splitInstantEdits = async (id: string, edits: Record<string, unknown>) => {
+  const keys = Object.keys(edits).filter((k) => !(INSTANT_EDIT_FIELDS as readonly string[]).includes(k));
+  let current: Record<string, unknown> = {};
+  if (keys.length) {
+    const { data } = await supabase.from("products").select(keys.join(",") as any).eq("id", id).maybeSingle();
+    current = (data as any) ?? {};
+  }
+  return partitionEdits(edits, current);
+};
+
 export interface PublishProductInput {
   title: string;
   description?: string;
@@ -358,10 +371,12 @@ export const updateProduct = async (
   // Edits to a live listing are stored separately for review; the live
   // listing keeps its current (approved) data until an admin approves.
   if ((current as any)?.approval_status === "approved") {
-    const { is_active, ...edits } = payload;
-    const onlyVisibility = Object.keys(edits).length === 0;
-    const livePayload: Record<string, unknown> = {};
+    const { is_active, ...rest } = payload;
+    const { instant, moderated } = await splitInstantEdits(id, rest);
+    const onlyVisibility = Object.keys(moderated).length === 0;
+    const livePayload: Record<string, unknown> = { ...instant };
     if (is_active !== undefined) livePayload.is_active = is_active;
+    const edits = moderated;
     if (!onlyVisibility) {
       livePayload.pending_edits = edits;
       livePayload.pending_edits_submitted_at = new Date().toISOString();
@@ -389,7 +404,7 @@ export const updateProduct = async (
         });
       } catch { /* non-blocking */ }
     }
-    return product as unknown as Product;
+    return { ...(product as any), submittedForReview: !onlyVisibility } as unknown as Product;
   }
 
   const { data: product, error } = await supabase

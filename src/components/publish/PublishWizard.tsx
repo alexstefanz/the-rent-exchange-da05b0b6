@@ -456,15 +456,15 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
 
       if (mode === "edit" && productId) {
         const prevStatus = initialProduct?.approval_status;
-        const willRequireReview = prevStatus === "rejected" || prevStatus === "approved";
-        await updateProduct(productId, { ...payload, is_active: data.is_active }, user.id);
+        const updated: any = await updateProduct(productId, { ...payload, is_active: data.is_active }, user.id);
+        const willRequireReview = prevStatus === "rejected" || (prevStatus === "approved" && !!updated?.submittedForReview);
         await queryClient.invalidateQueries({ queryKey: ["my-products", user.id] });
         await queryClient.invalidateQueries({ queryKey: ["product", productId] });
         toast({
           title: willRequireReview
             ? t("Anunț retrimis spre aprobare", "Listing resubmitted for approval")
             : t("Anunț actualizat", "Listing updated"),
-          description: prevStatus === "approved"
+          description: prevStatus === "approved" && willRequireReview
             ? t(
                 "Anunțul rămâne activ cu datele actuale până la verificarea modificărilor.",
                 "Your listing stays live with the current details until the changes are reviewed.",
@@ -557,8 +557,8 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
                     <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
                     <p>
                       {t(
-                        "Orice modificare salvată va trimite anunțul din nou spre aprobare. Anunțul nu va fi vizibil public până la o nouă verificare (de obicei sub 2 ore).",
-                        "Saving any change will resubmit the listing for review. It won't be publicly visible until re-approved (usually under 2 hours).",
+                        "Prețul și perioada de închiriere se actualizează imediat. Modificările la titlu, descriere, fotografii sau alte texte merg spre aprobare; anunțul rămâne activ cu datele actuale până la verificare.",
+                        "Price and rental period update instantly. Changes to title, description, photos or other text go to review; the listing stays live with its current details meanwhile.",
                       )}
                     </p>
                   </div>
