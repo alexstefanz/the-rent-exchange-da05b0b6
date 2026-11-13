@@ -253,6 +253,20 @@
       "when": 1794302238473,
       "tag": "0035_crons_use_service_key",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794548643236,
+      "tag": "0036_non_withdrawable_wallet_credit",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1794548662796,
+      "tag": "0037_wallet_ledger_bonus_kind",
+      "breakpoints": true
     }
   ]
 }
