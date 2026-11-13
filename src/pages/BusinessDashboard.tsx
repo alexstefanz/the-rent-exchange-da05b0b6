@@ -23,7 +23,7 @@ type Rental = {
 };
 
 export default function BusinessDashboard() {
-  const { user, loading, signOut } = useAuth() as any;
+  const { user, loading, signOut } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [docFilter, setDocFilter] = useState<"all" | "done">("all");
