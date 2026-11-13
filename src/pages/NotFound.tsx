@@ -6,6 +6,14 @@ const NotFound = () => {
 
   useEffect(() => {
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
+    const prevTitle = document.title;
+    document.title = "Pagina nu a fost găsită (404) | Rentli";
+    const meta = document.createElement("meta");
+    meta.name = "robots";
+    meta.content = "noindex, nofollow";
+    meta.setAttribute("data-404", "true");
+    document.head.appendChild(meta);
+    return () => { document.title = prevTitle; meta.remove(); };
   }, [location.pathname]);
 
   return (

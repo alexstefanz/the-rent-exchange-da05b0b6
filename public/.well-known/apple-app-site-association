@@ -1,0 +1,7 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [{ "appID": "TEAMID.ro.rentli.app", "paths": ["/produs/*", "/categorie/*", "/inchiriere/*", "/mesaje*", "/*"] }]
+  },
+  "webcredentials": { "apps": ["TEAMID.ro.rentli.app"] }
+}
