@@ -186,7 +186,7 @@ export function AdminInboxList({ tickets, isLoading, selectedId, onSelect, filte
         ) : visible.length === 0 ? (
           <div className="text-center py-12 px-4 text-muted-foreground text-sm">
             <Inbox className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            Niciun ticket aici
+            Niciun tichet aici
           </div>
         ) : (
           <ul className="divide-y">

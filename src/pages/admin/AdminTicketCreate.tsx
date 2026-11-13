@@ -66,7 +66,7 @@ const AdminTicketCreate = () => {
             <ArrowLeft className="h-4 w-4 mr-1" /> Înapoi la tichete
           </Button>
           <h1 className="text-2xl font-bold">Ticket Nou</h1>
-          <p className="text-muted-foreground">Creează un ticket operațional</p>
+          <p className="text-muted-foreground">Creează un tichet operațional</p>
         </div>
 
         <Card>

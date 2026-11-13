@@ -166,7 +166,7 @@ function EmptyState() {
       <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
         <MessageSquare className="h-7 w-7 opacity-50" />
       </div>
-      <h3 className="font-semibold text-foreground mb-1">Selectează un ticket</h3>
+      <h3 className="font-semibold text-foreground mb-1">Selectează un tichet</h3>
       <p className="text-sm max-w-sm">
         Inbox realtime cu filtre rapide, conversație premium cu note interne și AI Assist integrat.
       </p>

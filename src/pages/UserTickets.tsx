@@ -153,7 +153,7 @@ const UserTickets = () => {
               </DialogTrigger>
               <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                  <DialogTitle>{t("Creează un ticket", "Create a ticket")}</DialogTitle>
+                  <DialogTitle>{t("Creează un tichet", "Create a ticket")}</DialogTitle>
                 </DialogHeader>
                 <CreateTicketForm
                   onSuccess={(id) => { setCreateOpen(false); handleSelect(id); }}
@@ -217,10 +217,10 @@ const UserTickets = () => {
               <div className="rounded-2xl bg-card border border-border/60 p-8 text-center">
                 <LifeBuoy className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
                 <p className="text-sm font-medium mb-1">
-                  {t("Niciun ticket aici", "No tickets here")}
+                  {t("Niciun tichet aici", "No tickets here")}
                 </p>
                 <p className="text-xs text-muted-foreground mb-4">
-                  {t("Creează un ticket nou când ai nevoie de ajutor.", "Create a new ticket when you need help.")}
+                  {t("Creează un tichet nou când ai nevoie de ajutor.", "Create a new ticket when you need help.")}
                 </p>
                 <Button size="sm" onClick={() => setCreateOpen(true)}>
                   <Plus className="h-4 w-4 mr-1.5" />
