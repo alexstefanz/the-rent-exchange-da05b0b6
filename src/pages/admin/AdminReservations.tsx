@@ -25,6 +25,24 @@ import AdminContractAuditTab from "@/components/admin/AdminContractAuditTab";
 import AdminPhysicalPvTab from "@/components/admin/AdminPhysicalPvTab";
 import AdminOpenDisputesPanel from "@/components/admin/AdminOpenDisputesPanel";
 
+const RentalSerialRow = ({ rentalId }: { rentalId: string }) => {
+  const { data, isLoading } = useQuery({
+    queryKey: ["adminRentalSerial", rentalId],
+    queryFn: async () => {
+      const { data } = await supabase.rpc("get_rental_product_serial", { _rental_id: rentalId });
+      return (data as string | null) ?? null;
+    },
+    staleTime: 60000,
+  });
+  return (
+    <div className="flex items-center gap-2">
+      <Hash className="h-4 w-4 text-muted-foreground" />
+      <span className="text-muted-foreground">Serie / OEM:</span>
+      <span className="font-medium font-mono">{isLoading ? "…" : data || "-"}</span>
+    </div>
+  );
+};
+
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
   confirmed: "bg-blue-100 text-blue-800",
@@ -135,6 +153,7 @@ const RentalExpandedPanel = ({
             }} />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+        <RentalSerialRow rentalId={rental.id} />
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-muted-foreground" />
           <span className="text-muted-foreground">Proprietar:</span>
