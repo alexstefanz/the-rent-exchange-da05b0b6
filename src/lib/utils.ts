@@ -11,6 +11,6 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function formatPriceShort(value: number): string {
   if (!Number.isFinite(value)) return "0";
-  const rounded = Math.round(value * 10) / 10;
-  return rounded.toFixed(1).replace(/\.0$/, "");
+  const rounded = Math.round(value * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(2);
 }
