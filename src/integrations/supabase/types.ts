@@ -3552,6 +3552,17 @@ export type Database = {
           subtotal: number
         }[]
       }
+      get_rental_parties_business: {
+        Args: { _rental_id: string }
+        Returns: {
+          account_type: string
+          company_address: string
+          company_name: string
+          cui: string
+          party: string
+          reg_com: string
+        }[]
+      }
       get_rental_popup_by_id: {
         Args: { _rental_id: string }
         Returns: {
