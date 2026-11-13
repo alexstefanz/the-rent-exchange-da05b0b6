@@ -13,6 +13,7 @@ import EarningsTab from "@/components/profile/EarningsTab";
 import AccountTab from "@/components/profile/AccountTab";
 import Messages from "@/pages/Messages";
 import RentalDetailPage from "@/pages/RentalDetailPage";
+import ListingsPage from "@/pages/ListingsPage";
 import RentalsOutTab from "@/components/dashboard/RentalsOutTab";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -122,6 +123,7 @@ export default function BusinessDashboard() {
   const nav = [
     { id: "overview", icon: LayoutDashboard, label: t("Prezentare generală", "Overview") },
     { id: "fleet", icon: Package, label: t("Gestiune flotă", "Fleet") },
+    { id: "listings", icon: ClipboardList, label: t("Echipamentele mele de închiriat", "My rental equipment") },
     { id: "calendar", icon: CalendarDays, label: t("Calendar & rezervări", "Calendar & bookings") },
     { id: "requests", icon: ClipboardList, label: t("Închirieri primite", "Incoming rentals") },
     { id: "docs", icon: FileText, label: t("Documente & contabilitate", "Documents & accounting") },
@@ -264,7 +266,7 @@ export default function BusinessDashboard() {
                         <div className="flex justify-between gap-2"><h3 className="font-semibold line-clamp-1">{p.title}</h3><Badge variant={rented ? "default" : "secondary"}>{status}</Badge></div>
                         <p className="text-xs text-muted-foreground">{p.location_city} · {rentals.filter((r) => r.product_id === p.id).length} {t("închirieri", "rentals")}</p>
                         <p className="font-bold">{ron(Number(p.daily_price_owner))}/{t("zi", "day")}</p>
-                        <Button size="sm" variant="outline" className="w-full" onClick={() => navigate("/anunturi")}>{t("Gestionează", "Manage")}</Button>
+                        <Button size="sm" variant="outline" className="w-full" onClick={() => go("listings")}>{t("Gestionează", "Manage")}</Button>
                       </CardContent>
                     </Card>
                   );
@@ -272,6 +274,8 @@ export default function BusinessDashboard() {
               </div>
             )}
           </TabsContent>
+
+          <TabsContent value="listings" className="mt-0"><ListingsPage embedded /></TabsContent>
 
           <TabsContent value="docs" className="mt-0 space-y-4">
             <div className="flex flex-wrap gap-2 justify-between">
