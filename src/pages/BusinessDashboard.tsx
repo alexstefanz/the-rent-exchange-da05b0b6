@@ -2,9 +2,8 @@ import { useMemo, useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, addDays, parseISO, startOfMonth, subMonths, isWithinInterval } from "date-fns";
-import { Building2, Package, CalendarDays, FileText, Download, Loader2, TrendingUp, Wallet, Percent, Activity } from "lucide-react";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+import { Building2, Package, CalendarDays, FileText, Download, Loader2, TrendingUp, Wallet, Percent, Activity, LayoutDashboard, Menu, Plus, ArrowLeft, LogOut } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,10 +23,12 @@ type Rental = {
 };
 
 export default function BusinessDashboard() {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [docFilter, setDocFilter] = useState<"all" | "done">("all");
+  const [section, setSection] = useState("overview");
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ["business-dashboard", user?.id],
@@ -100,30 +101,71 @@ export default function BusinessDashboard() {
     { icon: Building2, label: t("Închirieri finalizate", "Completed"), value: String(stats.done.length) },
   ];
 
+  const nav = [
+    { id: "overview", icon: LayoutDashboard, label: t("Prezentare generală", "Overview") },
+    { id: "fleet", icon: Package, label: t("Gestiune flotă", "Fleet") },
+    { id: "calendar", icon: CalendarDays, label: t("Calendar & rezervări", "Calendar & bookings") },
+    { id: "docs", icon: FileText, label: t("Documente & contabilitate", "Documents & accounting") },
+    { id: "company", icon: Building2, label: t("Date fiscale", "Company details") },
+  ];
+  const go = (id: string) => { setSection(id); setMobileOpen(false); };
+  const calendarCard = (
+    <Card><CardHeader><CardTitle className="text-base">{t("Calendar rezervări – 14 zile", "Bookings – next 14 days")}</CardTitle></CardHeader>
+      <CardContent><div className="grid grid-cols-7 gap-2">
+        {days.map((d) => {
+          const iso = format(d, "yyyy-MM-dd");
+          const n = stats.active.filter((r) => r.start_date <= iso && r.end_date >= iso).length;
+          return (
+            <div key={iso} className={`rounded-lg border p-2 text-center ${n ? "bg-primary/10 border-primary/40" : ""}`}>
+              <div className="text-[10px] text-muted-foreground">{format(d, "dd.MM")}</div>
+              <div className="text-xs font-semibold">{n ? `${n} rez.` : t("liber", "free")}</div>
+            </div>
+          );
+        })}
+      </div></CardContent></Card>
+  );
+  const panel = (
+    <div className="flex h-full flex-col bg-card">
+      <div className="border-b p-5">
+        <Badge variant="secondary" className="mb-3"><Building2 className="h-3 w-3 mr-1" />Rentli Business</Badge>
+        <p className="font-bold leading-tight line-clamp-2">{profile?.company_name || t("Compania mea", "My company")}</p>
+        <p className="text-xs text-muted-foreground mt-1">{profile?.cui && `CUI ${profile.cui}`}{profile?.reg_com && ` · ${profile.reg_com}`}</p>
+      </div>
+      <nav className="flex-1 space-y-1 p-3">
+        {nav.map((n) => (
+          <button key={n.id} onClick={() => go(n.id)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${section === n.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
+            <n.icon className="h-4 w-4" />{n.label}
+          </button>
+        ))}
+      </nav>
+      <div className="space-y-2 border-t p-3">
+        <Button className="w-full" onClick={() => navigate("/owner/new-product")}><Plus className="h-4 w-4 mr-1" />{t("Adaugă echipament", "Add equipment")}</Button>
+        <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/")}><ArrowLeft className="h-4 w-4 mr-2" />{t("Înapoi la Rentli", "Back to Rentli")}</Button>
+        {signOut && <Button variant="ghost" className="w-full justify-start text-muted-foreground" onClick={async () => { await signOut(); navigate("/", { replace: true }); }}><LogOut className="h-4 w-4 mr-2" />{t("Deconectare", "Sign out")}</Button>}
+      </div>
+    </div>
+  );
+  const current = nav.find((n) => n.id === section)!;
+
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
-      <main className="container mx-auto px-4 py-8 flex-1 space-y-6">
+    <div className="min-h-screen flex w-full bg-muted/30">
+      <aside className="hidden md:block w-64 shrink-0 border-r sticky top-0 h-screen">{panel}</aside>
+      <main className="flex-1 min-w-0">
+        <div className="md:hidden sticky top-0 z-40 flex items-center gap-3 border-b bg-background px-4 py-3">
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild><Button variant="outline" size="icon"><Menu className="h-5 w-5" /></Button></SheetTrigger>
+            <SheetContent side="left" className="w-[280px] p-0">{panel}</SheetContent>
+          </Sheet>
+          <span className="font-bold text-primary">Rentli Business</span>
+        </div>
+        <div className="p-4 md:p-8 space-y-6 max-w-7xl">
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <Badge variant="secondary" className="mb-2"><Building2 className="h-3 w-3 mr-1" />Rentli Business</Badge>
-            <h1 className="text-2xl md:text-3xl font-bold">{profile?.company_name || t("Compania mea", "My company")}</h1>
-            <p className="text-sm text-muted-foreground">{profile?.cui && `CUI ${profile.cui}`}{profile?.reg_com && ` · ${profile.reg_com}`}</p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate("/inchirieri")}>{t("Închirieri", "Rentals")}</Button>
-            <Button onClick={() => navigate("/owner/new-product")}>{t("Adaugă echipament", "Add equipment")}</Button>
-          </div>
+          <h1 className="text-2xl md:text-3xl font-bold">{current.label}</h1>
+          <Button variant="outline" onClick={() => navigate("/inchirieri")}>{t("Închirieri", "Rentals")}</Button>
         </div>
 
-        <Tabs defaultValue="overview">
-          <TabsList>
-            <TabsTrigger value="overview">Dashboard</TabsTrigger>
-            <TabsTrigger value="fleet">{t("Flotă", "Fleet")}</TabsTrigger>
-            <TabsTrigger value="docs">{t("Documente", "Documents")}</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6 mt-4">
+        <Tabs value={section} onValueChange={setSection}>
+          <TabsContent value="overview" className="space-y-6 mt-0">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {kpis.map((k) => (
                 <Card key={k.label}><CardContent className="p-4">
@@ -143,23 +185,11 @@ export default function BusinessDashboard() {
                     </div>
                   ))}
                 </div></CardContent></Card>
-              <Card><CardHeader><CardTitle className="text-base">{t("Calendar rezervări – 14 zile", "Bookings – next 14 days")}</CardTitle></CardHeader>
-                <CardContent><div className="grid grid-cols-7 gap-2">
-                  {days.map((d) => {
-                    const iso = format(d, "yyyy-MM-dd");
-                    const n = stats.active.filter((r) => r.start_date <= iso && r.end_date >= iso).length;
-                    return (
-                      <div key={iso} className={`rounded-lg border p-2 text-center ${n ? "bg-primary/10 border-primary/40" : ""}`}>
-                        <div className="text-[10px] text-muted-foreground">{format(d, "dd.MM")}</div>
-                        <div className="text-xs font-semibold">{n ? `${n} rez.` : t("liber", "free")}</div>
-                      </div>
-                    );
-                  })}
-                </div></CardContent></Card>
+              {calendarCard}
             </div>
           </TabsContent>
 
-          <TabsContent value="fleet" className="mt-4">
+          <TabsContent value="fleet" className="mt-0">
             {products.length === 0 ? <p className="text-muted-foreground py-8 text-center">{t("Nu ai încă echipamente.", "No equipment yet.")}</p> : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {products.map((p: any) => {
@@ -181,7 +211,7 @@ export default function BusinessDashboard() {
             )}
           </TabsContent>
 
-          <TabsContent value="docs" className="mt-4 space-y-4">
+          <TabsContent value="docs" className="mt-0 space-y-4">
             <div className="flex flex-wrap gap-2 justify-between">
               <div className="flex gap-2">
                 <Button size="sm" variant={docFilter === "all" ? "default" : "outline"} onClick={() => setDocFilter("all")}>{t("Toate", "All")}</Button>
@@ -205,9 +235,31 @@ export default function BusinessDashboard() {
               ))}
             </CardContent></Card>
           </TabsContent>
+          <TabsContent value="calendar" className="mt-0 space-y-4">
+            {calendarCard}
+            <Card><CardHeader><CardTitle className="text-base">{t("Rezervări active și cereri", "Active bookings & requests")}</CardTitle></CardHeader>
+              <CardContent className="p-0 divide-y">
+                {[...stats.pending, ...stats.active].length === 0 && <p className="p-6 text-center text-muted-foreground">{t("Nicio rezervare activă.", "No active bookings.")}</p>}
+                {[...stats.pending, ...stats.active].map((r) => (
+                  <button key={r.id} onClick={() => navigate(`/inchirieri/${r.public_id}`)} className="flex w-full items-center justify-between gap-3 p-4 text-left hover:bg-muted/50">
+                    <div><p className="font-medium">{r.product_title_snapshot ?? r.public_id}</p><p className="text-xs text-muted-foreground">{r.public_id} · {r.start_date} → {r.end_date}</p></div>
+                    <Badge variant={r.status === "pending" ? "secondary" : "default"}>{r.status === "pending" ? t("Cerere nouă", "New request") : t("Activă", "Active")}</Badge>
+                  </button>
+                ))}
+              </CardContent></Card>
+          </TabsContent>
+
+          <TabsContent value="company" className="mt-0">
+            <Card><CardContent className="p-6 grid sm:grid-cols-2 gap-4">
+              {[[t("Denumire firmă", "Company name"), profile?.company_name], ["CUI", profile?.cui], [t("Nr. Reg. Com.", "Trade register no."), profile?.reg_com], [t("Adresă sediu", "Registered address"), profile?.company_address]].map(([l, v]) => (
+                <div key={l as string}><p className="text-xs text-muted-foreground">{l}</p><p className="font-medium">{v || "—"}</p></div>
+              ))}
+              <div className="sm:col-span-2"><Button variant="outline" onClick={() => navigate("/onboarding/business")}>{t("Actualizează datele firmei", "Update company details")}</Button></div>
+            </CardContent></Card>
+          </TabsContent>
         </Tabs>
+        </div>
       </main>
-      <Footer />
     </div>
   );
 }
