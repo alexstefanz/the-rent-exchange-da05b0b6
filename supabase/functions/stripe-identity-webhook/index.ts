@@ -1,6 +1,7 @@
 import { withCors, PRIMARY_ORIGIN } from "../_shared/cors.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
 import Stripe from "npm:stripe@17.7.0";
+import { verifiedFullName } from "./verified-name.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_LIVE_API_KEY")!, { apiVersion: "2024-12-18.acacia" });
 const cryptoProvider = Stripe.createSubtleCryptoProvider();
@@ -38,6 +39,24 @@ Deno.serve(withCors(async (req) => {
   // 2. Never downgrade a verified profile
   // 3. Only update when the session matches (or no session is set yet), so a
   //    late event from an older session cannot overwrite a newer one.
+  if (event.type === "identity.verification_session.verified") {
+    // Take the legal name from the verified ID document so contracts and PVs
+    // always carry the real name; the user never has to match it manually.
+    try {
+      const full = await stripe.identity.verificationSessions.retrieve(s.id, { expand: ["verified_outputs"] });
+      const name = verifiedFullName(full.verified_outputs as any);
+      if (name) {
+        Object.assign(patch, {
+          full_name: name,
+          full_name_locked: true,
+          full_name_source: "stripe_identity",
+          full_name_verified_at: new Date().toISOString(),
+        });
+      }
+    } catch (e) {
+      console.error("Could not read verified name", e);
+    }
+  }
   let q = admin.from("profiles").update({ ...patch, identity_session_id: s.id }).eq("id", userId);
   if (event.type !== "identity.verification_session.verified") q = q.neq("identity_status", "verified");
   q = q.or(`identity_session_id.eq.${s.id},identity_session_id.is.null`);
