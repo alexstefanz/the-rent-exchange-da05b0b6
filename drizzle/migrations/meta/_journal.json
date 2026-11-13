@@ -267,6 +267,13 @@
       "when": 1794548662796,
       "tag": "0037_wallet_ledger_bonus_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794549470413,
+      "tag": "0038_rental_product_serial_rpc",
+      "breakpoints": true
     }
   ]
 }
