@@ -432,7 +432,7 @@ export const updateProduct = async (
         });
       } catch { /* non-blocking */ }
     }
-    return product as unknown as Product;
+    return { ...(product as any), submittedForReview: !onlyVisibility } as unknown as Product;
   }
 
   const { data: product, error } = await supabase
