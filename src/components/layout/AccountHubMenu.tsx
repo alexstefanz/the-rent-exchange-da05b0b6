@@ -291,8 +291,9 @@ export function AccountHubBody({ onNavigate, onLogout }: { onNavigate: (path: st
     [health],
   );
 
+  const isBusiness = (profile as any)?.account_type === "business";
   const displayName =
-    profile?.full_name || user?.email?.split("@")[0] || t("Utilizator", "User");
+    (isBusiness && (profile as any)?.company_name) || profile?.full_name || user?.email?.split("@")[0] || t("Utilizator", "User");
   const displayEmail = profile?.email || user?.email || "";
 
   return (
