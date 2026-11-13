@@ -97,7 +97,7 @@ const AdminSupportAnalytics = () => {
           <div>
             <h1 className="text-2xl font-bold">Analytics Suport</h1>
             <p className="text-sm text-muted-foreground">
-              Performanță echipă, SLA și volume tickete
+              Performanță echipă, SLA și volume tichete
             </p>
           </div>
           <div className="flex gap-2">
@@ -122,7 +122,7 @@ const AdminSupportAnalytics = () => {
           <>
             {/* KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <KpiCard icon={Inbox} label="Total tickete" value={data.totals.total} />
+              <KpiCard icon={Inbox} label="Total tichete" value={data.totals.total} />
               <KpiCard icon={TrendingUp} label="În lucru" value={data.totals.in_progress_count + data.totals.waiting_count} />
               <KpiCard icon={CheckCircle2} label="Rezolvate" value={data.totals.resolved_count + data.totals.closed_count} accent="text-green-600" />
               <KpiCard icon={AlertTriangle} label="Breach SLA" value={data.sla_breach_count} accent="text-destructive" />
@@ -139,7 +139,7 @@ const AdminSupportAnalytics = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Volum zilnic</CardTitle>
-                <CardDescription>Tickete create vs rezolvate</CardDescription>
+                <CardDescription>Tichete create vs rezolvate</CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -189,7 +189,7 @@ const AdminSupportAnalytics = () => {
                       <XAxis dataKey="name" />
                       <YAxis allowDecimals={false} />
                       <Tooltip />
-                      <Bar dataKey="value" name="Tickete">
+                      <Bar dataKey="value" name="Tichete">
                         {categoryData.map((_, i) => (
                           <Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} />
                         ))}
@@ -204,7 +204,7 @@ const AdminSupportAnalytics = () => {
             <Card>
               <CardHeader>
                 <CardTitle>Performanță echipă</CardTitle>
-                <CardDescription>Tickete asignate per admin</CardDescription>
+                <CardDescription>Tichete asignate per admin</CardDescription>
               </CardHeader>
               <CardContent>
                 {data.by_admin.length === 0 ? (

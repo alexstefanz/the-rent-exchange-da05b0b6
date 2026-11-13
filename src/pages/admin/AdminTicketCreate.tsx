@@ -63,7 +63,7 @@ const AdminTicketCreate = () => {
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
           <Button variant="ghost" size="sm" onClick={() => navigate('/admin/tickets')} className="mb-2">
-            <ArrowLeft className="h-4 w-4 mr-1" /> Înapoi la tickete
+            <ArrowLeft className="h-4 w-4 mr-1" /> Înapoi la tichete
           </Button>
           <h1 className="text-2xl font-bold">Ticket Nou</h1>
           <p className="text-muted-foreground">Creează un ticket operațional</p>

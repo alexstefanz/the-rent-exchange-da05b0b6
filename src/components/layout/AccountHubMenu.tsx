@@ -454,7 +454,7 @@ export function AccountHubBody({ onNavigate, onLogout }: { onNavigate: (path: st
         >
           <LifeBuoy className="h-5 w-5 text-foreground" />
           <span className="flex-1 text-sm font-medium text-foreground text-left">
-            {t("Suport & Tickete", "Support & Tickets")}
+            {t("Suport & Tichete", "Support & Tickets")}
           </span>
           {openTickets > 0 && (
             <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold">

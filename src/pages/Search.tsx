@@ -248,7 +248,7 @@ const Search = () => {
             products.length > 0 && hasActiveFilters ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <p className="text-lg font-medium text-foreground">{t("Niciun rezultat cu filtrele curente", "No results with the current filters")}</p>
-                <p className="mt-2 text-sm text-muted-foreground">{t(`Există ${products.length} anunțuri care se potrivesc căutării.`, `There are ${products.length} listings that match your search.`)}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{products.length === 1 ? t("Există 1 anunț care se potrivește căutării.", "There is 1 listing that matches your search.") : t(`Există ${products.length} anunțuri care se potrivesc căutării.`, `There are ${products.length} listings that match your search.`)}</p>
                 <Button className="mt-4" onClick={handleClearFilters}>{t("Resetează filtrele", "Reset filters")}</Button>
               </div>
             ) : searchQuery ? (
