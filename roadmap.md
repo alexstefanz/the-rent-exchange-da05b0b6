@@ -6,3 +6,4 @@
 - [x] Testează înregistrarea în incognito până la etapa de verificare SMS
 - [x] Corectează și testează revenirea Stripe Identity prin HTTPS pentru aplicația mobilă.
 - [ ] Confirmă accesul cheii Stripe din serviciul găzduit — testul fără modificări din sandbox reușește, dar restricțiile IP necesită verificare în contul Stripe de către proprietar.
+- [x] Corectează și testează confirmarea returului după încasarea automată, fără o nouă încasare.

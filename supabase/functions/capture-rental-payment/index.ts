@@ -3,6 +3,7 @@ import { invokeAppEmail } from '../_shared/transactional-email-templates/send-ap
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "npm:@supabase/supabase-js@2.57.2";
+import { getCaptureState } from "./capture-state.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": PRIMARY_ORIGIN,
@@ -151,17 +152,21 @@ async function captureRental(
     rental = data;
   }
 
-  if (!rental.payment_intent_id) {
-    return { rental_id: rentalId, error: "No payment_intent_id" };
+  // Authorization is checked by the handler before this idempotent path.
+  // A cron/admin may have captured already: do not call Stripe, create duplicate
+  // transactions, or resend payout emails, but let return confirmation proceed.
+  const captureState = getCaptureState(rental, new Date().toISOString().split("T")[0], allowBeforeEndDate);
+  if (captureState === "already_captured") {
+    return { rental_id: rentalId, success: true, already_captured: true };
   }
-
-  // Escrow guard: capture only authorized holds whose rental period has ended.
-  if (rental.payment_status !== "authorized") {
+  if (captureState === "not_authorized") {
     return { rental_id: rentalId, error: "Rental not in authorized state" };
   }
-  const today = new Date().toISOString().split("T")[0];
-  if (!allowBeforeEndDate && rental.end_date && (rental.end_date as string) > today) {
+  if (captureState === "before_end_date") {
     return { rental_id: rentalId, error: "Rental end date has not been reached" };
+  }
+  if (!rental.payment_intent_id) {
+    return { rental_id: rentalId, error: "No payment_intent_id" };
   }
 
   const isTest = !!rental.is_test_payment;
