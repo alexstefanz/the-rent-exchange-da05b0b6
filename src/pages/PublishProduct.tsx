@@ -13,11 +13,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   mode: "create" | "edit";
+  productIdOverride?: string;
+  onDone?: () => void;
 }
 
-const PublishProductPage = ({ mode }: Props) => {
+const PublishProductPage = ({ mode, productIdOverride, onDone }: Props) => {
   const navigate = useNavigate();
-  const { id } = useParams<{ id: string }>();
+  const { id: routeId } = useParams<{ id: string }>();
+  const id = productIdOverride ?? routeId;
   const { user, loading: authLoading } = useAuth();
   const { isBanned } = useIsBanned();
   const { toast } = useToast();
@@ -97,7 +100,7 @@ const PublishProductPage = ({ mode }: Props) => {
     );
   }
 
-  return <PublishWizard mode={mode} productId={id} initialProduct={product} />;
+  return <PublishWizard key={id ?? "new"} mode={mode} productId={id} initialProduct={product} onDone={onDone} />;
 };
 
 export default PublishProductPage;

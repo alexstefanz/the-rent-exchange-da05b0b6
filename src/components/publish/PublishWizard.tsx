@@ -92,9 +92,11 @@ interface Props {
   mode: "create" | "edit";
   productId?: string;
   initialProduct?: Product | null;
+  /** When set, the wizard runs inside another panel and calls this instead of leaving. */
+  onDone?: () => void;
 }
 
-const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
+const PublishWizard = ({ mode, productId, initialProduct, onDone }: Props) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -352,7 +354,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
 
   const goBack = () => {
     if (step === 1) {
-      navigate(-1);
+      if (onDone) onDone(); else navigate(-1);
       return;
     }
     setStep(step - 1);
@@ -377,7 +379,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
           ? t("Draftul tău este salvat", "Your draft has been saved")
           : t("Modificările nesalvate au fost păstrate local", "Unsaved changes have been kept locally"),
     });
-    navigate("/owner");
+    (onDone ? onDone() : navigate("/owner"));
   };
 
   const canPreview = !!data.title && !!data.category && (data.images?.length ?? 0) > 0;
@@ -476,7 +478,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
               )
             : t("Modificările au fost salvate.", "Your changes have been saved."),
         });
-        navigate("/owner");
+        (onDone ? onDone() : navigate("/owner"));
       } else {
         await createProduct(payload, user.id);
         if (draftId) await deleteDraft(draftId);
@@ -521,7 +523,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
   void identityVerified; void identityLoaded;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className={cn("flex flex-col bg-background", onDone ? "rounded-2xl border overflow-hidden" : "min-h-screen")}>
       <PublishTopBar
         saveStatus={saveStatus}
         lastSavedAt={lastSavedAt}
@@ -619,7 +621,7 @@ const PublishWizard = ({ mode, productId, initialProduct }: Props) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => { setPublishedTitle(null); navigate("/owner"); }}>
+            <AlertDialogAction onClick={() => { setPublishedTitle(null); (onDone ? onDone() : navigate("/owner")); }}>
               {t("Vezi anunțurile mele", "View my listings")}
             </AlertDialogAction>
           </AlertDialogFooter>
