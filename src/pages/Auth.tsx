@@ -86,6 +86,7 @@ const Auth = () => {
     if (typeof window === "undefined") return false;
     return localStorage.getItem("rentli_remember_me") === "1";
   });
+  const [accountType, setAccountType] = useState<"individual" | "business">("individual");
   const copy = useUxCopy();
   const { language } = useLanguage();
 
@@ -196,6 +197,11 @@ const Auth = () => {
     if (user && !isResetMode && !phoneOtpOpen && !gatingLogin) {
       const r = searchParams.get("redirect");
       const safe = r && r.startsWith("/") && !r.startsWith("//") ? r : "/";
+      if (localStorage.getItem("rentli_pending_business") === "1") {
+        localStorage.removeItem("rentli_pending_business");
+        navigate("/onboarding/business", { replace: true });
+        return;
+      }
       navigate(safe, { replace: true });
     }
   }, [user, navigate, isResetMode, phoneOtpOpen, gatingLogin, searchParams]);
@@ -293,9 +299,12 @@ const Auth = () => {
     if (USE_SMS_OTP) setGatingLogin(true);
     try {
       const email = data.email.trim().toLowerCase();
+      if (accountType === "business") localStorage.setItem("rentli_pending_business", "1");
+      else localStorage.removeItem("rentli_pending_business");
       const { error } = await signUp(email, data.password, undefined);
       if (error) {
         setGatingLogin(false);
+        localStorage.removeItem("rentli_pending_business");
         let message = error.message || "Înregistrarea nu a putut fi finalizată. Încearcă din nou.";
         const alreadyRegistered =
           /already registered|already exists/i.test(error.message || "") ||
@@ -703,6 +712,31 @@ const Auth = () => {
             <TabsContent value="register" className="space-y-4">
               <CardTitle className="text-xl">{copy.auth.createAccount}</CardTitle>
               <CardDescription>{copy.auth.registerSubtitle}</CardDescription>
+
+              <div role="radiogroup" aria-label={language === "ro" ? "Tip cont" : "Account type"} className="grid grid-cols-2 gap-2 mt-4">
+                {([
+                  ["individual", "👤", language === "ro" ? "Persoană fizică" : "Individual"],
+                  ["business", "🏢", language === "ro" ? "Persoană juridică" : "Company"],
+                ] as const).map(([val, icon, label]) => (
+                  <button
+                    key={val}
+                    type="button"
+                    role="radio"
+                    aria-checked={accountType === val}
+                    onClick={() => setAccountType(val)}
+                    className={`rounded-xl border-2 p-3 text-sm font-semibold transition-colors ${accountType === val ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground hover:border-primary/50"}`}
+                  >
+                    <span className="block text-xl mb-1">{icon}</span>{label}
+                  </button>
+                ))}
+              </div>
+              {accountType === "business" && (
+                <p className="text-xs text-muted-foreground">
+                  {language === "ro"
+                    ? "Creează contul cu datele administratorului. După verificarea telefonului introduci CUI-ul, iar datele firmei se completează automat."
+                    : "Create the account with the administrator's details. After phone verification you enter the CUI and company data fills in automatically."}
+                </p>
+              )}
               
               <div className="mt-4">
                 <SocialLoginButtons onSuccess={() => navigate("/", { replace: true })} />

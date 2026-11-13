@@ -101,7 +101,7 @@ const BusinessOnboarding = () => {
           ? "Poți completa datele companiei oricând din profil."
           : "Bine ai venit pe Rentli Business!",
       });
-      navigate("/", { replace: true });
+      navigate(skip ? "/" : "/business", { replace: true });
     } catch (e: any) {
       toast({
         title: "Eroare",
