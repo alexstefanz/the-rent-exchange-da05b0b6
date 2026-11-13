@@ -23,6 +23,7 @@ import {
   ArrowUpRight,
   Eye,
   EyeOff,
+  Building2,
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -388,6 +389,15 @@ export function AccountHubBody({ onNavigate, onLogout }: { onNavigate: (path: st
           >
             <ShieldCheck className="h-4 w-4" />
             <span className="whitespace-nowrap">{t("Panou Admin", "Admin Panel")}</span>
+          </button>
+        )}
+        {(profile as any)?.account_type === "business" && (
+          <button
+            onClick={() => onNavigate("/business")}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90"
+          >
+            <Building2 className="h-4 w-4" />
+            <span className="whitespace-nowrap">Rentli Business</span>
           </button>
         )}
         {isInsurer && (
