@@ -31,6 +31,7 @@ export interface RentalFullDetail {
   product_category: string | null;
   product_included_items: string[] | null;
   product_deposit_value: number | null;
+  product_serial_number?: string | null;
   product_location_city: string | null;
   owner_id: string | null;
   owner_name: string | null;
@@ -68,7 +69,8 @@ export async function getRentalFullDetail(publicId: string): Promise<RentalFullD
       .select("stripe_fee, insurance_fee, cancellation_reason, cancelled_by, wallet_credit_applied, cancel_request_status, cancel_request_initiator, cancel_request_subject, cancel_request_reason, cancel_request_created_at, cancel_request_responded_at, cancel_request_response_note, admin_handover_unlocked_at")
       .eq("id", (row as any).id)
       .maybeSingle();
-    return { ...(row as RentalFullDetail), ...(c || {}) } as RentalFullDetail;
+    const { data: serial } = await supabase.rpc("get_rental_product_serial", { _rental_id: (row as any).id });
+    return { ...(row as RentalFullDetail), ...(c || {}), product_serial_number: (serial as string | null) ?? null } as RentalFullDetail;
   } catch {
     return row as RentalFullDetail;
   }

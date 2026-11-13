@@ -974,6 +974,28 @@ const Step2Details = ({
           {errors.condition && <p className="text-sm text-destructive">{errors.condition}</p>}
         </div>
 
+        {/* Serial / OEM */}
+        <div className="space-y-2">
+          <Label htmlFor="serial_number" className="text-sm font-semibold">
+            {t("Număr de serie / Cod OEM", "Serial number / OEM code")}{" "}
+            <span className="font-normal text-muted-foreground">{t("(opțional)", "(optional)")}</span>
+          </Label>
+          <Input
+            id="serial_number"
+            placeholder={t("Ex: SN-4829103, OEM-1294", "E.g. SN-4829103, OEM-1294")}
+            value={data.serial_number}
+            onChange={(e) => update("serial_number", e.target.value)}
+            maxLength={100}
+            className="h-12 text-base"
+          />
+          <p className="text-xs text-muted-foreground">
+            {t(
+              "Pentru camere, scule, drone, electronice. Apare automat în Procesul Verbal și nu este afișat public.",
+              "For cameras, tools, drones, electronics. Shown automatically in the handover report, never publicly.",
+            )}
+          </p>
+        </div>
+
         {/* Description */}
         <div className="space-y-2">
           <Label htmlFor="description" className="text-sm font-semibold">

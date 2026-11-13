@@ -69,7 +69,7 @@ Deno.serve(withCors(async (req) => {
     }
 
     const [productRes, ownerRes, renterRes, pvRes] = await Promise.all([
-      admin.from("products").select("title, category, included_items, daily_price_owner, deposit_value").eq("id", rental.product_id).maybeSingle(),
+      admin.from("products").select("title, category, included_items, daily_price_owner, deposit_value, serial_number").eq("id", rental.product_id).maybeSingle(),
       admin.from("profiles").select("full_name, email, phone").eq("id", rental.owner_id).maybeSingle(),
       admin.from("profiles").select("full_name, email, phone").eq("id", rental.renter_id).maybeSingle(),
       admin.from("rental_pv_documents").select("*").eq("rental_id", rental_id).eq("phase", phase).maybeSingle(),
@@ -203,7 +203,7 @@ Deno.serve(withCors(async (req) => {
 
     section("3. IDENTIFICAREA BUNULUI");
     kv([["Denumire / model", product?.title ?? "-"], ["Marca", "-"]]);
-    kv([["An fabricatie", "-"], ["Nr. serie / identificare", "-"], ["Suma asigurata", product?.deposit_value ? `${product.deposit_value} lei` : "-"]]);
+    kv([["An fabricatie", "-"], ["Nr. serie / identificare", (product as any)?.serial_number || "-"], ["Suma asigurata", product?.deposit_value ? `${product.deposit_value} lei` : "-"]]);
     kv([["Accesorii incluse", items.length ? items.join(", ") : "-"], ["Ambalaj / husa", "[ ] Da [ ] Nu"]]);
 
     section("4. STAREA BUNULUI LA PREDARE");
