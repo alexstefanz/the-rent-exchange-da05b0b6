@@ -9,6 +9,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 interface SocialLoginButtonsProps {
   onSuccess?: () => void;
+  accountType?: "individual" | "business";
 }
 
 const GoogleIcon = () => (
@@ -26,7 +27,7 @@ const AppleIcon = () => (
   </svg>
 );
 
-const SocialLoginButtons = ({ onSuccess }: SocialLoginButtonsProps) => {
+const SocialLoginButtons = ({ onSuccess, accountType }: SocialLoginButtonsProps) => {
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
   const { t } = useLanguage();
 
@@ -36,6 +37,8 @@ const SocialLoginButtons = ({ onSuccess }: SocialLoginButtonsProps) => {
 
   const handleSocialLogin = async (provider: "google" | "apple") => {
     setLoadingProvider(provider);
+    if (accountType === "business") localStorage.setItem("rentli_pending_business", "1");
+    else if (accountType === "individual") localStorage.removeItem("rentli_pending_business");
     try {
       if (isProductionDomain && provider === "google") {
         const { error } = await supabase.auth.signInWithOAuth({

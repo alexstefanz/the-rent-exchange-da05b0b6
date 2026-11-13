@@ -739,7 +739,7 @@ const Auth = () => {
               )}
               
               <div className="mt-4">
-                <SocialLoginButtons onSuccess={() => navigate("/", { replace: true })} />
+                <SocialLoginButtons accountType={accountType} onSuccess={() => navigate("/", { replace: true })} />
               </div>
 
               <form
