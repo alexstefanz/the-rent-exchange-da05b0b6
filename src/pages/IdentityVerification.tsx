@@ -34,6 +34,7 @@ export default function IdentityVerification() {
   const [err, setErr] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(5);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [verifiedName, setVerifiedName] = useState<string | null>(null);
 
   const goBack = () => {
     const target = sessionStorage.getItem("identity_return_to") || "/contul-meu";
@@ -52,9 +53,10 @@ export default function IdentityVerification() {
 
   const load = async () => {
     if (!user) return;
-    const { data } = await supabase.from("profiles").select("identity_status, identity_last_error").eq("id", user.id).single();
+    const { data } = await supabase.from("profiles").select("identity_status, identity_last_error, full_name, full_name_source").eq("id", user.id).single();
     setStatus(((data as any)?.identity_status ?? "unverified") as Status);
     setLastError((data as any)?.identity_last_error ?? null);
+    setVerifiedName((data as any)?.full_name_source === "stripe_identity" ? (data as any)?.full_name ?? null : null);
   };
 
   useEffect(() => {
@@ -95,6 +97,7 @@ export default function IdentityVerification() {
             <ShieldCheck className="mx-auto h-14 w-14 text-primary" />
             <h1 className="text-2xl font-bold">Identitate verificată</h1>
             <p className="text-muted-foreground">Profilul tău afișează acum insigna de identitate verificată.</p>
+            {verifiedName && <p className="rounded-xl bg-muted/50 p-3 text-sm">Numele tău pentru contracte a fost actualizat conform actului de identitate: <b>{verifiedName}</b></p>}
             {returning && <p className="text-sm text-muted-foreground">Te întoarcem automat în {countdown} secunde…</p>}
             <Button size="lg" className="w-full" onClick={goBack}>Înapoi la Rentli</Button>
           </>
