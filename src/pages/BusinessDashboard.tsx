@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format, addDays, parseISO, startOfMonth, subMonths, isWithinInterval } from "date-fns";
-import { Building2, Package, CalendarDays, FileText, Download, Loader2, TrendingUp, Wallet, Percent, Activity, LayoutDashboard, Menu, Plus, ArrowLeft, LogOut, ShoppingBag, MessageSquare, Settings, Wallet as WalletIcon } from "lucide-react";
+import { Building2, Package, CalendarDays, FileText, Download, Loader2, TrendingUp, Wallet, Percent, Activity, LayoutDashboard, ClipboardList, Menu, Plus, ArrowLeft, LogOut, ShoppingBag, MessageSquare, Settings, Wallet as WalletIcon } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import RentalsTab from "@/components/dashboard/RentalsTab";
 import EarningsTab from "@/components/profile/EarningsTab";
 import AccountTab from "@/components/profile/AccountTab";
 import Messages from "@/pages/Messages";
+import RentalDetailPage from "@/pages/RentalDetailPage";
+import RentalsOutTab from "@/components/dashboard/RentalsOutTab";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +37,9 @@ export default function BusinessDashboard() {
   const [section, setSectionState] = useState(params.get("section") || "overview");
   const setSection = (id: string) => { setSectionState(id); setParams(id === "overview" ? {} : { section: id }, { replace: true }); };
   const [mobileOpen, setMobileOpen] = useState(false);
+  const rentalId = params.get("rental");
+  const openRental = (id: string) => setParams({ section, rental: id });
+  const closeRental = () => setParams(section === "overview" ? {} : { section });
 
   const { data, isLoading } = useQuery({
     queryKey: ["business-dashboard", user?.id],
@@ -118,6 +123,7 @@ export default function BusinessDashboard() {
     { id: "overview", icon: LayoutDashboard, label: t("Prezentare generală", "Overview") },
     { id: "fleet", icon: Package, label: t("Gestiune flotă", "Fleet") },
     { id: "calendar", icon: CalendarDays, label: t("Calendar & rezervări", "Calendar & bookings") },
+    { id: "requests", icon: ClipboardList, label: t("Închirieri primite", "Incoming rentals") },
     { id: "docs", icon: FileText, label: t("Documente & contabilitate", "Documents & accounting") },
     { id: "company", icon: Building2, label: t("Date fiscale", "Company details") },
     { id: "renter", icon: ShoppingBag, label: t("Închirierile mele (chiriaș)", "My rentals (renter)"), group: "account" },
@@ -125,7 +131,7 @@ export default function BusinessDashboard() {
     { id: "wallet", icon: WalletIcon, label: t("Încasări & sold", "Earnings & balance"), group: "account" },
     { id: "settings", icon: Settings, label: t("Setări cont", "Account settings"), group: "account" },
   ] as { id: string; icon: any; label: string; group?: string }[];
-  const go = (id: string) => { setSection(id); setMobileOpen(false); };
+  const go = (id: string) => { setSectionState(id); setParams(id === "overview" ? {} : { section: id }, { replace: true }); setMobileOpen(false); };
   const calendarCard = (
     <Card><CardHeader><CardTitle className="text-base">{t("Calendar rezervări – 14 zile", "Bookings – next 14 days")}</CardTitle></CardHeader>
       <CardContent><div className="flex gap-2 overflow-x-auto pb-1">
@@ -181,7 +187,11 @@ export default function BusinessDashboard() {
           </Sheet>
           <span className="font-bold text-primary">Rentli Business</span>
         </div>
-        <div className="p-4 md:p-8 space-y-6 w-full">
+        <div className="p-4 md:p-8 space-y-6 w-full" onClickCapture={(e) => {
+          const a = (e.target as HTMLElement).closest("a");
+          const m = a?.getAttribute("href")?.match(/^\/(?:rezervari|inchirieri)\/([^/?#]+)/);
+          if (m) { e.preventDefault(); e.stopPropagation(); openRental(decodeURIComponent(m[1])); }
+        }}>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">{section === "overview" ? `${t("Salut", "Hello")}, ${profile?.company_name || ""}` : current.label}</h1>
@@ -193,6 +203,7 @@ export default function BusinessDashboard() {
           </div>
         </div>
 
+        {rentalId ? <RentalDetailPage key={rentalId} embedded publicIdOverride={rentalId} onBack={closeRental} /> :
         <Tabs value={section} onValueChange={setSection}>
           <TabsContent value="overview" className="space-y-6 mt-0">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -231,7 +242,7 @@ export default function BusinessDashboard() {
                 <CardContent className="p-0 divide-y">
                   {rentals.slice(0, 4).length === 0 && <p className="p-6 text-center text-sm text-muted-foreground">{t("Nicio tranzacție încă.", "No transactions yet.")}</p>}
                   {rentals.slice(0, 4).map((r) => (
-                    <button key={r.id} onClick={() => navigate(`/inchirieri/${r.public_id}`)} className="flex w-full items-center justify-between gap-3 px-6 py-3 text-left hover:bg-muted/50">
+                    <button key={r.id} onClick={() => openRental(r.public_id)} className="flex w-full items-center justify-between gap-3 px-6 py-3 text-left hover:bg-muted/50">
                       <div className="min-w-0"><p className="text-sm font-medium truncate">{r.product_title_snapshot ?? r.public_id}</p><p className="text-xs text-muted-foreground">{r.public_id} · {r.rental_days} {t("zile", "days")}</p></div>
                       <span className="text-sm font-semibold whitespace-nowrap">{ron(Number(r.owner_payout))}</span>
                     </button>
@@ -280,7 +291,7 @@ export default function BusinessDashboard() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-sm font-semibold">{ron(Number(r.owner_payout))}</span>
-                    <Button size="sm" variant="outline" onClick={() => navigate(`/inchirieri/${r.public_id}`)}>{t("Documente", "Documents")}</Button>
+                    <Button size="sm" variant="outline" onClick={() => openRental(r.public_id)}>{t("Documente", "Documents")}</Button>
                   </div>
                 </div>
               ))}
@@ -292,7 +303,7 @@ export default function BusinessDashboard() {
               <CardContent className="p-0 divide-y">
                 {[...stats.pending, ...stats.active].length === 0 && <p className="p-6 text-center text-muted-foreground">{t("Nicio rezervare activă.", "No active bookings.")}</p>}
                 {[...stats.pending, ...stats.active].map((r) => (
-                  <button key={r.id} onClick={() => navigate(`/inchirieri/${r.public_id}`)} className="flex w-full items-center justify-between gap-3 p-4 text-left hover:bg-muted/50">
+                  <button key={r.id} onClick={() => openRental(r.public_id)} className="flex w-full items-center justify-between gap-3 p-4 text-left hover:bg-muted/50">
                     <div><p className="font-medium">{r.product_title_snapshot ?? r.public_id}</p><p className="text-xs text-muted-foreground">{r.public_id} · {r.start_date} → {r.end_date}</p></div>
                     <Badge variant={r.status === "pending" ? "secondary" : "default"}>{r.status === "pending" ? t("Cerere nouă", "New request") : t("Activă", "Active")}</Badge>
                   </button>
@@ -300,6 +311,7 @@ export default function BusinessDashboard() {
               </CardContent></Card>
           </TabsContent>
 
+          <TabsContent value="requests" className="mt-0">{section === "requests" && <RentalsOutTab />}</TabsContent>
           <TabsContent value="renter" className="mt-0">{section === "renter" && <RentalsTab />}</TabsContent>
           <TabsContent value="messages" className="mt-0">{section === "messages" && <Messages embedded />}</TabsContent>
           <TabsContent value="wallet" className="mt-0">{section === "wallet" && <EarningsTab />}</TabsContent>
@@ -312,7 +324,7 @@ export default function BusinessDashboard() {
               <div className="sm:col-span-2"><Button variant="outline" onClick={() => navigate("/onboarding/business")}>{t("Actualizează datele firmei", "Update company details")}</Button></div>
             </CardContent></Card>
           </TabsContent>
-        </Tabs>
+        </Tabs>}
         </div>
       </main>
     </div>
