@@ -151,7 +151,7 @@ const PremiumBookingCard = ({
           <Separator className="my-2.5" />
           <div className="flex justify-between">
             <span className="text-muted-foreground">
-              {rentalDays} {language === "en" ? (rentalDays === 1 ? "day" : "days") : (rentalDays === 1 ? "zi" : "zile")} × {formatPriceShort(clientPrice)} RON
+              {t("Chirie", "Rent")} ({rentalDays} {language === "en" ? (rentalDays === 1 ? "day" : "days") : (rentalDays === 1 ? "zi" : "zile")})
             </span>
             <span className="font-medium">{formatPriceShort(breakdown.subtotal + breakdown.platformFee)} RON</span>
           </div>
