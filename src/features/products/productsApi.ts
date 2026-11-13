@@ -243,6 +243,47 @@ export const getOwnerProductCount = async (ownerId: string): Promise<number> => 
   return count || 0;
 };
 
+/** Owner may change these on a live listing without admin review (no free text/images). */
+export const INSTANT_EDIT_FIELDS = [
+  "daily_price_owner",
+  "min_rental_days",
+  "min_rental_preset",
+  "max_rental_days",
+  "pickup_available",
+  "delivery_available",
+  "delivery_radius_km",
+  "available_immediately",
+  "available_from",
+  "blocked_dates",
+] as const;
+
+const sameValue = (a: unknown, b: unknown) =>
+  JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+
+/** Split an edit into instantly-applied fields and changed fields needing moderation. */
+export const partitionEdits = (
+  edits: Record<string, unknown>,
+  current: Record<string, unknown>,
+) => {
+  const instant: Record<string, unknown> = {};
+  const moderated: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(edits)) {
+    if ((INSTANT_EDIT_FIELDS as readonly string[]).includes(k)) instant[k] = v;
+    else if (!sameValue(v, current[k])) moderated[k] = v;
+  }
+  return { instant, moderated };
+};
+
+const splitInstantEdits = async (id: string, edits: Record<string, unknown>) => {
+  const keys = Object.keys(edits).filter((k) => !(INSTANT_EDIT_FIELDS as readonly string[]).includes(k));
+  let current: Record<string, unknown> = {};
+  if (keys.length) {
+    const { data } = await supabase.from("products").select(keys.join(",") as any).eq("id", id).maybeSingle();
+    current = (data as any) ?? {};
+  }
+  return partitionEdits(edits, current);
+};
+
 export interface PublishProductInput {
   title: string;
   description?: string;
@@ -358,10 +399,12 @@ export const updateProduct = async (
   // Edits to a live listing are stored separately for review; the live
   // listing keeps its current (approved) data until an admin approves.
   if ((current as any)?.approval_status === "approved") {
-    const { is_active, ...edits } = payload;
-    const onlyVisibility = Object.keys(edits).length === 0;
-    const livePayload: Record<string, unknown> = {};
+    const { is_active, ...rest } = payload;
+    const { instant, moderated } = await splitInstantEdits(id, rest);
+    const onlyVisibility = Object.keys(moderated).length === 0;
+    const livePayload: Record<string, unknown> = { ...instant };
     if (is_active !== undefined) livePayload.is_active = is_active;
+    const edits = moderated;
     if (!onlyVisibility) {
       livePayload.pending_edits = edits;
       livePayload.pending_edits_submitted_at = new Date().toISOString();
