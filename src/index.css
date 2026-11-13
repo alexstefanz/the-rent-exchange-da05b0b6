@@ -117,6 +117,9 @@ html body[style*="padding-right"] {
 
     --radius: 0.75rem;
 
+    --biz-panel: 24 20% 10%;
+    --biz-panel-foreground: 30 15% 85%;
+    --biz-panel-muted: 24 12% 18%;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;

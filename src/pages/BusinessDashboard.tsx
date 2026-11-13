@@ -97,12 +97,19 @@ export default function BusinessDashboard() {
     { icon: Wallet, label: t("Venituri luna curentă", "This month"), value: ron(stats.monthRevenue) },
     { icon: Activity, label: t("Închirieri active", "Active rentals"), value: String(stats.active.length) },
     { icon: CalendarDays, label: t("Cereri noi", "New requests"), value: String(stats.pending.length) },
-    { icon: Package, label: t("Echipamente în flotă", "Fleet size"), value: String(products.length) },
-    { icon: Percent, label: t("Grad utilizare (30 zile)", "Utilization (30d)"), value: `${stats.utilization}%` },
+    { icon: Package, label: t("Echipamente disponibile", "Available equipment"), value: String(products.filter((p: any) => p.approval_status === "approved" && p.is_active && !stats.rentedIds.has(p.id)).length) },
+    { icon: Percent, label: t("Echipamente închiriate", "Rented equipment"), value: String(stats.rentedIds.size) },
     { icon: FileText, label: t("Comisioane Rentli", "Rentli fees"), value: ron(stats.fees) },
     { icon: Building2, label: t("Închirieri finalizate", "Completed"), value: String(stats.done.length) },
   ];
 
+  const decided = rentals.filter((r) => r.status !== "pending");
+  const accepted = decided.filter((r) => r.status !== "rejected" && r.status !== "cancelled");
+  const perf = [
+    { label: t("Grad de utilizare flotă (30 zile)", "Fleet utilization (30d)"), v: stats.utilization },
+    { label: t("Rată acceptare rezervări", "Booking acceptance rate"), v: decided.length ? Math.round((accepted.length / decided.length) * 100) : 0 },
+    { label: t("Închirieri finalizate", "Completed rentals"), v: decided.length ? Math.round((stats.done.length / decided.length) * 100) : 0 },
+  ];
   const nav = [
     { id: "overview", icon: LayoutDashboard, label: t("Prezentare generală", "Overview") },
     { id: "fleet", icon: Package, label: t("Gestiune flotă", "Fleet") },
@@ -113,50 +120,48 @@ export default function BusinessDashboard() {
   const go = (id: string) => { setSection(id); setMobileOpen(false); };
   const calendarCard = (
     <Card><CardHeader><CardTitle className="text-base">{t("Calendar rezervări – 14 zile", "Bookings – next 14 days")}</CardTitle></CardHeader>
-      <CardContent><div className="grid grid-cols-7 gap-2">
+      <CardContent><div className="flex gap-2 overflow-x-auto pb-1">
         {days.map((d) => {
           const iso = format(d, "yyyy-MM-dd");
           const n = stats.active.filter((r) => r.start_date <= iso && r.end_date >= iso).length;
           return (
-            <div key={iso} className={`rounded-lg border p-2 text-center ${n ? "bg-primary/10 border-primary/40" : ""}`}>
-              <div className="text-[10px] text-muted-foreground">{format(d, "dd.MM")}</div>
-              <div className="text-xs font-semibold">{n ? `${n} rez.` : t("liber", "free")}</div>
+            <div key={iso} className={`min-w-[68px] flex-1 rounded-xl border p-2 text-center ${n ? "bg-primary/10 border-primary/40" : "bg-card"}`}>
+              <div className="text-[11px] text-muted-foreground">{d.toLocaleDateString("ro-RO", { weekday: "short" })}</div>
+              <div className="text-lg font-bold">{format(d, "d")}</div>
+              <div className={`text-[11px] ${n ? "text-primary font-semibold" : "text-muted-foreground"}`}>{n ? `${n} rez.` : t("liber", "free")}</div>
             </div>
           );
         })}
       </div></CardContent></Card>
   );
+  const navBtn = (active: boolean) => `flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${active ? "bg-primary text-primary-foreground" : "text-biz-panel-foreground hover:bg-biz-panel-muted"}`;
   const panel = (
-    <div className="flex h-full flex-col bg-card">
-      <div className="border-b p-5">
-        <Badge variant="secondary" className="mb-3"><Building2 className="h-3 w-3 mr-1" />Rentli Business</Badge>
-        <p className="font-bold leading-tight line-clamp-2">{profile?.company_name || t("Compania mea", "My company")}</p>
-        <p className="text-xs text-muted-foreground mt-1">{profile?.cui && `CUI ${profile.cui}`}{profile?.reg_com && ` · ${profile.reg_com}`}</p>
+    <div className="flex h-full flex-col bg-biz-panel text-biz-panel-foreground">
+      <div className="flex items-center gap-3 px-5 py-6">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">R</div>
+        <div><p className="text-lg font-bold leading-none text-background">rentli</p><p className="mt-1 text-[11px] font-semibold tracking-widest text-primary">BUSINESS</p></div>
       </div>
-      <nav className="flex-1 space-y-1 p-3">
+      <div className="mx-3 mb-4 rounded-xl bg-biz-panel-muted p-3">
+        <p className="text-sm font-semibold leading-tight text-background line-clamp-2">{profile?.company_name || t("Compania mea", "My company")}</p>
+        <p className="mt-1 text-[11px] opacity-70">{profile?.cui && `CUI ${profile.cui}`}{profile?.reg_com && ` · ${profile.reg_com}`}</p>
+      </div>
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3">
         {nav.map((n) => (
-          <button key={n.id} onClick={() => go(n.id)} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${section === n.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}>
-            <n.icon className="h-4 w-4" />{n.label}
-          </button>
+          <button key={n.id} onClick={() => go(n.id)} className={navBtn(section === n.id)}><n.icon className="h-4 w-4" />{n.label}</button>
         ))}
-      </nav>
-      <div className="space-y-1 border-t p-3">
-        <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{t("Cont firmă", "Company account")}</p>
+        <p className="px-3 pb-1 pt-5 text-[11px] font-semibold uppercase tracking-wider opacity-50">{t("Cont firmă", "Company account")}</p>
         {[
           { to: "/rezervari", icon: ShoppingBag, label: t("Închirierile mele (chiriaș)", "My rentals (renter)") },
           { to: "/mesaje", icon: MessageSquare, label: t("Mesaje", "Messages") },
           { to: "/castiguri", icon: WalletIcon, label: t("Încasări & sold", "Earnings & balance") },
           { to: "/contul-meu", icon: Settings, label: t("Setări cont", "Account settings") },
         ].map((l) => (
-          <button key={l.to} onClick={() => navigate(l.to)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
-            <l.icon className="h-4 w-4" />{l.label}
-          </button>
+          <button key={l.to} onClick={() => navigate(l.to)} className={navBtn(false)}><l.icon className="h-4 w-4" />{l.label}</button>
         ))}
-      </div>
-      <div className="space-y-2 border-t p-3">
-        <Button className="w-full" onClick={() => navigate("/owner/new-product")}><Plus className="h-4 w-4 mr-1" />{t("Adaugă echipament", "Add equipment")}</Button>
-        <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/")}><ArrowLeft className="h-4 w-4 mr-2" />{t("Înapoi la Rentli", "Back to Rentli")}</Button>
-        {signOut && <Button variant="ghost" className="w-full justify-start text-muted-foreground" onClick={async () => { await signOut(); navigate("/", { replace: true }); }}><LogOut className="h-4 w-4 mr-2" />{t("Deconectare", "Sign out")}</Button>}
+      </nav>
+      <div className="space-y-1 border-t border-biz-panel-muted p-3">
+        <button onClick={() => navigate("/")} className={navBtn(false)}><ArrowLeft className="h-4 w-4" />{t("Înapoi la Rentli", "Back to Rentli")}</button>
+        {signOut && <button onClick={async () => { await signOut(); navigate("/", { replace: true }); }} className={navBtn(false)}><LogOut className="h-4 w-4" />{t("Deconectare", "Sign out")}</button>}
       </div>
     </div>
   );
@@ -164,7 +169,7 @@ export default function BusinessDashboard() {
 
   return (
     <div className="min-h-screen flex w-full bg-muted/30">
-      <aside className="hidden md:block w-64 shrink-0 border-r sticky top-0 h-screen">{panel}</aside>
+      <aside className="hidden md:block w-72 shrink-0 sticky top-0 h-screen">{panel}</aside>
       <main className="flex-1 min-w-0">
         <div className="md:hidden sticky top-0 z-40 flex items-center gap-3 border-b bg-background px-4 py-3">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -173,34 +178,62 @@ export default function BusinessDashboard() {
           </Sheet>
           <span className="font-bold text-primary">Rentli Business</span>
         </div>
-        <div className="p-4 md:p-8 space-y-6 max-w-7xl">
+        <div className="p-4 md:p-8 space-y-6 w-full">
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <h1 className="text-2xl md:text-3xl font-bold">{current.label}</h1>
-          <Button variant="outline" onClick={() => navigate("/inchirieri")}>{t("Închirieri", "Rentals")}</Button>
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">{section === "overview" ? `${t("Salut", "Hello")}, ${profile?.company_name || ""}` : current.label}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{t("Prezentare generală a activității Rentli Business", "Rentli Business activity overview")}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => go("fleet")}>{t("Echipamente", "Equipment")}</Button>
+            <Button onClick={() => navigate("/owner/new-product")}><Plus className="h-4 w-4 mr-1" />{t("Adaugă echipament", "Add equipment")}</Button>
+          </div>
         </div>
 
         <Tabs value={section} onValueChange={setSection}>
           <TabsContent value="overview" className="space-y-6 mt-0">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {kpis.map((k) => (
-                <Card key={k.label}><CardContent className="p-4">
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground"><k.icon className="h-4 w-4 text-primary" />{k.label}</div>
-                  <div className="text-xl font-bold mt-2">{k.value}</div>
+                <Card key={k.label} className="rounded-2xl"><CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-2"><span className="text-sm text-muted-foreground">{k.label}</span><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10"><k.icon className="h-4 w-4 text-primary" /></span></div>
+                  <div className="text-2xl font-bold mt-3">{k.value}</div>
                 </CardContent></Card>
               ))}
             </div>
-            <div className="grid lg:grid-cols-2 gap-6">
-              <Card><CardHeader><CardTitle className="text-base">{t("Evoluție venituri nete (6 luni)", "Net revenue (6 months)")}</CardTitle></CardHeader>
-                <CardContent><div className="flex items-end gap-3 h-40">
+            <div className="grid xl:grid-cols-3 gap-6">
+              <Card className="rounded-2xl xl:col-span-2"><CardHeader><CardTitle className="text-base">{t("Evoluție venituri (RON)", "Revenue (RON)")}</CardTitle></CardHeader>
+                <CardContent><div className="flex items-end gap-4 h-56 border-b border-l pl-2">
                   {stats.months.map((m) => (
-                    <div key={m.label} className="flex-1 flex flex-col items-center gap-1">
-                      <span className="text-[10px] text-muted-foreground">{m.v ? Math.round(m.v) : ""}</span>
-                      <div className="w-full rounded-t-md bg-primary" style={{ height: `${(m.v / max) * 100}%`, minHeight: 2 }} />
-                      <span className="text-xs text-muted-foreground capitalize">{m.label}</span>
+                    <div key={m.label} className="flex-1 h-full flex flex-col justify-end items-center gap-1">
+                      <span className="text-[11px] text-muted-foreground">{m.v ? Math.round(m.v) : ""}</span>
+                      <div className="w-full max-w-16 rounded-t-lg bg-gradient-to-t from-primary/60 to-primary" style={{ height: `${(m.v / max) * 85}%`, minHeight: 3 }} />
                     </div>
                   ))}
-                </div></CardContent></Card>
-              {calendarCard}
+                </div>
+                <div className="flex gap-4 pl-2 pt-2">{stats.months.map((m) => <span key={m.label} className="flex-1 text-center text-xs text-muted-foreground capitalize">{m.label}</span>)}</div>
+                </CardContent></Card>
+              <Card className="rounded-2xl"><CardHeader><CardTitle className="text-base">{t("Indicatori de performanță", "Performance")}</CardTitle></CardHeader>
+                <CardContent className="space-y-5">
+                  {perf.map((p) => (
+                    <div key={p.label}>
+                      <div className="flex justify-between text-sm mb-1.5"><span>{p.label}</span><span className="font-semibold">{p.v}%</span></div>
+                      <div className="h-2 rounded-full bg-muted overflow-hidden"><div className="h-full rounded-full bg-primary" style={{ width: `${p.v}%` }} /></div>
+                    </div>
+                  ))}
+                </CardContent></Card>
+            </div>
+            <div className="grid xl:grid-cols-3 gap-6">
+              <div className="xl:col-span-2">{calendarCard}</div>
+              <Card className="rounded-2xl"><CardHeader><CardTitle className="text-base">{t("Ultimele tranzacții", "Latest transactions")}</CardTitle></CardHeader>
+                <CardContent className="p-0 divide-y">
+                  {rentals.slice(0, 4).length === 0 && <p className="p-6 text-center text-sm text-muted-foreground">{t("Nicio tranzacție încă.", "No transactions yet.")}</p>}
+                  {rentals.slice(0, 4).map((r) => (
+                    <button key={r.id} onClick={() => navigate(`/inchirieri/${r.public_id}`)} className="flex w-full items-center justify-between gap-3 px-6 py-3 text-left hover:bg-muted/50">
+                      <div className="min-w-0"><p className="text-sm font-medium truncate">{r.product_title_snapshot ?? r.public_id}</p><p className="text-xs text-muted-foreground">{r.public_id} · {r.rental_days} {t("zile", "days")}</p></div>
+                      <span className="text-sm font-semibold whitespace-nowrap">{ron(Number(r.owner_payout))}</span>
+                    </button>
+                  ))}
+                </CardContent></Card>
             </div>
           </TabsContent>
 
