@@ -318,7 +318,7 @@ const SupportChatWidget = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // -------- Admin inbox (Tickete tab for admins) --------
+  // -------- Admin inbox (Tichete tab for admins) --------
   type AdminInboxTicket = AdminOpsTicket & {
     unread_count: number;
     last_message?: string;
@@ -426,7 +426,7 @@ const SupportChatWidget = () => {
       );
   }, [isAdmin, ticketId, queryClient]);
 
-  // -------- Tickets (Tickete tab) --------
+  // -------- Tickets (Tichete tab) --------
   const { data: userTickets = [], isLoading: isLoadingTickets } = useQuery<
     OpsTicket[]
   >({
@@ -607,7 +607,7 @@ const SupportChatWidget = () => {
     onError: () => {
       toast.error(
         t(
-          "Eroare la actualizarea ticketului.",
+          "Eroare la actualizarea tichetului.",
           "Failed to update ticket.",
         ),
       );
@@ -797,7 +797,7 @@ const SupportChatWidget = () => {
   // Header content
   // Back is hidden for non-admin while viewing an ACTIVE ticket — userul
   // nu trebuie să iasă accidental din conversația de suport în curs.
-  // Pentru tickete închise / arhivă / admin păstrăm back-ul.
+  // Pentru tichete închise / arhivă / admin păstrăm back-ul.
   const showBack =
     showTicketArchive ||
     !!ticketId;
@@ -973,8 +973,8 @@ const SupportChatWidget = () => {
                 <AlertDialogTrigger asChild>
                   <button
                     className="p-1.5 rounded-lg hover:bg-primary-foreground/20 lg:hover:bg-secondary transition-colors"
-                    aria-label={t("Închide ticketul", "Close ticket")}
-                    title={t("Închide ticketul", "Close ticket")}
+                    aria-label={t("Închide tichetul", "Close ticket")}
+                    title={t("Închide tichetul", "Close ticket")}
                   >
                     <CheckCircle2 className="h-5 w-5" />
                   </button>
@@ -986,7 +986,7 @@ const SupportChatWidget = () => {
                     </AlertDialogTitle>
                     <AlertDialogDescription>
                       {t(
-                        "Confirmă doar dacă problema este rezolvată sau ticketul a fost deschis din greșeală. Poți oricând deschide unul nou.",
+                        "Confirmă doar dacă problema este rezolvată sau tichetul a fost deschis din greșeală. Poți oricând deschide unul nou.",
                         "Confirm only if the issue is resolved or the ticket was opened by mistake. You can always open a new one.",
                       )}
                     </AlertDialogDescription>
@@ -1004,13 +1004,13 @@ const SupportChatWidget = () => {
                           queryClient.invalidateQueries({ queryKey: ["userTicketMessages", ticketId] });
                         } catch (e: any) {
                           toast.error(
-                            t("Nu am putut închide ticketul", "Could not close the ticket"),
+                            t("Nu am putut închide tichetul", "Could not close the ticket"),
                             { description: e?.message },
                           );
                         }
                       }}
                     >
-                      {t("Închide ticketul", "Close ticket")}
+                      {t("Închide tichetul", "Close ticket")}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -1250,7 +1250,7 @@ const SupportChatWidget = () => {
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
                           {t(
-                            "Ticketele noi de la clienți vor apărea aici.",
+                            "Tichetele noi de la clienți vor apărea aici.",
                             "New customer tickets will show up here.",
                           )}
                         </p>
@@ -1522,10 +1522,10 @@ const SupportChatWidget = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>
               {pendingAdminAction === "RESOLVE" &&
-                t("Marchezi ticketul ca rezolvat?", "Mark ticket as resolved?")}
+                t("Marchezi tichetul ca rezolvat?", "Mark ticket as resolved?")}
               {pendingAdminAction === "INVESTIGATE" &&
                 t(
-                  "Marchezi ticketul: necesită investigații?",
+                  "Marchezi tichetul: necesită investigații?",
                   "Mark ticket: needs investigation?",
                 )}
               {pendingAdminAction === "CANCEL" &&
@@ -1534,17 +1534,17 @@ const SupportChatWidget = () => {
             <AlertDialogDescription>
               {pendingAdminAction === "RESOLVE" &&
                 t(
-                  "Clientul va primi un email că ticketul a fost rezolvat. Va putea redeschide trimițând un nou mesaj.",
+                  "Clientul va primi un email că tichetul a fost rezolvat. Va putea redeschide trimițând un nou mesaj.",
                   "The customer will be notified by email. They can reopen by sending a new message.",
                 )}
               {pendingAdminAction === "INVESTIGATE" &&
                 t(
-                  "Ticketul rămâne deschis, dar marcat ca necesitând investigații suplimentare din partea echipei.",
+                  "Tichetul rămâne deschis, dar marcat ca necesitând investigații suplimentare din partea echipei.",
                   "The ticket stays open but is flagged as needing further internal investigation.",
                 )}
               {pendingAdminAction === "CANCEL" &&
                 t(
-                  "Ticketul va fi închis și marcat ca anulat. Acțiunea poate fi anulată din ERP-ul de admin.",
+                  "Tichetul va fi închis și marcat ca anulat. Acțiunea poate fi anulată din ERP-ul de admin.",
                   "The ticket will be closed and marked as cancelled. This can be reverted from the admin ERP.",
                 )}
             </AlertDialogDescription>

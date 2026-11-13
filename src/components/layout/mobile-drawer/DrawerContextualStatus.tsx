@@ -55,7 +55,7 @@ export function DrawerContextualStatus({
       to: "/suport",
       icon: LifeBuoy,
       text: t(
-        `${openTickets} ${openTickets === 1 ? "ticket activ" : "tickete active"}`,
+        `${openTickets} ${openTickets === 1 ? "tichet activ" : "tichete active"}`,
         `${openTickets} active ${openTickets === 1 ? "ticket" : "tickets"}`
       ),
       tone: "info",

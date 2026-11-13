@@ -22,7 +22,7 @@ const menuItems = [
   { title: "Rezervări", url: "/admin/reservations", icon: CalendarCheck },
   { title: "Dosare asigurări", url: "/admin/asigurari", icon: ShieldCheck },
   { title: "Produse", url: "/admin/products", icon: Package },
-  { title: "Tickete", url: "/admin/tickets", icon: TicketCheck },
+  { title: "Tichete", url: "/admin/tickets", icon: TicketCheck },
   { title: "Categorii", url: "/admin/categories", icon: FolderTree },
   { title: "Financiar", url: "/admin/finances", icon: Wallet },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },

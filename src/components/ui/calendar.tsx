@@ -1,6 +1,8 @@
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { DayPicker } from "react-day-picker";
+import { ro, enUS } from "date-fns/locale";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -8,15 +10,18 @@ import { buttonVariants } from "@/components/ui/button";
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
 function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
+  const { language } = useLanguage();
   return (
     <DayPicker
+      locale={language === "en" ? enUS : ro}
+      weekStartsOn={1}
       showOutsideDays={showOutsideDays}
       className={cn("p-2 sm:p-3 pointer-events-auto w-full max-w-full overflow-hidden", className)}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 w-full",
         month: "space-y-4 w-full",
         caption: "flex justify-center pt-1 relative items-center",
-        caption_label: "text-sm font-medium",
+        caption_label: "text-sm font-medium capitalize",
         nav: "space-x-1 flex items-center",
         nav_button: cn(
           buttonVariants({ variant: "outline" }),

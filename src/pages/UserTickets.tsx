@@ -153,7 +153,7 @@ const UserTickets = () => {
               </DialogTrigger>
               <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                  <DialogTitle>{t("Creează un ticket", "Create a ticket")}</DialogTitle>
+                  <DialogTitle>{t("Creează un tichet", "Create a ticket")}</DialogTitle>
                 </DialogHeader>
                 <CreateTicketForm
                   onSuccess={(id) => { setCreateOpen(false); handleSelect(id); }}
@@ -217,10 +217,10 @@ const UserTickets = () => {
               <div className="rounded-2xl bg-card border border-border/60 p-8 text-center">
                 <LifeBuoy className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
                 <p className="text-sm font-medium mb-1">
-                  {t("Niciun ticket aici", "No tickets here")}
+                  {t("Niciun tichet aici", "No tickets here")}
                 </p>
                 <p className="text-xs text-muted-foreground mb-4">
-                  {t("Creează un ticket nou când ai nevoie de ajutor.", "Create a new ticket when you need help.")}
+                  {t("Creează un tichet nou când ai nevoie de ajutor.", "Create a new ticket when you need help.")}
                 </p>
                 <Button size="sm" onClick={() => setCreateOpen(true)}>
                   <Plus className="h-4 w-4 mr-1.5" />
@@ -328,7 +328,7 @@ function TicketDetailView({ ticket, onBack }: { ticket: OpsTicket; onBack: () =>
       qc.invalidateQueries({ queryKey: ["userTicketMessages", ticket.id] });
     },
     onError: (e: Error) =>
-      toast.error(t("Nu am putut închide ticketul", "Could not close the ticket"), { description: e.message }),
+      toast.error(t("Nu am putut închide tichetul", "Could not close the ticket"), { description: e.message }),
   });
 
   return (
@@ -357,7 +357,7 @@ function TicketDetailView({ ticket, onBack }: { ticket: OpsTicket; onBack: () =>
                 {closeMutation.isPending
                   ? <Loader2 className="h-4 w-4 animate-spin" />
                   : <X className="h-4 w-4 mr-1" />}
-                <span className="hidden sm:inline">{t("Închide ticketul", "Close ticket")}</span>
+                <span className="hidden sm:inline">{t("Închide tichetul", "Close ticket")}</span>
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -365,7 +365,7 @@ function TicketDetailView({ ticket, onBack }: { ticket: OpsTicket; onBack: () =>
                 <AlertDialogTitle>{t("Închizi acest ticket?", "Close this ticket?")}</AlertDialogTitle>
                 <AlertDialogDescription>
                   {t(
-                    "Confirmă doar dacă problema este rezolvată sau ticketul a fost deschis din greșeală. Poți deschide oricând un ticket nou.",
+                    "Confirmă doar dacă problema este rezolvată sau tichetul a fost deschis din greșeală. Poți deschide oricând un tichet nou.",
                     "Confirm only if the issue is resolved or the ticket was opened by mistake. You can always open a new one."
                   )}
                 </AlertDialogDescription>
@@ -373,7 +373,7 @@ function TicketDetailView({ ticket, onBack }: { ticket: OpsTicket; onBack: () =>
               <AlertDialogFooter>
                 <AlertDialogCancel>{t("Anulează", "Cancel")}</AlertDialogCancel>
                 <AlertDialogAction onClick={() => closeMutation.mutate()}>
-                  {t("Închide ticketul", "Close ticket")}
+                  {t("Închide tichetul", "Close ticket")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -498,7 +498,7 @@ function CreateTicketForm({ onSuccess }: { onSuccess: (id: string) => void }) {
       <Button type="submit" className="w-full" disabled={!valid || createMutation.isPending}>
         {createMutation.isPending
           ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("Se trimite…", "Submitting…")}</>
-          : t("Trimite ticketul", "Submit ticket")}
+          : t("Trimite tichetul", "Submit ticket")}
       </Button>
     </form>
   );

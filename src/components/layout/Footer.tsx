@@ -94,7 +94,7 @@ const Footer = () => {
               <li><Link to="/anunturi?tab=cereri" className="transition-colors hover:text-foreground">{language === "en" ? "Rentals out" : "Închirieri"}</Link></li>
               <li><Link to="/rezervari" className="transition-colors hover:text-foreground">{language === "en" ? "Bookings" : "Rezervări"}</Link></li>
               <li><Link to="/favorite" className="transition-colors hover:text-foreground">{language === "en" ? "Favorites" : "Favorite"}</Link></li>
-              <li><Link to="/suport" className="transition-colors hover:text-foreground">{language === "en" ? "Support & Tickets" : "Suport & Tickete"}</Link></li>
+              <li><Link to="/suport" className="transition-colors hover:text-foreground">{language === "en" ? "Support & Tickets" : "Suport & Tichete"}</Link></li>
             </ul>
           </div>
 

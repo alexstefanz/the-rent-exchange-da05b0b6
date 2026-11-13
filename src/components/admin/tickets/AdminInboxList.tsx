@@ -95,7 +95,7 @@ export function AdminInboxList({ tickets, isLoading, selectedId, onSelect, filte
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <Inbox className="h-4 w-4 text-muted-foreground" />
-            <h2 className="font-semibold text-sm">Inbox tickete</h2>
+            <h2 className="font-semibold text-sm">Inbox tichete</h2>
           </div>
           <Button size="sm" variant="ghost" onClick={onNew} className="h-7 px-2">
             <Plus className="h-3.5 w-3.5 mr-1" /> Nou
@@ -186,7 +186,7 @@ export function AdminInboxList({ tickets, isLoading, selectedId, onSelect, filte
         ) : visible.length === 0 ? (
           <div className="text-center py-12 px-4 text-muted-foreground text-sm">
             <Inbox className="h-8 w-8 mx-auto mb-2 opacity-40" />
-            Niciun ticket aici
+            Niciun tichet aici
           </div>
         ) : (
           <ul className="divide-y">

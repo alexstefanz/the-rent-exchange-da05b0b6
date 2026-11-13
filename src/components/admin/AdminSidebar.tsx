@@ -58,7 +58,7 @@ const menuItems: Array<{
   { title: "Dosare asigurări", url: "/admin/asigurari", icon: ShieldCheck },
   { title: "Produse", url: "/admin/products", icon: Package },
   { title: "Confirmări / Anulări", url: "/admin/approvals", icon: ClipboardCheck, badgeKey: "pending_approvals_total" },
-  { title: "Tickete", url: "/admin/tickets", icon: TicketCheck, badgeKey: "open_tickets" },
+  { title: "Tichete", url: "/admin/tickets", icon: TicketCheck, badgeKey: "open_tickets" },
   { title: "Analytics Suport", url: "/admin/tickets/analytics", icon: BarChart3 },
   { title: "Conversații", url: "/admin/conversations", icon: MessageCircle },
   { title: "Categorii", url: "/admin/categories", icon: FolderTree },

@@ -658,8 +658,8 @@ const mockItemsBase: RentalItemBase[] = [
   // SCULE, UNELTE & CONSTRUCȚII (Category 4)
   {
     id: "4-1-1",
-    title: "Set Bormaşină DeWalt 20V MAX",
-    description: "Kit profesional cu bormaşină și rotopercutor, include 2 baterii și accesorii.",
+    title: "Set Bormașină DeWalt 20V MAX",
+    description: "Kit profesional cu bormașină și rotopercutor, include 2 baterii și accesorii.",
     price: 45,
     priceUnit: "zi",
     images: [

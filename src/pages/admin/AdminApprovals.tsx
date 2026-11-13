@@ -200,7 +200,7 @@ const AdminApprovals = () => {
             />
           </div>
           <Badge variant="secondary" className="text-sm">
-            {products.length} anunțuri în așteptare
+            {products.length} {products.length === 1 ? "anunț" : "anunțuri"} în așteptare
           </Badge>
         </div>
 

@@ -226,8 +226,8 @@ const ListingsPage = () => {
               </p>
               <p className="mt-0.5 text-sm text-muted-foreground">
                 {t(
-                  `Gestionează cele ${stats?.total ?? products.length} anunțuri ale tale.`,
-                  `Manage your ${stats?.total ?? products.length} listings.`,
+                  (stats?.total ?? products.length) === 1 ? "Gestionează anunțul tău." : `Gestionează cele ${stats?.total ?? products.length} anunțuri ale tale.`,
+                  (stats?.total ?? products.length) === 1 ? "Manage your listing." : `Manage your ${stats?.total ?? products.length} listings.`,
                 )}
               </p>
             </div>

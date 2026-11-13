@@ -519,8 +519,8 @@ const CategoryDetail = () => {
                 </p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {t(
-                    `Există ${products.length} anunțuri în această categorie.`,
-                    `There are ${products.length} listings in this category.`,
+                    products.length === 1 ? "Există 1 anunț în această categorie." : `Există ${products.length} anunțuri în această categorie.`,
+                    products.length === 1 ? "There is 1 listing in this category." : `There are ${products.length} listings in this category.`,
                   )}
                 </p>
                 <Button className="mt-4" onClick={handleClearFilters}>

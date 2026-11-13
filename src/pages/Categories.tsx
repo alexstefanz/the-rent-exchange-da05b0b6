@@ -101,7 +101,7 @@ const Categories = () => {
                 </div>
                 <p className="text-sm font-semibold text-foreground">{name}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {count} {language === "en" ? "listings" : "anunțuri"}
+                  {count} {language === "en" ? (count === 1 ? "listing" : "listings") : (count === 1 ? "anunț" : "anunțuri")}
                 </p>
               </Link>
             );
