@@ -126,7 +126,7 @@ export default function BusinessDashboard() {
   const nav = [
     { id: "overview", icon: LayoutDashboard, label: t("Prezentare generală", "Overview") },
     { id: "fleet", icon: Package, label: t("Gestiune flotă", "Fleet") },
-    { id: "listings", icon: ClipboardList, label: t("Echipamentele mele de închiriat", "My rental equipment") },
+    { id: "listings", icon: ClipboardList, label: t("Echipamentele mele", "My equipment") },
     { id: "calendar", icon: CalendarDays, label: t("Calendar & rezervări", "Calendar & bookings") },
     { id: "requests", icon: ClipboardList, label: t("Închirieri primite", "Incoming rentals") },
     { id: "docs", icon: FileText, label: t("Documente & contabilitate", "Documents & accounting") },
@@ -153,7 +153,7 @@ export default function BusinessDashboard() {
         })}
       </div></CardContent></Card>
   );
-  const navBtn = (active: boolean) => `flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${active ? "bg-primary text-primary-foreground" : "text-biz-panel-foreground hover:bg-biz-panel-muted"}`;
+  const navBtn = (active: boolean) => `flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors ${active ? "bg-primary text-primary-foreground" : "text-biz-panel-foreground hover:bg-biz-panel-muted"}`;
   const panel = (
     <div className="flex h-full flex-col bg-biz-panel text-biz-panel-foreground">
       <div className="flex items-center gap-3 px-5 py-6">
