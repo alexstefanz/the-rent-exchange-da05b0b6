@@ -20,6 +20,7 @@ export interface AdminProduct {
   admin_edited_at: string | null;
   admin_edited_by: string | null;
   created_via?: string | null;
+  serial_number?: string | null;
 }
 
 const isPendingEdit = async (productId: string): Promise<boolean> => {
@@ -144,7 +145,13 @@ export const fetchAdminProducts = async (
   });
 
   if (error) throw new Error(error.message);
-  return (data || []) as AdminProduct[];
+  const list = (data || []) as AdminProduct[];
+  if (list.length) {
+    const { data: sens } = await supabase.rpc('get_admin_products_sensitive', { _ids: list.map(p => p.id) });
+    const map = new Map((sens || []).map((r: any) => [r.id, r.serial_number]));
+    list.forEach(p => { p.serial_number = (map.get(p.id) as string | null) ?? null; });
+  }
+  return list;
 };
 
 export const toggleProductActive = async (productId: string, isActive: boolean): Promise<void> => {
@@ -260,7 +267,7 @@ export const fetchProductFullDetails = async (productId: string) => {
 
 export const updateProductAdmin = async (
   productId: string,
-  updates: { title?: string; description?: string; daily_price_owner?: number; category?: string; subcategory?: string; is_active?: boolean }
+  updates: { title?: string; description?: string; daily_price_owner?: number; category?: string; subcategory?: string; is_active?: boolean; serial_number?: string | null }
 ): Promise<void> => {
   const { data: { user } } = await supabase.auth.getUser();
   const { error } = await supabase

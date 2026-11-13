@@ -91,6 +91,10 @@ const ProductExpandedPanel = ({
           <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
           <div><span className="text-muted-foreground">Oraș:</span> <span className="font-medium">{product.location_city || '-'}</span></div>
         </div>
+        <div className="flex items-start gap-2">
+          <Tag className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+          <div><span className="text-muted-foreground">Serie / OEM:</span> <span className="font-medium font-mono">{product.serial_number || '-'}</span></div>
+        </div>
         {extraLoading ? (
           <Skeleton className="h-5 w-32" />
         ) : extraDetails && (
@@ -227,7 +231,7 @@ const AdminProducts = () => {
   const [reviewsData, setReviewsData] = useState<AdminProductReview[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [editDialog, setEditDialog] = useState<{ open: boolean; product: AdminProduct | null }>({ open: false, product: null });
-  const [editForm, setEditForm] = useState({ title: "", description: "", daily_price_owner: 0, category: "", subcategory: "", is_active: true });
+  const [editForm, setEditForm] = useState({ title: "", description: "", daily_price_owner: 0, category: "", subcategory: "", is_active: true, serial_number: "" });
   const [editSaving, setEditSaving] = useState(false);
   const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<string | null>(null);
@@ -465,6 +469,7 @@ const AdminProducts = () => {
       category: product.category || "",
       subcategory: product.subcategory || "",
       is_active: product.is_active,
+      serial_number: product.serial_number || "",
     });
     setEditDialog({ open: true, product });
   };
@@ -480,6 +485,7 @@ const AdminProducts = () => {
         category: editForm.category || undefined,
         subcategory: editForm.subcategory || undefined,
         is_active: editForm.is_active,
+        serial_number: editForm.serial_number.trim() || null,
       });
       toast.success("Produs actualizat de admin");
       queryClient.invalidateQueries({ queryKey: ['adminProducts'] });
@@ -603,6 +609,7 @@ const AdminProducts = () => {
                                 <div>
                                   <div className="flex items-center gap-2">
                                     <span className="font-medium line-clamp-1">{product.title}</span>
+{product.serial_number && <span className="block text-xs font-mono text-muted-foreground">SN/OEM: {product.serial_number}</span>}
                                     <SourceBadge source={product.created_via} />
                                   </div>
                                   {product.admin_flagged && (
@@ -657,6 +664,7 @@ const AdminProducts = () => {
                         )}
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm line-clamp-1">{product.title}</p>
+{product.serial_number && <span className="block text-xs font-mono text-muted-foreground">SN/OEM: {product.serial_number}</span>}
                           <p className="text-xs text-muted-foreground">{product.owner_name}</p>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-sm font-semibold">{formatCurrency(product.daily_price_owner)}</span>
@@ -906,6 +914,10 @@ const AdminProducts = () => {
             <div className="space-y-2">
               <label className="text-sm font-medium">Descriere</label>
               <Textarea value={editForm.description} onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value }))} rows={4} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Număr de serie / Cod OEM</label>
+              <Input value={editForm.serial_number} maxLength={100} placeholder="Ex: SN-4829103, OEM-1294" onChange={(e) => setEditForm(f => ({ ...f, serial_number: e.target.value }))} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
