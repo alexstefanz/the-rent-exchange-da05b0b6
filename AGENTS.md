@@ -7,3 +7,4 @@
 - Payment capture uses the function-local capture-state guard and treats recorded captured payments as success before any side effects. Why: automatic collection must not block return confirmation or duplicate financial records.
 
 - Legal name comes from Stripe Identity verified_outputs in the identity webhook (locked, source stripe_identity). Why: contracts/PVs must carry the ID-document name without manual matching.
+- Admin notifications DB trigger calls send-admin-sms-alert (settings singleton admin_sms_settings). Why: SMS fan-out stays server-side with cooldown.
