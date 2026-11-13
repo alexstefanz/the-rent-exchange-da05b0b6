@@ -8,6 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import RentalsTab from "@/components/dashboard/RentalsTab";
+import EarningsTab from "@/components/profile/EarningsTab";
+import AccountTab from "@/components/profile/AccountTab";
+import Messages from "@/pages/Messages";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -116,7 +120,11 @@ export default function BusinessDashboard() {
     { id: "calendar", icon: CalendarDays, label: t("Calendar & rezervări", "Calendar & bookings") },
     { id: "docs", icon: FileText, label: t("Documente & contabilitate", "Documents & accounting") },
     { id: "company", icon: Building2, label: t("Date fiscale", "Company details") },
-  ];
+    { id: "renter", icon: ShoppingBag, label: t("Închirierile mele (chiriaș)", "My rentals (renter)"), group: "account" },
+    { id: "messages", icon: MessageSquare, label: t("Mesaje", "Messages"), group: "account" },
+    { id: "wallet", icon: WalletIcon, label: t("Încasări & sold", "Earnings & balance"), group: "account" },
+    { id: "settings", icon: Settings, label: t("Setări cont", "Account settings"), group: "account" },
+  ] as { id: string; icon: any; label: string; group?: string }[];
   const go = (id: string) => { setSection(id); setMobileOpen(false); };
   const calendarCard = (
     <Card><CardHeader><CardTitle className="text-base">{t("Calendar rezervări – 14 zile", "Bookings – next 14 days")}</CardTitle></CardHeader>
@@ -146,17 +154,12 @@ export default function BusinessDashboard() {
         <p className="mt-1 text-[11px] opacity-70">{profile?.cui && `CUI ${profile.cui}`}{profile?.reg_com && ` · ${profile.reg_com}`}</p>
       </div>
       <nav className="flex-1 space-y-1 overflow-y-auto px-3">
-        {nav.map((n) => (
+        {nav.filter((n) => !n.group).map((n) => (
           <button key={n.id} onClick={() => go(n.id)} className={navBtn(section === n.id)}><n.icon className="h-4 w-4" />{n.label}</button>
         ))}
         <p className="px-3 pb-1 pt-5 text-[11px] font-semibold uppercase tracking-wider opacity-50">{t("Cont firmă", "Company account")}</p>
-        {[
-          { to: "/rezervari", icon: ShoppingBag, label: t("Închirierile mele (chiriaș)", "My rentals (renter)") },
-          { to: "/mesaje", icon: MessageSquare, label: t("Mesaje", "Messages") },
-          { to: "/castiguri", icon: WalletIcon, label: t("Încasări & sold", "Earnings & balance") },
-          { to: "/contul-meu", icon: Settings, label: t("Setări cont", "Account settings") },
-        ].map((l) => (
-          <button key={l.to} onClick={() => navigate(l.to)} className={navBtn(false)}><l.icon className="h-4 w-4" />{l.label}</button>
+        {nav.filter((n) => n.group).map((n) => (
+          <button key={n.id} onClick={() => go(n.id)} className={navBtn(section === n.id)}><n.icon className="h-4 w-4" />{n.label}</button>
         ))}
       </nav>
       <div className="space-y-1 border-t border-biz-panel-muted p-3">
@@ -165,7 +168,7 @@ export default function BusinessDashboard() {
       </div>
     </div>
   );
-  const current = nav.find((n) => n.id === section)!;
+  const current = nav.find((n) => n.id === section) ?? nav[0];
 
   return (
     <div className="min-h-screen flex w-full bg-muted/30">
@@ -297,6 +300,10 @@ export default function BusinessDashboard() {
               </CardContent></Card>
           </TabsContent>
 
+          <TabsContent value="renter" className="mt-0">{section === "renter" && <RentalsTab />}</TabsContent>
+          <TabsContent value="messages" className="mt-0">{section === "messages" && <Messages embedded />}</TabsContent>
+          <TabsContent value="wallet" className="mt-0">{section === "wallet" && <EarningsTab />}</TabsContent>
+          <TabsContent value="settings" className="mt-0">{section === "settings" && <AccountTab />}</TabsContent>
           <TabsContent value="company" className="mt-0">
             <Card><CardContent className="p-6 grid sm:grid-cols-2 gap-4">
               {[[t("Denumire firmă", "Company name"), profile?.company_name], ["CUI", profile?.cui], [t("Nr. Reg. Com.", "Trade register no."), profile?.reg_com], [t("Adresă sediu", "Registered address"), profile?.company_address]].map(([l, v]) => (

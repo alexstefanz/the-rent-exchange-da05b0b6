@@ -26,7 +26,7 @@ function useIsDesktop() {
   return isDesktop;
 }
 
-export default function Messages() {
+export default function Messages({ embedded = false }: { embedded?: boolean } = {}) {
   usePageSeo({ title: "Mesaje — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
   const { user, loading: authLoading } = useAuth();
   const { t } = useLanguage();
@@ -89,7 +89,7 @@ export default function Messages() {
       return;
     }
     if (searchParams.get("conv")) {
-      navigate("/mesaje", { replace: true });
+      if (!embedded) navigate("/mesaje", { replace: true });
     }
     setSelectedConversation(null);
   };
@@ -97,7 +97,7 @@ export default function Messages() {
   const handleCloseAnimationEnd = () => {
     if (!isClosing) return;
     if (searchParams.get("conv")) {
-      navigate("/mesaje", { replace: true });
+      if (!embedded) navigate("/mesaje", { replace: true });
     }
     setSelectedConversation(null);
     setIsClosing(false);
@@ -127,7 +127,7 @@ export default function Messages() {
             isClosing ? "animate-slide-in-left" : ""
           } pointer-events-none`}
         >
-          <Navbar />
+          {!embedded && <Navbar />}
           <main className="flex-1 pb-20">
             <ConversationList
               conversations={conversations}
@@ -136,7 +136,7 @@ export default function Messages() {
               onSelect={handleSelect}
             />
           </main>
-          <Footer />
+          {!embedded && <Footer />}
         </div>
         <div
           className={`fixed inset-0 z-50 flex flex-col overflow-hidden bg-background transform-gpu will-change-transform ${
@@ -183,7 +183,7 @@ export default function Messages() {
   if (!isDesktop) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Navbar />
+        {!embedded && <Navbar />}
         <main className="flex-1 pb-20">
           <ConversationList
             conversations={conversations}
@@ -192,7 +192,7 @@ export default function Messages() {
             onSelect={handleSelect}
           />
         </main>
-        <Footer />
+        {!embedded && <Footer />}
       </div>
     );
   }
@@ -200,8 +200,8 @@ export default function Messages() {
   // Desktop: 3-column layout
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
-      <main className="flex-1 container mx-auto px-4 py-6">
+      {!embedded && <Navbar />}
+      <main className={embedded ? "flex-1" : "flex-1 container mx-auto px-4 py-6"}>
         <div className="flex h-[calc(100vh-10rem)] border rounded-2xl overflow-hidden bg-background shadow-sm">
           {/* Left: list */}
           <div className="w-[320px] shrink-0 border-r flex flex-col">
@@ -263,7 +263,7 @@ export default function Messages() {
           )}
         </SheetContent>
       </Sheet>
-      <Footer />
+      {!embedded && <Footer />}
     </div>
   );
 }
