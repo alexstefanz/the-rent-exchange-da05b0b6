@@ -73,7 +73,7 @@ const ListingAvailabilityDialog = ({ product, open, onOpenChange, onSaved }: Pro
         <div className="space-y-4">
           <RadioGroup
             value={mode}
-            onValueChange={(v) => { setMode(v as "immediate" | "from_date"); if (v === "from_date" && !availableFrom) setPickerOpen(true); }}
+            onValueChange={(v) => { setMode(v as "immediate" | "from_date"); }}
             className="space-y-2"
           >
             <label
