@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { Loader2, CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 import type { Product } from "@/features/products/productsApi";
 
 interface Props {
@@ -19,7 +20,7 @@ interface Props {
 }
 
 const toDate = (s: string) => new Date(s + "T00:00:00");
-const toIso = (d: Date) => d.toISOString().slice(0, 10);
+const toIso = (d: Date) => format(d, "yyyy-MM-dd");
 
 const ListingAvailabilityDialog = ({ product, open, onOpenChange, onSaved }: Props) => {
   const { language } = useLanguage();
@@ -28,6 +29,7 @@ const ListingAvailabilityDialog = ({ product, open, onOpenChange, onSaved }: Pro
   const [availableFrom, setAvailableFrom] = useState<Date | undefined>(undefined);
   const [blocked, setBlocked] = useState<Date[]>([]);
   const [saving, setSaving] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     if (!product) return;
@@ -71,7 +73,7 @@ const ListingAvailabilityDialog = ({ product, open, onOpenChange, onSaved }: Pro
         <div className="space-y-4">
           <RadioGroup
             value={mode}
-            onValueChange={(v) => setMode(v as "immediate" | "from_date")}
+            onValueChange={(v) => { setMode(v as "immediate" | "from_date"); if (v === "from_date" && !availableFrom) setPickerOpen(true); }}
             className="space-y-2"
           >
             <label
@@ -99,15 +101,18 @@ const ListingAvailabilityDialog = ({ product, open, onOpenChange, onSaved }: Pro
               <div className="flex-1">
                 <div className="text-sm font-medium">{t("Disponibil începând cu data", "Available starting on")}</div>
                 <div className="text-xs text-muted-foreground mb-2">{t("Apare în căutări începând cu această dată", "Appears in search starting on this date")}</div>
+              </div>
+            </label>
+          </RadioGroup>
+            <div className="pl-10 -mt-1">
                 {mode === "from_date" && (
-                  <Popover>
+                  <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         type="button"
                         variant="outline"
                         size="sm"
                         className={cn("w-full justify-start font-normal", !availableFrom && "text-muted-foreground")}
-                        onClick={(e) => e.preventDefault()}
                       >
                         <CalendarIcon className="mr-2 h-4 w-4" />
                         {availableFrom
@@ -119,19 +124,19 @@ const ListingAvailabilityDialog = ({ product, open, onOpenChange, onSaved }: Pro
                       <Calendar
                         mode="single"
                         selected={availableFrom}
-                        onSelect={setAvailableFrom}
+                        onSelect={(d) => { setAvailableFrom(d); setPickerOpen(false); }}
+                        disabled={{ before: new Date(new Date().setHours(0,0,0,0)) }}
                         initialFocus
                         className="pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
                 )}
-              </div>
-            </label>
-          </RadioGroup>
+            </div>
 
           <div className="rounded-xl border border-border p-2">
             <div className="px-2 pb-1 text-xs font-medium text-muted-foreground">{t("Zile blocate", "Blocked days")}</div>
+            <div className="px-2 pb-1 text-xs text-muted-foreground">{t("Selectează zilele în care produsul nu e disponibil (concediu, revizie, reparații).", "Select days when the item is unavailable (holiday, service, repairs).")}</div>
             <Calendar
               mode="multiple"
               selected={blocked}
