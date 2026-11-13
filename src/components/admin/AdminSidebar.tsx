@@ -55,6 +55,7 @@ const menuItems: Array<{
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
   { title: "Notificări", url: "/admin/notifications", icon: Bell, badgeKey: "unread_total" },
   { title: "Rezervări", url: "/admin/reservations", icon: CalendarCheck },
+  { title: "Dosare asigurări", url: "/admin/asigurari", icon: ShieldCheck },
   { title: "Produse", url: "/admin/products", icon: Package },
   { title: "Confirmări / Anulări", url: "/admin/approvals", icon: ClipboardCheck, badgeKey: "pending_approvals_total" },
   { title: "Tickete", url: "/admin/tickets", icon: TicketCheck, badgeKey: "open_tickets" },
