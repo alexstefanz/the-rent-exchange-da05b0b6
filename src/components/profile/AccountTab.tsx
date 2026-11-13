@@ -503,7 +503,7 @@ const AccountTab = () => {
                 <p className="font-semibold truncate">{profile?.full_name || t("Utilizator nou", "New user")}</p>
                 {isBusiness && <Badge variant="secondary">{t("Administrator", "Administrator")}</Badge>}
                 {isBusiness && (identityVerified
-                  ? <Badge className="gap-1 bg-success/15 text-success hover:bg-success/15"><BadgeCheck className="h-3 w-3" />{t("Identitate verificată (KYC)", "Identity verified (KYC)")}</Badge>
+                  ? <Badge className="gap-1 bg-primary/15 text-primary hover:bg-primary/15"><BadgeCheck className="h-3 w-3" />{t("Identitate verificată (KYC)", "Identity verified (KYC)")}</Badge>
                   : <Button size="sm" variant="outline" className="h-6 text-xs" onClick={() => navigate("/verificare")}>{t("Verifică identitatea", "Verify identity")}</Button>)}
               </div>
               {isBusiness && profile?.company_name && <p className="text-xs text-muted-foreground truncate">{t("Reprezintă", "Represents")}: {profile.company_name}{profile.cui ? ` · CUI ${profile.cui}` : ""}</p>}
