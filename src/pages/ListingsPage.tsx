@@ -39,7 +39,7 @@ const deriveStatus = (p: Product): ListingStatus => {
   return "active";
 };
 
-const ListingsPage = () => {
+const ListingsPage = ({ embedded = false }: { embedded?: boolean } = {}) => {
   usePageSeo({ title: "Anunțurile mele — Rentli", description: "Zona privată a contului tău Rentli.", noindex: true });
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -211,9 +211,9 @@ const ListingsPage = () => {
   const hasNoProducts = products.length === 0;
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Navbar />
-      <main className="flex-1 container py-6 pt-24 lg:pt-8 pb-28 sm:pb-12 space-y-6">
+    <div className={embedded ? "flex flex-col" : "min-h-screen flex flex-col bg-background"}>
+      {!embedded && <Navbar />}
+      <main className={embedded ? "flex-1 space-y-6" : "flex-1 container py-6 pt-24 lg:pt-8 pb-28 sm:pb-12 space-y-6"}>
         <Button variant="ghost" size="sm" className="-ml-2" onClick={() => navigate("/profile")}>
           <ArrowLeft className="h-4 w-4" /> {t("Înapoi la Contul Meu", "Back to My Account")}
         </Button>
@@ -471,7 +471,7 @@ const ListingsPage = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Footer />
+      {!embedded && <Footer />}
     </div>
   );
 };
