@@ -401,6 +401,15 @@ export function AccountHubBody({ onNavigate, onLogout }: { onNavigate: (path: st
             <span className="whitespace-nowrap">Rentli Business</span>
           </button>
         )}
+        {profile && (profile as any)?.account_type !== "business" && (
+          <button
+            onClick={() => onNavigate("/onboarding/business")}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-primary px-4 py-2.5 text-sm font-semibold text-primary transition-all hover:bg-primary/10"
+          >
+            <Building2 className="h-4 w-4" />
+            <span className="whitespace-nowrap">{t("Treci la cont de firmă", "Switch to company account")}</span>
+          </button>
+        )}
         {isInsurer && (
           <button
             onClick={() => onNavigate("/admin/asigurari")}

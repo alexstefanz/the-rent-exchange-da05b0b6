@@ -11,6 +11,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { Suspense } from "react";
 import Index from "./pages/Index";
 import ScrollToTop from "./components/ScrollToTop";
+import AccountTypeGate from "./components/auth/AccountTypeGate";
 import RouteTracker from "./components/RouteTracker";
 import { useGlobalRealtime } from "@/hooks/useGlobalRealtime";
 import { useGlobalPresence } from "@/hooks/useOnlineUsers";
@@ -142,6 +143,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <ScrollToTop />
+            <AccountTypeGate />
             <RouteTracker />
             <Suspense fallback={null}>
               <ConditionalWidgets />
