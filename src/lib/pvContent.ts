@@ -338,7 +338,7 @@ export function buildPvRichContent(
         rows: [
           [L("Denumire / model", "Name / model"), val(rental.product_title), L("Marca", "Brand"), "-"],
           [L("An fabricatie", "Year of manufacture"), "-", "", ""],
-          [L("Nr. serie / identificare", "Serial / ID no."), "-", L("Suma asigurata", "Insured amount"), rental.product_deposit_value ? `${rental.product_deposit_value} lei` : "-"],
+          [L("Nr. serie / identificare", "Serial / ID no."), val((rental as any).product_serial_number), L("Suma asigurata", "Insured amount"), rental.product_deposit_value ? `${rental.product_deposit_value} lei` : "-"],
           [L("Accesorii incluse", "Included accessories"), items.length ? items.join(", ") : "-", L("Ambalaj / husa", "Packaging / case"), L(`${box(false)} Da   ${box(false)} Nu`, `${box(false)} Yes   ${box(false)} No`)],
         ],
       },

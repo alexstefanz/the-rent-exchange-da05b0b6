@@ -3569,6 +3569,10 @@ export type Database = {
           subtotal: number
         }[]
       }
+      get_rental_product_serial: {
+        Args: { _rental_id: string }
+        Returns: string
+      }
       get_rental_pv_signed_url: {
         Args: { _phase: string; _rental_id: string }
         Returns: string
