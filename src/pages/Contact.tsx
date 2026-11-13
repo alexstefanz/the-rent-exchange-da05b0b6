@@ -90,7 +90,7 @@ const Contact = () => {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
               <Mail className="h-7 w-7 text-primary" />
             </div>
-            <CardTitle className="text-2xl">{t("Contactează-ne", "Contact Us")}</CardTitle>
+            <h1 className="text-2xl font-semibold leading-none tracking-tight">{t("Contactează-ne", "Contact Us")}</h1>
             <CardDescription>
               {t(
                 "Trimite-ne un mesaj și îți răspundem în maximum 48 de ore.",

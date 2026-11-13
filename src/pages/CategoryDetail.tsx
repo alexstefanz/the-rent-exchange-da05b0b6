@@ -355,6 +355,7 @@ const CategoryDetail = () => {
         />
       )}
       <main className={viewMode === "map" ? "w-full px-4 pt-4 lg:px-8" : "container py-8"}>
+        {viewMode === "map" && <h1 className="mb-4 text-2xl font-bold">{catName}</h1>}
         <div className="mb-6 max-w-2xl">
           <div className="relative">
             <SearchIcon className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
