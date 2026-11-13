@@ -13,6 +13,7 @@ import EarningsTab from "@/components/profile/EarningsTab";
 import AccountTab from "@/components/profile/AccountTab";
 import Messages from "@/pages/Messages";
 import RentalDetailPage from "@/pages/RentalDetailPage";
+import PublishProductPage from "@/pages/PublishProduct";
 import ListingsPage from "@/pages/ListingsPage";
 import RentalsOutTab from "@/components/dashboard/RentalsOutTab";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,6 +40,8 @@ export default function BusinessDashboard() {
   const setSection = (id: string) => { setSectionState(id); setParams(id === "overview" ? {} : { section: id }, { replace: true }); };
   const [mobileOpen, setMobileOpen] = useState(false);
   const rentalId = params.get("rental");
+  const productForm = params.get("product"); // "new" or product id
+  const openProductForm = (v: string) => { setParams({ section: "listings", product: v }); setSectionState("listings"); setMobileOpen(false); };
   const openRental = (id: string) => setParams({ section, rental: id });
   const closeRental = () => setParams(section === "overview" ? {} : { section });
 
@@ -192,7 +195,10 @@ export default function BusinessDashboard() {
         <div className="p-4 md:p-8 space-y-6 w-full" onClickCapture={(e) => {
           const a = (e.target as HTMLElement).closest("a");
           const m = a?.getAttribute("href")?.match(/^\/(?:rezervari|inchirieri)\/([^/?#]+)/);
-          if (m) { e.preventDefault(); e.stopPropagation(); openRental(decodeURIComponent(m[1])); }
+          if (m) { e.preventDefault(); e.stopPropagation(); openRental(decodeURIComponent(m[1])); return; }
+          const href = a?.getAttribute("href") ?? "";
+          const pe = href.match(/^\/owner\/edit-product\/([^/?#]+)/);
+          if (href.startsWith("/owner/new-product") || pe) { e.preventDefault(); e.stopPropagation(); openProductForm(pe ? decodeURIComponent(pe[1]) : "new"); }
         }}>
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -201,11 +207,11 @@ export default function BusinessDashboard() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => go("fleet")}>{t("Echipamente", "Equipment")}</Button>
-            <Button onClick={() => navigate("/owner/new-product")}><Plus className="h-4 w-4 mr-1" />{t("Adaugă echipament", "Add equipment")}</Button>
+            <Button onClick={() => openProductForm("new")}><Plus className="h-4 w-4 mr-1" />{t("Adaugă echipament", "Add equipment")}</Button>
           </div>
         </div>
 
-        {rentalId ? <RentalDetailPage key={rentalId} embedded publicIdOverride={rentalId} onBack={closeRental} /> :
+        {productForm ? <PublishProductPage key={productForm} mode={productForm === "new" ? "create" : "edit"} productIdOverride={productForm === "new" ? undefined : productForm} onDone={() => go("listings")} /> : rentalId ? <RentalDetailPage key={rentalId} embedded publicIdOverride={rentalId} onBack={closeRental} /> :
         <Tabs value={section} onValueChange={setSection}>
           <TabsContent value="overview" className="space-y-6 mt-0">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
