@@ -9,6 +9,7 @@ const COOLDOWN_MIN = 10;
 Deno.serve(withCors(async (req) => {
   const headers = { ...getCorsHeaders(req), "Content-Type": "application/json" };
   const json = (b: unknown, s = 200) => new Response(JSON.stringify(b), { status: s, headers });
+  if (req.method === "OPTIONS") return new Response(null, { headers });
   try {
     if (!(await requireServiceCaller(req))) return json({ error: "Unauthorized" }, 401);
     const body = await req.json().catch(() => ({}));
