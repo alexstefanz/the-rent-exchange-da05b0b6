@@ -59,6 +59,39 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_sms_settings: {
+        Row: {
+          enabled: boolean
+          event_types: string[]
+          extra_phones: string[]
+          high_priority_only: boolean
+          id: number
+          notify_all_admins: boolean
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          enabled?: boolean
+          event_types?: string[]
+          extra_phones?: string[]
+          high_priority_only?: boolean
+          id?: number
+          notify_all_admins?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          event_types?: string[]
+          extra_phones?: string[]
+          high_priority_only?: boolean
+          id?: number
+          notify_all_admins?: boolean
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       admin_specializations: {
         Row: {
           category_group: string

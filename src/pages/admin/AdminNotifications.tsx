@@ -4,6 +4,7 @@ import {
   AlertTriangle, XCircle, Flag, RefreshCw,
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import AdminSmsAlertSettings from "@/components/admin/AdminSmsAlertSettings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -191,6 +192,8 @@ const AdminNotifications = () => {
             </Button>
           )}
         </div>
+
+        <AdminSmsAlertSettings />
 
         <Card>
           <CardHeader className="p-4 md:p-6 pb-3">
