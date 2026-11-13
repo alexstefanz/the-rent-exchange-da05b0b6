@@ -91,6 +91,33 @@ export default function RentalDocumentsModal({ open, onOpenChange, rental, initi
   const canSignContract = isPaid && !!myRole && !(myRole === "owner" ? acc.owner : acc.renter);
   const contractPv: Pv = { phase: "contract", owner_signature_data: acc.ownerSig, renter_signature_data: acc.renterSig, owner_signed_at: acc.owner, renter_signed_at: acc.renter };
   const items = rental.product_included_items || [];
+  const { data: biz = [] } = useQuery({
+    queryKey: ["rental-parties-business", rental.id],
+    enabled: open && !!rental.id,
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)("get_rental_parties_business", { _rental_id: rental.id });
+      if (error) return [];
+      return (data || []) as Array<{ party: string; account_type: string; company_name: string | null; cui: string | null; reg_com: string | null; company_address: string | null }>;
+    },
+  });
+  const bizOf = (party: "owner" | "renter") => {
+    const r = biz.find((x) => x.party === party);
+    return r && r.account_type === "business" && r.company_name ? r : null;
+  };
+  const partyLine = (party: "owner" | "renter") => {
+    const name = party === "owner" ? rental.owner_name : rental.renter_name;
+    const phone = party === "owner" ? rental.owner_phone : rental.renter_phone;
+    const email = party === "owner" ? rental.owner_email : rental.renter_email;
+    const c = bizOf(party);
+    const contact = `${T("telefon", "phone")} ${v(phone)}, e-mail ${v(email)}`;
+    if (!c) return `${v(name)}, ${T("identitate verificată prin Stripe Identity", "identity verified via Stripe Identity")}, ${contact}`;
+    return `${c.company_name}, ${T("CUI", "VAT ID")} ${v(c.cui)}, ${T("Nr. Reg. Com.", "Trade Reg. No.")} ${v(c.reg_com)}, ${T("cu sediul în", "registered at")} ${v(c.company_address)}, ${T("reprezentată prin", "represented by")} ${v(name)} (${T("Administrator", "Administrator")}), ${contact}`;
+  };
+  const sigName = (party: "owner" | "renter") => {
+    const name = party === "owner" ? rental.owner_name : rental.renter_name;
+    const c = bizOf(party);
+    return c ? `${c.company_name} — ${T("prin", "by")} ${v(name)}` : v(name);
+  };
   const daily = Number(rental.daily_price || 0);
   const { data: exts = [] } = useRentalExtensions(rental.id);
   const paidExts = exts.filter((e) => e.status === "approved" && e.payment_status === "paid").reverse();
@@ -164,13 +191,13 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
     <div className="sig flex gap-6 mt-6">
       <div className="flex-1 border-t border-foreground/60 pt-1 min-h-[70px]">
         <div className="text-xs font-semibold">{T("Locator (Proprietar)", "Lessor (Owner)")}</div>
-        <div className="text-xs">{v(rental.owner_name)}</div>
+        <div className="text-xs">{sigName("owner")}</div>
         {!sb && pv?.owner_signature_data && <img src={pv.owner_signature_data} alt="" className="max-h-[60px]" />}
         {!sb && pv?.owner_signed_at && <div className="muted text-[10px] text-muted-foreground">{T("Semnat", "Signed")} {fmtDT(pv.owner_signed_at)}</div>}
       </div>
       <div className="flex-1 border-t border-foreground/60 pt-1 min-h-[70px]">
         <div className="text-xs font-semibold">{T("Locatar (Chiriaș)", "Lessee (Renter)")}</div>
-        <div className="text-xs">{v(rental.renter_name)}</div>
+        <div className="text-xs">{sigName("renter")}</div>
         {!sb && pv?.renter_signature_data && <img src={pv.renter_signature_data} alt="" className="max-h-[60px]" />}
         {!sb && pv?.renter_signed_at && <div className="muted text-[10px] text-muted-foreground">{T("Semnat", "Signed")} {fmtDT(pv.renter_signed_at)}</div>}
       </div>
@@ -191,8 +218,8 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
     <div className="page">
       <Head title={T("CONTRACT DE LOCAȚIUNE A UNUI BUN MOBIL", "LEASE AGREEMENT FOR A MOVABLE ITEM")} sub={T(`încheiat prin platforma Rentli.ro la data de ${fmtD(rental.created_at)}`, `concluded via the Rentli.ro platform on ${fmtD(rental.created_at)}`)} />
       <H2>{T("Art. 1. Părțile contractante", "Art. 1. Contracting parties")}</H2>
-      <p><b>{T("Locator (Proprietar):", "Lessor (Owner):")}</b> {v(rental.owner_name)}, {T("telefon", "phone")} {v(rental.owner_phone)}, e-mail {v(rental.owner_email)};</p>
-      <p><b>{T("Locatar (Chiriaș):", "Lessee (Renter):")}</b> {v(rental.renter_name)}, {T("telefon", "phone")} {v(rental.renter_phone)}, e-mail {v(rental.renter_email)}.</p>
+      <p><b>{T("Locator (Proprietar):", "Lessor (Owner):")}</b> {partyLine("owner")};</p>
+      <p><b>{T("Locatar (Chiriaș):", "Lessee (Renter):")}</b> {partyLine("renter")}.</p>
       <p>{T("Părțile au convenit încheierea prezentului contract în temeiul art. 1777–1823 din Codul Civil.", "The parties have agreed to conclude this agreement under art. 1777–1823 of the Romanian Civil Code.")}</p>
       <H2>{T("Art. 2. Obiectul contractului", "Art. 2. Subject of the agreement")}</H2>
       <p>{T("Locatorul transmite Locatarului folosința temporară a bunului mobil:", "The Lessor grants the Lessee temporary use of the movable item:")} <b>{v(rental.product_title)}</b>{rental.product_category ? T(` (categoria ${rental.product_category})`, ` (category ${rental.product_category})`) : ""}, {T("împreună cu accesoriile:", "together with the accessories:")} {!items.length ? "______________________" : items.join(", ")}. {T("Starea bunului la predare se consemnează în Anexa 1.", "The condition of the item at handover is recorded in Annex 1.")}</p>
@@ -259,8 +286,8 @@ table{width:100%;border-collapse:collapse;margin:6px 0} td,th{border:1px solid #
               })()],
               [T("Interval orar", "Time slot"), b ? "____:____" : slot(rental.pickup_time)],
               [T("Locație", "Location"), v(rental.pickup_location || rental.product_location_city)],
-              [isRet ? T("Predă (Locatar)", "Hands over (Lessee)") : T("Predă (Locator)", "Hands over (Lessor)"), v(isRet ? rental.renter_name : rental.owner_name)],
-              [isRet ? T("Primește (Locator)", "Receives (Lessor)") : T("Primește (Locatar)", "Receives (Lessee)"), v(isRet ? rental.owner_name : rental.renter_name)],
+              [isRet ? T("Predă (Locatar)", "Hands over (Lessee)") : T("Predă (Locator)", "Hands over (Lessor)"), (isRet ? sigName("renter") : sigName("owner"))],
+              [isRet ? T("Primește (Locator)", "Receives (Lessor)") : T("Primește (Locatar)", "Receives (Lessee)"), (isRet ? sigName("owner") : sigName("renter"))],
             ].map(([k, val]) => (
               <tr key={k}><td className="border border-border p-1.5 font-semibold w-1/3">{k}</td><td className="border border-border p-1.5">{val}</td></tr>
             ))}
