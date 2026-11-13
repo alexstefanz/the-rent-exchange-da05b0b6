@@ -53,7 +53,7 @@ const EarningsTab = () => {
       <WithdrawDrawer
         open={openDrawer}
         onOpenChange={setOpenDrawer}
-        available={earnings.availableBalance}
+        available={earnings.withdrawableBalance}
         method={method}
         onSuccess={refresh}
       />
