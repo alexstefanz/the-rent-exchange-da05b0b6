@@ -1,0 +1,2 @@
+ALTER TABLE public.wallet_ledger DROP CONSTRAINT wallet_ledger_kind_check;
+ALTER TABLE public.wallet_ledger ADD CONSTRAINT wallet_ledger_kind_check CHECK (kind = ANY (ARRAY['rental_credit_hold','rental_credit_capture','rental_credit_release','refund','adjustment','bonus_credit']));

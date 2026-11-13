@@ -260,6 +260,13 @@
       "when": 1794548643236,
       "tag": "0036_non_withdrawable_wallet_credit",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1794548662796,
+      "tag": "0037_wallet_ledger_bonus_kind",
+      "breakpoints": true
     }
   ]
 }
