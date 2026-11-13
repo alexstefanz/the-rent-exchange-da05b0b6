@@ -23,6 +23,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import SocialLoginButtons from "@/components/auth/SocialLoginButtons";
 import { strongPasswordSchema, isWeakPasswordError } from "@/lib/passwordValidation";
 import PhoneOtpDialog from "@/components/profile/PhoneOtpDialog";
+import CuiLookupField, { CuiLookupResult } from "@/components/onboarding/CuiLookupField";
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 
 // TEMP: while notify.rentli.ro DNS isn't propagated, we verify accounts via SMS
@@ -87,6 +88,8 @@ const Auth = () => {
     return localStorage.getItem("rentli_remember_me") === "1";
   });
   const [accountType, setAccountType] = useState<"individual" | "business">("individual");
+  const [bizCui, setBizCui] = useState("");
+  const [bizCompany, setBizCompany] = useState<CuiLookupResult | null>(null);
   const copy = useUxCopy();
   const { language } = useLanguage();
 
@@ -294,6 +297,10 @@ const Auth = () => {
 
   const handleRegister = async (data: RegisterFormData) => {
     setRegisterError(null);
+    if (accountType === "business" && !bizCompany?.found) {
+      setRegisterError(language === "ro" ? "Introdu un CUI valid pentru firmă." : "Enter a valid company CUI.");
+      return;
+    }
     setIsLoading(true);
     // Block redirect-on-user-set while we open the SMS OTP dialog
     if (USE_SMS_OTP) setGatingLogin(true);
@@ -345,7 +352,19 @@ const Auth = () => {
       try {
         const { data: { user: newUser } } = await supabase.auth.getUser();
         if (newUser) {
-          await supabase.from("profiles").update({ phone: normalizedPhone }).eq("id", newUser.id);
+          const upd: Record<string, any> = { phone: normalizedPhone };
+          if (accountType === "business" && bizCompany?.found) {
+            Object.assign(upd, {
+              account_type: "business",
+              company_name: bizCompany.denumire,
+              cui: bizCui.replace(/^RO/i, "").replace(/\D/g, ""),
+              reg_com: bizCompany.nrRegCom,
+              company_address: bizCompany.adresa,
+            });
+            localStorage.setItem(`rentli_account_type_chosen_${newUser.id}`, "1");
+            localStorage.removeItem("rentli_pending_business");
+          }
+          await supabase.from("profiles").update(upd).eq("id", newUser.id);
         }
       } catch (e) {
         console.error("Failed to set profile after signup:", e);
@@ -396,7 +415,7 @@ const Auth = () => {
     setPhoneOtpOpen(false);
     setGatingLogin(false);
     pendingCredsRef.current = null;
-    navigate("/", { replace: true });
+    navigate(accountType === "business" && bizCompany?.found ? "/business" : "/", { replace: true });
   };
 
   const handleVerifyOtp = async () => {
@@ -733,8 +752,8 @@ const Auth = () => {
               {accountType === "business" && (
                 <p className="text-xs text-muted-foreground">
                   {language === "ro"
-                    ? "Creează contul cu datele administratorului. După verificarea telefonului introduci CUI-ul, iar datele firmei se completează automat."
-                    : "Create the account with the administrator's details. After phone verification you enter the CUI and company data fills in automatically."}
+                    ? "Introdu CUI-ul firmei — denumirea, adresa și Nr. Reg. Com. se completează automat din ANAF. Apoi creează contul cu datele administratorului."
+                    : "Enter the company CUI — name, address and trade register no. fill in automatically. Then create the account with the administrator's details."}
                 </p>
               )}
               
@@ -766,6 +785,18 @@ const Auth = () => {
                   </div>
                 )}
 
+                {accountType === "business" && (
+                  <div className="space-y-2 rounded-xl border border-border p-3">
+                    <CuiLookupField value={bizCui} onChange={setBizCui} onResult={setBizCompany} />
+                    {bizCompany?.found && (
+                      <div className="text-sm space-y-0.5">
+                        <p className="font-semibold text-foreground">{bizCompany.denumire}</p>
+                        {bizCompany.nrRegCom && <p className="text-muted-foreground">Reg. Com.: {bizCompany.nrRegCom}</p>}
+                        {bizCompany.adresa && <p className="text-muted-foreground">{bizCompany.adresa}</p>}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="register-email">{copy.auth.email}</Label>
                   <Input
