@@ -320,7 +320,7 @@ export default function BusinessDashboard() {
               <div className="sm:col-span-2"><Button variant="outline" onClick={() => navigate("/onboarding/business")}>{t("Actualizează datele firmei", "Update company details")}</Button></div>
             </CardContent></Card>
           </TabsContent>
-        </Tabs>
+        </Tabs>}
         </div>
       </main>
     </div>
